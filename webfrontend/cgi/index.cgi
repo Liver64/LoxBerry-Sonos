@@ -164,7 +164,6 @@ $pphrase = new Config::Simple($planguagefile);
 # Default value for Miniserverport
 if (!$udpport) {$udpport = "80";}
 if (!$rmpvol) {$rmpvol = "25";}
-$step++;
 
 ##########################################################################
 # Main program
@@ -192,12 +191,12 @@ exit;
 
 sub form {
 
-	$pcfg             = new Config::Simple("$installfolder/config/plugins/$psubfolder/sonos.cfg");
+	$pcfg			  = new Config::Simple("$installfolder/config/plugins/$psubfolder/sonos.cfg");
 	$LoxDaten		  = $pcfg->param("LOXONE.LoxDaten");
 	$udpport	  	  = $pcfg->param("LOXONE.LoxPort");
 	$apikey 		  = $pcfg->param("TTS.API-key");
 	$seckey 		  = $pcfg->param("TTS.secret-key");
-	$t2s_engine       = $pcfg->param("TTS.t2s_engine");
+	$t2s_engine		  = $pcfg->param("TTS.t2s_engine");
 	$voice	 		  = $pcfg->param("TTS.voice");
 	$rampto	 		  = $pcfg->param("TTS.rampto");
 	$rmpvol	 	  	  = $pcfg->param("TTS.volrampto");
@@ -205,16 +204,67 @@ sub form {
 	$MP3store 		  = $pcfg->param("MP3.MP3store");
 	$volume		  	  = $pcfg->param("MP3.volumedown");
 	$file_gong		  = $pcfg->param("MP3.file_gong");
-	$rsender		  = $pcfg->param("RADIO.radio_name[]");
-	$rsenderurl		  = $pcfg->param("RADIO.radio_adresse[]");
-		
-	# Call Subroutine to scan/import Sonos Zones
-	&scan;
-		
+
+	# Radiosender auslesen
+	our $countradios = 0;
+	our $rowsradios;
+
+	my %config = $pcfg->vars();	
+
+
+	foreach my $key (keys %config) {
+		if ( $key =~ /^RADIO/ ) {
+			$countradios++;
+			my @fields = $pcfg->param($key);
+			$rowsradios .= "<tr><td style='height: 25px; width: 43px;' class='auto-style1'><INPUT type='checkbox' style='width: 20px' name='chkradios$countradios' id='chkradios$countradios' align='center'/></td>\n";
+			$rowsradios .= "<td style='height: 28px'><input type='text' id='radioname$countradios' name='radioname$countradios' size='20' value='@fields[0]' /> </td>\n";
+			$rowsradios .= "<td style='width: 888px; height: 28px'><input type='text' id='radiourl$countradios' name='radiourl$countradios' size='100' value='@fields[1]' style='width: 862px' /> </td></tr>\n";
+		}
+	}
+
+	if ( $countradios < 1 ) {
+		$rowsradios .= "<tr><td colspan=3>" . $pphrase->param("TXT0007") . "</td></tr>\n";
+	}
+	$rowsradios .= "<input type='hidden' id='countradios' name='countradios' value='$countradios'>\n";
+
 	# Filter
 	#$apikey   = quotemeta($apikey);
+
+	# Als erstes vorhandene Player aus player.cfg einlesen
+	our $countplayers = 0;
+	our $rowssonosplayer;
+
+	my $playercfg = new Config::Simple("$installfolder/config/plugins/$psubfolder/player.cfg");
+	my %config = $playercfg->vars();	
+
+	foreach my $key (keys %config) {
+		$countplayers++;
+		my $room = $key;
+		$room =~ s/^SONOSZONEN\.//g;
+		$room =~ s/\[\]$//g;
+		my @fields = $playercfg->param($key);
+		$rowssonosplayer .= "<tr><td style='height: 25px; width: 43px;' class='auto-style1'><INPUT type='checkbox' style='width: 20px' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
+		$rowssonosplayer .= "<td style='height: 25px; width: 196px;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' value='$room' style='width: 133px' /> </td>\n";
+		$rowssonosplayer .= "<td style='height: 28px; width: 147px;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' value='@fields[2]' style='width: 153px' /> </td>\n";
+		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' name='t2svol$countplayers' value='@fields[3]' style='width: 52px' /> </td>\n";
+		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' name='sonosvol$countplayers' value='@fields[4]' style='width: 52px' /> </td>\n";
+		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' name='maxvol$countplayers' value='@fields[5]' style='width: 52px' /> </td> </tr>\n";
+		$rowssonosplayer .= "<input type='hidden' id='ip$countplayers' name='ip$countplayers' value='@fields[0]'>\n";
+		$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' value='@fields[1]'>\n";
+	}
+
+	# Call Subroutine to scan/import Sonos Zones
+	if ( $do eq "scan" ) {
+		&scan;
+	}
+
+	if ( $countplayers < 1 ) {
+		$rowssonosplayer .= "<tr><td colspan=6>" . $pphrase->param("TXT0006") . "</td></tr>\n";
+	}
+	$rowssonosplayer .= "<input type='hidden' id='countplayers' name='countplayers' value='$countplayers'>\n";
 	
 	# Prepare form defaults
+
 	# T2S_ENGINE
 	if ($t2s_engine eq "2001") {
 	  $selectedinstanz1 = "checked=checked";
@@ -225,6 +275,7 @@ sub form {
 	} else {
 	  $selectedinstanz1 = "checked=checked";
 	} 
+
 	# VOICE
 	if ($voice eq "Marlene") {
 	  $selectedvoice1 = "selected=selected";
@@ -233,6 +284,7 @@ sub form {
 	} else {
 	  $selectedvoice1 = "selected=selected";
 	} 
+
 	# LOXONE
 	if ($LoxDaten eq "false") {
 	  $selectedsendlox1 = "selected=selected";
@@ -241,6 +293,7 @@ sub form {
 	} else {
 	  $selectedsendlox1 = "selected=selected";
 	} 
+
 	# MP3STORE
 	if ($MP3store eq "1") {
 	  $mp3store1 = "selected=selected";
@@ -259,6 +312,7 @@ sub form {
 	} else {
 	  $mp3store5 = "selected=selected";
 	}
+
 	# VOLUMEUP OR DONW
 	if ($volume eq "3") {
 	  $volume1 = "selected=selected";
@@ -282,7 +336,7 @@ sub form {
 	} else {
 	  $selectedrampto2 = "checked=checked";
 	} 
-		
+
 	print "Content-Type: text/html\n\n";
 	
 	$template_title = $pphrase->param("TXT0000") . ": " . $pphrase->param("TXT0001");
@@ -313,7 +367,7 @@ sub save
 	$pname   = $pcfg->param("SYSTEM.Scriptname");
 
 	# Everything from Forms
-	$t2s_engine 	= param('t2s_engine');
+	$t2s_engine 		= param('t2s_engine');
 	$MP3store 		= param('mp3store');
 	$apikey 		= param('apikey');
 	$seckey 		= param('seckey');
@@ -324,9 +378,9 @@ sub save
 	$volume 		= param('volume');
 	$rampto		 	= param('rampto');
 	$rmpvol		 	= param('rmpvol');
-	
-		
-	
+	$countplayers		= param('countplayers');
+	$countradios 		= param('countradios');
+
 	# Filter
 	#$MP3Store   	= quotemeta($MP3store);
 	#$t2s_engine   	= quotemeta($t2s_engine);
@@ -340,8 +394,9 @@ sub save
 	$rmpvol 		= quotemeta($rmpvol);
 	$udpport 		= quotemeta($udpport);
 	#$lang 			= quotemeta($lang);
-	
-	
+	$countplayers		= quotemeta($countplayers);
+	$countradios		= quotemeta($countradios);
+
 	# OK - now installing...
 
 	# Write configuration file(s)
@@ -358,17 +413,30 @@ sub save
 	$pcfg->param("MP3.volumedown", "$volume");
 	$pcfg->param("MP3.volumeup", "$volume");
 	$pcfg->param("MP3.MP3store", "$MP3store");
-	#$pcfg->param("RADIO.radio_name[]", "$rsender");
-	#$pcfg->param("RADIO.radio_adresse[]", "$rsenderurl");
-	
-	for ($i = 1; $i <= 6; $i++) {
-	if (!param("rsender$i") ne "" ) {
-		my $rsender = param("rsender$i");
-		$pcfg->param("RADIO.radio_name[]", "$rsender$i");
+
+	# Alle Radios speichern
+	for ($i = 1; $i <= $countradios; $i++) {
+		if ( param("chkradios$i") ) { # if radio should be deleted
+			$pcfg->delete( "RADIO.radio$i" . "[]" );
+		} else { # save
+			$pcfg->param( "RADIO.radio$i" . "[]", param("radioname$i") . "," . param("radiourl$i") );
 		}
 	}
-		
+
 	$pcfg->save();
+
+	# Alle Player speichern
+	my $playercfg = new Config::Simple("$installfolder/config/plugins/$psubfolder/player.cfg");
+
+	for ($i = 1; $i <= $countplayers; $i++) {
+		if ( param("chkplayers$i") ) { # if player should be deleted
+			$playercfg->delete( "SONOSZONEN." . param("zone$i") . "[]" );
+		} else { # save
+			$playercfg->param( "SONOSZONEN." . param("zone$i") . "[]", param("ip$i") . "," . param("rincon$i") . "," . param("model$i") . "," . param("t2svol$i") . "," . param("sonosvol$i") . "," . param("maxvol$i") );
+		}
+	}
+
+	$playercfg->save();
 
 	$template_title = $pphrase->param("TXT0000") . " - " . $pphrase->param("TXT0001");
 	$message = $pphrase->param("TXT0005");
@@ -396,23 +464,36 @@ sub save
 
 sub scan 
 {
+
 	# führt das PHP script aus (liest zuerst sonos.cfg und fügt ggf. neue Zonen hinzu)
 	# und erstellt im config Verzeichnis die Datei tmp_player.json
 	#my $response = qx(/usr/bin/php $installfolder/webfrontend/html/plugins/$psubfolder/System/network.php);
 	
 	#importiert die Sonos Player aus JSON Datei (Button "Scan Zonen")
-	if (param('scan') and param('scan') eq 'Scan Zonen') {
-		open (my $fh, '<:raw', "$installfolder/config/plugins/$psubfolder/tmp_player.json") or die("Die Datei: $config_path konnte nicht geöffnet werden! $!\n");
-			my $file; { local $/; $file = <$fh>; }
-			my $config = decode_json($file);
+	open (my $fh, '<:raw', "$installfolder/config/plugins/$psubfolder/tmp_player.json") or die("Die Datei: $config_path konnte nicht geöffnet werden! $!\n");
+			our $file; { local $/; $file = <$fh>; }
+			our $config = decode_json($file);
+	
+	# Debugging	
+	#use Data::Dumper;
+	#print "Content-Type: text/html\n\n";
+	#print Dumper(\$config);
+	#exit;
+	foreach $key (keys $config)
+	{
+		$countplayers++;
+		$rowssonosplayer .= "<tr><td style='height: 25px; width: 43px;' class='auto-style1'><INPUT type='checkbox' style='width: 20px' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
+		$rowssonosplayer .= "<td style='height: 25px; width: 196px;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' value='$key' style='width: 133px' /> </td>\n";
+		$rowssonosplayer .= "<td style='height: 28px; width: 147px;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' value='$config->{$key}->[2]' style='width: 153px' /> </td>\n";
+		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' name='t2svol$countplayers' value='$config->{$key}->[3]' style='width: 52px' /> </td>\n";
+		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' name='sonosvol$countplayers' value='$config->{$key}->[4]' style='width: 52px' /> </td>\n";
+		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' name='maxvol$countplayers' value='$config->{$key}->[5]' style='width: 52px' /> </td> </tr>\n";
+		$rowssonosplayer .= "<input type='hidden' id='ip$countplayers' name='ip$countplayers' value='$config->{$key}->[0]'>\n";
+		$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' value='$config->{$key}->[1]'>\n";
 	}
-		
-	# Alternativ über CPAN Perl Modul ohne speichern der PHP array als JSON Datei (derzeit nicht installiert)
-	#---------------------------------------------------------------------------------------------------------
-	#use PHP::Include;
-	#include_php_vars('$installfolder/webfontend/html/plugins/$psubfolder/System/getSonosDevices.php' );
-	#my $test = \%config;
-	#print $test->{'sonoszonen'};
+
+	return();
+
 }
 	
 #####################################################

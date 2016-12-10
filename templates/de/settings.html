@@ -1,19 +1,17 @@
-﻿<html>
-	<head>
-		<style type="text/css">
+﻿<style type="text/css">
 
-			.auto-style1 {
-				text-align: center;
-			}
-			.auto-style2 {
-				text-align: right;
-			}
-			.auto-style3 {
-				text-align: left;
+.auto-style1 {
+	text-align: center;
+}
+.auto-style2 {
+	text-align: right;
+}
+.auto-style3 {
+	text-align: left;
 	margin-bottom: 0px;
 }
-		</style>
-	</head>
+
+</style>
 
 <form method="post" data-ajax="false" name="main_form" id="main_form" action="./index.cgi">
 	<input type="hidden" name="saveformdata" value="1">
@@ -31,13 +29,13 @@
 
 	</tr>
 	<tr>
-		<td style="height: 41px; width: 25%;">
+		<td style="height: 41px; width: 25%;" valign="top">
 			<label id="lzonen">Vorhandene oder gefundene Sonos Player:</label>
 		</td>
 		<td valign="middle" style="height: 41px; width: 50%;">
 		<table width="100%" cellpadding="2" cellspacing="0" border="1px" border="1" id="tblzonen" >
 			  <tr>
-			    <th>
+			    <th style="width: 35px">
 				<img class='ico_delete' src='/plugins/<!--$psubfolder-->/images/recycle-bin.png' border='0' width='24' height='24'>
 				</th>
 				<th align="left" style="height: 45px; width: 196px">Raum</th>
@@ -46,42 +44,21 @@
 			    <th align="left" style="height: 25px; width: 98px;">Sonos Vol</th>
 			    <th align="left" style="height: 25px; width: 98px;">Max Vol</th>
 			  </tr>
-			  <tr>
-			  <td style="height: 25px; width: 43px;" class="auto-style1">
-					<INPUT type="checkbox" style="width: 20px" name="chk" align="center"/>
-				</td>
-
-			    <td style="height: 25px; width: 196px;">
-					<input type="text" id="zone" name="zone" size="40" value="<!--$zone1-->" style="width: 133px" />
-				</td>
-			    <td style="height: 28px; width: 147px;">
-					<input type="text" id="model" name="model" size="30" value="<!--$model1-->" style="width: 153px" />
-			    </td>
-			    <td style="width: 98px; height: 28px;">
-					<input type="text" id="t2svol" size="100" name="t2svol" value="<!--$t2svol1-->" style="width: 52px" />
-				</td>
-				<td style="width: 98px; height: 28px;">
-					<input type="text" id="sonosvol" size="100" name="sonosvol" value="<!--$sonosvol1-->" style="width: 52px" />
-				</td>
-				<td style="width: 98px; height: 28px;">
-					<input type="text" id="maxvol" size="100" name="maxvol" value="<!--$maxvol1-->" style="width: 52px" />
-				</td>
-
-		
-			  </tr>
+			  <!--$rowssonosplayer-->
 			</table>
 
 		</td>
-			<td style="width: 201px; height: 41px;">
+			<td style="width: 201px; height: 41px;" valign="top">
 			
-			&nbsp;<input type="submit" id="zone" name="del" data-role="button" value="Delete Zone "data-inline="true" data-mini="true">
+			&nbsp;<a onClick="Scan()" id="btnplayerscan" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="#">Scan</a>
+
 		</td>
 		<td style="height: 13px; width: 24px;"></td>
 
 	</tr>
 	<tr>
 		<td style="width: 25%; height: 45px;">
-			<label id="ltts_instanz">Auswahl der Text-to-speech Instanz:</label>
+			<label id="ltts_instanz">Auswahl der Text-to-Speech Instanz:</label>
 		</td>
 		<td style="width: 50%; height: 45px;">
 			<fieldset data-role="controlgroup" data-type="horizontal">
@@ -94,7 +71,8 @@
 			</fieldset>
 			</td>
 		<td valign="middle" style="height: 45px; width: 201px;">
-		<font size="-1"><a id="linkvoicerss" href="http://www.voicerss.org/login.aspx" target="_blank">Kostenlosen API Key von VoiceRSS erstellen</a></font><br><br>
+		<font size="-1"><a id="linkvoicerss" href="http://www.voicerss.org/login.aspx" target="_blank">Kostenlosen API Key von VoiceRSS erstellen</a></font>
+		<br><br>
 		<font size="-1"><a id="linkivona" href="https://www.ivona.com/us/" target="_blank">Kostenlose Keys von Ivona erstellen</a></font>
 		</td>
 		<td style="height: 13px; width: 24px;"></td>
@@ -123,7 +101,7 @@
 		<label id="lvoice">Auswahl der Stimme:</label>
 		</td>
 		<td width="50%;">
-			<select id="voice" name="voice" data-mini="true" data-native-menu="false" width="50%">
+			<select id="voice" name="voice" data-mini="true" width="50%" data-native-menu="false">
 				<option value="Marlene" <!--$selectedvoice1-->>Marlene</option>
 				<option value="Hans" <!--$selectedvoice2-->>Hans</option>
 			</select>
@@ -191,7 +169,7 @@
 					<table border=0 style="width: 91%">
 						<tr>
 							<td class="auto-style1" align="right" style="width: 297px">
-								<label id="labelip">UDP Port:</label>
+								<label id="ludpport">UDP Port:</label>
 							</td>
 						
 				<td>
@@ -270,7 +248,7 @@
 		<td style="width: 50%; height: 60px;">
 			<table border=0 width="100%">
 				<tr>
-					<td style="width: 40%; height: 45px;">
+					<td style="width: 60%; height: 45px;">
 						<fieldset data-role="controlgroup" data-type="horizontal">
 							<input onclick="disable()" type="radio" name="rampto" id="rmpsleep" value="sleep" <!--$selectedrampto1-->>
 							<label for="rmpsleep">Sleep</label>
@@ -280,7 +258,7 @@
 				 			<label for="rmpauto">Auto</label>
 						</fieldset>
 					</td>
-					<td style="height: 45px">
+					<td style="width: 40%; height: 45px">
 						<table border=0 align="left" style="width: 99%">
 							<tr>
 								<td class="auto-style1" style="height: 30px; width: 70%;">
@@ -315,32 +293,20 @@
 					<font size="-1">Dies sind voreingestellte Radiosender für Taster Bedienung. Um diese zu 
 					ändern/ergänzen schau bitte ins Wiki.
 					</font>
-	<form>
 		<p>
-			<button type="del" id="del" data-role="button" data-inline="true" data-mini="true" onclick="deleteRow('tblBasic2');">Löschen</button>
-			<button type="app" id="new" data-role="button" data-inline="true" data-mini="true" onclick="appendRow('tblBasic2');">Hinzufügen</button>
 		</p>
 			<table width="100%" cellpadding="2" cellspacing="0" border="1px" border="1" id="tblBasic2">
 			  <tr>
-				<th>
+				<th style="width: 35px">
 				<img class='ico_delete' src='/plugins/<!--$psubfolder-->/images/recycle-bin.png' border='0' width='24' height='24'>
 				</th>
 
 			    <th align="left" style="height: 25px">Sender Name</th>
 			    <th align="left" style="height: 25px; width: 888px;">Sender URL</th>
 			  </tr>
-			  <tr>
-			    <td style="height: 25px" class="auto-style1">
-					<INPUT type="checkbox" style="width: 20px" name="chk" align="middle"/>
-				</td>
-			    <td style="height: 28px">
-			    	<input type="text" id="rsender" name="rsender" size="20" value="<!--$rsender1-->" />
-			    </td>
-			    <td style="width: 888px; height: 28px;">
-					<input type="text" id="rsenderurl" size="100" name="rsenderurl" value="<!--$rsenderurl1-->" style="width: 862px" />
-				</td>
-			  </tr>
+			  <!--$rowsradios-->
 			</table>
+			<a onClick="AddRadio();return false;" id="btnaddradio" data-role="button" data-inline="true" data-mini="true" data-icon="plus" href="#">Hinzufügen</a>
 		<p>
 			<tr>
 			<td></td>
@@ -360,121 +326,120 @@
 		</p>
 	</form>
 
-<script language="javascript">
-	var $messages = $('#form-error-message');
-		    $.validate({
-		    modules : 'security',
-		    scrollToTopOnError : true,
-		    errorMessagePosition : $messages,
-		});
-	
-			
-	// Disable some options on Load depending on selected value
-    disable();
+<script>
 
-    // function to disable/enable some fields on click depending on selected value
-    function disable() 
-    {
-	    // T2S INSTANZ
-	    if ( document.main_form.tts_voicerss.checked == true ) {
-	       $('#lapikey').removeClass('ui-disabled');
-	       $('#apikey').removeClass('ui-disabled');
-	       $('#lseckey').addClass('ui-disabled');
-	       $('#seckey').addClass('ui-disabled');
-	       $('#lvoice').addClass('ui-disabled');
-	       $('#voice').addClass('ui-disabled');
-	       $('#linkvoicerss').removeClass('ui-disabled');
-   	       $('#linkivona').addClass('ui-disabled');
-	    }
-	    if ( document.main_form.tts_mac_osx.checked == true ) {
-	       $('#lapikey').addClass('ui-disabled');
-	       $('#apikey').addClass('ui-disabled');
-	       $('#lseckey').addClass('ui-disabled');
-	       $('#seckey').addClass('ui-disabled');
-	       $('#lvoice').addClass('ui-disabled');
-	       $('#voice').addClass('ui-disabled');
-   	       $('#linkvoicerss').addClass('ui-disabled');
-   	       $('#linkivona').addClass('ui-disabled');
-	    }
-	    if ( document.main_form.tts_ivona.checked == true ) {
-	       $('#lapikey').removeClass('ui-disabled');
-	       $('#apikey').removeClass('ui-disabled');
-	       $('#lseckey').removeClass('ui-disabled');
-	       $('#seckey').removeClass('ui-disabled');
-	       $('#lvoice').removeClass('ui-disabled');
-	       $('#voice').removeClass('ui-disabled');
-	       $('#linkvoicerss').addClass('ui-disabled');
-   	       $('#linkivona').removeClass('ui-disabled');
-		}
-		if ( document.main_form.sendlox.value == "false" ) {
-	       $('#miniserverip').removeClass('ui-disabled');
-	    } else {
-	       $('#miniserverip').addClass('ui-disabled');
-	    }		
-  	}
+  var $messages = $('#form-error-message');
+	    $.validate({
+	    modules : 'security',
+	    scrollToTopOnError : true,
+	    errorMessagePosition : $messages,
+  });
 
-function appendRow(tblStr)
-{
-  var tbl = document.getElementById(tblStr);
-  var row = tbl.insertRow(tbl.rows.length);
-  
-  // checkbox for deletion
-  var cell1 = row.insertCell(0);
-  var element1 = document.createElement("input");
-	  element1.type = "checkbox";
-	  element1.name = "chkbox[]";
-	  element1.style = "width=20px";
-	  element1.align = "middle";
-	  cell1.appendChild(element1);
-  
-  // input  first text cell
-  var cellInputText = row.insertCell(1);
-  var el1 = document.createElement('input');
-	  el1.setAttribute('type', 'text');
-	  el1.setAttribute('size', '25');
-	  el1.setAttribute('name', 'rsender');
-	  el1.setAttribute('id', 'rsender');
-	  el1.setAttribute('value', '<!--$rsender' + (tbl.rows.length - 1) + '-->');
-	  cellInputText.appendChild(el1);
-  
-  // input second text cell
-  var cellInputText = row.insertCell(2);
-  var el2 = document.createElement('input');
-	  el2.setAttribute('type', 'text');
-	  el2.setAttribute('size', '110px');
-	  el2.setAttribute('name', 'rsenderurl');
-	  el2.setAttribute('id', 'rsenderurl');
-	  el2.setAttribute('value', '<!--$rsenderurl' + (tbl.rows.length - 1) + '-->');
-	  cellInputText.appendChild(el2);
+		
+// Disable some options on Load depending on selected value
+disable();
+
+// function to disable/enable some fields on click depending on selected value
+function disable() {
+
+//  // T2S INSTANZ
+//  if ( document.main_form.tts_voicerss.checked == true ) {
+//     $('#lapikey').removeClass('ui-disabled');
+//     $('#apikey').removeClass('ui-disabled');
+//     $('#lseckey').addClass('ui-disabled');
+//     $('#seckey').addClass('ui-disabled');
+//     $('#lvoice').addClass('ui-disabled');
+//     $('#voice').addClass('ui-disabled');
+//     $('#voice').selectmenu('refresh', true);
+//     $('#linkvoicerss').removeClass('ui-disabled');
+//     $('#linkivona').addClass('ui-disabled');
+//  }
+//  if ( document.main_form.tts_mac_osx.checked == true ) {
+//     $('#lapikey').addClass('ui-disabled');
+//     $('#apikey').addClass('ui-disabled');
+//     $('#lseckey').addClass('ui-disabled');
+//     $('#seckey').addClass('ui-disabled');
+//     $('#lvoice').addClass('ui-disabled');
+//     $('#voice').addClass('ui-disabled');
+//     $('#voice').selectmenu('refresh', true);
+//     $('#linkvoicerss').addClass('ui-disabled');
+//     $('#linkivona').addClass('ui-disabled');
+//  }
+//  if ( document.main_form.tts_ivona.checked == true ) {
+//     $('#lapikey').removeClass('ui-disabled');
+//     $('#apikey').removeClass('ui-disabled');
+//     $('#lseckey').removeClass('ui-disabled');
+//     $('#seckey').removeClass('ui-disabled');
+//     $('#lvoice').removeClass('ui-disabled');
+//     $('#voice').removeClass('ui-disabled');
+//     $('#voice').selectmenu('refresh', true);
+//     $('#linkvoicerss').addClass('ui-disabled');
+//     $('#linkivona').removeClass('ui-disabled');
+//      }
+//  //if ( document.main_form.sendlox.value == "false" ) {
+//  //   $('#udpport').addClass('ui-disabled');
+//  //   $('#ludpport').addClass('ui-disabled');
+//  //} else {
+//  //   $('#udpport').removeClass('ui-disabled');
+//  //   $('#ludpport').removeClass('ui-disabled');
+//  //}		
+
+//  // Reinit Validator
+//  var $messages = $('#form-error-message');
+//  $.validate({
+//   modules : 'security',
+//   errorMessagePosition : $messages,
+//  });
+
+// // Recreate JQUERY styles
+// $("#main_form").trigger('create');
+
 }
 
+function AddRadio() {
 
-function deleteRow(tableID) {
-  try {
-	var table = document.getElementById(tableID);
-	var rowCount = table.rows.length;
-		for(var i=0; i<rowCount; i++) {
-			var row = table.rows[i];
-			var chkbox = row.cells[0].childNodes[0];
-			if(null != chkbox && true == chkbox.checked) {
-				table.deleteRow(i);
-				rowCount--;
-				i--;
-			}
-		}
-	} 
-	catch(e) {
-		alert(e);
-	}
+  // Total number of Radios
+  var iteration = document.getElementById('countradios').value;
+  iteration = parseInt(iteration)
+
+  var tbl = document.getElementById('tblBasic2');
+
+  // Del 1. row if there where no radios
+  if ( iteration < 1 ) {
+    var row = tbl.deleteRow(-1);
+  }
+
+  var lastRow = tbl.rows.length;
+  iteration += 1;
+  document.getElementById("countradios").value = iteration;
+
+  // Add cells
+  var row = tbl.insertRow(lastRow);
+  var cellRight = row.insertCell(0);
+  cellRight.innerHTML = '<tr><td style="height: 25px; width: 43px;" class="auto-style1"><INPUT type="checkbox" style="width: 20px" name="chkradios' + iteration + '" id="chkradios' + iteration + '" align="center"/></td>'
+  var cellRight = row.insertCell(1);
+  cellRight.innerHTML = '<td style="height: 28px"><input type="text" id="radioname' + iteration + '" name="radioname' + iteration + '" size="20" value="" /> </td>'
+  var cellRight = row.insertCell(2);
+  cellRight.innerHTML = '<td style="width: 888px; height: 28px"><input type="text" id="radiourl' + iteration + '" name="radiourl' + iteration + '" size="100" value="" style="width: 862px" /> </td></tr>'
+
+  // Reinit Validator
+  var $messages = $('#form-error-message');
+  $.validate({
+   modules : 'security',
+   errorMessagePosition : $messages,
+  });
+
+ // Recreate JQUERY styles
+ $("#main_form").trigger('create');
+
+}
+
+// Scan for Players
+function Scan() {
+
+  url = './index.cgi?do=scan';
+  document.location.href = url;
+
 }
 
 </script>
-</html>
-
-
-
-
-
-
-
-
