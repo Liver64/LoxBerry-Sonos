@@ -31,8 +31,8 @@ function t2s($messageid)
 		$inlay = "key=$ttskey&src=$words&hl=$ttslanguage&f=$ttsaudiocodec";	
 									
 		# Speicherort der MP3 Datei
-		$path = $config['SYSTEM']['messageStorePath'];
-		$file = $path . $fileolang . ".mp3";
+		$mpath = $config['SYSTEM']['messageStorePath'];
+		$file = $mpath . $fileolang . ".mp3";
 					
 		# Prüfung ob die MP3 Datei bereits vorhanden ist
 		if (!file_exists($file)) 

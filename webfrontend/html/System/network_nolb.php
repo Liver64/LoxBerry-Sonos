@@ -36,7 +36,7 @@ DATA;
 		socket_recvfrom($sock, $tmp, 2048, null, $name, $port);
 		$buff .= $tmp;
 	}
-	// Parse buffer zu den Zonen
+	// Parse buffer into Zones
 	$data = _parse_detection_replies($buff);
 	// create array
 	$devices = array();
@@ -44,22 +44,35 @@ DATA;
 		$url = parse_url($datum['location']);
 		$devices[] = ($url['host']);
 	}
-	// based on scanned IPs retrieve Zone Details
+	// get Zone Details based on scanned IPs 
 	getSonosDevices($devices);
 	// load configuration file
 	parse_cfg_file();
-	// prüft ob player.cfg leer war
+	// check if player_nolb.cfg is empty
 	if(empty($sonosnet)) {
 		$finalzones = $sonosplayer;
 	} else {
 		// computes the difference of arrays with additional index check
 		$finalzones = array_diff_assoc($sonosplayer, $sonosnet);
 	}
-	// save array as JSON file
-	$d = array2json($finalzones);
-	$fh = fopen('/opt/loxberry/config/plugins/sonos4lox/tmp_player.json', 'w');
-	fwrite($fh, json_encode($finalzones));
+	// write into file
+	$fh = fopen('player_nolb.cfg', 'a+');
+	foreach ($finalzones as $newzones => $value) {
+		$tmp_values = implode(",",$value);
+		$write = $newzones.'[]='.$tmp_values;
+		fwrite($fh, $write."\r\n");
+		#echo $write;
+	}
 	fclose($fh);
+	if (!empty($write)) {
+		echo "Die gefundenen Sonos Player wurden erfolgreich in der Datei /system/player_nolb.cfg gespeichert!<br><br>";
+		echo "Bitte die Datei /system/player_nolb.cfg öffnen und die jeweilige Standardlautstärke<br>";
+		echo "für T2S, Sonos und Sonos Maximal Volume aktualisieren.<br>";
+	} else {
+		echo "Es wurden keine neue Sonos Player gefunden.<br><br>";
+	}
+		
+
 	
 	
 
@@ -110,9 +123,9 @@ DATA;
 			$zonen = 	[substr($ipadr, 0, strpos($ipadr,' ')),
 						substr($rinconid, 5, 50),
 						(string)$device,
-						'',
-						'', 						
-						''
+						'35',
+						'30', 						
+						'100'
 						];
 		}
 		$sonosplayer[$room] = $zonen;
@@ -159,7 +172,7 @@ function parse_cfg_file() {
 	#	trigger_error("Die Datei /opt/loxberry/config/plugins/sonos4lox/player.cfg ist nicht vorhanden. Bitte zuerst die Zonen auf der Config Seite anlegen lassen!", E_USER_NOTICE);
 	#} else {
 	// Laden der Zonen Konfiguration aus player.cfg
-	$tmp = parse_ini_file('/opt/loxberry/config/plugins/sonos4lox/player.cfg', true);
+	$tmp = parse_ini_file('player_nolb.cfg', true);
 	$player = ($tmp['SONOSZONEN']);
 	foreach ($player as $zonen => $key) {
 		$sonosnet[$zonen] = explode(',', $key[0]);
@@ -167,54 +180,6 @@ function parse_cfg_file() {
 	return $sonosnet;
 	}
 
-
-/********************************************************************************************
-/* Funktion : 	array2json --> konvertiert array in JSON Format
-/* http://www.bin-co.com/php/scripts/array2json/
-/* 
-/* @return: JSON string
-/********************************************************************************************/
-function array2json($arr) { 
-    if(function_exists('json_encode')) return json_encode($arr); //Lastest versions of PHP already has this functionality.
-    $parts = array(); 
-    $is_list = false; 
-
-    //Find out if the given array is a numerical array 
-    $keys = array_keys($arr); 
-    $max_length = count($arr)-1; 
-    if(($keys[0] == 0) and ($keys[$max_length] == $max_length)) {//See if the first key is 0 and last key is length - 1 
-        $is_list = true; 
-        for($i=0; $i<count($keys); $i++) { //See if each key correspondes to its position 
-            if($i != $keys[$i]) { //A key fails at position check. 
-                $is_list = false; //It is an associative array. 
-                break; 
-            } 
-        } 
-    } 
-
-    foreach($arr as $key=>$value) { 
-        if(is_array($value)) { //Custom handling for arrays 
-            if($is_list) $parts[] = array2json($value); /* :RECURSION: */ 
-            else $parts[] = '"' . $key . '":' . array2json($value); /* :RECURSION: */ 
-        } else { 
-            $str = ''; 
-            if(!$is_list) $str = '"' . $key . '":'; 
-
-            //Custom handling for multiple data types 
-            if(is_numeric($value)) $str .= $value; //Numbers 
-            elseif($value === false) $str .= 'false'; //The booleans 
-            elseif($value === true) $str .= 'true'; 
-            else $str .= '"' . addslashes($value) . '"'; //All other things 
-            // :TODO: Is there any more datatype we should be in the lookout for? (Object?) 
-
-            $parts[] = $str; 
-        } 
-    } 
-    $json = implode(',',$parts); 
-     
-    if($is_list) return '[' . $json . ']';//Return numerical JSON 
-    return '{' . $json . '}';//Return associative JSON 
-} 
 
 
 ?>

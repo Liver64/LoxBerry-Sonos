@@ -1,6 +1,6 @@
 <font size="-1">
 	<p>
-		<b><i>Sonos Player:</i></b> Die zur Verfügung stehenden oder ermittelten Sonos Player werden hier aufgelistet. Der Raum Name etc. sowie andere netzwerkrelevante Daten können nicht geändert werden. Zusätzlich sind die 2 Default Volume Werte für T2S Durchsagen und Sonos Standard Volume je Player anzugeben. Diese werden als Standard Volume genutzt falls in der Syntax kein Volume angegeben ist. Näheres hierzu bitte dem Wiki entnehmen.
+		<b><i>Sonos Player:</i></b> Die zur Verfügung stehenden oder gefundenen Sonos Player werden hier aufgelistet. Der Raum Name etc. sowie andere netzwerkrelevante Daten können nicht geändert werden. Zusätzlich sind die 3 Default Lautstärke Werte für T2S Durchsage, Sonos Standard Lautstärke und Maximal Lautstärke je Player anzugeben. Diese werden als Standard Lautstärke genutzt falls in der Syntax kein Parameter "volume" oder "groupvolume" angegeben ist.<br> Näheres hierzu bitte dem Wiki entnehmen. Wenn ein neuer Sonos Player zu deinen bestehendem System hinzugefügt wurde bitte den Button Scan Zones betätigen damit dieser deiner Konfiguration hinzugefügt wird.
 
 	</p>
 	<p>
@@ -19,23 +19,30 @@
 		<b><i>Verweildauer der MP3 Dateien:</i></b> Legt fest wieviele Tage eine T2S MP3 im TTS Ordner gespeichert bleiben soll. Nach Ablauf der ausgewählten Tage werden alle Dateien älter als x automatisch gelöscht.
 	</p>
 	<p>
-		<b><i>Dateiname für Jingle :</i></b> Name der Datei die als eine Art Jingle vor der eigentlichen Durchsage abgespielt werden kann. Die Datei MUSS in dem Unterordner loxberry/data/plugins/sonos4lox/tts/MP3 gespeichert sein.
+		<b><i>Dateiname für Jingle :</i></b> Name der Datei die als eine Art Jingle vor der eigentlichen Durchsage abgespielt werden kann. Die Datei MUSS in dem Unterordner loxberry/data/plugins/REPLACEBYSUBFOLDER/tts/MP3 gespeichert sein.
 	</p>
 	<p>
 		<b><i>Datenübertragung zu Loxone:</i></b> Schaltet die Datenübertragung zu Loxone An oder Aus. Es können je Zone bei einer Playliste Titel / Interpret bzw. bei Radio der Sender, die gegenwärtige Lautstärke und den Status der Zone (Play/Pause/Stop) abgerufen werden. Näheres hierzu und wie die Loxone Config aussieht bitte dem Wiki entnehmen.
 	</p>
+		<p>
+		<b><i>UDP Port zu Loxone:</i></b> Port für den Datentransfer. Play/Stop/Pause und Volume werden per UDP Paket übertragen, Titel/Interpret/Radio Sender an virtuelle Texteingangsverbinder, aber nur wenn die entsprechende Zone gerade läuft!
+	</p>
+
 	<p>
 		<b><i>Volume Änderung:</i></b> Wert um den die Lautstärke erhöht verringert werden soll. Diese Funktion ist hauptsächlich als Tasterfunktion gedacht.
 	</p>
 	<p>
 		<b><i>Rampto:</i></b> Funktion um die Lautstärke langsam zu verringern/erhöhen. Es stehen folgende Möglichkeiten zur Verfügung:<br>
-		sleep: Erhöht die Lautstärke innerhalb 17 Sekunden auf gewünschte Volume<br>
-		alarm: Erhöht / verringert die Lautstärke innerhalb weniger Sekunden (empfohlen)<br>
-		auto: Erhöht die Lautstärke innerhalb Sekunden (schnell und gleichmäßig)<br>
+		<b><i>sleep:</i></b> Erhöht die Lautstärke innerhalb 17 Sekunden auf gewünschte Volume<br>
+		<b><i>alarm:</i></b> Erhöht / verringert die Lautstärke innerhalb weniger Sekunden (empfohlen)<br>
+		<b><i>auto:</i></b> Erhöht die Lautstärke innerhalb Sekunden (schnell und gleichmäßig)<br>
 	</p>
 	<p>
 		<b><i>Rampto Volume:</i></b> Lautstärke in Prozent ab wann 'rampto' OHNE explizite Angabe genutzt werden soll, ansonsten geht es mit eingestellter Lautstärke weiter.<br>
 		Das gilt für folgende Funktionen: play, nextradio, previousradio, playqueue, sonosplaylist, radioplaylist.
+	</p>
+	<p>
+		<b><i>Radio Favoriten:</i></b> Hier können die Radio Favoriten eingegeben werden die dann per Taster Klick durchgezappt werden. Wenn der letzte Sender erreicht wurde geht es wieder rückwärts weiter. <br>Wie du die relevanten Daten für die Radiosender ermittelst entnehme bitte dem Wiki.
 	</p>
 
 

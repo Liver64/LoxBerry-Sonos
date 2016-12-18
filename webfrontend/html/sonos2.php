@@ -2,52 +2,114 @@
 
 ##############################################################################################################################
 #
-# Version: 	1.1.0
-# Datum: 	21.10.2016
+# Version: 	0.8.0
+# Datum: 	07.12.2016
 # veröffentlicht in forum: https://www.loxforum.com/
 # 
 # Change History:
 # ----------------------------------------------------------------------------------------------------------------------------
-# 1.1.0		Initiale Version des Plugin (Alpha Version)
-#	getSonosTitInt() muss noch überarbeitet werden wenn DNS Cloud geht
+# 0.8.0		Initiale Version des Plugin (Alpha Version)
+#			getSonosTitInt() muss noch überarbeitet werden wenn DNS Cloud geht - erledigt
+#			"playmode" kann jetzt in Syntaxkombination genutzt werden
+#			"volume" ist jetzt auf max Vol. gemäß Config restrektiert
+#			prüft auf das Vorhandensein von Addon's
 #
 ######## Script Code (ab hier bitte nichts ändern) ###################################
 
 header('Content-Type: text/html; charset=utf-8');
 
 ini_set('max_execution_time', 120); // Max. Skriptlaufzeit auf 120 Sekunden
-include("System/PHPSonos.php");
+include("system/PHPSonos.php");
 
 date_default_timezone_set(date("e"));
 
 $home = posix_getpwuid(posix_getuid());
 $home = $home['dir'];
+$myIP = $_SERVER["SERVER_ADDR"];
 
 $psubfolder = __FILE__;
 $psubfolder = preg_replace('/(.*)\/(.*)\/(.*)$/',"$2", $psubfolder);
 
-$myFolder = "$home/config/plugins/$psubfolder/";
+if(substr($home,0,4) == "/opt") 
+{
+#-- Ab hier Loxberry spezifisch ------------------------------------------------------------------
 
-// Parsen der Konfigurationsdatei sonos.cfg
-$tmpsonos = parse_ini_file($myFolder.'/sonos.cfg', TRUE);
-// Parsen der Konfigurationsdatei player.cfg
-$tmpplayer = parse_ini_file($myFolder.'/player.cfg', true);
-$player = ($tmpplayer['SONOSZONEN']);
-foreach ($player as $zonen => $key) {
-	$sonosnet[$zonen] = explode(',', $key[0]);
-} 
-$sonoszonen['sonoszonen'] = $sonosnet;
-// final config array for further usage
-$config = array_merge($sonoszonen, $tmpsonos);
+	$myFolder = "$home/config/plugins/$psubfolder/";
+	$myMessagepath = "//$myIP/loxberry/data/plugins/$psubfolder/tts/";
+	$myMessageStorepath = "$home/loxberry/data/plugins/$psubfolder/tts/";
 
-// Parsen der Konfigurationsdatei general.cfg um die Loxone Kommunikation sicherzustellen
-#$tmp_lox =  parse_ini_file("$home/config/system/general.cfg", TRUE);
-#$tmp_loxip = $tmp_lox['MINISERVER1']['IPADDRESS'];
-#$tmp_loxport = $tmp_lox['MINISERVER1']['PORT'];
-#$loxip = $tmp_loxip.':'.$tmp_loxport;
-#$loxuser = $tmp_lox['MINISERVER1']['ADMIN'];
-#$loxpassword = $tmp_lox['MINISERVER1']['PASS'];
+	// Parsen der Konfigurationsdatei sonos.cfg
+	if (!file_exists($myFolder.'/sonos.cfg')) {
+		trigger_error('Die Datei sonos.cfg konnte nicht geöffnet werden, bitte erneut versuchen!', E_USER_NOTICE);
+	} else {
+		$tmpsonos = parse_ini_file($myFolder.'/sonos.cfg', TRUE);
+	}
+	// Parsen der Sonos Zonen Konfigurationsdatei player.cfg
+	if (!file_exists($myFolder.'/player.cfg')) {
+		trigger_error('Die Datei player.cfg konnte nicht geöffnet werden, bitte erneut versuchen!', E_USER_NOTICE);
+	} else {
+		$tmpplayer = parse_ini_file($myFolder.'/player.cfg', true);
+	}
+	$player = ($tmpplayer['SONOSZONEN']);
+	foreach ($player as $zonen => $key) {
+		$sonosnet[$zonen] = explode(',', $key[0]);
+	} 
+	$sonoszonen['sonoszonen'] = $sonosnet;
+	// finale config für das Script
+	$config = array_merge($sonoszonen, $tmpsonos);
+	$logpath = $config['SYSTEM']['logpath'];	
+	
+#-- Ende Loxberry spezifisch ---------------------------------------------------------------------
 
+#-- Ab hier NICHT Loxberry spezifisch ------------------------------------------------------------
+
+} else {
+	// Parsen der Konfigurationsdatei sonos_nolb.cfg (Non Loxberry)
+	if (!file_exists("./system/sonos_nolb.cfg")) {
+		trigger_error('Die Datei sonos_nolb.cfg konnte nicht geöffnet werden, bitte erneut versuchen!', E_USER_NOTICE);
+	} else {
+		$tmpsonos =  parse_ini_file("./system/sonos_nolb.cfg", TRUE);
+	}
+	// Parsen der Konfigurationsdatei player_noLB.cfg (Non Loxberry)
+	if (!file_exists("./system/player_nolb.cfg")) {
+		trigger_error('Die Datei player_nolb.cfg konnte nicht geöffnet werden, bitte erneut versuchen!', E_USER_NOTICE);
+	} else {
+		$tmpplayer = parse_ini_file("./system/player_nolb.cfg", true);
+	}
+	$player = ($tmpplayer['SONOSZONEN']);
+	
+	foreach ($player as $zonen => $key) {
+		$sonosnet[$zonen] = explode(',', $key[0]);
+	} 
+	$sonoszonen['sonoszonen'] = $sonosnet;
+	// finale config für das Script
+	$config = array_merge($sonoszonen, $tmpsonos);	
+	
+	$tmp_loxip = $tmpsonos['LOXONE']['LoxIP'];
+	$tmp_loxport = $tmpsonos['LOXONE']['LoxPort'];
+	$loxip = $tmp_loxip.':'.$tmp_loxport;
+	$loxuser = $tmpsonos['LOXONE']['LoxUser'];
+	$loxpassword = $tmpsonos['LOXONE']['LoxPassword'];
+	$myMessagepath = $config['SYSTEM']['messagespath'];
+	$myMessageStorepath = $config['SYSTEM']['messagespath'];
+	
+	$logpath = "log";
+	if (is_dir($logpath)) { 
+	} else { 
+	mkdir ($logpath, 0777); 
+	} 
+}
+
+	// Schaltet den virtuellen Eingang in Loxone an/aus
+	if($config['LOXONE']['LoxDaten'] == 1) {
+		#turnonlox('Ein');
+	} else {
+		#turnonlox('Aus');
+	}
+
+#-- Ende NICHT Loxberry spezifisch ---------------------------------------------------------------------
+
+#-- Ab hier allgemeiner Teil ----------------------------------------------------------------------
 
 $debug = $config['SYSTEM']['debuggen'];
 if($debug == 1) { 
@@ -56,38 +118,68 @@ if($debug == 1) {
  
 // Übernahme und Deklaration von Variablen aus der Konfiguration
 $sonoszonen = $config['sonoszonen'];
-$path = $config['SYSTEM']['logpath'];
-
-echo "<pre><br>";
-#print_r($config);
-#exit;
+#$logpath = $config['SYSTEM']['logpath'];
 
 // prüft den Onlinestatus jeder Zone
-foreach($sonoszonen as $zonen => $ip) {
-	echo "<pre>"; 
-	if (!$socket = @fsockopen($ip[0], 1400, $errno, $errstr, 1)) {
-		echo '<br>';
-	} else {
-		$sonoszone[$zonen] = $ip;
+#function playeron() {
+	foreach($sonoszonen as $zonen => $ip) {
+		$port = 1400;
+		$timeout = 3;
+			#$handle = @fsockopen($ip[0], $port, $errno, $errstr, $timeout);
+			$handle = @stream_socket_client("$ip[0]:$port", $errno, $errstr, $timeout);
+		if($handle) {
+			$sonoszone[$zonen] = $ip;
+			fclose($handle);
+		} else {
+			echo '';
+		}
 	}
-}
+	$sonoszone;
+
+// Umbennennen des ursprünglichen Array Keys
+$config['SYSTEM']['myMessageStorepath'] = $config['SYSTEM']['messagespath'];
+unset($config['SYSTEM']['messagespath']);			
+	
+echo "<pre>"; 
+#$sonoszone = $sonoszonen;
+#print_r($sonoszone);
+#print_r($config);
+#exit;
+	
+#}
+
+#*** ANSCHAUEN OB NICHT BESSER INNERHALB DER FUNKTION ***
+// Delta zwischen Sonoszonen (siehe config) und Zonen die Online sind 
+// relevant für senden von UDP Daten an Loxone
+#$sonos_array_diff = @array_diff_key($sonoszonen, $sonoszone);
+#$sonos_array_diff = array_keys($sonos_array_diff);
 
 // Setzen des Error Handler
 if($debug == 0) {set_error_handler("errorHandler"); }
 if($debug == 1) {echo '<br>'; }
 
-// Error handling einfach (erstellt Eintrag in Error log)	
 function errorHandler($errno, $errstr, $errfile, $errline) {
-	global $path, $loxuser, $loxpassword, $loxip, $master;
+	global $logpath, $loxuser, $loxpassword, $loxip, $master;
 	
 	ini_set("display_errors", 0);
+	if(substr($home,0,4) == "/opt") {
+	#-- Ab hier Loxberry spezifisch ------------------------------------------------------------------	
+	
+		$msdata = getMS1data();
+		$tmp_loxip = $msdata['Host'];
+		$loxport = $msdata['Port'];
+		$loxuser = $msdata['User'];
+		$loxpassword = $msdata['PW'];
+		$loxip = $tmp_loxip.':'.$loxport;
+	}
+	#-- Ende Loxberry spezifisch ---------------------------------------------------------------------
 	switch ($errno) {
         case E_NOTICE:
         case E_USER_NOTICE:
 			$message = date("Y-m-d H:i:s - ");
-			$message .= "USER defined WARNING error: [" . $errno ."], " . "$errstr in $errfile in line $errline, \r\n";
-			error_log($message, 3, $path."/sonos_error.log");
-			#echo("Ein Fehler trat auf. Bitte Datei ".$path."sonos_error.log pruefen.<br>");
+			$message .= "USER defined NOTICE: [" . $errno ."], " . "$errstr in $errfile in line $errline, \r\n";
+			error_log($message, 3, $logpath."/sonos_error.log");
+			#echo("Ein Fehler trat auf. Bitte Datei ".$logpath."sonos_error.log pruefen.<br>");
 			break;
 			
         case E_DEPRECATED:
@@ -95,16 +187,16 @@ function errorHandler($errno, $errstr, $errfile, $errline) {
         case E_STRICT:
 			$message = date("Y-m-d H:i:s - ");
 			$message .= "STRICT error: [" . $errno ."], " . "$errstr in $errfile in line $errline, \r\n";
-			error_log($message, 3, $path."/sonos_error.log");
-			#echo("Ein Fehler trat auf. Bitte Datei ".$path."sonos_error.log pruefen.<br>");
+			error_log($message, 3, $logpath."/sonos_error.log");
+			#echo("Ein Fehler trat auf. Bitte Datei ".$logpath."sonos_error.log pruefen.<br>");
             break;
  
         case E_WARNING:
         case E_USER_WARNING:
 			$message = date("Y-m-d H:i:s - ");
-			$message .= "USER WARNING error: [" . $errno ."], " . "$errstr in $errfile in line $errline, \r\n";
-			error_log($message, 3, $path."/sonos_error.log");
-			#echo("Ein Fehler trat auf. Bitte Datei ".$path."sonos_error.log pruefen.<br>");
+			$message .= "USER defined WARNING: [" . $errno ."], " . "$errstr in $errfile in line $errline, \r\n";
+			error_log($message, 3, $logpath."/sonos_error.log");
+			#echo("Ein Fehler trat auf. Bitte Datei ".$logpath."sonos_error.log pruefen.<br>");
             break;
  
         case E_ERROR:
@@ -112,16 +204,16 @@ function errorHandler($errno, $errstr, $errfile, $errline) {
         case E_RECOVERABLE_ERROR:
 			$message = date("Y-m-d H:i:s - ");
 			$message .= "FATAL error: [" . $errno ."], " . "$errstr in $errfile in line $errline, \r\n";
-			error_log($message, 3, $path."/sonos_error.log");
-			#echo("Ein Fehler trat auf. Bitte Datei ".$path."sonos_error.log pruefen.<br>");
+			error_log($message, 3, $logpath."/sonos_error.log");
+			#echo("Ein Fehler trat auf. Bitte Datei ".$logpath."sonos_error.log pruefen.<br>");
  
         default:
 			#$message = date("Y-m-d H:i:s - ");
 			#$message .= "Unknown error at $errfile in line $errline, \r\n";
-			#error_log($message, 3, $path."/sonos_error.log");
-			#echo("Ein unbekannter Fehler trat auf. Bitte Datei /".$path."/sonos_error.log pruefen.");
+			#error_log($message, 3, $logpath."/sonos_error.log");
+			#echo("Ein unbekannter Fehler trat auf. Bitte Datei /".$logpath."/sonos_error.log pruefen.");
     }
-	echo("Ein Fehler trat auf. Bitte Datei ".$path."sonos_error.log pruefen.<br>");
+	echo("Ein Fehler trat auf. Bitte Datei ".$logpath."sonos_error.log pruefen.<br>");
 	#-- Loxone Uebermittlung eines Fehlerhinweises ----------------------------------------------
 	$ErrorS = rawurlencode("Sonos Fehler. Bitte log pruefen");
 	$handle = @fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-Error/$ErrorS", "r");
@@ -131,11 +223,33 @@ function errorHandler($errno, $errstr, $errfile, $errline) {
 # Start des eigentlichen Srcipts
 if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
 	$volume = $_GET['volume'];
+	$master = $_GET['zone'];
+	// prüft auf Max. Lautstärke und korrigiert diese ggf.
+	if($volume >= $config['sonoszonen'][$master][5]) {
+		$volume = $config['sonoszonen'][$master][5];
+	} else {
+		$volume = $_GET['volume'];
+	}
 } else {
 	$master = $_GET['zone'];
-	$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
+	$sonos = new PHPSonos($sonoszone[$master][0]);
+	$tmp_vol = $sonos->GetVolume();
+	if ($tmp_vol >= $config['sonoszonen'][$master][5]) {
+		$volume = $config['sonoszonen'][$master][5];
+	}
 	$volume = $config['sonoszonen'][$master][4];
 }
+
+if(isset($_GET['playmode'])) { 
+	if(($_GET['playmode'] == "normal") || ($_GET['playmode'] == "repeat_all")
+		|| ($_GET['playmode'] == "shuffle_norepeat") || ($_GET['playmode'] == "shuffle") 
+		|| ($_GET['playmode'] == "repeat_one") || ($_GET['playmode'] == "shuffle_repeat_one")) {
+		$sonos = new PHPSonos($sonoszone[$master][0]);
+		$sonos->SetPlayMode(strtoupper($_GET['playmode']));
+	}  else {
+		trigger_error('falscher PlayMode ausgewählt. Bitte korrigieren!', E_USER_NOTICE);
+	}
+}    
 
 if(isset($_GET['rampto'])) {
 		switch($_GET['rampto'])	{
@@ -396,30 +510,49 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$sonos = new PHPSonos($sonoszone[$member][0]);
 			$sonos->BecomeCoordinatorOfStandaloneGroup();
 		break;
-		  
 		
-		case 'nextradio':
+		
+		case 'nextradio1':
+			global $nextRadioUrl, $nextRadio, $currentRadio;
+			
+			#echo $currentRadio.'<br>';
+			$radio = ($config['RADIO']['radio']);
+			$radioanzahl = $result = count($config['RADIO']['radio']);
+			$i = 1;
+			for ($i; $i <= $radioanzahl; $i++) {
+				$radiosplit = explode(',',$radio[$i]);
+				$radioStations[$radiosplit[0]] = $radiosplit[1];
+			}
+			#print_r($radioStations);
+			#echo'<br>';
 			$playstatus = $sonos->GetTransportInfo();
 			$radiovolume = $sonos->GetVolume();
-			$radiosender = $sonos->GetPositionInfo();
-			$senderuri = $radiosender["URI"];
-			$radioanzahl = $result = count($config['RADIO']['radio_name']);
-			$senderaktuell = array_search($senderuri,  $config['RADIO']['radio_adresse']);
-			# Wenn nextradio aufgerufen wird ohne eine vorherigen Radiosender
-			if( $senderaktuell == "" && $senderuri == "" || substr($senderuri,0,12) == "x-file-cifs:" ) {
-				$sonos->SetRadio($config['RADIO']['radio_adresse'][0], $config['RADIO']['radio_name'][0]);
-			}
-
-			if ($senderaktuell == $radioanzahl - 1) {
-				$sonos->SetRadio($config['RADIO']['radio_adresse'][0], $config['RADIO']['radio_name'][0]);
-			} else {
-				$sonos->SetRadio($config['RADIO']['radio_adresse'][$senderaktuell + 1], $config['RADIO']['radio_name'][$senderaktuell + 1]);
-			}
-			if( $debug == 1) {
-				echo "Senderuri vorher: " . $senderuri . "<br>";
-				echo "Sender aktuell: " . $senderaktuell . "<br>";
-				echo "Radioanzahl: " .$radioanzahl . "<br>";
-			}
+			#$radiosender = $sonos->GetPositionInfo();
+			#$senderuri = $radiosender["URI"];
+			$radiosender = $sonos->GetMediaInfo();
+			$senderuri = $radiosender["CurrentURI"];
+			if(empty($radiosender["title"])) {
+                reset($radioStations);
+                $currentRadio = key($radioStations);
+            } else {
+				$currentRadio;
+			} 
+			foreach ($radioStations as $key => $value) {
+				if($key == $currentRadio) {
+                $nextRadioUrl = next($radioStations);
+                $nextRadio    = key($radioStations);
+                //if last element catched, move to first element
+                if(empty($nextRadioUrl)) {
+                    $nextRadioUrl = reset($radioStations);
+                    $nextRadio    = key($radioStations);
+                }
+                    break;
+                } else {
+                    next($radioStations);
+                }
+            }
+			$currentRadio = $nextRadio;
+			$sonos->SetRadio($nextRadioUrl, $nextRadio);
 			if($playstatus == 1) {
 				$sonos->SetVolume($radiovolume);
 				$sonos->Play();
@@ -428,37 +561,53 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$sonos->Play();
 			}
 		  break;
-
-		case 'prevradio':
+		  
+		  
+		case 'nextradio':
+			$radioanzahl_check = $result = count($config['RADIO']);
+			if($radioanzahl_check == 0)  {
+				trigger_error("Es sind keine Sender in der Konfiguration vorhanden. Bitte nachpflegen!", E_USER_NOTICE);
+				exit;
+			}
 			$playstatus = $sonos->GetTransportInfo();
 			$radiovolume = $sonos->GetVolume();
 			$radiosender = $sonos->GetPositionInfo();
 			$senderuri = $radiosender["URI"];
-			$radioanzahl = $result = count($config['RADIO']['radio_name']);
-			$senderaktuell = array_search($senderuri, $config['RADIO']['radio_adresse']);
-			# Wenn prevradio aufgerufen wird ohne eine vorherigen Radiosender
-			if( $senderaktuell == "" && $senderuri == "" || substr($senderuri,0,12) == "x-file-cifs:") {
-					$sonos->SetRadio($config['RADIO']['radio_adresse'][0], $config['RADIO']['radio_name'][0]);
-				}
-				if ($senderaktuell == 0) {
-					$sonos->SetRadio($config['RADIO']['radio_adresse'][$radioanzahl -1], $config['RADIO']['radio_name'][$radioanzahl - 1]);
-				} else {
-					$sonos->SetRadio($config['RADIO']['radio_adresse'][$senderaktuell - 1], $config['RADIO']['radio_name'][$senderaktuell - 1]);
-				}	
-				if( $debug == 1) {
-					echo "Senderuri vorher: " . $senderuri . "<br>";
-					echo "Sender aktuell: " . $senderaktuell . "<br>";
-					echo "Radioanzahl: " .$radioanzahl . "<br>";
-				}
-				if($playstatus == 1) {
-					$sonos->SetVolume($radiovolume);
-					$sonos->Play();
-				} else {
-					$sonos->RampToVolume($config['TTS']['rampto'], $volume);
-					$sonos->Play();
-				}
+			$radio = $config['RADIO']['radio'];
+			$radioanzahl = $result = count($config['RADIO']['radio']);
+			$radio_name = array();
+			$radio_adresse = array();
+			$i = 1;
+			for ($i; $i <= $radioanzahl; $i++) {
+				$radiosplit = explode(',',$radio[$i]);
+				array_push($radio_name, $radiosplit[0]);
+				array_push($radio_adresse, $radiosplit[1]);
+			}
+			$senderaktuell = array_search($senderuri, $radio_adresse);
+			# Wenn nextradio aufgerufen wird ohne eine vorherigen Radiosender
+			if( $senderaktuell == "" && $senderuri == "" || substr($senderuri,0,12) == "x-file-cifs:" ) {
+				$sonos->SetRadio($radio_adresse[0], $radio_name[0]);
+			}
+			if ($senderaktuell == $radioanzahl - 1) {
+				$sonos->SetRadio($radio_adresse[0], $radio_name[0]);
+			} else {
+				$sonos->SetRadio($radio_adresse[$senderaktuell + 1], $radio_name[$senderaktuell + 1]);
+			}
+			if( $debug == 1) {
+				echo "Senderuri vorher: " . $senderuri . "<br>";
+				echo "Sender aktuell: " . $senderaktuell . "<br>";
+				echo "Radioanzahl: " .$radioanzahl . "<br>";
+			}
+			if($radiovolume >= 10) {
+				$sonos->SetVolume($radiovolume);
+				$sonos->Play();
+			} else {
+				$sonos->SetVolume($config['sonoszonen'][$master][4]);
+				$sonos->Play();
+			}
 		  break;
-				  
+
+							  
 		case 'sonosplaylist':
 			logging();
 			groupplaylist();
@@ -641,6 +790,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				trigger_error("Der Parameter sonos kann nicht für Gruppendurchsagen verwendet werden!", E_USER_NOTICE);
 				exit;
 			}
+			checkaddon();
 			checkTTSkeys();
 			$groupvol = "1";
 			$master = $_GET['zone'];
@@ -653,7 +803,9 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$sonos = new PHPSonos($sonoszone[$master][0]);
 			$sonos->SetGroupMute(true);
 			$sonos->SetPlayMode('NORMAL'); 
-			$sonos->Stop();
+			if(!isset($_GET['sonos'])) {
+				$sonos->Stop();
+			}
 			create_tts($text, $messageid);
 			// Setzen der T2S Lautstärke je Member Zone
 			foreach ($member as $player => $zone) {
@@ -687,6 +839,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				// übernimmt Standard Lautstärke der angegebenen Zone aus config.php
 				$volume = $config['sonoszonen'][$master][3];
 			}
+			checkaddon();
 			checkTTSkeys();
 			$groupvol = "0";
 			// prüft ob Zone in einer Gruppe ist
@@ -700,7 +853,9 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			} else {
 				save_current_ez();
 			}
-			$sonos->Stop();
+			if(!isset($_GET['sonos'])) {
+				$sonos->Stop();
+			}
 			create_tts($text, $messageid);
 			play_tts($messageid, $groupvol);
 			if($checkgroup == true) {
@@ -719,7 +874,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		$masterrincon = getRINCON($sonoszone[$master][0]);
 		foreach ($sonoszone as $zone => $ip) {
 			if($zone != $_GET['zone']) {
-				$sonos = new PHPSonos($sonoszone[$zone][0]); //Sonos IPAdresse
+				$sonos = new PHPSonos($sonoszone[$zone][0]); //Sonos lox_ipesse
 				$sonos->SetAVTransportURI("x-rincon:" . $masterrincon); 
 			}
 		}
@@ -729,7 +884,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		logging();
 		# Alle Zonen Gruppierungen aufheben
 		foreach($sonoszone as $zone => $ip) {
-			$sonos = new PHPSonos($sonoszone[$zone][0]); //Sonos IPAdresse
+			$sonos = new PHPSonos($sonoszone[$zone][0]); //Sonos lox_ipesse
 			$sonos->SetQueue("x-rincon-queue:" . getRINCON($sonoszone[$zone][0]) . "#0");
 		}
 	break;
@@ -1082,7 +1237,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		case 'favoriten':
 			echo '<PRE>';
-				$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos ZP IPAdresse 
+				$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos ZP lox_ipesse 
 				$browselist = $sonos->Browse("FV:2","c"); 
 				#$browselist = $sonos->GetSonosFavorites();
 				print_r($browselist);  
@@ -1104,7 +1259,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		case 'getmsip':
 			echo '<PRE>';
-				getMSIP();
+				getMS1data();
 			echo '</PRE>';
 		break;
 		
@@ -1117,6 +1272,12 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'getip':
 			echo '<PRE>';
 				getdnsip();
+			echo '</PRE>';
+		break;
+		
+		case 'getivonavoices':
+			echo '<PRE>';
+			getIvonaVoices();
 			echo '</PRE>';
 		break;
 
@@ -1142,16 +1303,11 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			echo "RinconID: " . $zoneplayerip;
 		break;
 		  
-	default:
-       trigger_error("Dieser Befehl ist nicht bekannt. <br>sonos2.php?zone=SONOSPLAYER&action=BEFEHL&BEFEHL=Option", E_USER_NOTICE);
-
-	} 
-	
-	
-	}
-	else 
-	{
-	trigger_error("Die Zone ist nicht im angegebenen Bereich vorhanden. (siehe config.php)", E_USER_NOTICE);
+		default:
+		   trigger_error("Dieser Befehl ist nicht bekannt. <br>index.php?zone=SONOSPLAYER&action=BEFEHL&BEFEHL=Option", E_USER_NOTICE);
+		} 
+	} else 	{
+	trigger_error("Die Zone ".$master." ist nicht vorhanden oder Offline. Bitte prüfen und ggf. in der Config die Zone hinzufügen", E_USER_NOTICE);
 }
 
 
@@ -1424,10 +1580,10 @@ function File_Get_Array_From_JSON($FileName, $zip=false) {
 /******************************************************************************************************/
  function logging_alt() // Nicht mehr in Nutzung
  { 
- 	global $log, $config, $path;
+ 	global $log, $config, $logpath;
 	if($log == true) {
 		$content = date("d.m.Y - H:i:s") . ' ' . $_SERVER['REQUEST_URI'] . "\r\n";
-		$handle = fopen ($path."/".$config['SYSTEM']['logfile'], 'a');
+		$handle = fopen ($logpath."/".$config['SYSTEM']['logfile'], 'a');
 		fwrite ($handle, $content);
 		fclose ($handle);
 		return;
@@ -1441,7 +1597,7 @@ function File_Get_Array_From_JSON($FileName, $zip=false) {
 /* @return: Log Datei
 /******************************************************************************************************/
  function logging() {
- global $master, $log, $path;
+ global $master, $log, $logpath;
 
 	$format = "txt"; //Moeglichkeiten: csv und txt
  	$datum_zeit = date("d.m.Y H:i:s");
@@ -1453,7 +1609,7 @@ function File_Get_Array_From_JSON($FileName, $zip=false) {
 	$monat = date("n");
 	$jahr = date("y");
  
-	$dateiname=$path."/log_".$monate[$monat]."_$jahr.$format";
+	$dateiname=$logpath."/log_".$monate[$monat]."_$jahr.$format";
  	$header = array("Datum/Uhrzeit", "    Zone  ", "Syntax");
 	$infos = array($datum_zeit, $master, $site);
  	if($format == "csv") {
@@ -1540,7 +1696,7 @@ function SnapshotGroupVolume() {
 /******************************************************************************************************/		
 function create_tts($text, $messageid) {
 	global $sonos, $text, $member, $master, $zone, $messageid, $logging, $words, $voice, $accesskey, $secretkey, $rampsleep, $config, $save_status, $mute;
-	global $fileolang, $fileo, $volume;
+	global $fileolang, $fileo, $volume, $home;
 				
 	# erlaubt das Abspielen einer Nachricht ohne messageid
 	$messageid = !empty($_GET['messageid']) ? $_GET['messageid'] : '0';
@@ -1549,32 +1705,24 @@ function create_tts($text, $messageid) {
 							
 	if(isset($_GET['weather'])) {
 		# ruft die weather-to-speech Funktion auf
-		if(!file_exists('weather-to-speech.php')) {
-			trigger_error("Das weather-to-speech addon ist derzeit nicht installiert!", E_USER_ERROR);
-			exit;
+		if(substr($home,0,4) == "/opt") {	
+			include_once("addon/weather-to-speech.php");
+		} else {
+			include_once("addon/weather-to-speech_noLB.php");
 		}
-		include_once("weather-to-speech.php");
 		$fileo = w2s($text);
 		$words = substr($fileo, 0, 500); // Begrenzung des Textes auf 500 Zeichen
 		$words = urlencode($fileo);
 		} 
 	elseif (isset($_GET['clock'])) {
 		# ruft die clock-to-speech Funktion auf
-		if(!file_exists('clock-to-speech.php')) {
-			trigger_error("Das clock-to-speech addon ist derzeit nicht installiert!", E_USER_ERROR);
-			exit;
-		}
-		include_once("clock-to-speech.php");
+		include_once("addon/clock-to-speech.php");
 		$fileo = c2s($text);
 		$words = urlencode($fileo);
 		}
 	elseif (isset($_GET['sonos'])) {
 		# ruft die sonos-to-speech Funktion auf
-		if(!file_exists('sonos-to-speech.php')) {
-			trigger_error("Das sonos-to-speech addon ist derzeit nicht installiert!", E_USER_ERROR);
-			exit;
-		}
-		include_once("sonos-to-speech.php");
+		include_once("addon/sonos-to-speech.php");
 		$fileo = s2s($text);
 		$words = urlencode($fileo);
 		$rampsleep = false;
@@ -1595,17 +1743,18 @@ function create_tts($text, $messageid) {
 		}	
 	# Name der MP3 als MD5 Hash zum Speichern codieren
 	$fileo  = md5($words);
+	#$fileo  = $words;
 	$fileolang = "$fileo";
 	# ruft die zur Verfügung stehenden T2S Engines auf (je nach config)					
 	if (($messageid == '0') && ($fileo != '')) {
 		if ($config['TTS']['t2s_engine'] == 1001) {
-			include_once("Voice_Engines/VoiceRSS.php");
+			include_once("voice_engines/VoiceRSS.php");
 		}
 		if ($config['TTS']['t2s_engine'] == 3001) {
-			include_once("Voice_Engines/MAC_OSX.php");
+			include_once("voice_engines/MAC_OSX.php");
 		}
 		if ($config['TTS']['t2s_engine'] == 2001) {
-			include_once("Voice_Engines/Ivona.php");
+			include_once("voice_engines/Ivona.php");
 			if(!isset($_GET['voice'])) {
 				$voice = $config['TTS']['voice'];	
 			} elseif (($_GET['voice'] == 'Marlene') or ($_GET['voice'] == 'Hans')) {
@@ -1687,7 +1836,7 @@ function save_current_gr($groupvol) {
 /* @return: 
 /**************************************************************************************************************/		
 function restore_previous_gr() {
-	global $sonoszone, $path, $master, $sonos, $config, $zonevolume, $groupvol, $save_status, $results, $membermaster, $member, $player, $grouping, $zone, $rinconid;
+	global $sonoszone, $logpath, $master, $sonos, $config, $zonevolume, $groupvol, $save_status, $results, $membermaster, $member, $player, $grouping, $zone, $rinconid;
 	
 	$file = 'tmp_sz.json'; 
 	// nimmt angegebene Zone(n) aus der Gruppe heraus
@@ -1789,7 +1938,7 @@ function restore_previous_gr() {
 /* @return: nichts
 /**************************************************************************************************************/		
 function play_tts($messageid, $groupvol) {
-	global $volume, $config, $sonos, $messageid, $save_status, $sonoszone, $master, $groupvol, $getgroup, $group, $save_gr_status;
+	global $volume, $config, $sonos, $messageid, $save_status, $sonoszone, $master, $groupvol, $getgroup, $group, $myMessagepath, $save_gr_status;
 	// wenn Single T2S dann Volume und Mute setzten
 	if($groupvol == "0") {
 		$sonos->SetMute(false);
@@ -1799,15 +1948,15 @@ function play_tts($messageid, $groupvol) {
 	if(isset($_GET['messageid'])) {
 		$mp3 = $_GET['messageid'];
 		if((!empty($config['MP3']['MP3path'])) || (!empty($mp3))) {
-			$mpath = $config['SYSTEM']['messagespath']."/".$config['MP3']['MP3path'];
+			$mpath = $myMessagepath."/".$config['MP3']['MP3path'];
 		} 
 	} else {
-		$mpath = $config['SYSTEM']['messagespath'];
+		$mpath = $myMessagepath;
 	}
 	if(isset($_GET['playgong'])) {
 		if(isset($_GET['playgong']) && ($_GET['playgong'] == "yes")) {
 			if((!empty($config['MP3']['MP3path'])) || (!empty($mp3))) {
-				$mpath = $config['SYSTEM']['messagespath']."/".$config['MP3']['MP3path'];
+				$mpath = $myMessagepath."/".$config['MP3']['MP3path'];
 			}
 			$sonos->AddToQueue("x-file-cifs:" . $mpath . "/" . $config['MP3']['file_gong'] . ".mp3");
 		}
@@ -1850,7 +1999,7 @@ function play_tts($messageid, $groupvol) {
 		$mess = isset($_GET['sendmessage']);
 		if (!isset($_GET['messageid'])) {
 			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
-			$sonos->AddToQueue('x-file-cifs:'.$config['SYSTEM']['messagespath'] . "/" . $messageid . ".mp3");
+			$sonos->AddToQueue('x-file-cifs:'.$myMessagepath . "/" . $messageid . ".mp3");
 		} else {
 			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 			$sonos->AddToQueue('x-file-cifs:'.$mpath . "/" . $messageid . ".mp3");
@@ -1872,12 +2021,12 @@ function play_tts($messageid, $groupvol) {
 		$sonos->SetQueue("x-rincon-queue:" . getRINCON($sonoszone[$master][0]) . "#0"); //Playliste aktivieren
 		$sonos->SetGroupMute(false);
 		$sonos->SetPlayMode('NORMAL');
-		try {
+		#try {
 			$sonos->SetTrack($message_pos);
 			$sonos->Play();   // Abspielen
-		} catch (Exception $e) {
-			trigger_error("Die T2S Message konnte nicht abgespielt werden!", E_USER_NOTICE);
-		}
+		#} catch (Exception $e) {
+		#	trigger_error("Die T2S Message konnte nicht abgespielt werden!", E_USER_NOTICE);
+		#}
 		$abort = false;
 		# Prüfen ob Meldung zu Ende gespielt ist
 		sleep($config['TTS']['sleeptimegong']); // warten gemäﬂ config.php
@@ -2129,7 +2278,7 @@ function groupradioplaylist(){
  /* @return:    Array<Key => Array<Node>>  
  /****************************************************************************/
 function getZonePlayerList($zone=""){
-	global $sonoszone, $zone, $master, $sonosclass, $config;
+	global $sonoszone, $zone, $master, $sonosclass, $config, $debug;
 		
 		if(!$xml=deviceCmdRaw('/status/topology')){
 			return false;
@@ -2167,7 +2316,9 @@ function getZonePlayerList($zone=""){
 	foreach ($coordinators as $key=>$coordinator){
 		usort($coordinators[$key], "cmp");
 	}
-	#print_r($coordinators);
+	if($debug == 1) { 
+		print_r($coordinators);
+	}
 	return $coordinators;
 }
  }
@@ -2370,7 +2521,7 @@ function allgroupsmaster() {
 	Global $sonoszone, $sonos, $groupid, $debug;	
 	
 	foreach ($sonoszone as $zone => $ip) {
-		$ipadr = $ip[0];
+		$lox_ip = $ip[0];
 		$sonos = new PHPSonos($sonoszone[$zone][0]);
 		$group = $sonos->GetZoneGroupAttributes();
 		$tmp_name = $group["CurrentZoneGroupName"];
@@ -2379,7 +2530,7 @@ function allgroupsmaster() {
 			if(count($tmp_group) > 1) {
 				$new_array = array('member' => $tmp_group);
 				$groupcord = array_shift($new_array['member']);
-				$groupid[$ipadr] = $new_array['member'];
+				$groupid[$lox_ip] = $new_array['member'];
 			}
 		}
 	}
@@ -2400,7 +2551,7 @@ function zonegroups($soplayer = "") {
 	if($soplayer == "") {
 		$soplayer = $_GET['zone'];
 	}
-	$ipadr = $sonoszone[$soplayer][0];
+	$lox_ip = $sonoszone[$soplayer][0];
 	$sonos = new PHPSonos($sonoszone[$soplayer][0]);
 	$group = $sonos->GetZoneGroupAttributes();
 	$tmp_name = $group["CurrentZoneGroupName"];
@@ -2521,7 +2672,7 @@ function gettopology($soplayer = "") {
 			if (in_array($rincon,array($UUID['Rincon-ID']))) {
 				return $UUID;
 			} 
-		}	
+		}
 	}
 }
 
@@ -2553,6 +2704,50 @@ function getgroupstatus($player = 0){
 	$masterrincon = "";
 }
 
+
+/*************************************************************************************************************
+/* Funktion : checkaddon --> prüft vorhanden sein von Addon's
+/* @param: 	leer
+/*
+/* @return: true oder Abbruch
+/*************************************************************************************************************/
+ function checkaddon() {
+	global $home;
+	
+	if(isset($_GET['weather'])) {
+		# ruft die weather-to-speech Funktion auf
+		if(substr($home,0,4) == "/opt") {	
+			if(!file_exists('addon/weather-to-speech.php')) {
+				trigger_error("Das weather-to-speech Addon ist derzeit nicht installiert!", E_USER_NOTICE);
+				exit;
+			} else {
+				if(!file_exists("$home/config/plugins/wu4lox/wu4lox.cfg")) {
+					trigger_error("Bitte zuerst das Wunderground Plugin installieren!", E_USER_NOTICE);
+					exit;
+				}
+			}
+		} else {
+			if(!file_exists('addon/weather-to-speech_noLB.php')) {
+				trigger_error("Das weather-to-speech Addon ist derzeit nicht installiert!", E_USER_NOTICE);
+				exit;
+			}
+		}
+	} elseif (isset($_GET['clock'])) {
+		# ruft die clock-to-speech Funktion auf
+		if(!file_exists('addon/clock-to-speech.php')) {
+			trigger_error("Das clock-to-speech addon ist derzeit nicht installiert!", E_USER_NOTICE);
+			exit;
+		}
+	} elseif (isset($_GET['sonos'])) {
+		# ruft die sonos-to-speech Funktion auf
+		if(!file_exists('addon/sonos-to-speech.php')) {
+			trigger_error("Das sonos-to-speech addon ist derzeit nicht installiert!", E_USER_NOTICE);
+			exit;
+		}
+	}
+ }
+
+
 /********************************************************************************************
 /* Funktion : checkTTSkeys --> prüft die verwendete TTS Instanz auf Korrektheit
 /* @param: leer                             
@@ -2563,7 +2758,7 @@ function checkTTSkeys() {
 	Global $config;
 	
 	if ($config['TTS']['t2s_engine'] == 1001) {
-		if (!file_exists("Voice_Engines/VoiceRSS.php")) {
+		if (!file_exists("voice_engines/VoiceRSS.php")) {
 			trigger_error("Die Instanz VoiceRSS ist derzeit nicht vorhanden. Bitte nachinstallieren!", E_USER_NOTICE);
 		} else {
 			if(strlen($config['TTS']['API-key']) !== 32) {
@@ -2572,12 +2767,12 @@ function checkTTSkeys() {
 		}
 	}
 	if ($config['TTS']['t2s_engine'] == 3001) {
-		if (!file_exists("Voice_Engines/MAC_OSX.php")) {
+		if (!file_exists("voice_engines/MAC_OSX.php")) {
 			trigger_error("Die Instanz MAC OSX ist derzeit nicht vorhanden. Bitte nachinstallieren!", E_USER_NOTICE);
 		}
 	}
 	if ($config['TTS']['t2s_engine'] == 2001) {
-		if (!file_exists("Voice_Engines/Ivona.php")) {
+		if (!file_exists("voice_engines/Ivona.php")) {
 			trigger_error("Die Instanz Ivona ist derzeit nicht vorhanden. Bitte nachinstallieren!", E_USER_NOTICE);
 		} else {
 			if((strlen($config['TTS']['API-key']) !== 20) or (strlen($config['TTS']['secret-key']) !== 40)) {
@@ -2585,6 +2780,23 @@ function checkTTSkeys() {
 			}
 		}
 	}
+}
+
+
+/********************************************************************************************
+/* Funktion : getIvonaVoices --> lädt alle Ivona Voice relevante Daten
+/* @param: leer                             
+/*
+/* @return: multidimensionales array mit Geschlecht, Sprache und Name
+/********************************************************************************************/
+function getIvonaVoices() {
+
+	require_once("voice_engines/ivona_tts/ivona.php");
+	$ivona = new IvonaClient();
+	$voices = $ivona->ListVoices();
+	$voices = objectToArray($voices);
+	echo '<pre>';
+	print_r($voices);
 }
 
 
@@ -2611,13 +2823,235 @@ function getLoxoneData() {
 /* @return: Plugin Folder
 /********************************************************************************************/
 function getPluginFolder(){
-	$path = $_SERVER["SCRIPT_FILENAME"].'<br>';
-	$folder = explode('/', $path);
+	$logpath = $_SERVER["SCRIPT_FILENAME"].'<br>';
+	$folder = explode('/', $logpath);
 	print_r ($folder[6]);
 	return($folder);
 }
 
+/********************************************************************************************
+/* Funktion : getMS1data --> übernimmt die Daten des MINISERVER1 aus dem Loxberry,
+/* falls dieser mit loxone clouddns konfiguriert ist, wird die lokale IP ermittelt.
+/* @param: 	leer
+/*
+/* @return: array mit den allen MS Daten
+/********************************************************************************************/
+function getMS1data() {
+	
+	global $home, $mstopology;
+	// Parsen der Loxberry Config general.cfg um alle Miniserver zu übernehmen
+	$tmp_lox =  parse_ini_file("$home/config/system/general.cfg", TRUE);
+	$loxip = $tmp_lox['MINISERVER1']['IPADDRESS'];
+	$msport = $tmp_lox['MINISERVER1']['PORT'];
+	$useclouddns = $tmp_lox['MINISERVER1']['USECLOUDDNS'];
+	$cloudurl = $tmp_lox['MINISERVER1']['CLOUDURL'];
+	$loxuser = $tmp_lox['MINISERVER1']['ADMIN'];
+	$loxpw = $tmp_lox['MINISERVER1']['PASS'];
+	$ip = $loxip.":".$msport;
+	// ermittelt die lokale IP Addresse des MS basierend auf DNS loxcloud Service
+	if($useclouddns == 1) {
+		$getprovip = objectToArray(json_decode(file_get_contents("http://dns.loxonecloud.com/?getip&snr=$cloudurl&json=true", "r")));
+		$lokip = $getprovip['IP'];
+		$tmp_ip = objectToArray(json_decode(file_get_contents("http://$loxuser:$loxpw@$lokip/jdev/cfg/ip", "r")));
+		$loxip = $tmp_ip['LL']['value'];
+	}
+	// erstellt array
+	$mstopology['MINISERVER'] = array('Host' => "$loxip",
+									  'Port' => $msport,
+									  'use DNS' => $useclouddns,
+									  'Cloud URL' => $cloudurl,
+									  'User' => $loxuser,
+									  'PW' => $loxpw
+	);
+	#print_r($mstopology);
+	return ($mstopology);
+}
 
+/********************************************************************************************
+/* Funktion : getSonosStatVol --> sendet für alle Zonen die jeweilige Lautstärke und 
+/*			  Play=1/Stop=3/Pause=2 per UDP an Loxone
+/* @param: 	leer
+/*
+/* @return: Volume und Play Status je Zone
+/********************************************************************************************/
+ function getSonosStatVol() {
+	global $config, $sonoszone, $mstopology, $sonos_array_diff, $home;
+	
+	if($config['LOXONE']['LoxDaten'] == 1) {
+		if(substr($home,0,4) == "/opt") {		
+			// LoxBerry ****************************************************************************************
+			$mstopology = getMS1data();
+			$sonos_array_diff = @array_diff_key($sonoszonen, $sonoszone);
+			$sonos_array_diff = @array_keys($sonos_array_diff);
+			$server_ip = $mstopology['MINISERVER']['Host'];
+			$server_port = $mstopology['MINISERVER']['Port'];
+			$cloud_url = $mstopology['MINISERVER']['Cloud URL'];
+			$use_cloud = $mstopology['MINISERVER']['use DNS'];
+		} else {
+			// Non LoxBerry ************************************************************************************
+			$server_ip = $config['LOXONE']['LoxIP'];
+			$server_port = $config['LOXONE']['LoxPort'];
+		}
+		$tmp_array = array();
+		if ($socket = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP)) {
+			foreach ($sonoszone as $zone => $player) {
+				$sonos = new PHPSonos($sonoszone[$zone][0]);
+				$message = "vol_$zone@".$sonos->GetVolume()."; stat_$zone@".$sonos->GetTransportInfo();
+				array_push($tmp_array, $message);
+			}
+		} else {
+			trigger_error("Can't create UDP socket to $server_ip", E_USER_WARNING);
+		}
+		// fügt die Offline Zonen hinzu
+		foreach ($sonos_array_diff as $zoneoff) {
+			$messageoff = "vol_$zoneoff@0; stat_$zoneoff@3";
+			array_push($tmp_array, $messageoff);
+		}
+		$UDPmessage = implode("; ", $tmp_array);
+		try {
+			socket_sendto($socket, $UDPmessage, strlen($UDPmessage), 0, $server_ip, $server_port);
+		} catch (Exception $e) {
+			if(substr($home,0,4) == "/opt") {	
+				#getdnsip();
+			}
+			trigger_error("Die Verbindung zu Loxone konnte nicht initiiert werden!", E_USER_NOTICE);	
+		}		
+	} else { 
+		trigger_error("Die Datenuebermittlung zu Loxone ist nicht aktiv. Bitte aktivieren!", E_USER_NOTICE); 
+	}
+	socket_close($socket);
+}
+
+/**********************************************************************************************************
+/* Funktion : getSonosTitInt --> sendet für alle aktive Zonen (es läuft gerade irgendwas) 
+/* die Titel-/Interpret, nur Titel und nur Interpret Info per http an virtuellen texteingang an Loxone
+/* @param: 	leer
+/*
+/* @return: Titel und Interpret Info je Zone
+/**********************************************************************************************************/
+ function getSonosTitInt() {
+	global $config, $countms, $sonoszone, $sonos, $lox_ip, $sonoszonen; 
+		
+	if($config['LOXONE']['LoxDaten'] == 1) {	
+		if(substr($home,0,4) == "/opt") {		
+			// LoxBerry ***********************************************************************************
+			$mstopology = getMS1data();
+			#print_r($mstopology);
+			$lox_ip		 = $mstopology['MINISERVER']['Host'];
+			$lox_port 	 = $mstopology['MINISERVER']['Port'];
+			$loxuser 	 = $mstopology['MINISERVER']['User'];
+			$loxpassword = $mstopology['MINISERVER']['PW'];
+			$loxip = $lox_ip.':'.$lox_port;
+		} else {
+			// Non LoxBerry *******************************************************************************
+			$lox_ip 		= $config['LOXONE']['LoxIP'];
+			$lox_port 		= $config['LOXONE']['LoxPort'];
+			$loxuser 		= $config['LOXONE']['LoxUser'];
+			$loxpassword 	= $config['LOXONE']['LoxPassword'];
+			$loxip = $lox_ip.':'.$lox_port;
+		}
+		foreach ($sonoszone as $zone => $player) {
+			$sonos = new PHPSonos($sonoszone[$zone][0]);
+			$temp = $sonos->GetPositionInfo();
+			$tempradio = $sonos->GetMediaInfo();
+			$gettransportinfo = $sonos->GetTransportInfo();
+			if ($gettransportinfo == 1) {
+				// Radio wird gerade gespielt
+				if(isset($tempradio["title"]) && (empty($temp["duration"]))) {	
+					$value =  @substr($tempradio["title"], 0, 40); 
+					$valuesplit[0] = $value; 							
+					$valuesplit[1] = $value;							
+				// Playliste wird gerade gespielt
+				} elseif(!empty($temp["duration"]) && ($gettransportinfo == 1)) {
+					$artist = substr($temp["artist"], 0, 30);
+					$title = substr($temp["title"], 0, 50); 
+					$value = $artist." - ".$title; 	// kombinierte Titel- und Interpretinfo
+					$valuesplit[0] = $title; 		// Nur Titelinfo
+					$valuesplit[1] = $artist;		// Nur Interpreteninfo
+				}
+				// Übergabe der Titelinformation an Loxone (virtueller Texteingang)
+				$valueurl = rawurlencode($value);
+				$valuesplit[0] = rawurlencode($valuesplit[0]);
+				$valuesplit[1] = rawurlencode($valuesplit[1]);
+					try {
+						$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/titint_$zone/$valueurl"); // Titel- und Interpretinfo für Loxone
+						$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/tit_$zone/$valuesplit[0]"); // Nur Titelinfo für Loxone
+						$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/int_$zone/$valuesplit[1]"); // Nur Interpreteninfo für Loxone
+					} catch (Exception $e) {
+						if(substr($home,0,4) == "/opt") {	
+							#getdnsip();
+						}
+						trigger_error("Die Verbindung zu Loxone konnte nicht initiiert werden!", E_USER_NOTICE);	
+					}							
+				echo '<PRE>';
+			}
+		}
+	} else { 
+		trigger_error("Die Datenuebermittlung zu Loxone ist nicht aktiv. Bitte aktivieren!", E_USER_NOTICE); 
+	}
+ }
+ 
+/*************************************************************************************************************
+/* Funktion : turnonlox --> schaltet den virtuellen Eingangsverbinder "push_sonos_loxone" ein/aus
+/* @param: 	Ein/Aus
+/*
+/* @return: 0 oder 1
+/*************************************************************************************************************/
+ function turnonlox($status) {
+	global $config, $countms, $sonoszone, $sonos, $lox_ip, $sonoszonen; 
+		
+		$mstopology = getMS1data();
+		#print_r($mstopology);
+		$i = 1;
+		for ($i; $i <= $countms; $i++) {
+			$lox_ip		 = $mstopology['MINISERVER'.$i.'']['Host'];
+			$lox_port 	 = $mstopology['MINISERVER'.$i.'']['Port'];
+			$loxuser 	 = $mstopology['MINISERVER'.$i.'']['User'];
+			$loxpassword = $mstopology['MINISERVER'.$i.'']['PW'];
+			$loxcloudurl = $mstopology['MINISERVER'.$i.'']['Cloud URL'];
+			$loxclouddns = $mstopology['MINISERVER'.$i.'']['use DNS'];
+			$loxcloud = $loxcloudurl.':'.$lox_port;
+			if($loxclouddns == 1) {
+				$lox_ip = getdnsip();
+				$loxip = $lox_ip.':'.$lox_port;
+			} else {
+				$loxip = $lox_ip.':'.$lox_port;
+			}
+			try {
+				$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/fetch_sonos/".$status); // Titel- und Interpretinfo für Loxone
+			} catch (Exception $e) {
+				trigger_error("Die Verbindung zu Loxone konnte nicht initiiert werden!", E_USER_NOTICE);	
+			}							
+			echo '<PRE>';
+		}
+}
+ 
+/*************************************************************************************************************
+/* Funktion : getdnsip --> ermittelt die lokale IP Addresse des MS basierend auf DNS loxcloud Service
+/* CRONJOB oder Fehlerbehandlung
+/* @param: 	leer
+/*
+/* @return: lokale IP Adresse
+/*************************************************************************************************************/
+ function getdnsip() {
+	global $home, $mstopology, $home, $countms, $lox_ip;
+	
+	#$mstopology = getMS1data();
+	$user = $mstopology['MINISERVER']['User'];
+	$pw = $mstopology['MINISERVER']['PW'];
+	$cloudurl = $mstopology['MINISERVER']['Cloud URL'];
+	$use_cloud = $mstopology['MINISERVER']['use DNS'];
+	if($use_cloud == 1) {
+		$getprovip = objectToArray(json_decode(file_get_contents("http://dns.loxonecloud.com/?getip&snr=$cloudurl&json=true", "r")));
+		$lokip = $getprovip['IP'];
+		$tmp_ip = objectToArray(json_decode(file_get_contents("http://$user:$pw@$lokip/jdev/cfg/ip", "r")));
+		$lox_ip = $tmp_ip['LL']['value'];
+	}
+	#echo $lox_ip;
+	return $lox_ip;
+ }
+ 
+ 
 /********************************************************************************************
 /* Funktion : recursive_array_search --> durchsucht eine Array nach einem Wert und gibt 
 /* den dazugehörigen key zurück
@@ -2636,208 +3070,53 @@ function recursive_array_search($needle,$haystack) {
     return false;
 }
 
-/********************************************************************************************
-/* Funktion : getMSIP --> übernimmt alle gespeicherten Miniserver aus dem Loxberry
-/* @param: 	leer
-/*
-/* @return: array mit den notwendigen MS Daten
-/********************************************************************************************/
-function getMSIP(){
-	
-	global $home, $countms;
-	// Parsen der Loxberry Configdatei general.cfg um alle Miniserver zu übernehmen
-	$tmp_lox =  parse_ini_file("$home/config/system/general.cfg", TRUE);
-	$countms = $tmp_lox['BASE']['MINISERVERS'];
-	$i = 1;
-	for ($i; $i <= $countms; $i++) {
-		$loxip = $tmp_lox['MINISERVER'.$i.'']['IPADDRESS'];
-		$msport = $tmp_lox['MINISERVER'.$i.'']['PORT'];
-		$useclouddns = $tmp_lox['MINISERVER'.$i.'']['USECLOUDDNS'];
-		$cloudurl = $tmp_lox['MINISERVER'.$i.'']['CLOUDURL'];
-		$loxuser = $tmp_lox['MINISERVER'.$i.'']['ADMIN'];
-		$loxpassword = $tmp_lox['MINISERVER'.$i.'']['PASS'];
-		$ip = $loxip.":".$msport;
-		$mstopology['MINISERVER'.$i] = array('Host' => "$loxip",
-											'Port' => $msport,
-											'use DNS' => $useclouddns,
-											'Cloud URL' => $cloudurl,
-											'User' => $loxuser,
-											'PW' => $loxpassword
-		);
-	}	
-	#print_r($mstopology);
-	return($mstopology);
-}
 
 /********************************************************************************************
-/* Funktion : getSonosStatVol --> sendet für alle Zonen die jeweilige Lautstärke und 
-/*			  Play=1/Stop=3/Pause=2 per UDP an alle im lokalen Netzwerk vorhandenen Miniserver
-/* @param: 	leer
-/*
-/* @return: Volume und Play Status je Zone
-/********************************************************************************************/
- function getSonosStatVol() {
-	global $config, $countms, $sonoszone, $mstopology, $ipadr;
-	
-	if($config['LOXONE']['LoxDaten'] == 1) {
-		$mstopology = getMSIP();
-		#print_r($mstopology);
-		// Start UDP Übertragung
-		$i = 1;
-		for ($i; $i <= $countms; $i++) {
-			$server_port = $mstopology['MINISERVER'.$i.'']['Port'];
-			$cloud_url = $mstopology['MINISERVER'.$i.'']['Cloud URL'];
-			$use_cloud = $mstopology['MINISERVER'.$i.'']['use DNS'];
-			if($use_cloud == 1) {
-				getdnsip();
-				$server_ip = $ipadr;
-			} else {
-				$server_ip   = $mstopology['MINISERVER'.$i.'']['Host'];				
-			}
-			$tmp_array = array();
-			if ($socket = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP)) {
-				foreach ($sonoszone as $zone => $player) {
-					$sonos = new PHPSonos($sonoszone[$zone][0]);
-					$message = "vol_$zone@".$sonos->GetVolume()."; stat_$zone@".$sonos->GetTransportInfo();
-					array_push($tmp_array, $message);
-				}
-			} else {
-				trigger_error("Can't create UDP socket to $server_ip", E_USER_WARNING);
-			}
-			$UDPmessage = implode("; ", $tmp_array);
-			socket_sendto($socket, $UDPmessage, strlen($UDPmessage), 0, $server_ip, $server_port);
-			}
-		} else { 
-			trigger_error("Die Datenuebermittlung zu Loxone ist nicht aktiv. Bitte aktivieren!", E_USER_NOTICE); 
-		}
-	socket_close($socket);
-}
-
-/********************************************************************************************
-/* Funktion : getSonosTitInt --> sendet für alle Zonen die Titel-/Interpret und nur Titel und
-/*			  nur Interpret Info per http an virtuellen texteingang an alle im lokalem
-/*			  Netzwerk vorhandenen Miniserver.
-/* @param: 	leer
-/*
-/* @return: Titel und Interpret Info je Zone
-/********************************************************************************************/
- function getSonosTitInt() {
-	global $config, $countms, $sonoszone, $sonos, $ipadr; 
-		
-	if($config['LOXONE']['LoxDaten'] == 1) {	
-		$mstopology = getMSIP();
-		#print_r($mstopology);
-		$i = 1;
-		for ($i; $i <= $countms; $i++) {
-			$lox_ip		 = $mstopology['MINISERVER'.$i.'']['Host'];
-			$lox_port = $mstopology['MINISERVER'.$i.'']['Port'];
-			$loxuser 	 = $mstopology['MINISERVER'.$i.'']['User'];
-			$loxpassword = $mstopology['MINISERVER'.$i.'']['PW'];
-			$loxcloudurl = $mstopology['MINISERVER'.$i.'']['Cloud URL'];
-			$loxclouddns = $mstopology['MINISERVER'.$i.'']['use DNS'];
-			$loxcloud = $loxcloudurl.':'.$lox_port;
-			if($loxclouddns == 1) {
-				$ipadr = getdnsip();
-				$loxip = $ipadr.':'.$lox_port;
-			} else {
-				$loxip = $lox_ip.':'.$lox_port;
-			}
-			foreach ($sonoszone as $zone => $player) {
-				$sonos = new PHPSonos($sonoszone[$zone][0]);
-				$temp = $sonos->GetPositionInfo();
-				$tempradio = $sonos->GetMediaInfo();
-				$gettransportinfo = $sonos->GetTransportInfo();
-				if ($gettransportinfo == 1) {
-					// Radio wird gerade gespielt
-					if(isset($tempradio["title"]) && (empty($temp["duration"]))) {	
-						$value =  @substr($tempradio["title"], 0, 40); 
-						$valuesplit[0] = $value; 							
-						$valuesplit[1] = $value;							
-					// Playliste wird gerade gespielt
-					} elseif(!empty($temp["duration"]) && ($gettransportinfo == 1)) {
-						$artist = substr($temp["artist"], 0, 30);
-						$title = substr($temp["title"], 0, 50); 
-						$value = $artist." - ".$title; 	// kombinierte Titel- und Interpretinfo
-						$valuesplit[0] = $title; 		// Nur Titelinfo
-						$valuesplit[1] = $artist;		// Nur Interpreteninfo
-					}
-					// Übergabe der Titelinformation an Loxone (virtueller Texteingang)
-					$valueurl = rawurlencode($value);
-					$valuesplit[0] = rawurlencode($valuesplit[0]);
-					$valuesplit[1] = rawurlencode($valuesplit[1]);
-						try {
-							$handle = @fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/titint_$zone/$valueurl", "r"); // Titel- und Interpretinfo für Loxone
-							$handle = @fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/tit_$zone/$valuesplit[0]", "r"); // Nur Titelinfo für Loxone
-							$handle = @fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/int_$zone/$valuesplit[1]", "r"); // Nur Interpreteninfo für Loxone
-						} catch (Exception $e) {
-							trigger_error("Die Verbindung zu Loxone konnte nicht initiiert werden!", E_USER_NOTICE);	
-						}							
-					echo '<PRE>';	
-				}
-			}
-		}
-	}
- }
- 
-/*************************************************************************************************************
-/* Funktion : getdnsip --> ermittelt die lokale IP Addresse des MS basierend auf DNS loxcloud Service
-/* CRONJOB oder Fehlerbehandlung
-/* @param: 	leer
-/*
-/* @return: lokale IP Adresse
-/*************************************************************************************************************/
- function getdnsip() {
-	global $home, $mstopology, $countms, $ipadr;
-	
-	$mstopology = getMSIP();
-	$i = 1;
-	for ($i; $i <= $countms; $i++) {
-		#print_r($mstopology);
-		$user = $mstopology['MINISERVER'.$i.'']['User'];
-		$pw = $mstopology['MINISERVER'.$i.'']['PW'];
-		$cloudurl = $mstopology['MINISERVER'.$i.'']['Cloud URL'];
-		$use_cloud = $mstopology['MINISERVER'.$i.'']['use DNS'];
-		if($use_cloud == 1) {
-			$getprovip = objectToArray(json_decode(file_get_contents("http://dns.loxonecloud.com/?getip&snr=$cloudurl&json=true", "r")));
-			$lokip = $getprovip['IP'];
-			$tmp_ip = objectToArray(json_decode(file_get_contents("http://$user:$pw@$lokip/jdev/cfg/ip", "r")));
-			$ipadr = $tmp_ip['LL']['value'];
-		}
-	}
-	#echo($ipadr);
-	return $ipadr;
- }
- 
- 
-/********************************************************************************************
-/* https://www.if-not-true-then-false.com/2009/php-tip-convert-stdclass-object-to-multidimensional-array-and-convert-multidimensional-array-to-stdclass-object/
 /* Funktion : objectToArray --> konvertiert ein Object (Class) in eine Array.
+/* https://www.if-not-true-then-false.com/2009/php-tip-convert-stdclass-object-to-multidimensional-array-and-convert-multidimensional-array-to-stdclass-object/
 /*
 /* @param: 	Object (Class)
 /*
 /* @return: array
 /********************************************************************************************/
- 
- 
  function objectToArray($d) {
-        if (is_object($d)) {
-            // Gets the properties of the given object
-            // with get_object_vars function
-            $d = get_object_vars($d);
-        }
-		if (is_array($d)) {
-            /*
-            * Return array converted to object
-            * Using __FUNCTION__ (Magic constant)
-            * for recursive call
-            */
-            return array_map(__FUNCTION__, $d);
-        }
-        else {
-            // Return array
-            return $d;
-        }
+    if (is_object($d)) {
+        // Gets the properties of the given object
+        // with get_object_vars function
+        $d = get_object_vars($d);
     }
+	if (is_array($d)) {
+        /*
+        * Return array converted to object
+        * Using __FUNCTION__ (Magic constant)
+        * for recursive call
+        */
+        return array_map(__FUNCTION__, $d);
+    } else {
+        // Return array
+        return $d;
+    }
+}
+
+	
+/********************************************************************************************
+/* Funktion : get_file_content --> übermittelt die Titel/Interpret Info an Loxone
+/* http://stackoverflow.com/questions/697472/php-file-get-contents-returns-failed-to-open-stream-http-request-failed
+/*
+/* @param: 	URL = virtueller Texteingangsverbinder
+/*
+/* @return: string (Titel/Interpret Info)
+/********************************************************************************************/
+function get_file_content($url) {
+	
+	$curl_handle=curl_init();
+	curl_setopt($curl_handle, CURLOPT_URL,$url);
+	curl_setopt($curl_handle, CURLOPT_CONNECTTIMEOUT, 2);
+	curl_setopt($curl_handle, CURLOPT_RETURNTRANSFER, 1);
+	curl_setopt($curl_handle, CURLOPT_USERAGENT, 'LOXONE');
+	$query = curl_exec($curl_handle);
+	curl_close($curl_handle);
+}
 
 
 

@@ -6,12 +6,12 @@ function t2s($messageid)
 	#echo "bin in der MAC_OSX.php angekommen\n";
 	global $words, $config, $messageid, $fileolang, $fileo;
 
-		$messageStorePath = $config['SYSTEM']['messageStorePath'];
+		$mpath = $config['SYSTEM']['messageStorePath'];
 		$lamePath = $config['TTS']['lamePath'];
 		$words = urldecode($words);
 		
 		
-	shell_exec("say $words -o $messageStorePath$fileolang.aiff; ".$lamePath."lame $messageStorePath$fileolang.aiff 2>&1");
+	shell_exec("say $words -o $messageStorePath$fileolang.aiff; ".$lamePath."lame $mpath$fileolang.aiff 2>&1");
 	$messageid = $fileolang;
 	return ($messageid);
 				  	

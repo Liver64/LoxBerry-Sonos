@@ -2168,10 +2168,10 @@ Content-Length: '. strlen($xml) .'
         $returnContent = str_replace(array("&lt;", "&gt;", "&quot;", "&amp;", "%3a", "%2f", "%25"), array("<", ">", "\"", "&", ":", "/", "%"), $returnContent);
 
         $xml = new SimpleXMLElement($returnContent);
-        $liste = array();
+		$liste = array();
         for($i=0,$size=count($xml);$i<$size;$i++)
         {
-            $aktrow = $xml->item[$i];
+		    $aktrow = $xml->item[$i];
             $albumart = $aktrow->xpath("upnp:albumArtURI");
             $title = $aktrow->xpath("dc:title");
             $artist = $aktrow->xpath("dc:creator");
