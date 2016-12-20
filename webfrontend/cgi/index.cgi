@@ -248,19 +248,11 @@ sub form {
 		$room =~ s/\[\]$//g;
 		my @fields = $playercfg->param($key);
 		$rowssonosplayer .= "<tr><td style='height: 25px; width: 43px;' class='auto-style1'><INPUT type='checkbox' style='width: 20px' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
-<<<<<<< HEAD
 		$rowssonosplayer .= "<td style='height: 25px; width: 196px;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$room' style='width: 133px' /> </td>\n";
 		$rowssonosplayer .= "<td style='height: 28px; width: 147px;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='@fields[2]' style='width: 153px' /> </td>\n";
 		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation='number' data-validation-allowing='range[1;100]' data-validation-error-msg='T2S Vol: Bitte die gewünschte Standard Lautstärke von 1 bis 100 eingeben.' name='t2svol$countplayers' value='@fields[3]' style='width: 52px' /> </td>\n";
 		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation='number' data-validation-allowing='range[1;100]' data-validation-error-msg='Sonos Vol: Bitte die gewünschte Standard Lautstärke von 1 bis 100 eingeben.' name='sonosvol$countplayers' value='@fields[4]' style='width: 52px' /> </td>\n";
 		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation='number' data-validation-allowing='range[1;100]' data-validation-error-msg='Max Vol: Bitte die gewünschte Standard Lautstärke von 1 bis 100 eingeben.' name='maxvol$countplayers' value='@fields[5]' style='width: 52px' /> </td> </tr>\n";
-=======
-		$rowssonosplayer .= "<td style='height: 25px; width: 196px;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' value='$room' style='width: 133px' /> </td>\n";
-		$rowssonosplayer .= "<td style='height: 28px; width: 147px;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' value='@fields[2]' style='width: 153px' /> </td>\n";
-		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' name='t2svol$countplayers' value='@fields[3]' style='width: 52px' /> </td>\n";
-		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' name='sonosvol$countplayers' value='@fields[4]' style='width: 52px' /> </td>\n";
-		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' name='maxvol$countplayers' value='@fields[5]' style='width: 52px' /> </td> </tr>\n";
->>>>>>> origin/master
 		$rowssonosplayer .= "<input type='hidden' id='ip$countplayers' name='ip$countplayers' value='@fields[0]'>\n";
 		$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' value='@fields[1]'>\n";
 	}
@@ -390,13 +382,8 @@ sub save
 	$volume 		= param('volume');
 	$rampto		 	= param('rampto');
 	$rmpvol		 	= param('rmpvol');
-<<<<<<< HEAD
 	$countplayers	= param('countplayers');
 	$countradios 	= param('countradios');
-=======
-	$countplayers		= param('countplayers');
-	$countradios 		= param('countradios');
->>>>>>> origin/master
 
 	# Filter
 	$MP3Store   	= quotemeta($MP3store);
@@ -410,15 +397,9 @@ sub save
 	$rampto 		= quotemeta($rampto);
 	$rmpvol 		= quotemeta($rmpvol);
 	$udpport 		= quotemeta($udpport);
-<<<<<<< HEAD
 	$lang 			= quotemeta($lang);
 	$countplayers	= quotemeta($countplayers);
 	$countradios	= quotemeta($countradios);
-=======
-	#$lang 			= quotemeta($lang);
-	$countplayers		= quotemeta($countplayers);
-	$countradios		= quotemeta($countradios);
->>>>>>> origin/master
 
 	# OK - now installing...
 
@@ -437,31 +418,18 @@ sub save
 	$pcfg->param("MP3.volumeup", "$volume");
 	$pcfg->param("MP3.MP3store", "$MP3store");
 
-<<<<<<< HEAD
 	# save all radiostations
 	for ($i = 1; $i <= $countradios; $i++) {
 		if ( param("chkradios$i") ) { # if radio should be deleted
 			$pcfg->delete( "RADIO.radio" . "[$i]" );
 		} else { # save
 			$pcfg->param( "RADIO.radio" . "[$i]", param("radioname$i") . "," . param("radiourl$i") );
-=======
-	# Alle Radios speichern
-	for ($i = 1; $i <= $countradios; $i++) {
-		if ( param("chkradios$i") ) { # if radio should be deleted
-			$pcfg->delete( "RADIO.radio$i" . "[]" );
-		} else { # save
-			$pcfg->param( "RADIO.radio$i" . "[]", param("radioname$i") . "," . param("radiourl$i") );
->>>>>>> origin/master
 		}
 	}
 
 	$pcfg->save();
 
-<<<<<<< HEAD
 	# save all Sonos devices
-=======
-	# Alle Player speichern
->>>>>>> origin/master
 	my $playercfg = new Config::Simple("$installfolder/config/plugins/$psubfolder/player.cfg");
 
 	for ($i = 1; $i <= $countplayers; $i++) {
@@ -501,7 +469,6 @@ sub save
 sub scan 
 {
 
-<<<<<<< HEAD
 	# executes PHP network.php script (reads player.cfg and add new zones if been added)
 	my $response = qx(/usr/bin/php $installfolder/webfrontend/html/plugins/$psubfolder/system/network.php);
 	
@@ -511,39 +478,15 @@ sub scan
 			our $config = decode_json($file);
 	
 	# creates table of Sonos devices
-=======
-	# führt das PHP script aus (liest zuerst sonos.cfg und fügt ggf. neue Zonen hinzu)
-	# und erstellt im config Verzeichnis die Datei tmp_player.json
-	#my $response = qx(/usr/bin/php $installfolder/webfrontend/html/plugins/$psubfolder/System/network.php);
-	
-	#importiert die Sonos Player aus JSON Datei (Button "Scan Zonen")
-	open (my $fh, '<:raw', "$installfolder/config/plugins/$psubfolder/tmp_player.json") or die("Die Datei: $config_path konnte nicht geöffnet werden! $!\n");
-			our $file; { local $/; $file = <$fh>; }
-			our $config = decode_json($file);
-	
-	# Debugging	
-	#use Data::Dumper;
-	#print "Content-Type: text/html\n\n";
-	#print Dumper(\$config);
-	#exit;
->>>>>>> origin/master
 	foreach $key (keys $config)
 	{
 		$countplayers++;
 		$rowssonosplayer .= "<tr><td style='height: 25px; width: 43px;' class='auto-style1'><INPUT type='checkbox' style='width: 20px' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
-<<<<<<< HEAD
 		$rowssonosplayer .= "<td style='height: 25px; width: 196px;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$key' style='width: 133px' /> </td>\n";
 		$rowssonosplayer .= "<td style='height: 28px; width: 147px;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='$config->{$key}->[2]' style='width: 153px' /> </td>\n";
 		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation='number' data-validation-allowing='range[1;100]' data-validation-error-msg='T2S Vol: Bitte die gewünschte Standard Lautstärke von 1 bis 100 eingeben.' name='t2svol$countplayers' value='$config->{$key}->[3]' style='width: 52px' /> </td>\n";
 		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation='number' data-validation-allowing='range[1;100]' data-validation-error-msg='Sonos Vol: Bitte die gewünschte Standard Lautstärke von 1 bis 100 eingeben.' name='sonosvol$countplayers' value='$config->{$key}->[4]' style='width: 52px' /> </td>\n";
 		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation='number' data-validation-allowing='range[1;100]' data-validation-error-msg='Max Vol: Bitte die gewünschte Standard Lautstärke von 1 bis 100 eingeben.' name='maxvol$countplayers' value='$config->{$key}->[5]' style='width: 52px' /> </td> </tr>\n";
-=======
-		$rowssonosplayer .= "<td style='height: 25px; width: 196px;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' value='$key' style='width: 133px' /> </td>\n";
-		$rowssonosplayer .= "<td style='height: 28px; width: 147px;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' value='$config->{$key}->[2]' style='width: 153px' /> </td>\n";
-		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' name='t2svol$countplayers' value='$config->{$key}->[3]' style='width: 52px' /> </td>\n";
-		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' name='sonosvol$countplayers' value='$config->{$key}->[4]' style='width: 52px' /> </td>\n";
-		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' name='maxvol$countplayers' value='$config->{$key}->[5]' style='width: 52px' /> </td> </tr>\n";
->>>>>>> origin/master
 		$rowssonosplayer .= "<input type='hidden' id='ip$countplayers' name='ip$countplayers' value='$config->{$key}->[0]'>\n";
 		$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' value='$config->{$key}->[1]'>\n";
 	}
