@@ -129,11 +129,12 @@ $sonoszonen = $config['sonoszonen'];
 			$handle = @stream_socket_client("$ip[0]:$port", $errno, $errstr, $timeout);
 		if($handle) {
 			$sonoszone[$zonen] = $ip;
-			fclose($handle);
+			#fclose($handle);
 		} else {
 			echo '';
 		}
 	}
+	fclose($handle);
 	$sonoszone;
 
 // Umbennennen des ursprünglichen Array Keys
@@ -368,7 +369,16 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'stop';
 				$sonos->Stop();
 			break;  
+			
+		
+		case 'stopall';
+			foreach ($sonoszonen as $zone => $player) {
+				$sonos = new PHPSonos($sonoszonen[$zone][0]);
+				$sonos->Stop();
+			}	
+		break;  
 
+			
 		case 'softstop':
 				$save_vol_stop = $sonos->GetVolume();
 				$sonos->RampToVolume("SLEEP_TIMER_RAMP_TYPE", "0");
@@ -2930,7 +2940,7 @@ function getMS1data() {
 /* @return: Titel und Interpret Info je Zone
 /**********************************************************************************************************/
  function getSonosTitInt() {
-	global $config, $countms, $sonoszone, $sonos, $lox_ip, $sonoszonen; 
+	global $config, $countms, $sonoszone, $sonos, $lox_ip, $home, $sonoszonen; 
 		
 	if($config['LOXONE']['LoxDaten'] == 1) {	
 		if(substr($home,0,4) == "/opt") {		
