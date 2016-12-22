@@ -1968,10 +1968,10 @@ function play_tts($messageid, $groupvol) {
 			if((!empty($config['MP3']['MP3path'])) || (!empty($mp3))) {
 				$mpath = $myMessagepath."/".$config['MP3']['MP3path'];
 			}
-			$sonos->AddToQueue("x-file-cifs:" . $mpath . "/" . $config['MP3']['file_gong'] . ".mp3");
+			$sonos->AddToQueue("x-file-cifs:" . $mpath . "" . $config['MP3']['file_gong'] . ".mp3");
 		}
 		if(isset($_GET['playgong']) && ($_GET['playgong'] == is_numeric($_GET['playgong']))) {
-			$sonos->AddToQueue("x-file-cifs:" . $mpath . "/" . $_GET['playgong'] . ".mp3");	
+			$sonos->AddToQueue("x-file-cifs:" . $mpath . "" . $_GET['playgong'] . ".mp3");	
 		}
 		if($groupvol == "1") { // Gruppen T2S Durchsage
 			$save_plist = $sonos->GetCurrentPlaylist();
@@ -2009,10 +2009,10 @@ function play_tts($messageid, $groupvol) {
 		$mess = isset($_GET['sendmessage']);
 		if (!isset($_GET['messageid'])) {
 			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
-			$sonos->AddToQueue('x-file-cifs:'.$myMessagepath . "/" . $messageid . ".mp3");
+			$sonos->AddToQueue('x-file-cifs:'.$myMessagepath . "" . $messageid . ".mp3");
 		} else {
 			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
-			$sonos->AddToQueue('x-file-cifs:'.$mpath . "/" . $messageid . ".mp3");
+			$sonos->AddToQueue('x-file-cifs:'.$mpath . "" . $messageid . ".mp3");
 		}
 		#echo 'groupvol: '.$groupvol;
 		$gmaster = getmaster($master);
