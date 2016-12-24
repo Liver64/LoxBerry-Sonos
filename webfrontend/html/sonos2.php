@@ -2887,7 +2887,7 @@ function getMS1data() {
 /* @return: Volume und Play Status je Zone
 /********************************************************************************************/
  function getSonosStatVol() {
-	global $config, $sonoszone, $mstopology, $sonos_array_diff, $home;
+	global $config, $sonoszone, $sonoszonen, $mstopology, $sonos_array_diff, $home;
 	
 	if($config['LOXONE']['LoxDaten'] == 1) {
 		if(substr($home,0,4) == "/opt") {		
