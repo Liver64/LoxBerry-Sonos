@@ -2739,7 +2739,7 @@ function getgroupstatus($player = 0){
 				}
 			}
 		} else {
-			if(!file_exists('addon/weather-to-speech_noLB.php')) {
+			if(!file_exists('addon/weather-to-speech_nolb.php')) {
 				trigger_error("Das weather-to-speech Addon ist derzeit nicht installiert!", E_USER_NOTICE);
 				exit;
 			}
