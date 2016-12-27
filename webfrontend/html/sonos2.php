@@ -35,7 +35,7 @@ if(substr($home,0,4) == "/opt")
 #-- Ab hier Loxberry spezifisch ------------------------------------------------------------------
 
 	$myFolder = "$home/config/plugins/$psubfolder/";
-	$myMessagepath = "//$myIP/loxberry/data/plugins/$psubfolder/tts/";
+	$myMessagepath = "//$myIP/sonos_tts/";
 	$myMessageStorepath = "$home/loxberry/data/plugins/$psubfolder/tts/";
 
 	// Parsen der Konfigurationsdatei sonos.cfg
@@ -91,7 +91,7 @@ if(substr($home,0,4) == "/opt")
 	$loxuser = $tmpsonos['LOXONE']['LoxUser'];
 	$loxpassword = $tmpsonos['LOXONE']['LoxPassword'];
 	$myMessagepath = $config['SYSTEM']['messagespath'];
-	$myMessageStorepath = $config['SYSTEM']['messagespath'];
+	$myMessageStorepath = $config['SYSTEM']['messageStorePath'];
 	
 	$logpath = "log";
 	if (is_dir($logpath)) { 
@@ -118,10 +118,8 @@ if($debug == 1) {
  
 // Übernahme und Deklaration von Variablen aus der Konfiguration
 $sonoszonen = $config['sonoszonen'];
-#$logpath = $config['SYSTEM']['logpath'];
 
 // prüft den Onlinestatus jeder Zone
-#function playeron() {
 	foreach($sonoszonen as $zonen => $ip) {
 		$port = 1400;
 		$timeout = 3;
@@ -149,11 +147,6 @@ echo "<pre>";
 	
 #}
 
-#*** ANSCHAUEN OB NICHT BESSER INNERHALB DER FUNKTION ***
-// Delta zwischen Sonoszonen (siehe config) und Zonen die Online sind 
-// relevant für senden von UDP Daten an Loxone
-#$sonos_array_diff = @array_diff_key($sonoszonen, $sonoszone);
-#$sonos_array_diff = array_keys($sonos_array_diff);
 
 // Setzen des Error Handler
 if($debug == 0) {set_error_handler("errorHandler"); }
