@@ -144,7 +144,7 @@ function w2s($text)
 		switch ($Stunden) {
 			# Wettervorhersage für die Zeit zwischen 06:00 und 11:00h
 			case $Stunden >=6 && $Stunden <8:
-				$text="Guten morgen liebe Familie. Ich möchte euch eine kurze Wettervorhersage für den heutigen Taach geben. Vormittags wird das Wetter ". utf8_decode($wetter). ", die Höchsttemperatur beträgt voraussichtlich ". round($high0)." Grad, die aktuelle Temperatur beträgt ". round($temp_c)." Grad. ". $RegenAnsage.". ".$WindAnsage.". Ich wünsche euch einen wundervollen Tag.";
+				$text="Guten morgen. Ich möchte euch eine kurze Wettervorhersage für den heutigen Taach geben. Vormittags wird das Wetter ". utf8_decode($wetter). ", die Höchsttemperatur beträgt voraussichtlich ". round($high0)." Grad, die aktuelle Temperatur beträgt ". round($temp_c)." Grad. ". $RegenAnsage.". ".$WindAnsage.". Ich wünsche euch einen wundervollen Tag.";
 				break;
 			# Wettervorhersage für die Zeit zwischen 11:00 und 17:00h
 			case $Stunden >=8 && $Stunden <17:
@@ -156,7 +156,7 @@ function w2s($text)
 				break;
 			# Wettervorhersage für den morgigen Tag nach 22:00h
 			case $Stunden >=22:
-				$text="Hallo Ratz und Fatz. Das Arheilger Wetter wird morgen voraussichtlich ".utf8_decode($conditions1). ", die Höchsttemperatur beträgt ". round($high1) ." Grad, die Tiefsttemperatur beträgt " . round($low1). " Grad und die Regenwahrscheinlichkeit liegt bei ".$regenwahrscheinlichkeit1." Prozent. Gute Nacht ihr zwei und schlaft gut.";
+				$text="Guten Abend. Das Wetter morgen wird voraussichtlich ".utf8_decode($conditions1). ", die Höchsttemperatur beträgt ". round($high1) ." Grad, die Tiefsttemperatur beträgt " . round($low1). " Grad und die Regenwahrscheinlichkeit liegt bei ".$regenwahrscheinlichkeit1." Prozent. Gute Nacht und schlaft gut.";
 				break;
 			default:
 				$text="";

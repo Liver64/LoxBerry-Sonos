@@ -134,6 +134,7 @@ DATA;
  function isSpeaker($model) {
     $models = [
         "S1"    =>  "PLAY:1",
+		"S12"    =>  "PLAY:1",
         "S3"    =>  "PLAY:3",
         "S5"    =>  "PLAY:5",
         "S6"    =>  "PLAY:5",
