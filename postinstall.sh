@@ -29,17 +29,21 @@ ARGV5=$5 # Fifth argument is Base folder of LoxBerry
 /bin/sed -i "s%REPLACEBYDOMAIN%$ARGV5%" $ARGV5/webfrontend/html/plugins/$ARGV3/system/network.php
 /bin/sed -i "s%REPLACEBYSUBFOLDER%$ARGV3%" $ARGV5/templates/plugins/$ARGV3/de/help.html
 
+test=`cat /etc/samba/smb.conf | grep sonos_tts | wc -l`
 
-# to ensure that Sonos can read from folder structure
-#/bin/sed -i "s%guest ok = no%guest ok = yes%" $ARGV5/system/samba/smb.conf
-echo " " >> $ARGV5/system/samba/smb.conf
-echo "[sonos_tts]" >> $ARGV5/system/samba/smb.conf
-echo "   comment = Loxberry Files" >> $ARGV5/system/samba/smb.conf
-echo "   path = $ARGV5/data/plugins/$ARGV3/tts" >> $ARGV5/system/samba/smb.conf
-echo "   guest ok = yes" >> $ARGV5/system/samba/smb.conf
-echo "   read only = no" >> $ARGV5/system/samba/smb.conf
-echo "   directory mask = 0700" >> $ARGV5/system/samba/smb.conf
-echo "   create mask = 0700" >> $ARGV5/system/samba/smb.conf
+if [ $test == 0 ]
+then
+	# to ensure that Sonos can read from folder structure
+	#/bin/sed -i "s%guest ok = no%guest ok = yes%" $ARGV5/system/samba/smb.conf
+	echo " " >> $ARGV5/system/samba/smb.conf
+	echo "[sonos_tts]" >> $ARGV5/system/samba/smb.conf
+	echo "   comment = Loxberry Files" >> $ARGV5/system/samba/smb.conf
+	echo "   path = $ARGV5/data/plugins/$ARGV3/tts" >> $ARGV5/system/samba/smb.conf
+	echo "   guest ok = yes" >> $ARGV5/system/samba/smb.conf
+	echo "   read only = no" >> $ARGV5/system/samba/smb.conf
+	echo "   directory mask = 0700" >> $ARGV5/system/samba/smb.conf
+	echo "   create mask = 0700" >> $ARGV5/system/samba/smb.conf
+fi
 
 #echo "<INFO> Samba config file 'smb.conf' has been updated successfully."
 echo "<INFO>"
