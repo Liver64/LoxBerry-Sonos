@@ -2,7 +2,7 @@
 
 ##############################################################################################################################
 #
-# Version: 	0.8.0
+# Version: 	0.8.1
 # Datum: 	07.12.2016
 # veröffentlicht in forum: https://www.loxforum.com/
 # 
@@ -13,6 +13,7 @@
 #			"playmode" kann jetzt in Syntaxkombination genutzt werden
 #			"volume" ist jetzt auf max Vol. gemäß Config restrektiert
 #			prüft auf das Vorhandensein von Addon's
+# 0.8.1		samba drive added
 #
 ######## Script Code (ab hier bitte nichts ändern) ###################################
 
