@@ -25,7 +25,7 @@ use LWP::UserAgent;
 use Config::Simple;
 use File::HomeDir;
 use Cwd 'abs_path';
-use JSON::XS qw( decode_json );
+use JSON qw( decode_json );
 #use warnings;
 #use strict;
 #no strict "refs"; # we need it for template system
@@ -340,7 +340,7 @@ sub form {
 	} else {
 	  $selectedrampto2 = "checked=checked";
 	} 
-
+	
 	print "Content-Type: text/html\n\n";
 	
 	$template_title = $pphrase->param("TXT0000") . ": " . $pphrase->param("TXT0001");
@@ -400,7 +400,15 @@ sub save
 	$lang 			= quotemeta($lang);
 	$countplayers	= quotemeta($countplayers);
 	$countradios	= quotemeta($countradios);
-
+	
+	# turn on/off function "fetch_sonos"
+	my $ms = LWP::UserAgent->new;
+	if ($LoxDaten eq "true") {
+		$req = $ms->get("http://$MSUser:$MSPass\@$MiniServer:$MSWebPort/dev/sps/io/fetch_sonos/Ein");
+	} else {
+		$req = $ms->get("http://$MSUser:$MSPass\@$MiniServer:$MSWebPort/dev/sps/io/fetch_sonos/Aus");
+	}
+	
 	# OK - now installing...
 
 	# Write configuration file(s)
@@ -522,7 +530,7 @@ sub error
 	sub lbheader 
 	{
 		 # Create Help page
-	  #$helplink = "http://www.loxwiki.eu:80/x/uYCm";
+	  $helplink = "http://www.loxwiki.eu/display/LOXBERRY/Sonos4Loxone";
 	  open(F,"$installfolder/templates/plugins/$psubfolder/$lang/help.html") || die "Missing template plugins/$psubfolder/$lang/help.html";
 	    @help = <F>;
 	    foreach (@help)

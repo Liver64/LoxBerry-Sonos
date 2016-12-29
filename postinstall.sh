@@ -43,9 +43,9 @@ then
 	echo "   read only = no" >> $ARGV5/system/samba/smb.conf
 	echo "   directory mask = 0700" >> $ARGV5/system/samba/smb.conf
 	echo "   create mask = 0700" >> $ARGV5/system/samba/smb.conf
+	echo "<INFO> Samba file 'smb.conf' has been updated successfully."
 fi
 
-#echo "<INFO> Samba config file 'smb.conf' has been updated successfully."
 echo "<INFO>"
 echo "<INFO> Please restart Loxberry before starting Sonos configuration!"
 echo "<INFO>"
