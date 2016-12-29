@@ -2,4 +2,4 @@
 # One line per package, use exact packagename as you would do for apt-get.
 #
 libjson-perl
-curl libcurl3 php5-curl
+#curl libcurl3 php5-curl

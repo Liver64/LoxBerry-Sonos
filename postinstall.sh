@@ -31,7 +31,7 @@ ARGV5=$5 # Fifth argument is Base folder of LoxBerry
 
 test=`cat /etc/samba/smb.conf | grep sonos_tts | wc -l`
 
-if [ $test == 0 ]
+if [ $test = 0 ]
 then
 	# to ensure that Sonos can read from folder structure
 	#/bin/sed -i "s%guest ok = no%guest ok = yes%" $ARGV5/system/samba/smb.conf
