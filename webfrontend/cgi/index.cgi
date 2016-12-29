@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
 # Copyright 2016 Michael Schlenstedt, michael@loxberry.de
 #
