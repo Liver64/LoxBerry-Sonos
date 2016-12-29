@@ -2,7 +2,7 @@
 
 ##############################################################################################################################
 #
-# Version: 	0.8.1
+# Version: 	0.8.2
 # Datum: 	07.12.2016
 # veröffentlicht in forum: https://www.loxforum.com/
 # 
@@ -14,6 +14,7 @@
 #			"volume" ist jetzt auf max Vol. gemäß Config restrektiert
 #			prüft auf das Vorhandensein von Addon's
 # 0.8.1		samba drive added
+# 0.8.2		samba settings changed, Help details added
 #
 ######## Script Code (ab hier bitte nichts ändern) ###################################
 
