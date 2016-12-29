@@ -2,7 +2,7 @@
 
 ##############################################################################################################################
 #
-# Version: 	0.8.3
+# Version: 	0.8.4
 # Datum: 	07.12.2016
 # veröffentlicht in forum: https://www.loxforum.com/
 # 
@@ -16,6 +16,7 @@
 # 0.8.1		samba drive added
 # 0.8.2		samba settings changed, Help details added
 # 0.8.3		debugging option and fetch sonos added
+# 0.8.4		help.html updated
 #
 ######## Script Code (ab hier bitte nichts ändern) ###################################
 
