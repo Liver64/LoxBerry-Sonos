@@ -74,6 +74,7 @@ our $volume;
 our $ttssinglewait;
 our $rampto;
 our $rmpvol;
+our $debugging;
 our $selectedinstanz1;
 our $selectedinstanz2;
 our $selectedinstanz3;
@@ -196,6 +197,7 @@ exit;
 sub form {
 
 	$pcfg			  = new Config::Simple("$installfolder/config/plugins/$psubfolder/sonos.cfg");
+	$debugging		  = $pcfg->param("SYSTEM.debuggen");
 	$LoxDaten		  = $pcfg->param("LOXONE.LoxDaten");
 	$udpport	  	  = $pcfg->param("LOXONE.LoxPort");
 	$apikey 		  = $pcfg->param("TTS.API-key");
@@ -289,6 +291,15 @@ sub form {
 	  $selectedvoice1 = "selected=selected";
 	} 
 
+	# DEBUGGING
+	if ($debugging eq "0") {
+	  $selecteddebug1 = "selected=selected";
+	} elsif ($debugging eq "1") {
+	  $selecteddebug2 = "selected=selected";
+	} else {
+	  $selecteddebug1 = "selected=selected";
+	} 
+	
 	# LOXONE
 	if ($LoxDaten eq "false") {
 	  $selectedsendlox1 = "selected=selected";
@@ -379,6 +390,7 @@ sub save
 	$file_gong 		= param('file_gong');
 	$LoxDaten 		= param('sendlox');
 	$udpport 		= param('udpport');
+	$debugging 		= param('debugging');
 	$volume 		= param('volume');
 	$rampto		 	= param('rampto');
 	$rmpvol		 	= param('rmpvol');
@@ -393,6 +405,7 @@ sub save
 	$voice 			= quotemeta($voice);
 	$file_gong 		= quotemeta($file_gong);
 	$LoxDaten 		= quotemeta($LoxDaten);
+	$debugging		= quotemeta($debugging);
 	$volume 		= quotemeta($volume);
 	$rampto 		= quotemeta($rampto);
 	$rmpvol 		= quotemeta($rmpvol);
@@ -414,6 +427,7 @@ sub save
 	# Write configuration file(s)
 	$pcfg->param("LOXONE.LoxDaten", "$LoxDaten");
 	$pcfg->param("LOXONE.LoxPort", "$udpport");
+	$pcfg->param("SYSTEM.debuggen", "$debugging");
 	$pcfg->param("TTS.t2s_engine", "$t2s_engine");
 	$pcfg->param("TTS.rampto", "$rampto");
 	$pcfg->param("TTS.volrampto", "$rmpvol");

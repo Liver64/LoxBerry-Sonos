@@ -125,8 +125,8 @@ $sonoszonen = $config['sonoszonen'];
 	foreach($sonoszonen as $zonen => $ip) {
 		$port = 1400;
 		$timeout = 3;
-			#$handle = @fsockopen($ip[0], $port, $errno, $errstr, $timeout);
-			$handle = @stream_socket_client("$ip[0]:$port", $errno, $errstr, $timeout);
+		#$handle = @fsockopen($ip[0], $port, $errno, $errstr, $timeout);
+		$handle = @stream_socket_client("$ip[0]:$port", $errno, $errstr, $timeout);
 		if($handle) {
 			$sonoszone[$zonen] = $ip;
 			#fclose($handle);
@@ -228,7 +228,7 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 	}
 } else {
 	$master = $_GET['zone'];
-	$sonos = new PHPSonos($sonoszone[$master][0]);
+	$sonos = new PHPSonos($sonoszonen[$master][0]);
 	$tmp_vol = $sonos->GetVolume();
 	if ($tmp_vol >= $config['sonoszonen'][$master][5]) {
 		$volume = $config['sonoszonen'][$master][5];
