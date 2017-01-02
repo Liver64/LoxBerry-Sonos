@@ -104,13 +104,6 @@ if(substr($home,0,4) == "/opt")
 	} 
 }
 
-	// Schaltet den virtuellen Eingang in Loxone an/aus
-	if($config['LOXONE']['LoxDaten'] == 1) {
-		#turnonlox('Ein');
-	} else {
-		#turnonlox('Aus');
-	}
-
 #-- Ende NICHT Loxberry spezifisch ---------------------------------------------------------------------
 
 #-- Ab hier allgemeiner Teil ----------------------------------------------------------------------
@@ -127,16 +120,12 @@ $sonoszonen = $config['sonoszonen'];
 	foreach($sonoszonen as $zonen => $ip) {
 		$port = 1400;
 		$timeout = 3;
-		#$handle = @fsockopen($ip[0], $port, $errno, $errstr, $timeout);
 		$handle = @stream_socket_client("$ip[0]:$port", $errno, $errstr, $timeout);
 		if($handle) {
 			$sonoszone[$zonen] = $ip;
-			#fclose($handle);
-		} else {
-			echo '';
+			fclose($handle);
 		}
 	}
-	fclose($handle);
 	$sonoszone;
 
 // Umbennennen des ursprünglichen Array Keys

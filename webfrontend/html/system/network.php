@@ -57,7 +57,7 @@ DATA;
 	}
 	// save array as JSON file
 	$d = array2json($finalzones);
-	$fh = fopen('/opt/loxberry/config/plugins/sonos4lox/tmp_player.json', 'w');
+	$fh = fopen('/opt/loxberry/config/plugins/REPLACEBYSUBFOLDER/tmp_player.json', 'w');
 	fwrite($fh, json_encode($finalzones));
 	fclose($fh);
 	
@@ -94,6 +94,8 @@ DATA;
 /******************************************************************************/
  function getSonosDevices($devices){
 	global $sonosplayer;
+	
+	$zonen = array();
 	foreach ($devices as $zoneip) {
 		$url = "http://" . $zoneip . ":1400/xml/device_description.xml";
 		$xml = simpleXML_load_file($url);
@@ -105,18 +107,21 @@ DATA;
 		# Ersetzen der Umlaute
 		$search = array('Ä','ä','Ö','ö','Ü','ü','ß');
 		$replace = array('Ae','ae','Oe','oe','Ue','ue','ss');
+		# kleinschreibung
 		$room = strtolower(str_replace($search,$replace,$roomraw));
-		if(isSpeaker($model) == true) {
-			$zonen = 	[substr($ipadr, 0, strpos($ipadr,' ')),
+		if(isSpeaker($model) === true) {
+			$room = strtolower(str_replace($search,$replace,$roomraw));
+			$zonen = 	[$room, 
+						substr($ipadr, 0, strpos($ipadr,' ')),
 						substr($rinconid, 5, 50),
 						(string)$device,
 						'',
 						'', 						
 						''
 						];
+			$raum = array_shift($zonen);
 		}
-		$sonosplayer[$room] = $zonen;
-		#$sonosplayer['sonosscanzonen'] = $sonoszonen;
+		$sonosplayer[$raum] = $zonen;
 	}
 	echo "<pre>";
 	#print_r($sonosplayer);
@@ -160,7 +165,7 @@ function parse_cfg_file() {
 	#	trigger_error("Die Datei /opt/loxberry/config/plugins/sonos4lox/player.cfg ist nicht vorhanden. Bitte zuerst die Zonen auf der Config Seite anlegen lassen!", E_USER_NOTICE);
 	#} else {
 	// Laden der Zonen Konfiguration aus player.cfg
-	$tmp = parse_ini_file('/opt/loxberry/config/plugins/sonos4lox/player.cfg', true);
+	$tmp = parse_ini_file('/opt/loxberry/config/plugins/REPLACEBYSUBFOLDER/player.cfg', true);
 	$player = ($tmp['SONOSZONEN']);
 	foreach ($player as $zonen => $key) {
 		$sonosnet[$zonen] = explode(',', $key[0]);

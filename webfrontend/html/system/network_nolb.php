@@ -107,6 +107,8 @@ DATA;
 /******************************************************************************/
  function getSonosDevices($devices){
 	global $sonosplayer;
+	
+	$zonen = array();
 	foreach ($devices as $zoneip) {
 		$url = "http://" . $zoneip . ":1400/xml/device_description.xml";
 		$xml = simpleXML_load_file($url);
@@ -118,18 +120,21 @@ DATA;
 		# Ersetzen der Umlaute
 		$search = array('Ä','ä','Ö','ö','Ü','ü','ß');
 		$replace = array('Ae','ae','Oe','oe','Ue','ue','ss');
+		# kleinschreibung
 		$room = strtolower(str_replace($search,$replace,$roomraw));
-		if(isSpeaker($model) == true) {
-			$zonen = 	[substr($ipadr, 0, strpos($ipadr,' ')),
+		if(isSpeaker($model) === true) {
+			$room = strtolower(str_replace($search,$replace,$roomraw));
+			$zonen = 	[$room, 
+						substr($ipadr, 0, strpos($ipadr,' ')),
 						substr($rinconid, 5, 50),
 						(string)$device,
-						'35',
-						'30', 						
-						'100'
+						'',
+						'', 						
+						''
 						];
+			$raum = array_shift($zonen);
 		}
-		$sonosplayer[$room] = $zonen;
-		#$sonosplayer['sonosscanzonen'] = $sonoszonen;
+		$sonosplayer[$raum] = $zonen;
 	}
 	echo "<pre>";
 	#print_r($sonosplayer);
