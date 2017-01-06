@@ -78,6 +78,7 @@ our $debugging;
 our $selectedinstanz1;
 our $selectedinstanz2;
 our $selectedinstanz3;
+our $selectedinstanz4;
 our $rsender;
 our $rsenderurl;
 our @radioarray;
@@ -278,7 +279,9 @@ sub form {
 	  $selectedinstanz2 = "checked=checked";
 	} elsif ($t2s_engine eq "3001") {
 	  $selectedinstanz3 = "checked=checked";
-	} else {
+	} elsif ($t2s_engine eq "4001") {
+      $selectedinstanz4 = "checked=checked";
+    } else {
 	  $selectedinstanz1 = "checked=checked";
 	} 
 
@@ -382,7 +385,7 @@ sub save
 	$pname   = $pcfg->param("SYSTEM.Scriptname");
 
 	# Everything from Forms
-	$t2s_engine 		= param('t2s_engine');
+	$t2s_engine 	= param('t2s_engine');
 	$MP3store 		= param('mp3store');
 	$apikey 		= param('apikey');
 	$seckey 		= param('seckey');
