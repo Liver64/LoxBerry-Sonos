@@ -122,7 +122,7 @@ DATA;
 		$replace = array('Ae','ae','Oe','oe','Ue','ue','ss');
 		# kleinschreibung
 		$room = strtolower(str_replace($search,$replace,$roomraw));
-		if(isSpeaker($model) === true) {
+		if(isSpeaker($model) == true) {
 			$room = strtolower(str_replace($search,$replace,$roomraw));
 			$zonen = 	[$room, 
 						substr($ipadr, 0, strpos($ipadr,' ')),

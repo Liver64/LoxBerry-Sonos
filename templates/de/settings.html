@@ -1,4 +1,4 @@
-<style type="text/css">
+﻿<style type="text/css">
 
 .auto-style1 {
 	text-align: center;
@@ -9,6 +9,10 @@
 .auto-style3 {
 	text-align: left;
 	margin-bottom: 0px;
+}
+
+.auto-style4 {
+	font-size: smaller;
 }
 
 </style>
@@ -67,29 +71,38 @@
 				<input onclick="disable()" type="radio" name="t2s_engine" id="tts_voicerss" value="1001" <!--$selectedinstanz2-->>
 	 			<label for="tts_voicerss">VoiceRSS</label>
 				<input onclick="disable()" type="radio" name="t2s_engine" id="tts_mac_osx" value="3001" <!--$selectedinstanz3-->>
-	 			<label for="tts_mac_osx">Mac OSX</label>
+				<label for="tts_mac_osx">Mac OSX</label>
+				<input onclick="disable()" type="radio" name="t2s_engine" id="tts_polly" value="4001" <!--$selectedinstanz4-->>
+				<label for="tts_polly">Amazon Polly</label>
+				<input onclick="disable()" type="radio" name="t2s_engine" id="tts_pico" value="5001" <!--$selectedinstanz5-->>
+				<label for="tts_pico">Pico2Wave</label>
 			</fieldset>
 			</td>
 		<td valign="middle" style="height: 45px; width: 201px;">
-		<font size="-1"><a id="linkvoicerss" href="http://www.voicerss.org/login.aspx" target="_blank">Kostenlosen API Key von VoiceRSS erstellen</a></font>
-		<br><br>
-		<font size="-1"><a id="linkivona" href="https://www.ivona.com/us/" target="_blank">Kostenlose Keys von Ivona erstellen</a></font>
-		</td>
+		<font size="-1"><a id="linkvoicerss" href="http://www.voicerss.org/login.aspx" target="_blank">Kostenlosen API Key 
+		für VoiceRSS erstellen</a></font><br>
+		<br>
+		<font size="-1">
+		<a id="linkpolly" href="https://aws.amazon.com/de/developers/access-keys/" target="_blank">Keys 
+		für Polly erstellen</a></font>
+		<span class="auto-style4">(Preismodell beachten!)</span></td>
 		<td style="height: 13px; width: 24px;"></td>
 	</tr>
 	<tr>
 		<td style="height: 48px; width: 25%">
-			<label id="lapikey">API-Key (VoiceRSS und Ivona):</label>
+			<label id="lapikey">API-Key (VoiceRSS, Ivona,  Polly):</label>
 		</td>
 		<td style="width: 50%; height: 48px">
 			<input id="apikey" name="apikey" type="text" class="textfield" value="<!--$apikey-->">
 		</td>
-		<td style="height: 48px; width: 201px;"></td>
+		<td style="height: 48px; width: 201px;" class="auto-style4">
+		Zum Jahreswechsel 2017 wurde der Ivona Dienst 
+		durch Polly ersetzt, so dass keine neuen Keys mehr generiert werden können. </td>
 		<td style="height: 48px; width: 24px;"></td>
 	</tr>
 	<tr>
 		<td style="width: 25%">
-			<label id="lseckey">Secret-Key (nur Ivona):</label>
+			<label id="lseckey">Secret-Key (Ivona, Polly):</label>
 		</td>
 		<td style="width: 50%">
 			<input id="seckey" name="seckey" type="text" class="textfield" value="<!--$seckey-->">
@@ -98,7 +111,7 @@
 	</tr>
 	<tr>
 	<td style="height: 37px; width: 25%;">
-		<label id="lvoice">Auswahl der Stimme (nur Ivona):</label>
+		<label id="lvoice">Auswahl der Stimme (Ivona, Polly):</label>
 		</td>
 		<td width="50%;">
 			<select id="voice" name="voice" data-mini="true" width="50%" data-native-menu="false">
@@ -379,7 +392,7 @@ function disable() {
      $('#voice').addClass('ui-disabled');
 //     $('#voice').selectmenu('refresh', true);
      $('#linkvoicerss').removeClass('ui-disabled');
-     $('#linkivona').addClass('ui-disabled');
+     $('#linkpolly').addClass('ui-disabled');
   }
   if ( document.main_form.tts_mac_osx.checked == true ) {
      $('#lapikey').addClass('ui-disabled');
@@ -390,7 +403,18 @@ function disable() {
      $('#voice').addClass('ui-disabled');
 //     $('#voice').selectmenu('refresh', true);
      $('#linkvoicerss').addClass('ui-disabled');
-     $('#linkivona').addClass('ui-disabled');
+     $('#linkpolly').addClass('ui-disabled');
+  }
+  if ( document.main_form.tts_pico.checked == true ) {
+     $('#lapikey').addClass('ui-disabled');
+     $('#apikey').addClass('ui-disabled');
+     $('#lseckey').addClass('ui-disabled');
+     $('#seckey').addClass('ui-disabled');
+     $('#lvoice').addClass('ui-disabled');
+     $('#voice').addClass('ui-disabled');
+//     $('#voice').selectmenu('refresh', true);
+     $('#linkvoicerss').addClass('ui-disabled');
+     $('#linkpolly').addClass('ui-disabled');
   }
   if ( document.main_form.tts_ivona.checked == true ) {
      $('#lapikey').removeClass('ui-disabled');
@@ -401,8 +425,20 @@ function disable() {
      $('#voice').removeClass('ui-disabled');
 //     $('#voice').selectmenu('refresh', true);
      $('#linkvoicerss').addClass('ui-disabled');
-     $('#linkivona').removeClass('ui-disabled');
+     $('#linkpolly').removeClass('ui-disabled');
       }
+  if ( document.main_form.tts_polly.checked == true ) {
+     $('#lapikey').removeClass('ui-disabled');
+     $('#apikey').removeClass('ui-disabled');
+     $('#lseckey').removeClass('ui-disabled');
+     $('#seckey').removeClass('ui-disabled');
+     $('#lvoice').removeClass('ui-disabled');
+     $('#voice').removeClass('ui-disabled');
+//     $('#voice').selectmenu('refresh', true);
+     $('#linkvoicerss').addClass('ui-disabled');
+     $('#linkpolly').removeClass('ui-disabled');
+ }
+
 //  //if ( document.main_form.sendlox.value == "false" ) {
 //  //   $('#udpport').addClass('ui-disabled');
 //  //   $('#ludpport').addClass('ui-disabled');

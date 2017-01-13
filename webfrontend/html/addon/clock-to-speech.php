@@ -13,11 +13,11 @@ function c2s($ttext)
 	{
 		# Uhrzeitansage für die Zeit zwischen 06:00 und 11:00h
 		case $Stunden >=6 && $Stunden <11:
-			$Vorspann="Guten Morgen, ich bin es noch einmal.";
+			$Vorspann="Guten Morgen.";
 			break;
 		# Uhrzeitansage für die Zeit zwischen 11:00 und 17:00h
 		case $Stunden >=11 && $Stunden <17:
-			$Vorspann="Guten Tag.";
+			$Vorspann="Guten Tag. Ich bin es noch einmal";
 			break;
 		# Uhrzeitansage für die Zeit zwischen 17:00 und 22:00h
 		case $Stunden >=17 && $Stunden <22:
@@ -34,7 +34,7 @@ function c2s($ttext)
 	
 	switch ($Stunden) 
 	{
-		# ergänzender Satz für die Zeit zwischen 6:00 und 8:00h an Schultagen
+		# ergänzender Satz für die Zeit zwischen 6:00 und 8:00h (z.B. an Schultagen)
 		case $Stunden >=6 && $Stunden <8:
 			$Nachsatz=" ";
 		break;

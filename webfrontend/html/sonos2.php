@@ -2,21 +2,15 @@
 
 ##############################################################################################################################
 #
-# Version: 	0.8.4
-# Datum: 	07.12.2016
-# veröffentlicht in forum: https://www.loxforum.com/
+# Version: 	1.0.1
+# Datum: 	13.01.2017
+# veröffentlicht in: http://plugins.loxberry.de/
 # 
 # Change History:
 # ----------------------------------------------------------------------------------------------------------------------------
-# 0.8.0		Initiale Version des Plugin (Alpha Version)
-#			getSonosTitInt() muss noch überarbeitet werden wenn DNS Cloud geht - erledigt
-#			"playmode" kann jetzt in Syntaxkombination genutzt werden
-#			"volume" ist jetzt auf max Vol. gemäß Config restrektiert
-#			prüft auf das Vorhandensein von Addon's
-# 0.8.1		samba drive added
-# 0.8.2		samba settings changed, Help details added
-# 0.8.3		debugging option and fetch sonos added
-# 0.8.4		help.html updated
+# 1.0.0		Initiales Release des Plugin (Stable Version)
+# 1.0.1		T2S Engine Amazon Polly und Offline Engine Pico2Wave hinzugefügt
+#			Bugfix ivona_tts.php: Beim Abpsielen von MP3 Files auf CONNECT und CONNECT:AMP traten Fehler auf-
 #
 ######## Script Code (ab hier bitte nichts ändern) ###################################
 
@@ -1749,8 +1743,19 @@ function create_tts($text, $messageid) {
 		if ($config['TTS']['t2s_engine'] == 3001) {
 			include_once("voice_engines/MAC_OSX.php");
 		}
+		if ($config['TTS']['t2s_engine'] == 5001) {
+			include_once("voice_engines/Pico_tts.php");
+		}
 		if ($config['TTS']['t2s_engine'] == 2001) {
 			include_once("voice_engines/Ivona.php");
+			if(!isset($_GET['voice'])) {
+				$voice = $config['TTS']['voice'];	
+			} elseif (($_GET['voice'] == 'Marlene') or ($_GET['voice'] == 'Hans')) {
+				$voice = $_GET['voice'];
+			}
+		}
+		if ($config['TTS']['t2s_engine'] == 4001) {
+			include_once("voice_engines/Polly.php");
 			if(!isset($_GET['voice'])) {
 				$voice = $config['TTS']['voice'];	
 			} elseif (($_GET['voice'] == 'Marlene') or ($_GET['voice'] == 'Hans')) {
@@ -1993,16 +1998,12 @@ function play_tts($messageid, $groupvol) {
 									
 		#-- TTS Durchsage abspielen	--------------------------------------------------------------------------------
 		$mess = isset($_GET['sendmessage']);
+		$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 		if (!isset($_GET['messageid'])) {
-			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 			$sonos->AddToQueue('x-file-cifs:'.$myMessagepath . "" . $messageid . ".mp3");
 		} else {
-			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 			$sonos->AddToQueue('x-file-cifs:'.$mpath . "/" . $messageid . ".mp3");
 		}
-		#echo "x-file-cifs:".$myMessagepath . "" . $messageid . ".mp3<br>";
-		#echo "x-file-cifs:".$mpath . "/" . $messageid . ".mp3";
-		#echo 'groupvol: '.$groupvol;
 		$gmaster = getmaster($master);
 		if($groupvol == "1") { // Gruppen T2S Durchsage
 			$save_plist = $sonos->GetCurrentPlaylist();
@@ -2019,12 +2020,12 @@ function play_tts($messageid, $groupvol) {
 		$sonos->SetQueue("x-rincon-queue:" . getRINCON($sonoszone[$master][0]) . "#0"); //Playliste aktivieren
 		$sonos->SetGroupMute(false);
 		$sonos->SetPlayMode('NORMAL');
-		#try {
+		try {
 			$sonos->SetTrack($message_pos);
 			$sonos->Play();   // Abspielen
-		#} catch (Exception $e) {
-		#	trigger_error("Die T2S Message konnte nicht abgespielt werden!", E_USER_NOTICE);
-		#}
+		} catch (Exception $e) {
+			trigger_error("Die T2S Message konnte nicht abgespielt werden!", E_USER_NOTICE);
+		}
 		$abort = false;
 		# Prüfen ob Meldung zu Ende gespielt ist
 		sleep($config['TTS']['sleeptimegong']); // warten gemäﬂ config.php
@@ -2769,12 +2770,26 @@ function checkTTSkeys() {
 			trigger_error("Die Instanz MAC OSX ist derzeit nicht vorhanden. Bitte nachinstallieren!", E_USER_NOTICE);
 		}
 	}
+	if ($config['TTS']['t2s_engine'] == 5001) {
+		if (!file_exists("voice_engines/Pico_tts.php")) {
+			trigger_error("Die Instanz Pico2Wave ist derzeit nicht vorhanden. Bitte nachinstallieren!", E_USER_NOTICE);
+		}
+	}
 	if ($config['TTS']['t2s_engine'] == 2001) {
 		if (!file_exists("voice_engines/Ivona.php")) {
 			trigger_error("Die Instanz Ivona ist derzeit nicht vorhanden. Bitte nachinstallieren!", E_USER_NOTICE);
 		} else {
 			if((strlen($config['TTS']['API-key']) !== 20) or (strlen($config['TTS']['secret-key']) !== 40)) {
 				trigger_error("Der angegebene Ivona access oder secret Key ist ungültig. Bitte korrigieren!", E_USER_NOTICE);
+			}
+		}
+	}
+	if ($config['TTS']['t2s_engine'] == 4001) {
+		if (!file_exists("voice_engines/Polly.php")) {
+			trigger_error("Die Instanz Amazon Polly ist derzeit nicht vorhanden. Bitte nachinstallieren!", E_USER_NOTICE);
+		} else {
+			if((strlen($config['TTS']['API-key']) !== 20) or (strlen($config['TTS']['secret-key']) !== 40)) {
+				trigger_error("Der angegebene Amazon Polly access oder secret Key ist ungültig. Bitte korrigieren!", E_USER_NOTICE);
 			}
 		}
 	}

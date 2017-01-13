@@ -273,8 +273,8 @@ class IvonaClient
 	global $fileolang, $config, $mpath;
 		$fileName = $fileolang;
 		$mpath = $config['SYSTEM']['messageStorePath'];
-		$savePath = $mpath . ''.$fileName.'.'.$this->outputFormatCodec;
-        $dbPath = $mpath . ''.$fileName.'.'.$this->outputFormatCodec;
+		$savePath = $mpath . ''.$fileName.'.mp3';
+        $dbPath = $mpath . ''.$fileName.'.mp3';
 		file_put_contents($savePath, $resource);
 		$this->debug(__METHOD__ . ' File saved:'. $dbPath);
         return $dbPath;
