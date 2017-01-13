@@ -79,10 +79,7 @@ our $selectedinstanz1;
 our $selectedinstanz2;
 our $selectedinstanz3;
 our $selectedinstanz4;
-<<<<<<< HEAD
 our $selectedinstanz5;
-=======
->>>>>>> origin/master
 our $rsender;
 our $rsenderurl;
 our @radioarray;
@@ -285,11 +282,8 @@ sub form {
 	  $selectedinstanz3 = "checked=checked";
 	} elsif ($t2s_engine eq "4001") {
       $selectedinstanz4 = "checked=checked";
-<<<<<<< HEAD
 	} elsif ($t2s_engine eq "5001") {
       $selectedinstanz5 = "checked=checked";
-=======
->>>>>>> origin/master
     } else {
 	  $selectedinstanz1 = "checked=checked";
 	} 
