@@ -80,6 +80,7 @@ our $selectedinstanz2;
 our $selectedinstanz3;
 our $selectedinstanz4;
 our $selectedinstanz5;
+our $selectedinstanz6;
 our $rsender;
 our $rsenderurl;
 our @radioarray;
@@ -284,6 +285,8 @@ sub form {
       $selectedinstanz4 = "checked=checked";
 	} elsif ($t2s_engine eq "5001") {
       $selectedinstanz5 = "checked=checked";
+	} elsif ($t2s_engine eq "6001") {
+      $selectedinstanz6 = "checked=checked";
     } else {
 	  $selectedinstanz1 = "checked=checked";
 	} 

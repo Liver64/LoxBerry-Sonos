@@ -16,6 +16,9 @@ cp -p -v -r /tmp/$ARGV1\_upgrade/log/$ARGV3/* $ARGV5/log/plugins/$ARGV3/
 echo "<INFO> Copy back existing MP3 files"
 cp -p -v -r /tmp/$ARGV1\_upgrade/data/$ARGV3/* $ARGV5/data/plugins/$ARGV3/ 
 
+# Replace by subfolder
+bin/sed -i "s%MP3path=MP3%$MP3path=mp3%" $ARGV5/config/plugins/$ARGV3/sonos.cfg
+
 echo "<INFO> Remove temporary folders"
 rm -r /tmp/$ARGV1\_upgrade
 

@@ -3,14 +3,19 @@
 ##############################################################################################################################
 #
 # Version: 	1.0.1
-# Datum: 	13.01.2017
+# Datum: 	18.01.2017
 # veröffentlicht in: http://plugins.loxberry.de/
 # 
 # Change History:
 # ----------------------------------------------------------------------------------------------------------------------------
 # 1.0.0		Initiales Release des Plugin (Stable Version)
-# 1.0.1		T2S Engine Amazon Polly und Offline Engine Pico2Wave hinzugefügt
-#			Bugfix ivona_tts.php: Beim Abpsielen von MP3 Files auf CONNECT und CONNECT:AMP traten Fehler auf-
+# 1.0.1		[Feature] Online Provider Amazon Polly hinzugefügt
+# 			[Feature] Offline Engine Pico2Wave hinzugefügt
+#			[Bugfix] ivona_tts.php: Großschreibung der Endung .MP3 in .mp3 geändert. Problem trat außer bei PLAY:3 und PLAY:5 bei allen anderen Modellen auf
+#			[Bugfix] MP3path in der Config auf Kleinschreibung korrigiert (wird per Installationsscript korrigiert)
+#					 Beim Abspielen von gespeicherten MP3 Files gabe es Probleme dass das angegebene File nicht gefunden wurde.
+# 			[Feature] Online Provider responsiveVoice hinzugefügt
+#			[Feature] Für Non-LoxBerry User besteht nun die Möglichkeit in ihrer Config die pws: für Wunderground anzugeben
 #
 ######## Script Code (ab hier bitte nichts ändern) ###################################
 
@@ -1743,6 +1748,9 @@ function create_tts($text, $messageid) {
 		if ($config['TTS']['t2s_engine'] == 3001) {
 			include_once("voice_engines/MAC_OSX.php");
 		}
+		if ($config['TTS']['t2s_engine'] == 6001) {
+			include_once("voice_engines/ResponsiveVoice.php");
+		}
 		if ($config['TTS']['t2s_engine'] == 5001) {
 			include_once("voice_engines/Pico_tts.php");
 		}
@@ -2768,6 +2776,11 @@ function checkTTSkeys() {
 	if ($config['TTS']['t2s_engine'] == 3001) {
 		if (!file_exists("voice_engines/MAC_OSX.php")) {
 			trigger_error("Die Instanz MAC OSX ist derzeit nicht vorhanden. Bitte nachinstallieren!", E_USER_NOTICE);
+		}
+	}
+	if ($config['TTS']['t2s_engine'] == 6001) {
+		if (!file_exists("voice_engines/ResponsiveVoice.php")) {
+			trigger_error("Die Instanz ResponsiveVoice ist derzeit nicht vorhanden. Bitte nachinstallieren!", E_USER_NOTICE);
 		}
 	}
 	if ($config['TTS']['t2s_engine'] == 5001) {

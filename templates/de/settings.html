@@ -1,4 +1,4 @@
-﻿<style type="text/css">
+<style type="text/css">
 
 .auto-style1 {
 	text-align: center;
@@ -73,9 +73,11 @@
 				<input onclick="disable()" type="radio" name="t2s_engine" id="tts_mac_osx" value="3001" <!--$selectedinstanz3-->>
 				<label for="tts_mac_osx">Mac OSX</label>
 				<input onclick="disable()" type="radio" name="t2s_engine" id="tts_polly" value="4001" <!--$selectedinstanz4-->>
-				<label for="tts_polly">Amazon Polly</label>
+				<label for="tts_polly">AWS Polly</label>
 				<input onclick="disable()" type="radio" name="t2s_engine" id="tts_pico" value="5001" <!--$selectedinstanz5-->>
 				<label for="tts_pico">Pico2Wave</label>
+				<input onclick="disable()" type="radio" name="t2s_engine" id="tts_respvoice" value="6001" <!--$selectedinstanz6-->>
+				<label for="tts_respvoice">RespVoice</label>
 			</fieldset>
 			</td>
 		<td valign="middle" style="height: 45px; width: 201px;">
@@ -406,6 +408,17 @@ function disable() {
      $('#linkpolly').addClass('ui-disabled');
   }
   if ( document.main_form.tts_pico.checked == true ) {
+     $('#lapikey').addClass('ui-disabled');
+     $('#apikey').addClass('ui-disabled');
+     $('#lseckey').addClass('ui-disabled');
+     $('#seckey').addClass('ui-disabled');
+     $('#lvoice').addClass('ui-disabled');
+     $('#voice').addClass('ui-disabled');
+//     $('#voice').selectmenu('refresh', true);
+     $('#linkvoicerss').addClass('ui-disabled');
+     $('#linkpolly').addClass('ui-disabled');
+  }
+  if ( document.main_form.tts_respvoice.checked == true ) {
      $('#lapikey').addClass('ui-disabled');
      $('#apikey').addClass('ui-disabled');
      $('#lseckey').addClass('ui-disabled');

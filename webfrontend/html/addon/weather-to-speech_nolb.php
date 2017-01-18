@@ -9,20 +9,28 @@ function w2s($text)
 		$Stunden = intval(strftime("%H"));
 		$Minuten = intval(strftime("%M"));
 		$key = $config['WUNDERGROUND']['wgkey'];
+		$pws = $config['WUNDERGROUND']['pws'];
 		$city = $config['WUNDERGROUND']['wgcity']; 
 		$regenschwelle = intval($config['WUNDERGROUND']['wgregenschwelle']);
 		$windschwelle = intval($config['WUNDERGROUND']['wgwindschwelle']);
 		$sprache = "DL"; // DL = deutsch
 		$land = "Germany"; // Land
+		
+		#wenn PWS gesetzt, dann diese verwenden
+		if ($pws != '') {
+			$station = $land."/".$city;
+		} else {
+			$station = "pws:".$pws;
+		}
 	
 		# aktuelle Wetterdaten aufbereiten
-		$json_string = file_get_contents("http://api.wunderground.com/api/".$key."/geolookup/conditions/lang:".$sprache."/q/".$land."/".$city.".json");
+		$json_string = file_get_contents("http://api.wunderground.com/api/".$key."/geolookup/conditions/lang:".$sprache."/q/".$station.".json");	
 		$current_parsed_json = json_decode($json_string);
 		// Vorhersage: Tag 0 = heute, 1 = morgen, 2 = übermorgen *
-		$json_fc_string = file_get_contents("http://api.wunderground.com/api/".$key."/forecast/lang:".$sprache."/q/".$land."/".$city.".json");
+		$json_fc_string = file_get_contents("http://api.wunderground.com/api/".$key."/forecast/lang:".$sprache."/q/".$station.".json");	
 		$parsed_fc_json = json_decode($json_fc_string);
 		// Vorhersage: stündlich ist 0 = jetzt, 1 = + 1 Stunde, 2 = + 2 Stunden usw.
-		$json_hc_string = file_get_contents("http://api.wunderground.com/api/".$key."/hourly10day/lang:".$sprache."/q/".$land."/".$city.".json");
+		$json_hc_string = file_get_contents("http://api.wunderground.com/api/".$key."/hourly10day/lang:".$sprache."/q/".$station.".json");	
 		# Kopiervorlage für wunderground.com
 		# http://api.wunderground.com/api/9ad952ba578239ff/hourly10day/lang:DL/q/Germany/Frankfurt.json
 		$parsed_hc_json = json_decode($json_hc_string);
