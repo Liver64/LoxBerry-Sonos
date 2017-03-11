@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	1.0.1
-# Datum: 	18.01.2017
+# Version: 	1.0.4
+# Datum: 	2017-03-11 
 # veröffentlicht in: http://plugins.loxberry.de/
 # 
 # Change History:
@@ -16,6 +16,12 @@
 #					 Beim Abspielen von gespeicherten MP3 Files gabe es Probleme dass das angegebene File nicht gefunden wurde.
 # 			[Feature] Online Provider responsiveVoice hinzugefügt
 #			[Feature] Für Non-LoxBerry User besteht nun die Möglichkeit in ihrer Config die pws: für Wunderground anzugeben
+# 1.0.2		[Bugfix] Fehlernachricht an Loxone und Zurücksetzen des Fehlers korrigiert. Funktion war nicht aktiv.
+#			[Bugfix] UDP-Port für Inbound Daten korrigiert. Skript nimmt jetzt UDP-Port aus der Plugin Config statt der MS Config.
+# 1.0.3     [Bugfix] Support für XAMPP Windows hinzugefügt
+#			[Feature] Online Provider Google hinzugefügt
+#			[Bugfix] Korrektur bei Einzel T2S aus Gruppe heraus
+# 1.0.4     [Feature] playmode case insensitive: https://github.com/Liver64/LoxBerry-Sonos/issues/4
 #
 ######## Script Code (ab hier bitte nichts ändern) ###################################
 
@@ -26,8 +32,18 @@ include("system/PHPSonos.php");
 
 date_default_timezone_set(date("e"));
 
-$home = posix_getpwuid(posix_getuid());
-$home = $home['dir'];
+# Configuration variables
+$valid_playmodes 	= array("NORMAL","REPEAT_ALL","SHUFFLE_NOREPEAT","SHUFFLE","REPEAT_ONE","SHUFFLE_REPEAT_ONE");
+
+
+echo "<pre>"; 
+
+if (!function_exists('posix_getpwuid')) {
+	$home = @getenv('DOCUMENT_ROOT');
+} else {
+	$home = posix_getpwuid(posix_getuid());
+	$home = $home['dir'];
+}
 $myIP = $_SERVER["SERVER_ADDR"];
 
 $psubfolder = __FILE__;
@@ -131,7 +147,7 @@ $sonoszonen = $config['sonoszonen'];
 $config['SYSTEM']['myMessageStorepath'] = $config['SYSTEM']['messagespath'];
 unset($config['SYSTEM']['messagespath']);			
 	
-echo "<pre>"; 
+
 #$sonoszone = $sonoszonen;
 #print_r($sonoszone);
 #print_r($config);
@@ -226,13 +242,15 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 	$volume = $config['sonoszonen'][$master][4];
 }
 
-if(isset($_GET['playmode'])) { 
-	if(($_GET['playmode'] == "normal") || ($_GET['playmode'] == "repeat_all")
-		|| ($_GET['playmode'] == "shuffle_norepeat") || ($_GET['playmode'] == "shuffle") 
-		|| ($_GET['playmode'] == "repeat_one") || ($_GET['playmode'] == "shuffle_repeat_one")) {
+if(isset($_GET['playmode'])) {
+	$playmode =  preg_replace("/[^a-zA-Z0-9]+/", "", strtoupper($_GET['playmode']));
+	if (in_array($playmode, $valid_playmodes)) 
+	{
 		$sonos = new PHPSonos($sonoszone[$master][0]);
-		$sonos->SetPlayMode(strtoupper($_GET['playmode']));
-	}  else {
+		$sonos->SetPlayMode(strtoupper($playmode));
+	}  
+	else 
+	{
 		trigger_error('falscher PlayMode ausgewählt. Bitte korrigieren!', E_USER_NOTICE);
 	}
 }    
@@ -381,15 +399,13 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			break;  
 					
 		case 'playmode';
-			// NORMAL
-			// REPEAT_ALL
-			// REPEAT_ONE
-			// SHUFFLE_NOREPEAT
-			// SHUFFLE
-			// SHUFFLE_REPEAT_ONE
-			if( ($_GET['playmode'] == "normal") || ($_GET['playmode'] == "repeat_all") || ($_GET['playmode'] == "shuffle_norepeat") || ($_GET['playmode'] == "shuffle") || ($_GET['playmode'] == "repeat_one") || ($_GET['playmode'] == "shuffle_repeat_one")) {
-				$sonos->SetPlayMode(strtoupper($_GET['playmode']));
-			} else {
+			// See $valid_playmodes under Configuratio section for a list of valid modes
+			if (in_array($playmode, $valid_playmodes)) 
+ 			{
+				$sonos->SetPlayMode($playmode);
+			} 
+			else 
+			{
 				trigger_error('falscher PlayMode ausgewählt', E_USER_NOTICE);
 			}    
 			break;           
@@ -1170,7 +1186,12 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		
 		case 'clearlox': // Loxone Fehlerhinweis zurücksetzen
+			if(substr($home,0,4) == "/opt")  {
+				clear_error();
+			} else {
 				$handle = fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-Error/''", "r");
+			}
+			
 		break;
 		
 		case 'getzoneplayerlist':
@@ -1751,6 +1772,9 @@ function create_tts($text, $messageid) {
 		if ($config['TTS']['t2s_engine'] == 6001) {
 			include_once("voice_engines/ResponsiveVoice.php");
 		}
+		if ($config['TTS']['t2s_engine'] == 7001) {
+			include_once("voice_engines/Google.php");
+		}
 		if ($config['TTS']['t2s_engine'] == 5001) {
 			include_once("voice_engines/Pico_tts.php");
 		}
@@ -2161,6 +2185,7 @@ function save_current_group_ez() {
 		$save_gr_status['PositionInfo'] = $sonos->GetPositionInfo();
 		$sonos->BecomeCoordinatorOfStandaloneGroup();
 		$save_vol = $sonos->GetVolume($master);
+		#echo $master;
 		$check = getgroupstatus($master);
 		if($check = 'master') {
 			$save_gr_status['PositionInfo'];
@@ -2690,15 +2715,16 @@ function gettopology($soplayer = "") {
 /*
 /* @return: Rincon-ID des Masters, 'master' oder 'leer'
 /********************************************************************************************/
-function getgroupstatus($player = 0){
+function getgroupstatus($master = 0){
 	global $sonoszone, $zone, $master, $player;
 		
-	if(empty($player)) {
-		$player = $_GET['zone'];
+	if(empty($master)) {
+		$master = $_GET['zone'];
 	}
-	$sonos = new PHPSonos($sonoszone[$player][0]); 
+	#print_r($sonoszone[$master][0]);
+	$sonos = new PHPSonos($sonoszone[$master][0]); 
 	$posinfo = $sonos->GetPositionInfo();
-	$masterrincon = getRINCON($sonoszone[$player][0]);
+	$masterrincon = getRINCON($sonoszone[$master][0]);
 	foreach ($sonoszone as $member => $sz) {
 		$sonos = new PHPSonos($sonoszone[$member][0]); 
 		$posinfo = $sonos->GetPositionInfo();
@@ -2910,7 +2936,8 @@ function getMS1data() {
 			$sonos_array_diff = @array_diff_key($sonoszonen, $sonoszone);
 			$sonos_array_diff = @array_keys($sonos_array_diff);
 			$server_ip = $mstopology['MINISERVER']['Host'];
-			$server_port = $mstopology['MINISERVER']['Port'];
+			#$server_port = $mstopology['MINISERVER']['Port'];
+			$server_port = $config['LOXONE']['LoxPort'];
 			$cloud_url = $mstopology['MINISERVER']['Cloud URL'];
 			$use_cloud = $mstopology['MINISERVER']['use DNS'];
 		} else {
@@ -3018,39 +3045,36 @@ function getMS1data() {
  }
  
 /*************************************************************************************************************
-/* Funktion : turnonlox --> schaltet den virtuellen Eingangsverbinder "push_sonos_loxone" ein/aus
+/* Funktion : clear_error --> löscht die Fehlermeldung in der Visu
 /* @param: 	Ein/Aus
 /*
 /* @return: 0 oder 1
 /*************************************************************************************************************/
- function turnonlox($status) {
+ function clear_error() {
 	global $config, $countms, $sonoszone, $sonos, $lox_ip, $sonoszonen; 
 		
 		$mstopology = getMS1data();
-		#print_r($mstopology);
-		$i = 1;
-		for ($i; $i <= $countms; $i++) {
-			$lox_ip		 = $mstopology['MINISERVER'.$i.'']['Host'];
-			$lox_port 	 = $mstopology['MINISERVER'.$i.'']['Port'];
-			$loxuser 	 = $mstopology['MINISERVER'.$i.'']['User'];
-			$loxpassword = $mstopology['MINISERVER'.$i.'']['PW'];
-			$loxcloudurl = $mstopology['MINISERVER'.$i.'']['Cloud URL'];
-			$loxclouddns = $mstopology['MINISERVER'.$i.'']['use DNS'];
-			$loxcloud = $loxcloudurl.':'.$lox_port;
-			if($loxclouddns == 1) {
-				$lox_ip = getdnsip();
-				$loxip = $lox_ip.':'.$lox_port;
-			} else {
-				$loxip = $lox_ip.':'.$lox_port;
-			}
-			try {
-				$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/fetch_sonos/".$status); // Titel- und Interpretinfo für Loxone
-			} catch (Exception $e) {
-				trigger_error("Die Verbindung zu Loxone konnte nicht initiiert werden!", E_USER_NOTICE);	
-			}							
-			echo '<PRE>';
+		
+		$lox_ip		 = $mstopology['MINISERVER']['Host'];
+		$lox_port 	 = $mstopology['MINISERVER']['Port'];
+		$loxuser 	 = $mstopology['MINISERVER']['User'];
+		$loxpassword = $mstopology['MINISERVER']['PW'];
+		$loxcloudurl = $mstopology['MINISERVER']['Cloud URL'];
+		$loxclouddns = $mstopology['MINISERVER']['use DNS'];
+		$loxcloud = $loxcloudurl.':'.$lox_port;
+		if($loxclouddns == 1) {
+			$lox_ip = getdnsip();
+			$loxip = $lox_ip.':'.$lox_port;
+		} else {
+			$loxip = $lox_ip.':'.$lox_port;
 		}
-}
+		try {
+			$handle = fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-Error/''", "r");
+		} catch (Exception $e) {
+			trigger_error("Die Fehlermeldung konnte nicht gelöscht werden!", E_USER_NOTICE);	
+		}							
+		echo '<PRE>';
+ }
  
 /*************************************************************************************************************
 /* Funktion : getdnsip --> ermittelt die lokale IP Addresse des MS basierend auf DNS loxcloud Service
@@ -3143,7 +3167,3 @@ function get_file_content($url) {
 	$query = curl_exec($curl_handle);
 	curl_close($curl_handle);
 }
-
-
-
-?>
