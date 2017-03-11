@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	1.0.4
-# Datum: 	08.03.2017
+# Version: 	1.0.5
+# Datum: 	11.03.2017
 # veröffentlicht in: http://plugins.loxberry.de/
 # 
 # Change History:
@@ -29,6 +29,7 @@
 #					  ist der Raumname des Paares
 #			[Feature] Neue Funktion seperatestereopair die ein bestehendes Stereopaar wieder trennt
 #			[Feature] delegategroupcoordinationto (RinconID von Member)
+# 1.0.5		[Feature] playmode ist in case insensitive nutzbar
 #
 #
 ######## Script Code (ab hier bitte nichts ändern) ###################################
@@ -43,7 +44,9 @@ include("helper.php");
 include("system/PHPSonosController.php");
 
 date_default_timezone_set(date("e"));
+$valid_playmodes = array("NORMAL","REPEAT_ALL","SHUFFLE_NOREPEAT","SHUFFLE","REPEAT_ONE","SHUFFLE_REPEAT_ONE");
 echo "<pre>"; 
+
 
 if (!function_exists('posix_getpwuid')) {
 	$home = @getenv('DOCUMENT_ROOT');
@@ -250,11 +253,10 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 }
 
 if(isset($_GET['playmode'])) { 
-	if(($_GET['playmode'] == "normal") || ($_GET['playmode'] == "repeat_all")
-		|| ($_GET['playmode'] == "shuffle_norepeat") || ($_GET['playmode'] == "shuffle") 
-		|| ($_GET['playmode'] == "repeat_one") || ($_GET['playmode'] == "shuffle_repeat_one")) {
+	$playmode =  preg_replace("/[^a-zA-Z0-9]+/", "", strtoupper($_GET['playmode']));
+	if (in_array($playmode, $valid_playmodes)) {
 		$sonos = new PHPSonos($sonoszone[$master][0]);
-		$sonos->SetPlayMode(strtoupper($_GET['playmode']));
+		$sonos->SetPlayMode(strtoupper($playmode));
 	}  else {
 		trigger_error('falscher PlayMode ausgewählt. Bitte korrigieren!', E_USER_NOTICE);
 	}
@@ -404,14 +406,9 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			break;  
 					
 		case 'playmode';
-			// NORMAL
-			// REPEAT_ALL
-			// REPEAT_ONE
-			// SHUFFLE_NOREPEAT
-			// SHUFFLE
-			// SHUFFLE_REPEAT_ONE
-			if( ($_GET['playmode'] == "normal") || ($_GET['playmode'] == "repeat_all") || ($_GET['playmode'] == "shuffle_norepeat") || ($_GET['playmode'] == "shuffle") || ($_GET['playmode'] == "repeat_one") || ($_GET['playmode'] == "shuffle_repeat_one")) {
-				$sonos->SetPlayMode(strtoupper($_GET['playmode']));
+			// see valid_playmodes under Configuratio section for a list of valid modes
+			if (in_array($playmode, $valid_playmodes)) {
+				$sonos->SetPlayMode($playmode);
 			} else {
 				trigger_error('falscher PlayMode ausgewählt', E_USER_NOTICE);
 			}    
