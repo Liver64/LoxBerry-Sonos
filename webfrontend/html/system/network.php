@@ -57,7 +57,7 @@ DATA;
 	}
 	// save array as JSON file
 	$d = array2json($finalzones);
-	$fh = fopen('/opt/loxberry/config/plugins/sonos4lox/tmp_player.json', 'w');
+	$fh = fopen('/opt/loxberry/config/plugins/sonos4lox_dev/tmp_player.json', 'w');
 	fwrite($fh, json_encode($finalzones));
 	fclose($fh);
 	
@@ -165,7 +165,7 @@ function parse_cfg_file() {
 	#	trigger_error("Die Datei /opt/loxberry/config/plugins/sonos4lox/player.cfg ist nicht vorhanden. Bitte zuerst die Zonen auf der Config Seite anlegen lassen!", E_USER_NOTICE);
 	#} else {
 	// Laden der Zonen Konfiguration aus player.cfg
-	$tmp = parse_ini_file('/opt/loxberry/config/plugins/sonos4lox/player.cfg', true);
+	$tmp = parse_ini_file('/opt/loxberry/config/plugins/sonos4lox_dev/player.cfg', true);
 	$player = ($tmp['SONOSZONEN']);
 	foreach ($player as $zonen => $key) {
 		$sonosnet[$zonen] = explode(',', $key[0]);

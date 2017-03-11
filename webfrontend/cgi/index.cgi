@@ -81,6 +81,7 @@ our $selectedinstanz3;
 our $selectedinstanz4;
 our $selectedinstanz5;
 our $selectedinstanz6;
+our $selectedinstanz7;
 our $rsender;
 our $rsenderurl;
 our @radioarray;
@@ -91,7 +92,7 @@ our $i;
 ##########################################################################
 
 # Version of this script
-$version = "1.0.0";
+$version = "1.0.4";
 
 # Figure out in which subfolder we are installed
 $psubfolder = abs_path($0);
@@ -287,6 +288,8 @@ sub form {
       $selectedinstanz5 = "checked=checked";
 	} elsif ($t2s_engine eq "6001") {
       $selectedinstanz6 = "checked=checked";
+	} elsif ($t2s_engine eq "7001") {
+      $selectedinstanz7 = "checked=checked";
     } else {
 	  $selectedinstanz1 = "checked=checked";
 	} 
@@ -412,7 +415,7 @@ sub save
 	#$apikey   		= quotemeta($apikey);
 	#$seckey 		= quotemeta($seckey);
 	$voice 			= quotemeta($voice);
-	$file_gong 		= quotemeta($file_gong);
+	#$file_gong 	= quotemeta($file_gong);
 	$LoxDaten 		= quotemeta($LoxDaten);
 	$debugging		= quotemeta($debugging);
 	$volume 		= quotemeta($volume);
@@ -420,8 +423,8 @@ sub save
 	$rmpvol 		= quotemeta($rmpvol);
 	$udpport 		= quotemeta($udpport);
 	$lang 			= quotemeta($lang);
-	$countplayers	= quotemeta($countplayers);
-	$countradios	= quotemeta($countradios);
+	#$countplayers	= quotemeta($countplayers);
+	#$countradios	= quotemeta($countradios);
 	
 	# turn on/off function "fetch_sonos"
 	my $ms = LWP::UserAgent->new;

@@ -3,10 +3,10 @@
  * PHPSonos.php
  *
  * PHPSonos class originally released as: Sonos PHP Script - Copyright: Michael Maroszek - Version: 1.0, 09.07.2009
- * adopted and updated by Oliver Lewald 2016
+ * adopted and updated by Oliver Lewald 2017
  *
  * urn:schemas-upnp-org:device:ZonePlayer:1 
- * http://player.ip:1400/xml/zone_player.xml
+ * 
  **/
 
 # Available commands to interact with Sonos System. Those commands require another php script to be called.
@@ -70,8 +70,10 @@
 # - GetPlaylist($value)
 # - Browse($value,$meta="BrowseDirectChildren",$filter="",$sindex="0",$rcount="1000",$sc="")
 # - RadiotimeGetNowPlaying()
-# - 
-# - 
+# - DelegateGroupCoordinationTo($RinconID, $Rejoin)
+# - DelSonosPlaylist($id)
+# - CreateStereoPair($ChannelMapSet)
+# - SeperateStereoPair($ChannelMapSet)
 
 
 
@@ -779,9 +781,10 @@ $content=$header . '
 Content-Length: '. strlen($xml) .'
 
 '. $xml;
-
+	
     $returnContent = $this->sendPacket($content);
-   }
+	
+}
 
  /**
  * Get info on actual crossfademode
@@ -1175,18 +1178,51 @@ SOAPACTION: "urn:schemas-upnp-org:service:ContentDirectory:1#DestroyObject"
 	# 0 = RejoinGroup --> false 
 	# 1 = RejoinGroup --> true
 
-$content='POST /MediaRenderer/AVTransport/Control HTTP/1.1
-SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#DelegateGroupCoordinationTo"
+		$content='POST /MediaRenderer/AVTransport/Control HTTP/1.1
+		SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#DelegateGroupCoordinationTo"
+		CONTENT-TYPE: text/xml; charset="utf-8"
+		HOST: '.$this->address.':1400
+		Content-Length: 381
+
+		<s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body>
+		<u:DelegateGroupCoordinationTo xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+		<NewCoordinator>'.$RinconID.'</NewCoordinator><RejoinGroup>'.$Rejoin.'</RejoinGroup></u:DelegateGroupCoordinationTo></s:Body></s:Envelope>';
+
+		$this->sendPacket($content);
+}
+
+
+	public function CreateStereoPair($ChannelMapSet) 
+	{
+$content='POST /DeviceProperties/Control HTTP/1.1
+SOAPACTION: "urn:schemas-upnp-org:service:DeviceProperties:1#CreateStereoPair"
 CONTENT-TYPE: text/xml; charset="utf-8"
 HOST: '.$this->address.':1400
 Content-Length: 381
 
-<s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body>
-<u:DelegateGroupCoordinationTo xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
-<NewCoordinator>'.$RinconID.'</NewCoordinator><RejoinGroup>'.$Rejoin.'</RejoinGroup></u:DelegateGroupCoordinationTo></s:Body></s:Envelope>';
+<?xml version="1.0" encoding="utf-8"?><s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body>
+<u:CreateStereoPair xmlns:u="urn:schemas-upnp-org:service:DeviceProperties:1"><ChannelMapSet>'.$ChannelMapSet.'</ChannelMapSet></u:CreateStereoPair></s:Body></s:Envelope>';
 
-		$this->sendPacket($content);
-}
+$this->sendPacket($content);
+	}
+	
+
+
+	public function SeperateStereoPair($ChannelMapSet) 
+	{
+$content='POST /DeviceProperties/Control HTTP/1.1
+SOAPACTION: "urn:schemas-upnp-org:service:DeviceProperties:1#SeparateStereoPair"
+CONTENT-TYPE: text/xml; charset="utf-8"
+HOST: '.$this->address.':1400
+Content-Length: 387
+
+<?xml version="1.0" encoding="utf-8"?><s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body>
+<u:SeparateStereoPair xmlns:u="urn:schemas-upnp-org:service:DeviceProperties:1"><ChannelMapSet>'.$ChannelMapSet.'</ChannelMapSet></u:SeparateStereoPair></s:Body></s:Envelope>';
+		
+$this->sendPacket($content);
+	}
+
+
 
 
 public function GetZoneGroupState() 
