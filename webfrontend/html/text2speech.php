@@ -140,9 +140,9 @@ function create_tts_new($text, $messageid) {
 function play_tts_new($messageid) {
 	global $volume, $config, $sonos, $messageid, $sonoszone, $master, $myMessagepath, $coord, $actual;
 	
-		#$coord = getRoomCoordinator($master);
-		#$sonos = new PHPSonos($coord[0]);
-		$sonos = new PHPSonos($sonoszone[$master][0]);
+		$coord = getRoomCoordinator($master);
+		$sonos = new PHPSonos($coord[0]);
+		#$sonos = new PHPSonos($sonoszone[$master][0]);
 		if (isset($_GET['messageid'])) {
 			// Set path if messageid
 			$mpath = $myMessagepath."".$config['MP3']['MP3path'];
@@ -164,8 +164,8 @@ function play_tts_new($messageid) {
 		}
 		$message_pos = 1;
 		$sonos->AddToQueue('x-file-cifs:'.$mpath."/".$messageid.".mp3");
-		#$sonos->SetQueue("x-rincon-queue:".$coord[1]."#0");
-		$sonos->SetQueue("x-rincon-queue:".$sonoszone[$master][1]."#0");
+		$sonos->SetQueue("x-rincon-queue:".$coord[1]."#0");
+		#$sonos->SetQueue("x-rincon-queue:".$sonoszone[$master][1]."#0");
 		$sonos->SetTrack($message_pos);
 		$sonos->SetGroupMute(false);
 		$sonos->SetPlayMode('NORMAL');
@@ -202,8 +202,8 @@ function LoadPlayList($playlist) {
 		if($playlist == $sonoslists[$pleinzeln]["title"]) {
 			$plfile = urldecode($sonoslists[$pleinzeln]["file"]);
 			$sonos->AddToQueue($plfile);
-			#$sonos->SetQueue("x-rincon-queue:".$coord[1]."#0"); 
-			$sonos->SetQueue("x-rincon-queue:".$sonoszone[$master][1]."#0"); 
+			$sonos->SetQueue("x-rincon-queue:".$coord[1]."#0"); 
+			#$sonos->SetQueue("x-rincon-queue:".$sonoszone[$master][1]."#0"); 
 			$gefunden = 1;
 		}
 		$pleinzeln++;

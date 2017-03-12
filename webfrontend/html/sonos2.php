@@ -30,6 +30,8 @@
 #			[Feature] Neue Funktion seperatestereopair die ein bestehendes Stereopaar wieder trennt
 #			[Feature] delegategroupcoordinationto (RinconID von Member)
 # 1.0.5		[Feature] playmode ist in case insensitive nutzbar
+#			[Bugfix] Funktion Softstop überarbeitet. Es wird solange gespielt bis die Lautstärke 0 ist, dann Pause betätigt
+#					 und die Lautstärke wieder auf den Wert vor Softstop angehoben.
 #
 #
 ######## Script Code (ab hier bitte nichts ändern) ###################################
@@ -44,7 +46,7 @@ include("helper.php");
 include("system/PHPSonosController.php");
 
 date_default_timezone_set(date("e"));
-$valid_playmodes = array("NORMAL","REPEAT_ALL","SHUFFLE_NOREPEAT","SHUFFLE","REPEAT_ONE","SHUFFLE_REPEAT_ONE");
+$valid_playmodes = array("NORMAL","REPEAT_ALL","REPEAT_ONE","SHUFFLE_NOREPEAT","SHUFFLE","SHUFFLE_REPEAT_ONE");
 echo "<pre>"; 
 
 
@@ -253,7 +255,8 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 }
 
 if(isset($_GET['playmode'])) { 
-	$playmode =  preg_replace("/[^a-zA-Z0-9]+/", "", strtoupper($_GET['playmode']));
+	#$playmode =  preg_replace("/[^a-zA-Z0-9]+/", "", strtoupper($_GET['playmode']));
+	$playmode =  strtoupper($_GET['playmode']);
 	if (in_array($playmode, $valid_playmodes)) {
 		$sonos = new PHPSonos($sonoszone[$master][0]);
 		$sonos->SetPlayMode(strtoupper($playmode));
@@ -392,8 +395,10 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'softstop':
 				$save_vol_stop = $sonos->GetVolume();
 				$sonos->RampToVolume("SLEEP_TIMER_RAMP_TYPE", "0");
-				sleep('17');
-				$sonos->Stop();
+				while ($sonos->GetVolume() > 0) {
+					sleep('1');
+				}
+				$sonos->Pause();
 				$sonos->SetVolume($save_vol_stop);
 			break;      
 		  
@@ -410,7 +415,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			if (in_array($playmode, $valid_playmodes)) {
 				$sonos->SetPlayMode($playmode);
 			} else {
-				trigger_error('falscher PlayMode ausgewählt', E_USER_NOTICE);
+				trigger_error('falscher PlayMode ausgewählt. Bitte korrigieren!', E_USER_NOTICE);
 			}    
 			break;           
 	  

@@ -147,22 +147,18 @@ function CreateStereoPair() {
 	foreach ($topology->ZonePlayers->ZonePlayer as $player) {
 		$player_data = $player->attributes();
 		$ip = parse_url((string)$player_data->location)['host'];
-		if ($ip == $config['sonoszonen'][$room][0]) {
-			$myself = $player_data;
-		}
-		if ((string)$player_data->coordinator == 'true') {
-			$coordinators[(string)$player_data->group] = $ip;
-			$uuid = (string)$player_data->uuid;
-			$coorddata = array($coordinators[(string)$player_data->group], $uuid); 
+		if ($ip == $sonoszone[$room][0]) {
+			if ((string)$player_data->coordinator == 'true') {
+				$coordinators[(string)$player_data->group] = $ip;
+				$uuid = (string)$player_data->uuid;
+				$coord = array($coordinators[(string)$player_data->group], $uuid); 
+			} 
 		}
 	}
-	
-	#$coordinator = $coordinators[(string)$myself->group];
 	if($debug == 1) { 
-		#print_r ($coordinator);
-		#print_r ($coorddata);
+		print_r ($coord);
 	}
-	return ($coorddata);
+	return ($coord);
 }
 	
 
