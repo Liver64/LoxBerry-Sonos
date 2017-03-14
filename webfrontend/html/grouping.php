@@ -127,39 +127,61 @@ function CreateStereoPair() {
 }
 
  
+
 /**
 * Function: getCoordinatorByRoom --> identify the Coordinator for provided room
 *
 * @param:  $room
-* @return: array of (0) IP address and (1) Rincon-ID
+* @return: array of (0) IP address and (1) Rincon-ID of Master
 */
-
- function getRoomCoordinator($room) {
-	global $sonoszone, $config, $debug;
+function getRoomCoordinator($room){
+	global $sonoszone, $zone, $debug, $master, $sonosclass, $config;
 		
-	if(!$xml=deviceCmdRaw('/status/topology')){
-		return false;
-	}	
-	$myself = null;
-	$coordinators = [];
-	$topology = simplexml_load_string($xml);
-	// Loop players, build map of coordinators and find myself
-	foreach ($topology->ZonePlayers->ZonePlayer as $player) {
-		$player_data = $player->attributes();
-		$ip = parse_url((string)$player_data->location)['host'];
-		if ($ip == $sonoszone[$room][0]) {
-			if ((string)$player_data->coordinator == 'true') {
-				$coordinators[(string)$player_data->group] = $ip;
-				$uuid = (string)$player_data->uuid;
-				$coord = array($coordinators[(string)$player_data->group], $uuid); 
-			} 
+		#$room = $master;
+		if(!$xml=deviceCmdRaw('/status/topology')){
+			return false;
+		}	
+		$topology = simplexml_load_string($xml);
+		$myself = null;
+		$coordinators = [];
+		// Loop players, build map of coordinators and find myself
+		foreach ($topology->ZonePlayers->ZonePlayer as $player)	{
+			$player_data = $player->attributes();
+			$room = (string)$player;
+			// replace german umlaute
+			$search = array('Ä','ä','Ö','ö','Ü','ü','ß');
+			$replace = array('Ae','ae','Oe','oe','Ue','ue','ss');
+			$room = strtolower(str_replace($search,$replace,$room));
+			$ip = parse_url((string)$player_data->location)['host'];
+			$player = array(
+				'Host' =>"$ip",
+				'Master' =>((string)$player_data->coordinator == 'true'),
+				'Rincon' =>'RINCON_'.explode('RINCON_',(string)$player_data->uuid)[1]
+			);
+			$coordinators[$room][] = $player;
 		}
+ function cnp($a, $b) {
+	if ($a['Master'] == $b['Master']) {
+		if($a['Sonos Name'] == $b['Sonos Name']) 
+			return 0;
+		else 
+			return ($a['Sonos Name'] > $b['Sonos Name']) ? 1 : -1;;
+		}
+		return ($a['Master'] === TRUE) ? -1 : 1;
 	}
+	foreach ($coordinators as $key=>$coordinator){
+		usort($coordinators[$key], "cnp");
+	}
+	// search for room in topology
+	$zonename = recursive_array_search($config['sonoszonen'][$master][1],$coordinators);
+	$ipadr = $coordinators[$zonename][0]['Host'];
+	$rinconid = $coordinators[$zonename][0]['Rincon'];
+	$coord = array($ipadr, $rinconid); 
 	if($debug == 1) { 
 		print_r ($coord);
 	}
-	return ($coord);
-}
+	return $coord;
+ }
 	
 
 

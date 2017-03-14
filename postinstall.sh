@@ -28,7 +28,7 @@ ARGV5=$5 # Fifth argument is Base folder of LoxBerry
 /bin/sed -i "s%REPLACEBYSUBFOLDER%$ARGV3%" $ARGV5/webfrontend/html/plugins/$ARGV3/system/network.php
 /bin/sed -i "s%REPLACEBYDOMAIN%$ARGV5%" $ARGV5/webfrontend/html/plugins/$ARGV3/system/network.php
 /bin/sed -i "s%REPLACEBYSUBFOLDER%$ARGV3%" $ARGV5/templates/plugins/$ARGV3/de/help.html
-/bin/sed -i "s%MP3path=MP3%$MP3path=mp3%" $ARGV5/config/plugins/$ARGV3/sonos.cfg
+#/bin/sed -i "s%MP3path=MP3%$MP3path=mp3%" $ARGV5/config/plugins/$ARGV3/sonos.cfg
 
 test=`cat /etc/samba/smb.conf | grep sonos_tts | wc -l`
 

@@ -137,7 +137,7 @@ function create_tts_new($text, $messageid) {
 * @return: empty
 **/		
 
-function play_tts_new($messageid) {
+function play_tts($messageid) {
 	global $volume, $config, $sonos, $messageid, $sonoszone, $master, $myMessagepath, $coord, $actual;
 	
 		$coord = getRoomCoordinator($master);
@@ -182,8 +182,7 @@ function play_tts_new($messageid) {
 		$sonos->ClearQueue();
 		LoadPlaylist("temp_t2s");
 		DelPlaylist();
-		#sleep($config['TTS']['sleeptimegong']);  
-		
+				
 }
 
 /**

@@ -26,9 +26,9 @@
 #			[New] Datei text2speech.php hinzugefügt
 #			[Bugfix] Support für Stereopaar hinzugefügt
 #			[Feature] Neue Funktion createstereopair die aus zwei gleichen Modellen ein Stereopaar erstellt. Die zone=<DEINE ZONE> 
-#					  ist der Raumname des Paares
+#					  ist dann der Raumname des neuen Paares
 #			[Feature] Neue Funktion seperatestereopair die ein bestehendes Stereopaar wieder trennt
-#			[Feature] delegategroupcoordinationto (RinconID von Member)
+#			[Feature] delegategroupcoordinationto --> Subfunction für Gruppenmanagement (RinconID von Member)
 # 1.0.5		[Feature] playmode ist in case insensitive nutzbar
 #			[Bugfix] Funktion Softstop überarbeitet. Es wird solange gespielt bis die Lautstärke 0 ist, dann Pause betätigt
 #					 und die Lautstärke wieder auf den Wert vor Softstop angehoben.
@@ -36,14 +36,12 @@
 #
 ######## Script Code (ab hier bitte nichts ändern) ###################################
 
-header('Content-Type: text/html; charset=utf-8');
-
 ini_set('max_execution_time', 120); // Max. Skriptlaufzeit auf 120 Sekunden
+
 include("system/PHPSonos.php");
 include("grouping.php");
-include("text2speech.php");
 include("helper.php");
-include("system/PHPSonosController.php");
+#include("system/PHPSonosController.php");
 
 date_default_timezone_set(date("e"));
 $valid_playmodes = array("NORMAL","REPEAT_ALL","REPEAT_ONE","SHUFFLE_NOREPEAT","SHUFFLE","SHUFFLE_REPEAT_ONE");
@@ -255,11 +253,10 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 }
 
 if(isset($_GET['playmode'])) { 
-	#$playmode =  preg_replace("/[^a-zA-Z0-9]+/", "", strtoupper($_GET['playmode']));
-	$playmode =  strtoupper($_GET['playmode']);
+	$playmode = preg_replace("/[^a-zA-Z0-9_]+/", "", strtoupper($_GET['playmode']));
 	if (in_array($playmode, $valid_playmodes)) {
 		$sonos = new PHPSonos($sonoszone[$master][0]);
-		$sonos->SetPlayMode(strtoupper($playmode));
+		$sonos->SetPlayMode($playmode);
 	}  else {
 		trigger_error('falscher PlayMode ausgewählt. Bitte korrigieren!', E_USER_NOTICE);
 	}
@@ -762,7 +759,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		case 'titelinfo':
 		if($debug == 1) {
-				echo debug();
+				#echo debug();
 			}
 			$PositionInfo = $sonos->GetPositionInfo();
 			$GetMediaInfo = $sonos->GetMediaInfo();
@@ -796,8 +793,8 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		case 'sendgroupmessage':
 			global $sonos, $text, $member, $master, $zone, $messageid, $logging, $words, $voice, $accesskey, $secretkey, $rampsleep, $config, $save_status, $mute, $membermaster, $groupvol, $getgroup, $checkgroup;
+			include_once("text2speech.php");
 			
-			#networkstatus();
 			if(isset($_GET['volume'])) {
 				trigger_error("Die Angabe des Parameters Volume ist innerhalb dieser Syntax nicht zulässig!", E_USER_ERROR);
 				exit;
@@ -812,7 +809,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			}
 			checkaddon();
 			checkTTSkeys();
-			$groupvol = "1";
 			$master = $_GET['zone'];
 			$member = $_GET['member'];
 			$member = explode(',', $member);
@@ -841,7 +837,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$sonos = new PHPSonos($sonoszone[$master][0]); 
 				$sonos = SetGroupVolume($groupvolume);
 			}
-			play_tts_new($messageid, $groupvol);
+			play_tts($messageid);
 			// wiederherstellen der Ursprungszustände
 			restore_previous_gr();
 			logging();
@@ -851,8 +847,8 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		case 'sendmessage':
 			global $text, $master, $messageid, $logging, $words, $voice, $accesskey, $secretkey, $rampsleep, $config, $save_status, $membermaster, $groupvol;
+			include_once("text2speech.php");
 			
-			#networkstatus();
 			if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
 				$volume = $_GET['volume'];
 			} else 	{
@@ -861,7 +857,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			}
 			checkaddon();
 			checkTTSkeys();
-			$groupvol = "0";
 			// prüft ob Zone in einer Gruppe ist
 			$checkgroup = sonosgroupzone();
 			if($checkgroup == true) {
@@ -879,7 +874,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			create_tts($text, $messageid);
 			$sonos->SetMute(false);
 			$sonos->SetVolume($volume);
-			play_tts_new($messageid, $groupvol);
+			play_tts($messageid, $groupvol);
 			if($checkgroup == true) {
 				restore_previous_group_ez();
 			} else {
@@ -893,11 +888,10 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 	case 'group':
 		logging();
 		# Alle Zonen gruppieren
-		$masterrincon = getRINCON($sonoszone[$master][0]);
 		foreach ($sonoszone as $zone => $ip) {
 			if($zone != $_GET['zone']) {
 				$sonos = new PHPSonos($sonoszone[$zone][0]); //Sonos lox_ipesse
-				$sonos->SetAVTransportURI("x-rincon:" . $masterrincon); 
+				$sonos->SetAVTransportURI("x-rincon:" . $config['sonoszonen'][$master][1]); 
 			}
 		}
 	break;
@@ -907,7 +901,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		# Alle Zonen Gruppierungen aufheben
 		foreach($sonoszone as $zone => $ip) {
 			$sonos = new PHPSonos($sonoszone[$zone][0]); //Sonos lox_ipesse
-			$sonos->SetQueue("x-rincon-queue:" . getRINCON($sonoszone[$zone][0]) . "#0");
+			$sonos->SetQueue("x-rincon-queue:" . $config['sonoszonen'][$zone][1] . "#0");
 		}
 	break;
 	
@@ -1860,12 +1854,12 @@ function restore_previous_gr() {
 }	
 
 /**************************************************************************************************************
-/* Funktion : play_tts --> spielt die vorher generierte mp3 datei ab
+/* Funktion : play_tts_OLD --> spielt die vorher generierte mp3 datei ab
 /*
 /* @param: 	MessageID, Parameter zur Unterscheidung ob Gruppen oder EInzeldurchsage
 /* @return: nichts
 /**************************************************************************************************************/		
-function play_tts($messageid, $groupvol) {
+function play_tts_OLD($messageid, $groupvol) {
 	global $volume, $config, $sonos, $messageid, $save_status, $sonoszone, $master, $groupvol, $getgroup, $group, $myMessagepath, $save_gr_status;
 	// wenn Single T2S dann Volume und Mute setzten
 	if($groupvol == "0") {
@@ -2807,11 +2801,11 @@ function getMS1data() {
 				#getdnsip();
 			}
 			trigger_error("Die Verbindung zu Loxone konnte nicht initiiert werden!", E_USER_NOTICE);	
-		}		
+		}
+		socket_close($socket);
 	} else { 
 		trigger_error("Die Datenuebermittlung zu Loxone ist nicht aktiv. Bitte aktivieren!", E_USER_NOTICE); 
 	}
-	socket_close($socket);
 }
 
 /**********************************************************************************************************
