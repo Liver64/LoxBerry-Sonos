@@ -1327,17 +1327,15 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			echo '</PRE>';
 		break;
 		
-		case 'grouping':
-			group($master);
-		break;
-		
-		case 'getgroups':
-			getGroups();
-		break;
-		
-		case 'save':
-			require_once("text2speech.php");
-			saveZonesStatus();
+		case 'gettest':
+		global $sonos;
+		$pl = $sonos->GetSonosPlaylists();
+		$sq = recursive_array_search("temp_t2s",$pl);
+		if(empty($sq)) {
+			echo 'nicht löschen';
+		} else {
+			echo 'löschen';
+		}
 		break;
 
 		case 'getzoneinfo':

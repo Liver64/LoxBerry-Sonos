@@ -50,7 +50,6 @@ fi
 echo "<INFO>"
 echo "<INFO> Please restart Loxberry before starting Sonos configuration!"
 echo "<INFO>"
-# wget https://raw.githubusercontent.com/composer/getcomposer.org/2091762d2ebef14c02301f3039c41d08468fb49e/web/installer -O - -q | php -- --quiet
 
 # Exit with Status 0
 exit 0

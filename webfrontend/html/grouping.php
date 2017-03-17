@@ -8,6 +8,7 @@
 * @return: a pair of 2 Single Zones
 */
 
+
 function CreateStereoPair() {
 	global $config, $sonos, $sonoszone;
 	
@@ -49,7 +50,7 @@ function CreateStereoPair() {
 
 	
 /**
-* Subfunction: CompletionCheckCreate --> check completness of syntax during creation of Stereo Pair
+* Function: CompletionCheckCreate --> check completness of syntax during creation of Stereo Pair
 *
 * @param:  left Zone, right Zone
 * @return: true or false
@@ -85,7 +86,7 @@ function CreateStereoPair() {
  
  
  /**
-* Subfunction: CompletionCheckSeperate --> check completness of syntax during seperation of Stereo Pair
+* Function: CompletionCheckSeperate --> check completness of syntax during seperation of Stereo Pair
 *
 * @param:  left Zone, right Zone
 * @return: true or false
@@ -109,7 +110,7 @@ function CreateStereoPair() {
 
  
  /**
-* Subfunction: checkZonePairingAllowed --> check input if devices been entered are suitable for pairing
+* Function: checkZonePairingAllowed --> check input if devices been entered are suitable for pairing
 *
 * @param:  $model --> Devices
 * @return: true or false
@@ -128,12 +129,11 @@ function CreateStereoPair() {
  
 
 /**
-* Function: getRoomCoordinator --> identify the Coordinator for provided room (typically for StereoPair)
+* Function: getCoordinatorByRoom --> identify the Coordinator for provided room
 *
 * @param:  $room
 * @return: array of (0) IP address and (1) Rincon-ID of Master
 */
-
 function getRoomCoordinator($room){
 	global $sonoszone, $zone, $debug, $master, $sonosclass, $config;
 		
@@ -182,62 +182,6 @@ function getRoomCoordinator($room){
 	}
 	return $coord;
  }
- 
-
-/**
-* Subfunction: getGroup --> collect all Zones if device is part of a group
-*
-* @param:  $room
-* @return: array of rooms from a group where index (0) is always the Coordinator
-*/ 
-
- function Group($room) {
-	global $sonoszone, $sonos, $grouping, $debug, $config;	
-	
-	if($room == "") {
-		$room = $_GET['zone'];
-	}
-	$sonos = new PHPSonos($sonoszone[$room][0]);
-	$group = $sonos->GetZoneGroupAttributes();
-	$tmp_name = $group["CurrentZoneGroupName"];
-	$group = explode(',', $group["CurrentZonePlayerUUIDsInGroup"]);
-	$grouping = array();
-	if(!empty($tmp_name)) {
-		if(count($group) > 1) {
-			foreach ($group as $zone) {
-				$zone = recursive_array_search($zone, $config['sonoszonen']);
-				array_push($grouping,$zone);
-			}
-		}
-	}
-	if(!empty($grouping)) {
-		if($debug == 1) { 
-			#print_r($grouping);
-		}
-		return $grouping;
-	} else {
-		return false;
-	}
-}
-
-
-/**
-* Function for T2S: getGroups --> collect all groups where index (0) is always Group Coordinator
-*
-* @param: empty
-* @return: array of devices from each group
-**/
-
-function getGroups() {
-	global $sonoszone;
-
-	foreach ($sonoszone as $room => $value) {
-		$groups = Group($room);
-		print_r($groups);
-	}
-	return ($groups);
- }
-
 	
 
 
