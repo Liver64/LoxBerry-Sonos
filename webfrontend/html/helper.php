@@ -112,6 +112,26 @@ function recursive_array_search($needle,$haystack) {
 
 
 /**
+* Function : array_multi_search --> search threw a multidimensionales array for a specific value
+* Optional you can search more detailed on a specific key'
+* https://sklueh.de/2012/11/mit-php-ein-mehrdimensionales-array-durchsuchen/
+*
+* @return: array with result
+**/
+
+ function array_multi_search($mSearch, $aArray, $sKey = "")
+{
+    $aResult = array();
+    foreach( (array) $aArray as $aValues) {
+        if($sKey === "" && in_array($mSearch, $aValues)) $aResult[] = $aValues;
+        else 
+        if(isset($aValues[$sKey]) && $aValues[$sKey] == $mSearch) $aResult[] = $aValues;
+    }
+    return $aResult;
+}
+
+
+/**
 * Function : getLoxoneData --> Zeigt die Verbindung zu Loxone an
 * @param: leer                             
 *
@@ -120,11 +140,11 @@ function recursive_array_search($needle,$haystack) {
 
 function getLoxoneData() {
 	global $loxip, $loxuser, $loxpassword;
-	echo "Folgende Verbindung wird zur Datenübertragung zu Loxone genutzt:<br><br>";
+	echo "The following connection is used for data transmission to Loxone:<br><br>";
 
-	echo 'IP-Adresse/Port: '.$loxip.'<br>';
+	echo 'IP-Address/Port: '.$loxip.'<br>';
 	echo 'User: '.$loxuser.'<br>';
-	echo 'Passwort: '.$loxpassword.'<br>';
+	echo 'Password: '.$loxpassword.'<br>';
 }
 
 
@@ -150,7 +170,7 @@ function getPluginFolder(){
 **/
 
  function settimestamp() {
-	$myfile = fopen("timestamps.txt","w") or die ("Kann Timestamp Datei nicht schreiben!");
+	$myfile = fopen("timestamps.txt","w") or die ("Can't write the timestamp file!");
 	fwrite($myfile, time());
 	fclose($myfile);
  }
@@ -163,7 +183,7 @@ function getPluginFolder(){
 **/
 
  function gettimestamp() {
-	$myfile = fopen("timestamps.txt","r") or die ("Kann Timestamp Datei nicht lesen!");
+	$myfile = fopen("timestamps.txt","r") or die ("Can't read the timestamp file!");
 	$zeit = fread($myfile, 999);
 	fclose($myfile);
 	if( time() % $zeit > 200 )
@@ -185,11 +205,11 @@ function networkstatus() {
 	foreach($sonoszonen as $zonen => $ip) {
 		$start = microtime(true);
 		if (!$socket = @fsockopen($ip[0], 1400, $errno, $errstr, 3)) {
-			echo "Die Zone ".$zonen." mit IP: ".$ip[0]." ==> Offline :-( Bitte dringend Status überprüfen!<br/>"; 
+			echo "The Zone ".$zonen." using IP: ".$ip[0]." ==> Offline :-( Please check status!<br/>"; 
 		} else { 
 			$latency = microtime(true) - $start;
 			$latency = round($latency * 10000);
-			echo "Die Zone ".$zonen." mit IP: ".$ip[0]." ==> Online :-) Die Antwortzeit betrug ".$latency." Millisekunden <br/>";
+			echo "The Zone ".$zonen." using IP: ".$ip[0]." ==> Online :-) The response time was ".$latency." Milliseconds <br/>";
 		}
 	}
 	
@@ -288,7 +308,7 @@ function URL_Encode($string) {
  function _assertNumeric($number) {
 	// prüft ob eine Eingabe numerisch ist
     if(!is_numeric($number)) {
-        trigger_error("Die Eingabe ist nicht numerisch. Bitte wiederholen", E_USER_NOTICE);
+        trigger_error("The input is not numeric. Please try again", E_USER_NOTICE);
     }
     return $number;
  }
@@ -321,4 +341,6 @@ function URL_Encode($string) {
   return $playerIP;
  }
 
+ 
+ 
 ?>

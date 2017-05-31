@@ -33,6 +33,7 @@ function t2s($messageid)
 		{
 			# Übermitteln des strings an ResponsiveVoice
 			$mp3 = file_get_contents('https://code.responsivevoice.org/getvoice.php?t='.$words.'&tl='.$upper.'');
+			#http://responsivevoice.org/responsivevoice/getvoice.php?t=' + multipartText[i]+ '&tl=' + profile.collectionvoice.lang || profile.systemvoice.lang || 'en-US';
 			file_put_contents($file, $mp3);
 		}
 	# Ersetze die messageid durch die von TTS gespeicherte Datei

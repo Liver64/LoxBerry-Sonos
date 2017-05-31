@@ -1056,19 +1056,27 @@ SOAPACTION: "urn:schemas-upnp-org:service:ContentDirectory:1#DestroyObject"
  
 public function DelegateGroupCoordinationTo($RinconID, $Rejoin) {
 		
-	# 0 = RejoinGroup --> false 
-	# 1 = RejoinGroup --> true
+# 0 = RejoinGroup --> false 
+# 1 = RejoinGroup --> true
 
-		$content='POST /MediaRenderer/AVTransport/Control HTTP/1.1
-		SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#DelegateGroupCoordinationTo"
-		CONTENT-TYPE: text/xml; charset="utf-8"
-		HOST: '.$this->address.':1400
-		Content-Length: 381
+$content='POST /MediaRenderer/AVTransport/Control HTTP/1.1
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#DelegateGroupCoordinationTo"
+CONTENT-TYPE: text/xml; charset="utf-8"
+HOST: '.$this->address.':1400
+Content-Length: 419
 
-		<s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body>
-		<u:DelegateGroupCoordinationTo xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
-		<NewCoordinator>'.$RinconID.'</NewCoordinator><RejoinGroup>'.$Rejoin.'</RejoinGroup></u:DelegateGroupCoordinationTo></s:Body></s:Envelope>';
+<?xml version="1.0" encoding="utf-8"?>
+<s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+   <s:Body>
+      <u:DelegateGroupCoordinationTo xmlns:u="urn:schemas-upnp-org:service:AVTransport:1">
+         <InstanceID>0</InstanceID>
+         <NewCoordinator>'.$RinconID.'</NewCoordinator>
+         <RejoinGroup>'.$Rejoin.'</RejoinGroup>
+      </u:DelegateGroupCoordinationTo>
+   </s:Body>
+</s:Envelope>';
 
+		
 		$this->sendPacket($content);
 }
 
@@ -1097,7 +1105,7 @@ $this->sendPacket($content);
 	
 
  /**
- * Sepaerates a Stereo Pair in two single zones
+ * Seperates a Stereo Pair in two single zones
  *
  * @param string RinconID, LEFT and RinconID RIGHT
  *
@@ -1857,21 +1865,24 @@ SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#GetPositionInfo"
  * Play Radio station
  *
  * @param string $radio            radio url
- * @param string $Name            Name of station (optional, default IP-Symcon Radio)
+ * @param string $Name            Name of station (optional)
  * @param string $id             ID of Station (optional, default R:0/0/0)
  * @param string $parentID           parentID (optional, default R:0/0)
  * @return array
  */
  
-   public function SetRadio($radio,$Name="default",$id="R:0/0/0",$parentID="R:0/0")
+   #public function SetRadio($radio, $name, $id="R:0/0/0", $parentID="R:0/0")
+   public function SetRadio($radio, $name, $id="R:0/0/43", $parentID="R:0/0")
    { 
-   $MetaData="&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;".$id."&quot; parentID=&quot;".$parentID."&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;".$Name."&lt;/dc:title&gt;&lt;upnp:class&gt;object.item.audioItem.audioBroadcast&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON65031_&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;";
-
+   $MetaData="&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;".$id."&quot; parentID=&quot;".$parentID."&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;".$name."&lt;/dc:title&gt;&lt;upnp:class&gt;object.item.audioItem.audioBroadcast&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON65031_&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;";
+              
     $this->SetAVTransportURI($radio,$MetaData);
 
    }
-
    
+   
+
+
 /**
  * Sets Av Transport URI
  *
