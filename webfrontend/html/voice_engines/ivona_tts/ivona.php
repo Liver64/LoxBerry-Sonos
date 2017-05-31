@@ -19,8 +19,7 @@ class IvonaClient
 	public $FileName;
 	public $enableDebug = 1;
     public $useCache = 1;
-    #public $CacheDir = '//opt/loxberry/data/plugins/sonos4lox/tts/';
-			
+    			
 	
     public function __construct()
     {

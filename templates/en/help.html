@@ -1,0 +1,52 @@
+<font size="-1">
+	<p>
+		<b><i>Sonos Player:</i></b> The available or already found Sonos Player are listed here. The room name etc. as well as other network-related data can not be changed. In addition the 3 default volume values ​​for T2S announcement, Sonos standard volume and maximum volume per player must be specified. These are used as the default volume, if no syntax "volume" or "groupvolume" is specified in the syntax. <br> Please refer to the Wiki for more information. If a new Sonos player has been added to your existing system, please press the Scan Zones button to add them to your configuration.
+
+	</p>
+	<p>
+		<b><i>Text-to-speech Instance:</i></b> Select your Text-2-Speech instance to be used.
+	</p>
+	<p>
+		<b><i>API Key:</i></b> Necessary key to use for VoiceRRS, Ivona or Polly.
+	</p>
+	<p>
+		<b><i>Secret Key:</i></b> Necessary key to use for Ivona or Polly.
+	</p>
+	<p>
+		<b><i>Voice:</i></b> Select your Voice (only German Users right now).
+	</p>
+	<p>
+		<b><i>Timeperiod to store MP3 files:</i></b> Determines how many days a T2S file should be stored in tts folder before files will be deleted automatically.
+	</p>
+	<p>
+		<b><i>Filename for Jingle :</i></b> Name of the file which can be played as a kind of jingle before the announcement take place. The file MUST be stored in the subfolder loxberry/data/plugins/sonos4lox/tts/MP3.
+	</p>
+	<p>
+		<b><i>Connection to Loxone:</i></b> Switches the data transmission to Loxone On or Off. The Zone /Play/Pause/Stop buttons can be used for each zone in a Playlist Title/Artist or Radio, the current volume, and the Zone status. You can find more information about this and the Loxone Config in the Wiki.
+	</p>
+		<p>
+		<b><i>UDP Port for Loxone:</i></b> Port for data transfer. Play/Stop/Pause and Volume are transferred via UDP packet, title/artist/radio station to virtual text input connector, but only if the corresponding zone is currently running!
+	</p>
+	<p>
+		<b><i>Debugging:</i></b> Only activate if detailed error search is to be carried out in the browser.
+	</p>
+	<p>
+		<b><i>Change Volume:</i></b> Value by which the volume should be increased/decreased. This function is mainly used as a push button function.
+	</p>
+	<p>
+		<b><i>Rampto:</i></b> Function to decrease / increase the volume slowly. The following options are available: <br>
+		<b><i>sleep:</i></b> Increases the volume within 17 seconds to desired volume
+		<b><i>alarm:</i></b> Increases / decreases the volume within a few seconds (recommended)
+		<b><i>auto:</i></b> Increases the volume within seconds (fast and steady) <br>
+	</p>
+	<p>
+		<b><i>Rampto Volume:</i></b> Volume in percent from when 'rampto' WITHOUT explicit data is to be used, otherwise it goes on with the adjusted volume
+		This just applies for the following functions: play, nextradio, playqueue, sonosplaylist, radioplaylist.
+	</p>
+	<p>
+		<b><i>Radio Favorites:</i></b> Here the radio favorites can be entered, which are then by-buttoned by button click. When the last station is reached, it goes backwards. <br> How to determine the relevant data for the radiosender please refer to the Wiki.
+	</p>
+
+
+		
+</font>

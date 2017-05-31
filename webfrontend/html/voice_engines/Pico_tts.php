@@ -7,18 +7,22 @@ function t2s($messageid)
 {
 	global $words, $config, $messageid, $fileolang, $fileo;
 		
+		$valid_languages =array('de-DE','en-GB','fr-FR','it-IT');
 		$ttsengine = $config['TTS']['t2s_engine'];
 		$words = urldecode($words);
 		
 		if($ttsengine = '4001') {
-			if($config['TTS']['messageLang'] = "de") { $ttslanguage = "de-DE"; }
-			elseif($config['TTS']['messageLang'] = "gb") { $ttslanguage = "en-GB"; }
-			elseif($config['TTS']['messageLang'] = "us") { $ttslanguage = "en-US"; }
-			elseif($config['TTS']['messageLang'] = "fr") { $ttslanguage = "fr-FR"; }
-			elseif($config['TTS']['messageLang'] = "it") { $ttslanguage = "it-IT"; }
-		} else {
-			trigger_error("Die angegebene Sprache für Pico2wave ist unbekannt! Die Sprache wird automatisch auf DE gesetzt!", E_USER_WARNING);
-			$ttslanguage = "de-DE";
+			if (isset($_GET['lang'])) {
+				$language = $_GET['lang'];
+				if (in_array($language, $valid_languages)) {
+					$ttslanguage = $_GET['lang'];	
+				} else {
+					trigger_error('The entered Pico language key is not supported. Please correct (see Wiki)!', E_USER_ERROR);	
+					exit;
+				}
+			} else {
+				$ttslanguage = $config['TTS']['messageLang'].'-'.strtoupper($config['TTS']['messageLang']);
+			}	
 		}
 		
 		$mpath = $config['SYSTEM']['messageStorePath'];
@@ -33,7 +37,7 @@ function t2s($messageid)
 				exec('/usr/bin/lame '.$mpath . $fileolang . ".wav".' '.$mpath . $fileolang . ".mp3");
 				unlink($mpath . $fileolang . ".wav");
 			} catch(Exception $e) {
-				trigger_error("Die T2S konnte nicht erstellt werden! Bitte erneut versuchen.", E_USER_WARNING);
+				trigger_error("The T2S could not be created! Please try again.", E_USER_WARNING);
 			}
 		}
 	# Ersetze die messageid durch die von TTS gespeicherte Datei
