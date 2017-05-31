@@ -9,12 +9,87 @@ function t2s($messageid)
 	
 	global $messageid, $words, $config, $filename, $fileolang, $voice, $accesskey, $secretkey, $fileo;
 		include 'ivona_tts/ivona.php';
-				
+		
+		// List of all available Ivona voices (Date: 23.05.2017)
+		$voices[] = array("voice" => 'Salli', "lang" => "en-US", "gender" => 'Female');
+		$voices[] = array("voice" => 'Joey', "lang" => "en-US", "gender" => 'Male');
+		$voices[] = array("voice" => 'Naja', "lang" => "da-DK", "gender" => 'Female');
+		$voices[] = array("voice" => 'Mads', "lang" => "da-DK", "gender" => 'Male');
+		$voices[] = array("voice" => 'Marlene', "lang" => "de-DE", "gender" => 'Female');
+		$voices[] = array("voice" => 'Hans', "lang" => "de-DE", "gender" => 'Male');
+		$voices[] = array("voice" => 'Nicole', "lang" => "en-AU", "gender" => 'Female');
+		$voices[] = array("voice" => 'Russell', "lang" => "en-AU", "gender" => 'Male');
+		$voices[] = array("voice" => 'Amy', "lang" => "en-GB", "gender" => 'Female');
+		$voices[] = array("voice" => 'Brian', "lang" => "en-GB", "gender" => 'Male');
+		$voices[] = array("voice" => 'Emma', "lang" => "en-GB", "gender" => 'Female');
+		$voices[] = array("voice" => 'Gwyneth', "lang" => "en-GB-WLS", "gender" => 'Female');
+		$voices[] = array('voice' => 'Salli','lang' => 'en-US','gender' => 'Female');
+		$voices[] = array('voice' => 'Joey','lang' => 'en-US','gender' => 'Male');
+		$voices[] = array('voice' => 'Naja','lang' => 'da-DK','gender' => 'Female');
+		$voices[] = array('voice' => 'Mads','lang' => 'da-DK','gender' => 'Male');
+		$voices[] = array('voice' => 'Marlene','lang' => 'de-DE','gender' => 'Female');
+		$voices[] = array('voice' => 'Hans','lang' => 'de-DE','gender' => 'Male');
+		$voices[] = array('voice' => 'Nicole','lang' => 'en-AU','gender' => 'Female');
+		$voices[] = array('voice' => 'Russell','lang' => 'en-AU','gender' => 'Male');
+		$voices[] = array('voice' => 'Amy','lang' => 'en-GB','gender' => 'Female');
+		$voices[] = array('voice' => 'Brian','lang' => 'en-GB','gender' => 'Male');
+		$voices[] = array('voice' => 'Emma','lang' => 'en-GB','gender' => 'Female');
+		$voices[] = array('voice' => 'Gwyneth','lang' => 'cy-GB','gender' => 'Female');
+		$voices[] = array('voice' => 'Geraint','lang' => 'cy-GB','gender' => 'Male');
+		$voices[] = array('voice' => 'Raveena','lang' => 'en-IN','gender' => 'Female');
+		$voices[] = array('voice' => 'Chipmunk','lang' => 'en-US','gender' => 'Male');
+		$voices[] = array('voice' => 'Eric','lang' => 'en-US','gender' => 'Female');
+		$voices[] = array('voice' => 'Ivy','lang' => 'en-US','gender' => 'Male');
+		$voices[] = array('voice' => 'Jennifer','lang' => 'en-US','gender' => 'Female');
+		$voices[] = array('voice' => 'Justin','lang' => 'en-US','gender' => 'Male');
+		$voices[] = array('voice' => 'Kendra','lang' => 'en-US','gender' => 'Female');
+		$voices[] = array('voice' => 'Kimberly','lang' => 'en-US','gender' => 'Male');
+		$voices[] = array('voice' => 'Conchita','lang' => 'es-ES','gender' => 'Female');
+		$voices[] = array('voice' => 'Enrique','lang' => 'es-ES','gender' => 'Male');
+		$voices[] = array('voice' => 'Penelope','lang' => 'es-US','gender' => 'Female');
+		$voices[] = array('voice' => 'Miguel','lang' => 'es-US','gender' => 'Male');
+		$voices[] = array('voice' => 'Chantal','lang' => 'fr-CA','gender' => 'Female');
+		$voices[] = array('voice' => 'Celine','lang' => 'fr-FR','gender' => 'Female');
+		$voices[] = array('voice' => 'Mathieu','lang' => 'fr-FR','gender' => 'Male');
+		$voices[] = array('voice' => 'Dora','lang' => 'is-IS','gender' => 'Female');
+		$voices[] = array('voice' => 'Karl','lang' => 'is-IS','gender' => 'Male');
+		$voices[] = array('voice' => 'Carla','lang' => 'it-IT','gender' => 'Female');
+		$voices[] = array('voice' => 'Giorgio','lang' => 'it-IT','gender' => 'Male');
+		$voices[] = array('voice' => 'Liv','lang' => 'nb-NO','gender' => 'Female');
+		$voices[] = array('voice' => 'Lotte','lang' => 'nl-NL','gender' => 'Female');
+		$voices[] = array('voice' => 'Ruben','lang' => 'nl-NL','gender' => 'Male');
+		$voices[] = array('voice' => 'Agnieszka','lang' => 'pl-PL','gender' => 'Female');
+		$voices[] = array('voice' => 'Jacek','lang' => 'pl-PL','gender' => 'Male');
+		$voices[] = array('voice' => 'Ewa','lang' => 'pl-PL','gender' => 'Female');
+		$voices[] = array('voice' => 'Jan','lang' => 'pl-PL','gender' => 'Male');
+		$voices[] = array('voice' => 'Maja','lang' => 'pl-PL','gender' => 'Female');
+		$voices[] = array('voice' => 'Vitoria','lang' => 'pt-BR','gender' => 'Male');
+		$voices[] = array('voice' => 'Ricardo','lang' => 'pt-BR','gender' => 'Male');
+		$voices[] = array('voice' => 'Cristiano','lang' => 'pt-PT','gender' => 'Male');
+		$voices[] = array('voice' => 'Ines','lang' => 'pt-PT','gender' => 'Female');
+		$voices[] = array('voice' => 'Carmen','lang' => 'ro-RO','gender' => 'Female');
+		$voices[] = array('voice' => 'Maxim','lang' => 'ru-RU','gender' => 'Male');
+		$voices[] = array('voice' => 'Tatyana','lang' => 'ru-RU','gender' => 'Female');
+		$voices[] = array('voice' => 'Astrid','lang' => 'sv-SE','gender' => 'Female');
+		$voices[] = array('voice' => 'Filiz','lang' => 'tr-TR','gender' => 'Female');
+						
 		#-- Übernahme der Variablen aus config.php --
 		$engine = $config['TTS']['t2s_engine'];
 		$mpath = $config['SYSTEM']['messageStorePath'];
 		if($engine = '2001') {
-			$language = $config['TTS']['messageLang'].'-'.strtoupper($config['TTS']['messageLang']);
+			if (isset($_GET['voice'])) {
+				$tmp_voice = $_GET['voice'];
+					$valid_voice = array_multi_search($tmp_voice, $voices);
+					if (!empty($valid_voice)) {
+						$language = $valid_voice[0]['lang'];
+						$voice = $valid_voice[0]['voice'];
+					} else {
+						trigger_error('Der eingegebene Ivona Name wird nicht unterstuetzt. Bitte korrigieren (siehe Wiki Tabelle)!', E_USER_ERROR);	
+					}
+			} else {
+				$language = $config['TTS']['messageLang'].'-'.strtoupper($config['TTS']['messageLang']);
+				$voice = $config['TTS']['voice'];
+			}
 		}
 		
 		#####################################################################################################################

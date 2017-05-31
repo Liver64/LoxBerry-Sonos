@@ -6,6 +6,11 @@ function t2s($messageid)
 
 {
 	global $words, $config, $messageid, $fileolang, $fileo;
+	// List of all available VoiceRSS voices (Date: 12.11.2016)
+	$valid_languages= array('ca-ESs','da-DK','de-DE','en-AU','en-CA','en-GB','en-IN','en-US','es-ES','es-MX',
+							'fi-FI','fr-CA','fr-FR','it-IT','ja-JP','ko-KR','nb-NO','nl-NL','pl-PL','pt-BR',
+							'pt-PT','ru-RU','sv-SE','zh-CN','zh-HK','zh-TW'
+							);
 
 		$ttsengine = $config['TTS']['t2s_engine'];
 		$ttskey = $config['TTS']['API-key'];
@@ -13,7 +18,21 @@ function t2s($messageid)
 		$words = utf8_encode($words);
 		
 		if($ttsengine = '1001') {
-			$ttslanguage = $config['TTS']['messageLang'].'-'.$config['TTS']['messageLang'];
+			if (isset($_GET['lang'])) {
+				$language = $_GET['lang'];
+				// lang = de-DE
+				if (in_array($language, $valid_languages)) {
+					$language = $_GET['lang'];
+					$lang_end = substr($language, -2);
+					$lang_start = substr($language, 0, 2);
+					$language = $lang_start.'-'.strtolower($lang_end);
+				} else {
+					trigger_error('The entered VoiceRS language key is not supported. Please correct (see Wiki)!', E_USER_ERROR);
+					exit;
+				}
+			} else {
+				$language = $config['TTS']['messageLang'].'-'.$config['TTS']['messageLang'];
+			}	
 		}
 						
 		#####################################################################################################################
@@ -25,10 +44,10 @@ function t2s($messageid)
 		#####################################################################################################################	
 
 		# Sprache in Groﬂbuchsaben
-		$upper = strtoupper($ttslanguage);
+		$upper = strtoupper($language);
 								  
 		# Generieren des strings der an VoiceRSS geschickt wird
-		$inlay = "key=$ttskey&src=$words&hl=$ttslanguage&f=$ttsaudiocodec";	
+		$inlay = "key=$ttskey&src=$words&hl=$language&f=$ttsaudiocodec";	
 									
 		# Speicherort der MP3 Datei
 		$mpath = $config['SYSTEM']['messageStorePath'];
