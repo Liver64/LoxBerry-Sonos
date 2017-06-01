@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	1.0.5
-# Datum: 	11.03.2017
+# Version: 	1.0.6
+# Datum: 	25.03.2017
 # veröffentlicht in: http://plugins.loxberry.de/
 # 
 # Change History:
@@ -32,6 +32,7 @@
 # 1.0.5		[Feature] playmode ist in case insensitive nutzbar
 #			[Bugfix] Funktion Softstop überarbeitet. Es wird solange gespielt bis die Lautstärke 0 ist, dann Pause betätigt
 #					 und die Lautstärke wieder auf den Wert vor Softstop angehoben.
+# 1.0.6		[Bugfix] network.php geändert - Fehler beim Scannen der Zonen bei Neuinstallation korrigiert
 #
 #
 ######## Script Code (ab hier bitte nichts ändern) ###################################
@@ -1327,15 +1328,17 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			echo '</PRE>';
 		break;
 		
-		case 'gettest':
-		global $sonos;
-		$pl = $sonos->GetSonosPlaylists();
-		$sq = recursive_array_search("temp_t2s",$pl);
-		if(empty($sq)) {
-			echo 'nicht löschen';
-		} else {
-			echo 'löschen';
-		}
+		case 'grouping':
+			group($master);
+		break;
+		
+		case 'getgroups':
+			getGroups();
+		break;
+		
+		case 'save':
+			require_once("text2speech.php");
+			saveZonesStatus();
 		break;
 
 		case 'getzoneinfo':

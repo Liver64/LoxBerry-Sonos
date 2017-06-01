@@ -2,7 +2,7 @@
 # text2speech.php
 
 /**
-* Function : saveZonesStatus --> saves Status for each Zone in Network
+* Function : saveZonesStatus --> saves cuurent details for each Zone
 *
 * @param: 	empty
 * @return: 	array
@@ -10,26 +10,18 @@
 	
 	
 function saveZonesStatus() {
-	global $sonoszone, $sonos;
+	global $sonoszone, $config, $sonos;
 	
 	// save each Zone Status
-	foreach ($sonoszone as $player => $sz) {
-		$sonos = new PHPSonos($sonoszone[$sz][0]); 
-		$actual[$sz]['Mute'] = $sonos->GetMute($sz);
-		$actual[$sz]['Volume'] = $sonos->GetVolume($sz);
-		$actual[$sz]['MediaInfo'] = $sonos->GetMediaInfo($sz);
-		$actual[$sz]['PositionInfo'] = $sonos->GetPositionInfo($sz);
-		$actual[$sz]['TransportInfo'] = $sonos->GetTransportInfo($sz);
-		$actual[$sz]['TransportSettings'] = $sonos->GetTransportSettings($sz);
-		$actual[$sz]['Topology'] = gettopology($sz);
-		if(!empty($groupid)) {
-			if (array_key_exists($save_status[$sz]['Topology']['IP-Adresse'], $groupid)) {
-				$save_status[$sz]['GroupCoordinator'] = 'true';
-				$save_status[$sz]['Groupmember'] = zonegroups($sz);
-			} else {
-				$save_status[$sz]['GroupCoordinator'] = 'false';
-			}
-		}
+	foreach ($sonoszone as $player => $value) {
+		$sonos = new PHPSonos($config['sonoszonen'][$player][0]); 
+		$actual[$player]['Mute'] = $sonos->GetMute($player);
+		$actual[$player]['Volume'] = $sonos->GetVolume($player);
+		$actual[$player]['MediaInfo'] = $sonos->GetMediaInfo($player);
+		$actual[$player]['PositionInfo'] = $sonos->GetPositionInfo($player);
+		$actual[$player]['TransportInfo'] = $sonos->GetTransportInfo($player);
+		$actual[$player]['TransportSettings'] = $sonos->GetTransportSettings($player);
+		$actual[$player]['Grouping'] = Group($player);
 	}
 	#print_r($actual);
 	return $actual;
