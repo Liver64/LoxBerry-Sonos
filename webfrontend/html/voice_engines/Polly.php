@@ -70,7 +70,7 @@ function t2s($messageid)
 						$language = $valid_voice[0]['lang'];
 						$voice = $valid_voice[0]['voice'];
 					} else {
-						trigger_error('Der eingegebene Polly Name wird nicht unterstuetzt. Bitte korrigieren (siehe Wiki Tabelle)!', E_USER_ERROR);	
+						trigger_error('The entered Polly voice is not supported. Please correct (see Wiki)!', E_USER_ERROR);	
 					}
 			} else {
 				$language = $config['TTS']['messageLang'].'-'.strtoupper($config['TTS']['messageLang']);

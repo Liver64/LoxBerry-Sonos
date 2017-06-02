@@ -7,7 +7,7 @@ function t2s($messageid)
 {
 	global $words, $config, $messageid, $fileolang, $fileo;
 	// List of all available VoiceRSS voices (Date: 12.11.2016)
-	$valid_languages= array('ca-ESs','da-DK','de-DE','en-AU','en-CA','en-GB','en-IN','en-US','es-ES','es-MX',
+	$valid_languages= array('ca-ES','da-DK','de-DE','en-AU','en-CA','en-GB','en-IN','en-US','es-ES','es-MX',
 							'fi-FI','fr-CA','fr-FR','it-IT','ja-JP','ko-KR','nb-NO','nl-NL','pl-PL','pt-BR',
 							'pt-PT','ru-RU','sv-SE','zh-CN','zh-HK','zh-TW'
 							);
@@ -27,7 +27,7 @@ function t2s($messageid)
 					$lang_start = substr($language, 0, 2);
 					$language = $lang_start.'-'.strtolower($lang_end);
 				} else {
-					trigger_error('The entered VoiceRS language key is not supported. Please correct (see Wiki)!', E_USER_ERROR);
+					trigger_error('The entered VoiceRSS language key is not supported. Please correct (see Wiki)!', E_USER_ERROR);
 					exit;
 				}
 			} else {

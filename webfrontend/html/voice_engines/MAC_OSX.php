@@ -36,7 +36,7 @@ function t2s($messageid)
 						$voice = $valid_voice[0]['voice'];
 						shell_exec("say -v $voice $words -o $messageStorePath$fileolang.aiff; ".$lamePath."lame $mpath$fileolang.aiff 2>&1");
 					} else {
-						trigger_error('Der eingegebene OSX Name wird nicht unterstuetzt. Bitte korrigieren (siehe Wiki Tabelle)!', E_USER_ERROR);	
+						trigger_error('The entered OSX Voice is not supported. Please correct (see Wiki)!', E_USER_ERROR);	
 					}
 			} else {
 				shell_exec("say $words -o $messageStorePath$fileolang.aiff; ".$lamePath."lame $mpath$fileolang.aiff 2>&1");
