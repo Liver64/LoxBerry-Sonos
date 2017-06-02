@@ -26,7 +26,7 @@ function t2s($messageid)
 				if (in_array($language, $valid_languages)) {
 					$language = $_GET['lang'];	
 				} else {
-					trigger_error('Der eingegebene Google Sprachenschluessel wird nicht unterstuetzt. Bitte korrigieren (siehe Wiki Tabelle)!', E_USER_ERROR);
+					trigger_error('The entered Google language key is not supported. Please correct (see Wiki)!', E_USER_ERROR);
 					exit;
 				}
 			} else {
@@ -43,7 +43,7 @@ function t2s($messageid)
 		#####################################################################################################################
 		
 		if (strlen($words) > 100) {
-            trigger_error("Die T2S Message hat mehr als 100 Zeichen! Bitte den Text kürzen", E_USER_NOTICE);
+            trigger_error("The T2S contains more than 100 characters and therefor could not be generated. Please reduce characters in your message!", E_USER_NOTICE);
         }
 								  
 		# Speicherort der MP3 Datei
