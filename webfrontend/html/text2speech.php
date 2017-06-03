@@ -50,7 +50,7 @@ function create_tts($text, $messageid) {
 		if(substr($home,0,4) == "/opt") {	
 			include_once("addon/weather-to-speech.php");
 		} else {
-			include_once("addon/weather-to-speech_noLB.php");
+			include_once("addon/weather-to-speech_nolb.php");
 		}
 		$fileo = w2s($text);
 		$words = substr($fileo, 0, 500);
@@ -108,6 +108,9 @@ function create_tts($text, $messageid) {
 		}
 		if ($config['TTS']['t2s_engine'] == 4001) {
 			include_once("voice_engines/Polly.php");
+		}
+		if ($config['TTS']['t2s_engine'] == 8001) {
+			include_once("voice_engines/microsoft.php");
 		}
 	t2s($messageid);
 	return $messageid;

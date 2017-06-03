@@ -68,6 +68,7 @@ if (!function_exists('posix_getpwuid')) {
 }
 $myIP = $_SERVER["SERVER_ADDR"];
 
+
 $psubfolder = __FILE__;
 $psubfolder = preg_replace('/(.*)\/(.*)\/(.*)$/',"$2", $psubfolder);
 
@@ -78,6 +79,7 @@ if(substr($home,0,4) == "/opt")
 	$myFolder = "$home/config/plugins/$psubfolder/";
 	$myMessagepath = "//$myIP/sonos_tts/";
 	$myMessageStorepath = "$home/loxberry/data/plugins/$psubfolder/tts/";
+	chmod("$home/data/plugins/$psubfolder/tts/mp3/", 0644);
 
 	// Parsen der Konfigurationsdatei sonos.cfg
 	if (!file_exists($myFolder.'/sonos.cfg')) {
@@ -1665,8 +1667,8 @@ function getIvonaVoices() {
  function sendUDPdata() {
 	global $config, $sonoszone, $sonoszonen, $mstopology, $sonos_array_diff, $home, $tmp_lox;
 	
-	$tmp_lox =  parse_ini_file("$home/config/system/general.cfg", TRUE);
 	if($config['LOXONE']['LoxDaten'] == 1) {
+		$tmp_lox =  parse_ini_file("$home/config/system/general.cfg", TRUE);
 		if(substr($home,0,4) == "/opt") {		
 			// LoxBerry **********************
 			$sonos_array_diff = @array_diff_key($sonoszonen, $sonoszone);
