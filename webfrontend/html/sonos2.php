@@ -1668,9 +1668,9 @@ function getIvonaVoices() {
 	global $config, $sonoszone, $sonoszonen, $mstopology, $sonos_array_diff, $home, $tmp_lox;
 	
 	if($config['LOXONE']['LoxDaten'] == 1) {
-		$tmp_lox =  parse_ini_file("$home/config/system/general.cfg", TRUE);
 		if(substr($home,0,4) == "/opt") {		
 			// LoxBerry **********************
+			$tmp_lox =  parse_ini_file("$home/config/system/general.cfg", TRUE);
 			$sonos_array_diff = @array_diff_key($sonoszonen, $sonoszone);
 			$sonos_array_diff = @array_keys($sonos_array_diff);
 			$server_ip = $tmp_lox['MINISERVER1']['IPADDRESS'];
@@ -1692,9 +1692,11 @@ function getIvonaVoices() {
 			trigger_error("Can't create UDP socket to $server_ip", E_USER_WARNING);
 		}
 		// fügt die Offline Zonen hinzu
-		foreach ($sonos_array_diff as $zoneoff) {
-			$messageoff = "vol_$zoneoff@0; stat_$zoneoff@3";
-			array_push($tmp_array, $messageoff);
+		if (!empty($sonos_array_diff)) {
+			foreach ($sonos_array_diff as $zoneoff) {
+				$messageoff = "vol_$zoneoff@0; stat_$zoneoff@3";
+				array_push($tmp_array, $messageoff);
+			}
 		}
 		$UDPmessage = implode("; ", $tmp_array);
 		try {
