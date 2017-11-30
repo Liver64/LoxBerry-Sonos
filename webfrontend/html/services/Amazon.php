@@ -33,6 +33,7 @@ function AddAmazon() {
 	
 	// Amazon Track
 	if (isset($_GET['trackuri'])) {  
+		trigger_error("Amazon Track-URI is currently not supported!", E_USER_ERROR);
 		$uri = $_GET['trackuri'];
 		if (empty($uri)) {
 			trigger_error("Please enter Amazon Track-URI!", E_USER_ERROR);
