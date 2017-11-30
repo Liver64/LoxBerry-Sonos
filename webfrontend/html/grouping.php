@@ -3,6 +3,7 @@
 
 /**
 * Function: CreateStereoPair --> creates a StereoPair of 2 Single Zones
+* Example: $ChannelMapSet=(RINCON_000E5872D8AC01400:LF,LF;RINCON_000E5872D59801400:RF,RF)
 *
 * @param:  empty
 * @return: a pair of 2 Single Zones
@@ -18,7 +19,6 @@ function CreateStereoPair() {
 	$rinconrf = $sonoszone[$rf][1];
 	$ChannelMapSet = (string)$rinconlf.':LF,LF;'.$rinconrf.':RF,RF';
 	$sonos = new PHPSonos($sonoszone[$lf][0]);
-	// Example: $ChannelMapSet=(RINCON_000E5872D8AC01400:LF,LF;RINCON_000E5872D59801400:RF,RF)
 	$temp = $sonos->CreateStereoPair($ChannelMapSet);
 }
 
@@ -42,7 +42,7 @@ function CreateStereoPair() {
 	try {
 		$temp = $sonos->SeperateStereoPair($ChannelMapSet);
 	} catch (Exception $e) {
-		trigger_error("Die angegebenen Zonen sind kein Stereopaar oder in der Syntax vertauscht! Bitte korrigieren", E_USER_ERROR);
+		trigger_error("The specified zones are not a stereoparar or the syntax is reversed! Please correct", E_USER_ERROR);
 	}
  }
 
@@ -60,26 +60,26 @@ function CreateStereoPair() {
 	
 	// check if member for pairing has been entered
 	if (empty($rf)) {
-		trigger_error("Bitte die zweite Zone zur Erstellung eines Stereopaares angeben!!", E_USER_ERROR);
+		trigger_error("Please specify the second zone for creating a stereopair!!", E_USER_ERROR);
 	}
 	$lfbox = $config['sonoszonen'][$lf][2];
 	$rfbox = $config['sonoszonen'][$rf][2];
 	// check if zones are not doubled in syntax
 	if ($lf == $rf) {
-		trigger_error("Der Player ".$rf." kann sich nicht selbst zu ".$lf." hinzufügen. Bitte korrigieren!!", E_USER_ERROR);
+		trigger_error("The Zone ".$rf." can not be added itself to ".$lf.". Please correct!!", E_USER_ERROR);
 	}
 		// check if zones are supported devices for pairing
 		$lfmod = checkZonePairingAllowed($lfbox);
 		if ($lfmod != true) {
-			trigger_error("Der Player ".$lf." kann nicht zur Bildung eines Stereopaares genutzt werden, es sind nur PLAY:1, PLAY:3 und PLAY:5 erlaubt. Bitte korrigieren!!", E_USER_ERROR);
+			trigger_error("The Zone ".$lf." can't be used to create a stereopair, only PLAY: 1, PLAY: 3 and PLAY: 5 are allowed. Please correct!!", E_USER_ERROR);
 		}
 			$rfmod = checkZonePairingAllowed($rfbox);
 			if ($rfmod != true) {
-				trigger_error("Der Player ".$rf." kann nicht zur Bildung eines Stereopaares genutzt werden, es sind nur PLAY:1, PLAY:3 und PLAY:5 erlaubt. Bitte korrigieren!!", E_USER_ERROR);
+				trigger_error("The Zone ".$rf." can't be used to create a stereopair, only PLAY: 1, PLAY: 3 and PLAY: 5 are allowed. Please correct!!!!", E_USER_ERROR);
 			}
 				// check if both zones are exactly the same model
 				if ($lfbox != $rfbox) {
-					trigger_error("Der angegebene Player ".$rf." ist nicht der gleiche Typ wie der Player ".$lf.". Es können jeweils nur gleiche Modelle zur Bildung eines Stereopaares genutzt werden. Bitte korrigieren!!", E_USER_ERROR);
+					trigger_error("The entered Zone ".$rf." isn't the same type as zone ".$lf.". Only the same models can be used to create a stereopair. Please correct!!", E_USER_ERROR);
 				} 
  }
  
@@ -96,13 +96,13 @@ function CreateStereoPair() {
 	
 	// check if member for pairing has been entered
 	if (empty($rf)) {
-		trigger_error("Bitte die zweite Zone zur Auflösung eines Stereopaares angeben!!", E_USER_ERROR);
+		trigger_error("Please enter the second zone to seperate the stereopair!!", E_USER_ERROR);
 	}
 	$lfbox = $config['sonoszonen'][$lf][2];
 	$rfbox = $config['sonoszonen'][$rf][2];
 	// check if zones are not doubled in syntax
 	if ($lf == $rf) {
-		trigger_error("Der Player ".$rf." kann sich nicht selbst entfernen. Bitte korrigieren!!", E_USER_ERROR);
+		trigger_error("The Zone ".$rf." can't remove itself. Please correct!!", E_USER_ERROR);
 	}
  
  }
@@ -156,7 +156,8 @@ function getRoomCoordinator($room){
 			$player = array(
 				'Host' =>"$ip",
 				'Master' =>((string)$player_data->coordinator == 'true'),
-				'Rincon' =>'RINCON_'.explode('RINCON_',(string)$player_data->uuid)[1]
+				'Rincon' =>'RINCON_'.explode('RINCON_',(string)$player_data->uuid)[1],
+				'Sonos Name' => utf8_encode($room)
 			);
 			$coordinators[$room][] = $player;
 		}
@@ -173,13 +174,17 @@ function getRoomCoordinator($room){
 		usort($coordinators[$key], "cnp");
 	}
 	// search for room in topology
-	$zonename = recursive_array_search($config['sonoszonen'][$master][1],$coordinators);
+	$zonename = recursive_array_search(trim($sonoszone[$master][1]),$coordinators);
+	#print_r($zonename);
 	$ipadr = $coordinators[$zonename][0]['Host'];
 	$rinconid = $coordinators[$zonename][0]['Rincon'];
 	$coord = array($ipadr, $rinconid); 
 	if($debug == 1) { 
-		print_r ($coord);
+		echo 'Group Coordinator-IP: ';
+		print_r ($coord[0]);
+		echo '<br><br>';
 	}
+	#print_r($coord[0]);
 	return $coord;
  }
  
@@ -191,7 +196,7 @@ function getRoomCoordinator($room){
 * @return: array of rooms from a group where index (0) is always the Coordinator
 */ 
 
- function Group($room) {
+ function getGroup($room = "") {
 	global $sonoszone, $sonos, $grouping, $debug, $config;	
 	
 	if($room == "") {
@@ -229,16 +234,120 @@ function getRoomCoordinator($room){
 **/
 
 function getGroups() {
-	global $sonoszone;
+	global $sonoszone, $debug;
 
 	foreach ($sonoszone as $room => $value) {
-		$groups = Group($room);
-		print_r($groups);
+		$groups[] = getGroup($room);
+		if($debug == 1) { 
+			#print_r($groups);
+			
+		}
+		#return($groups);
 	}
-	return ($groups);
+	#print_r($groups);
+	return($groups);
  }
+ 
+ 
+/**
+* Function for T2S: getZoneStatus --> identify Player's current Status: Single Zone, Master or Member of a group
+*
+* @param: room
+* @return: single, member or master
+**/
 
+ function getZoneStatus($room) {
+	global $sonoszone, $sonos, $grouping, $debug, $config;	
 	
+	if(empty($room)) {
+		$room = $_GET['zone'];
+	}
+	$sonos = new PHPSonos($sonoszone[$room][0]);
+	$group = $sonos->GetZoneGroupAttributes();
+	$tmp_name = $group["CurrentZoneGroupName"];
+	$group = explode(',', $group["CurrentZonePlayerUUIDsInGroup"]);
+	if(empty($tmp_name)) {
+		$restore = 'member';
+	} 
+	if(!empty($tmp_name) && count($group) > 1) {
+		$restore = 'master';
+	}
+	if(!empty($tmp_name) && count($group) < 2) {
+		$restore = 'single';
+	}
+	if($debug == 2) { 
+		echo '<br>';
+		echo 'Die angegebene Zone '.$room.' hat den Status '.$restore;
+		echo '<br>';
+	}
+	return $restore;
+}
+
+
+/** --> OBSOLETE
+* Function for T2S: checkDeltaArray() --> identify differencies between Group area and current grouping
+*
+* @param: empty
+* @return: array of Delta
+**/
+
+function checkDeltaArray() {
+	global $member, $master, $sonoszone, $config, $debug;
+	
+	$master = $_GET['zone'];
+	$member = $_GET['member'];
+	$member = explode(',', $member);
+	// add Master to Array Position 0
+	array_unshift($member, $master);
+	$group = getGroup($master);
+	print_r($group);
+	// create delta between arrays and reset key to zero
+	if (empty($group)) {
+		$delta = $member;
+	} else {
+		$delta = array_diff($group, $member);
+		$delta = array_values($delta);
+	}
+	$newMaster = "tttt";
+	if (!empty($delta)) {
+		if($debug == 1) { 
+			echo 'member<br>';
+			print_r($member);
+			echo 'existing group<br>';
+			print_r($group);
+			echo 'Delta member to group<br>';
+			print_r ($delta);
+		}
+		$sonos = new PHPSonos($sonoszone[$master][0]);
+		$newMaster = $delta[0];
+		print_r($newMaster);
+		return $newMaster;
+		#exit;
+		$sonos->DelegateGroupCoordinationTo($config['sonoszonen'][$delta[0]][1], 1);
+	}
+	return $newMaster;
+}
+
+
+/**
+* Funktion : 	checkifmaster --> prüft ob die Zone aus der Syntax auch der Master ist, falls nicht wird der Gruppenmaster zurückgegeben
+*
+* @param: $master 
+* @return: $sater --> neuer master
+**/
+
+function checkifmaster($master) {
+	global $sonoszone, $config, $master;
+	
+	$sonos = new PHPSonos($sonoszone[$master][0]);
+	$posinfo = $sonos->GetPositionInfo();
+	if (substr($posinfo["TrackURI"], 0, 9) == "x-rincon:") {
+		$GroupMaster = trim(substr($posinfo["TrackURI"], 9, 30));
+		$master = recursive_array_search($GroupMaster,$sonoszone);
+		#echo $master;
+		return $master;
+	}      
+}
 
 
 ?>

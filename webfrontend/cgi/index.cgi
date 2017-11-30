@@ -26,6 +26,7 @@ use Config::Simple;
 use File::HomeDir;
 use Cwd 'abs_path';
 use JSON qw( decode_json );
+use utf8;
 #use warnings;
 #use strict;
 #no strict "refs"; # we need it for template system
@@ -82,8 +83,22 @@ our $selectedinstanz4;
 our $selectedinstanz5;
 our $selectedinstanz6;
 our $selectedinstanz7;
+our $town;
+our $region;
 our $rsender;
 our $rsenderurl;
+our $miniserver;
+our $msselectlist;
+our $googlekey;
+our $googletown;
+our $googlestreet;
+our $announceradio;
+our $selectedannounceradio1;
+our $selectedannounceradio2;
+our $maxzap;
+our $wastecal;
+our $cal;
+our $pluginlogfile;
 our @radioarray;
 our $i;
 
@@ -92,7 +107,7 @@ our $i;
 ##########################################################################
 
 # Version of this script
-$version = "1.0.6";
+$version = "2.1.3";
 
 # Figure out in which subfolder we are installed
 $psubfolder = abs_path($0);
@@ -132,15 +147,7 @@ if ( !$query{'saveformdata'} ) {
 } else { 
 	$saveformdata = quotemeta($query{'saveformdata'}); 
 }
-if ( !$query{'lang'} ) {
-	if ( param('lang') ) {
-		$lang = quotemeta(param('lang'));
-	} else {
-		$lang = "de";
-	}
-} else {
-	$lang = quotemeta($query{'lang'}); 
-}
+
 if ( !$query{'do'} ) { 
 	if ( param('do')) {
 		$do = quotemeta(param('do'));
@@ -170,9 +177,8 @@ if (!-e "$installfolder/templates/plugins/$psubfolder/$lang/language.dat") {
 $planguagefile	= "$installfolder/templates/plugins/$psubfolder/$lang/language.dat";
 $pphrase = new Config::Simple($planguagefile);
 
-# Default value for Miniserverport
-if (!$udpport) {$udpport = "80";}
-if (!$rmpvol) {$rmpvol = "25";}
+# Set variables
+$pluginlogfile    = $installfolder."/log/plugins/".$psubfolder."/sonos_error.log";
 
 ##########################################################################
 # Main program
@@ -204,17 +210,27 @@ sub form {
 	$debugging		  = $pcfg->param("SYSTEM.debuggen");
 	$LoxDaten		  = $pcfg->param("LOXONE.LoxDaten");
 	$udpport	  	  = $pcfg->param("LOXONE.LoxPort");
+	$miniserver	  	  = $pcfg->param("LOXONE.Loxone");
 	$apikey 		  = $pcfg->param("TTS.API-key");
 	$seckey 		  = $pcfg->param("TTS.secret-key");
 	$t2s_engine		  = $pcfg->param("TTS.t2s_engine");
 	$voice	 		  = $pcfg->param("TTS.voice");
 	$rampto	 		  = $pcfg->param("TTS.rampto");
 	$rmpvol	 	  	  = $pcfg->param("TTS.volrampto");
-	$lang			  = $pcfg->param("TTS.messageLang");
+	#$lang			  = $pcfg->param("TTS.messageLang");
 	$MP3store 		  = $pcfg->param("MP3.MP3store");
 	$volume		  	  = $pcfg->param("MP3.volumedown");
 	$file_gong		  = $pcfg->param("MP3.file_gong");
-
+	$town		  	  = $pcfg->param("LOCATION.town");
+	$region		  	  = $pcfg->param("LOCATION.region");
+	$googlekey		  = $pcfg->param("LOCATION.googlekey");
+	$googletown		  = $pcfg->param("LOCATION.googletown");
+	$googlestreet	  = $pcfg->param("LOCATION.googlestreet");
+	$announceradio	  = $pcfg->param("VARIOUS.announceradio");
+	$maxzap			  = $pcfg->param("VARIOUS.maxzap");
+	$wastecal		  = $pcfg->param("VARIOUS.CALDavMuell");
+	$cal			  = $pcfg->param("VARIOUS.CALDav2");
+	
 	# Radiosender auslesen
 	our $countradios = 0;
 	our $rowsradios;
@@ -256,13 +272,13 @@ sub form {
 		$rowssonosplayer .= "<tr><td style='height: 25px; width: 43px;' class='auto-style1'><INPUT type='checkbox' style='width: 20px' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
 		$rowssonosplayer .= "<td style='height: 25px; width: 196px;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$room' style='width: 133px' /> </td>\n";
 		$rowssonosplayer .= "<td style='height: 28px; width: 147px;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='@fields[2]' style='width: 153px' /> </td>\n";
-		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation='number' data-validation-allowing='range[1;100]' data-validation-error-msg='T2S Vol: Bitte die gewünschte Standard Lautstärke von 1 bis 100 eingeben.' name='t2svol$countplayers' value='@fields[3]' style='width: 52px' /> </td>\n";
-		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation='number' data-validation-allowing='range[1;100]' data-validation-error-msg='Sonos Vol: Bitte die gewünschte Standard Lautstärke von 1 bis 100 eingeben.' name='sonosvol$countplayers' value='@fields[4]' style='width: 52px' /> </td>\n";
-		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation='number' data-validation-allowing='range[1;100]' data-validation-error-msg='Max Vol: Bitte die gewünschte Standard Lautstärke von 1 bis 100 eingeben.' name='maxvol$countplayers' value='@fields[5]' style='width: 52px' /> </td> </tr>\n";
+		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation='number' data-validation-allowing='range[1;100]' data-validation-error-msg='T2S Vol: Please enter Volume between 1 to 100.' name='t2svol$countplayers' value='@fields[3]' style='width: 52px' /> </td>\n";
+		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation='number' data-validation-allowing='range[1;100]' data-validation-error-msg='Sonos Vol: Please enter Volume between 1 to 100.' name='sonosvol$countplayers' value='@fields[4]' style='width: 52px' /> </td>\n";
+		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation='number' data-validation-allowing='range[1;100]' data-validation-error-msg='Max Vol: Please enter Volume between 1 to 100.' name='maxvol$countplayers' value='@fields[5]' style='width: 52px' /> </td> </tr>\n";
 		$rowssonosplayer .= "<input type='hidden' id='ip$countplayers' name='ip$countplayers' value='@fields[0]'>\n";
 		$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' value='@fields[1]'>\n";
 	}
-
+		
 	# Call Subroutine to scan/import Sonos Zones
 	if ( $do eq "scan" ) {
 		&scan;
@@ -272,6 +288,17 @@ sub form {
 		$rowssonosplayer .= "<tr><td colspan=6>" . $pphrase->param("TXT0006") . "</td></tr>\n";
 	}
 	$rowssonosplayer .= "<input type='hidden' id='countplayers' name='countplayers' value='$countplayers'>\n";
+	
+	
+	# Fill Miniserver selection dropdown
+	for (my $i = 1; $i <= $cfg->param('BASE.MINISERVERS');$i++) {
+	    if ("MINISERVER$i" eq $miniserver) {
+		    $msselectlist .= '<option selected value="'.$i.'">'.$cfg->param("MINISERVER$i.NAME")."</option>\n";
+		} else {
+		    $msselectlist .= '<option value="'.$i.'">'.$cfg->param("MINISERVER$i.NAME")."</option>\n";
+		}
+	}
+	
 	
 	# Prepare form defaults
 
@@ -364,6 +391,50 @@ sub form {
 	  $selectedrampto2 = "checked=checked";
 	} 
 	
+	# REGION
+	if ($region eq "baw") {
+	  $region1 = "selected=selected";
+	} elsif ($region eq "bay") {
+	  $region2 = "selected=selected";
+	} elsif ($region eq "bbb") {
+	  $region3 = "selected=selected";
+	} elsif ($region eq "hes") {
+	  $region4 = "selected=selected";
+	} elsif ($region eq "mvp") {
+	  $region5 = "selected=selected";
+	} elsif ($region eq "nib") {
+	  $region6 = "selected=selected";
+	} elsif ($region eq "nrw") {
+	  $region7 = "selected=selected";
+	} elsif ($region eq "rps") {
+	  $region8 = "selected=selected";
+	} elsif ($region eq "sac") {
+	  $region9 = "selected=selected";
+	} elsif ($region eq "saa") {
+	  $region10 = "selected=selected";
+	} elsif ($region eq "shh") {
+	  $region11 = "selected=selected";
+	} elsif ($region eq "thu") {
+	  $region12 = "selected=selected";
+	} else {
+	  $region1 = "selected=selected";
+	}
+	
+	# VARIOUS
+	if ($announceradio eq "0") {
+	  $selectedannounceradio1 = "selected=selected";;
+	} elsif ($announceradio eq "1") {
+	  $selectedannounceradio2 = "selected=selected";
+	} else {
+	  $selectedannounceradio1 = "selected=selected";
+	} 
+	
+	# Various default values
+	#if (!$udpport) {$udpport = "80"};
+	if (!$rmpvol) {$rmpvol = "25"};
+	if (!$miniserver) {$miniserver = "MINISERVER1"};
+	if (!$maxzap) {$maxzap = "40"};
+		
 	print "Content-Type: text/html\n\n";
 	
 	$template_title = $pphrase->param("TXT0000") . ": " . $pphrase->param("TXT0001");
@@ -406,9 +477,19 @@ sub save
 	$volume 		= param('volume');
 	$rampto		 	= param('rampto');
 	$rmpvol		 	= param('rmpvol');
+	$town		 	= param('town');
+	$region		 	= param('region');
 	$countplayers	= param('countplayers');
 	$countradios 	= param('countradios');
-
+	$miniserver		= param('miniserver');
+	$googlekey		= param('googlekey');
+	$googletown		= param('googletown');
+	$googlestreet	= param('googlestreet');
+	$announceradio	= param('announceradio');
+	$maxzap			= param('maxzap');
+	$wastecal		= param('wastecal');
+	$cal			= param('cal');
+	
 	# Filter
 	$MP3Store   	= quotemeta($MP3store);
 	$t2s_engine   	= quotemeta($t2s_engine);
@@ -416,13 +497,17 @@ sub save
 	#$seckey 		= quotemeta($seckey);
 	$voice 			= quotemeta($voice);
 	#$file_gong 	= quotemeta($file_gong);
-	$LoxDaten 		= quotemeta($LoxDaten);
+	#$LoxDaten 		= quotemeta($LoxDaten);
 	$debugging		= quotemeta($debugging);
 	$volume 		= quotemeta($volume);
 	$rampto 		= quotemeta($rampto);
 	$rmpvol 		= quotemeta($rmpvol);
 	$udpport 		= quotemeta($udpport);
 	$lang 			= quotemeta($lang);
+	#$town 			= quotemeta($town);
+	$region 		= quotemeta($region);
+	$miniserver		= quotemeta($miniserver);
+	$maxzap 		= quotemeta($maxzap);
 	#$countplayers	= quotemeta($countplayers);
 	#$countradios	= quotemeta($countradios);
 	
@@ -437,13 +522,14 @@ sub save
 	# OK - now installing...
 
 	# Write configuration file(s)
+	$pcfg->param("LOXONE.Loxone", "MINISERVER$miniserver");
 	$pcfg->param("LOXONE.LoxDaten", "$LoxDaten");
 	$pcfg->param("LOXONE.LoxPort", "$udpport");
 	$pcfg->param("SYSTEM.debuggen", "$debugging");
 	$pcfg->param("TTS.t2s_engine", "$t2s_engine");
 	$pcfg->param("TTS.rampto", "$rampto");
 	$pcfg->param("TTS.volrampto", "$rmpvol");
-	$pcfg->param("TTS.messageLang", "$lang");
+	#$pcfg->param("TTS.messageLang", "$lang");
 	$pcfg->param("TTS.API-key", "$apikey");
 	$pcfg->param("TTS.secret-key", "$seckey");
 	$pcfg->param("TTS.voice", "$voice");
@@ -451,6 +537,15 @@ sub save
 	$pcfg->param("MP3.volumedown", "$volume");
 	$pcfg->param("MP3.volumeup", "$volume");
 	$pcfg->param("MP3.MP3store", "$MP3store");
+	$pcfg->param("LOCATION.town", "\"$town\"");
+	$pcfg->param("LOCATION.region", "$region");
+	$pcfg->param("LOCATION.googlekey", "$googlekey");
+	$pcfg->param("LOCATION.googletown", "$googletown");
+	$pcfg->param("LOCATION.googlestreet", "$googlestreet");
+	$pcfg->param("VARIOUS.announceradio", "$announceradio");
+	$pcfg->param("VARIOUS.maxzap", "$maxzap");
+	$pcfg->param("VARIOUS.CALDavMuell", "\"$wastecal\"");
+	$pcfg->param("VARIOUS.CALDav2", "\"$cal\"");
 
 	# save all radiostations
 	for ($i = 1; $i <= $countradios; $i++) {
@@ -518,14 +613,15 @@ sub scan
 		$rowssonosplayer .= "<tr><td style='height: 25px; width: 43px;' class='auto-style1'><INPUT type='checkbox' style='width: 20px' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
 		$rowssonosplayer .= "<td style='height: 25px; width: 196px;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$key' style='width: 133px' /> </td>\n";
 		$rowssonosplayer .= "<td style='height: 28px; width: 147px;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='$config->{$key}->[2]' style='width: 153px' /> </td>\n";
-		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation='number' data-validation-allowing='range[1;100]' data-validation-error-msg='T2S Vol: Bitte die gewünschte Standard Lautstärke von 1 bis 100 eingeben.' name='t2svol$countplayers' value='$config->{$key}->[3]' style='width: 52px' /> </td>\n";
-		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation='number' data-validation-allowing='range[1;100]' data-validation-error-msg='Sonos Vol: Bitte die gewünschte Standard Lautstärke von 1 bis 100 eingeben.' name='sonosvol$countplayers' value='$config->{$key}->[4]' style='width: 52px' /> </td>\n";
-		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation='number' data-validation-allowing='range[1;100]' data-validation-error-msg='Max Vol: Bitte die gewünschte Standard Lautstärke von 1 bis 100 eingeben.' name='maxvol$countplayers' value='$config->{$key}->[5]' style='width: 52px' /> </td> </tr>\n";
+		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation='number' data-validation-allowing='range[1;100]' data-validation-error-msg='T2S Vol: Please enter Volume between 1 to 100.' name='t2svol$countplayers' value='$config->{$key}->[3]' style='width: 52px' /> </td>\n";
+		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation='number' data-validation-allowing='range[1;100]' data-validation-error-msg='Sonos Vol: Please enter Volume between 1 to 100.' name='sonosvol$countplayers' value='$config->{$key}->[4]' style='width: 52px' /> </td>\n";
+		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation='number' data-validation-allowing='range[1;100]' data-validation-error-msg='Max Vol: Please enter Volume between 1 to 100.' name='maxvol$countplayers' value='$config->{$key}->[5]' style='width: 52px' /> </td> </tr>\n";
 		$rowssonosplayer .= "<input type='hidden' id='ip$countplayers' name='ip$countplayers' value='$config->{$key}->[0]'>\n";
 		$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' value='$config->{$key}->[1]'>\n";
 	}
-
+	$result = unlink ("$installfolder/config/plugins/$psubfolder/tmp_player.json");
 	return();
+	
 
 }
 	

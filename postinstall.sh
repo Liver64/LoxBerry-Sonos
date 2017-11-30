@@ -26,9 +26,9 @@ ARGV5=$5 # Fifth argument is Base folder of LoxBerry
 # Replace by subfolder
 /bin/sed -i "s%REPLACEBYSUBFOLDER%$ARGV3%" $ARGV5/config/plugins/$ARGV3/sonos.cfg
 /bin/sed -i "s%REPLACEBYSUBFOLDER%$ARGV3%" $ARGV5/webfrontend/html/plugins/$ARGV3/system/network.php
+/bin/sed -i "s%sonos4lox_dev%$ARGV3%" $ARGV5/webfrontend/html/plugins/$ARGV3/system/network.php
 /bin/sed -i "s%REPLACEBYDOMAIN%$ARGV5%" $ARGV5/webfrontend/html/plugins/$ARGV3/system/network.php
 /bin/sed -i "s%REPLACEBYSUBFOLDER%$ARGV3%" $ARGV5/templates/plugins/$ARGV3/de/help.html
-#/bin/sed -i "s%MP3path=MP3%$MP3path=mp3%" $ARGV5/config/plugins/$ARGV3/sonos.cfg
 
 test=`cat /etc/samba/smb.conf | grep sonos_tts | wc -l`
 
@@ -50,7 +50,6 @@ fi
 echo "<INFO>"
 echo "<INFO> Please restart Loxberry before starting Sonos configuration!"
 echo "<INFO>"
-# wget https://raw.githubusercontent.com/composer/getcomposer.org/2091762d2ebef14c02301f3039c41d08468fb49e/web/installer -O - -q | php -- --quiet
 
 # Exit with Status 0
 exit 0

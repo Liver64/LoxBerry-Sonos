@@ -5,13 +5,33 @@ function t2s($messageid)
 // speichert das zurückkommende file lokal ab
 // @Parameter = $messageid von sonos2.php
 {
-	global $messageid, $words, $config, $filename, $fileolang, $voice, $accesskey, $secretkey, $fileo;
-					
+	global $messageid, $words, $config, $filename, $fileolang, $voice, $fileo, $MessageStorepath;
+	// List of all available google voices (Date: 28.04.2017)
+	$valid_languages =array('af-ZA','id-ID','ms-MY','ca-ES','cs-CZ','da-DK','de-DE','en-AU','en-CA','en-GB','en-IN',
+							'en-IE','en-NZ','en-PH','en-ZA','en-US','es-AR','es-BO','es-CL','es-CO','es-CR','es-EC',
+							'es-SV','es-ES','es-US','es-GT','es-HN','es-MX','es-NI','es-PA','es-PY','es-PE','es-PR',
+							'es-DO','es-UY','es-VE','eu-ES','fil-PH','fr-CA','fr-FR','gl-ES','hr-HR','zu-ZA','is-IS',
+							'it-IT','lt-LT','hu-HU','nl-NL','nb-NO','pl-PL','pt-BR','pt-PT','ro-RO','sk-SK','sl-SI',
+							'fi-FI','sv-SE','vi-VN','tr-TR','el-GR','bg-BG','ru-RU','sr-RS','uk-UA','he-IL','ar-IL',
+							'ar-JO','ar-AE','ar-BH','ar-DZ','ar-SA','ar-IQ','ar-KW','ar-MA','ar-TN','ar-OM','ar-PS',
+							'ar-QA','ar-LB','ar-EG','fa-IR','hi-IN','th-TH','ko-KR','cmn-Hant-TW','yue-Hant-HK',
+							'ja-JP','cmn-Hans-HK','cmn-Hans-CN'
+						   );			
 		#-- Übernahme der Variablen aus config.php --
 		$engine = $config['TTS']['t2s_engine'];
-		$mpath = $config['SYSTEM']['messageStorePath'];
+		$mpath = $MessageStorepath;
 		if($engine = '7001') {
-			$language = $config['TTS']['messageLang'].'-'.$config['TTS']['messageLang'];;
+			if (isset($_GET['lang'])) {
+				$language = $_GET['lang'];
+				if (in_array($language, $valid_languages)) {
+					$language = $_GET['lang'];	
+				} else {
+					trigger_error('The entered Google language key is not supported. Please correct (see Wiki)!', E_USER_ERROR);
+					exit;
+				}
+			} else {
+				$language = $config['TTS']['messageLang'].'-'.strtoupper($config['TTS']['messageLang']);
+			}	
 		}
 		
 		#####################################################################################################################
@@ -23,7 +43,7 @@ function t2s($messageid)
 		#####################################################################################################################
 		
 		if (strlen($words) > 100) {
-            trigger_error("Die T2S Message hat mehr als 100 Zeichen! Bitte den Text kürzen", E_USER_NOTICE);
+            trigger_error("The T2S contains more than 100 characters and therefor could not be generated. Please reduce characters in your message!", E_USER_NOTICE);
         }
 								  
 		# Speicherort der MP3 Datei

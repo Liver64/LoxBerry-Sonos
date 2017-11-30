@@ -20,8 +20,16 @@
 # <ERROR> This is an error!"
 # <FAIL> This is a fail!"
 
-find /tmp/uploads/$ARGV1 -type f -print0 | xargs -0 dos2unix -q
 
+#$version = sed -nr "/^\[BASE\]/ { :l /^VERSION[ ]*=/ { s/.*=[ ]*//; p; q;}; n; b l;}" .$ARGV3/loxberry/config/system/general.cfg
+#echo $version
+#if [ "$version"  == "0.2.2" ]
+#then
+	#echo "<ERROR> You must update LoxBerry to Version 0.2.3 before installing Sonos Script"
+	#exit
+#fi
+
+find /tmp/uploads/$ARGV1 -type f -print0 | xargs -0 dos2unix -q
 echo "<OK> Fehlerhafte EOL's wurden erfolgreich konvertiert!"
 
 # Exit with Status 0

@@ -1,4 +1,4 @@
-<style type="text/css">
+﻿<style type="text/css">
 
 .auto-style1 {
 	text-align: center;
@@ -36,7 +36,7 @@
 <table class="formtable" border="0" width="100%" cellpadding="10">
 	<tr>
 		<td valign="middle" style="height: 33px; width: 25%;" class="auto-style1">
-			<h2 class="auto-style3" style="width: 255px">Sonos&reg; Konfiguration</h2>
+			<h2 class="auto-style3" style="width: 255px">Sonos&reg; Configuration</h2>
 		<td style="height: 33px" class="auto-style1">
 			<img class='ico_sonos' src='/plugins/<!--$psubfolder-->/images/sonos-logo.png' border='0' width='197' height='62' align="absmiddle">
 		</td>
@@ -46,7 +46,7 @@
 	</tr>
 	<tr>
 		<td style="height: 41px; width: 25%;" valign="top">
-			<label id="lzonen">Vorhandene oder hinzugef&uumlgte Sonos Player:</label>
+			<label id="lzonen">existing or added Sonos Zones:</label>
 		</td>
 		<td valign="middle" style="height: 41px; width: 50%;">
 		<table width="100%" cellpadding="2" cellspacing="0" border="1px" border="1" id="tblzonen">
@@ -54,8 +54,8 @@
 			    <th style="width: 35px">
 				<img class='ico_delete' src='/plugins/<!--$psubfolder-->/images/recycle-bin.png' border='0' width='24' height='24'>
 				</th>
-				<th align="left" style="height: 45px; width: 196px">Raum</th>
-			    <th align="left" style="height: 25px; width: 147px;">Modell</th>
+				<th align="left" style="height: 45px; width: 196px">Room</th>
+			    <th align="left" style="height: 25px; width: 147px;">Model</th>
    			    <th align="left" style="height: 25px; width: 98px;">T2S Vol</th>
 			    <th align="left" style="height: 25px; width: 98px;">Sonos Vol</th>
 			    <th align="left" style="height: 25px; width: 98px;">Max Vol</th>
@@ -65,7 +65,7 @@
 		</td>
 			<td style="width: 201px; height: 41px;" valign="top">
 			
-			<a onClick="Scan()" id="btnplayerscan" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="#">Scan Zonen</a>
+			<a onClick="Scan()" id="btnplayerscan" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="#">Scan Zones</a>
 
 		</td>
 		<td style="height: 13px; width: 24px;"></td>
@@ -73,7 +73,7 @@
 	</tr>
 	<tr>
 		<td style="width: 25%; height: 45px;">
-			<label id="ltts_instanz">Auswahl der Text-to-Speech Instanz:</label>
+			<label id="ltts_instanz">Select your Text-to-Speech Instance:</label>
 		</td>
 		<td style="width: 50%; height: 45px;">
 			<fieldset data-role="controlgroup" data-type="horizontal">
@@ -93,13 +93,13 @@
 			</fieldset>
 			</td>
 		<td valign="middle" style="height: 45px; width: 201px;">
-		<font size="-1"><a id="linkvoicerss" href="http://www.voicerss.org/login.aspx" target="_blank">Kostenlosen API Key 
-		f&uumlr VoiceRSS erstellen</a></font><br>
+		<font size="-1"><a id="linkvoicerss" href="http://www.voicerss.org/login.aspx" target="_blank">create free of charge API Key 
+		for VoiceRSS</a></font><br>
 		<br>
 		<font size="-1">
-		<a id="linkpolly" href="https://aws.amazon.com/de/developers/access-keys/" target="_blank">Keys 
-		f&uumlr Polly erstellen</a></font>
-		<span class="auto-style4">(Preismodell beachten!)</span></td>
+		<a id="linkpolly" href="https://aws.amazon.com/de/developers/access-keys/" target="_blank">create Keys 
+		for Polly</a></font>
+		<span class="auto-style4">(check Pricing!)</span></td>
 		<td style="height: 13px; width: 24px;"></td>
 	</tr>
 	<tr>
@@ -125,7 +125,7 @@
 	</tr>
 	<tr>
 	<td style="height: 37px; width: 25%;">
-		<label id="lvoice">Auswahl der Standard Stimme (Polly):</label>
+		<label id="lvoice">Select standard voice (Polly):</label>
 		</td>
 		<td width="50%;">
 			<select id="voice" name="voice" data-mini="true" width="50%" data-native-menu="false">
@@ -138,27 +138,27 @@
 		</tr>
 		<tr>
 			<td style="width: 25%">
-				<label id="lmp3store">Verweildauer der MP3 Dateien:</label>
+				<label id="lmp3store">time period to store MP3 files:</label>
 			</td>
 			<td style="width: 50%">
 				<table border=0 width="100%">
 			<tr>
 				<td width="19%">
 					<select id="mp3store" name="mp3store" data-mini="true" data-native-menu="false" width="50%">
-						<option value="1" <!--$mp3store1-->>1 Tag</option>
-						<option value="2" <!--$mp3store2-->>2 Tage</option>
-						<option value="3" <!--$mp3store3-->>3 Tage</option>
-						<option value="4" <!--$mp3store4-->>4 Tage</option>
-						<option value="5" <!--$mp3store5-->>5 Tage</option>
-						<option value="6" <!--$mp3store6-->>6 Tage</option>
-						<option value="7" <!--$mp3store7-->>7 Tage</option>
+						<option value="1" <!--$mp3store1-->>1 day</option>
+						<option value="2" <!--$mp3store2-->>2 days</option>
+						<option value="3" <!--$mp3store3-->>3 days</option>
+						<option value="4" <!--$mp3store4-->>4 days</option>
+						<option value="5" <!--$mp3store5-->>5 days</option>
+						<option value="6" <!--$mp3store6-->>6 days</option>
+						<option value="7" <!--$mp3store7-->>7 days</option>
 					</select>
 				</td>
 			<td>
 				<table border=0 width="100%">
 					<tr>
 						<td width="50%" class="auto-style1" style="height: 30px">
-							<label id="lfile_gong">Dateiname f&uumlr Jingle MP3:</label>
+							<label id="lfile_gong">filename for jingle MP3:</label>
 						</td>
 						<td style="height: 30px">
 							<input id="file_gong" name="file_gong" type="text" class="textfield" value="<!--$file_gong-->">
@@ -179,7 +179,7 @@
 	</tr>
 	<tr>
 		<td style="height: 60px; width: 25%;">
-			<label id="lsendlox">Daten&uumlbertragung / Auswahl Miniserver:</label>
+			<label id="lsendlox">Select Loxone MS / Data Transfer:</label>
 		</td>
 		<td width="50%" style="height: 60px">
 			<table border=0 width="100%">
@@ -187,8 +187,8 @@
 					<td style="width: 25%">
 					<fieldset>
 							<select id="sendlox" name="sendlox" data-role="flipswitch" style="width: 104px" onchange="selection()">
-								<option <!--$selectedsendlox1--> value="false">Aus</option>
-								<option <!--$selectedsendlox2--> value="true">An</option>
+								<option <!--$selectedsendlox1--> value="false">Off</option>
+								<option <!--$selectedsendlox2--> value="true">On</option>
 								
 							</select>
 							</fieldset>
@@ -221,8 +221,8 @@
 	</table>
 		</td>
 			<td style="height: 30px; width: 201px;">
-				<font size="-1">Sonos Daten per virtuellem UDP und Text Eingang am 
-				Miniserver einlesen. </font>
+				<font size="-1">Transfer data from Sonos using virtual UDP and 
+				Text Input to Miniserver. </font>
 			</td>
 			<td style="height: 30px; width: 24px;">
 				<font size="-1"><div id="testurl">
@@ -240,13 +240,13 @@
 					<td width="20%">
 						<fieldset>
 							<select id="debugging" name="debugging" data-role="flipswitch">
-								<option <!--$selecteddebug1--> value="0">Aus</option>
-								<option <!--$selecteddebug2--> value="1">Ein</option>
+								<option <!--$selecteddebug1--> value="0">Off</option>
+								<option <!--$selecteddebug2--> value="1">On</option>
 							</select>
 						</fieldset>
 					</td>
 					<td class="auto-style1">
- 					<a href="/admin/system/tools/logfile.cgi?logfile=plugins/sonos4lox/sonos_error.log&header=html&format=template" target="_blank">Anzeige Sonos Logfile</a>
+ 					<a href="/admin/system/tools/logfile.cgi?logfile=plugins/sonos4lox/sonos_error.log&header=html&format=template" target="_blank">Show Sonos Logfile</a>
 					</td>
 					
 </tr>
@@ -254,7 +254,7 @@
 		</td>
 			
 			<td style="height: 30px; width: 201px;">
-				<font size="-1">Nur in Ausnahmef&aumlllen zur Fehlersuche einschalten. </font>
+				<font size="-1">Just use only in case for error fixing. </font>
 			</td>
 		</tr>
 		<tr>
@@ -272,7 +272,7 @@
 		</tr>
 		<tr>
 			<td colspan=3 valign="middle">
-				<font size="-1">Bitte &uumlbernehme die Standard Werte und &aumllndere diese Parameter erst nach erfolgreicher Installation (siehe Hilfe)!
+				<font size="-1">Please adopt Standard values and change them post successful installation (see Help)!
 				</font>
 
 			</td>
@@ -280,7 +280,7 @@
 		</tr>
 		<tr>
 			<td style="width: 25%; height: 60px;">
-				<label id="lvolume">Volume &Aumlnderung +/-per Klick:</label>
+				<label id="lvolume">Change Volume +/- by click:</label>
 			</td>
 				<td style="width: 50%; height: 60px;">
 					<table border=0 width="100%">
@@ -334,7 +334,7 @@
 								<td style width: "60%" class="auto-style2">
 									<input id="rmpvol" name="rmpvol" type="text" data-validation="number" class="textfield" value="<!--$rmpvol-->"
 									data-validation-allowing="range[1;100]"
-									data-validation-error-msg="* Rampto Volume: Bitte nur Zahlen von 1 bis 100 eingeben.">
+									data-validation-error-msg="* Rampto Volume: Please enter numbers between 1 and 100.">
 								</td>
 							</tr>
 						</table>
@@ -352,15 +352,14 @@
 			</tr>
 				<td colspan=3 valign="middle" style="height: 33px">
 					<hr />
-					<h3>Radio Favoriten f&uumlr Taster Bedienung</h3>
+					<h3>Radio Station Favorites for Push Button</h3>
 				</td>
 				<td style="height: 33px; width: 24px;"></td>
 
 				<tr>		
 					<td colspan=3 valign="middle" style="height: 36px">
-					<font size="-1">Dies sind voreingestellte Radiosender f&uumlr Taster Bedienung. 
-					Mit der Funktion werden per Klick die Radio Favoriten 
-					durchgezappt. <br>Wie du die Favoriten korrekt einpflegst schau bitte ins Wiki.
+					<font size="-1">Maintain your Radio Station favorites for Push button usage. Once you hit the push button you zapp through your stations back and force. 
+					<br>For details how to obtain the correct URL please review the Wiki.
 					</font>
 		<p>
 		</p>
@@ -370,25 +369,24 @@
 				<img class='ico_delete' src='/plugins/<!--$psubfolder-->/images/recycle-bin.png' border='0' width='24' height='24'>
 				</th>
 
-			    <th align="left" style="height: 25px">Sender Name</th>
-			    <th align="left" style="height: 25px; width: 888px;">Sender URL</th>
+			    <th align="left" style="height: 25px">Station Name</th>
+			    <th align="left" style="height: 25px; width: 888px;">Station URL</th>
 			  </tr>
 			  <!--$rowsradios-->
 			</table>
-			<a onClick="AddRadio();return false;" id="btnaddradio" data-role="button" data-inline="true" data-mini="true" data-icon="plus" href="#">Hinzuf&uumlgen</a>
+			<a onClick="AddRadio();return false;" id="btnaddradio" data-role="button" data-inline="true" data-mini="true" data-icon="plus" href="#">add station</a>
 			
 			<table border=0 width="100%">
 				<tr>
 					<td style="width: 27%">
-						Ansage des Radiosenders vor Play:</td>
+						Name of radiostation before starts playing station:</td>
 					<td style="width: 557px">
-						<fieldset style="width: 431px">
+						<fieldset style="width: 688px">
 							<select id="announceradio" name="announceradio" data-role="flipswitch">
-								<option <!--$selectedannounceradio1--> value="0">Aus</option>
-								<option <!--$selectedannounceradio2--> value="1">Ein</option>
-							</select>&nbsp;&nbsp; <span class="auto-style4">(gilt 
-							nur für die Funktionen '<strong>nextradio</strong>' 
-							und '<strong>zapzone</strong>')</span>
+								<option <!--$selectedannounceradio1--> value="0">Off</option>
+								<option <!--$selectedannounceradio2--> value="1">On</option>
+							</select>&nbsp;&nbsp; <span class="auto-style4">(only to be used for '<strong>nextradio</strong>' 
+							and '<strong>zapzone</strong>')</span>
 						</fieldset>
 						<input id="maxzap" name="maxzap" type="hidden" class="textfield" value="<!--$maxzap-->">
 					</td>
@@ -397,150 +395,8 @@
 				</tr>
 			</table>
 
-					<br>
-					<h3>&nbsp;</h3><hr />
-					<h3>Bundesland, Stadt oder Gemeinde f&uumlr Pollenflug und 
-					Wetterhinweise oder Wetterwarnungen (nur f&uumlr BRD)</h3>
 					
-					<font size="-1">Um Pollenflug und 
-					Wetterhinweise bzw. Wetterwarnungen per T2S mitgeteilt zu 
-					bekommen bitte Bundesland und Stadt bzw. Gemeinde einpflegen. 
-					Datenquelle ist der deutsche Wetterdienst.
-					</font>
-	
-				
-						<tr>
-						<td style="width: 25%">
-						Bundesland / Region:
-			</td>
-			<td style="width: 50%">
-				<table border=0 width="100%">
-			<tr>
-				<td width="19%">
-					<select id="region" name="region" data-mini="true" data-native-menu="false" style="width: 83%">
-									<option value="baw" <!--$region1-->>Baden-W&uumlrttemberg</option>
-									<option value="bay" <!--$region2-->>Bayern</option>
-									<option value="bbb" <!--$region3-->>Berlin und Brandenburg</option>
-									<option value="hes" <!--$region4-->>Hessen</option>
-									<option value="mvp" <!--$region5-->>Mecklenburg-Vorpommern</option>
-									<option value="nib" <!--$region6-->>Niedersachsen und Bremen</option>
-									<option value="nrw" <!--$region7-->>Nordrhein-Westfalen</option>
-									<option value="rps" <!--$region8-->>Rheinland-Pfalz und Saarland</option>
-									<option value="sac" <!--$region9-->>Sachsen</option>
-									<option value="saa" <!--$region10-->>Sachsen-Anhalt</option>
-									<option value="shh" <!--$region11-->>Schleswig-Holstein und Hamburg</option>
-									<option value="thu" <!--$region12-->>Th&uumlringen</option>
-						</select>
-				</td>
-			<td>
-				<table border=0 width="100%">
-					<tr>
-						<td width="50%" class="auto-style1" style="height: 30px">
-							Stadt oder Gemeinde:</td>
-						<td style="height: 30px">
-							<input id="town" name="town" type="text" class="textfield" value="<!--$town-->">
-						</td>
-						
-					</tr>
-				</table></tr>
-			</td>
-		</tr>
-	</table>
-		<td valign="middle" style="height: 60px; width: 201px;" class="auto-style4">
-		<a id="linkdwd" href="http://www.dwd.de/DE/wetter/warnungen_gemeinden/warntabellen/warntabellen_node.html" target="_blank">Wetterwarnung Standort pr&uumlfen</a><br>
-		<a id="linkpollen" href="http://www.wetterdienst.de/Deutschlandwetter/DEINE_STADT/Pollenflug/" target="_blank">Pollenflug Standort pr&uumlfen</a></td>
-		<td style="height: 60px; width: 24px;">
-		
-		</td>
-		<tr>
-		<td colspan=3 valign="middle" style="height: 33px">
-					<h3>&nbsp;</h3><hr />
-					<h3>Fahrzeitansage von deinem Standort zu einem gew&uumlnschten Ziel 
-					(basierend auf Google Maps)</h3>
-				</td>
-
-		</tr>
-		<tr>
-		<td colspan=3 valign="middle" style="height: 37px">
-					<font size="-1">Mit der Fahrzeitberechnung wird die ca. 
-					Fahrdauer von deinem Standort zu einem anzugebenen Ziel 
-					angesagt.&nbsp; (Details siehe Wiki). Zuerst bitte bei
-					<a href="https://www.google.de/maps">
-					https://www.google.de/maps</a> pr&uumlfen!</font></tr>
-		<tr>
-		<td style="height: 48px; width: 25%">
-			<label id="lapikey">Google (distance matrix API):</label>
-		</td>
-		<td style="width: 50%; height: 48px">
-			<input id="googlekey" name="googlekey" type="text" class="textfield" value="<!--$googlekey-->">
-		</td>
-		<td style="height: 48px; width: 201px;" class="auto-style4">
-		<font size="-1">
-		<a id="linkgoogle" href="https://developers.google.com/maps/documentation/distance-matrix/" target="_blank">Key 
-		f&uumlr Google distance to matrix erstellen</a></font></td>
-		<td style="height: 48px; width: 24px;"></td>
-
-		</tr>
-<td style="width: 25%">Land / Stadt / Dorf / Gemeinde:
-			<br><span class="auto-style7">z.B. D-60623 o. Frankfurt o. 60623</span></td>
-			<td style="width: 50%">
-				<table border=0 width="100%">
-			<tr>
-				<td style="width: 41%">
-					<input id="googletown" name="googletown" type="text" class="textfield" value="<!--$googletown-->" style="width: 215px">
-				</td>
-			<td>
-				<table border=0 width="100%">
-					<tr>
-						<td class="auto-style1" style="height: 30px; width: 24%;">
-							Adresse:</td>
-						<td style="height: 30px">
-							<input id="googlestreet" name="googlestreet" type="text" class="textfield" value="<!--$googlestreet-->" style="width: 231px">
-						</td>
-						
-					</tr>
-				</table></tr>
-			
-	</table>
-		<td valign="middle" style="height: 60px; width: 201px;" class="auto-style4">
-		<td style="height: 60px; width: 24px;">
-	</td>
-	<p>
-	
-	</p>
-	<tr>
-		<td colspan=3 valign="middle" style="height: 33px">
-					<h3>&nbsp;</h3><hr />
-					<h3>Kalendar Ansage basierend auf CALDav Plugin 
-					(Syntaxermittlung im Plugin durchführen)</h3>
-				</td>
-
-		</tr>
-	<tr>
-	<td style="height: 48px; width: 25%">
-			<label id="lwastecal">Abfallkalender:</label>
-		</td>
-		<td style="width: 50%; height: 48px">
-			<input id="wastecal" name="wastecal" type="text" class="textfield" value="<!--$wastecal-->">
-		</td>
-		<td style="height: 48px; width: 201px;" class="auto-style4">
-		</td>
-		<td style="height: 48px; width: 24px;"></td>
-		<tr>
-		<td style="height: 48px; width: 25%">
-			<label id="lcal">Kalender:</label>
-		</td>
-		<td style="width: 50%; height: 48px">
-			<input id="cal" name="cal" type="text" class="textfield" value="<!--$cal-->">
-		</td>
-		<td style="height: 48px; width: 201px;" class="auto-style4">
-		</td>
-		<td style="height: 48px; width: 24px;"></td>
-
-		</tr>
-
-
-	</tr>
+					
 
 	</table>
 	</div>
@@ -553,8 +409,8 @@
 		<p>
 			<p>
 			<center>
-				<a id="btncancel" data-role="button" data-inline="true" data-mini="true" data-icon="delete" href="/admin/index.cgi">Abbrechen</a>
-				<button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check">Speichern</button>
+				<a id="btncancel" data-role="button" data-inline="true" data-mini="true" data-icon="delete" href="/admin/index.cgi">Cancel</a>
+				<button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check">Save</button>
 			</center>
 		</p>
 	</form>

@@ -4,13 +4,12 @@
  * class to control a Sonos Multiroom System
  *
  *
- * Version: 		1.0.0
- * Date: 			14.03.2017
+ * Version: 		2.1.3
+ * Date: 			20.11.2017
  * Auto:    		Oliver Lewald
- * published in: 	http://plugins.loxberry.de/ or https://github.com/Liver64/LoxBerry-Sonos
+ * published in: 	http://plugins.loxberry.de/
  * 
- * Change History:
- * 1.0.0 initial release
+ * 
  *
  **/
 
@@ -78,6 +77,11 @@
 # - DelSonosPlaylist($id)
 # - CreateStereoPair($ChannelMapSet)
 # - SeperateStereoPair($ChannelMapSet)
+// V2.1.1
+# - GetVolumeMode($mode, $uuid) 
+# - SetVolumeMode($uuid) 
+
+
 
 
 
@@ -1056,19 +1060,27 @@ SOAPACTION: "urn:schemas-upnp-org:service:ContentDirectory:1#DestroyObject"
  
 public function DelegateGroupCoordinationTo($RinconID, $Rejoin) {
 		
-	# 0 = RejoinGroup --> false 
-	# 1 = RejoinGroup --> true
+# 0 = RejoinGroup --> false 
+# 1 = RejoinGroup --> true
 
-		$content='POST /MediaRenderer/AVTransport/Control HTTP/1.1
-		SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#DelegateGroupCoordinationTo"
-		CONTENT-TYPE: text/xml; charset="utf-8"
-		HOST: '.$this->address.':1400
-		Content-Length: 381
+$content='POST /MediaRenderer/AVTransport/Control HTTP/1.1
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#DelegateGroupCoordinationTo"
+CONTENT-TYPE: text/xml; charset="utf-8"
+HOST: '.$this->address.':1400
+Content-Length: 419
 
-		<s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body>
-		<u:DelegateGroupCoordinationTo xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
-		<NewCoordinator>'.$RinconID.'</NewCoordinator><RejoinGroup>'.$Rejoin.'</RejoinGroup></u:DelegateGroupCoordinationTo></s:Body></s:Envelope>';
+<?xml version="1.0" encoding="utf-8"?>
+<s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+   <s:Body>
+      <u:DelegateGroupCoordinationTo xmlns:u="urn:schemas-upnp-org:service:AVTransport:1">
+         <InstanceID>0</InstanceID>
+         <NewCoordinator>'.$RinconID.'</NewCoordinator>
+         <RejoinGroup>'.$Rejoin.'</RejoinGroup>
+      </u:DelegateGroupCoordinationTo>
+   </s:Body>
+</s:Envelope>';
 
+		
 		$this->sendPacket($content);
 }
 
@@ -1097,7 +1109,7 @@ $this->sendPacket($content);
 	
 
  /**
- * Sepaerates a Stereo Pair in two single zones
+ * Seperates a Stereo Pair in two single zones
  *
  * @param string RinconID, LEFT and RinconID RIGHT
  *
@@ -1499,6 +1511,64 @@ SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#SetPlayMode"
       $this->sendPacket($content);
    }
    
+
+   
+
+
+   
+   
+/**
+ * Set for Sonos CONNECT the Volume to fixed or variable
+ * 
+ * @params '0' = variable, '1' = fixed
+ * @return string
+ */ 
+ 
+   public function SetVolumeMode($mode, $uuid) 
+   {
+$content='POST /MediaRenderer/RenderingControl/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: '.$this->address.':1400
+USER-AGENT: Linux UPnP/1.0 Sonos/38.9-46251 (WDCR:Microsoft Windows NT 6.1.7601 Service Pack 1)
+CONTENT-LENGTH: 305
+CONTENT-TYPE: text/xml; charset="utf-8"
+X-SONOS-TARGET-UDN: uuid:'.$uuid.'
+SOAPACTION: "urn:schemas-upnp-org:service:RenderingControl:1#SetOutputFixed"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:SetOutputFixed xmlns:u="urn:schemas-upnp-org:service:RenderingControl:1"><InstanceID>0</InstanceID><DesiredFixed>'.$mode.'</DesiredFixed></u:SetOutputFixed></s:Body></s:Envelope>';
+
+		return $this->sendPacket($content);
+   }
+   
+   
+/**
+ * Get for Sonos CONNECT the Volume mode
+ * 
+ * @params 
+ * @return '0' = variable, '1' = fixed
+ */ 
+ 
+   public function GetVolumeMode($uuid) 
+   {
+$content='POST /MediaRenderer/RenderingControl/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: '.$this->address.':1400
+USER-AGENT: Linux UPnP/1.0 Sonos/38.9-46251 (WDCR:Microsoft Windows NT 6.1.7601 Service Pack 1)
+CONTENT-LENGTH: 275
+CONTENT-TYPE: text/xml; charset="utf-8"
+X-SONOS-TARGET-UDN: uuid:'.$uuid.'
+SOAPACTION: "urn:schemas-upnp-org:service:RenderingControl:1#GetOutputFixed"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:GetOutputFixed xmlns:u="urn:schemas-upnp-org:service:RenderingControl:1"><InstanceID>0</InstanceID></u:GetOutputFixed></s:Body></s:Envelope>';	   
+	   
+	   return (bool)$this->sendPacket($content);
+   }
+
+   
+
+   
 /**
  * Gets transport settings for a renderer
  *
@@ -1857,21 +1927,24 @@ SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#GetPositionInfo"
  * Play Radio station
  *
  * @param string $radio            radio url
- * @param string $Name            Name of station (optional, default IP-Symcon Radio)
+ * @param string $Name            Name of station (optional)
  * @param string $id             ID of Station (optional, default R:0/0/0)
  * @param string $parentID           parentID (optional, default R:0/0)
  * @return array
  */
  
-   public function SetRadio($radio,$Name="default",$id="R:0/0/0",$parentID="R:0/0")
+   #public function SetRadio($radio, $name, $id="R:0/0/0", $parentID="R:0/0")
+   public function SetRadio($radio, $name, $id="R:0/0/43", $parentID="R:0/0")
    { 
-   $MetaData="&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;".$id."&quot; parentID=&quot;".$parentID."&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;".$Name."&lt;/dc:title&gt;&lt;upnp:class&gt;object.item.audioItem.audioBroadcast&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON65031_&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;";
-
+   $MetaData="&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;".$id."&quot; parentID=&quot;".$parentID."&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;".$name."&lt;/dc:title&gt;&lt;upnp:class&gt;object.item.audioItem.audioBroadcast&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON65031_&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;";
+              
     $this->SetAVTransportURI($radio,$MetaData);
 
    }
-
    
+   
+
+
 /**
  * Sets Av Transport URI
  *
@@ -2093,7 +2166,7 @@ Content-Length: '. strlen($xml) .'
     $returnContent = substr($returnContent, stripos($returnContent, '&lt;'));
         $returnContent = substr($returnContent, 0, strrpos($returnContent, '&gt;') + 4);
         $returnContent = str_replace(array("&lt;", "&gt;", "&quot;", "&amp;", "%3a", "%2f", "%25"), array("<", ">", "\"", "&", ":", "/", "%"), $returnContent);
-
+				
         $xml = new SimpleXMLElement($returnContent);
         $liste = array();
         for($i=0,$size=count($xml);$i<$size;$i++)
@@ -2277,10 +2350,10 @@ Content-Length: '. strlen($xml) .'
         $returnContent = substr($returnContent, stripos($returnContent, '&lt;'));
         $returnContent = substr($returnContent, 0, strrpos($returnContent, '&gt;') + 4);
         $returnContent = str_replace(array("&lt;", "&gt;", "&quot;", "&amp;", "%3a", "%2f", "%25"), array("<", ">", "\"", "&", ":", "/", "%"), $returnContent);
-
+		
         $xml = new SimpleXMLElement($returnContent);
         $liste = array();
-        for($i=0,$size=count($xml);$i<$size;$i++)
+		for($i=0,$size=count($xml);$i<$size;$i++)
         {
             //Wenn Container vorhanden, dann ist es ein Browse Element
             //Wenn Item vorhanden, dann ist es ein Song.
@@ -2297,12 +2370,13 @@ Content-Length: '. strlen($xml) .'
                //Fehler aufgetreten
                return;
             }
-                  $id = $attr['id'];
+			      $id = $attr['id'];
                   $parentid = $attr['parentID'];
                   $albumart = $aktrow->xpath("upnp:albumArtURI");
                   $titel = $aktrow->xpath("dc:title");
                   $interpret = $aktrow->xpath("dc:creator");
                   $album = $aktrow->xpath("upnp:album");
+				  
                   if(isset($aktrow->res)){
                      $res = (string)$aktrow->res;
                      $liste[$i]['res'] = urlencode($res);
@@ -2342,12 +2416,141 @@ Content-Length: '. strlen($xml) .'
                   }else{
                    $liste[$i]['album']="leer";
                   }
+				  
 
         }
 return $liste;
     }
 
 
+	
+/**
+ * Universal function to browse ContentDirectory
+ *
+ * @param string $value    ObjectID 
+ * @param string $meta     BrowseFlag
+ * @param string $filter   Filter
+ * @param string $sindex   SearchIndex
+ * @param string $rcount   ResultCount
+ * @param string $sc       SortCriteria
+ *
+ * @return Array
+ */
+ 
+     public function GetSonosFavorites($value,$meta="BrowseDirectChildren",$filter="",$sindex="0",$rcount="1000",$sc="")
+    {
+
+       switch($meta){
+       case 'BrowseDirectChildren':
+       case 'c':
+       case 'child':
+         $meta="BrowseDirectChildren";
+       break;
+       case 'BrowseMetadata':
+       case 'm':
+       case 'meta':
+             $meta = "BrowseMetadata";
+       break;
+       default:
+       return false;
+      }
+        $header='POST /MediaServer/ContentDirectory/Control HTTP/1.1
+SOAPACTION: "urn:schemas-upnp-org:service:ContentDirectory:1#Browse"
+CONTENT-TYPE: text/xml; charset="utf-8"
+HOST: '.$this->address.':1400';
+$xml='<?xml version="1.0" encoding="utf-8"?>
+<s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+<s:Body>
+<u:Browse xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1"><ObjectID>'.htmlspecialchars($value).'</ObjectID><BrowseFlag>'.$meta.'</BrowseFlag><Filter>'.$filter.'</Filter><StartingIndex>'.$sindex.'</StartingIndex><RequestedCount>'.$rcount.'</RequestedCount><SortCriteria>'.$sc.'</SortCriteria></u:Browse>
+</s:Body>
+</s:Envelope>';
+$content=$header . '
+Content-Length: '. strlen($xml) .'
+
+'. $xml;
+
+    $returnContent = $this->sendPacket($content);
+    $xmlParser = xml_parser_create();
+        $returnContent = substr($returnContent, stripos($returnContent, '&lt;'));
+        $returnContent = substr($returnContent, 0, strrpos($returnContent, '&gt;') + 4);
+        $returnContent = str_replace(array("&lt;", "&gt;", "&quot;", "&amp;", "%3a", "%2f", "%25"), array("<", ">", "\"", "&", ":", "/", "%"), $returnContent);
+		
+        $xml = new SimpleXMLElement($returnContent);
+		$liste = array();
+		for($i=0,$size=count($xml);$i<$size;$i++)
+        {
+            //Wenn Container vorhanden, dann ist es ein Browse Element
+            //Wenn Item vorhanden, dann ist es ein Song.
+            if(isset($xml->container[$i]))  {
+                  $aktrow = $xml->container[$i];
+                  $attr = $xml->container[$i]->attributes();
+                  $liste[$i]['typ'] = "container";
+             } else if(isset($xml->item[$i]))  {
+               //Item vorhanden also nur noch Musik
+                  $aktrow = $xml->item[$i];
+                  $attr = $xml->item[$i]->attributes();
+                  $liste[$i]['typ'] = "item";
+            } else {
+               //Fehler aufgetreten
+			   return;
+            }
+			      $id = $attr['id'];
+                  $parentid = $attr['parentID'];
+                  $albumart = $aktrow->xpath("upnp:albumArtURI");
+                  $titel = $aktrow->xpath("dc:title");
+                  $interpret = $aktrow->xpath("dc:creator");
+                  $album = $aktrow->xpath("upnp:album");
+				  if(isset($aktrow->res)){
+                     $res = (string)$aktrow->res;
+                     $liste[$i]['res'] = urlencode($res);
+
+                   }else{
+                      $liste[$i]['res'] = "leer";
+                   }
+                      $resattr = $aktrow->res->attributes();
+                           if(isset($resattr['duration'])){
+                         $liste[$i]['duration']=(string)$resattr['duration'];
+                      }else{
+                         $liste[$i]['duration']="leer";
+                      }
+                  if(isset($albumart[0])){
+                   $liste[$i]['albumArtURI']="http://" . $this->address . ":1400".(string)$albumart[0];
+                  }else{
+                   $liste[$i]['albumArtURI'] ="leer";
+                  }
+                  $liste[$i]['title']=(string)$titel[0];
+                  if(isset($interpret[0])){
+                      $liste[$i]['artist']=(string)$interpret[0];
+                  }else{
+                     $liste[$i]['artist']="leer";
+                  }
+                  if(isset($id) && !empty($id)){
+                      $liste[$i]['id']=urlencode((string)$id);
+                  }else{
+                      $liste[$i]['id']="leer";
+                  }
+                  if(isset($parentid) && !empty($parentid)){
+                      $liste[$i]['parentid']=urlencode((string)$parentid);
+                  }else{
+                      $liste[$i]['parentid']="leer";
+                  }
+                    if(isset($album[0])){
+                   $liste[$i]['album']=(string)$album[0];
+                  }else{
+                   $liste[$i]['album']="leer";
+                  }
+				  
+				  
+
+        }
+return $liste;
+    }
+
+	
+	
+	
+	
 /**
  * Get Now Playing information from Radiotime via opml
  *
@@ -2507,14 +2710,4 @@ return $list;
     }  
 }
 
-
-	
-# check if necessary anymore
-function SonosBY_SendSOAP($IPaddress, $content) { 
-    $fp = fsockopen($IPaddress, 1400); 
-   fputs ($fp, $content); 
-   $result = stream_get_contents($fp, -1); 
-   fclose($fp); 
-   return $result; 
-} 
 ?>

@@ -4,7 +4,7 @@ function w2s($text)
 // TTS Nachricht, übermittelt sie an VoiceRRS und speichert das zurückkommende file lokal ab
 // @Parameter = $text von sonos2.php
  	{
-		global $config, $debug;
+		global $config, $debug, $town;
 		
 		$home = posix_getpwuid(posix_getuid());
 		$home = $home['dir'];

@@ -1,209 +1,107 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: Shaq
- * Date: 06.01.2017
- * Time: 19:07
- */
-
-require 'aws/aws-autoloader.php';
-
-class PollyClient
-{
-
-    public $version = 'latest';
-    public $region = 'eu-west-1';
-    public $voiceName = 'Marlene';
-    public $outputFormatCodec = 'mp3';
-    public $outputFormatSampleRate = '22050';
-    public $key;
-    public $secret;
-    public $longDate;
-    public $shortDate;
-    public $string;
-    public $FileName;
-    public $enableDebug = 1;
-    public $useCache = 1;
-
-    #public $CacheDir = '//opt/loxberry/data/plugins/sonos4lox/tts/';
-
-    public function __construct()
-    {
-        $this->debug(__METHOD__ . " Created instance of " . __CLASS__);
-        $this->setDate();
+class POLLY_TTS{
+    private $utc_tz      = "";
+    private $access_key  = "";
+    private $secret_key  = "";
+	private $region      = "eu-west-1"; 
+    private $voice       = "";
+    private $endpoint    = array( 'us-east-1' => 'polly.us-east-1.amazonaws.com',
+                                  'us-east-2' => 'polly.us-east-2.amazonaws.com',
+                                  'us-west-2' => 'polly.us-west-2.amazonaws.com',
+                                  'eu-west-1' => 'polly.eu-west-1.amazonaws.com' );
+								  
+    public function __construct(){
+        $this->utc_tz      = new \DateTimeZone( 'UTC' );
         $this->setCredential();
     }
-
-    private function debug($message)
-    {
-        if ($this->enableDebug) {
-            syslog(LOG_DEBUG, $message);
-        }
-    }
-
-    /**
-     * Funktiom zum Auflisten der verfügbaren Voices
-     *
-     * @return   $pollyClient
-     */
-    public function ListVoices()
-    {
-        $config = [
-            'version' => $this->version,
-            'region' => $this->region,
-            'credentials' => [
-                'key' => $this->key,
-                'secret' => $this->secret,
-            ]
-        ];
-
-        $sdk = new Aws\Sdk($config);
-        $pollyClient = $sdk->createPolly();
-
-        if ($pollyClient){
-            return $pollyClient;
-        }
-        return 0;
-    }
-
-    /**
-     * Funktion zum Aufruf von Polly und der Generierung der TTS-Datei
-     *
-     * @param    string $text
-     * @param    array $params
-     *
-     * @return   $result
-     */
-    public function get($text, $params = null)
-    {
-        if ($params['VoiceName']) {
-            $voiceName = $params['VoiceName'];
-        } else {
-            $voiceName = $this->voiceName;
-        }
-
-        $config = [
-            'version' => $this->version,
-            'region' => $this->region,
-            'credentials' => [
-                'key' => $this->key,
-                'secret' => $this->secret,
-            ]
-        ];
-
-        $sdk = new Aws\Sdk($config);
-        $pollyClient = $sdk->createPolly();
-
-        $result = $pollyClient->synthesizeSpeech([
-            'OutputFormat' => $this->outputFormatCodec,
-            'SampleRate' => $this->outputFormatSampleRate,
-            'Text' => $text,
-            'TextType' => 'text',
-            'VoiceId' => $voiceName,
-        ]);
-
-        if ($result['AudioStream']) {
-            return $result['AudioStream'];
-        }
-        return 0;
-    }
-
-
-    /**
-     * Funktion
-     *
-     * @param    string $text
-     * @param    array $params
-     *
-     * @return   $this->save()
-     */
-    public function getSave($text, $params = null)
-    {
-        if ($params['VoiceName']) {
-            $name = $params['VoiceName'];
-        } else {
-            $name = $this->voiceName;
-        }
-        if ($params['CacheDir']) {
-            $mpath = $params['CacheDir'];
-        } else {
-            $mpath = $this->CacheDir;
-        }
-        $fileolang = $params['FileName'];
-        $this->debug(__METHOD__ . ' Input params are: ' . print_r($params, true));
-        // $content = $this->get($text);
-        $uniqueString = urldecode($text) . '_' . $this->outputFormatCodec . '_' . $this->outputFormatSampleRate . '_' . $name;
-        $this->debug(__METHOD__ . ' Unique string of TTS is: ' . $uniqueString);
-        if ($this->useCache == TRUE) {
-            if ($cached = $this->checkIfCached($uniqueString)) {
-                $this->debug(__METHOD__ . ' File already Cached: ' . $cached);
-                return $cached;
-            }
-        }
-        if ($content = $this->get(urldecode($text), $params)) {
-            return $this->save($content, $uniqueString);
-        }
-        $this->debug(__METHOD__ . ' Failed to get content of ' . $uniqueString);
-        return 0;
-    }
-
-
-    /**
-     * Funktion zum Vorinitialisieren des Datums
-     */
-    public function setDate()
-    {
-        $this->longDate = gmdate('Ymd\THis\Z', time());
-        $this->shortDate = substr($this->longDate, 0, 8);
-        $this->xAmzDate = $this->longDate;
-    }
-
-
-    /**
-     * Funktion zum Holen der Logindaten aus der Konfiguration
-     */
-    public function setCredential()
+    public function save_mp3($text, $filename) {
+            $mp3 = $this->get_mp3($text);
+            file_put_contents($filename, $mp3);
+     }
+	public function setCredential()
     {
         global $config;
         $akey = $config['TTS']['API-key'];
-        $asecret = $config['TTS']['secret-key'];
+        $secretkey = $config['TTS']['secret-key'];
 
-        $this->key = $akey;
-        $this->secret = $asecret;
-    }
-
-
-    /**
-     * Funktion zum Prüfen, ob die Datei bereits im Cache vorliegt
-     */
-    private function checkIfCached($string)
+        $this->access_key = $akey;
+        $this->secret_key = $secretkey;
+    } 
+	 
+    public function get_mp3( $text )
     {
-        global $fileolang, $config, $mpath;
-        $fileName = $fileolang;
-        $mpath = $config['SYSTEM']['messageStorePath'];
-        $savePath = $mpath . '' . $fileName . '.' . $this->outputFormatCodec;
-        $dbPath = $mpath . '' . $fileName . '.' . $this->outputFormatCodec;
-        if (file_exists($dbPath)) {
-            $this->debug(__METHOD__ . " File $dbPath is there! ");
-            return $dbPath;
+		global $voice;
+		$payload = json_encode(array( ('OutputFormat')  => 'mp3',
+                                      ('Text')          => urldecode($text),
+                                      ('VoiceId')       => $voice ) );
+        $datestamp                = new \DateTime( "now", $this->utc_tz );
+        $longdate                 = $datestamp->format( "Ymd\\THis\\Z");
+        $shortdate                = $datestamp->format( "Ymd" );
+        $ksecret                  = 'AWS4' . $this->secret_key;
+        $params                   = array( 'host'                 => $this->endpoint[$this->region],
+                                           'content-type'         => 'application/json',
+                                           'x-amz-content-sha256' => hash( 'sha256', $payload, false ),
+                                           'x-amz-date'           => $longdate );
+        $canonical_request        = $this->createCanonicalRequest( $params, $payload );
+        $signed_request           = hash( 'sha256', $canonical_request );
+        $sign_string              = "AWS4-HMAC-SHA256\n{$longdate}\n$shortdate/$this->region/polly/aws4_request\n" . $signed_request;
+        $signature                = hash_hmac( 'sha256', $sign_string, hash_hmac( 'sha256', 'aws4_request', hash_hmac( 'sha256', 'polly', hash_hmac( 'sha256', $this->region, hash_hmac( 'sha256', $shortdate, $ksecret, true ) , true ) , true ), true ));
+        $params['Authorization']  = "AWS4-HMAC-SHA256 Credential=" . $this->access_key . "/$shortdate/$this->region/polly/aws4_request, " .
+                                    "SignedHeaders=content-type;host;x-amz-content-sha256;x-amz-date, " .
+                                    "Signature=$signature";
+        $params['content-length'] = strlen( $payload ) ;
+        /*
+         * Execute Crafted Request
+         */
+        $url    = "https://".$this->endpoint[$this->region]."/v1/speech";
+        $ch     = curl_init();
+        $curl_headers = array();
+        foreach( $params as $p => $k )
+            $curl_headers[] = $p . ": " . $k;
+        curl_setopt($ch, CURLOPT_URL,$url);
+        curl_setopt($ch, CURLOPT_POST,1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $curl_headers);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER,1);
+        curl_setopt($ch, CURLOPT_TCP_NODELAY, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false );
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false );
+        // debug opts
+        {
+            curl_setopt($ch, CURLOPT_VERBOSE, true);
+            $verbose = fopen('php://temp', 'rw+');
+            curl_setopt($ch, CURLOPT_STDERR, $verbose);
+            $result = curl_exec($ch); // raw result
+            rewind($verbose);
+            $verboseLog = stream_get_contents($verbose);
+            #echo "Verbose information:\n<pre>", htmlspecialchars($verboseLog), "</pre>\n";
         }
-        $this->debug(__METHOD__ . " File $fileName not there!");
-        return FALSE;
+        // check for magic number of mp3 with ID3 tag
+        if ( substr(bin2hex($result), 0, 6) != "494433" )
+          throw new Exception("Response from Polly is no mp3: ".$result);
+        return $result;
     }
-
-
-    /**
-     * Funktion zum Speichern der generierten Datei
-     */
-    private function save($resource, $string)
+    private function createCanonicalRequest( Array $params, $payload )
     {
-        global $fileolang, $config, $mpath;
-        $fileName = $fileolang;
-        $mpath = $config['SYSTEM']['messageStorePath'];
-        $savePath = $mpath . '' . $fileName . '.' . $this->outputFormatCodec;
-        $dbPath = $mpath . '' . $fileName . '.' . $this->outputFormatCodec;
-        file_put_contents($savePath, $resource);
-        $this->debug(__METHOD__ . ' File saved:' . $dbPath);
-        return $dbPath;
+        $canonical_request      = array();
+        $canonical_request[]    = 'POST';
+        $canonical_request[]    = '/v1/speech';
+        $canonical_request[]    = '';
+        $can_headers            = array(
+          'host' => $this->endpoint[$this->region]
+        );
+        foreach( $params as $k => $v )
+            $can_headers[ strtolower( $k ) ] = trim( $v );
+        uksort( $can_headers, 'strcmp' );
+        foreach ( $can_headers as $k => $v )
+            $canonical_request[] = $k . ':' . $v;
+        $canonical_request[] = '';
+        $canonical_request[] = implode( ';', array_keys( $can_headers ) );
+        $canonical_request[] = hash( 'sha256', $payload, false );
+        $canonical_request = implode( "\n", $canonical_request );
+        return $canonical_request;
     }
 }
+
+
+?>

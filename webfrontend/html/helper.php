@@ -110,6 +110,69 @@ function recursive_array_search($needle,$haystack) {
     return false;
 }
 
+/**
+* Function : searchForKey --> search threw a multidimensionales array for a specific value and return key
+*
+* @return: string key
+**/
+
+function searchForKey($id, $array) {
+   foreach ($array as $key => $val) {
+       if ($val[1] === $id) {
+           return $key;
+       }
+   }
+   return null;
+}
+
+
+/**
+/* Function : checkZonesOnline --> Prüft ob  Member Online sind
+/*
+/* @param:  Array der Member die geprüft werden soll
+/* @return: Array aller Member Online Zonen
+**/
+
+function checkZonesOnline($member) {
+	global $sonoszonen, $zonen, $debug, $config;
+	
+	$memberzones = $member;
+	foreach($memberzones as $zonen) {
+		if(!array_key_exists($zonen, $sonoszonen)) {
+			trigger_error("Die angegebene Zone (Member) existiert nicht. Bitte korrigieren!!", E_USER_NOTICE);
+		}
+	}
+	foreach($memberzones as $zonen) {
+		if(!$socket = @fsockopen($sonoszonen[$zonen][0], 1400, $errno, $errstr, 2)) {
+			echo '<br>';
+		} else {
+			$member[] = $zonen;
+		}
+	}
+	// print_r($member);
+	return($member);
+}
+
+
+/**
+* Function : array_multi_search --> search threw a multidimensionales array for a specific value
+* Optional you can search more detailed on a specific key'
+* https://sklueh.de/2012/11/mit-php-ein-mehrdimensionales-array-durchsuchen/
+*
+* @return: array with result
+**/
+
+ function array_multi_search($mSearch, $aArray, $sKey = "")
+{
+    $aResult = array();
+    foreach( (array) $aArray as $aValues) {
+        if($sKey === "" && in_array($mSearch, $aValues)) $aResult[] = $aValues;
+        else 
+        if(isset($aValues[$sKey]) && $aValues[$sKey] == $mSearch) $aResult[] = $aValues;
+    }
+    return $aResult;
+}
+
 
 /**
 * Function : getLoxoneData --> Zeigt die Verbindung zu Loxone an
@@ -120,11 +183,11 @@ function recursive_array_search($needle,$haystack) {
 
 function getLoxoneData() {
 	global $loxip, $loxuser, $loxpassword;
-	echo "Folgende Verbindung wird zur Datenübertragung zu Loxone genutzt:<br><br>";
+	echo "The following connection is used for data transmission to Loxone:<br><br>";
 
-	echo 'IP-Adresse/Port: '.$loxip.'<br>';
+	echo 'IP-Address/Port: '.$loxip.'<br>';
 	echo 'User: '.$loxuser.'<br>';
-	echo 'Passwort: '.$loxpassword.'<br>';
+	echo 'Password: '.$loxpassword.'<br>';
 }
 
 
@@ -150,7 +213,7 @@ function getPluginFolder(){
 **/
 
  function settimestamp() {
-	$myfile = fopen("timestamps.txt","w") or die ("Kann Timestamp Datei nicht schreiben!");
+	$myfile = fopen("timestamps.txt","w") or die ("Can't write the timestamp file!");
 	fwrite($myfile, time());
 	fclose($myfile);
  }
@@ -163,7 +226,7 @@ function getPluginFolder(){
 **/
 
  function gettimestamp() {
-	$myfile = fopen("timestamps.txt","r") or die ("Kann Timestamp Datei nicht lesen!");
+	$myfile = fopen("timestamps.txt","r") or die ("Can't read the timestamp file!");
 	$zeit = fread($myfile, 999);
 	fclose($myfile);
 	if( time() % $zeit > 200 )
@@ -185,11 +248,11 @@ function networkstatus() {
 	foreach($sonoszonen as $zonen => $ip) {
 		$start = microtime(true);
 		if (!$socket = @fsockopen($ip[0], 1400, $errno, $errstr, 3)) {
-			echo "Die Zone ".$zonen." mit IP: ".$ip[0]." ==> Offline :-( Bitte dringend Status überprüfen!<br/>"; 
+			echo "The Zone ".$zonen." using IP: ".$ip[0]." ==> Offline :-( Please check status!<br/>"; 
 		} else { 
 			$latency = microtime(true) - $start;
 			$latency = round($latency * 10000);
-			echo "Die Zone ".$zonen." mit IP: ".$ip[0]." ==> Online :-) Die Antwortzeit betrug ".$latency." Millisekunden <br/>";
+			echo "The Zone ".$zonen." using IP: ".$ip[0]." ==> Online :-) The response time was ".$latency." Milliseconds <br/>";
 		}
 	}
 	
@@ -288,7 +351,7 @@ function URL_Encode($string) {
  function _assertNumeric($number) {
 	// prüft ob eine Eingabe numerisch ist
     if(!is_numeric($number)) {
-        trigger_error("Die Eingabe ist nicht numerisch. Bitte wiederholen", E_USER_NOTICE);
+        trigger_error("The input is not numeric. Please try again", E_USER_NOTICE);
     }
     return $number;
  }
@@ -321,4 +384,143 @@ function URL_Encode($string) {
   return $playerIP;
  }
 
+ 
+ 
+/**
+*
+* Function : AddMemberTo --> fügt ggf. Member zu Playlist oder Radio hinzu
+*
+* @param: 	empty
+* @return:  create Group
+**/
+function AddMemberTo() { 
+global $sonoszone, $master, $config;
+
+	if(isset($_GET['member'])) {
+		$member = $_GET['member'];
+		if($member === 'all') {
+		$member = array();
+		foreach ($sonoszone as $zone => $ip) {
+			// exclude master Zone
+			if ($zone != $master) {
+				array_push($member, $zone);
+			}
+		}
+	} else {
+		$member = explode(',', $member);
+	}
+	foreach ($member as $zone) {
+		$sonos = new PHPSonos($sonoszone[$zone][0]);
+		if ($zone != $master) {
+			$sonos->SetAVTransportURI("x-rincon:" . trim($sonoszone[$master][1])); 
+		}
+	}
+}	
+}
+
+
+function previous_el($array, $current, $use_key = false)
+{
+    // we'll return null if $current is the first in the array (there is no previous)
+    $previous = null;
+
+    foreach ($array as $key => $value)
+    {
+        $matched = $use_key ? $key === $current : $value === $current;
+        if ($matched)
+        {
+            return $previous;
+        }
+        $previous = $use_key ? $key : $value;
+    }
+
+    // we'll return false if $current does not exist in the array
+    return false;
+}
+
+
+
+// return the key or value after whatever is in $current
+function next_el($array, $current, $use_key = false)
+{
+    $found = false;
+
+    foreach ($array as $key => $value)
+    {
+        // $current was found on the previous loop
+        if ($found)
+        {
+            return $use_key ? $key : $value;
+        }
+        $matched = $use_key ? $key === $current : $value === $current;
+        if ($matched)
+        {
+            $found = true;
+        }
+    }
+
+    if ($found)
+    {
+        // we'll return null if $current was the last one (there is no next)
+        return null;
+    }
+    else
+    {
+        // we'll return false if $current does not exist in the array
+        return false;
+    }
+}
+
+
+// check if current zone is streaming
+function isStreaming() {
+	
+        $sonos = new PHPSonos($sonoszone[$master][0]);
+		$media = $sonos->GetMediaInfo();
+        $uri = $media["CurrentURI"];
+        # Standard streams
+        if (substr($uri, 0, 18) === "x-sonosapi-stream:") {
+            return true;
+        }
+        # Line in
+        if (substr($uri, 0, 16) === "x-rincon-stream:") {
+            return true;
+        }
+        # Line in (playbar)
+        if (substr($uri, 0, 18) === "x-sonos-htastream:") {
+            return true;
+        }
+        return false;
+    }
+	
+	
+/**
+* Funktion : 	chmod_r --> setzt für alle Dateien im MP3 Verzeichnis die Rechte auf 0644
+* https://stackoverflow.com/questions/9262622/set-permissions-for-all-files-and-folders-recursively
+*
+* @param: $Path --> Pfad zum Verzeichnis
+* @return: empty
+**/
+
+function chmod_r($Path="") {
+	global $Path, $MessageStorepath, $config;
+	
+	$Path = $MessageStorepath."".$config['MP3']['MP3path'];
+	#echo $Path;
+	$dp = opendir($Path);
+     while($File = readdir($dp)) {
+       if($File != "." AND $File != "..") {
+         if(is_dir($File)){
+            chmod($File, 0755);
+            chmod_r($Path."/".$File);
+         }else{
+             chmod($Path."/".$File, 0644);
+         }
+       }
+     }
+   closedir($dp);
+}
+
+ 
+ 
 ?>
