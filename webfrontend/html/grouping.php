@@ -161,6 +161,7 @@ function getRoomCoordinator($room){
 			);
 			$coordinators[$room][] = $player;
 		}
+		
  function cnp($a, $b) {
 	if ($a['Master'] == $b['Master']) {
 		if($a['Sonos Name'] == $b['Sonos Name']) 
@@ -180,11 +181,8 @@ function getRoomCoordinator($room){
 	$rinconid = $coordinators[$zonename][0]['Rincon'];
 	$coord = array($ipadr, $rinconid); 
 	if($debug == 1) { 
-		echo 'Group Coordinator-IP: ';
-		print_r ($coord[0]);
-		echo '<br><br>';
+		echo 'Group Coordinator-IP: '.$coord[0].'<br><br>';
 	}
-	#print_r($coord[0]);
 	return $coord;
  }
  

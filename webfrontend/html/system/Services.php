@@ -97,7 +97,7 @@ Content-Length: '. strlen($xml) .'
  * @return String
  */
    
-   public function SetSpotifyPlaylist($pl)
+   public function SetSpotifyPlaylist($pl, $user)
    {
 	  
 $reg = 'SA_RINCON2311_X_#Svc2311-0-Token';   // Region EU
@@ -118,7 +118,7 @@ $xml='<?xml version="1.0" encoding="utf-8"?>
    <s:Body>
       <u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1">
          <InstanceID>0</InstanceID>
-         <EnqueuedURI>x-rincon-cpcontainer:'.$rand.'cspotify%3auser%3aspotify%3aplaylist%3a'.$pl.'?sid=9&amp;flags=8300&amp;sn=5</EnqueuedURI>
+         <EnqueuedURI>x-rincon-cpcontainer:'.$rand.'cspotify%3auser%3a'.$user.'%3aplaylist%3a'.$pl.'?sid=9&amp;flags=8300&amp;sn=5</EnqueuedURI>
          <EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;1006206cspotify%3auser%3aspotify%3aplaylist%3a'.$pl.'&quot; parentID=&quot;10082064spotify%3acategory%3apop&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;/dc:title&gt;&lt;upnp:class&gt;object.container.playlistContainer&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;'.$reg.'&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</EnqueuedURIMetaData>
          <DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued>
          <EnqueueAsNext>1</EnqueueAsNext>

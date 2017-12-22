@@ -521,6 +521,209 @@ function chmod_r($Path="") {
    closedir($dp);
 }
 
+
+/*************************************************************************************************************
+/* Funktion : checkaddon --> prüft vorhanden sein von Addon's
+/* @param: 	leer
+/*
+/* @return: true oder Abbruch
+/*************************************************************************************************************/
+ function checkaddon() {
+	global $home;
+	
+	if(isset($_GET['weather'])) {
+		# ruft die weather-to-speech Funktion auf
+		if(substr($home,0,4) == "/opt") {	
+			if(!file_exists('addon/weather-to-speech.php')) {
+				trigger_error("The weather-to-speech Addon is currently not installed!", E_USER_NOTICE);
+				exit;
+			} else {
+				if(!file_exists("$home/config/plugins/wu4lox/wu4lox.cfg")) {
+					trigger_error("Bitte zuerst das Wunderground Plugin installieren!", E_USER_NOTICE);
+					exit;
+				}
+			}
+		} else {
+			if(!file_exists('addon/weather-to-speech_nolb.php')) {
+				trigger_error("The weather-to-speech Addon is currently not installed!", E_USER_NOTICE);
+				exit;
+			}
+		}
+	} elseif (isset($_GET['clock'])) {
+		# ruft die clock-to-speech Funktion auf
+		if(!file_exists('addon/clock-to-speech.php')) {
+			trigger_error("The clock-to-speech addon is currently not installed!", E_USER_NOTICE);
+			exit;
+		}
+	} elseif (isset($_GET['sonos'])) {
+		# ruft die sonos-to-speech Funktion auf
+		if(!file_exists('addon/sonos-to-speech.php')) {
+			trigger_error("The sonos-to-speech addon Is currently not installed!", E_USER_NOTICE);
+			exit;
+		}
+	} elseif (isset($_GET['abfall'])) {
+		# ruft die waste-calendar-to-speech Funktion auf
+		if(!file_exists('addon/waste-calendar-to-speech.php')) {
+				trigger_error("The waste-calendar-to-speech Addon is currently not installed!", E_USER_NOTICE);
+				exit;
+			} else {
+				if(!file_exists("$home/config/plugins/caldav4lox/caldav4lox.conf")) {
+					trigger_error("Bitte zuerst das CALDAV4Lox Plugin installieren!", E_USER_NOTICE);
+					exit;
+				}
+			}
+	}
+ }
+
+
+/********************************************************************************************
+/* Funktion : checkTTSkeys --> prüft die verwendete TTS Instanz auf Korrektheit
+/* @param: leer                             
+/*
+/* @return: falls OK --> nichts, andernfalls Abbruch und Eintrag in error log
+/********************************************************************************************/
+function checkTTSkeys() {
+	Global $config;
+	
+	if ($config['TTS']['t2s_engine'] == 1001) {
+		if (!file_exists("voice_engines/VoiceRSS.php")) {
+			trigger_error("VoiceRSS is currently not available. Please install!", E_USER_NOTICE);
+		} else {
+			if(strlen($config['TTS']['API-key']) !== 32) {
+				trigger_error("The specified VoiceRSS API key is invalid. Please correct!", E_USER_NOTICE);
+			}
+		}
+	}
+	if ($config['TTS']['t2s_engine'] == 3001) {
+		if (!file_exists("voice_engines/MAC_OSX.php")) {
+			trigger_error("MAC OSX is currently not available. Please install!", E_USER_NOTICE);
+		}
+	}
+	if ($config['TTS']['t2s_engine'] == 6001) {
+		if (!file_exists("voice_engines/ResponsiveVoice.php")) {
+			trigger_error("ResponsiveVoice is currently not available. Please install!", E_USER_NOTICE);
+		}
+	}
+	if ($config['TTS']['t2s_engine'] == 5001) {
+		if (!file_exists("voice_engines/Pico_tts.php")) {
+			trigger_error("Pico2Wave is currently not available. Please install!", E_USER_NOTICE);
+		}
+	}
+	if ($config['TTS']['t2s_engine'] == 4001) {
+		if (!file_exists("voice_engines/Polly.php")) {
+			trigger_error("Amazon Polly is currently not available. Please install!", E_USER_NOTICE);
+		} else {
+			if((strlen($config['TTS']['API-key']) !== 20) or (strlen($config['TTS']['secret-key']) !== 40)) {
+				trigger_error("The specified AWS Polly API key is invalid. Please correct!!", E_USER_NOTICE);
+			}
+		}
+	}
+}
+
+
+
+/**
+* Funktion : 	playmode_selection --> setzt den Playmode bei Wiederherstllung gemäß der gespeicherten Werte
+*
+* @param: Sonos Zone
+* @return: sting playmode
+**/
+
+function playmode_detection($zone, $settings)  {
+	global $master, $sonoszonen;
+	
+	$sonos = new PHPSonos($sonoszonen[$zone][0]);
+	#print_r($settings);
+	if (($settings['repeat'] != 1) AND ($settings['repeat one'] != 1) AND ($settings['shuffle'] != 1)) {
+		$sonos->SetPlayMode('NORMAL');
+		$mode = 'NORMAL';
+		
+	} elseif (($settings['repeat'] == 1) AND ($settings['repeat one'] != 1) AND ($settings['shuffle'] != 1)) {
+		$sonos->SetPlayMode('REPEAT_ALL');
+		$mode = 'REPEAT_ALL';
+	
+	} elseif (($settings['repeat'] != 1) AND ($settings['repeat one'] != 1) AND ($settings['shuffle'] == 1)) {
+		$sonos->SetPlayMode('SHUFFLE_NOREPEAT');
+		$mode = 'SHUFFLE_NOREPEAT';
+	
+	} elseif (($settings['repeat'] != 1) AND ($settings['repeat one'] == 1) AND ($settings['shuffle'] == 1)) {
+		$sonos->SetPlayMode('SHUFFLE_REPEAT_ONE');
+		$mode = 'SHUFFLE_REPEAT_ONE';
+	
+	} elseif (($settings['repeat'] == 1) AND ($settings['repeat one'] != 1) AND ($settings['shuffle'] == 1)) {
+		$sonos->SetPlayMode('SHUFFLE');
+		$mode = 'SHUFFLE';
+	
+	} elseif (($settings['repeat'] != 1) AND ($settings['repeat one'] == 1) AND ($settings['shuffle'] != 1)) {
+		$sonos->SetPlayMode('REPEAT_ONE');
+		$mode = 'REPEAT_ONE';
+	}
+	#echo $mode;
+	return $mode;
+}
+
+
+/**
+* Funktion : 	allowLineIn --> filtert die gefunden Sonos Devices nach Zonen
+* 				die den LineIn Eingang unterstützen
+*
+* @param: $model --> alle gefundenen Devices
+* @return: $models --> Sonos Zonen
+**/
+
+ function allowLineIn($model) {
+    $models = [
+        "S5"    =>  "PLAY:5",
+        "S6"    =>  "PLAY:5",
+        "ZP80"  =>  "CONNECT",
+        "ZP90"  =>  "CONNECT",
+        "ZP100" =>  "CONNECT:AMP",
+        "ZP120" =>  "CONNECT:AMP",
+        ];
+    return in_array($model, array_keys($models));
+}
+
+
+/**
+* Funktion : 	OnlyCONNECT --> filtert die gefunden Sonos Devices nach Model CONNECT
+*
+* @param: $model --> alle gefundenen Devices
+* @return: $models --> TRUE or FALSE
+**/
+
+function OnlyCONNECT($model) {
+    $models = [
+        "CONNECT"  =>  "ZP80",
+        "CONNECT"  =>  "ZP90",
+        ];
+    return in_array($model, array_keys($models));
+}
+
+
+/**
+* Funktion : 	AudioTypeIsSupported --> filtert die von Sonos unterstützten Audio Formate
+*
+* @param: $type --> Audioformat
+* @return: $types --> TRUE or FALSE
+**/
+
+function AudioTypeIsSupported($type) {
+    $types = [
+        "mp3"   =>  "MP3 - MPEG-1 Audio Layer III oder MPEG-2 Audio Layer III",
+        "wma"   =>  "WMA - Windows Media Audio",
+		"aac"   =>  "AAC - Advanced Audio Coding",
+		"ogg"   =>  "OGG - Ogg Vorbis Compressed Audio File",
+		"flac"  =>  "FLAC - Free Lossless Audio Codec",
+		"alac"  =>  "ALAC - Apple Lossless Audio Codec",
+		"aiff"  =>  "AIFF - Audio Interchange File Format",
+		"wav"   =>  "WAV - Waveform Audio File Format",
+        ];
+    return in_array($type, array_keys($types));
+}
+
+
+
+
  
  
 ?>

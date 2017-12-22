@@ -1573,10 +1573,12 @@ SOAPACTION: "urn:schemas-upnp-org:service:RenderingControl:1#GetOutputFixed"
  * Gets transport settings for a renderer
  *
   *
- * NORMAL = SHUFFLE and REPEAT -->FALSE
- * REPEAT_ALL = REPEAT --> TRUE, Shuffle --> FALSE
- * SHUFFLE_NOREPEAT = SHUFFLE -->TRUE / REPEAT = FALSE
- * SHUFFLE = SHUFFLE and REPEAT -->TRUE </PRE>
+ * NORMAL = SHUFFLE and REPEAT and REPEAT ON -->FALSE
+ * REPEAT_ALL = REPEAT --> TRUE, SHUFFLE --> FALSE, REPEAT ONE --> FALSE
+ * SHUFFLE_NOREPEAT = SHUFFLE -->TRUE, REPEAT = FALSE, REPEAT ONE --> FALSE
+ * SHUFFLE = SHUFFLE and REPEAT -->TRUE, REPEAT ONE --> FALSE </PRE>
+ * SHUFFLE_REPEAT_ONE = SHUFFLE --> TRUE, REPEAT --> FALSE, REPEAT ONE --> TRUE
+ * REPEAT_ONE = SHUFFLE --> FALSE, REPEAT --> FALSE, REPEAT ONE --> TRUE
  *
  * @return Array
  */
@@ -1593,31 +1595,50 @@ SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#GetTransportSettings"
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:GetTransportSettings xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID></u:GetTransportSettings></s:Body></s:Envelope>';
 
       $returnContent = $this->sendPacket($content);
-
+	  
 //   echo "\n===" . $this->address. "====\n" . $returnContent . "\n===\n";
 
       if (strstr($returnContent, "NORMAL") !== false) {
          return Array (
             "repeat" => false,
+			"repeat one" => false,
             "shuffle" => false
          );
       } elseif (strstr($returnContent, "REPEAT_ALL") !== false) {
          return Array (
             "repeat" => true,
+			"repeat one" => false,
             "shuffle" => false
          );   
       
       } elseif (strstr($returnContent, "SHUFFLE_NOREPEAT") !== false) {
          return Array (
             "repeat" => false,
+			"repeat one" => false,
+            "shuffle" => true
+         );
+		 
+	  } elseif (strstr($returnContent, "SHUFFLE_REPEAT_ONE") !== false) {
+         return Array (
+            "repeat" => false,
+			"repeat one" => true,
             "shuffle" => true
          );
 
       } elseif (strstr($returnContent, "SHUFFLE") !== false) {
          return Array (
             "repeat" => true,
+			"repeat one" => false,
             "shuffle" => true
          );
+		 
+	  } elseif (strstr($returnContent, "REPEAT_ONE") !== false) {
+         return Array (
+            "repeat" => false,
+			"repeat one" => true,
+            "shuffle" => false
+         );
+	  
       }
  }
 

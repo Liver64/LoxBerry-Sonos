@@ -23,7 +23,7 @@ function AddAmazon() {
 	// album geht = B003Z69GS8, B00BLWYTE4
 	// track = B01F5KG8L4,B077HNFYYG 
 	
-	trigger_error("Amazon Track-URI is currently not supported!", E_USER_ERROR);
+	
 	
 	$sonos = new PHPSonos($sonoszone[$master][0]);
 	$rincon = $sonoszone[$master][1];
@@ -32,8 +32,8 @@ function AddAmazon() {
 	empty($curr_track_tmp['duration']) ? $sonos->SetQueue("x-rincon-queue:".$sonoszone[$master][1]."#0") : '';
 	
 	// Amazon Track
-	if (isset($_GET['trackuri'])) {  
-		trigger_error("Amazon Track-URI is currently not supported!", E_USER_ERROR);
+	if (isset($_GET['trackuri'])) { 
+		trigger_error("Amazon Track-URI is currently not supported!", E_USER_ERROR);	
 		$uri = $_GET['trackuri'];
 		if (empty($uri)) {
 			trigger_error("Please enter Amazon Track-URI!", E_USER_ERROR);

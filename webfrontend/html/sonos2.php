@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	2.1.3
-# Datum: 	20.11.2017
+# Version: 	2.1.5
+# Datum: 	22.12.2017
 # veröffentlicht in: http://plugins.loxberry.de/
 # 
 # Change History:
@@ -101,7 +101,7 @@
 #			[Feature] bei ...messageid=..." können jetzt auch nicht numerische MP3 files (z.B. mein_sonos_gong) genutzt werden.
 # 2.1.2		[Feature] Debugging tool added
 #			[Bugfix] Korrektur beim Laden einer Playliste wenn vorher Radio/TV lief oder Mute EIN war
-#			[Bugfix] Korrektur der Lautstärkeregelung/Anpasung bei Gruppendurchsagen
+#			[Bugfix] Korrektur der Lautstärkeregelung/Anpassung bei Gruppendurchsagen
 #			[Bugfix] Scan Zonen Funktion von LoxBerry auch für Non-LoxBerry Versionen aktualisiert und beide optimiert (Trennung von Gruppen vorm 
 #					 Speichern der Config)
 #			[Bugfix] Englische Version der GUI aktualisiert
@@ -111,6 +111,17 @@
 #			[Bugfix] Korrektur bei T2S wenn Playliste im Shufflemodus läuft
 #			[Feature] Funktion 'nextpush'. PL läuft -> next track, Ende PL -> 1st track, Radio -> nextradio im Loop, leer -> nextradio im Loop
 #			[Feature] Funktion 'next' und 'previous' optimiert. next - (letzter Track -> Track #1), 'previous - (erster Track -> letzter Track)
+# 2.1.4		[Bugfix] Funktion 'radio' (radioplaylist, groupradioplaylist) korrigiert. Bei input quelle SPDIF (Playbar, Playbase) 
+#					 wurde kein Radiosender geladen.
+#			[Bugfix] Korrektur der Zonen Scan Funktion (temporäre Datei wird nicht mehr gelöscht)
+#			[Bugfix] Korrektur der Zonen Scan Funktion nach Update Sonos auf 8.1
+#			[Bugfix] Korrektur bei Einzel T2S an Master einer Gruppe. Nach Durchsage wurde Urprungszustand nicht mehr wiederhergestellt
+#			[Bugfix] Erweiterung der TransportSettings (shuffle, repeat, etc.)
+# 2.1.5		[Bugfix] Korrektur der Zonen Scanfunktion für Nicht LoxBerry Nutzer
+#			[Feature] Neue Funktion zum Laden und Abspielen von Sonos Playlisten per Zufallsgenerator. Es könne auch Exceptions angegeben werden (siehe Wiki)
+#			[Feature] Neue Funktion zum Laden und Abspielen von Sonos Radiosender per Zufallsgenerator. Es könne auch Exceptions angegeben werden (siehe Wiki)
+#			[Feature] Aktualisierte Funktion um user-spezifische Playlisten zu laden (gilt nur für Spotify)
+#
 #
 ######## Script Code (ab hier bitte nichts ändern) ###################################
 
@@ -512,7 +523,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				}
 				checkifmaster($master);
 				$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
-				$sonos->Pause();
+				$sonos->Stop();
 				$sonos->SetVolume($save_vol_stop);
 		break;      
 		  
@@ -520,7 +531,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			if($sonos->GetTransportInfo() == 1)  {
 				checkifmaster($master);
 				$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
-				$sonos->Pause();
+				$sonos->Stop();
 			} else {
 				checkifmaster($master);
 				$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
@@ -1403,6 +1414,14 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			AddTrack();
 		break;	
 		
+		case 'randomplaylist':
+			random_playlist();
+		break;
+		
+		case 'randomradio':
+			random_radio();
+		break;
+		
 		case 'getzoneinfo':
 		
 			$GetZoneInfo = $sonos->GetzoneInfo();
@@ -1643,7 +1662,12 @@ function radio(){
 	} else {
 		trigger_error("No radio stations found.", E_USER_NOTICE);
     }
-	$sonos->Stop();
+	$coord = $master;
+	$roomcord = getRoomCoordinator($coord);
+	$sonosroom = new PHPSonos($roomcord[0]); //Sonos IP Adresse
+	$sonosroom->SetQueue("x-rincon-queue:".$roomcord[1]."#0");
+	$sonosroom->SetMute(false);
+	$sonosroom->Stop();
     # Sonos Radio Playlist ermitteln und mit übergebene vergleichen   
     $radiolists = $sonos->Browse("R:0/0","c");
 	$radioplaylist = urldecode($playlist);
@@ -1652,30 +1676,31 @@ function radio(){
 	if ($radioplaylist == $radiolists[$rleinzeln]["title"]) {
 		$sonos->SetRadio(urldecode($radiolists[$rleinzeln]["res"]),$radiolists[$rleinzeln]["title"]);
 		#$sonos->SetRadio(urldecode($radiolists[$rleinzeln]["res"]));
-		if ((isset($_GET['member'])) and isset($_GET['standardvolume'])) {
+		if (isset($_GET['member'])) {
 			$member = $_GET['member'];
 			$member = explode(',', $member);
-			foreach ($member as $zone) {
-				$sonos = new PHPSonos($sonoszone[$zone][0]); //Sonos IP Adresse
-				$volume = $config['sonoszonen'][$zone][4];
-				$sonos->SetVolume($config['sonoszonen'][$zone][4]);
+			if (isset($_GET['standardvolume'])) {
+				foreach ($member as $zone) {
+					$sonos = new PHPSonos($sonoszone[$zone][0]); //Sonos IP Adresse
+					$volume = $config['sonoszonen'][$zone][4];
+					$sonos->SetVolume($config['sonoszonen'][$zone][4]);
+				}
 			}
-			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
-			$sonos->SetVolume($config['sonoszonen'][$master][4]);
-			$sonos->Play();
+			$sonos = new PHPSonos($roomcord[0]); //Sonos IP Adresse
+			$sonosroom->SetVolume($config['sonoszonen'][$master][4]);
 		} else {
 			if($sonos->GetVolume() <= $config['TTS']['volrampto'])	{
 				$sonos->RampToVolume($config['TTS']['rampto'], $volume);
-				$sonos->Play();
 			} else {
 				$sonos->SetVolume($volume);
-				$sonos->Play();
 			}
 		}
+		$sonos->Play();
     }
     $rleinzeln++;
 	}   
 }
+
 
 
  /*************************************************************************************************************
@@ -1698,95 +1723,6 @@ function radio(){
  }
  
  
-/*************************************************************************************************************
-/* Funktion : checkaddon --> prüft vorhanden sein von Addon's
-/* @param: 	leer
-/*
-/* @return: true oder Abbruch
-/*************************************************************************************************************/
- function checkaddon() {
-	global $home;
-	
-	if(isset($_GET['weather'])) {
-		# ruft die weather-to-speech Funktion auf
-		if(substr($home,0,4) == "/opt") {	
-			if(!file_exists('addon/weather-to-speech.php')) {
-				trigger_error("The weather-to-speech Addon Is currently not installed!", E_USER_NOTICE);
-				exit;
-			} else {
-				if(!file_exists("$home/config/plugins/wu4lox/wu4lox.cfg")) {
-					trigger_error("Bitte zuerst das Wunderground Plugin installieren!", E_USER_NOTICE);
-					exit;
-				}
-			}
-		} else {
-			if(!file_exists('addon/weather-to-speech_nolb.php')) {
-				trigger_error("The weather-to-speech Addon is currently not installed!", E_USER_NOTICE);
-				exit;
-			}
-		}
-	} elseif (isset($_GET['clock'])) {
-		# ruft die clock-to-speech Funktion auf
-		if(!file_exists('addon/clock-to-speech.php')) {
-			trigger_error("The clock-to-speech addon is currently not installed!", E_USER_NOTICE);
-			exit;
-		}
-	} elseif (isset($_GET['sonos'])) {
-		# ruft die sonos-to-speech Funktion auf
-		if(!file_exists('addon/sonos-to-speech.php')) {
-			trigger_error("The sonos-to-speech addon Is currently not installed!", E_USER_NOTICE);
-			exit;
-		}
-	}
- }
-
-
-/********************************************************************************************
-/* Funktion : checkTTSkeys --> prüft die verwendete TTS Instanz auf Korrektheit
-/* @param: leer                             
-/*
-/* @return: falls OK --> nichts, andernfalls Abbruch und Eintrag in error log
-/********************************************************************************************/
-function checkTTSkeys() {
-	Global $config;
-	
-	if ($config['TTS']['t2s_engine'] == 1001) {
-		if (!file_exists("voice_engines/VoiceRSS.php")) {
-			trigger_error("VoiceRSS is currently not available. Please install!", E_USER_NOTICE);
-		} else {
-			if(strlen($config['TTS']['API-key']) !== 32) {
-				trigger_error("The specified VoiceRSS API key is invalid. Please correct!", E_USER_NOTICE);
-			}
-		}
-	}
-	if ($config['TTS']['t2s_engine'] == 3001) {
-		if (!file_exists("voice_engines/MAC_OSX.php")) {
-			trigger_error("MAC OSX is currently not available. Please install!", E_USER_NOTICE);
-		}
-	}
-	if ($config['TTS']['t2s_engine'] == 6001) {
-		if (!file_exists("voice_engines/ResponsiveVoice.php")) {
-			trigger_error("ResponsiveVoice is currently not available. Please install!", E_USER_NOTICE);
-		}
-	}
-	if ($config['TTS']['t2s_engine'] == 5001) {
-		if (!file_exists("voice_engines/Pico_tts.php")) {
-			trigger_error("Pico2Wave is currently not available. Please install!", E_USER_NOTICE);
-		}
-	}
-	if ($config['TTS']['t2s_engine'] == 4001) {
-		if (!file_exists("voice_engines/Polly.php")) {
-			trigger_error("Amazon Polly is currently not available. Please install!", E_USER_NOTICE);
-		} else {
-			if((strlen($config['TTS']['API-key']) !== 20) or (strlen($config['TTS']['secret-key']) !== 40)) {
-				trigger_error("The specified AWS Polly API key is invalid. Please correct!!", E_USER_NOTICE);
-			}
-		}
-	}
-}
-
-
-
 /**
 /* Funktion : sendUDPdata --> send for each Zone as UDP package Volume and Playmode Info
 /*			  Playmode: Play=1/Stop=3/Pause=2
@@ -2327,69 +2263,12 @@ function LineIn() {
 		$sonos->SetAVTransportURI("x-rincon-stream:" . $sonoszone[$master][1]);
 		$sonos->Play();	
 	} else {
-		trigger_error("The specified Zone does not support LineIn to be selected!", E_USER_ERROR);
+		trigger_error("The specified Zone does not support Line-in to be selected!", E_USER_ERROR);
 		exit;
 	}
 	
 }
 
-/**
-* Funktion : 	allowLineIn --> filtert die gefunden Sonos Devices nach Zonen
-* 				die den LineIn Eingang unterstützen
-*
-* @param: $model --> alle gefundenen Devices
-* @return: $models --> Sonos Zonen
-**/
-
- function allowLineIn($model) {
-    $models = [
-        "S5"    =>  "PLAY:5",
-        "S6"    =>  "PLAY:5",
-        "ZP80"  =>  "CONNECT",
-        "ZP90"  =>  "CONNECT",
-        "ZP100" =>  "CONNECT:AMP",
-        "ZP120" =>  "CONNECT:AMP",
-        ];
-    return in_array($model, array_keys($models));
-}
-
-
-/**
-* Funktion : 	OnlyCONNECT --> filtert die gefunden Sonos Devices nach Model CONNECT
-*
-* @param: $model --> alle gefundenen Devices
-* @return: $models --> TRUE or FALSE
-**/
-
-function OnlyCONNECT($model) {
-    $models = [
-        "CONNECT"  =>  "ZP80",
-        "CONNECT"  =>  "ZP90",
-        ];
-    return in_array($model, array_keys($models));
-}
-
-
-/**
-* Funktion : 	AudioTypeIsSupported --> filtert die von Sonos unterstützten Audio Formate
-*
-* @param: $type --> Audioformat
-* @return: $types --> TRUE or FALSE
-**/
-
-function AudioTypeIsSupported($type) {
-    $types = [
-        "mp3"   =>  "MP3 - MPEG-1 Audio Layer III oder MPEG-2 Audio Layer III",
-        "wma"   =>  "WMA - Windows Media Audio",
-		"aac"   =>  "AAC - Advanced Audio Coding",
-		"ogg"   =>  "OGG - Ogg Vorbis Compressed Audio File",
-		"flac"  =>  "FLAC - Free Lossless Audio Codec",
-		"alac"  =>  "ALAC - Apple Lossless Audio Codec",
-		"aiff"  =>  "AIFF - Audio Interchange File Format",
-		"wav"   =>  "WAV - Waveform Audio File Format",
-        ];
-    return in_array($type, array_keys($types));
-}
 
 
 /**
@@ -2488,11 +2367,97 @@ function next_dynamic() {
 	}
 	$sonos->Play();
 }
-			
 
 
 
+/**
+* Funktion : 	random_playlist --> lädt per Zufallsgenerator eine Playliste und spielt sie ab.
+*
+* @param: empty
+* @return: Playliste
+**/
 
+function random_playlist() {
+	global $sonos, $sonoszone, $master, $volume, $config;
+	
+	if (isset($_GET['member'])) {
+		trigger_error("This function could not be used with groups!", E_USER_ERROR);
+		exit;
+	}
+	$sonoslists = $sonos->GetSONOSPlaylists();
+	print_r($sonoslists);
+	if(!isset($_GET['except'])) {
+		$countpl = count($sonoslists);
+		$random = mt_rand(0, $countpl - 1);
+	} else {
+		$except = $_GET['except'];
+		$exception = explode(',',$except);
+		for($i = 0; $i < count($exception); $i++) {
+			$exception[$i] = str_replace(' ', '', $exception[$i]);
+		}
+		foreach ($exception as $key => $val) {
+			unset($sonoslists[$val]);
+		}
+		$sonoslists = array_values($sonoslists);
+		$countpl = count($sonoslists);
+		$random = mt_rand(0, $countpl - 1);
+	}
+	$plfile = urldecode($sonoslists[$random]["file"]);
+	$sonos->ClearQueue();
+	$sonos->SetMute(false);
+	$sonos->AddToQueue($plfile);
+	$sonos->SetQueue("x-rincon-queue:". trim($sonoszone[$master][1]) ."#0"); 
+	if (!isset($_GET['volume'])) {
+		if($sonos->GetVolume() <= $config['TTS']['volrampto']) {
+			$sonos->RampToVolume($config['TTS']['rampto'], $volume);
+		}	
+	}
+	$sonos->Play();
+}
+
+
+/**
+* Funktion : 	random_radio --> lädt per Zufallsgenerator einen Radiosender und spielt ihn ab.
+*
+* @param: empty
+* @return: Radio Sender
+**/
+
+function random_radio() {
+	global $sonos, $sonoszone, $master, $volume, $config;
+	
+	if (isset($_GET['member'])) {
+		trigger_error("This function could not be used with groups!", E_USER_ERROR);
+		exit;
+	}
+	$sonoslists = $sonos->Browse("R:0/0","c");
+	print_r($sonoslists);
+	if(!isset($_GET['except'])) {
+		$countpl = count($sonoslists);
+		$random = mt_rand(0, $countpl - 1);
+	} else {
+		$except = $_GET['except'];
+		$exception = explode(',',$except);
+		for($i = 0; $i < count($exception); $i++) {
+			$exception[$i] = str_replace(' ', '', $exception[$i]);
+		}
+		foreach ($exception as $key => $val) {
+			unset($sonoslists[$val]);
+		}
+		$sonoslists = array_values($sonoslists);
+		$countpl = count($sonoslists);
+		$random = mt_rand(0, $countpl - 1);
+	}
+	$sonos->ClearQueue();
+	$sonos->SetMute(false);
+	$sonos->SetRadio(urldecode($sonoslists[$random]["res"]),$sonoslists[$random]["title"]);
+	if (!isset($_GET['volume'])) {
+		if($sonos->GetVolume() <= $config['TTS']['volrampto']) {
+			$sonos->RampToVolume($config['TTS']['rampto'], $volume);
+		}	
+	}
+	$sonos->Play();
+}
 
 
 

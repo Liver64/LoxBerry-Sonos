@@ -50,7 +50,11 @@ function create_tts($text, $messageid) {
 	if(isset($_GET['weather'])) {
 		// calls the weather-to-speech Function
 		if(substr($home,0,4) == "/opt") {	
-			include_once("addon/weather-to-speech.php");
+			if(isset($_GET['lang']) and $_GET['lang'] == "nb-NO" or $_GET['voice'] == "Liv") {
+				include_once("addon/weather-to-speech_no.php");
+			} else {
+				include_once("addon/weather-to-speech.php");
+			}
 		} else {
 			include_once("addon/weather-to-speech_nolb.php");
 		}
@@ -314,7 +318,6 @@ function sendmessage() {
 			checkTTSkeys();
 			$save = saveZonesStatus(); // saves all Zones Status
 			SetVolumeModeConnect($mode = '0', $master);
-			#exit;
 			$return = getZoneStatus($master); // get current Zone Status (Single, Member or Master)
 			if($return == 'member') {
 				if(isset($_GET['sonos'])) { // check if Zone is Group Member, then abort
@@ -324,22 +327,23 @@ function sendmessage() {
 			}
 			create_tts($text, $messageid);
 			// stop 1st before Song Name been played
-			$sonos->GetPositionInfo();
-			$sonos->SetQueue("x-rincon-queue:". $sonoszone[$master][1] ."#0");
+			$test = $sonos->GetPositionInfo();
+			if (($return == 'master') or ($return == 'member')) {
+				$sonos->BecomeCoordinatorOfStandaloneGroup();  // in case Member or Master then remove Zone from Grouop
+			}
+			if (substr($test['TrackURI'], 0, 18) !== "x-sonos-htastream:") {
+				$sonos->SetQueue("x-rincon-queue:". $sonoszone[$master][1] ."#0");
+			}
 			#if ((substr($test, 0, 18) !== "x-sonos-htastream:") and (!isset($_GET['sonos'])))  {
 			if (!isset($_GET['sonos']))  {
 				$sonos->Stop();
 				usleep(500000);
-			}
-			if (($return == 'master') or ($return == 'member')) {
-				$sonos->BecomeCoordinatorOfStandaloneGroup();  // in case Member or Master then remove Zone from Grouop
 			}
 			// get Coordinator of (maybe) pair or single player
 			$coord = getRoomCoordinator($master);
 			$sonos = new PHPSonos($coord[0]); 
 			$sonos->SetMute(false);
 			$sonos->SetVolume($volume);
-			
 			play_tts($messageid);
 			#$time_end = microtime(true);
 			#$t2s_time = $time_end - $time_start;
@@ -482,42 +486,14 @@ function restoreSingleZone() {
 		// Zone was playing in Single Mode
 		case $actual[$master]['ZoneStatus'] == 'single':
 			$prevStatus = "single";
-			#if (substr($actual[$master]['PositionInfo']["TrackURI"], 0, 5) == "npsdy" || 
-			#	substr($actual[$master]['PositionInfo']["TrackURI"], 0, 11) == "x-file-cifs" || 
-			#	substr($actual[$master]['PositionInfo']["TrackURI"], 0, 12) == "x-sonos-http" ||
-			#	substr($actual[$master]['PositionInfo']["TrackURI"], 0, 15) == "x-sonos-spotify") { // Es läuft eine Musikliste
-			# ***** zum Testen *****
-			if ((substr($actual[$master]['PositionInfo']["TrackURI"], 0, 18) !== "x-sonos-htastream:") &&
-				($actual[$master]['PositionInfo']["TrackDuration"] != '')) {			
-			# ***** zum Testen ENDE *****
-				$sonos->SetTrack($actual[$master]['PositionInfo']["Track"]);
-				$sonos->Seek($actual[$master]['PositionInfo']["RelTime"],"NONE");
-				if($actual[$master]['TransportSettings']['shuffle'] == 1) {
-					$sonos->SetPlayMode('SHUFFLE_NOREPEAT'); // schaltet Zufallswiedergabe wieder ein 
-				} else {
-					$sonos->SetPlayMode('NORMAL'); // spielt im Normal Modus weiter
-				}
-				} 
-				# TV Playbar
-				elseif (substr($actual[$master]['PositionInfo']["TrackURI"], 0, 18) == "x-sonos-htastream:") {
-					$sonos->SetAVTransportURI($actual[$master]['PositionInfo']["TrackURI"]); 
-				} 
-				# LineIn
-				elseif (substr($actual[$master]['PositionInfo']["TrackURI"], 0, 15) == "x-rincon-stream") {
-					$sonos->SetAVTransportURI($actual[$master]['PositionInfo']["TrackURI"]); 
-				} 
-				# Radio
-				elseif (($actual[$master]['PositionInfo']["TrackDuration"] == '') && ($actual[$master]['MediaInfo']["title"] <> '')){
-					$radioURL = trim($actual[$master]['PositionInfo']["TrackURI"]);
-					$radioName = trim(($actual[$master]['MediaInfo']['title']));
-					$sonos->SetRadio($radioURL,$radioName);
-					#var_dump($radioURL);
-				}
-				$sonos->SetVolume($actual[$master]['Volume']);
-				$sonos->SetMute($actual[$master]['Mute']);
-				if (($actual[$master]['TransportInfo'] == 1)) {
-					$sonos->Play();	
-				}
+			restore_details($master);
+			$sonos->SetVolume($actual[$master]['Volume']);
+			$sonos->SetMute($actual[$master]['Mute']);
+			if (($actual[$master]['TransportInfo'] == 1)) {
+				$sonos->Play();	
+			}
+			$mode = $actual[$master]['TransportSettings'];
+			playmode_detection($master, $mode);
 		break;
 		
 		// Zone was Member of a group
@@ -535,37 +511,8 @@ function restoreSingleZone() {
 			#echo "LineIn";
 			# Zone was Master of a group
 			$sonos = new PHPSonos($sonoszone[$master][0]);
-			# Playlist
-			#if (substr($actual[$master]['PositionInfo']["TrackURI"], 0, 5) == "npsdy" || 
-			#	substr($actual[$master]['PositionInfo']["TrackURI"], 0, 11) == "x-file-cifs" || 
-			#	substr($actual[$master]['PositionInfo']["TrackURI"], 0, 12) == "x-sonos-http" || 
-			#	substr($actual[$master]['PositionInfo']["TrackURI"], 0, 15) == "x-sonos-spotify") {
-			# ***** zum Testen *****
-			if ((substr($actual[$master]['PositionInfo']["TrackURI"], 0, 18) !== "x-sonos-htastream:") &&
-				($actual[$master]['PositionInfo']["TrackDuration"] != '')) {			
-			# ***** zum Testen ENDE *****	
-				$sonos->SetTrack($actual[$master]['PositionInfo']['Track']);
-				$sonos->Seek($actual[$master]['PositionInfo']['RelTime'],"NONE");
-					if($actual[$master]['TransportSettings']['shuffle'] == 1) {
-						$sonos->SetPlayMode('SHUFFLE_NOREPEAT'); // schaltet Zufallswiedergabe wieder ein 
-					} else {
-						$sonos->SetPlayMode('NORMAL'); // spielt im Normal Modus weiter
-					}
-				} 
-				# TV Playbar
-				elseif (substr($actual[$master]['PositionInfo']["TrackURI"], 0, 18) == "x-sonos-htastream:") {
-					$sonos->SetAVTransportURI($actual[$master]['PositionInfo']["TrackURI"]); 
-				} 
-				# LineIn
-				elseif (substr($actual[$master]['PositionInfo']["TrackURI"], 0, 15) == "x-rincon-stream") {
-					$sonos->SetAVTransportURI($actual[$master]['PositionInfo']["TrackURI"]); 
-				} 
-				# Radio Station
-				elseif (($actual[$master]['PositionInfo']["TrackDuration"] == '') && ($actual[$master]['MediaInfo']["title"] <> '')){
-					$radionam = $actual[$master]['MediaInfo']["title"];
-					#echo $radionam;
-					$sonos->SetRadio($actual[$master]['PositionInfo']['TrackURI'],"$radionam");
-				}
+			$sonos->SetAVTransportURI($actual[$master]['PositionInfo']["TrackURI"]);
+			
 			# Restore Zone Members
 			$tmp_group = $actual[$master]['Grouping'];
 			$tmp_group1st = array_shift($tmp_group);
@@ -579,11 +526,6 @@ function restoreSingleZone() {
 			$sonos = new PHPSonos($sonoszone[$master][0]);
 			$sonos->SetVolume($actual[$master]['Volume']);
 			$sonos->SetMute($actual[$master]['Mute']);
-			if($actual[$master]['TransportInfo'] != 1) {
-				$sonos->Stop();
-			} else {
-				$sonos->Play();
-			}
 		} else {
 			#echo "Normal";
 			$prevStatus = "master";
@@ -592,25 +534,21 @@ function restoreSingleZone() {
 			foreach ($oldGroup as $newMaster) {
 				// loop threw former Members in order to get the New Coordinator
 				$sonos = new PHPSonos($sonoszone[$newMaster][0]);
-				$check = $sonos->GetPositionInfo($newMaster);
-				$checkMaster = $check['trackURI'];
+				$check = $sonos->GetPositionInfo();
+				$checkMaster = $check['TrackURI'];
 				if (empty($checkMaster)) {
-					// if trackURI is empty add Zone to New Coordinator
-					$sonos = new PHPSonos($sonoszone[$master][0]);
-					$sonos->SetVolume($actual[$master]['Volume']);
-					$sonos->SetMute($actual[$master]['Mute']);
-					$sonos->SetAVTransportURI("x-rincon:" . $sonoszone[$newMaster][1]);
-				}
-				// check if File/Streaming was playing, then go to former position
-				$sonos = new PHPSonos($sonoszone[$newMaster][0]);
-				if ($actual[$master]['PositionInfo']["TrackDuration"] != '') {
-					$sonos->Seek($actual[$master]['PositionInfo']["RelTime"],"NONE");
-				} 
-				// check if Status was playing, then play
-				if ($actual[$master]['TransportInfo'] == 1) {
-					$sonos->Play();	
+					// if TrackURI is empty add Zone to New Coordinator
+					$sonos_old = new PHPSonos($sonoszone[$master][0]);
+					$sonos_old->SetVolume($actual[$master]['Volume']);
+					$sonos_old->SetMute($actual[$master]['Mute']);
+					$sonos_old->SetAVTransportURI("x-rincon:" . $sonoszone[$newMaster][1]);
 				}
 			}
+			# add previous master back to group and restore settings
+			$sonos = new PHPSonos($sonoszone[$exMaster][0]);
+			$sonos->SetAVTransportURI("x-rincon:" . $sonoszone[$newMaster][1]);
+			$sonos->SetVolume($actual[$exMaster]['Volume']);
+			$sonos->SetMute($actual[$exMaster]['Mute']);
 		try {
 			$sonos = new PHPSonos($sonoszone[$newMaster][0]);
 			$sonos->DelegateGroupCoordinationTo($sonoszone[$master][1], 1);
@@ -650,21 +588,12 @@ function restoreGroupZone() {
 			// Zone was playing as Single Zone
 			if (empty($actual[$player]['Grouping'])) {
 			# Playlist
-			#if (substr($actual[$player]['PositionInfo']["TrackURI"], 0, 5) == "npsdy" || 
-			#	substr($actual[$player]['PositionInfo']["TrackURI"], 0, 11) == "x-file-cifs" || 
-			#	substr($actual[$player]['PositionInfo']["TrackURI"], 0, 12) == "x-sonos-http" || 
-			#	substr($actual[$player]['PositionInfo']["TrackURI"], 0, 15) == "x-sonos-spotify") {
-			# ***** zum Testen *****
 			if ((substr($actual[$player]['PositionInfo']["TrackURI"], 0, 18) !== "x-sonos-htastream:") &&
 				($actual[$player]['PositionInfo']["TrackDuration"] != '')) {			
-			# ***** zum Testen ENDE *****
 				$sonos->SetTrack($actual[$player]['PositionInfo']['Track']);
 				$sonos->Seek($actual[$player]['PositionInfo']['RelTime'],"NONE");
-					if($actual[$player]['TransportSettings']['shuffle'] == 1) {
-						$sonos->SetPlayMode('SHUFFLE_NOREPEAT'); // schaltet Zufallswiedergabe wieder ein 
-					} else {
-						$sonos->SetPlayMode('NORMAL'); // spielt im Normal Modus weiter
-					}
+				$mode = $actual[$player]['TransportSettings'];
+				playmode_detection($player, $mode);
 				} 
 				# TV Playbar
 				elseif (substr($actual[$player]['PositionInfo']["TrackURI"], 0, 18) == "x-sonos-htastream:") {
@@ -705,21 +634,13 @@ function restoreGroupZone() {
 			# Zone was Master of a group
 			$sonos = new PHPSonos($sonoszone[$player][0]);
 			# Playlist
-			#if (substr($actual[$player]['PositionInfo']["TrackURI"], 0, 5) == "npsdy" || 
-			#	substr($actual[$player]['PositionInfo']["TrackURI"], 0, 11) == "x-file-cifs" || 
-			#	substr($actual[$player]['PositionInfo']["TrackURI"], 0, 12) == "x-sonos-http" || 
-			#	substr($actual[$player]['PositionInfo']["TrackURI"], 0, 15) == "x-sonos-spotify") {
-			# ***** zum Testen *****
 			if ((substr($actual[$master]['PositionInfo']["TrackURI"], 0, 18) !== "x-sonos-htastream:") &&
 				($actual[$master]['PositionInfo']["TrackDuration"] != '')) {			
 			# ***** zum Testen ENDE *****	
 				$sonos->SetTrack($actual[$player]['PositionInfo']['Track']);
 				$sonos->Seek($actual[$player]['PositionInfo']['RelTime'],"NONE");
-					if($actual[$player]['TransportSettings']['shuffle'] == 1) {
-						$sonos->SetPlayMode('SHUFFLE_NOREPEAT'); // schaltet Zufallswiedergabe wieder ein 
-					} else {
-						$sonos->SetPlayMode('NORMAL'); // spielt im Normal Modus weiter
-					}
+				$mode = $actual[$player]['TransportSettings'];
+				playmode_detection($player, $mode);
 				} 
 				# TV Playbar
 				elseif (substr($actual[$player]['PositionInfo']["TrackURI"], 0, 18) == "x-sonos-htastream:") {
@@ -881,6 +802,40 @@ function say_radio_station() {
 	restoreSingleZone();
 }
 
+
+
+/**
+* Function : restore_details() --> restore the details of master zone
+*
+* @param: 
+* @return: 
+**/
+function restore_details($zone) {
+	global $sonoszone, $sonos, $master, $actual;
+	
+	# Playlist
+	if ((substr($actual[$zone]['PositionInfo']["TrackURI"], 0, 18) !== "x-sonos-htastream:") && ($actual[$zone]['PositionInfo']["TrackDuration"] != '')) {			
+		$sonos->SetTrack($actual[$zone]['PositionInfo']['Track']);
+		$sonos->Seek($actual[$zone]['PositionInfo']['RelTime'],"NONE");
+		
+		#$mode = $actual[$zone]['TransportSettings'];
+		#playmode_detection($zone, $mode);
+	} 
+	# TV Playbar
+	elseif (substr($actual[$zone]['PositionInfo']["TrackURI"], 0, 18) == "x-sonos-htastream:") {
+		$sonos->SetAVTransportURI($actual[$zone]['PositionInfo']["TrackURI"]); 
+	} 
+	# LineIn
+	elseif (substr($actual[$zone]['PositionInfo']["TrackURI"], 0, 15) == "x-rincon-stream") {
+		$sonos->SetAVTransportURI($actual[$zone]['PositionInfo']["TrackURI"]); 
+	} 
+	# Radio Station
+	elseif (($actual[$zone]['PositionInfo']["TrackDuration"] == '') or ($actual[$zone]['MediaInfo']["title"] <> '')) {
+		@$radioname = $actual[$zone]['MediaInfo']["title"];
+		$sonos->SetRadio($actual[$zone]['PositionInfo']["TrackURI"], $radioname);
+	}
+}
+	
 
 
 

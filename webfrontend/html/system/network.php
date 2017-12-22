@@ -23,121 +23,105 @@ $folder =($folder_array[6]);
 echo "<PRE>"; 
 trigger_error('The home and plugin folder has been successful detected!', E_USER_NOTICE);
 
-#unlink($home.'/config/plugins/'.$folder.'/tmp_player.json');
+	$ip = '239.255.255.250';
+	$port = 1900;
+	
+	global $sonosfinal, $sonosnet, $devices;
 
-// Multicast IP-Adresse und Port for UPnP devices
-$ip = '239.255.255.250';
-$port = 1900;
-	global $sonosplayer, $sonosnet, $devices;
 	$sock = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
 	$level = getprotobyname("ip");
 	socket_set_option($sock, $level, IP_MULTICAST_TTL, 2);
-	
-		$data = <<<DATA
-M-SEARCH * HTTP/1.1
-HOST: {$ip}:reservedSSDPport
-MAN: ssdp:discover
-MX: 1
-ST: urn:schemas-upnp-org:device:ZonePlayer:1
-DATA;
+		
+	$data = "M-SEARCH * HTTP/1.1\r\n";
+	$data .= "HOST: {$ip}:reservedSSDPport\r\n";
+	$data .= "MAN: ssdp:discover\r\n";
+	$data .= "MX: 1\r\n";
+	$data .= "ST: urn:schemas-upnp-org:device:ZonePlayer:1\r\n";
 
 	socket_sendto($sock, $data, strlen($data), null, $ip, $port);
 	
 	// All passed by ref
 	$read = [$sock];
-	$write = [];
-	$except = [];
-	$name = null;
-	$port = null;
-	$tmp = '';
-	// Lese buffer
-	$response = '';
-	// Loop bis nichts mehr gefunden wird
-	while (socket_select($read, $write, $except, 1)) {
-		socket_recvfrom($sock, $tmp, 2048, null, $name, $port);
-		$response .= $tmp;
-	}
-	trigger_error('Loop through network has been completed.', E_USER_NOTICE);
-	// Parse buffer zu den Zonen
-	$data = _parse_detection_replies($response);
-	// create array
-	$devices = [];
-	foreach ($data as $datum) {
-		if ($datum["st"] !== "urn:schemas-upnp-org:device:ZonePlayer:1") {
+    $write = [];
+    $except = [];
+    $name = null;
+    $port = null;
+    $tmp = "";
+    $response = "";
+    while (socket_select($read, $write, $except, 1)) {
+        socket_recvfrom($sock, $tmp, 2048, null, $name, $port);
+        $response .= $tmp;
+    }
+    $devices = [];
+    foreach (explode("\r\n\r\n", $response) as $reply) {
+        if (!$reply) {
             continue;
         }
-        if (in_array($datum["usn"], $unique)) {
+        $data = [];
+        foreach (explode("\r\n", $reply) as $line) {
+            if (!$pos = strpos($line, ":")) {
+                continue;
+            }
+            $key = strtolower(substr($line, 0, $pos));
+            $val = trim(substr($line, $pos + 1));
+            $data[$key] = $val;
+        }
+        $devices[] = $data;
+    }
+    $return = [];
+    $unique = [];
+    foreach ($devices as $device) {
+        if ($device["st"] !== "urn:schemas-upnp-org:device:ZonePlayer:1") {
             continue;
         }
-		$url = parse_url($datum['location']);
-		$devices[] = ($url['host']);
-	}
-	if (empty($devices)) {
+        if (in_array($device["usn"], $unique)) {
+            continue;
+        }
+        $url = parse_url($device["location"]);
+        $ip = $url["host"];
+        $return[] = $ip;
+        $unique[] = $device["usn"];
+    }
+	$devices = $return;
+    if (empty($devices)) {
 		trigger_error(count($devices).' System has not detected any Sonos devices in your network!', E_USER_ERROR);
 	} else {
-		trigger_error(count($devices).' Sonos devices IP-adresses has been successful detected!', E_USER_NOTICE);
-		
+		trigger_error(count($devices).' IP-adresses from Sonos devices has been successful detected!', E_USER_NOTICE);	
 	}
-	// ** OBSOLETE **
-	// if no multicast addresses were detected run for broadcast addresses
-	#if (empty($devices)) {
-	#	$devices[] = broadcast_scan();
-	#}
-	//**
-	// in case there are groups destroy them
+	// in case there are groups ungroup them first
 	require_once("PHPSonos.php");
 	foreach ($devices as $scanzone) {
-		$sonos = New PHPSonos($scanzone);
-		$sonos->BecomeCoordinatorOfStandaloneGroup();
-		usleep(200000); // warte 200ms
+		try {
+			$sonos = New PHPSonos($scanzone);
+			$sonos->BecomeCoordinatorOfStandaloneGroup();
+			#usleep(100000); // warte 200ms
+		} catch (Exception $e) {
+			trigger_error("Minimum One Stereo pair or a Surround Config has been identified!", E_USER_NOTICE);	
+		}
 	}
-	// based on scanned IPs retrieve Zone Details
 	getSonosDevices($devices);
 	$devicelist = implode(" / ", $devices);
 	trigger_error("Following Sonos Player IP addresses has been detected (exclude Boost, Subwoofer, Bridges) :". $devicelist, E_USER_NOTICE);
-	// load configuration file
-	parse_cfg_file();
-	// prüft ob player.cfg leer war
+	parse_cfg_file(); // $sonosnet
 	if(empty($sonosnet)) {
-		$finalzones = $sonosplayer;
+		$finalzones = $sonosfinal;
 	} else {
 		// computes the difference of arrays with additional index check
-		$finalzones = @array_diff_assoc($sonosplayer, $sonosnet);
+		$finalzones = @array_diff_assoc($sonosfinal, $sonosnet);
 	}
+	#print_r($finalzones);
 	// save array as JSON file
 	$d = array2json($finalzones);
 	$fh = fopen($home.'/config/plugins/'.$folder.'/tmp_player.json', 'w');
 	$checkInst = file_exists($home.'/config/plugins/'.$folder.'/tmp_player.json');
 	if ($checkInst === false) {
-		trigger_error("Error during installation, please re-install the Plugin. The Scan could not be completed due to missing temporary file!!", E_USER_ERROR);
+		trigger_error("Error during initial installation, please re-install the Plugin. The Scan could not be completed due to missing temporary file!!", E_USER_ERROR);
 	}
 	trigger_error('The setup has been completed.', E_USER_NOTICE);
 	fwrite($fh, json_encode($finalzones));
 	fclose($fh);
-	trigger_error('System setup passed over to LoxBerry Configuration.', E_USER_NOTICE);
-	#unlink($home.'/config/plugins/sonos4lox_dev/tmp_player.json');
+	trigger_error('File has been saved and system setup passed over to LoxBerry Configuration.', E_USER_NOTICE);
 	
-	function _parse_detection_replies($replies) {
-		$out = array();
-		// Loop durch jede Antwort
-		foreach (explode("\r\n\r\n", $replies) as $reply) {
-			if ( ! $reply) {
-				continue;
-			}
-			// Neue Array
-			$arr =& $out[];
-			// Loop durch die Ergebnisse
-			foreach (explode("\r\n", $reply) as $line) {
-				// Ende von header name
-				if (($colon = strpos($line, ':')) !== false) {
-					$name = strtolower(substr($line, 0, $colon));
-					$val = trim(substr($line, $colon + 1));
-					$arr[$name] = $val;
-				}
-			}
-		}
-		return $out;
-	}
 	
 
 /**
@@ -147,12 +131,13 @@ DATA;
 * @return:    Array<Key => Array<Node>>  
 **/
  function getSonosDevices($devices){
-	global $sonosplayer, $sodevices;
+	global $sonosfinal, $sodevices;
 	
 	$sodevices = $devices[0];
-	$soplayer = getRoomCoordinatorSetup($sodevices);
+	$soplayer = getRoomCoordinator($sodevices);
+	$soplayernew = getRoomCoordinatorSetup($sodevices);
 	$zonen = array();
-	foreach ($devices as $zoneip) {
+	foreach ($soplayer as $zoneip) {
 		$url = "http://" . $zoneip . ":1400/xml/device_description.xml";
 		$xml = simpleXML_load_file($url);
 		$model = $xml->device->modelNumber;
@@ -171,14 +156,16 @@ DATA;
 						''
 						];
 			$raum = array_shift($zonen);
+			
 		}
-		$sonosplayer[$raum] = $zonen;
+		$sonosplayerfinal[$raum] = $zonen;
 	}
-	$sonosplayer = array_merge_recursive($soplayer, $sonosplayer);
-	ksort($sonosplayer);
-	echo "<PRE>";
-	#print_r($sonosplayer);
-	return $sonosplayer;	
+	$match = @array_intersect_assoc($soplayernew, $sonosplayerfinal);
+	$sonosfinal = @array_merge_recursive($match, $sonosplayerfinal);
+	ksort($sonosfinal);
+	#echo "<PRE>";
+	#print_r($sonosfinal);
+	return $sonosfinal;	
  }
 
   
@@ -196,7 +183,7 @@ DATA;
 		"S12"   =>  "PLAY:1",
 		"S13"   =>  "PLAY:1",
         "S3"    =>  "PLAY:3",
-        "S5"    =>  "PLAY:5",
+		"S5"    =>  "PLAY:5",
         "S6"    =>  "PLAY:5",
         "S9"    =>  "PLAYBAR",
 		"S11"   =>  "PLAYBASE",
@@ -236,45 +223,43 @@ function parse_cfg_file() {
 **/
 
 function array2json($arr) { 
-    if(function_exists('json_encode')) return json_encode($arr); //Lastest versions of PHP already has this functionality.
+    if(function_exists('json_encode')) return json_encode($arr); // Lastest versions of PHP already has this functionality.
     $parts = array(); 
     $is_list = false; 
 
-    //Find out if the given array is a numerical array 
+    // Find out if the given array is a numerical array 
     $keys = array_keys($arr); 
     $max_length = count($arr)-1; 
-    if(($keys[0] == 0) and ($keys[$max_length] == $max_length)) {//See if the first key is 0 and last key is length - 1 
+    if(($keys[0] == 0) and ($keys[$max_length] == $max_length)) {// See if the first key is 0 and last key is length - 1 
         $is_list = true; 
-        for($i=0; $i<count($keys); $i++) { //See if each key correspondes to its position 
-            if($i != $keys[$i]) { //A key fails at position check. 
-                $is_list = false; //It is an associative array. 
+        for($i=0; $i<count($keys); $i++) { // See if each key correspondes to its position 
+            if($i != $keys[$i]) { // A key fails at position check. 
+                $is_list = false; // It is an associative array. 
                 break; 
             } 
         } 
     } 
 
     foreach($arr as $key=>$value) { 
-        if(is_array($value)) { //Custom handling for arrays 
+        if(is_array($value)) { // Custom handling for arrays 
             if($is_list) $parts[] = array2json($value); /* :RECURSION: */ 
             else $parts[] = '"' . $key . '":' . array2json($value); /* :RECURSION: */ 
         } else { 
             $str = ''; 
             if(!$is_list) $str = '"' . $key . '":'; 
 
-            //Custom handling for multiple data types 
-            if(is_numeric($value)) $str .= $value; //Numbers 
-            elseif($value === false) $str .= 'false'; //The booleans 
+            // Custom handling for multiple data types 
+            if(is_numeric($value)) $str .= $value; // Numbers 
+            elseif($value === false) $str .= 'false'; // The booleans 
             elseif($value === true) $str .= 'true'; 
-            else $str .= '"' . addslashes($value) . '"'; //All other things 
-            // :TODO: Is there any more datatype we should be in the lookout for? (Object?) 
-
+            else $str .= '"' . addslashes($value) . '"'; // All other things 
             $parts[] = $str; 
         } 
     } 
     $json = implode(',',$parts); 
      
-    if($is_list) return '[' . $json . ']';//Return numerical JSON 
-    return '{' . $json . '}';//Return associative JSON 
+    if($is_list) return '[' . $json . ']';// Return numerical JSON 
+    return '{' . $json . '}'; // Return associative JSON 
 } 
 
 
@@ -315,8 +300,37 @@ function getRoomCoordinatorSetup($devices){
 		ksort($coordinators);
 		#echo "<PRE>";
 		#print_r($coordinators);
-		trigger_error('All player details and Stereo Pairs has been collected (room, IP, Rincon-ID and Model).', E_USER_NOTICE);
+		trigger_error('All player details has been collected (room, IP, Rincon-ID and Model).', E_USER_NOTICE);
 		return $coordinators;
+}
+
+
+/**
+* Function: getRoomCoordinator --> filter for Master IP addresses
+*
+* @param:  $room
+* @return: array of (0) IP address
+*/
+
+function getRoomCoordinator($devices){
+	global $sonoszone, $zone, $debug, $master, $sonosclass, $config;
+		
+		#$room = $master;
+		if(!$xml=deviceCmdRawSetup('/status/topology')){
+			return false;
+		}	
+		$topology = simplexml_load_string($xml);
+		$myself = null;
+		$playernew = [];
+		// Loop players, build map of coordinators and find myself
+		foreach ($topology->ZonePlayers->ZonePlayer as $player)	{
+			$player_data = $player->attributes();
+			$ip = parse_url((string)$player_data->location)['host'];
+			if ($player_data->coordinator == 'true') {
+				array_push($playernew, $ip);
+			}
+		}
+		return $playernew;
 }
 
 /**
@@ -337,56 +351,6 @@ function deviceCmdRawSetup($url, $ip='', $port=1400) {
 	curl_close($ch);
 	return $data;
  }
- 
-// ** OBSOLETE ** 
-/**
-* Funktion : broadcast_scan --> Subfunction necessary to read Sonos Topology
-* @param: 	empty
-*
-* @return: array
-**/ 
-function broadcast_scan() {
- 
- // Broadcast IP-Adresse und Port for UPnP devices
-$ip = '239.255.255.250';
-$broadcastip = '255.255.255.255';
-$port = 1900;
-	global $sonosplayer, $sonosnet;
-	$sock = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
-	socket_set_option($sock, SOL_SOCKET, SO_BROADCAST, 1);
-
-		$data = <<<DATA
-M-SEARCH * HTTP/1.1
-HOST: {$ip}:reservedSSDPport
-MAN: ssdp:discover
-MX: 1
-ST: urn:schemas-upnp-org:device:ZonePlayer:1
-DATA;
-
-	socket_sendto($sock, $data, strlen($data), null, $broadcastip, $port);
-
-	// All passed by ref
-	$read = array($sock);
-	$write = $except = array();
-	$name = $port = null;
-	$tmp = '';
-	// Lese buffer
-	$buff = '';
-	// Loop bis nichts mehr gefunden wird
-	while (socket_select($read, $write, $except, 1) && $read) {
-		socket_recvfrom($sock, $tmp, 2048, null, $name, $port);
-		$buff .= $tmp;
-	}
-	// Parse buffer zu den Zonen
-	$data = _parse_detection_replies($buff);
-	// create array
-	$devices = array();
-	foreach ($data as $datum) {
-		$url = parse_url($datum['location']);
-		$devices[] = ($url['host']);
-	}
-	return $devices;
-}
  
  
 

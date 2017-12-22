@@ -27,6 +27,11 @@ function AddSpotify() {
 	// check if Radio/Line IN/TV is playing, then switch to PL
 	empty($curr_track_tmp['duration']) ? $sonos->SetQueue("x-rincon-queue:".$sonoszone[$master][1]."#0") : '';
 	
+	if (isset($_GET['user'])) {
+		$user = $_GET['user'];
+	} else {
+		$user = "spotify";
+	}
 	// Spotify Track(s)
 	if (isset($_GET['trackuri'])) {
 		$uri = $_GET['trackuri'];
@@ -59,7 +64,7 @@ function AddSpotify() {
 		$sonos->ClearQueue();
 		try {
 			$service = New SonosMusicService($sonoszone[$master][0]);
-			$service->SetSpotifyPlaylist($pl);
+			$service->SetSpotifyPlaylist($pl, $user);
 		} catch (Exception $e) {
 			trigger_error("The entered Spotify-Playlist-URI: ".$pl." is not valid! Please check!", E_USER_ERROR);
 		}

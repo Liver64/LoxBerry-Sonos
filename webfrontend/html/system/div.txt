@@ -1,0 +1,605 @@
+
+
+<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" 
+xmlns:r="urn:schemas-rinconnetworks-com:metadata-1-0/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"></DIDL-Lite>003Array
+(
+)
+
+$content='POST /MediaServer/ContentDirectory/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: '.$this->address.':1400
+USER-AGENT: Linux UPnP/1.0 Sonos/39.2-47040 (WDCR:Microsoft Windows NT 6.1.7601 Service Pack 1)
+CONTENT-LENGTH: 479
+CONTENT-TYPE: text/xml; charset="utf-8"
+X-SONOS-TARGET-UDN: uuid:'.$uuid.'
+SOAPACTION: "urn:schemas-upnp-org:service:ContentDirectory:1#Browse"
+
+spotify:track:4hKWUzhQWsOkgT6LnDEASe
+spotify:user:spotifycharts:playlist:37i9dQZEVXbJiZcmkrIHGU
+spotify:user:spotify:playlist:37i9dQZF1DX2lUf1uE6Mre
+spotify:track:7vGuf3Y35N4wmASOKLUVVU
+spotify:track:56zQMVWGBBTVSItzddscyj
+
+
+Add Spotify Playlist
+
+POST /MediaRenderer/AVTransport/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: 192.168.50.31:1400
+USER-AGENT: Linux UPnP/1.0 Sonos/39.2-47040 (WDCR:Microsoft Windows NT 6.1.7601 Service Pack 1)
+CONTENT-LENGTH: 1243
+CONTENT-TYPE: text/xml; charset="utf-8"
+X-SONOS-TARGET-UDN: uuid:RINCON_000E5872D8AC01400
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body><u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+<EnqueuedURI>x-rincon-cpcontainer:100420ecexplore%3aalbum%3a%3aAlb.287816565?sid=203&amp;flags=8428&amp;sn=1</EnqueuedURI>
+<EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp
+/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0
+/DIDL-Lite/&quot;&gt;&lt;item id=&quot;100420ecexplore%3aalbum%3a%3aAlb.287816565&quot; parentID=&quot;100d2064root%3anewreleases&quot; 
+restricted=&quot;true&quot;&gt;&lt;dc:title&gt;Everyday Is Christmas&lt;/dc:title&gt;&lt;upnp:class&gt;object.container.album.musicAlbum&lt;
+/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON51975_olewald@t-online.de&lt;
+/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</EnqueuedURIMetaData><DesiredFirstTrackNumberEnqueued>2</DesiredFirstTrackNumberEnqueued>
+<EnqueueAsNext>1</EnqueueAsNext></u:AddURIToQueue></s:Body></s:Envelope>
+
+
+Add Spotify Track
+
+POST /MediaRenderer/AVTransport/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: 192.168.50.31:1400
+USER-AGENT: Linux UPnP/1.0 Sonos/39.2-47040 (WDCR:Microsoft Windows NT 6.1.7601 Service Pack 1)
+CONTENT-LENGTH: 1296
+CONTENT-TYPE: text/xml; charset="utf-8"
+X-SONOS-TARGET-UDN: uuid:RINCON_000E5872D8AC01400
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body><u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+<EnqueuedURI>x-sonos-http:ondemand_track%3a%3atra.287816567%7cv1%7cALBUM%7calb.287816565.mp4?sid=203&amp;flags=8224&amp;sn=1</EnqueuedURI>
+<EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp
+/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0
+/DIDL-Lite/&quot;&gt;&lt;item id=&quot;10032020ondemand_track%3a%3atra.287816567%7cv1%7cALBUM%7calb.287816565&quot; parentID=&quot;100420ecexplore%3aalbum%3a%3aAlb.287816565
+&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;Candy Cane Lane&lt;/dc:title&gt;&lt;upnp:class&gt;object.item.audioItem.musicTrack&lt;
+/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON51975_olewald@t-online.de&lt;
+/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</EnqueuedURIMetaData><DesiredFirstTrackNumberEnqueued>1</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>1</EnqueueAsNext>
+</u:AddURIToQueue></s:Body></s:Envelope>
+
+spotify:track:1j4kHkkpqZRBwE0A4CN4Yv
+spotify:track:1NfNdnuFbTgYpRG0z5bHxv
+spotify:track:5nFskY47OoXlr6uFb1wiqP
+spotify:track:4hKWUzhQWsOkgT6LnDEASe
+
+
+wget https://raw.githubusercontent.com/composer/getcomposer.org/4449596339f6ee0b9bbe21117eb7998fd46fbd25/web/installer -O - -q | php -- --quiet
+
+
+<EnqueuedURI>
+x-sonos-spotify:spotify%3atrack%3a7LRCzA2vlK4EIAdBPz2BEd?sid=203&sn=1
+
+<EnqueuedURIMetaData>
+<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:r="urn:schemas-rinconnetworks-com:metadata-1-0/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"><item id="16054235spotify%3atrack%3a7LRCzA2vlK4EIAdBPz2BEd" restricted="true"><dc:title></dc:title><upnp:class>object.item.audioItem.musicTrack</upnp:class><desc id="cdudn" nameSpace="urn:schemas-rinconnetworks-com:metadata-1-0/">SA_RINCON2311_X_#Svc2311-0-Token</desc></item></DIDL-Lite>
+			
+Ergebnis WIRESHARK
+
+POST /MediaRenderer/AVTransport/Control HTTP/1.1
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
+CONTENT-TYPE: text/xml; charset="utf-8"
+HOST: 192.168.50.31:1400
+Content-Length: 1198
+
+<?xml version="1.0" encoding="utf-8"?>
+<s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+   <s:Body>
+      <u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1">
+         <InstanceID>0</InstanceID>
+         <EnqueuedURI>x-sonos-spotify:spotify%3atrack%3a7LRCzA2vlK4EIAdBPz2BEd?sid=203&amp;sn=1</EnqueuedURI>
+         <EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:r="urn:schemas-rinconnetworks-com:metadata-1-0/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"&gt;&lt;item id="16054235spotify%3atrack%3a7LRCzA2vlK4EIAdBPz2BEd" restricted="true"&gt;&lt;dc:title&gt;&lt;/dc:title&gt;&lt;upnp:class&gt;object.item.audioItem.musicTrack&lt;/upnp:class&gt;&lt;desc id="cdudn" nameSpace="urn:schemas-rinconnetworks-com:metadata-1-0/"&gt;SA_RINCON2311_X_#Svc2311-0-Token&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</EnqueuedURIMetaData>
+         <DesiredFirstTrackNumberEnqueued>1</DesiredFirstTrackNumberEnqueued>
+         <EnqueueAsNext>1</EnqueueAsNext>
+      </u:AddURIToQueue>
+   </s:Body>
+</s:Envelope>
+
+
+
+<iframe src="https://open.spotify.com/embed/track/7LRCzA2vlK4EIAdBPz2BEd" width="300" height="380" frameborder="0" allowtransparency="true"></iframe>
+spotify:track:7LRCzA2vlK4EIAdBPz2BEd
+
+
+
+POST /MediaRenderer/AVTransport/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: 192.168.50.31:1400
+USER-AGENT: Linux UPnP/1.0 Sonos/39.2-47040 (WDCR:Microsoft Windows NT 6.1.7601 Service Pack 1)
+CONTENT-LENGTH: 1297
+CONTENT-TYPE: text/xml; charset="utf-8"
+X-SONOS-TARGET-UDN: uuid:RINCON_000E5872D8AC01400
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body><u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+<EnqueuedURI>x-rincon-cpcontainer:1006206cspotify%3auser%3aspotify%3aplaylist%3a37i9dQZF1DX4jP4eebSWR9?sid=9&amp;flags=8300&amp;sn=5</EnqueuedURI>
+<EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;1006206cspotify%3auser%3aspotify%3aplaylist%3a37i9dQZF1DX4jP4eebSWR9&quot; parentID=&quot;10082064spotify%3acategory%3apop&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;Top Hits Deutschland&lt;/dc:title&gt;&lt;upnp:class&gt;object.container.playlistContainer&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON2311_X_#Svc2311-0-Token&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</EnqueuedURIMetaData>
+<DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>0</EnqueueAsNext></u:AddURIToQueue></s:Body></s:Envelope>
+
+
+x-rincon-cpcontainer:1006206cspotify%3auser%3aspotify%3aplaylist%3a37i9dQZF1DX4jP4eebSWR9?&sid=9&flags=8300&sn=5
+x-rincon-cpcontainer:1006206cspotify%3auser%3aspotify%3aplaylist%3a37i9dQZF1DX4jP4eebSWR9?sid=9&amp;sn=5
+spotify:user:spotify:playlist:37i9dQZF1DX3h1vasAdBTc
+spotify:user:spotify:playlist:37i9dQZEVXcCOxDenytp7k
+
+
+POST /MediaRenderer/AVTransport/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: 192.168.50.31:1400
+USER-AGENT: Linux UPnP/1.0 Sonos/39.2-47040 (WDCR:Microsoft Windows NT 6.1.7601 Service Pack 1)
+CONTENT-LENGTH: 1274
+CONTENT-TYPE: text/xml; charset="utf-8"
+X-SONOS-TARGET-UDN: uuid:RINCON_000E5872D8AC01400
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body><u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+<EnqueuedURI>x-rincon-cpcontainer:100e004cexplore%3aplaylist%3a%3app.222524250?sid=203&amp;flags=76&amp;sn=1</EnqueuedURI>
+<EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:
+metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:
+metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;100e004cexplore%3aplaylist%3a%3app.222524250&quot; 
+parentID=&quot;100d2064explore%3atag%3aplaylists%3a%3atag.156763216&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;
+Geile Sonntags Playlist&lt;/dc:title&gt;&lt;upnp:class&gt;object.container.playlistContainer&lt;/upnp:class&gt;&lt;desc 
+id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;
+SA_RINCON51975_olewald@t-online.de&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</EnqueuedURIMetaData>
+<DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>0</EnqueueAsNext></u:AddURIToQueue></s:Body></s:Envelope>
+
+
+
+
+POST /MediaRenderer/AVTransport/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: 192.168.50.31:1400
+USER-AGENT: Linux UPnP/1.0 Sonos/39.2-47040 (WDCR:Microsoft Windows NT 6.1.7601 Service Pack 1)
+CONTENT-LENGTH: 1264
+CONTENT-TYPE: text/xml; charset="utf-8"
+X-SONOS-TARGET-UDN: uuid:RINCON_000E5872D8AC01400
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body><u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+<EnqueuedURI>x-rincon-cpcontainer:100e004cexplore%3aplaylist%3a%3app.191473986?sid=203&amp;flags=76&amp;sn=1</EnqueuedURI>
+<EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;100e004cexplore%3aplaylist%3a%3app.191473986&quot; parentID=&quot;100d2064explore%3atag%3aplaylists%3a%3atag.152196439&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;Morning Chill&lt;/dc:title&gt;&lt;upnp:class&gt;object.container.playlistContainer&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON51975_olewald@t-online.de&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</EnqueuedURIMetaData><DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>0</EnqueueAsNext></u:AddURIToQueue></s:Body></s:Envelope>
+
+spotify:album:0PNXB6AmSfM9oS0YwNkCYH
+spotify:user:spotify:playlist:37i9dQZF1DX36edUJpD76c
+spotify:album:7GcrxecamwbZqW0Vf0TEo7
+
+POST /MediaRenderer/AVTransport/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: 192.168.50.31:1400
+USER-AGENT: Linux UPnP/1.0 Sonos/39.2-47040 (WDCR:Microsoft Windows NT 6.1.7601 Service Pack 1)
+CONTENT-LENGTH: 1229
+CONTENT-TYPE: text/xml; charset="utf-8"
+X-SONOS-TARGET-UDN: uuid:RINCON_000E5872D8AC01400
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body><u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+<EnqueuedURI>x-rincon-cpcontainer:100420ecexplore%3aalbum%3a%3aAlb.287008560?sid=203&amp;flags=8428&amp;sn=1</EnqueuedURI>
+
+<EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:
+metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:
+metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;100420ecexplore%3aalbum%3a%3aAlb.287008560&quot; 
+parentID=&quot;100d2064root%3anewreleases&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;Eiskalt&lt;/dc:title&gt;&lt;upnp:class&gt;
+object.container.album.musicAlbum&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:
+schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON51975_olewald@t-online.de&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;
+</EnqueuedURIMetaData><DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>0</EnqueueAsNext>
+</u:AddURIToQueue></s:Body></s:Envelope>
+
+spotify:album:4ADIqpPBchOMHfHYRL9HU1
+<iframe src="https://open.spotify.com/embed/album/4ADIqpPBchOMHfHYRL9HU1" width="300" height="380" frameborder="0" allowtransparency="true"></iframe>
+https://open.spotify.com/album/4ADIqpPBchOMHfHYRL9HU1
+https://open.spotify.com/album/24Nm4WqbpFrtAsgE5Ba3ab
+<iframe src="https://open.spotify.com/embed/album/24Nm4WqbpFrtAsgE5Ba3ab" width="300" height="380" frameborder="0" allowtransparency="true"></iframe>
+spotify:album:24Nm4WqbpFrtAsgE5Ba3ab
+
+&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;100420ecexplore%3aalbum%3a'.$pl.'&quot; parentID=&quot;100d2064root%3anewreleases&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;Eiskalt&lt;/dc:title&gt;&lt;upnp:class&gt;object.container.album.musicAlbum&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON51975_olewald@t-online.de&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;
+
+
+POST /MediaRenderer/AVTransport/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: 192.168.50.31:1400
+USER-AGENT: Linux UPnP/1.0 Sonos/39.2-47040 (WDCR:Microsoft Windows NT 6.1.7601 Service Pack 1)
+CONTENT-LENGTH: 1265
+CONTENT-TYPE: text/xml; charset="utf-8"
+X-SONOS-TARGET-UDN: uuid:RINCON_000E5872D8AC01400
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body><u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+<EnqueuedURI>x-rincon-cpcontainer:1004206cspotify%3aalbum%3a24Nm4WqbpFrtAsgE5Ba3ab?sid=9&amp;flags=8300&amp;sn=5</EnqueuedURI>
+<EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;1004206cspotify%3aalbum%3a24Nm4WqbpFrtAsgE5Ba3ab&quot; parentID=&quot;10052064spotify%3aartist%3a7jgZFR40bWjwOrRCOZFB02&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;Representing&lt;/dc:title&gt;&lt;upnp:class&gt;object.container.album.musicAlbum&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON2311_X_#Svc2311-0-Token&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</EnqueuedURIMetaData>
+<DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>0</EnqueueAsNext></u:AddURIToQueue></s:Body></s:Envelope>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+POST /MediaRenderer/AVTransport/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: 192.168.50.31:1400
+USER-AGENT: Linux UPnP/1.0 Sonos/39.2-47040 (WDCR:Microsoft Windows NT 6.1.7601 Service Pack 1)
+CONTENT-LENGTH: 383
+CONTENT-TYPE: text/xml; charset="utf-8"
+X-SONOS-TARGET-UDN: uuid:RINCON_000E5872D8AC01400
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#SetAVTransportURI"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:SetAVTransportURI xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID><CurrentURI>x-rincon-queue:RINCON_000E5872D8AC01400#0</CurrentURI><CurrentURIMetaData></CurrentURIMetaData></u:SetAVTransportURI></s:Body></s:Envelope>
+
+
+Amazon Music
+
+POST /MediaRenderer/AVTransport/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: 192.168.50.31:1400
+USER-AGENT: Linux UPnP/1.0 Sonos/39.2-47040 (WDCR:Microsoft Windows NT 6.1.7601 Service Pack 1)
+CONTENT-LENGTH: 1303
+CONTENT-TYPE: text/xml; charset="utf-8"
+X-SONOS-TARGET-UDN: uuid:RINCON_000E5872D8AC01400
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body><u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+<EnqueuedURI>x-rincon-cpcontainer:1006206ccatalog%2fplaylists%2fB076F95ZLV%2f%23prime_playlist?sid=201&amp;flags=8300&amp;sn=8</EnqueuedURI>
+<EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;1006206ccatalog%2fplaylists%2fB076F95ZLV%2f%23prime_playlist&quot; parentID=&quot;10082064catalog%2fplaylists%2f%23prime_playlists&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;50 Hits: Pop von heute&lt;/dc:title&gt;&lt;upnp:class&gt;object.container.playlistContainer&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON51463_X_#Svc51463-0-Token&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</EnqueuedURIMetaData>
+<DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>0</EnqueueAsNext></u:AddURIToQueue></s:Body></s:Envelope>
+
+Rechtsklick "Adresse des Links kopieren"
+
+https://music.amazon.de/albums/B076F95ZLV - geht
+https://music.amazon.de/playlists/B071JFKCXV
+https://music.amazon.de/albums/B00IK3IV6Y
+https://music.amazon.de/albums/B003Z69GS8
+https://music.amazon.de/albums/B00BLWYTE4?ref=dm_sh_8996-fcd6-dmcp-78de-70cce
+https://music.amazon.de/playlists/B071W6HN35?ref=dm_wcp_pp_link_pb_pp_rec
+https://music.amazon.de/playlists/B076J6H4Y2?ref=dm_wcp_pp_link_pb_pp_rec
+
+
+POST /MediaRenderer/AVTransport/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: 192.168.50.31:1400
+USER-AGENT: Linux UPnP/1.0 Sonos/39.2-47040 (WDCR:Microsoft Windows NT 6.1.7601 Service Pack 1)
+CONTENT-LENGTH: 1281
+CONTENT-TYPE: text/xml; charset="utf-8"
+X-SONOS-TARGET-UDN: uuid:RINCON_000E5872D8AC01400
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body><u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+<EnqueuedURI>x-rincon-cpcontainer:1004206ccatalog%2falbums%2fB01DG9FS9E%2f%23album_desc?sid=201&amp;flags=8300&amp;sn=8</EnqueuedURI>
+<EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;1004206ccatalog%2falbums%2fB01DG9FS9E%2f%23album_desc&quot; parentID=&quot;100d2064catalog%2fpopular%2falbums%2f%23popular_albums_desc&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;TAPE&lt;/dc:title&gt;&lt;upnp:class&gt;object.container.album.musicAlbum&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON51463_X_#Svc51463-0-Token&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</EnqueuedURIMetaData>
+<DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>0</EnqueueAsNext></u:AddURIToQueue></s:Body></s:Envelope>
+
+
+POST /MediaRenderer/AVTransport/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: 192.168.50.31:1400
+USER-AGENT: Linux UPnP/1.0 Sonos/39.2-47040 (WDCR:Microsoft Windows NT 6.1.7601 Service Pack 1)
+CONTENT-LENGTH: 1296
+CONTENT-TYPE: text/xml; charset="utf-8"
+X-SONOS-TARGET-UDN: uuid:RINCON_000E5872D8AC01400
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body><u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+<EnqueuedURI>x-sonosapi-hls-static:catalog%2ftracks%2fB01DG9FT2U%2f%3falbumAsin%3dB01DG9FS9E?sid=201&amp;flags=0&amp;sn=8</EnqueuedURI>
+<EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;10030000catalog%2ftracks%2fB01DG9FT2U%2f%3falbumAsin%3dB01DG9FS9E&quot; parentID=&quot;1004206ccatalog%2falbums%2fB01DG9FS9E%2f%23album_desc&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;Spul zur..ck&lt;/dc:title&gt;&lt;upnp:class&gt;object.item.audioItem.musicTrack&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON51463_X_#Svc51463-0-Token&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</EnqueuedURIMetaData>
+<DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>0</EnqueueAsNext></u:AddURIToQueue></s:Body></s:Envelope>
+
+
+auf die Minutenangabe des Songs klicken->Song teilen->Link kopieren. Nur die zweite is notwendig
+
+https://music.amazon.de/albums/B01DG9FS9E?trackAsin=B01DG9FT2U&ref=dm_sh_22cd-6a1f-dmcp-8526-ba82a
+https://music.amazon.de/albums/B01DG9FS9E?trackAsin=B01DG9FW3G&ref=dm_sh_6c49-e362-dmcp-eb77-e9529
+https://music.amazon.de/albums/B01DG9FS9E?trackAsin=B01DG9FWXG&ref=dm_sh_6aa9-cee6-dmcp-252b-8ff50
+https://music.amazon.de/albums/B001SN2YNE?trackAsin=B001SMXZNI&ref=dm_sh_93a0-70dc-dmcp-aafd-0c591
+
+
+Google
+
+POST /MediaRenderer/AVTransport/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: 192.168.50.31:1400
+USER-AGENT: Linux UPnP/1.0 Sonos/39.2-47040 (WDCR:Microsoft Windows NT 6.1.7601 Service Pack 1)
+CONTENT-LENGTH: 1284
+CONTENT-TYPE: text/xml; charset="utf-8"
+X-SONOS-TARGET-UDN: uuid:RINCON_000E5872D8AC01400
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body><u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+<EnqueuedURI>x-rincon-cpcontainer:1004204cxwBttu4cg2yp4rmr6fes7jetyr?tsid=151&amp;flags=8268&amp;sn=9</EnqueuedURI>
+<EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;1004204cxwBttu4cg2yp4rmr6fes7jetyr&quot; parentID=&quot;1004204cxwBttu4cg2yp4rmr6fes7jetyr&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;Eiskalt&lt;/dc:title&gt;&lt;upnp:class&gt;object.container.album.musicAlbum.#topCharts&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON38663_X_#Svc38663-0-Token&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</EnqueuedURIMetaData>
+<DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>0</EnqueueAsNext></u:AddURIToQueue></s:Body></s:Envelope>
+
+https://play.google.com/music/m/Bttu4cg2yp4rmr6fes7jetyrobq?t=Eiskalt_-_Luciano
+https://play.google.com/music/listen?via=about%2Fmusic%2Fsonos&hl=de&u=0
+https://play.google.com/music/m/Ttbpyqvz3cn37nhwo64kdikr5li?t=Eiskalt_-_Luciano
+Ttbpyqvz3cn37nhwo64kdikr5li
+T8X2rh3H9LkREFZ62BtGU
+
+https://play.google.com/music/m/Bttu4cg2yp4rmr6fes7jetyrobq?t=Eiskalt_-_Luciano
+https://play.google.com/store/music/album/WIRTZ_Die_f%C3%BCnfte_Dimension?id=Bhnzl7fvl5wpg67snkkhjquml7y
+
+
+<EnqueuedURI>x-rincon-cpcontainer:1004204cxwT8X2rh3H9LkREFZ62BtGU-ROJqLMDumOJEUBD7jztrdraj_qUGwg?sid=151&amp;flags=8268&amp;sn=9</EnqueuedURI>
+
+
+POST /MediaRenderer/AVTransport/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: 192.168.50.31:1400
+USER-AGENT: Linux UPnP/1.0 Sonos/39.2-47040 (WDCR:Microsoft Windows NT 6.1.7601 Service Pack 1)
+CONTENT-LENGTH: 1308
+CONTENT-TYPE: text/xml; charset="utf-8"
+X-SONOS-TARGET-UDN: uuid:RINCON_000E5872D8AC01400
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body><u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+<EnqueuedURI>x-rincon-cpcontainer:1004204cxwT8X2rh3H_zcJmOn5-_CiSym-z9KdeZXM0UougrOfvefqIk9cdrlw?sid=151&amp;flags=8268&amp;sn=9</EnqueuedURI>
+<EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;1004204cxwT8X2rh3H_zcJmOn5-_CiSym-z9KdeZXM0UougrOfvefqIk9cdrlw&quot; parentID=&quot;100d206cXcXaB9QHYW-Js5n-VMtTsmX15ctuvF_c&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;The Burning Spider&lt;/dc:title&gt;&lt;upnp:class&gt;object.container.album.musicAlbum.#exploreAlbum&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON38663_X_#Svc38663-0-Token&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</EnqueuedURIMetaData>
+<DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>0</EnqueueAsNext></u:AddURIToQueue></s:Body></s:Envelope>
+
+https://play.google.com/store/music/album/Parov_Stelar_The_Burning_Spider?id=Bw27nr35cby263gvoolfzlhm2k4
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body><u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+<EnqueuedURI>x-rincon-cpcontainer:1004204cxwT8X2rh3H-FX0anGTsGC2wdrXq8wWUQesfvu-C7umRlwcu_jYFu-w?sid=151&amp;flags=8268&amp;sn=9</EnqueuedURI>
+<EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;1004204cxwT8X2rh3H-FX0anGTsGC2wdrXq8wWUQesfvu-C7umRlwcu_jYFu-w&quot; parentID=&quot;100d206cXcXaB9QHYW-Js5n-VMtTsmX15ctuvF_c&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;Los Amsterdam&lt;/dc:title&gt;&lt;upnp:class&gt;object.container.album.musicAlbum.#exploreAlbum&lt;/upnp:class&gt;&lt;r:tags&gt;1&lt;/r:tags&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON38663_X_#Svc38663-0-Token&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</EnqueuedURIMetaData>
+<DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>0</EnqueueAsNext></u:AddURIToQueue></s:Body></s:Envelope>
+
+https://play.google.com/store/music/album/Yellow_Claw_Los_Amsterdam?id=B6nypsneymqbjinmzqs6kwhtdv4
+https://play.google.com/store/music/artist/Yellow_Claw?id=Aztybzf3jjux6wsa6sjanvqb2aa
+
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body><u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+<EnqueuedURI>x-rincon-cpcontainer:1004204cxwT8X2rh3H_pxmG6pxRlkqwUmeH-30IfTGZF1SwPWytwHHMw5JCyXg?sid=151&amp;flags=8268&amp;sn=9</EnqueuedURI>
+<EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;1004204cxwT8X2rh3H_pxmG6pxRlkqwUmeH-30IfTGZF1SwPWytwHHMw5JCyXg&quot; parentID=&quot;100d206cIIB0B886jAdRxVzJOAD9Vw&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;Moments&lt;/dc:title&gt;&lt;upnp:class&gt;object.container.album.musicAlbum.#exploreAlbum&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON38663_X_#Svc38663-0-Token&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</EnqueuedURIMetaData>
+<DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>0</EnqueueAsNext></u:AddURIToQueue></s:Body></s:Envelope>
+
+https://play.google.com/store/music/album/Marcus_Martinus_Moments?id=Bpdaam6cktdby7c5duuvgwdd2ya
+https://play.google.com/store/music/album/Sharon_Jones_Soul_of_a_Woman?id=Bih4u3j3of2tqxnuspkyntblh3m
+https://play.google.com/store/music/album/Various_Artists_Club_Sounds_Best_Of_2017?id=Bapv3tz5uxccul5bwy7fte7ewza
+https://play.google.com/store/music/album/Various_Artists_Club_Sounds_Best_Of_2017?id=Bapv3tz5uxccul5bwy7fte7ewza
+
+A0DvPDnows IzDDR6LIMrrP8aWH3mL_xC-lteZtpPNY_X4c7RabKdOQ.mp3
+A0DvPDnows JvlGUiFB6msrgtFEXVq75iuVyFZmm0D26IUrBaQWk5Kg.mp3
+
+POST /MediaRenderer/AVTransport/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: 192.168.50.31:1400
+USER-AGENT: Linux UPnP/1.0 Sonos/39.2-47040 (WDCR:Microsoft Windows NT 6.1.7601 Service Pack 1)
+CONTENT-LENGTH: 1279
+CONTENT-TYPE: text/xml; charset="utf-8"
+X-SONOS-TARGET-UDN: uuid:RINCON_000E5872D8AC01400
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
+
+Google Track Unlimited
+x-sonos-http:A0DvPDnows
+Google Track 
+x-sonos-http:_dklxfo-
+
+return Helper::createMetaDataXml(Helper::TRACK_HASH . static::UNIQUE . "{$uri}", "-1", [
+            "dc:title"      =>  "",
+            "upnp:class"    =>  "object.item.audioItem.musicTrack",
+        ], "38663");
+
+
+Google Track (Whatever it takes)
+https://play.google.com/store/music/album?id=B5ajs37gooyyku2qrkqc3ructey&tid=song-Tyxfeuv5grxtfxjtwecrxf3vhom
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body><u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+<EnqueuedURI>x-sonos-http:A0DvPDnowsL4hpmXfDmmA30IOmcqwss2LbiD-gZvuXsq80lBimTZmg.mp3?sid=151&amp;flags=32&amp;sn=9</EnqueuedURI>
+<EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;10030020A0DvPDnowsL4hpmXfDmmA30IOmcqwss2LbiD-gZvuXsq80lBimTZmg&quot; parentID=&quot;100e206cfEmlj_TKisxRxVzJOAD9Vw&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;Whatever It Takes&lt;/dc:title&gt;&lt;upnp:class&gt;object.item.audioItem.musicTrack.#topCharts&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON38663_X_#Svc38663-0-Token&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</EnqueuedURIMetaData>
+<DesiredFirstTrackNumberEnqueued>2</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>1</EnqueueAsNext></u:AddURIToQueue></s:Body></s:Envelope>
+
+Google Track (Was du Liebe nennst)
+https://play.google.com/store/music/album?id=Bm4utkor662jeupvcgnacx67yf4&tid=song-Tl6pn2a6irjnqra36lgweobhxie
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body><u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+<EnqueuedURI>x-sonos-http:A0DvPDnowsLf4rlvI2miixw0SWf0hkM7yNKanv5Tr55wfvZhWKwVdA.mp3?sid=151&amp;flags=32&amp;sn=9</EnqueuedURI>
+<EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;10030020A0DvPDnowsLf4rlvI2miixw0SWf0hkM7yNKanv5Tr55wfvZhWKwVdA&quot; parentID=&quot;100e206cfEmlj_TKisxRxVzJOAD9Vw&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;Was Du Liebe nennst&lt;/dc:title&gt;&lt;upnp:class&gt;object.item.audioItem.musicTrack.#topCharts&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON38663_X_#Svc38663-0-Token&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</EnqueuedURIMetaData>
+<DesiredFirstTrackNumberEnqueued>2</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>1</EnqueueAsNext></u:AddURIToQueue></s:Body></s:Envelope>
+
+
+
+
+<EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;1004204cxw'.$pl.'&quot; parentID=&quot;100d206cKnPYi2AfiTlRxVzJOAD9Vw&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;/dc:title&gt;&lt;upnp:class&gt;object.container.album.musicAlbum.#topCharts&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON38663_X_#Svc38663-0-Token&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</EnqueuedURIMetaData>
+
+
+https://itunes.apple.com/de/album/eiskalt/1288630360
+https://itunes.apple.com/de/album/discotek-people-ep/1266795371
+https://itunes.apple.com/de/album/perfect/1193700802?i=1193700926
+https://itunes.apple.com/de/album/feel-it-still/1229315038?i=1229315050
+https://itunes.apple.com/de/playlist/angesagt-dance/pl.6bf4415b83ce4f3789614ac4c3675740
+
+POST /MediaRenderer/AVTransport/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: 192.168.50.31:1400
+USER-AGENT: Linux UPnP/1.0 Sonos/39.2-47040 (WDCR:Microsoft Windows NT 6.1.7601 Service Pack 1)
+CONTENT-LENGTH: 1204
+CONTENT-TYPE: text/xml; charset="utf-8"
+X-SONOS-TARGET-UDN: uuid:RINCON_000E5872D8AC01400
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body><u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+<EnqueuedURI>x-rincon-cpcontainer:1004206calbum%3a1288630360?sid=204&amp;flags=8300&amp;sn=10</EnqueuedURI>
+<EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;1004206calbum%3a1288630360&quot; parentID=&quot;100d2064albumchart%3a34&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;Eiskalt&lt;/dc:title&gt;&lt;upnp:class&gt;object.container.album.musicAlbum.#TopItem&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON52231_X_#Svc52231-0-Token&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</EnqueuedURIMetaData>
+<DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>0</EnqueueAsNext></u:AddURIToQueue></s:Body></s:Envelope>
+
+POST /MediaRenderer/AVTransport/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: 192.168.50.31:1400
+USER-AGENT: Linux UPnP/1.0 Sonos/39.2-47040 (WDCR:Microsoft Windows NT 6.1.7601 Service Pack 1)
+CONTENT-LENGTH: 1273
+CONTENT-TYPE: text/xml; charset="utf-8"
+X-SONOS-TARGET-UDN: uuid:RINCON_000E5872D8AC01400
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body><u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+<EnqueuedURI>x-rincon-cpcontainer:1006206cplaylist%3apl.5030c32a73e9459d82fae6f7b046d3ec?sid=204&amp;flags=8300&amp;sn=10</EnqueuedURI>
+<EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;1006206cplaylist%3apl.5030c32a73e9459d82fae6f7b046d3ec&quot; parentID=&quot;00020000playlist:Trap Kingz&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;Trap Kingz&lt;/dc:title&gt;&lt;upnp:class&gt;object.container.playlistContainer.#PlaylistView&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON52231_X_#Svc52231-0-Token&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</EnqueuedURIMetaData>
+<DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>0</EnqueueAsNext></u:AddURIToQueue></s:Body></s:Envelope>
+
+https://itunes.apple.com/de/playlist/trap-kingz/pl.5030c32a73e9459d82fae6f7b046d3ec
+https://itunes.apple.com/de/playlist/r-b-replay/pl.efaf877db72a4c05b2654eb4371d6c24
+
+
+https://itunes.apple.com/de/album/youre-the-best-thing-about-me/1298613276?i=1298614329
+
+POST /MediaRenderer/AVTransport/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: 192.168.50.31:1400
+USER-AGENT: Linux UPnP/1.0 Sonos/39.2-47040 (WDCR:Microsoft Windows NT 6.1.7601 Service Pack 1)
+CONTENT-LENGTH: 1208
+CONTENT-TYPE: text/xml; charset="utf-8"
+X-SONOS-TARGET-UDN: uuid:RINCON_000E5872D8AC01400
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body><u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+<EnqueuedURI>x-sonos-http:song%3a1298614329.mp4?sid=204&amp;flags=8224&amp;sn=10</EnqueuedURI>
+<EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;10032020song%3a1298614329&quot; parentID=&quot;1004206calbum%3a1298613276&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;You...re the Best Thing About Me&lt;/dc:title&gt;&lt;upnp:class&gt;object.item.audioItem.musicTrack&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON52231_X_#Svc52231-0-Token&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</EnqueuedURIMetaData>
+<DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>0</EnqueueAsNext></u:AddURIToQueue></s:Body></s:Envelope>
+
+
+Napster
+
+<iframe width="355" height="440" src="http://de.napster.com/embedded-player/?g=BBDB7113EC1DB034E040960A39036709&ocode=social_user&pcode=social_user&cpath=Embed&rsrc=album#/albums/alb.287008560"></iframe>
+https://app.napster.com/artist/Art.257023675
+
+POST /MediaRenderer/AVTransport/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: 192.168.50.57:1400
+USER-AGENT: Linux UPnP/1.0 Sonos/39.2-47040 (WDCR:Microsoft Windows NT 6.1.7601 Service Pack 1)
+CONTENT-LENGTH: 1229
+CONTENT-TYPE: text/xml; charset="utf-8"
+X-SONOS-TARGET-UDN: uuid:RINCON_000E5872D59801400
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body><u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+<EnqueuedURI>x-rincon-cpcontainer:100420ecexplore%3aalbum%3a%3aAlb.287008560?sid=203&amp;flags=8428&amp;sn=1</EnqueuedURI>
+<EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;100420ecexplore%3aalbum%3a%3aAlb.287008560&quot; parentID=&quot;100d2064root%3anewreleases&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;Eiskalt&lt;/dc:title&gt;&lt;upnp:class&gt;object.container.album.musicAlbum&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON51975_olewald@t-online.de&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</EnqueuedURIMetaData>
+<DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>0</EnqueueAsNext></u:AddURIToQueue></s:Body></s:Envelope>
+
+https://app.napster.com/artist/sia/album/everyday-is-christmas-287816565
+
+https://app.napster.com/playlist/pp.207466845
+https://app.napster.com/playlist/pp.249764303
+https://app.napster.com/artist/art.4212/album/alb.285904254
+
+POST /MediaRenderer/AVTransport/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: 192.168.50.31:1400
+USER-AGENT: Linux UPnP/1.0 Sonos/39.2-47040 (WDCR:Microsoft Windows NT 6.1.7601 Service Pack 1)
+CONTENT-LENGTH: 1263
+CONTENT-TYPE: text/xml; charset="utf-8"
+X-SONOS-TARGET-UDN: uuid:RINCON_000E5872D8AC01400
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body><u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+<EnqueuedURI>x-rincon-cpcontainer:100e004cexplore%3aplaylist%3a%3app.207466845?sid=203&amp;flags=76&amp;sn=1</EnqueuedURI>
+<EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;100e004cexplore%3aplaylist%3a%3app.207466845&quot; parentID=&quot;100d2064explore%3atag%3aplaylists%3a%3atag.156763213&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;Mellow Songs&lt;/dc:title&gt;&lt;upnp:class&gt;object.container.playlistContainer&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON51975_olewald@t-online.de&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</EnqueuedURIMetaData>
+<DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>0</EnqueueAsNext></u:AddURIToQueue></s:Body></s:Envelope>
+
+Apple Track
+
+POST /MediaRenderer/AVTransport/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: 192.168.50.31:1400
+USER-AGENT: Linux UPnP/1.0 Sonos/39.2-47040 (WDCR:Microsoft Windows NT 6.1.7601 Service Pack 1)
+CONTENT-LENGTH: 1188
+CONTENT-TYPE: text/xml; charset="utf-8"
+X-SONOS-TARGET-UDN: uuid:RINCON_000E5872D8AC01400
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body><u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+<EnqueuedURI>x-sonos-http:song%3a1280409269.mp4?sid=204&amp;flags=8224&amp;sn=10</EnqueuedURI>
+<EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;10032020song%3a1280409269&quot; parentID=&quot;100e206csongchart%3a34&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;Rooftop&lt;/dc:title&gt;&lt;upnp:class&gt;object.item.audioItem.musicTrack.#TopItem&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON52231_X_#Svc52231-0-Token&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</EnqueuedURIMetaData>
+<DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>0</EnqueueAsNext></u:AddURIToQueue></s:Body></s:Envelope>
+
+x-sonos-http:song:1280409269.mp4?sid=204&flags=8224&sn=10
+x-sonos-http:song:1308317897.mp4?sid=204&flags=8224&sn=10
+x-sonos-http:song:1308233284.mp4?sid=204&flags=8224&sn=10
+
+
+POST /MediaRenderer/AVTransport/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: 192.168.50.31:1400
+USER-AGENT: Linux UPnP/1.0 Sonos/39.2-47040 (WDCR:Microsoft Windows NT 6.1.7601 Service Pack 1)
+CONTENT-LENGTH: 1251
+CONTENT-TYPE: text/xml; charset="utf-8"
+X-SONOS-TARGET-UDN: uuid:RINCON_000E5872D8AC01400
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body><u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+<EnqueuedURI>x-file-cifs://SYN-DS415/home/mp3/A%20Flock%20of%20Seagulls%20-%2008%20-%20I%20Ran.mp3</EnqueuedURI>
+<EnqueuedURIMetaData>&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;S://SYN-DS415/home/mp3/A%20Flock%20of%20Seagulls%20-%2008%20-%20I%20Ran.mp3&quot; parentID=&quot;A:ALBUMARTIST/A%20Flock%20of%20Seagulls/&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;I Ran&lt;/dc:title&gt;&lt;upnp:class&gt;object.item.audioItem.musicTrack&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;RINCON_AssociatedZPUDN&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;</EnqueuedURIMetaData>
+<DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>0</EnqueueAsNext></u:AddURIToQueue></s:Body></s:Envelope>
+
+//SYN-DS415/music/Artists/B/Bangles/Bangles - 46 - Walk Like An Egyptian.mp3
+\\SYN-DS415\music\Artists\B\Bangles\Bangles - 46 - Walk Like An Egyptian.mp3
+
+x-file-cifs://DESKTOP/G/01%20Culcha%20Candela%20-%20Hamma.mp3
+x-file-cifs://LOXBERRY/loxberry/data/plugins/sonos4lox/tts/mp3/10.mp3
+x-file-cifs://SYN-DS415/home/mp3/A%20Flock%20of%20Seagulls%20-%2008%20-%20I%20Ran.mp3
+
+
+
+
