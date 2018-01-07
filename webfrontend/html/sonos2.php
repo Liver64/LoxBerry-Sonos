@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	2.1.5
-# Datum: 	22.12.2017
+# Version: 	2.1.6
+# Datum: 	06.01.2018
 # veröffentlicht in: http://plugins.loxberry.de/
 # 
 # Change History:
@@ -121,6 +121,8 @@
 #			[Feature] Neue Funktion zum Laden und Abspielen von Sonos Playlisten per Zufallsgenerator. Es könne auch Exceptions angegeben werden (siehe Wiki)
 #			[Feature] Neue Funktion zum Laden und Abspielen von Sonos Radiosender per Zufallsgenerator. Es könne auch Exceptions angegeben werden (siehe Wiki)
 #			[Feature] Aktualisierte Funktion um user-spezifische Playlisten zu laden (gilt nur für Spotify)
+# 2.1.6		[Bugfix] Fehler bei Non LoxBerry beseitigt, es wurde versucht eine LoxBerry Berechtigung zu setzen
+#			[Bugfix] SHUFFLE Wiedergabe wird jetzt nach erfolgter T2S korrekt weitergespielt
 #
 #
 ######## Script Code (ab hier bitte nichts ändern) ###################################
@@ -165,8 +167,8 @@ if(substr($home,0,4) == "/opt") {
 
 	$myFolder = "$home/config/plugins/$psubfolder/";
 	$myMessagepath = "//$myIP/sonos_tts/";
-	#$MessageStorepath = "$home/data/plugins/$psubfolder/tts/";
-	$MessageStorepath = "$home/data/plugins/sonos4lox/tts/";
+	$MessageStorepath = "$home/data/plugins/$psubfolder/tts/";
+	#$MessageStorepath = "$home/data/plugins/sonos4lox/tts/";
 	$logpath = "$home/log/plugins/$psubfolder";
 
 	// Parsen der Konfigurationsdatei sonos.cfg
@@ -1610,7 +1612,7 @@ function playlist() {
 		if($playlist == $sonoslists[$pleinzeln]["title"]) {
 			$plfile = urldecode($sonoslists[$pleinzeln]["file"]);
 			$sonos->ClearQueue();
-			$sonos->SetMute(false);
+			#$sonos->SetMute(false);
 			$sonos->AddToQueue($plfile); //Datei hinzufügen
 			$sonos->SetQueue("x-rincon-queue:". trim($sonoszone[$master][1]) ."#0"); 
 			if ((isset($_GET['member'])) and isset($_GET['standardvolume'])) {
@@ -2327,16 +2329,34 @@ function GetSonosFavorites() {
 	
 	$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos ZP lox_ipesse 
 	$browselist = $sonos->GetSonosFavorites("FV:2","c"); 
-	#print_r($browselist);  
+	print_r($browselist);
+	$posinfo = $sonos->GetPositionInfo();
+	#echo $uri = $posinfo['TrackURI'];
+	#echo '<br>';
+	#echo $meta = $posinfo['TrackMetaData'];
+	
+
+	#$finalstring = urldecode($scope);
+	#$sonos->AddFavToQueue($uri, $meta);	
+	#exit;
 	foreach ($browselist as $favorite) {
-		$scope = trim($favorite['res']);
+		$scope = $favorite['res'];
 		if ((substr($scope,0,11) != "x-sonosapi-") and (substr($scope,0,11) != "x-rincon-cp")) {
 			$finalstring = urldecode($scope);
-			$sonos->AddToQueue($finalstring);
+			$track = $favorite['res'];
+			$title = $favorite['title'];
+			$artist = $favorite['artist'];
+			$metadata = '<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:r="urn:schemas-rinconnetworks-com:metadata-1-0/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"><item id="-1" parentID="-1" restricted="true"><res protocolInfo="sonos.com-http:*:audio/mpeg:*>'.$track.'</res><r:streamContent></r:streamContent><upnp:albumArtURI></upnp:albumArtURI><dc:title>'.$title.'</dc:title><upnp:class>object.item.audioItem.musicTrack</upnp:class><dc:creator>'.$artist.'</dc:creator></item></DIDL-Lite>';
+			#$metadata = '<DIDL-Lite xmlns:dc=http://purl.org/dc/elements/1.1/ xmlns:upnp=urn:schemas-upnp-org:metadata-1-0/upnp/ xmlns:r=urn:schemas-rinconnetworks-com:metadata-1-0/ xmlns=urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/item id=-1; parentID=-1; restricted=truedc:title'.$title.'/dc:titleupnp:classobject.item.audioItem.musicTrack.#editorialViewTracks.sonos-favorite/upnp:classdesc id=cdudn nameSpace=urn:schemas-rinconnetworks-com:metadata-1-0/SA_RINCON40967_X_#Svc40967-0-Token/desc/item/DIDL-Lite>';
+			$sonos->AddFavToQueue($finalstring, $metadata);
+			try {
+			#$sonos->AddToQueue($track);	
+			} catch (Exception $e) {
+#			trigger_error("The connection to Loxone could not be initiated!", E_USER_NOTICE);	
+		}	
 		}
-			
 	}
-	#print_r($scope);
+	#$sonos->Play();
 }
 
 

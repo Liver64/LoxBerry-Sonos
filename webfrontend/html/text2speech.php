@@ -182,13 +182,15 @@ function create_tts($text, $messageid) {
 **/		
 
 function play_tts($messageid) {
-	global $volume, $config, $sonos, $text, $messageid, $sonoszone, $sonoszonen, $master, $myMessagepath, $coord, $actual, $player, $time_start, $t2s_batch, $filename, $words;
+	global $volume, $config, $sonos, $text, $messageid, $sonoszone, $sonoszonen, $master, $myMessagepath, $coord, $actual, $player, $time_start, $t2s_batch, $filename, $words, $home;
 		
 		$sonos = new PHPSonos($coord[0]);
 		if (isset($_GET['messageid'])) {
 			// Set path if messageid
 			$mpath = $myMessagepath."".$config['MP3']['MP3path'];
-			chmod_r();
+			if(substr($home,0,4) == "/opt") {
+				chmod_r();
+			}
 		} else {
 			// Set path if T2S
 			$mpath = $myMessagepath;
@@ -489,11 +491,12 @@ function restoreSingleZone() {
 			restore_details($master);
 			$sonos->SetVolume($actual[$master]['Volume']);
 			$sonos->SetMute($actual[$master]['Mute']);
+			if (!empty($actual[$master]['PositionInfo']["duration"]))  {
+				SetShuffle($actual, $master);
+			}
 			if (($actual[$master]['TransportInfo'] == 1)) {
 				$sonos->Play();	
 			}
-			$mode = $actual[$master]['TransportSettings'];
-			playmode_detection($master, $mode);
 		break;
 		
 		// Zone was Member of a group
@@ -590,10 +593,7 @@ function restoreGroupZone() {
 			# Playlist
 			if ((substr($actual[$player]['PositionInfo']["TrackURI"], 0, 18) !== "x-sonos-htastream:") &&
 				($actual[$player]['PositionInfo']["TrackDuration"] != '')) {			
-				$sonos->SetTrack($actual[$player]['PositionInfo']['Track']);
-				$sonos->Seek($actual[$player]['PositionInfo']['RelTime'],"NONE");
-				$mode = $actual[$player]['TransportSettings'];
-				playmode_detection($player, $mode);
+				SetShuffle($actual, $player);
 				} 
 				# TV Playbar
 				elseif (substr($actual[$player]['PositionInfo']["TrackURI"], 0, 18) == "x-sonos-htastream:") {
@@ -634,13 +634,9 @@ function restoreGroupZone() {
 			# Zone was Master of a group
 			$sonos = new PHPSonos($sonoszone[$player][0]);
 			# Playlist
-			if ((substr($actual[$master]['PositionInfo']["TrackURI"], 0, 18) !== "x-sonos-htastream:") &&
-				($actual[$master]['PositionInfo']["TrackDuration"] != '')) {			
-			# ***** zum Testen ENDE *****	
-				$sonos->SetTrack($actual[$player]['PositionInfo']['Track']);
-				$sonos->Seek($actual[$player]['PositionInfo']['RelTime'],"NONE");
-				$mode = $actual[$player]['TransportSettings'];
-				playmode_detection($player, $mode);
+			if ((substr($actual[$player]['PositionInfo']["TrackURI"], 0, 18) !== "x-sonos-htastream:") &&
+				($actual[$player]['PositionInfo']["TrackDuration"] != '')) {			
+				SetShuffle($actual, $player);
 				} 
 				# TV Playbar
 				elseif (substr($actual[$player]['PositionInfo']["TrackURI"], 0, 18) == "x-sonos-htastream:") {
@@ -705,7 +701,7 @@ function LoadPlayList($playlist) {
 
 
 /**
-* Function : read_txt_file_to_array --> read a txt file into an array
+* Function : read_txt_file_to_array --> Subfunction of batch T2S to read a txt file into an array
 *
 * @param: file
 * @return: array
@@ -810,8 +806,9 @@ function say_radio_station() {
 * @param: 
 * @return: 
 **/
+
 function restore_details($zone) {
-	global $sonoszone, $sonos, $master, $actual;
+	global $sonoszone, $sonos, $master, $actual, $j, $browselist, $senderName;
 	
 	# Playlist
 	if ((substr($actual[$zone]['PositionInfo']["TrackURI"], 0, 18) !== "x-sonos-htastream:") && ($actual[$zone]['PositionInfo']["TrackDuration"] != '')) {			
@@ -831,8 +828,40 @@ function restore_details($zone) {
 	} 
 	# Radio Station
 	elseif (($actual[$zone]['PositionInfo']["TrackDuration"] == '') or ($actual[$zone]['MediaInfo']["title"] <> '')) {
-		@$radioname = $actual[$zone]['MediaInfo']["title"];
-		$sonos->SetRadio($actual[$zone]['PositionInfo']["TrackURI"], $radioname);
+		@$radioname1 = $actual[$zone]['MediaInfo']["title"];
+		$sonos->SetRadio(urldecode($actual[$zone]['PositionInfo']["TrackURI"]), "$radioname1");
+	}
+}
+
+
+
+
+
+/**
+* Function : SetShuffle() --> Restore previous playmode settings
+*
+* @param: array $actual array of saved status, string $player Masterplayer
+* @return: static
+**/
+
+function SetShuffle($actual, $player) {
+	global $sonoszonen;
+	
+	$sonos = new PHPSonos($sonoszonen[$player][0]);
+	$mode = $actual[$player]['TransportSettings'];
+	playmode_detection($player, $mode);
+	$pl = $sonos->GetCurrentPlaylist();
+	$titel = (string)$actual[$player]['PositionInfo']['title'];
+	// falls irgendein SHUFFLE ein
+	if ($mode['shuffle'] == 1)  { 
+		$trackNoSearch = recursive_array_search($titel, $pl);
+		$track = (string)$pl[$trackNoSearch]['listid'];
+		$sonos->SetTrack($track);
+		$sonos->Seek($actual[$player]['PositionInfo']['RelTime'],"NONE");	
+	// falls SHUFFLE aus
+	} else {
+		$sonos->SetTrack($actual[$player]['PositionInfo']['Track']);
+		$sonos->Seek($actual[$player]['PositionInfo']['RelTime'],"NONE");	
 	}
 }
 	
