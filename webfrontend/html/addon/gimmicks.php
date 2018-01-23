@@ -1,6 +1,6 @@
 <?php
 
-function GetTodayBauernregel($regel) {
+function GetTodayBauernregel() {
 	$month = date('m');
 	$bauernregel = file_get_contents("http://www.bauernregeln.net/i" . $month . ".js");
 	$bauernregel = mb_convert_encoding($bauernregel, 'UTF-8', mb_detect_encoding($bauernregel, 'UTF-8, ISO-8859-1', true));
@@ -19,7 +19,7 @@ function GetTodayBauernregel($regel) {
 }
 
 
-function GetWitz($witz)  {
+function GetWitz()  {
 	$such_start = "<!-- google_ad_section_start -->";
 	$such_ende = "<!-- google_ad_section_end -->";
 	$witz_html = file_get_contents("http://lustich.de/witze/zufallswitz/");

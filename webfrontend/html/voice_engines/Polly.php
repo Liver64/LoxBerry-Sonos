@@ -1,5 +1,5 @@
 <?php
-function t2s($messageid)
+function t2s($messageid, $MessageStorepath, $textstring, $filename)
 
 // text-to-speech: Erstellt basierend auf Input eine TTS Nachricht, übermittelt sie an Ivona.com und 
 // speichert das zurückkommende file lokal ab
@@ -7,7 +7,8 @@ function t2s($messageid)
 {
 	set_include_path(__DIR__ . '/polly_tts');
 	
-	global $messageid, $words, $config, $filename, $fileolang, $voice, $accesskey, $secretkey, $fileo, $MessageStorepath;
+	#global $config, $messageid, $accesskey, $secretkey;
+	global $config, $messageid, $voice, $accesskey, $secretkey, $MessageStorepath;
 		include 'polly_tts/polly.php';
 		// List of all available Polly (Ivonca?) voices (Date: 22.05.2017)
 		$voices[] = array('voice' => 'Mads','lang' => 'da-DK','gender' => 'Male');
@@ -61,7 +62,6 @@ function t2s($messageid)
 						
 		#-- Übernahme der Variablen aus config.php --
 		$engine = $config['TTS']['t2s_engine'];
-		$mpath = $MessageStorepath;
 		if($engine = '4001') {
 			if (isset($_GET['voice'])) {
 				$tmp_voice = $_GET['voice'];
@@ -83,13 +83,13 @@ function t2s($messageid)
 		# ersetzt Umlaute um die Sprachqualität zu verbessern
 		# $search = array('ä','ü','ö','Ä','Ü','Ö','ß','°','%20','%C3%84','%C4','%C3%9C','%FC','%C3%96','%F6','%DF','%C3%9F');
 		# $replace = array('ae','ue','oe','Ae','Ue','Oe','ss','Grad',' ','ae','ae','ue','ue','oe','oe','ss','ss');
-		# $words = str_replace($search,$replace,$words);
+		# $textstring = str_replace($search,$replace,$textstring);
 		#####################################################################################################################
 		
 		#-- Aufruf der POLLY Class zum generieren der t2s --
 		$a = new POLLY_TTS();
-		$a->save_mp3($words, $mpath."/".$fileolang.".mp3", $language, $voice);
-		$messageid = $fileolang;
+		$a->save_mp3($textstring, $MessageStorepath."/".$filename.".mp3", $language, $voice);
+		$messageid = $filename;
 	
 	return ($messageid);
 }

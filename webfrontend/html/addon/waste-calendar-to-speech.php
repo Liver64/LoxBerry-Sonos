@@ -6,7 +6,7 @@
 * @param: text
 * @return: 
 **/
-function muellkalender($text) {
+function muellkalender() {
 	
 	global $config;
 	
@@ -114,7 +114,7 @@ function muellkalender($text) {
 * @param: text
 * @return: 
 **/	
-function calendar($text) {
+function calendar() {
 	
 	global $config;
 	

@@ -38,7 +38,7 @@
 		<td valign="middle" style="height: 33px; width: 25%;" class="auto-style1">
 			<h2 class="auto-style3" style="width: 255px">Sonos&reg; Konfiguration</h2>
 		<td style="height: 33px" class="auto-style1">
-			<img class='ico_sonos' src='/plugins/<!--$psubfolder-->/images/sonos-logo.png' border='0' width='197' height='62' align="absmiddle">
+			<img class='ico_sonos' src='/plugins/<!--$psubfolder-->/images/sonos-logo.png' border='0' width='197' height='132' align="absmiddle">
 		</td>
 		<td style="height: 33px; width: 201px;"></td>
 		<td style="height: 33px; width: 24px;" class="auto-style4">v<!--$version--></td>
@@ -131,6 +131,7 @@
 			<select id="voice" name="voice" data-mini="true" width="50%" data-native-menu="false">
 				<option value="Marlene" <!--$selectedvoice1-->>Marlene</option>
 				<option value="Hans" <!--$selectedvoice2-->>Hans</option>
+				<option value="Vicki" <!--$selectedvoice3-->>Vicki</option>
 			</select>
 		</td>
 			<td style="height: 37px; width: 201px;"></td>
@@ -246,7 +247,7 @@
 						</fieldset>
 					</td>
 					<td class="auto-style1">
- 					<a href="/admin/system/tools/logfile.cgi?logfile=plugins/sonos4lox/sonos_error.log&header=html&format=template" target="_blank">Anzeige Sonos Logfile</a>
+ 					<!--<a href="/admin/system/tools/logfile.cgi?logfile=plugins/sonos4lox/sonos_error.log&header=html&format=template" target="_blank">Anzeige Sonos Logfile</a>-->
 					</td>
 					
 </tr>
@@ -759,7 +760,6 @@ var cat = document.getElementById('sendlox').value;
     }
 $("#sendlox").flipswitch("refresh"); 
 }
-
 
 
 </script>

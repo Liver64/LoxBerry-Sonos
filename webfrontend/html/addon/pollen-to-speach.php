@@ -1,6 +1,6 @@
 <?php
 
-function p2s($text) {
+function p2s() {
 // pollenflug: Erstellt basierend auf Daten des deutschen Wetterdienstes eine Ansage bzgl. der Pollenbelastung
 // TTS Nachricht, übermittelt sie an die T2S Engine und speichert das zurückkommende file lokal ab
 // @Parameter = $text von sonos2.php

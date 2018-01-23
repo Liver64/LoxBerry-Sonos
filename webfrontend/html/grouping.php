@@ -1,5 +1,9 @@
 <?php
-# grouping.php
+
+/**
+* Submodul: Grouping
+*
+**/
 
 /**
 * Function: CreateStereoPair --> creates a StereoPair of 2 Single Zones
@@ -345,6 +349,89 @@ function checkifmaster($master) {
 		#echo $master;
 		return $master;
 	}      
+}
+
+
+/**
+* Funktion : 	group_all --> gruppiert alle vorhanden Zonen
+*
+* @param: empty
+* @return: group
+**/
+
+function group_all() {
+	global $sonoszone, $master;
+	
+	# Alle Zonen gruppieren
+	foreach ($sonoszone as $zone => $ip) {
+		if($zone != $_GET['zone']) {
+			$sonos = new PHPSonos($sonoszone[$zone][0]);
+			$sonos->SetAVTransportURI("x-rincon:" . $config['sonoszonen'][$master][1]); 
+		}
+	}
+	logging();
+}
+
+	
+/**
+* Funktion : 	ungroup_all --> seperiert alle Zonen zu Single Player
+*
+* @param: empty 
+* @return: single Zone
+**/
+		
+function ungroup_all() {
+	global $sonoszone, $config;
+		
+		# Alle Zonen Gruppierungen aufheben
+		foreach($sonoszone as $zone => $ip) {
+			$sonos = new PHPSonos($sonoszone[$zone][0]);
+			$sonos->SetQueue("x-rincon-queue:" . $config['sonoszonen'][$zone][1] . "#0");
+		}
+	logging();
+}
+
+
+/**
+* Funktion : 	addmember --> fügt angegebene Zone einer Gruppe hinzu
+*
+* @param: empty 
+* @return: Gruppe
+**/
+
+function addmember() {
+	global $sonoszone, $config, $master;
+	
+	$member = $_GET['member'];
+	$member = explode(',', $member);
+	if (in_array($master, $member)) {
+		trigger_error("The zone ".$master." could not be entered as member again. Please remove from Syntax '&member=".$master."' !", E_USER_ERROR);
+	}
+	foreach ($member as $value) {
+		$masterrincon = $config['sonoszonen'][$master][1];
+		$sonos = new PHPSonos($sonoszone[$value][0]);
+		$sonos->SetAVTransportURI("x-rincon:" . $masterrincon);
+	}
+}
+
+
+/**
+* Funktion : 	removemember --> seperiert angegebene Zone aus einer Gruppe
+*
+* @param: empty 
+* @return: single Zone
+**/
+	
+function removemember() {
+	global $sonoszone, $config, $master;
+	
+	$member = $_GET['member'];
+	$member = explode(',', $member);
+	foreach ($member as $value) {
+		$masterrincon = $config['sonoszonen'][$master][1];
+		$sonos = new PHPSonos($sonoszone[$value][0]);
+		$sonos->BecomeCoordinatorOfStandaloneGroup();
+	}
 }
 
 

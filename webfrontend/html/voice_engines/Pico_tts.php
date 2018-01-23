@@ -1,15 +1,15 @@
 <?php
-function t2s($messageid)
+function t2s($messageid, $MessageStorepath, $textstring, $filename)
 // text-to-speech: Erstellt basierend auf Input eine TTS Nachricht mit Pico2Wave
 // http://lame.sf.net
 // @param = $messageid von sonos2.php
 
 {
-	global $words, $config, $messageid, $fileolang, $fileo, $MessageStorepath;
+	global $config, $messageid;
 		
 		$valid_languages =array('de-DE','en-GB','fr-FR','it-IT');
 		$ttsengine = $config['TTS']['t2s_engine'];
-		$words = urldecode($words);
+		$textstring = urldecode($textstring);
 		
 		if($ttsengine = '4001') {
 			if (isset($_GET['lang'])) {
@@ -24,24 +24,22 @@ function t2s($messageid)
 				$ttslanguage = $config['TTS']['messageLang'].'-'.strtoupper($config['TTS']['messageLang']);
 			}	
 		}
-		
-		$mpath = $MessageStorepath;
-		$file = $mpath . $fileolang . ".wav";
+		$file = $MessageStorepath . $filename . ".wav";
 					
 		# Prüfung ob die Voice Datei bereits vorhanden ist
 		if (!file_exists($file)) 
 		{
 			# Übermitteln des Strings an Pico und lame zu MP3
 			try {
-				exec('/usr/bin/pico2wave -l=' . $ttslanguage . ' -w=' . $file . ' "'.$words.'"');
-				exec('/usr/bin/lame '.$mpath . $fileolang . ".wav".' '.$mpath . $fileolang . ".mp3");
-				unlink($mpath . $fileolang . ".wav");
+				exec('/usr/bin/pico2wave -l=' . $ttslanguage . ' -w=' . $file . ' "'.$textstring.'"');
+				exec('/usr/bin/lame '.$MessageStorepath . $filename . ".wav".' '.$MessageStorepath . $filename . ".mp3");
+				unlink($MessageStorepath . $filename . ".wav");
 			} catch(Exception $e) {
 				trigger_error("The T2S could not be created! Please try again.", E_USER_WARNING);
 			}
 		}
 	# Ersetze die messageid durch die von TTS gespeicherte Datei
-	$messageid = $fileolang;
+	$messageid = $filename;
 	return ($messageid);
 }
 

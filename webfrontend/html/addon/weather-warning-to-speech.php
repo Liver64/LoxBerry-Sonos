@@ -1,6 +1,6 @@
 <?php
 
-function ww2s($text) {
+function ww2s() {
 // unwetter: Erstellt basierend auf Daten des deutschen Wetterdienstes eine Wetterwarnung
 // TTS Nachricht, übermittelt sie an die T2S Engine und speichert das zurückkommende file lokal ab
 // @Parameter = $text von sonos2.php

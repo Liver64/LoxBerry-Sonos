@@ -107,7 +107,7 @@ our $i;
 ##########################################################################
 
 # Version of this script
-$version = "2.1.6";
+$version = "2.1.7";
 
 # Figure out in which subfolder we are installed
 $psubfolder = abs_path($0);
@@ -326,6 +326,8 @@ sub form {
 	  $selectedvoice1 = "selected=selected";
 	} elsif ($voice eq "Hans") {
 	  $selectedvoice2 = "selected=selected";
+	} elsif ($voice eq "Vicki") {
+	  $selectedvoice3 = "selected=selected";
 	} else {
 	  $selectedvoice1 = "selected=selected";
 	} 
@@ -607,7 +609,7 @@ sub scan
 			our $config = decode_json($file);
 	
 	# creates table of Sonos devices
-	foreach $key (keys $config)
+	foreach $key (keys %{$config})
 	{
 		$countplayers++;
 		$rowssonosplayer .= "<tr><td style='height: 25px; width: 43px;' class='auto-style1'><INPUT type='checkbox' style='width: 20px' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
@@ -619,7 +621,7 @@ sub scan
 		$rowssonosplayer .= "<input type='hidden' id='ip$countplayers' name='ip$countplayers' value='$config->{$key}->[0]'>\n";
 		$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' value='$config->{$key}->[1]'>\n";
 	}
-	$result = unlink ("$installfolder/config/plugins/$psubfolder/tmp_player.json");
+	#$result = unlink ("$installfolder/config/plugins/$psubfolder/tmp_player.json");
 	return();
 	
 

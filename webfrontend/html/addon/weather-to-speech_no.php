@@ -1,5 +1,5 @@
 <?php
-function w2s($text) 
+function w2s() 
 // weather-to-speech: Erstellt basierend auf Wunderground eine Wettervorhersage zur Generierung einer
 // TTS Nachricht, übermittelt sie an VoiceRRS und speichert das zurückkommende file lokal ab
 // @Parameter = $text von sonos2.php

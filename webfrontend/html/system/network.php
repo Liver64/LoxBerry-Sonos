@@ -89,16 +89,16 @@ trigger_error('The home and plugin folder has been successful detected!', E_USER
 		trigger_error(count($devices).' IP-adresses from Sonos devices has been successful detected!', E_USER_NOTICE);	
 	}
 	// in case there are groups ungroup them first
-	require_once("PHPSonos.php");
-	foreach ($devices as $scanzone) {
-		try {
-			$sonos = New PHPSonos($scanzone);
-			$sonos->BecomeCoordinatorOfStandaloneGroup();
-			#usleep(100000); // warte 200ms
-		} catch (Exception $e) {
-			trigger_error("Minimum One Stereo pair or a Surround Config has been identified!", E_USER_NOTICE);	
-		}
-	}
+	#require_once("PHPSonos.php");
+	#foreach ($devices as $scanzone) {
+	#	try {
+	#		$sonos = New PHPSonos($scanzone);
+	#		$sonos->BecomeCoordinatorOfStandaloneGroup();
+	#		#usleep(100000); // warte 200ms
+	#	} catch (Exception $e) {
+	#		trigger_error("Minimum One Stereo pair or a Surround Config has been identified!", E_USER_NOTICE);	
+	#	}
+	#}
 	getSonosDevices($devices);
 	$devicelist = implode(" / ", $devices);
 	trigger_error("Following Sonos Player IP addresses has been detected (exclude Boost, Subwoofer, Bridges) :". $devicelist, E_USER_NOTICE);

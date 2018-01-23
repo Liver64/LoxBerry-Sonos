@@ -1,11 +1,11 @@
 <?php
-function t2s($messageid)
+function t2s($messageid, $MessageStorepath, $textstring, $filename)
 
 // text-to-speech: Erstellt basierend auf Input eine TTS Nachricht, übermittelt sie an Google.com und 
 // speichert das zurückkommende file lokal ab
 // @Parameter = $messageid von sonos2.php
 {
-	global $messageid, $words, $config, $filename, $fileolang, $voice, $fileo, $MessageStorepath;
+	global $config, $messageid;
 	// List of all available google voices (Date: 28.04.2017)
 	$valid_languages =array('af-ZA','id-ID','ms-MY','ca-ES','cs-CZ','da-DK','de-DE','en-AU','en-CA','en-GB','en-IN',
 							'en-IE','en-NZ','en-PH','en-ZA','en-US','es-AR','es-BO','es-CL','es-CO','es-CR','es-EC',
@@ -19,7 +19,6 @@ function t2s($messageid)
 						   );			
 		#-- Übernahme der Variablen aus config.php --
 		$engine = $config['TTS']['t2s_engine'];
-		$mpath = $MessageStorepath;
 		if($engine = '7001') {
 			if (isset($_GET['lang'])) {
 				$language = $_GET['lang'];
@@ -39,20 +38,20 @@ function t2s($messageid)
 		# ersetzt Umlaute um die Sprachqualität zu verbessern
 		# $search = array('ä','ü','ö','Ä','Ü','Ö','ß','°','%20','%C3%84','%C4','%C3%9C','%FC','%C3%96','%F6','%DF','%C3%9F');
 		# $replace = array('ae','ue','oe','Ae','Ue','Oe','ss','Grad',' ','ae','ae','ue','ue','oe','oe','ss','ss');
-		# $words = str_replace($search,$replace,$words);
+		# $textstring = str_replace($search,$replace,$textstring);
 		#####################################################################################################################
 		
-		if (strlen($words) > 100) {
+		if (strlen($textstring) > 100) {
             trigger_error("The T2S contains more than 100 characters and therefor could not be generated. Please reduce characters in your message!", E_USER_NOTICE);
         }
 								  
 		# Speicherort der MP3 Datei
 		$mpath = $config['SYSTEM']['messageStorePath'];
-		$file = $mpath . $fileolang . ".mp3";
-		$words = utf8_encode($words);
+		$file = $MessageStorepath . $filename . ".mp3";
+		$textstring = utf8_encode($textstring);
 		
 		#Generieren des strings der an Google geschickt wird.
-		$inlay = "ie=UTF-8&total=1&idx=0&textlen=100&client=tw-ob&q=$words&tl=$language";	
+		$inlay = "ie=UTF-8&total=1&idx=0&textlen=100&client=tw-ob&q=$textstring&tl=$language";	
 					
 		# Prüfung ob die MP3 Datei bereits vorhanden ist
 		if (!file_exists($file)) 
@@ -61,7 +60,7 @@ function t2s($messageid)
 			$mp3 = file_get_contents("http://translate.google.com/translate_tts?".$inlay);
 			file_put_contents($file, $mp3);
 		}
-	$messageid = $fileolang;
+	$messageid = $filename;
 	return ($messageid);
 }
 

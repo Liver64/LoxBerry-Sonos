@@ -1,11 +1,12 @@
 <?php
-function t2s($messageid)
+function t2s($messageid, $MessageStorepath, $textstring, $filename)
 // text-to-speech: Erstellt basierend auf Input eine TTS Nachricht, übermittelt sie an VoiceRRS und 
 // speichert das zurückkommende file lokal ab
 // @Parameter = $messageid von sonos2.php
 
 {
-	global $words, $config, $messageid, $fileolang, $fileo, $MessageStorepath;
+	global $config, $messageid;
+	
 	// List of all available VoiceRSS voices (Date: 12.11.2016)
 	$valid_languages= array('ca-ES','da-DK','de-DE','en-AU','en-CA','en-GB','en-IN','en-US','es-ES','es-MX',
 							'fi-FI','fr-CA','fr-FR','it-IT','ja-JP','ko-KR','nb-NO','nl-NL','pl-PL','pt-BR',
@@ -15,7 +16,7 @@ function t2s($messageid)
 		$ttsengine = $config['TTS']['t2s_engine'];
 		$ttskey = $config['TTS']['API-key'];
 		$ttsaudiocodec = $config['TTS']['audiocodec'];
-		$words = utf8_encode($words);
+		$textstring = utf8_encode($textstring);
 		
 		if($ttsengine = '1001') {
 			if (isset($_GET['lang'])) {
@@ -40,18 +41,17 @@ function t2s($messageid)
 		# ersetzt Umlaute um die Sprachqualität zu verbessern
 		 $search = array('ä','ü','ö','Ä','Ü','Ö','ß','°','%20','%C3%84','%C4','%C3%9C','%FC','%C3%96','%F6','%DF','%C3%9F');
 		 $replace = array('ae','ue','oe','Ae','Ue','Oe','ss','Grad',' ','ae','ae','ue','ue','oe','oe','ss','ss');
-		 $words = str_replace($search,$replace,$words);
+		 $textstring = str_replace($search,$replace,$textstring);
 		#####################################################################################################################	
 
 		# Sprache in Großbuchsaben
 		$upper = strtoupper($language);
 								  
 		# Generieren des strings der an VoiceRSS geschickt wird
-		$inlay = "key=$ttskey&src=$words&hl=$language&f=$ttsaudiocodec";	
+		$inlay = "key=$ttskey&src=$textstring&hl=$language&f=$ttsaudiocodec";	
 									
 		# Speicherort der MP3 Datei
-		$mpath = $MessageStorepath;
-		$file = $mpath . $fileolang . ".mp3";
+		$file = $MessageStorepath . $filename . ".mp3";
 					
 		# Prüfung ob die MP3 Datei bereits vorhanden ist
 		if (!file_exists($file)) 
@@ -62,7 +62,7 @@ function t2s($messageid)
 			file_put_contents($file, $mp3);
 		}
 	# Ersetze die messageid durch die von TTS gespeicherte Datei
-	$messageid = $fileolang;
+	$messageid = $filename;
 	return ($messageid);
 				  	
 }

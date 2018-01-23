@@ -5,7 +5,7 @@
 * @param $text
 */ 
 
-function s2s($text)
+function s2s()
 { 		
 	global $debug, $sonos, $sonoszone, $master;
 	

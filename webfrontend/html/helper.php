@@ -1,5 +1,31 @@
 <?php
-# helper.php
+
+/**
+* Submodul: Helper
+*
+**/
+
+
+/*************************************************************************************************************
+/* Funktion : deviceCmdRaw --> Subfunction necessary to read Sonos Topology
+/* @param: 	URL, IP-Adresse, port
+/*
+/* @return: data
+/*************************************************************************************************************/
+	
+ function deviceCmdRaw($url, $ip='', $port=1400) {
+	global $sonoszone, $master, $zone;
+		
+	$url = "http://{$sonoszone[$master][0]}:{$port}{$url}"; // ($sonoszone[$master][0])
+	$ch = curl_init();
+	curl_setopt($ch, CURLOPT_URL, $url);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	$data = curl_exec($ch);
+	curl_close($ch);
+	return $data;
+ }
+ 
+
 
 /**
 * Function: getPlayerList --> generates Sonos Topology
@@ -524,8 +550,7 @@ function chmod_r($Path="") {
 
 /*************************************************************************************************************
 /* Funktion : checkaddon --> prüft vorhanden sein von Addon's
-/* @param: 	leer
-/*
+/* @param: 	leer/*
 /* @return: true oder Abbruch
 /*************************************************************************************************************/
  function checkaddon() {
@@ -533,19 +558,12 @@ function chmod_r($Path="") {
 	
 	if(isset($_GET['weather'])) {
 		# ruft die weather-to-speech Funktion auf
-		if(substr($home,0,4) == "/opt") {	
-			if(!file_exists('addon/weather-to-speech.php')) {
-				trigger_error("The weather-to-speech Addon is currently not installed!", E_USER_NOTICE);
-				exit;
-			} else {
-				if(!file_exists("$home/config/plugins/wu4lox/wu4lox.cfg")) {
-					trigger_error("Bitte zuerst das Wunderground Plugin installieren!", E_USER_NOTICE);
-					exit;
-				}
-			}
+		if(!file_exists('addon/weather-to-speech.php')) {
+			trigger_error("The weather-to-speech Addon is currently not installed!", E_USER_NOTICE);
+			exit;
 		} else {
-			if(!file_exists('addon/weather-to-speech_nolb.php')) {
-				trigger_error("The weather-to-speech Addon is currently not installed!", E_USER_NOTICE);
+			if(!file_exists("$home/config/plugins/wu4lox/wu4lox.cfg")) {
+				trigger_error("Bitte zuerst das Wunderground Plugin installieren!", E_USER_NOTICE);
 				exit;
 			}
 		}
@@ -719,6 +737,37 @@ function AudioTypeIsSupported($type) {
 		"wav"   =>  "WAV - Waveform Audio File Format",
         ];
     return in_array($type, array_keys($types));
+}
+
+
+/**
+* Function : select_t2s_engine --> selects the configured t2s engine for speech creation
+*
+* @param: empty
+* @return: 
+**/
+
+function select_t2s_engine()  {
+	global $config;
+	
+	if ($config['TTS']['t2s_engine'] == 1001) {
+		include_once("voice_engines/VoiceRSS.php");
+	}
+	if ($config['TTS']['t2s_engine'] == 3001) {
+		include_once("voice_engines/MAC_OSX.php");
+	}
+	if ($config['TTS']['t2s_engine'] == 6001) {
+		include_once("voice_engines/ResponsiveVoice.php");
+	}
+	if ($config['TTS']['t2s_engine'] == 7001) {
+		include_once("voice_engines/Google.php");
+	}
+	if ($config['TTS']['t2s_engine'] == 5001) {
+		include_once("voice_engines/Pico_tts.php");
+	}
+	if ($config['TTS']['t2s_engine'] == 4001) {
+		include_once("voice_engines/Polly.php");
+	}
 }
 
 

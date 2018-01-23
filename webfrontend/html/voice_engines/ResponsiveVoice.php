@@ -1,11 +1,11 @@
 <?php
-function t2s($messageid)
+function t2s($messageid, $MessageStorepath, $textstring, $filename)
 // text-to-speech: Erstellt basierend auf Input eine TTS Nachricht, übermittelt sie an ResponsiveVoice und 
 // speichert das zurückkommende file lokal ab
 // @Parameter = $messageid von sonos2.php
 
 {
-	global $words, $config, $messageid, $fileolang, $fileo, $MessageStorepath;
+	global $config, $messageid;
 
 		$ttsengine = $config['TTS']['t2s_engine'];
 		
@@ -74,27 +74,26 @@ function t2s($messageid)
 		# ersetzt Umlaute um die Sprachqualität zu verbessern
 		# search = array('ä','ü','ö','Ä','Ü','Ö','ß','°','%20','%C3%84','%C4','%C3%9C','%FC','%C3%96','%F6','%DF','%C3%9F');
 		# replace = array('ae','ue','oe','Ae','Ue','Oe','ss','Grad',' ','ae','ae','ue','ue','oe','oe','ss','ss');
-		# words = str_replace($search,$replace,$words);
+		# words = str_replace($search,$replace,$textstring);
 		#####################################################################################################################	
 
 		# Sprache in Großbuchsaben
 		#$upper = strtoupper($language);
 										  		
 		# Speicherort der MP3 Datei
-		$mpath = $MessageStorepath;
-		$file = $mpath . $fileolang . ".mp3";
+		$file = $MessageStorepath . $filename . ".mp3";
 				
 		# Prüfung ob die MP3 Datei bereits vorhanden ist
 		if (!file_exists($file)) 
 		{
 			# Übermitteln des strings an ResponsiveVoice
-			$mp3 = file_get_contents('https://code.responsivevoice.org/getvoice.php?t='.$words.'&tl='.$language.'');
+			$mp3 = file_get_contents('https://code.responsivevoice.org/getvoice.php?t='.$textstring.'&tl='.$language.'');
 			#http://responsivevoice.org/responsivevoice/getvoice.php?t=' + multipartText[i]+ '&tl=' + profile.collectionvoice.lang || profile.systemvoice.lang || 'en-US';
 			file_put_contents($file, $mp3);
 		}
 	# Ersetze die messageid durch die von TTS gespeicherte Datei
-	$messageid = $fileolang;
-	return ($messageid);
+	$messageid = $filename;
+	return $filename;
 				  	
 }
 

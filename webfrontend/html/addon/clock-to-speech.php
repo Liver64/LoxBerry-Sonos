@@ -1,5 +1,5 @@
 <?php
-function c2s($ttext)
+function c2s()
 
 // clock-to-speech: Erstellt basierend auf der aktuellen Uhrzeit eine TTS Nachricht, übermittelt sie an VoiceRRS und 
 // speichert das zurückkommende file lokal ab
