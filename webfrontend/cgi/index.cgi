@@ -107,7 +107,7 @@ our $i;
 ##########################################################################
 
 # Version of this script
-$version = "2.1.7";
+$version = "2.1.6";
 
 # Figure out in which subfolder we are installed
 $psubfolder = abs_path($0);
@@ -326,8 +326,6 @@ sub form {
 	  $selectedvoice1 = "selected=selected";
 	} elsif ($voice eq "Hans") {
 	  $selectedvoice2 = "selected=selected";
-	} elsif ($voice eq "Vicki") {
-	  $selectedvoice3 = "selected=selected";
 	} else {
 	  $selectedvoice1 = "selected=selected";
 	} 

@@ -550,7 +550,8 @@ function chmod_r($Path="") {
 
 /*************************************************************************************************************
 /* Funktion : checkaddon --> prüft vorhanden sein von Addon's
-/* @param: 	leer/*
+/* @param: 	leer
+/*
 /* @return: true oder Abbruch
 /*************************************************************************************************************/
  function checkaddon() {
@@ -558,12 +559,19 @@ function chmod_r($Path="") {
 	
 	if(isset($_GET['weather'])) {
 		# ruft die weather-to-speech Funktion auf
-		if(!file_exists('addon/weather-to-speech.php')) {
-			trigger_error("The weather-to-speech Addon is currently not installed!", E_USER_NOTICE);
-			exit;
+		if(substr($home,0,4) == "/opt") {	
+			if(!file_exists('addon/weather-to-speech.php')) {
+				trigger_error("The weather-to-speech Addon is currently not installed!", E_USER_NOTICE);
+				exit;
+			} else {
+				if(!file_exists("$home/config/plugins/wu4lox/wu4lox.cfg")) {
+					trigger_error("Bitte zuerst das Wunderground Plugin installieren!", E_USER_NOTICE);
+					exit;
+				}
+			}
 		} else {
-			if(!file_exists("$home/config/plugins/wu4lox/wu4lox.cfg")) {
-				trigger_error("Bitte zuerst das Wunderground Plugin installieren!", E_USER_NOTICE);
+			if(!file_exists('addon/weather-to-speech_nolb.php')) {
+				trigger_error("The weather-to-speech Addon is currently not installed!", E_USER_NOTICE);
 				exit;
 			}
 		}
