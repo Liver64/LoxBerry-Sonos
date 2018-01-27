@@ -1,0 +1,9 @@
+; Language phrases EN
+
+TXT0000="LoxBerry"
+TXT0001="Sonos4Lox"
+TXT0003="The entered API-Key is not valid."
+TXT0004="The entered Secret-Key is not valid."
+TXT0005="Settings are succesful saved and activated. Have fun with Sonos."
+TXT0006="No Sonos Zones are currently available. Please hit Scan Zones button in order to scan for new zones!"
+TXT0007="No Radio Stations has been maintained."
