@@ -1,0 +1,2 @@
+[BASIC]
+SAMPLEPLUGIN_HINT="Dieses ist ein Sample Plugin."

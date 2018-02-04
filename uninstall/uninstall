@@ -1,16 +1,14 @@
-#!/bin/sh
+#!/bin/bash
 
-# Bash script which is executed in case of an update (if this plugin is already
-# installed on the system). This script is executed as very first step (*BEFORE*
-# preinstall.sh) and can be used e.g. to save existing configfiles to /tmp 
-# during installation. Use with caution and remember, that all systems may be
-# different!
+# Bashscript which is executed by bash when uninstalling the plugin
+# Use with caution and remember, that all systems may be different!
 #
 # Exit code must be 0 if executed successfull. 
-# Exit code 1 gives a warning but continues installation.
-# Exit code 2 cancels installation.
+# Exit code 1 gives a warning but continues deinstallation.
 #
-# Will be executed as user "loxberry".
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Will be executed as user "root".
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #
 # You can use all vars from /etc/environment in this script.
 #
@@ -45,20 +43,19 @@ PCONFIG=$LBPCONFIG/$PDIR
 PSBIN=$LBPSBIN/$PDIR
 PBIN=$LBPBIN/$PDIR
 
-echo "<INFO> Creating temporary folders for upgrading"
-mkdir -p /tmp/$1\_upgrade
-mkdir -p /tmp/$1\_upgrade/config
-mkdir -p /tmp/$1\_upgrade/log
-mkdir -p /tmp/$1\_upgrade/data
-
-echo "<INFO> Backing up existing config files"
-cp -p -v -r $5/config/plugins/$3/ /tmp/$1\_upgrade/config
-
-echo "<INFO> Backing up existing log files"
-cp -p -v -r $5/log/plugins/$3/ /tmp/$1\_upgrade/log
-
-echo "<INFO> Backing up existing MP3 files"
-cp -p -v -r $5/data/plugins/$3/ /tmp/$1\_upgrade/data
+echo "<INFO> Command is: $COMMAND"
+echo "<INFO> Temporary folder is: $TEMPDIR"
+echo "<INFO> (Short) Name is: $PSHNAME"
+echo "<INFO> Installation folder is: $ARGV3"
+echo "<INFO> Plugin version is: $ARGV4"
+echo "<INFO> Plugin CGI folder is: $PCGI"
+echo "<INFO> Plugin HTML folder is: $PHTML"
+echo "<INFO> Plugin Template folder is: $PTEMPL"
+echo "<INFO> Plugin Data folder is: $PDATA"
+echo "<INFO> Plugin Log folder (on RAMDISK!) is: $PLOG"
+echo "<INFO> Plugin CONFIG folder is: $PCONFIG"
+echo "<INFO> Plugin SBIN folder is: $PSBIN"
+echo "<INFO> Plugin BIN folder is: $PBIN"
 
 # Exit with Status 0
 exit 0

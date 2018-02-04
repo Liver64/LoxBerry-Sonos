@@ -2,13 +2,17 @@
 
 # Bash script which is executed by bash *BEFORE* installation is started (but
 # *AFTER* preupdate). Use with caution and remember, that all systems may be
-# different! Better to do this in your own Pluginscript if possible.
+# different!
 #
-# Exit code must be 0 if executed successfull.
+# Exit code must be 0 if executed successfull. 
+# Exit code 1 gives a warning but continues installation.
+# Exit code 2 cancels installation.
 #
 # Will be executed as user "loxberry".
 #
-# We add 5 arguments when executing the script:
+# You can use all vars from /etc/environment in this script.
+#
+# We add 5 additional arguments when executing this script:
 # command <TEMPFOLDER> <NAME> <FOLDER> <VERSION> <BASEFOLDER>
 #
 # For logging, print to STDOUT. You can use the following tags for showing
@@ -20,16 +24,26 @@
 # <ERROR> This is an error!"
 # <FAIL> This is a fail!"
 
+# To use important variables from command line use the following code:
+COMMAND=$0    # Zero argument is shell command
+PTEMPDIR=$1   # First argument is temp folder during install
+PSHNAME=$2    # Second argument is Plugin-Name for scipts etc.
+PDIR=$3       # Third argument is Plugin installation folder
+PVERSION=$4   # Forth argument is Plugin version
+#LBHOMEDIR=$5 # Comes from /etc/environment now. Fifth argument is
+              # Base folder of LoxBerry
 
-#$version = sed -nr "/^\[BASE\]/ { :l /^VERSION[ ]*=/ { s/.*=[ ]*//; p; q;}; n; b l;}" .$ARGV3/loxberry/config/system/general.cfg
-#echo $version
-#if [ "$version"  == "0.2.2" ]
-#then
-	#echo "<ERROR> You must update LoxBerry to Version 0.2.3 before installing Sonos Script"
-	#exit
-#fi
+# Combine them with /etc/environment
+PCGI=$LBPCGI/$PDIR
+PHTML=$LBPHTML/$PDIR
+PTEMPL=$LBPTEMPL/$PDIR
+PDATA=$LBPDATA/$PDIR
+PLOG=$LBPLOG/$PDIR # Note! This is stored on a Ramdisk now!
+PCONFIG=$LBPCONFIG/$PDIR
+PSBIN=$LBPSBIN/$PDIR
+PBIN=$LBPBIN/$PDIR
 
-find /tmp/uploads/$ARGV1 -type f -print0 | xargs -0 dos2unix -q
+find /tmp/uploads/$1 -type f -print0 | xargs -0 dos2unix -q
 echo "<OK> Fehlerhafte EOL's wurden erfolgreich konvertiert!"
 
 # Exit with Status 0

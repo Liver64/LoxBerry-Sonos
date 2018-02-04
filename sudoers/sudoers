@@ -1,0 +1,2 @@
+# Sudoers file for the plugin. Note: All scripts in sbin will be added automatically
+%loxberry ALL = NOPASSWD: /opt/loxberry/sbin/hereiswhatwehavetodoasroot

@@ -1,0 +1,49 @@
+<h1><TMPL_VAR NAME=T::BASIC.HEADING_BASICSETTINGS></h1>
+
+<p>
+<TMPL_VAR NAME=T::BASIC.SAMPLEPLUGIN_HINT>
+<TMPL_VAR NAME=T::BASIC.SAMPLEPLUGIN_BESTPRACTISE>
+</p>
+
+<br>
+
+<b>Now a sample form with two select lists. We created these lists
+in two different ways. The result here is the very same.</b>
+
+<br>
+
+<h2>First way: Use LOOP in the template</h2>
+
+<form>
+<select name="Selectlist1" size="1">
+
+<TMPL_LOOP NAME=SECTIONS>
+<option value='<TMPL_VAR NAME=ID>'><TMPL_VAR NAME=OPTION_NAME></option>
+</TMPL_LOOP>
+
+</select>
+</form>
+
+<br>
+
+<h2>Second way: Use a pre-created selectlist in the template</h2>
+
+<form>
+<select name="Selectlist2" size="1">
+<TMPL_VAR NAME=SELECTLIST>
+</select>
+</form>
+
+<br>
+
+<h2>And now some siple variables</h2>
+
+<TMPL_VAR NAME=PLUGINNAME>
+
+<br>
+
+<TMPL_VAR NAME=ANOTHERNAME>
+
+<br><br>
+
+<i><TMPL_VAR NAME=T::FOOTER.GREETING></i>
