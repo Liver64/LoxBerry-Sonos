@@ -2,7 +2,7 @@
 
 ##############################################################################################################################
 #
-# Version: 	2.1.7_1
+# Version: 	2.1.7_2
 # Datum: 	07.01.2018
 # veröffentlicht in: http://plugins.loxberry.de/
 # 
@@ -123,12 +123,13 @@
 #			[Feature] Aktualisierte Funktion um user-spezifische Playlisten zu laden (gilt nur für Spotify)
 # 2.1.6		[Bugfix] Fehler bei Non LoxBerry beseitigt, es wurde versucht eine LoxBerry Berechtigung zu setzen
 #			[Bugfix] SHUFFLE Wiedergabe wird jetzt nach erfolgter T2S korrekt weitergespielt
-# 2.1.7		Allgemeine Struktur überarbeitet und LoxBeryy 0.3.x Konpatibilität hergestellt
+# 2.1.7		Allgemeine Struktur überarbeitet und LoxBeryy v1.0.0 Konpatibilität hergestellt
 #			Unterstützung für Non-LoxBerry User entfernt
 #			[Bugfix] Stabilere Scan Funktion nach Sonos Playern
 #			[Feature] Vicki als Stimme für Polly hinzugefügt	
 #			[Feature] Funktion batch optmiert um numerische, gespeicherte MP3 files aus dem tts/mp3 Verzeichnis zu inkludieren
-# 2.1.7_1	[Bugfix] Support für LoxBerry V0.2.4 und V1.0.0 korrigiert
+# 2.1.7_2	[Bugfix] Fehler bei Installation für LoxBerry v1.0.0 beseitigt
+#
 #
 ######## Script Code (ab hier bitte nichts ändern) ###################################
 
