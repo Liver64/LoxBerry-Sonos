@@ -2,7 +2,7 @@
 
 ##############################################################################################################################
 #
-# Version: 	2.1.7
+# Version: 	2.1.7_1
 # Datum: 	07.01.2018
 # veröffentlicht in: http://plugins.loxberry.de/
 # 
@@ -128,7 +128,7 @@
 #			[Bugfix] Stabilere Scan Funktion nach Sonos Playern
 #			[Feature] Vicki als Stimme für Polly hinzugefügt	
 #			[Feature] Funktion batch optmiert um numerische, gespeicherte MP3 files aus dem tts/mp3 Verzeichnis zu inkludieren
-#
+# 2.1.7_1	[Bugfix] Support für LoxBerry V0.2.4 und V1.0.0 korrigiert
 #
 ######## Script Code (ab hier bitte nichts ändern) ###################################
 

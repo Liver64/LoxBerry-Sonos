@@ -5,7 +5,5 @@ libjson-perl
 lame
 curl 
 libcurl3
-php5-curl
-php-curl
 php-soap
 git
