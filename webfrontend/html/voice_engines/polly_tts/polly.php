@@ -11,7 +11,7 @@ class POLLY_TTS{
                                   'eu-west-1' => 'polly.eu-west-1.amazonaws.com' );
 								  
     public function __construct(){
-        $this->utc_tz      = new \DateTimeZone( 'UTC' );
+        $this->utc_tz      = new \DateTimeZone( 'GMT' );
         $this->setCredential();
     }
     public function save_mp3($text, $filename) {
