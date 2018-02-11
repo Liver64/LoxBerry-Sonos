@@ -107,7 +107,11 @@ our $i;
 ##########################################################################
 
 # Version of this script
+<<<<<<< HEAD:webfrontend/cgi/index.cgi
 $version = "2.1.7_1";
+=======
+$version = "2.1.7.2";
+>>>>>>> origin/master:webfrontend/htmlauth/index.cgi
 
 # Figure out in which subfolder we are installed
 $psubfolder = abs_path($0);
