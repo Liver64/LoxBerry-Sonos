@@ -21,6 +21,7 @@
 
 use CGI::Carp qw(fatalsToBrowser);
 use CGI qw/:standard/;
+use CGI;
 use LWP::UserAgent;
 use Config::Simple;
 use File::HomeDir;
@@ -48,7 +49,6 @@ our $helptext;
 our $helplink;
 our $installfolder;
 our $planguagefile;
-our $version;
 our $error;
 our $saveformdata = 0;
 our $output;
@@ -98,6 +98,8 @@ our $selectedannounceradio2;
 our $maxzap;
 our $wastecal;
 our $cal;
+our $code;
+our $language;
 our $pluginlogfile;
 our @radioarray;
 our $i;
@@ -105,9 +107,6 @@ our $i;
 ##########################################################################
 # Read Settings
 ##########################################################################
-
-# Version of this script
-$version = "2.1.7";
 
 # Figure out in which subfolder we are installed
 $psubfolder = abs_path($0);
@@ -121,6 +120,7 @@ my $MiniServer	 = $cfg->param("MINISERVER1.IPADDRESS");
 my $MSWebPort	 = $cfg->param("MINISERVER1.PORT");
 my $MSUser		 = $cfg->param("MINISERVER1.ADMIN");
 my $MSPass		 = $cfg->param("MINISERVER1.PASS");
+my $cgi 		 = CGI->new;
 
 #########################################################################
 # Parameter
@@ -215,6 +215,7 @@ sub form {
 	$seckey 		  = $pcfg->param("TTS.secret-key");
 	$t2s_engine		  = $pcfg->param("TTS.t2s_engine");
 	$voice	 		  = $pcfg->param("TTS.voice");
+	$code		  	  = $pcfg->param("TTS.messageLang");
 	$rampto	 		  = $pcfg->param("TTS.rampto");
 	$rmpvol	 	  	  = $pcfg->param("TTS.volrampto");
 	#$lang			  = $pcfg->param("TTS.messageLang");
@@ -319,17 +320,6 @@ sub form {
       $selectedinstanz7 = "checked=checked";
     } else {
 	  $selectedinstanz1 = "checked=checked";
-	} 
-
-	# VOICE
-	if ($voice eq "Marlene") {
-	  $selectedvoice1 = "selected=selected";
-	} elsif ($voice eq "Hans") {
-	  $selectedvoice2 = "selected=selected";
-	} elsif ($voice eq "Vicki") {
-	  $selectedvoice3 = "selected=selected";
-	} else {
-	  $selectedvoice1 = "selected=selected";
 	} 
 
 	# DEBUGGING
@@ -491,13 +481,14 @@ sub save
 	$maxzap			= param('maxzap');
 	$wastecal		= param('wastecal');
 	$cal			= param('cal');
+	$code		    = param('lang');
 	
 	# Filter
 	$MP3Store   	= quotemeta($MP3store);
 	$t2s_engine   	= quotemeta($t2s_engine);
 	#$apikey   		= quotemeta($apikey);
 	#$seckey 		= quotemeta($seckey);
-	$voice 			= quotemeta($voice);
+	#$voice 		= quotemeta($voice);
 	#$file_gong 	= quotemeta($file_gong);
 	#$LoxDaten 		= quotemeta($LoxDaten);
 	$debugging		= quotemeta($debugging);
@@ -531,7 +522,7 @@ sub save
 	$pcfg->param("TTS.t2s_engine", "$t2s_engine");
 	$pcfg->param("TTS.rampto", "$rampto");
 	$pcfg->param("TTS.volrampto", "$rmpvol");
-	#$pcfg->param("TTS.messageLang", "$lang");
+	$pcfg->param("TTS.messageLang", "$code");
 	$pcfg->param("TTS.API-key", "$apikey");
 	$pcfg->param("TTS.secret-key", "$seckey");
 	$pcfg->param("TTS.voice", "$voice");
@@ -548,7 +539,7 @@ sub save
 	$pcfg->param("VARIOUS.maxzap", "$maxzap");
 	$pcfg->param("VARIOUS.CALDavMuell", "\"$wastecal\"");
 	$pcfg->param("VARIOUS.CALDav2", "\"$cal\"");
-
+	
 	# save all radiostations
 	for ($i = 1; $i <= $countradios; $i++) {
 		if ( param("chkradios$i") ) { # if radio should be deleted

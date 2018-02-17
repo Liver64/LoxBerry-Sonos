@@ -102,9 +102,9 @@ function muellkalender() {
 	if (empty($speak)) {
 		exit;	
 	}
-	echo $speak;
-	echo '<br><br>';
-	return $speak;
+	#echo urlencode($speak);
+	#echo '<br><br>';
+	return urlencode($speak);
 }
 
 	
@@ -159,9 +159,9 @@ function calendar() {
 			$monate = array("Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember");
 			$speak .= $calendar['']['Summary'] . " am " . $tage[$calendar['']['wkDay']] . " den ". date_format($zeit, 'd'). " " .$monate[date_format($zeit, 'm') - 1] ." um ". date_format($zeit, 'G:i');
 		}
-	#echo $speak;
+	#echo urlencode($speak);
 	#echo '<br><br>';
-	return $speak;		
+	return urlencode($speak);
 	}
 }
 

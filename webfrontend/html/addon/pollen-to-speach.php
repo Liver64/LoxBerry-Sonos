@@ -173,7 +173,7 @@ curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
 
 // Text ansagen
 $text = preg_replace("/[^a-z0-9!. ]/i", "", $text);
-$url = utf8_encode($text);
+$url = urlencode($text);
 echo $url;
 return $url;
 

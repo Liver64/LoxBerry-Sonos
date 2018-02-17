@@ -69,7 +69,7 @@ $text = str_replace("Warnzeitraum", "Warn Zeitraum", $text);
 $text = str_replace(" M ", " Metern ", $text);
 $text = str_replace(" m ", " Metern ", $text);
 
-$url = ($text);
+$url = urlencode($text);
 #echo $url;
 return $url;
 

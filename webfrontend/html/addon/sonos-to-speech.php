@@ -33,7 +33,7 @@ function s2s()
 			$sender = $temp_radio['title'];
 			$text = 'Es läuft '.$sender;
 		}
-		$text = utf8_encode($text);
+		$text = urlencode($text);
 		if ($debug == 1) 
 		{
 			echo ($text); 

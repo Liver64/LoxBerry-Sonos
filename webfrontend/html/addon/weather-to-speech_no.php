@@ -162,7 +162,7 @@ function w2s()
 				$wtext="";
 				break;
 		}
-		$wtext = utf8_encode($wtext);
+		$wtext = urlencode($wtext);
 		if ($debug == 1) {
 			echo 'Text zur Uebergabe an T2S:<br><br>';
 			print_r ($wtext); 

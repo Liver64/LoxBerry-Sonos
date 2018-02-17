@@ -44,32 +44,32 @@ function create_tts() {
 		} else {
 			include_once("addon/weather-to-speech.php");
 		}
-		$textstring = urlencode(substr(w2s(), 0, 500));
+		$textstring = substr(w2s(), 0, 500);
 		} 
 	elseif (isset($_GET['clock'])) {
 		// calls the clock-to-speech Function
 		include_once("addon/clock-to-speech.php");
-		$textstring = urlencode(c2s());
+		$textstring = c2s();
 		}
 	elseif (isset($_GET['pollen'])) {
 		// calls the pollen-to-speech Function
 		include_once("addon/pollen-to-speach.php");
-		$textstring = urlencode(substr(p2s(), 0, 500));
+		$textstring = substr(p2s(), 0, 500);
 		}
 	elseif (isset($_GET['warning'])) {
 		// calls the weather warning-to-speech Function
 		include_once("addon/weather-warning-to-speech.php");
-		$textstring = urlencode(substr(ww2s(), 0, 500));
+		$textstring = substr(ww2s(), 0, 500);
 	}
 	elseif (isset($_GET['distance'])) {
-		// calls the weather warning-to-speech Function
+		// calls the time-to-destination-speech Function
 		include_once("addon/time-to-destination-speech.php");
-		$textstring = urlencode(substr(tt2t(), 0, 500));
+		$textstring = substr(tt2t(), 0, 500);
 		}
 	elseif (isset($_GET['witz'])) {
 		// calls the weather warning-to-speech Function
 		include_once("addon/gimmicks.php");
-		$textstring = urlencode(substr(GetWitz(), 0, 500));
+		$textstring = substr(GetWitz(), 0, 1000);
 		}
 	elseif (isset($_GET['bauernregel'])) {
 		// calls the weather warning-to-speech Function
@@ -79,17 +79,17 @@ function create_tts() {
 	elseif (isset($_GET['abfall'])) {
 		// calls the wastecalendar-to-speech Function
 		include_once("addon/waste-calendar-to-speech.php");
-		$textstring = urlencode(substr(muellkalender(), 0, 500));
+		$textstring = substr(muellkalender(), 0, 500);
 		}
 	elseif (isset($_GET['calendar'])) {
 		// calls the calendar-to-speech Function
 		include_once("addon/waste-calendar-to-speech.php");
-		$textstring = urlencode(substr(calendar(), 0, 500));
+		$textstring = substr(calendar(), 0, 500);
 		}
 	elseif (isset($_GET['sonos'])) {
 		// calls the sonos-to-speech Function
 		include_once("addon/sonos-to-speech.php");
-		$textstring = urlencode(s2s());
+		$textstring = s2s();
 		$rampsleep = false;
 		}
 	elseif ((empty($messageid)) && (!isset($_GET['text'])) and (isset($_GET['playbatch']))) {
@@ -411,20 +411,20 @@ function sendgroupmessage() {
 				$sonos = new PHPSonos($sonoszone[$zone2][0]);
 				if(isset($_GET['volume']) or isset($_GET['groupvolume']))  { 
 					isset($_GET['volume']) ? $groupvolume = $_GET['volume'] : $groupvolume = $_GET['groupvolume'];
-					$sonos->SetVolume($sonoszone[$zone2][3]);					
-					$newvolume = $sonos->GetVolume();
-					#$tmp_vol = $newvolume + $groupvolume; // addieren
-					$tmp_vol = $newvolume + ($newvolume * ($groupvolume / 100));  // multiplizieren
-					// prüfen ob errechnete Volume > 100 ist, falls ja max. auf 100 setzen
-					$tmp_vol > 100 ? $tmp_vol = 100 : $tmp_vol;
-					$sonos->SetVolume($tmp_vol);
-					$final_vol = $sonos->GetVolume();
+					if(isset($_GET['volume'])) {
+						$final_vol = $groupvolume;
+					} else {
+						$newvolume = $sonos->GetVolume();
+						$final_vol = $newvolume + ($newvolume * ($groupvolume / 100));  // multiplizieren
+						// prüfen ob errechnete Volume > 100 ist, falls ja max. auf 100 setzen
+						$final_vol > 100 ? $final_vol = 100 : $final_vol;
+					}
 				} else {
-					$newvolume = $sonos->SetVolume($sonoszone[$zone2][3]);
-					$final_vol = $sonos->GetVolume();
+					$final_vol = $sonoszone[$zone2][3];
 				}
+				$sonos->SetVolume($final_vol);
 				$sonos->SetMute(false);
-				#echo $zone2.' = '.$final_vol.'<br>';
+				#echo 'Zone: '.$zone2.'; Volume: '.$final_vol.'<br>';
 			}
 			play_tts($messageid);
 			// wiederherstellen der Ursprungszustände

@@ -87,7 +87,7 @@ function tt2t()
     } else {
         trigger_error('The URL is not complete or invalid. Please check URL!', E_USER_ERROR);
     }
-    $words = $text;
+    $words = urlencode($text);
 	#echo $request;
 	
 	if( $debug == 1) {

@@ -1,0 +1,122 @@
+[
+ {
+   "t2s": 4001,
+   "country": "Deutsch (German)",
+   "value": "de-DE"
+ },
+ {
+   "t2s": 4001,
+   "country": "Dutch",
+   "value": "nl-NL"
+ },
+ {
+   "t2s": 4001,
+   "country": "English (Australian)",
+   "value": "en-AU"
+ },
+ {
+   "t2s": 4001,
+   "country": "English (British)",
+   "value": "en-GB"
+ },
+ {
+   "t2s": 4001,
+   "country": "English (Indian)",
+   "value": "en-IN"
+ },
+ {
+   "t2s": 4001,
+   "country": "English (US)",
+   "value": "en-US"
+ },
+ {
+   "t2s": 4001,
+   "country": "English (Welsh)",
+   "value": "en-GB-WLS"
+ },
+ {
+   "t2s": 4001,
+   "country": "French",
+   "value": "fr-FR"
+ },
+ {
+   "t2s": 4001,
+   "country": "French (Canadian)",
+   "value": "fr-CA"
+ },
+ {
+   "t2s": 4001,
+   "country": "Danish",
+   "value": "da-DK"
+ },
+ {
+   "t2s": 4001,
+   "country": "Icelandic",
+   "value": "is-IS"
+ },
+ {
+   "t2s": 4001,
+   "country": "Italian",
+   "value": "it-IT"
+ },
+ {
+   "t2s": 4001,
+   "country": "Japanese",
+   "value": "ja-JP"
+ },
+ {
+   "t2s": 4001,
+   "country": "Norwegian",
+   "value": "nb-NO"
+ },
+ {
+   "t2s": 4001,
+   "country": "Polish",
+   "value": "pl-PL"
+ },
+ {
+   "t2s": 4001,
+   "country": "Portuguese (Brazilian)",
+   "value": "pt-BR"
+ },
+ {
+   "t2s": 4001,
+   "country": "Portuguese (European)",
+   "value": "pt-PT"
+ },
+ {
+   "t2s": 4001,
+   "country": "Romanian",
+   "value": "ro-RO"
+ },
+ {
+   "t2s": 4001,
+   "country": "Russian",
+   "value": "ru-RU"
+ },
+ {
+   "t2s": 4001,
+   "country": "Spanish (Castilian)",
+   "value": "es-ES"
+ },
+ {
+   "t2s": 4001,
+   "country": "Spanish (Latin American)",
+   "value": "es-US"
+ },
+ {
+   "t2s": 4001,
+   "country": "Swedish",
+   "value": "sv-SE"
+ },
+ {
+   "t2s": 4001,
+   "country": "Turkish",
+   "value": "tr-TR"
+ },
+ {
+   "t2s": 4001,
+   "country": "Welsh",
+   "value": "cy-GB"
+ }
+]

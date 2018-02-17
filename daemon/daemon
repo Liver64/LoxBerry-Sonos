@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# This is a sample DAEMON file which is started at boottime. 
+# CAUTION! MAKE SURE YOUR SCRIPT EXITS CLEANLY! It is a good idea
+# to start your daemon as background process. If you do something wrong here
+# your user's systems may hang forever during boottime!
+
+# Will be executed as user "root".
+
+# Name this file "daemon" in your plugin-archive. It will be renamed to NAME
+# during installation
+
+if [ -x /usr/bin/logger ]
+then
+    /usr/bin/logger "This is just a sample DAEMON script from Sample Plugin"
+fi
+
+exit 0

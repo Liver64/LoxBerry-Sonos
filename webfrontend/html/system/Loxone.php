@@ -159,10 +159,10 @@
 	global $config, $countms, $sonoszone, $home, $sonos, $lox_ip, $sonoszonen, $tmp_lox; 
 	
 	$tmp_lox =  parse_ini_file("$home/config/system/general.cfg", TRUE);
-	$lox_ip		 = $tmp_lox['MINISERVER1']['IPADDRESS'];
-	$lox_port 	 = $tmp_lox['MINISERVER1']['PORT'];
-	$loxuser 	 = $tmp_lox['MINISERVER1']['ADMIN'];
-	$loxpassword = $tmp_lox['MINISERVER1']['PASS'];
+	$lox_ip		 = $tmp_lox[$config['LOXONE']['Loxone']]['IPADDRESS'];
+	$lox_port 	 = $tmp_lox[$config['LOXONE']['Loxone']]['PORT'];
+	$loxuser 	 = $tmp_lox[$config['LOXONE']['Loxone']]['ADMIN'];
+	$loxpassword = $tmp_lox[$config['LOXONE']['Loxone']]['PASS'];
 	$loxip = $lox_ip.':'.$lox_port;
 	try {
 		$handle = fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-Error/''", "r");

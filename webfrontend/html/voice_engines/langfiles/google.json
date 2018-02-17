@@ -1,0 +1,432 @@
+[
+ {
+   "t2s": 7001,
+   "country": "Deutsch (German)",
+   "value": "de-DE"
+ },
+ {
+   "t2s": 7001,
+   "country": "Arabic (Algeria)",
+   "value": "ar-DZ"
+ },
+ {
+   "t2s": 7001,
+   "country": "Arabic (Bahrain)",
+   "value": "ar-BH"
+ },
+ {
+   "t2s": 7001,
+   "country": "Arabic (Egypt)",
+   "value": "ar-EG"
+ },
+ {
+   "t2s": 7001,
+   "country": "Arabic (Iraq)",
+   "value": "ar-IQ"
+ },
+ {
+   "t2s": 7001,
+   "country": "Arabic (Israel)",
+   "value": "ar-IL"
+ },
+ {
+   "t2s": 7001,
+   "country": "Arabic (Jordan)",
+   "value": "ar-JO"
+ },
+ {
+   "t2s": 7001,
+   "country": "Arabic (Kuwait)",
+   "value": "ar-KW"
+ },
+ {
+   "t2s": 7001,
+   "country": "Arabic (Lebanon)",
+   "value": "ar-LB"
+ },
+ {
+   "t2s": 7001,
+   "country": "Arabic (Morocco)",
+   "value": "ar-MA"
+ },
+ {
+   "t2s": 7001,
+   "country": "Arabic (Oman)",
+   "value": "ar-OM"
+ },
+ {
+   "t2s": 7001,
+   "country": "Arabic (Qatar)",
+   "value": "ar-QA"
+ },
+ {
+   "t2s": 7001,
+   "country": "Arabic (Saudi Arabia)",
+   "value": "ar-SA"
+ },
+ {
+   "t2s": 7001,
+   "country": "Arabic (State of Palestine)",
+   "value": "ar-PS"
+ },
+ {
+   "t2s": 7001,
+   "country": "Arabic (Tunisia)",
+   "value": "ar-TN"
+ },
+ {
+   "t2s": 7001,
+   "country": "Arabic (United Arab Emirates)",
+   "value": "ar-AE"
+ },
+ {
+   "t2s": 7001,
+   "country": "Basque (Spain)",
+   "value": "eu-ES"
+ },
+ {
+   "t2s": 7001,
+   "country": "Bulgarian (Bulgaria)",
+   "value": "bg-BG"
+ },
+ {
+   "t2s": 7001,
+   "country": "Catalan (Spain)",
+   "value": "ca-ES"
+ },
+ {
+   "t2s": 7001,
+   "country": "Chinese, Cantonese (Traditional, Hong Kong)",
+   "value": "yue-Hant-HK"
+ },
+ {
+   "t2s": 7001,
+   "country": "Chinese, Mandarin (Simplified, China)",
+   "value": "cmn-Hans-CN"
+ },
+ {
+   "t2s": 7001,
+   "country": "Chinese, Mandarin (Simplified, Hong Kong)",
+   "value": "cmn-Hans-HK"
+ },
+ {
+   "t2s": 7001,
+   "country": "Chinese, Mandarin (Traditional, Taiwan)",
+   "value": "cmn-Hant-TW"
+ },
+ {
+   "t2s": 7001,
+   "country": "Croatian (Croatia)",
+   "value": "hr-HR"
+ },
+ {
+   "t2s": 7001,
+   "country": "Czech (Czech Republic)",
+   "value": "cs-CZ"
+ },
+ {
+   "t2s": 7001,
+   "country": "Danish",
+   "value": "da-DK"
+ },
+ {
+   "t2s": 7001,
+   "country": "English (Australian)",
+   "value": "en-AU"
+ },
+ {
+   "t2s": 7001,
+   "country": "English (British)",
+   "value": "en-GB"
+ },
+ {
+   "t2s": 7001,
+   "country": "English (Canada)",
+   "value": "en-CA"
+ },
+ {
+   "t2s": 7001,
+   "country": "English (Indian)",
+   "value": "en-IN"
+ },
+ {
+   "t2s": 7001,
+   "country": "English (Ireland)",
+   "value": "en-IE"
+ },
+ {
+   "t2s": 7001,
+   "country": "English (New Zealand)",
+   "value": "en-NZ"
+ },
+ {
+   "t2s": 7001,
+   "country": "English (Philippines)",
+   "value": "en-PH"
+ },
+ {
+   "t2s": 7001,
+   "country": "English (South Africa)",
+   "value": "en-ZA"
+ },
+ {
+   "t2s": 7001,
+   "country": "Filipino (Philippines)",
+   "value": "fil-PH"
+ },
+ {
+   "t2s": 7001,
+   "country": "Finnish (Finland)",
+   "value": "fi-FI"
+ },
+ {
+   "t2s": 7001,
+   "country": "French (Canadian)",
+   "value": "fr-CA"
+ },
+ {
+   "t2s": 7001,
+   "country": "Galician (Spain)",
+   "value": "gl-ES"
+ },
+ {
+   "t2s": 7001,
+   "country": "Afrikaans (South Africa)",
+   "value": "af-ZA"
+ },
+ {
+   "t2s": 7001,
+   "country": "Greek (Greece)",
+   "value": "el-GR"
+ },
+ {
+   "t2s": 7001,
+   "country": "Hebrew (Israel)",
+   "value": "he-IL"
+ },
+ {
+   "t2s": 7001,
+   "country": "Hindi (India)",
+   "value": "hi-IN"
+ },
+ {
+   "t2s": 7001,
+   "country": "Hungarian (Hungary)",
+   "value": "hu-HU"
+ },
+ {
+   "t2s": 7001,
+   "country": "Icelandic (Iceland)",
+   "value": "is-IS"
+ },
+ {
+   "t2s": 7001,
+   "country": "Indonesian (Indonesia)",
+   "value": "id-ID"
+ },
+ {
+   "t2s": 7001,
+   "country": "Italian (Italy)",
+   "value": "it-IT"
+ },
+ {
+   "t2s": 7001,
+   "country": "Japanese",
+   "value": "ja-JP"
+ },
+ {
+   "t2s": 7001,
+   "country": "Korean (South Korea)",
+   "value": "ko-KR"
+ },
+ {
+   "t2s": 7001,
+   "country": "Lithuanian (Lithuania)",
+   "value": "lt-LT"
+ },
+ {
+   "t2s": 7001,
+   "country": "Malay (Malaysia)",
+   "value": "ms-MY"
+ },
+ {
+   "t2s": 7001,
+   "country": "Norwegian",
+   "value": "nb-NO"
+ },
+ {
+   "t2s": 7001,
+   "country": "Persian (Iran)",
+   "value": "fa-IR"
+ },
+ {
+   "t2s": 7001,
+   "country": "Polish",
+   "value": "pl-PL"
+ },
+ {
+   "t2s": 7001,
+   "country": "Portuguese (Brazilian)",
+   "value": "pt-BR"
+ },
+ {
+   "t2s": 7001,
+   "country": "Portuguese (European)",
+   "value": "pt-PT"
+ },
+ {
+   "t2s": 7001,
+   "country": "Romanian",
+   "value": "ro-RO"
+ },
+ {
+   "t2s": 7001,
+   "country": "Russian",
+   "value": "ru-RU"
+ },
+ {
+   "t2s": 7001,
+   "country": "Serbian (Serbia)",
+   "value": "sr-RS"
+ },
+ {
+   "t2s": 7001,
+   "country": "Slovak (Slovakia)",
+   "value": "sk-SK"
+ },
+ {
+   "t2s": 7001,
+   "country": "Slovenian (Slovenia)",
+   "value": "sl-SI"
+ },
+ {
+   "t2s": 7001,
+   "country": "Spanish (Argentina)",
+   "value": "es-AR"
+ },
+ {
+   "t2s": 7001,
+   "country": "Spanish (Bolivia)",
+   "value": "es-BO"
+ },
+ {
+   "t2s": 7001,
+   "country": "Spanish (Castilian)",
+   "value": "es-ES"
+ },
+ {
+   "t2s": 7001,
+   "country": "Spanish (Chile)",
+   "value": "es-CL"
+ },
+ {
+   "t2s": 7001,
+   "country": "Spanish (Colombia)",
+   "value": "es-CO"
+ },
+ {
+   "t2s": 7001,
+   "country": "Spanish (Costa Rica)",
+   "value": "es-CR"
+ },
+ {
+   "t2s": 7001,
+   "country": "Spanish (Dominican Republic)",
+   "value": "es-DO"
+ },
+ {
+   "t2s": 7001,
+   "country": "Spanish (Ecuador)",
+   "value": "es-EC"
+ },
+ {
+   "t2s": 7001,
+   "country": "Spanish (El Salvador)",
+   "value": "es-SV"
+ },
+ {
+   "t2s": 7001,
+   "country": "Spanish (Guatemala)",
+   "value": "es-GT"
+ },
+ {
+   "t2s": 7001,
+   "country": "Spanish (Honduras)",
+   "value": "es-HN"
+ },
+ {
+   "t2s": 7001,
+   "country": "Spanish (Latin American)",
+   "value": "es-US"
+ },
+ {
+   "t2s": 7001,
+   "country": "Spanish (Mexico)",
+   "value": "es-MX"
+ },
+ {
+   "t2s": 7001,
+   "country": "Spanish (Nicaragua)",
+   "value": "es-NI"
+ },
+ {
+   "t2s": 7001,
+   "country": "Spanish (Panama)",
+   "value": "es-PA"
+ },
+ {
+   "t2s": 7001,
+   "country": "Spanish (Paraguay)",
+   "value": "es-PY"
+ },
+ {
+   "t2s": 7001,
+   "country": "Spanish (Peru)",
+   "value": "es-PE"
+ },
+ {
+   "t2s": 7001,
+   "country": "Spanish (Puerto Rico)",
+   "value": "es-PR"
+ },
+ {
+   "t2s": 7001,
+   "country": "Spanish (Uruguay)",
+   "value": "es-UY"
+ },
+ {
+   "t2s": 7001,
+   "country": "Spanish (Venezuela)",
+   "value": "es-VE"
+ },
+ {
+   "t2s": 7001,
+   "country": "Swedish",
+   "value": "sv-SE"
+ },
+ {
+   "t2s": 7001,
+   "country": "Thai (Thailand)",
+   "value": "th-TH"
+ },
+ {
+   "t2s": 7001,
+   "country": "Turkish",
+   "value": "tr-TR"
+ },
+ {
+   "t2s": 7001,
+   "country": "Ukrainian (Ukraine)",
+   "value": "uk-UA"
+ },
+ {
+   "t2s": 7001,
+   "country": "Vietnamese (Vietnam)",
+   "value": "vi-VN"
+ },
+ {
+   "t2s": 7001,
+   "country": "Zulu (South Africa)",
+   "value": "zu-ZA"
+ }
+]

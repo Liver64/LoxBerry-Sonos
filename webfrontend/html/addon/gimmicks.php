@@ -11,7 +11,7 @@ function GetTodayBauernregel() {
 		{
 		  $posstart = $posstart + 10;
 		  $posend = strpos($bauernregel, "\"", $posstart+1);
-		  $regel = " Die Bauernregel des Tages lautet: " . substr($bauernregel, $posstart, $posend-$posstart);
+		  $regel = "Die Bauernregel des Tages lautet: " . substr($bauernregel, $posstart, $posend-$posstart);
 		  echo "<br>Bauernregel: $regel";
 		  echo '<br>';
 		  return $regel;
@@ -29,7 +29,7 @@ function GetWitz()  {
 	$witz = str_replace("\"", "", $witz);
 	echo "<br>WITZ: $witz";
 	echo '<br>';
-	return $witz;
+	return urlencode($witz);
 }
 	
 ?>
