@@ -2,7 +2,7 @@
 
 ##############################################################################################################################
 #
-# Version: 	2.1.7
+# Version: 	3.0.0
 # Datum: 	07.01.2018
 # veröffentlicht in: http://plugins.loxberry.de/
 # 
@@ -128,6 +128,7 @@
 #			[Bugfix] Stabilere Scan Funktion nach Sonos Playern
 #			[Feature] Vicki als Stimme für Polly hinzugefügt	
 #			[Feature] Funktion batch optmiert um numerische, gespeicherte MP3 files aus dem tts/mp3 Verzeichnis zu inkludieren
+# 3.0.0
 #
 #
 ######## Script Code (ab hier bitte nichts ändern) ###################################
@@ -153,7 +154,7 @@ require_once('system/function.debug.php');
 require_once "loxberry_log.php";
 require_once "loxberry_system.php";
 __debug(false); // true = enable or false = disable
-
+echo "<pre>"; 
 
 
 // setze korrekte Zeitzone

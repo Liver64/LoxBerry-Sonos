@@ -89,7 +89,6 @@ my $MSUser		= $cfg->param("MINISERVER1.ADMIN");
 my $MSPass		= $cfg->param("MINISERVER1.PASS");
 
 # Create a logging object
-
 $LoxBerry::System::DEBUG		= 1;
 $LoxBerry::Web::DEBUG 			= 1;
 
