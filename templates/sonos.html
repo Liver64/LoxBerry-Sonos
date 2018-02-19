@@ -57,11 +57,11 @@
 			    <th style="width: 35px">
 				<img class='ico_delete' src='/plugins/<TMPL_VAR PLUGINDIR>/images/recycle-bin.png' border='0' width='24' height='24'>
 				</th>
-				<th align="left" style="height: 45px; width: 196px">Raum</th>
-			    <th align="left" style="height: 25px; width: 147px;">Modell</th>
-   			    <th align="left" style="height: 25px; width: 98px;">T2S Vol</th>
-			    <th align="left" style="height: 25px; width: 98px;">Sonos Vol</th>
-			    <th align="left" style="height: 25px; width: 98px;">Max Vol</th>
+				<th align="left" style="height: 45px; width: 196px"><TMPL_VAR ZONES.SONOS_ROOM></th>
+			    <th align="left" style="height: 25px; width: 147px;"><TMPL_VAR ZONES.SONOS_MODEL></th>
+   			    <th align="left" style="height: 25px; width: 98px;"><TMPL_VAR ZONES.SONOS_T2S-VOL></th>
+			    <th align="left" style="height: 25px; width: 98px;"><TMPL_VAR ZONES.SONOS_SONOS-VOL></th>
+			    <th align="left" style="height: 25px; width: 98px;"><TMPL_VAR ZONES.SONOS_MAX-VOL></th>
 			  </tr>
 			  <TMPL_VAR ROWSSONOSPLAYER>
 			</table>
@@ -69,7 +69,8 @@
 			<td style="width: 201px; height: 41px;" valign="top">
 			
 			<a onClick="Scan()" id="btnplayerscan" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="#">Scan Zonen</a>
-
+			<br>
+<a href="/admin/system/tools/logfile.cgi?logfile=plugins/sonos4lox/sonos.log&header=html&format=template" target="_blank" id="btnplayerscan" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="#">Error Log</a>
 		</td>
 		<td style="height: 13px; width: 24px;"></td>
 
@@ -93,6 +94,7 @@
 				<input onclick="disable()" type="radio" name="t2s_engine" id="tts_google" value="7001" <TMPL_VAR SELECTEDINSTANZ7>>
 				<label for="tts_google">Google</label>
 			</fieldset>
+			<script>$("input[name=t2s_engine]").val(['<TMPL_VAR TTS.t2s_engine>']);</script>
 			</td>
 		<td valign="middle" style="height: 45px; width: 201px;">
 		<font size="-1"><a id="linkvoicerss" href="http://www.voicerss.org/login.aspx" target="_blank">Kostenlosen API Key 
@@ -109,7 +111,7 @@
 			<label id="lapikey">API-Key (VoiceRSS,  Polly):</label>
 		</td>
 		<td style="width: 50%; height: 48px">
-			<input id="apikey" name="apikey" type="text" class="textfield" value="<TMPL_VAR APIKEY>">
+			<input id="apikey" name="apikey" type="text" class="textfield" value="<TMPL_VAR TTS.API-key>">
 		</td>
 		<td style="height: 48px; width: 201px;" class="auto-style4">
 		</td>
@@ -120,7 +122,7 @@
 			<label id="lseckey">Secret-Key (Polly):</label>
 		</td>
 		<td style="width: 50%; height: 48px;">
-			<input id="seckey" name="seckey" type="text" class="textfield" value="<TMPL_VAR SECKEY>">
+			<input id="seckey" name="seckey" type="text" class="textfield" value="<TMPL_VAR TTS.secret-key>">
 		<td style="width: 201px; height: 48px;">
 		</td>
 		<td style="width: 24px; height: 48px;"></td>		
@@ -150,7 +152,7 @@
 							</fieldset>
 						<td style="height: 36px; width: 294px;" class="auto-style2">
 								<fieldset style="width: 48px">
-								<input name="langiso" id ="langiso" style="width: 46px" type="text">
+								<input name="langiso" id ="langiso" style="width: 46px" readonly="true" type="text" align="middle">
 							</fieldset>
 						</td>
 					</div>
@@ -177,6 +179,7 @@
 						<option value="6" <TMPL_VAR MP3STORE6>>6 Tage</option>
 						<option value="7" <TMPL_VAR MP3STORE7>>7 Tage</option>
 					</select>
+					<script>$('#mp3store').val('<TMPL_VAR MP3.MP3store>').slider('refresh');</script>
 				</td>
 			<td>
 				<table border=0 width="100%">
@@ -185,7 +188,7 @@
 							<label id="lfile_gong">Dateiname f&uumlr Jingle MP3:</label>
 						</td>
 						<td style="height: 30px">
-							<input id="file_gong" name="file_gong" type="text" class="textfield" value="<TMPL_VAR FILE_GONG>">
+							<input id="file_gong" name="file_gong" type="text" class="textfield" value="<TMPL_VAR MP3.file_gong>">
 						</td>
 						<td style="height: 30px">
 							.mp3
@@ -210,12 +213,13 @@
 				<tr>
 					<td style="width: 25%">
 					<fieldset>
-							<select id="sendlox" name="sendlox" data-role="flipswitch" style="width: 104px" onchange="selection()">
+							<select id="sendlox" name="sendlox" data-role="flipswitch" style="width: 104px">
 								<option <TMPL_VAR SELECTEDSENDLOX1> value="false">Aus</option>
 								<option <TMPL_VAR SELECTEDSENDLOX2> value="true">An</option>
 								
 							</select>
 							</fieldset>
+						<script>$('#sendlox').val('<TMPL_VAR LOXONE.LoxDaten>').slider('refresh');</script>	
 							
 						
 					</td>
@@ -236,7 +240,7 @@
 							UDP Port:</td>
 						
 				<td class="auto-style2" style="width: 27px">
-					<input id="udpport" name="udpport" type="text" class="auto-style6" value="<TMPL_VAR UDPPORT>" style="width: 71px">
+					<input id="udpport" name="udpport" type="text" class="auto-style6" value="<TMPL_VAR LOXONE.LoxPort>" style="width: 71px">
 				</td>
 			</tr>
 		</table>
@@ -268,6 +272,7 @@
 								<option <TMPL_VAR SELECTEDDEBUG2> value="1">Ein</option>
 							</select>
 						</fieldset>
+						<script>$('#debugging').val('<TMPL_VAR SYSTEM.debuggen>').slider('refresh');</script>
 					</td>
 					<td class="auto-style1">
  					
@@ -295,7 +300,7 @@
 			<td style="height: 33px; width: 24px;"></td>
 		</tr>
 		<tr>
-			<td colspan=3 valign="middle">
+			<td colspan=3 valign="middle" style="height: 33px">
 				<font size="-1">Bitte &uumlbernehme die Standard Werte und &aumllndere diese Parameter erst nach erfolgreicher Installation (siehe Hilfe)!
 				</font>
 
@@ -316,7 +321,7 @@
 									<option value="7" <TMPL_VAR VOLUME3>>7 %</option>
 									<option value="10" <TMPL_VAR VOLUME4>>10 %</option>
 								</select>
-
+							<script>$('#volume').val('<TMPL_VAR MP3.volumedown>').slider('refresh');</script>
 							</td>
 							<td>
 								<table border=0 width="100%">
@@ -348,6 +353,7 @@
 							<input onclick="disable()" type="radio" name="rampto" id="rmpauto" value="auto" <TMPL_VAR SELECTEDRAMPTO3>>
 				 			<label for="rmpauto">Auto</label>
 						</fieldset>
+					<script>$("input[name=rampto]").val(['<TMPL_VAR TTS.rampto>']);</script>
 					</td>
 					<td style="width: 40%; height: 45px">
 						<table border=0 align="left" style="width: 99%">
@@ -356,7 +362,7 @@
 								<label id="lrmpvol">Rampto Volume:</label>
 								</td>
 								<td style width: "60%" class="auto-style2">
-									<input id="rmpvol" name="rmpvol" type="text" data-validation="number" class="textfield" value="<TMPL_VAR RMPVOL>"
+									<input id="rmpvol" name="rmpvol" type="text" data-validation="number" class="textfield" value="<TMPL_VAR TTS.volrampto>"
 									data-validation-allowing="range[1;100]"
 									data-validation-error-msg="* Rampto Volume: Bitte nur Zahlen von 1 bis 100 eingeben.">
 								</td>
@@ -410,7 +416,9 @@
 							<select id="announceradio" name="announceradio" data-role="flipswitch">
 								<option <TMPL_VAR SELECTEDANNOUNCERADIO1> value="0">Aus</option>
 								<option <TMPL_VAR SELECTEDANNOUNCERADIO2> value="1">Ein</option>
-							</select>&nbsp;&nbsp; <span class="auto-style4">(gilt 
+							</select>&nbsp;&nbsp; 
+							<script>$('#announceradio').val('<TMPL_VAR VARIOUS.announceradio>').slider('refresh');</script>
+							<span class="auto-style4">(gilt 
 							nur f&uumlr die Funktionen '<strong>nextradio</strong>' 
 							und '<strong>zapzone</strong>')</span>
 						</fieldset>
@@ -455,6 +463,8 @@
 									<option value="shh" <TMPL_VAR REGION11>>Schleswig-Holstein und Hamburg</option>
 									<option value="thu" <TMPL_VAR REGION12>>Th&uumlringen</option>
 						</select>
+						<script>$('#region').val('<TMPL_VAR LOCATION.region>').slider('refresh');</script>
+
 				</td>
 			<td>
 				<table border=0 width="100%">
@@ -462,7 +472,7 @@
 						<td width="50%" class="auto-style1" style="height: 30px">
 							Stadt oder Gemeinde:</td>
 						<td style="height: 30px">
-							<input id="town" name="town" type="text" class="textfield" value="<TMPL_VAR TOWN>">
+							<input id="town" name="town" type="text" class="textfield" value="<TMPL_VAR LOCATION.town>">
 						</td>
 						
 					</tr>
@@ -496,7 +506,7 @@
 			<label id="lapikey">Google (distance matrix API):</label>
 		</td>
 		<td style="width: 50%; height: 48px">
-			<input id="googlekey" name="googlekey" type="text" class="textfield" value="<TMPL_VAR GOOGLEKEY>">
+			<input id="googlekey" name="googlekey" type="text" class="textfield" value="<TMPL_VAR LOCATION.googlekey>">
 		</td>
 		<td style="height: 48px; width: 201px;" class="auto-style4">
 		<font size="-1">
@@ -511,7 +521,7 @@
 				<table border=0 width="100%">
 			<tr>
 				<td style="width: 41%">
-					<input id="googletown" name="googletown" type="text" class="textfield" value="<TMPL_VAR GOOGLETOWN>" style="width: 215px">
+					<input id="googletown" name="googletown" type="text" class="textfield" value="<TMPL_VAR LOCATION.googletown>" style="width: 215px">
 				</td>
 			<td>
 				<table border=0 width="100%">
@@ -519,7 +529,7 @@
 						<td class="auto-style1" style="height: 30px; width: 24%;">
 							Adresse:</td>
 						<td style="height: 30px">
-							<input id="googlestreet" name="googlestreet" type="text" class="textfield" value="<TMPL_VAR GOOGLESTREET>" style="width: 231px">
+							<input id="googlestreet" name="googlestreet" type="text" class="textfield" value="<TMPL_VAR LOCATION.googlestreet>" style="width: 231px">
 						</td>
 						
 					</tr>
@@ -545,10 +555,10 @@
 			<label id="lwastecal">Abfallkalender:</label>
 		</td>
 		<td style="width: 50%; height: 48px">
-			<input id="wastecal" name="wastecal" type="text" class="textfield" value="<TMPL_VAR WASTECAL>">
+			<input id="wastecal" name="wastecal" type="text" class="textfield" value="<TMPL_VAR VARIOUS.CALDavMuell>">
 		</td>
 		<td style="height: 48px; width: 201px;" class="auto-style4">
-		<input name="val_t2s" id="val_t2s" class="textfield" value="<TMPL_VAR T2S_ENGINE>" style="width: 96px">&nbsp;
+		<input name="val_t2s" id="val_t2s" class="textfield" value="<TMPL_VAR T2S_ENGINE>" type="hidden" style="width: 96px">;
 		<td style="height: 48px; width: 24px;">
 
 		</td>
@@ -558,7 +568,7 @@
 			<label id="lcal">Kalender:</label>
 		</td>
 		<td style="width: 50%; height: 48px">
-			<input id="cal" name="cal" type="text" class="textfield" value="<TMPL_VAR CAL>">
+			<input id="cal" name="cal" type="text" class="textfield" value="<TMPL_VAR VARIOUS.CALDav2>">
 		</td>
 		<td style="height: 48px; width: 201px;" class="auto-style4">
 		<input name="val_voice" id="val_voice" type="hidden" class="textfield" value="<TMPL_VAR VOICE>" style="width: 93px">
@@ -795,6 +805,10 @@ function initial_lang_voice_load()  {
 		} else {
 			$('#voice').empty();
 			$('#voice').addClass('ui-disabled');
+			
+
+			
+			
 		}
 	}
 	$('#voice').addClass('ui-disabled');
@@ -818,6 +832,29 @@ function initial_lang_voice_load()  {
 	{
          
     }
+    $('#lang').append('<option selected="true" value="empty" disabled>** Sprache wählen **</option>');
+	$.getJSON(url, function(listlang)  {
+    $.each(listlang, function(index, value)  { 
+    //alert(value.value);
+    if (value.value == '<TMPL_VAR CODE>') {
+		$('#lang').append('<option selected="selected" value="'+value.value+'">'+value.country+'</option>');
+		$('#t2s_lang_country').val('+value.country+');
+	} else {
+		$('#lang').append('<option value="'+value.value+'">'+value.country+'</option>');
+	}
+	$('#voice').removeClass('ui-disabled');
+	$('#lang').selectmenu('refresh', true);
+    });
+});
+//$('#lang').selectmenu('refresh', true);
+    
+    
+    
+    
+    // Generate language ISO Code for info
+	var isocode = '<TMPL_VAR CODE>'.substr(0, 2);
+	$('#langiso').val(isocode);
+	//alert(isocode);
     $('#lang').empty();
           $('#voice').empty();
           //$('#lang').append('<option selected="true" value="empty" disabled>** Sprache wählen **</option>');
@@ -836,9 +873,6 @@ function initial_lang_voice_load()  {
             });
           $('select').selectmenu();
           $('select').selectmenu('refresh', true);
-
-	
-	//alert('AB HIER');
 	$('#lang').selectmenu('refresh', true);
 	$('#voice').selectmenu('refresh', true);
 
