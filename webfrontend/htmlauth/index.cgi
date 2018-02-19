@@ -31,7 +31,7 @@ use File::HomeDir;
 use Cwd 'abs_path';
 use JSON qw( decode_json );
 use utf8;
-#use warnings;
+use warnings;
 #use strict;
 #no strict "refs"; # we need it for template system
 
@@ -749,8 +749,12 @@ sub scan
 	
 	#import Sonos Player from JSON file
 	open (my $fh, '<:raw', $lbpconfigdir . '/' . $plugintempplayerfile) or die("Die Datei: $plugintempplayerfile konnte nicht geöffnet werden! $!\n");
-	our $file; { local $/; $file = <$fh>; }
-	our $config = decode_json($file);
+	my $file;
+	local $/ = undef;
+	$file = <$fh>;
+	close($fh);
+	if ( $file ne "[]" ) {
+	my $config = decode_json($file);
 	
 	# creates table of Sonos devices
 	foreach my $key (keys %{$config})
@@ -767,12 +771,13 @@ sub scan
 	}
 	$template->param("ROWSSONOSPLAYER", $rowssonosplayer);
 	
-	$template_title = "$SL{'BASIS.MAIN_TITLE'}: v$sversion";
+	#$template_title = "$SL{'BASIS.MAIN_TITLE'}: v$sversion";
 	#LoxBerry::Web::head();
 	#LoxBerry::Web::pagestart($template_title, $helplink, $helptemplate);
-	print $template->output();
+	#print $template->output();
 	#LoxBerry::Web::pageend();
 	#LoxBerry::Web::foot();
+	}
 	return();
 	
 
