@@ -291,7 +291,7 @@ function networkstatus() {
 * @return: GetPositionInfo, GetMediaInfo, GetTransportInfo, GetTransportSettings, GetCurrentPlaylist
 **/
 
-  function debug() {
+  function debugsonos() {
  	global $sonos, $sonoszone;
 	$GetPositionInfo = $sonos->GetPositionInfo();
 	$GetMediaInfo = $sonos->GetMediaInfo();

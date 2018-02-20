@@ -70,7 +70,15 @@
 			
 			<a onClick="Scan()" id="btnplayerscan" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="#">Scan Zonen</a>
 			<br>
-			
+			<button onclick="window.open('/admin/system/tools/logfile.cgi?logfile=plugins/sonos4lox/sonos.log&amp;header=html&amp;format=template', 'log'); return false;" id="logview" data-role="button" data-inline="true" data-mini="true" data-icon="bars"><TMPL_VAR TEMPLATE.BUTTON_LOG_VIEW></button>
+				<select id="LOGLEVEL" name="LOGLEVEL" data-mini="true">
+					<option value="7" ><TMPL_VAR TEMPLATE.LOGLEVEL> <TMPL_VAR TEMPLATE.LOGLEVEL7></option>
+					<option value="4"><TMPL_VAR TEMPLATE.LOGLEVEL> <TMPL_VAR TEMPLATE.LOGLEVEL4></option>
+					<option value="3"><TMPL_VAR TEMPLATE.LOGLEVEL> <TMPL_VAR TEMPLATE.LOGLEVEL3></option>
+					<option value="2"><TMPL_VAR TEMPLATE.LOGLEVEL> <TMPL_VAR TEMPLATE.LOGLEVEL2></option>
+				 </select>
+			 <script> $("#LOGLEVEL").val('<TMPL_VAR SYSTEM.LOGLEVEL>'); </script>
+	<td style="height: 13px; width: 24px;"></td>
 
 	</tr>
 	<tr>
@@ -135,9 +143,8 @@
 					<div data-role="collapsible">
 						<td style="height: 36px; width: 294px;" class="auto-style5">
 							<fieldset style="width: 286px">
-								<select onclick="filterlang()" id="lang" name="lang" data-mini="true" style="align:left; width: 258px;"
-								data-validation-error-msg="Bitte Sprache auswählen" 
-								data-validation-rule="special:number-min-digits:1">
+								<select onclick="filterlang()" id="lang" name="lang" data-validation-error-msg="Bitte noch zusätzlich die Standardsprache auswählen" 
+								data-validation-rule="special:number-min-digits:1" data-mini="true" style="align:left; width: 258px;">
 								</select>
 							</fieldset>
 						</td>
@@ -145,9 +152,8 @@
 					</div>
 						<td style="height: 36px; width: 294px;" class="auto-style5">
 							<fieldset style="width: 187px">
-								<select onclick="filtervoice()" id="voice" name="voice" data-mini="true" style="align:left; width: 206px;"
-								data-validation-error-msg="Bitte Stimme auswählen" 
-								data-validation-rule="special:number-min-digits:1">
+								<select onclick="filtervoice()" id="voice" name="voice" data-validation-error-msg="Bitte noch zusätzlich die Standardstimme auswählen" 
+								data-validation-rule="special:number-min-digits:1" data-mini="true" style="align:left; width: 206px;">
 								</select>
 							</fieldset>
 						<td style="height: 36px; width: 294px;" class="auto-style2">
@@ -179,9 +185,7 @@
 						<option value="6" <TMPL_VAR MP3STORE6>>6 Tage</option>
 						<option value="7" <TMPL_VAR MP3STORE7>>7 Tage</option>
 					</select>
-					<script>
-					$('#mp3store').val('<TMPL_VAR MP3.MP3store>');
-					</script>
+					<script>$('#mp3store').val('<TMPL_VAR MP3.MP3store>').slider('refresh');</script>
 				</td>
 			<td>
 				<table border=0 width="100%">
@@ -215,14 +219,15 @@
 				<tr>
 					<td style="width: 25%">
 					<fieldset>
-							<select onchange="selection()"  id="sendlox" name="sendlox" data-role="flipswitch" style="width: 104px">
+							<select id="sendlox" name="sendlox" data-role="flipswitch" style="width: 104px">
 								<option <TMPL_VAR SELECTEDSENDLOX1> value="false">Aus</option>
 								<option <TMPL_VAR SELECTEDSENDLOX2> value="true">An</option>
+								
 							</select>
 							</fieldset>
-						<script>
-						$('#sendlox').val('<TMPL_VAR LOXONE.LoxDaten>')
-						</script>	
+						<script>$('#sendlox').val('<TMPL_VAR LOXONE.LoxDaten>').slider('refresh');</script>	
+							
+						
 					</td>
 				
 				<td class="auto-style1" style="width: 23px">	
@@ -241,8 +246,7 @@
 							UDP Port:</td>
 						
 				<td class="auto-style2" style="width: 27px">
-					<input id="udpport" name="udpport" type="text" class="auto-style6" value="<TMPL_VAR LOXONE.LoxPort>" style="width: 71px"
-					data-validation-error-msg="<TMPL_VAR ERRORS.ERR_UDPPORT>" data-validation-rule="special:port">
+					<input id="udpport" name="udpport" type="text" class="auto-style6" value="<TMPL_VAR LOXONE.LoxPort>" style="width: 71px">
 				</td>
 			</tr>
 		</table>
@@ -262,50 +266,26 @@
 		</tr>
 		<tr>
 			<td style="height: 60px; width: 25%;">
-			<label id="ldebug">Debugging / Logging:</label>
+			<label id="ldebug">Debugging (Browser):</label>
 		</td>
 		<td width="50%" style="height: 60px">
-		
-
-		<div style="display:table; width:80%;">
-			<div style="display:table-row;">
-				<div style="display:table-cell; min-witdh:30%; width:30%;">
-							<div style="display:table; width:90%; padding:10px; border: 1px solid black; border-radius: 5px; background-color: #bebebe;">
-							 <div style="display:table-row;">
-								<div style="display:table-cell; border-radius: 5px;" id="delete_log_div">
-								 <button id="delete_log_btn" onclick="$('#delete_log_div'); 
-								 $('#delete_log_btn').html('<TMPL_VAR TEMPLATE.LOG_BUTTON_DELETE_WAIT>'); $.ajax({url: '', type: 'GET', data: { 'delete_log':1},
-								 <!--.css('background-color','yellow')-->
-						            success: function (data) {
-						                <!--$('#delete_log_div').css('background-color','green');-->
-						                $('#delete_log_btn').html('<TMPL_VAR TEMPLATE.LOG_BUTTON_DELETE_OK>');
-						                setTimeout( function() { $('#delete_log_div').css('background-color',''); $('#delete_log_btn').html('<TMPL_VAR TEMPLATE.LOG_BUTTON_DELETE>'); }, 2000);
-						            },
-						            error: function (textStatus, errorThrown) {
-						                <!--$('#delete_log_div').css('background-color','red');-->
-						                $('#delete_log_btn').html('<TMPL_VAR TEMPLATE.LOG_BUTTON_DELETE_FAIL>');
-						                setTimeout( function() { $('#delete_log_div').css('background-color',''); $('#delete_log_btn').html('<TMPL_VAR TEMPLATE.LOG_BUTTON_DELETE>');}, 2000);
-						
-						            }	}); return false;" data-role="button" data-inline="true" data-mini="true" data-icon="delete"><TMPL_VAR TEMPLATE.LOG_BUTTON_DELETE></button>
-								</div>
-								<div style="display:table-cell;">
-								 	<button onclick="window.open('/admin/system/tools/logfile.cgi?logfile=plugins/sonos4lox/sonos.log&amp;header=html&amp;format=template', 'log'); return false;" id="logview" data-role="button" data-inline="true" data-mini="true" data-icon="bars"><TMPL_VAR TEMPLATE.BUTTON_LOG_VIEW></button>
-								</div>
-								<div style="display:table-cell;">
-									<select id="LOGLEVEL" name="LOGLEVEL" data-mini="true">
-										<option value="7" ><TMPL_VAR TEMPLATE.LOGLEVEL> <TMPL_VAR TEMPLATE.LOGLEVEL7></option>
-										<option value="4"><TMPL_VAR TEMPLATE.LOGLEVEL> <TMPL_VAR TEMPLATE.LOGLEVEL4></option>
-										<option value="3"><TMPL_VAR TEMPLATE.LOGLEVEL> <TMPL_VAR TEMPLATE.LOGLEVEL3></option>
-										<option value="2"><TMPL_VAR TEMPLATE.LOGLEVEL> <TMPL_VAR TEMPLATE.LOGLEVEL2></option>
-									 </select>
-								 <script> $("#LOGLEVEL").val('<TMPL_VAR SYSTEM.LOGLEVEL>'); </script>
-								</div>
-								</div>
-							 </div>
-							</div>
-						 </div>
-					</div>
-				
+			<table border=0 width="100%">
+				<tr>
+					<td width="20%">
+						<fieldset>
+							<select id="debugging" name="debugging" data-role="flipswitch">
+								<option <TMPL_VAR SELECTEDDEBUG1> value="0">Aus</option>
+								<option <TMPL_VAR SELECTEDDEBUG2> value="1">Ein</option>
+							</select>
+						</fieldset>
+						<script>$('#debugging').val('<TMPL_VAR SYSTEM.debuggen>').slider('refresh');</script>
+					</td>
+					<td class="auto-style1">
+ 					
+					</td>
+					
+</tr>
+	</table>
 		</td>
 			
 			<td style="height: 30px; width: 201px;">
@@ -347,7 +327,7 @@
 									<option value="7" <TMPL_VAR VOLUME3>>7 %</option>
 									<option value="10" <TMPL_VAR VOLUME4>>10 %</option>
 								</select>
-							<script>$('#volume').val('<TMPL_VAR MP3.volumedown>');</script>
+							<script>$('#volume').val('<TMPL_VAR MP3.volumedown>').slider('refresh');</script>
 							</td>
 							<td>
 								<table border=0 width="100%">
@@ -420,7 +400,6 @@
 					</font>
 		<p>
 		</p>
-		
 			<table width="100%" cellpadding="2" cellspacing="0" border="1px" border="1" id="tblBasic2">
 			  <tr>
 				<th style="width: 35px">
@@ -444,8 +423,7 @@
 								<option <TMPL_VAR SELECTEDANNOUNCERADIO1> value="0">Aus</option>
 								<option <TMPL_VAR SELECTEDANNOUNCERADIO2> value="1">Ein</option>
 							</select>&nbsp;&nbsp; 
-							<script>$('#announceradio').val('<TMPL_VAR VARIOUS.announceradio>')
-							</script>
+							<script>$('#announceradio').val('<TMPL_VAR VARIOUS.announceradio>').slider('refresh');</script>
 							<span class="auto-style4">(gilt 
 							nur f&uumlr die Funktionen '<strong>nextradio</strong>' 
 							und '<strong>zapzone</strong>')</span>
@@ -491,7 +469,7 @@
 									<option value="shh" <TMPL_VAR REGION11>>Schleswig-Holstein und Hamburg</option>
 									<option value="thu" <TMPL_VAR REGION12>>Th&uumlringen</option>
 						</select>
-						<script>$('#region').val('<TMPL_VAR LOCATION.region>');</script>
+						<script>$('#region').val('<TMPL_VAR LOCATION.region>').slider('refresh');</script>
 
 				</td>
 			<td>
@@ -573,7 +551,6 @@
 	<tr>
 		<td colspan=3 valign="middle" style="height: 33px">
 					<h3>&nbsp;</h3><hr />
-
 					<h3>Kalendar Ansage basierend auf CALDav Plugin 
 					(Syntaxermittlung im Plugin durchf&uumlhren)</h3>
 				</td>
@@ -587,8 +564,7 @@
 			<input id="wastecal" name="wastecal" type="text" class="textfield" value="<TMPL_VAR VARIOUS.CALDavMuell>">
 		</td>
 		<td style="height: 48px; width: 201px;" class="auto-style4">
-		<input name="val_t2s" id="val_t2s" class="textfield" value="<TMPL_VAR T2S_ENGINE>" type="hidden" style="width: 96px">
-		<input name="lblang" id="lblang" class="textfield" value="<TMPL_VAR LBLANG>" type="hidden" style="width: 96px">
+		<input name="val_t2s" id="val_t2s" class="textfield" value="<TMPL_VAR T2S_ENGINE>" type="hidden" style="width: 96px">;
 		<td style="height: 48px; width: 24px;">
 
 		</td>
@@ -627,7 +603,7 @@
 				<button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check">Speichern</button>
 			</center>
 		</p>
-	
+		
 	</form>
 
 
@@ -636,12 +612,12 @@
 
 
 	
-//	var $messages = $('#form-error-message');
-//	    $.validate({
-//	    modules : 'security',
-//	    scrollToTopOnError : true,
-//	    errorMessagePosition : $messages,
-//  });
+	var $messages = $('#form-error-message');
+	    $.validate({
+	    modules : 'security',
+	    scrollToTopOnError : true,
+	    errorMessagePosition : $messages,
+  });
 
 
 // *** Functions to be executed during loading the page ***
@@ -652,8 +628,6 @@ initial_lang_voice_load();
 	
 // Disable some options on Load depending on selected value
 disable();
-
-selection()
 
 });
 
@@ -751,37 +725,17 @@ function Scan() {
 
 }
 
-function float() 
-{
-	// Ethernet or WLAN
-	if ( document.main_form3.netzwerkanschluss_eth.checked == true ) {
-		validate_clean_objects(['#netzwerkssid','#netzwerkschluessel']);
-		$('.area-netzwerkssid').fadeOut(1);
-		$('.area-netzwerkschluessel').fadeOut(50);
-	}
-	else {
-		validate_chk_object(['#netzwerkssid','#netzwerkschluessel']);
-		$('.area-netzwerkssid').fadeIn(1);
-		$('.area-netzwerkschluessel').fadeIn(50);
-	}
-}
-
 
 
 // make UDP Port mandatory in case flipswitch value is true
 function selection() {    
 var cat = document.getElementById('sendlox').value;    
     if (cat == "true") {
-		//$("#udpport").attr('required', ''); 
-		$('#miniserver').removeClass('ui-disabled'); 
-		$('#udpport').removeClass('ui-disabled'); 
+		$("#udpport").attr('required', ''); 
 	} else {
-		//$("#udpport").removeAttr('required');
-		$('#miniserver').addClass('ui-disabled');
-		$('#udpport').addClass('ui-disabled');
+		$("#udpport").removeAttr('required'); 
     }
 $("#sendlox").flipswitch("refresh"); 
-$('#miniserver').selectmenu('refresh', true);
 }
 
 
@@ -998,17 +952,13 @@ function initial_lang_voice_load()  {
 		if (document.main_form.tts_polly.checked == true ) {
 			var selectvoice = document.getElementById("voice").value;
 			if (selectlang == 'empty')  {
-//				validate_enable('#lang');
 				alert('Bitte die Standardsprache für T2S auswählen!');
 				return false;
 			}
-			if (selectvoice == '1')  {
-//				alert(selectvoice);
-//				validate_enable('#voice');  
+			if (selectvoice == 'empty')  {  
 				alert('Bitte die Standardstimme für T2S auswählen!');
 				return false;
 			}
-//			validate_chk_object(['#lang','#voice']);
 		}
 		else if (document.main_form.tts_mac_osx.checked == true ) {
 			if (selectlang == 'empty')  {
@@ -1057,7 +1007,7 @@ function initial_lang_voice_load()  {
 	    $('#voice').empty();
 	    var url = "/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/langfiles/polly_voices.json";
 	    $.getJSON(url, function(listvoice)  {
-			$('#voice').append('<option selected="true" value=1 disabled>** Stimme wählen **</option>');
+			$('#voice').append('<option selected="true" value="empty" disabled>** Stimme wählen **</option>');
 		    var selectedvoiceList = listvoice.filter(function(item){
 		    	return item.language === selectedlanguage;
 		  	});
@@ -1078,35 +1028,6 @@ function initial_lang_voice_load()  {
 	}
 }
 
-	
-		
-
-// Error validation
-// validate UDP Port
-var slox = document.getElementById('sendlox').value;   
-if (slox == "true") {
-		validate_enable('#udpport');
-		validate_chk_object(['#udpport']);
-	}
-	else 
-	{
-		validate_enable('#udpport');
-		validate_clean_objects(['#udpport']);
-	}
-	
-	
-// validate Volume entries per player
-  var iteration = document.getElementById('countplayers').value;
-  iteration = parseInt(iteration)
-  iteration += 1;
-	for (i = 1; i < iteration; ++i) {
-		validate_enable('#t2svol' + i + '');
-  		validate_enable('#sonosvol' + i + '');
-  		validate_enable('#maxvol' + i + '');
-  	validate_chk_object(['#t2svol' + i + '', '#sonosvol' + i + '', '#maxvol' + i + '']);
-	}
-	
-	
  
 }); 
 

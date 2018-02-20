@@ -149,29 +149,18 @@ include("Radio.php");
 include("Restore_T2S.php");
 include("Save_T2S.php");
 include("Speaker.php");
-require_once('system/function.debug.php');
-
-require_once "loxberry_log.php";
-require_once "loxberry_system.php";
-__debug(false); // true = enable or false = disable
-echo "<pre>"; 
-
+#require_once('system/function.debug.php');
+require_once('system/debug.php');
 
 // setze korrekte Zeitzone
 date_default_timezone_set(date("e"));
 $valid_playmodes = array("NORMAL","REPEAT_ALL","REPEAT_ONE","SHUFFLE_NOREPEAT","SHUFFLE","SHUFFLE_REPEAT_ONE");
 echo "<pre>"; 
 
-if (!function_exists('posix_getpwuid')) {
-	$home = @getenv('DOCUMENT_ROOT');
-} else {
-	$home = posix_getpwuid(posix_getuid());
-	$home = $home['dir'];
-}
+# prepare variables
+$home = $lbhomedir;
 $myIP = $_SERVER["SERVER_ADDR"];
-
-$psubfolder = __FILE__;
-$psubfolder = preg_replace('/(.*)\/(.*)\/(.*)$/',"$2", $psubfolder);
+$psubfolder = $lbpplugindir;
 
 #-- Start Loxberry ------------------------------------------------------------------
 	
@@ -181,7 +170,7 @@ $psubfolder = preg_replace('/(.*)\/(.*)\/(.*)$/',"$2", $psubfolder);
 		trigger_error('The Sonos4lox Plugin require minimum LoxBerry Version 0.2.3! Please upgrade LoxBerry', E_USER_NOTICE);
 		exit;
 	}
-
+	
 	$myFolder = "$home/config/plugins/$psubfolder/";
 	$myMessagepath = "//$myIP/sonos_tts/";
 	$MessageStorepath = "$home/data/plugins/$psubfolder/tts/";
@@ -219,6 +208,7 @@ $debug = $config['SYSTEM']['debuggen'];
 if($debug == 1) { 
 	echo "<pre><br>"; 
 }
+echo "<pre><br>"; 
  
 // Übernahme und Deklaration von Variablen aus der Konfiguration
 $sonoszonen = $config['sonoszonen'];
@@ -239,6 +229,11 @@ $sonoszonen = $config['sonoszonen'];
 #print_r($sonoszone);
 #print_r($config);
 #exit;
+
+# checking size of LoxBerry logfile
+check_size_logfile();
+
+debug("Entering plugin for ".$_SERVER['REMOTE_ADDR'],7);
 
 # Start des eigentlichen Srcipts
 if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
