@@ -323,7 +323,7 @@ function sendmessage() {
 			$mode = "";
 			$actual[$master]['CONNECT'] == 'true' ? $mode = '1' : $mode = '0';
 			SetVolumeModeConnect($mode, $master);
-			logging();
+			#logging();
 			delmp3();
 	}
 
@@ -439,7 +439,7 @@ function sendgroupmessage() {
 			SetVolumeModeConnect($mode, $master);
 			#$modeback = '1' ? $mode = '1' : $mode = '0';
 			#SetVolumeModeConnect($mode);
-			logging();
+			#logging();
 			delmp3();
 			
 }

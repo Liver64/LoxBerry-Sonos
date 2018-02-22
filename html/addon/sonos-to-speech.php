@@ -34,11 +34,7 @@ function s2s()
 			$text = 'Es läuft '.$sender;
 		}
 		$text = urlencode($text);
-		if ($debug == 1) 
-		{
-			echo ($text); 
-			echo '<br />';
-		}
+		LOGGING('Song Announcement: '.$text,6);
 		return ($text);
 	} 
 }

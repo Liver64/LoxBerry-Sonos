@@ -12,7 +12,7 @@ $region = $config['LOCATION']['region'];
 $town = htmlentities($town);
 
 if (empty($town) or empty($region)) {
-	trigger_error('Es ist keine Stadt bzw. Gemeinde oder Bundesland in der Konfiguration gepflegt. Bitte erst eingeben!', E_USER_ERROR);
+	LOGGING('Es ist keine Stadt bzw. Gemeinde oder Bundesland in der Konfiguration gepflegt. Bitte erst eingeben!',3);
 	exit;
 }
 
@@ -71,6 +71,7 @@ $text = str_replace(" m ", " Metern ", $text);
 
 $url = urlencode($text);
 #echo $url;
+LOGGING('Wetter Warnung Ansage: '.$url,6);
 return $url;
 
 curl_setopt($curl, CURLOPT_URL, $url);

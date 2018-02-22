@@ -8,7 +8,8 @@ function tt2t()
     	
 	$valid_traffic_models = array("pessimistic","best_guess","optimistic");
 	if (empty($_GET['to'])) {
-        trigger_error('No destination address maintained in syntax. Please enter address!', E_USER_ERROR);
+		LOGGING('You do not have a destination address maintained in syntax. Please enter address!',3);
+		exit;
     } else {
 		$arrival = $_GET['to'];
 	}
@@ -28,7 +29,8 @@ function tt2t()
 		if (in_array($traffic_model, $valid_traffic_models)) {
 			$traffic_model 	= $_GET['model'];
 		} else {
-			trigger_error('The traffic model entered is invalid. Please correct!', E_USER_ERROR);
+			LOGGING('The traffic model you have entered is invalid. Please correct!',3);
+			exit;
 		}
 	}
 	$lang		= "de"; // https://developers.google.com/maps/faq#languagesupport
@@ -85,23 +87,24 @@ function tt2t()
         }
         $text = $textpart1 . $textpart2;
     } else {
-        trigger_error('The URL is not complete or invalid. Please check URL!', E_USER_ERROR);
+		LOGGING('The entered URL is not complete or invalid. Please check URL!',3);
+        exit;
     }
     $words = urlencode($text);
 	#echo $request;
 	
 	if( $debug == 1) {
-		echo "<b>-----------------------------------------------------------------------</b><br>";
-		echo "Text = " . $text . "<br>";
-		echo "Abfahrtsort = " . $start . "<br>";
-		echo "Ankunftsort = " . $arrival . "<br>";
-		echo "geplante Abfahrtszeit = " . date("H:i", $time) . "<br>";
-		echo "Traffic Model = " . $traffic_model . "<br>";
-		echo "Mode = " . $mode . "<br>";
-		echo "Entfernung = " . $distance . "km / Zeit = " . $hours . " Stunden " . $minutes . " Minuten<br>";
-		echo "<b>-----------------------------------------------------------------------</b><br>";
+	#	$ttd = "<b>-----------------------------------------------------------------------</b><br>";
+	#	$ttd. = "Text = " . $text . "<br>";
+	#	$ttd. = "Abfahrtsort = " . $start . "<br>";
+	#	$ttd. = "Ankunftsort = " . $arrival . "<br>";
+	#	$ttd. = "geplante Abfahrtszeit = " . date("H:i", $time) . "<br>";
+	#	$ttd. = "Traffic Model = " . $traffic_model . "<br>";
+	#	$ttd. = "Mode = " . $mode . "<br>";
+	#	$ttd. = "Entfernung = " . $distance . "km / Zeit = " . $hours . " Stunden " . $minutes . " Minuten<br>";
+	#	$ttd. = "<b>-----------------------------------------------------------------------</b><br>";
 	}
-	
+	LOGGING('Destination announcement: '.$text,6);
 	return $words;
 }
 

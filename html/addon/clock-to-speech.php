@@ -49,11 +49,8 @@ function c2s()
 	
 	$ttext = $Vorspann." Es ist jetzt ".$Stunden." Uhr und ".$Minuten. " Minuten." .$Nachsatz;
 	$ttext = urlencode($ttext);
-	if ($debug == 1) 
-		{
-			echo ($ttext); 
-			echo '<br />';
-		}
+	
+	LOGGING('Time Announcement: '.$ttext,6);
 	return ($ttext);
 }	
 ?>

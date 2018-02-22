@@ -14,19 +14,22 @@ function w2s()
 
 		// Einlesen der Daten vom Wunderground Plugin
 		if (!file_exists("$home/data/plugins/wu4lox/current.dat")) {
-			trigger_error("Die Datei current.dat konnte nicht eingelesen werden. Bitte das Wunderground Plugin prüfen!!", E_USER_NOTICE);
+			LOGGING('The file current.dat could not been opened. Please check Wunderground Plugin!',3);
+			exit;
 		} else {
 			$current = file_get_contents("$home/data/plugins/wu4lox/current.dat");
 			$current = explode('|',$current);
 		}
 		if (!file_exists("$home/data/plugins/wu4lox/dailyforecast.dat")) {
-			trigger_error("Die Datei dailyforecast.dat konnte nicht eingelesen werden. Bitte das Wunderground Plugin prüfen!!", E_USER_NOTICE);
+			LOGGING('The file dailyforecast.dat could not been opened. Please check Wunderground Plugin!',3);
+			exit;
 		} else {
 			$dailyforecast = file_get_contents("$home/data/plugins/wu4lox/dailyforecast.dat");
 			$dailyforecast = explode('|',$dailyforecast);
 		}
 		if (!file_exists("$home/data/plugins/wu4lox/hourlyforecast.dat")) {
-			trigger_error("Die Datei hourlyforecast.dat konnte nicht eingelesen werden. Bitte das Wunderground Plugin prüfen!!", E_USER_NOTICE);
+			LOGGING('The file hourlyforecast.dat could not been opened. Please check Wunderground Plugin!',3);
+			exit;
 		} else {
 			$hourlyforecast = file_get_contents("$home/data/plugins/wu4lox/hourlyforecast.dat");
 			$hourlyforecast = explode('|',$hourlyforecast);
@@ -162,11 +165,8 @@ function w2s()
 				$text="";
 				break;
 		}
-		$text = utf8_encode($text);
-		if ($debug == 1) {
-			echo 'Text zur Uebergabe an T2S:<br><br>';
-			print_r ($text); 
-		}
-		return $text;
+		$textcode = utf8_encode($text);
+		LOGGING('Weather announcement: '.$textcode,6);
+		return $textcode;
 	}
 ?>

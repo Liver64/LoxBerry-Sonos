@@ -163,10 +163,8 @@ function w2s()
 				break;
 		}
 		$wtext = urlencode($wtext);
-		if ($debug == 1) {
-			echo 'Text zur Uebergabe an T2S:<br><br>';
-			print_r ($wtext); 
-		}
+		echo 'Text zur Uebergabe an T2S:<br><br>';
+		print_r ($wtext); 
 		return $wtext;
 	}
 ?>

@@ -9,23 +9,22 @@
 function muellkalender() {
 	
 	global $config;
-	
 	$home = posix_getpwuid(posix_getuid());
 	$home = $home['dir'];
 	if (!file_exists("$home/webfrontend/html/plugins/caldav4lox/caldav.php")) {
-		trigger_error("The required Caldav-4-Lox Plugin is already not installed. Please install Plugin!", E_USER_ERROR);
+		LOGGING('The required Caldav-4-Lox Plugin is already not installed. Please install Plugin!',3);
 		exit;
 	}
 	$myIP = $_SERVER["SERVER_ADDR"];
 	if(substr($home,0,4) !== "/opt") {
-		trigger_error("The system you are using is not a loxberry. This application runs only on LoxBerry!", E_USER_ERROR);
+		LOGGING('The system you are using is not a loxberry. This application runs only on LoxBerry!',3);
 		exit;
 	}
 	// URL from Config
 	$url = $config['VARIOUS']['CALDavMuell'];
 	$checkdebug = strpos($url,"&debug");
 	if ($checkdebug != false) {
-		trigger_error("Please remove &debug from your syntax entry in Sonos4lox configuration!", E_USER_ERROR);
+		LOGGING('Please remove &debug from your syntax entry in Sonos4lox configuration!',3);
 		exit;
 	}
 	$callurl = trim($config['VARIOUS']['CALDavMuell'].'&debug');
@@ -40,7 +39,7 @@ function muellkalender() {
 	$checklength = strlen($url).'<br>';
 	$events = strpos($url, "events");
 	if ($events + 7 == $checklength){
-		trigger_error("Please remove &events= from your syntax entry in Sonos4lox configuration or enter add the events you are looking for!", E_USER_ERROR);
+		LOGGING('Please remove &events= from your syntax entry in Sonos4lox configuration or enter add the events you are looking for!',3);
 		exit;
 	}
 	if ($events === false) {
@@ -95,15 +94,19 @@ function muellkalender() {
 			$welcomeevening = welcomeevening($text);
 			$speak = $welcomeevening." Ich bin es noch einmal. Morgen früh wird " . $muellmorgen[0] . " und " .$muellmorgen[1]. " abgeholt. Falls die Muelltonne noch nicht vorm Haus steht bitte noch unbedingt daran denken sie raus zu stellen!. ";
 		} elseif ((empty($muellheute)) or (empty($muellmorgen)))  {
-			echo 'Kein Abfalltermin für heute oder morgen im Kalender.';
+			$text = 'Kein Abfalltermin für heute oder morgen im Kalender.';
+			echo $text;
+			LOGGING('Waste calendar: '.$text,4);
 			exit;
 		}
 	}
 	if (empty($speak)) {
+		LOGGING('Waste calendar: '.$text,4);
 		exit;	
 	}
 	#echo urlencode($speak);
 	#echo '<br><br>';
+	LOGGING('Waste calendar Announcement: '.$speak,6);
 	return urlencode($speak);
 }
 
@@ -121,19 +124,19 @@ function calendar() {
 	$home = posix_getpwuid(posix_getuid());
 	$home = $home['dir'];
 	if (!file_exists("$home/webfrontend/html/plugins/caldav4lox/caldav.php")) {
-		trigger_error("The required Caldav-4-Lox Plugin is already not installed. Please install Plugin!", E_USER_ERROR);
+		LOGGING('The required Caldav-4-Lox Plugin is already not installed. Please install Plugin!',3);
 		exit;
 	}
 	$myIP = $_SERVER["SERVER_ADDR"];
 	if(substr($home,0,4) !== "/opt") {
-		trigger_error("The system you are using is not a loxberry. This application runs only on LoxBerry!", E_USER_ERROR);
+		LOGGING('The system you are using is not a loxberry. This application runs only on LoxBerry!',3);
 		exit;
 	}
 	$url = $config['VARIOUS']['CALDav2'];
 	$checklength = strlen($url).'<br>';
 	$checkdebug = @substr($url,$checklength - 5,$checklength);
 	if ($checkdebug == "debug") {
-		trigger_error("Please remove &debug from your syntax entry in Sonos4lox configuration!", E_USER_ERROR);
+		LOGGING('Please remove &debug from your syntax entry in Sonos4lox configuration!',3);
 		exit;
 	}
 	$callurl = trim($config['VARIOUS']['CALDav2'].'&debug');
@@ -161,6 +164,7 @@ function calendar() {
 		}
 	#echo urlencode($speak);
 	#echo '<br><br>';
+	LOGGING('Calendar Announcement: '.$speak,6);
 	return urlencode($speak);
 	}
 }

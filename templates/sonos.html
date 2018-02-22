@@ -68,14 +68,14 @@
 		</td>
 			<td style="width: 201px; height: 41px;" valign="top">
 			
-			<a onClick="Scan()" id="btnplayerscan" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="#">Scan Zonen</a>
+			<a onClick="Scan()" id="btnplayerscan" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="#"><TMPL_VAR T2S.BUTTON_SCAN></a>
 			<br>
 			
 
 	</tr>
 	<tr>
 		<td style="width: 25%; height: 45px;">
-			<label id="ltts_instanz">Text-to-Speech (T2S) Instanz:</label>
+			<label id="ltts_instanz"><TMPL_VAR T2S.TTS_INSTANZ></label>
 		</td>
 		<td style="width: 50%; height: 45px;">
 			<fieldset data-role="controlgroup" data-type="horizontal">
@@ -95,18 +95,16 @@
 			<script>$("input[name=t2s_engine]").val(['<TMPL_VAR TTS.t2s_engine>']);</script>
 			</td>
 		<td valign="middle" style="height: 45px; width: 201px;">
-		<font size="-1"><a id="linkvoicerss" href="http://www.voicerss.org/login.aspx" target="_blank">Kostenlosen API Key 
-		f&uumlr VoiceRSS erstellen</a></font><br>
+		<font size="-1"><a id="linkvoicerss" <TMPL_VAR T2S.LINK_VOICERSS> target="_blank"><TMPL_VAR T2S.LABEL_API_KEY_VOICESS></a></font><br>
 		<br>
 		<font size="-1">
-		<a id="linkpolly" href="https://aws.amazon.com/de/developers/access-keys/" target="_blank">Keys 
-		f&uumlr Polly erstellen</a></font>
-		<span class="auto-style4">(Preismodell beachten!)</span></td>
+		<a id="linkpolly" <TMPL_VAR T2S.LINK_POLLY> target="_blank"><TMPL_VAR T2S.LABEL_API_KEY_POLLY></a></font>
+		<span class="auto-style4"><TMPL_VAR T2S.LABEL_POLLY_PRICING></span></td>
 		<td style="height: 13px; width: 24px;"></td>
 	</tr>
 	<tr>
 		<td style="height: 48px; width: 25%">
-			<label id="lapikey">API-Key (VoiceRSS,  Polly):</label>
+			<label id="lapikey"><TMPL_VAR T2S.LABEL_API_KEY></label>
 		</td>
 		<td style="width: 50%; height: 48px">
 			<input id="apikey" name="apikey" type="text" class="textfield" value="<TMPL_VAR TTS.API-key>">
@@ -117,7 +115,7 @@
 	</tr>
 	<tr>
 		<td style="width: 25%; height: 48px;">
-			<label id="lseckey">Secret-Key (Polly):</label>
+			<label id="lseckey"><TMPL_VAR T2S.LABEL_SECRET_KEY></label>
 		</td>
 		<td style="width: 50%; height: 48px;">
 			<input id="seckey" name="seckey" type="text" class="textfield" value="<TMPL_VAR TTS.secret-key>">
@@ -127,7 +125,7 @@
 	</tr>
 	<tr>
 			<td style="height: 60px; width: 25%;">
-			<label id="llang">Standardsprache/-stimme für T2S: </label>
+			<label id="llang"><TMPL_VAR T2S.TTS_LANGUAGE></label>
 		</td>
 		<td width="50%" style="height: 60px">
 			<table border=0 width="100%">
@@ -135,7 +133,7 @@
 					<div data-role="collapsible">
 						<td style="height: 36px; width: 294px;" class="auto-style5">
 							<fieldset style="width: 286px">
-								<select onclick="filterlang()" id="lang" name="lang" data-mini="true" style="align:left; width: 258px;"
+								<select onclick="filterlang()" id="t2slang" name="t2slang" data-mini="true" style="align:left; width: 258px;"
 								data-validation-error-msg="Bitte Sprache auswählen" 
 								data-validation-rule="special:number-min-digits:1">
 								</select>
@@ -143,9 +141,10 @@
 						</td>
 					<div id="loginResult" style="display:none;">
 					</div>
+					<div id="msg"></div>
 						<td style="height: 36px; width: 294px;" class="auto-style5">
 							<fieldset style="width: 187px">
-								<select onclick="filtervoice()" id="voice" name="voice" data-mini="true" style="align:left; width: 206px;"
+								<select id="voice" name="voice" data-mini="true" style="align:left; width: 206px;"
 								data-validation-error-msg="Bitte Stimme auswählen" 
 								data-validation-rule="special:number-min-digits:1">
 								</select>
@@ -164,20 +163,20 @@
 		</tr>
 		<tr>
 			<td style="width: 25%">
-				<label id="lmp3store">Verweildauer der MP3 Dateien:</label>
+				<label id="lmp3store"><TMPL_VAR T2S.LABEL_MP3_FILES></label>
 			</td>
 			<td style="width: 50%">
 				<table border=0 width="100%">
 			<tr>
 				<td width="19%">
 					<select id="mp3store" name="mp3store" data-mini="true" data-native-menu="false" width="50%">
-						<option value="1" <TMPL_VAR MP3STORE1>>1 Tag</option>
-						<option value="2" <TMPL_VAR MP3STORE2>>2 Tage</option>
-						<option value="3" <TMPL_VAR MP3STORE3>>3 Tage</option>
-						<option value="4" <TMPL_VAR MP3STORE4>>4 Tage</option>
-						<option value="5" <TMPL_VAR MP3STORE5>>5 Tage</option>
-						<option value="6" <TMPL_VAR MP3STORE6>>6 Tage</option>
-						<option value="7" <TMPL_VAR MP3STORE7>>7 Tage</option>
+						<option value="1" <TMPL_VAR MP3STORE1>><TMPL_VAR T2S.1DAY_MP3_STORE></option>
+						<option value="2" <TMPL_VAR MP3STORE2>><TMPL_VAR T2S.2DAY_MP3_STORE></option>
+						<option value="3" <TMPL_VAR MP3STORE3>><TMPL_VAR T2S.3DAY_MP3_STORE></option>
+						<option value="4" <TMPL_VAR MP3STORE4>><TMPL_VAR T2S.4DAY_MP3_STORE></option>
+						<option value="5" <TMPL_VAR MP3STORE5>><TMPL_VAR T2S.5DAY_MP3_STORE></option>
+						<option value="6" <TMPL_VAR MP3STORE6>><TMPL_VAR T2S.6DAY_MP3_STORE></option>
+						<option value="7" <TMPL_VAR MP3STORE7>><TMPL_VAR T2S.7DAY_MP3_STORE></option>
 					</select>
 					<script>
 					$('#mp3store').val('<TMPL_VAR MP3.MP3store>');
@@ -187,7 +186,7 @@
 				<table border=0 width="100%">
 					<tr>
 						<td width="50%" class="auto-style1" style="height: 30px">
-							<label id="lfile_gong">Dateiname f&uumlr Jingle MP3:</label>
+							<label id="lfile_gong"><TMPL_VAR T2S.LABEL_MP3_FILE></label>
 						</td>
 						<td style="height: 30px">
 							<input id="file_gong" name="file_gong" type="text" class="textfield" value="<TMPL_VAR MP3.file_gong>">
@@ -208,7 +207,7 @@
 	</tr>
 	<tr>
 		<td style="height: 60px; width: 25%;">
-			<label id="lsendlox">Daten&uumlbertragung / Auswahl Miniserver:</label>
+			<label id="lsendlox"><TMPL_VAR T2S.DATA_TRANSFER_MINISERVER></label>
 		</td>
 		<td width="50%" style="height: 60px">
 			<table border=0 width="100%">
@@ -216,8 +215,8 @@
 					<td style="width: 25%">
 					<fieldset>
 							<select onchange="selection()"  id="sendlox" name="sendlox" data-role="flipswitch" style="width: 104px">
-								<option <TMPL_VAR SELECTEDSENDLOX1> value="false">Aus</option>
-								<option <TMPL_VAR SELECTEDSENDLOX2> value="true">An</option>
+								<option <TMPL_VAR SELECTEDSENDLOX1> value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
+								<option <TMPL_VAR SELECTEDSENDLOX2> value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
 							</select>
 							</fieldset>
 						<script>
@@ -251,8 +250,7 @@
 	</table>
 		</td>
 			<td style="height: 30px; width: 201px;">
-				<font size="-1">Sonos Daten per virtuellem UDP und Text Eingang am 
-				Miniserver einlesen. </font>
+				<font size="-1"><TMPL_VAR T2S.LABEL_SONOS_DATA_TRANSFER></font>
 			</td>
 			<td style="height: 30px; width: 24px;">
 				<font size="-1"><div id="testurl">
@@ -262,7 +260,7 @@
 		</tr>
 		<tr>
 			<td style="height: 60px; width: 25%;">
-			<label id="ldebug">Debugging / Logging:</label>
+			<label id="ldebug"><TMPL_VAR T2S.LABEL_DEBUGGING></label>
 		</td>
 		<td width="50%" style="height: 60px">
 		
@@ -270,21 +268,17 @@
 		<div style="display:table; width:80%;">
 			<div style="display:table-row;">
 				<div style="display:table-cell; min-witdh:30%; width:30%;">
-							<div style="display:table; width:90%; padding:10px; border: 1px solid black; border-radius: 5px; background-color: #bebebe;">
+						<div style="display:table; width:90%; padding:10px; border: 1px solid black; border-radius: 5px; background-color: #bebebe;">
 							 <div style="display:table-row;">
 								<div style="display:table-cell; border-radius: 5px;" id="delete_log_div">
-								 <button id="delete_log_btn" onclick="$('#delete_log_div'); 
-								 $('#delete_log_btn').html('<TMPL_VAR TEMPLATE.LOG_BUTTON_DELETE_WAIT>'); $.ajax({url: '', type: 'GET', data: { 'delete_log':1},
-								 <!--.css('background-color','yellow')-->
-						            success: function (data) {
-						                <!--$('#delete_log_div').css('background-color','green');-->
+								 <button id="delete_log_btn" onclick="$('#delete_log_btn').html('<TMPL_VAR TEMPLATE.LOG_BUTTON_DELETE_WAIT>'); $.ajax({url: '', type: 'GET', data: { 'delete_log':1},
+								    success: function (data) {
 						                $('#delete_log_btn').html('<TMPL_VAR TEMPLATE.LOG_BUTTON_DELETE_OK>');
-						                setTimeout( function() { $('#delete_log_div').css('background-color',''); $('#delete_log_btn').html('<TMPL_VAR TEMPLATE.LOG_BUTTON_DELETE>'); }, 2000);
+						                setTimeout( function() { $('#delete_log_btn').html('<TMPL_VAR TEMPLATE.LOG_BUTTON_DELETE>'); }, 2000);
 						            },
 						            error: function (textStatus, errorThrown) {
-						                <!--$('#delete_log_div').css('background-color','red');-->
 						                $('#delete_log_btn').html('<TMPL_VAR TEMPLATE.LOG_BUTTON_DELETE_FAIL>');
-						                setTimeout( function() { $('#delete_log_div').css('background-color',''); $('#delete_log_btn').html('<TMPL_VAR TEMPLATE.LOG_BUTTON_DELETE>');}, 2000);
+						                setTimeout( function() { $('#delete_log_btn').html('<TMPL_VAR TEMPLATE.LOG_BUTTON_DELETE>');}, 2000);
 						
 						            }	}); return false;" data-role="button" data-inline="true" data-mini="true" data-icon="delete"><TMPL_VAR TEMPLATE.LOG_BUTTON_DELETE></button>
 								</div>
@@ -309,7 +303,7 @@
 		</td>
 			
 			<td style="height: 30px; width: 201px;">
-				<font size="-1">Nur in Ausnahmef&aumlllen zur Fehlersuche einschalten. </font>
+				<font size="-1"><TMPL_VAR T2S.NOTE_DEBUGGING></font>
 			</td>
 		</tr>
 		<tr>
@@ -320,14 +314,14 @@
 		</tr>
 		<tr>
 			<td colspan=3 valign="middle" style="height: 33px">
-<hr />
-				<h3>T2S Feineinstellungen</h3>
+				<hr/>
+				<h3><TMPL_VAR T2S_DETAILS.LABEL_HEADER_T2S_DETAILS></h3>
 			</td>
 			<td style="height: 33px; width: 24px;"></td>
 		</tr>
 		<tr>
 			<td colspan=3 valign="middle" style="height: 33px">
-				<font size="-1">Bitte &uumlbernehme die Standard Werte und &aumllndere diese Parameter erst nach erfolgreicher Installation (siehe Hilfe)!
+				<font size="-1"><TMPL_VAR T2S_DETAILS.LABEL_TEXT_T2S_DETAILS>
 				</font>
 
 			</td>
@@ -335,7 +329,7 @@
 		</tr>
 		<tr>
 			<td style="width: 25%; height: 60px;">
-				<label id="lvolume">Volume &Aumlnderung +/-per Klick:</label>
+				<label id="lvolume"><TMPL_VAR T2S_DETAILS.LABEL_T2S_VOLUME_CHANGE></label>
 			</td>
 				<td style="width: 50%; height: 60px;">
 					<table border=0 width="100%">
@@ -365,7 +359,7 @@
 	</tr>
 	<tr>
 		<td style="width: 25%; height: 40px;">
-			<label id="lrampto">Rampto Parameter:</label>
+			<label id="lrampto"><TMPL_VAR T2S_DETAILS.LABEL_RAMPTO></label>
 		</td>
 		<td style="width: 50%; height: 60px;">
 			<table border=0 width="100%">
@@ -385,7 +379,7 @@
 						<table border=0 align="left" style="width: 99%">
 							<tr>
 								<td class="auto-style1" style="height: 30px; width: 70%;">
-								<label id="lrmpvol">Rampto Volume:</label>
+								<label id="lrmpvol"><TMPL_VAR T2S_DETAILS.LABEL_RAMPTO_VOLUME></label>
 								</td>
 								<td style width: "60%" class="auto-style2">
 									<input id="rmpvol" name="rmpvol" type="text" data-validation="number" class="textfield" value="<TMPL_VAR TTS.volrampto>"
@@ -408,16 +402,13 @@
 			</tr>
 				<td colspan=3 valign="middle" style="height: 33px">
 					<hr />
-					<h3>Radio Favoriten f&uumlr Taster Bedienung</h3>
+					<h3><TMPL_VAR RADIO.HEADER_RADIO></h3>
 				</td>
 				<td style="height: 33px; width: 24px;"></td>
 
 				<tr>		
 					<td colspan=3 valign="middle" style="height: 36px">
-					<font size="-1">Dies sind voreingestellte Radiosender f&uumlr Taster Bedienung. 
-					Mit der Funktion werden per Klick die Radio Favoriten 
-					durchgezappt. <br>Wie du die Favoriten korrekt einpflegst schau bitte ins Wiki.
-					</font>
+					<font size="-1"><TMPL_VAR RADIO.NOTE_RADIO></font>
 		<p>
 		</p>
 		
@@ -427,69 +418,54 @@
 				<img class='ico_delete' src='/plugins/<TMPL_VAR PLUGINDIR>/images/recycle-bin.png' border='0' width='24' height='24'>
 				</th>
 
-			    <th align="left" style="height: 25px">Sender Name</th>
-			    <th align="left" style="height: 25px; width: 888px;">Sender URL</th>
+			    <th align="left" style="height: 25px"><TMPL_VAR RADIO.RADIO_STATION_NAME></th>
+			    <th align="left" style="height: 25px; width: 888px;"><TMPL_VAR RADIO.RADIO_STATION_URL></th>
 			  </tr>
 			  <TMPL_VAR ROWSRADIO>
 			</table>
-			<a onClick="AddRadio();return false;" id="btnaddradio" data-role="button" data-inline="true" data-mini="true" data-icon="plus" href="#">Hinzufügen</a>
+			<a onClick="AddRadio();return false;" id="btnaddradio" data-role="button" data-inline="true" data-mini="true" data-icon="plus" href="#"><TMPL_VAR RADIO.BUTTON_ADD_STATION></a>
 			
 			<table border=0 width="100%">
 				<tr>
 					<td style="width: 27%">
-						Ansage des Radiosenders vor Play:</td>
+						<TMPL_VAR RADIO.LABEL_RADIO_ANNOUNCE></td>
 					<td style="width: 557px">
 						<fieldset style="width: 587px">
 							<select id="announceradio" name="announceradio" data-role="flipswitch">
-								<option <TMPL_VAR SELECTEDANNOUNCERADIO1> value="0">Aus</option>
-								<option <TMPL_VAR SELECTEDANNOUNCERADIO2> value="1">Ein</option>
+								<option <TMPL_VAR SELECTEDANNOUNCERADIO1> value="0"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
+								<option <TMPL_VAR SELECTEDANNOUNCERADIO2> value="1"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
 							</select>&nbsp;&nbsp; 
 							<script>$('#announceradio').val('<TMPL_VAR VARIOUS.announceradio>')
 							</script>
-							<span class="auto-style4">(gilt 
-							nur f&uumlr die Funktionen '<strong>nextradio</strong>' 
-							und '<strong>zapzone</strong>')</span>
+							<span class="auto-style4"><TMPL_VAR RADIO.NOTE_RADIO_ANNOUNCE></span>
 						</fieldset>
 						<input id="maxzap" name="maxzap" type="hidden" class="textfield" value="<TMPL_VAR MAXZAP>">
 					</td>
-					
-
 				</tr>
 			</table>
-
-					<br>
+				<br>
 					<h3>&nbsp;</h3><hr />
-					<h3>Bundesland, Stadt oder Gemeinde f&uumlr Pollenflug und 
-					Wetterhinweise oder Wetterwarnungen (nur f&uumlr BRD)</h3>
-					
-					<font size="-1">Um Pollenflug und 
-					Wetterhinweise bzw. Wetterwarnungen per T2S mitgeteilt zu 
-					bekommen bitte Bundesland und Stadt bzw. Gemeinde einpflegen. 
-					Datenquelle ist der deutsche Wetterdienst.
-					</font>
-	
-				
-						<tr>
-						<td style="width: 25%">
-						Bundesland / Region:
-			</td>
+					<h3><TMPL_VAR WEATHER.HEADER_WEATHER></h3>
+						<font size="-1"><TMPL_VAR WEATHER.NOTE_WEATHER></font>
+				<tr>
+				<td style="width: 25%"><TMPL_VAR WEATHER.REGION></td>
 			<td style="width: 50%">
 				<table border=0 width="100%">
 			<tr>
 				<td width="19%">
 					<select id="region" name="region" data-mini="true" data-native-menu="false" style="width: 83%">
-									<option value="baw" <TMPL_VAR REGION1>>Baden-W&uumlrttemberg</option>
-									<option value="bay" <TMPL_VAR REGION2>>Bayern</option>
-									<option value="bbb" <TMPL_VAR REGION3>>Berlin und Brandenburg</option>
-									<option value="hes" <TMPL_VAR REGION4>>Hessen</option>
-									<option value="mvp" <TMPL_VAR REGION5>>Mecklenburg-Vorpommern</option>
-									<option value="nib" <TMPL_VAR REGION6>>Niedersachsen und Bremen</option>
-									<option value="nrw" <TMPL_VAR REGION7>>Nordrhein-Westfalen</option>
-									<option value="rps" <TMPL_VAR REGION8>>Rheinland-Pfalz und Saarland</option>
-									<option value="sac" <TMPL_VAR REGION9>>Sachsen</option>
-									<option value="saa" <TMPL_VAR REGION10>>Sachsen-Anhalt</option>
-									<option value="shh" <TMPL_VAR REGION11>>Schleswig-Holstein und Hamburg</option>
-									<option value="thu" <TMPL_VAR REGION12>>Th&uumlringen</option>
+									<option value="baw" <TMPL_VAR REGION1>><TMPL_VAR WEATHER.REGION1></option>
+									<option value="bay" <TMPL_VAR REGION2>><TMPL_VAR WEATHER.REGION2></option>
+									<option value="bbb" <TMPL_VAR REGION3>><TMPL_VAR WEATHER.REGION3></option>
+									<option value="hes" <TMPL_VAR REGION4>><TMPL_VAR WEATHER.REGION4></option>
+									<option value="mvp" <TMPL_VAR REGION5>><TMPL_VAR WEATHER.REGION5></option>
+									<option value="nib" <TMPL_VAR REGION6>><TMPL_VAR WEATHER.REGION6></option>
+									<option value="nrw" <TMPL_VAR REGION7>><TMPL_VAR WEATHER.REGION7></option>
+									<option value="rps" <TMPL_VAR REGION8>><TMPL_VAR WEATHER.REGION8></option>
+									<option value="sac" <TMPL_VAR REGION9>><TMPL_VAR WEATHER.REGION9></option>
+									<option value="saa" <TMPL_VAR REGION10>><TMPL_VAR WEATHER.REGION10></option>
+									<option value="shh" <TMPL_VAR REGION11>><TMPL_VAR WEATHER.REGION11></option>
+									<option value="thu" <TMPL_VAR REGION12>><TMPL_VAR WEATHER.REGION12></option>
 						</select>
 						<script>$('#region').val('<TMPL_VAR LOCATION.region>');</script>
 
@@ -498,53 +474,47 @@
 				<table border=0 width="100%">
 					<tr>
 						<td width="50%" class="auto-style1" style="height: 30px">
-							Stadt oder Gemeinde:</td>
+							<TMPL_VAR WEATHER.TOWN></td>
 						<td style="height: 30px">
 							<input id="town" name="town" type="text" class="textfield" value="<TMPL_VAR LOCATION.town>">
 						</td>
 						
 					</tr>
 				</table></tr>
-			</td>
-		</tr>
+			
+		
 	</table>
 		<td valign="middle" style="height: 60px; width: 201px;" class="auto-style4">
-		<a id="linkdwd" href="http://www.dwd.de/DE/wetter/warnungen_gemeinden/warntabellen/warntabellen_node.html" target="_blank">Wetterwarnung Standort pr&uumlfen</a><br>
-		<a id="linkpollen" href="http://www.wetterdienst.de/Deutschlandwetter/DEINE_STADT/Pollenflug/" target="_blank">Pollenflug Standort pr&uumlfen</a></td>
+		<a id="linkdwd" href="<TMPL_VAR WEATHER.LINK_WEATHER_SERVICE>" target="_blank"><TMPL_VAR WEATHER.LABEL_WEATHER_SERVICE></a><br>
+		<a id="linkpollen" href="<TMPL_VAR WEATHER.LINK_ALLERGEN>" target="_blank"><TMPL_VAR WEATHER.LABEL_ALLERGEN></a></td>
 		<td style="height: 60px; width: 24px;">
 		
 		</td>
 		<tr>
 		<td colspan=3 valign="middle" style="height: 33px">
 					<h3>&nbsp;</h3><hr />
-					<h3>Fahrzeitansage von deinem Standort zu einem gew&uumlnschten Ziel 
-					(basierend auf Google Maps)</h3>
+					<h3><TMPL_VAR DESTINATION.HEADER></h3>
 				</td>
-
 		</tr>
 		<tr>
 		<td colspan=3 valign="middle" style="height: 37px">
-					<font size="-1">Mit der Fahrzeitberechnung wird die ca. 
-					Fahrdauer von deinem Standort zu einem anzugebenen Ziel 
-					angesagt.&nbsp; (Details siehe Wiki). Zuerst bitte bei
-					<a href="https://www.google.de/maps">
-					https://www.google.de/maps</a> pr&uumlfen!</font></tr>
+					<font size="-1"><TMPL_VAR DESTINATION.NOTE><a href="<TMPL_VAR DESTINATION.LINK_GOOGLE>">
+					<TMPL_VAR DESTINATION.LABEL_LINK_GOOGLE></font></tr>
 		<tr>
 		<td style="height: 48px; width: 25%">
-			<label id="lapikey">Google (distance matrix API):</label>
+			<label id="lapikey"><TMPL_VAR DESTINATION.LABEL_GOOGLE_API></label>
 		</td>
 		<td style="width: 50%; height: 48px">
 			<input id="googlekey" name="googlekey" type="text" class="textfield" value="<TMPL_VAR LOCATION.googlekey>">
 		</td>
 		<td style="height: 48px; width: 201px;" class="auto-style4">
 		<font size="-1">
-		<a id="linkgoogle" href="https://developers.google.com/maps/documentation/distance-matrix/" target="_blank">Key 
-		f&uumlr Google distance to matrix erstellen</a></font></td>
+		<a id="linkgoogle" href="<TMPL_VAR DESTINATION.LINK_GOOGLE_DISTANCE>" target="_blank"><TMPL_VAR DESTINATION.LABEL_GOOGLE_DISTANCE></a></font></td>
 		<td style="height: 48px; width: 24px;"></td>
 
 		</tr>
-<td style="width: 25%">Land / Stadt / Dorf / Gemeinde:
-			<br><span class="auto-style7">z.B. D-60623 o. Frankfurt o. 60623</span></td>
+		<td style="width: 25%"><TMPL_VAR DESTINATION.LABEL_GOOGLE_REGION>
+			<br><span class="auto-style7"><TMPL_VAR DESTINATION.LABEL_GOOGLE_EXAMPLE></span></td>
 			<td style="width: 50%">
 				<table border=0 width="100%">
 			<tr>
@@ -555,7 +525,7 @@
 				<table border=0 width="100%">
 					<tr>
 						<td class="auto-style1" style="height: 30px; width: 24%;">
-							Adresse:</td>
+							<TMPL_VAR DESTINATION.LABEL_ADDRESS></td>
 						<td style="height: 30px">
 							<input id="googlestreet" name="googlestreet" type="text" class="textfield" value="<TMPL_VAR LOCATION.googlestreet>" style="width: 231px">
 						</td>
@@ -573,15 +543,12 @@
 	<tr>
 		<td colspan=3 valign="middle" style="height: 33px">
 					<h3>&nbsp;</h3><hr />
-
-					<h3>Kalendar Ansage basierend auf CALDav Plugin 
-					(Syntaxermittlung im Plugin durchf&uumlhren)</h3>
+					<h3><TMPL_VAR CALENDAR.HEADER></h3>
 				</td>
-
 		</tr>
 	<tr>
 	<td style="height: 48px; width: 25%">
-			<label id="lwastecal">Abfallkalender:</label>
+			<label id="lwastecal"><TMPL_VAR CALENDAR.WASTE_LABEL></label>
 		</td>
 		<td style="width: 50%; height: 48px">
 			<input id="wastecal" name="wastecal" type="text" class="textfield" value="<TMPL_VAR VARIOUS.CALDavMuell>">
@@ -595,7 +562,7 @@
 		
 		<tr>
 		<td style="height: 48px; width: 25%">
-			<label id="lcal">Kalender:</label>
+			<label id="lcal"><TMPL_VAR CALENDAR.CALENDAR_LABEL></label>
 		</td>
 		<td style="width: 50%; height: 48px">
 			<input id="cal" name="cal" type="text" class="textfield" value="<TMPL_VAR VARIOUS.CALDav2>">
@@ -609,7 +576,7 @@
 		</tr>
 
 
-	</tr>
+	
 
 	</table>
 	
@@ -623,12 +590,12 @@
 		<p>
 			<p>
 			<center>
-				<a id="btncancel" data-role="button" data-inline="true" data-mini="true" data-icon="delete" href="/admin/index.cgi">Abbrechen</a>
-				<button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check">Speichern</button>
+				<a id="btncancel" data-role="button" data-inline="true" data-mini="true" data-icon="delete" href="/admin/index.cgi"><TMPL_VAR SAVE.CANCEL_BUTTON></a>
+				<button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SAVE.SAVE_BUTTON></button>
 			</center>
 		</p>
 	
-	</form>
+	
 
 
 
@@ -636,14 +603,6 @@
 
 
 	
-//	var $messages = $('#form-error-message');
-//	    $.validate({
-//	    modules : 'security',
-//	    scrollToTopOnError : true,
-//	    errorMessagePosition : $messages,
-//  });
-
-
 // *** Functions to be executed during loading the page ***
 $(document).on('pageinit', function() {
 
@@ -788,7 +747,7 @@ $('#miniserver').selectmenu('refresh', true);
 
 // function to make field voice not functional by default
 //$('#voice').addClass('ui-disabled');
-//$('#lang').addClass('ui-disabled');
+//$('#t2slang').addClass('ui-disabled');
 
 
 
@@ -809,36 +768,36 @@ function filtervoice() {
 function initial_lang_voice_load()  {
 	// if screen is initial (no T2S engine selected
 	if (!$('#val_t2s').val()) {
-		$('#lang').empty();
+		$('#t2slang').empty();
 	 	$('#voice').addClass('ui-disabled');
-		$('#lang').addClass('ui-disabled');
+		$('#t2slang').addClass('ui-disabled');
 	} else {
 		$('#voice').addClass('ui-disabled');
-		$('#lang').removeClass('ui-disabled');
-		$('#lang').append('<option value="empty">** Sprache wählen **</option>');
+		$('#t2slang').removeClass('ui-disabled');
+		$('#t2slang').append('<option value="empty"><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>');
 		// if T2S engine polly (4001) has been selected pass saved voice to field
 		if ($('#val_t2s').val() == '4001')  {
 			var url = "/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/langfiles/polly.json";
 			var urlvoice = "/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/langfiles/polly_voices.json";
-			$('#lang').append('<option selected="true" value="empty" disabled>** Sprache wählen **</option>');
+			$('#t2slang').append('<option selected="true" value="empty" disabled><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>');
 			$.getJSON(url, function(listlang)  {
                	$.each(listlang, function(index, value)  { 
                	//alert(value.value);
                		if (value.value == '<TMPL_VAR CODE>') {
-	               		$('#lang').append('<option selected="selected" value="'+value.value+'">'+value.country+'</option>');
+	               		$('#t2slang').append('<option selected="selected" value="'+value.value+'">'+value.country+'</option>');
 	               		$('#t2s_lang_country').val('+value.country+');
 	               	} else {
-	               		$('#lang').append('<option value="'+value.value+'">'+value.country+'</option>');
+	               		$('#t2slang').append('<option value="'+value.value+'">'+value.country+'</option>');
 	               	}
 	               	$('#voice').removeClass('ui-disabled');
-	               	$('#lang').selectmenu('refresh', true);
+	               	$('#t2slang').selectmenu('refresh', true);
              	});
             //});
-            var selectlang = document.getElementById("lang");
+            var selectlang = document.getElementById("t2slang");
 			var selectedlang = selectlang.options[selectlang.selectedIndex].value;
 		    $('#voice').removeClass('ui-disabled');
             $.getJSON(urlvoice, function(listvoice)  {
-			//$('#voice').append('<option selected="true" value="empty" disabled>** Stimme wählen **</option>');
+			//$('#voice').append('<option selected="true" value="empty" disabled><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>');
 		    var selectedvoiceList = listvoice.filter(function(item){
 		    	return item.language === selectedlang;
 		  	});
@@ -864,7 +823,7 @@ function initial_lang_voice_load()  {
 		}
 	}
 	$('#voice').addClass('ui-disabled');
-	$('#lang').removeClass('ui-disabled');
+	$('#t2slang').removeClass('ui-disabled');
 	if ($('#val_t2s').val() == '1001')  {
         var url = "/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/langfiles/voicerss.json";
 	}
@@ -884,21 +843,21 @@ function initial_lang_voice_load()  {
 	{
          
     }
-    $('#lang').append('<option selected="true" value="empty" disabled>** Sprache wählen **</option>');
+    $('#t2slang').append('<option selected="true" value="empty" disabled><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>');
 	$.getJSON(url, function(listlang)  {
     $.each(listlang, function(index, value)  { 
     //alert(value.value);
     if (value.value == '<TMPL_VAR CODE>') {
-		$('#lang').append('<option selected="selected" value="'+value.value+'">'+value.country+'</option>');
+		$('#t2slang').append('<option selected="selected" value="'+value.value+'">'+value.country+'</option>');
 		$('#t2s_lang_country').val('+value.country+');
 	} else {
-		$('#lang').append('<option value="'+value.value+'">'+value.country+'</option>');
+		$('#t2lang').append('<option value="'+value.value+'">'+value.country+'</option>');
 	}
 	$('#voice').removeClass('ui-disabled');
-	$('#lang').selectmenu('refresh', true);
+	$('#t2slang').selectmenu('refresh', true);
     });
 });
-//$('#lang').selectmenu('refresh', true);
+//$('#t2slang').selectmenu('refresh', true);
     
     
     
@@ -907,25 +866,25 @@ function initial_lang_voice_load()  {
 	var isocode = '<TMPL_VAR CODE>'.substr(0, 2);
 	$('#langiso').val(isocode);
 	//alert(isocode);
-    $('#lang').empty();
+    $('#t2slang').empty();
           $('#voice').empty();
-          //$('#lang').append('<option selected="true" value="empty" disabled>** Sprache wählen **</option>');
-          //$('#voice').append('<option selected="true" value="empty" disabled>** Stimme wählen **</option>');
-          $('#lang').prop('selectedIndex', 0);
+          //$('#t2slang').append('<option selected="true" value="empty" disabled><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>');
+          //$('#voice').append('<option selected="true" value="empty" disabled><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>');
+          $('#t2slang').prop('selectedIndex', 0);
           $.getJSON(url, function(listlang)  {
                	$.each(listlang, function(index, value)  { 
                		if (value.value == '<!--$code-->') {
-	               		$('#lang').append('<option selected="selected" value="'+value.value+'">'+value.country+'</option>');
+	               		$('#t2slang').append('<option selected="selected" value="'+value.value+'">'+value.country+'</option>');
 	               		$('#t2s_lang_country').val('+value.country+');
 	               	} else {
-	               		$('#lang').append('<option value="'+value.value+'">'+value.country+'</option>');
+	               		$('#t2slang').append('<option value="'+value.value+'">'+value.country+'</option>');
 	               	}
 	               	$('select').selectmenu('refresh', true);
              	});
             });
           $('select').selectmenu();
           $('select').selectmenu('refresh', true);
-	$('#lang').selectmenu('refresh', true);
+	$('#t2slang').selectmenu('refresh', true);
 	$('#voice').selectmenu('refresh', true);
 
 };
@@ -938,49 +897,49 @@ function initial_lang_voice_load()  {
       
           if($(this).is(':checked') && $(this).val() == '1001')  {
             $('#voice').addClass('ui-disabled');
-			$('#lang').removeClass('ui-disabled');
+			$('#t2slang').removeClass('ui-disabled');
             var url = "/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/langfiles/voicerss.json";
           }
           else if($(this).is(':checked') && $(this).val() == '3001')   {
             $('#voice').addClass('ui-disabled');
-            $('#lang').removeClass('ui-disabled');
+            $('#t2slang').removeClass('ui-disabled');
             var url = "/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/langfiles/osx.json";
           }
 		  else if($(this).is(':checked') && $(this).val() == '4001')   {
 	        $('#voice').removeClass('ui-disabled');
-	        $('#lang').removeClass('ui-disabled');
+	        $('#t2slang').removeClass('ui-disabled');
             var url = "/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/langfiles/polly.json";	     
           }
 		  else if($(this).is(':checked') && $(this).val() == '5001')   {
             $('#voice').addClass('ui-disabled');
-            $('#lang').removeClass('ui-disabled');
+            $('#t2slang').removeClass('ui-disabled');
             var url = "/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/langfiles/pico.json";	                 
 		  }
 		  else if($(this).is(':checked') && $(this).val() == '6001')   {
             $('#voice').addClass('ui-disabled');
-            $('#lang').removeClass('ui-disabled');
+            $('#t2slang').removeClass('ui-disabled');
 			var url = "/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/langfiles/respvoice.json";	                             
           }
 		  else if($(this).is(':checked') && $(this).val() == '7001')   {
             $('#voice').addClass('ui-disabled');
-            $('#lang').removeClass('ui-disabled');
+            $('#t2slang').removeClass('ui-disabled');
 			var url = "/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/langfiles/google.json";	                                         
           }
           else  {
          
           }
-          $('#lang').empty();
+          $('#t2slang').empty();
           $('#voice').empty();
-          $('#lang').append('<option selected="true" value="empty" disabled>** Sprache wählen **</option>');
-          //$('#voice').append('<option selected="true" value="empty" disabled>** Stimme wählen **</option>');
-          $('#lang').prop('selectedIndex', 0);
+          $('#t2slang').append('<option selected="true" value="empty" disabled><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>');
+          //$('#voice').append('<option selected="true" value="empty" disabled><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>');
+          $('#t2slang').prop('selectedIndex', 0);
           $.getJSON(url, function(listlang)  {
                	$.each(listlang, function(index, value)  { 
                		if (value.value == '<TMPL_VAR CODE>') {
-	               		$('#lang').append('<option selected="selected" value="'+value.value+'">'+value.country+'</option>');
+	               		$('#t2slang').append('<option selected="selected" value="'+value.value+'">'+value.country+'</option>');
 	               		$('#t2s_lang_country').val('+value.country+');
 	               	} else {
-	               		$('#lang').append('<option value="'+value.value+'">'+value.country+'</option>');
+	               		$('#t2slang').append('<option value="'+value.value+'">'+value.country+'</option>');
 	               	}
 	               	$('select').selectmenu('refresh', true);
              	});
@@ -994,21 +953,21 @@ function initial_lang_voice_load()  {
  
     // main_form is submitted    
 	$("form#main_form").submit(function() {
-		var selectlang = document.getElementById("lang").value;
+		var selectlang = document.getElementById("t2slang").value;
 		if (document.main_form.tts_polly.checked == true ) {
 			var selectvoice = document.getElementById("voice").value;
 			if (selectlang == 'empty')  {
-//				validate_enable('#lang');
+//				validate_enable('#t2slang');
 				alert('Bitte die Standardsprache für T2S auswählen!');
 				return false;
 			}
-			if (selectvoice == '1')  {
+			if (selectvoice == 'empty')  {
 //				alert(selectvoice);
 //				validate_enable('#voice');  
 				alert('Bitte die Standardstimme für T2S auswählen!');
 				return false;
 			}
-//			validate_chk_object(['#lang','#voice']);
+//			validate_chk_object(['#t2slang','#voice']);
 		}
 		else if (document.main_form.tts_mac_osx.checked == true ) {
 			if (selectlang == 'empty')  {
@@ -1051,13 +1010,13 @@ function initial_lang_voice_load()  {
 	// prepare the voice list dependend on language list
 	filterlang = function() { 
 	if (document.main_form.tts_polly.checked == true ) {
-  
-		var select = document.getElementById("lang");
+  		
+		var select = document.getElementById("t2slang");
 		var selectedlanguage = select.options[select.selectedIndex].value;
 	    $('#voice').empty();
 	    var url = "/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/langfiles/polly_voices.json";
 	    $.getJSON(url, function(listvoice)  {
-			$('#voice').append('<option selected="true" value=1 disabled>** Stimme wählen **</option>');
+			$('#voice').append('<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>');
 		    var selectedvoiceList = listvoice.filter(function(item){
 		    	return item.language === selectedlanguage;
 		  	});
@@ -1091,19 +1050,19 @@ if (slox == "true") {
 	else 
 	{
 		validate_enable('#udpport');
-		validate_clean_objects(['#udpport']);
+		//validate_clean_objects(['#udpport']);
 	}
 	
 	
 // validate Volume entries per player
-  var iteration = document.getElementById('countplayers').value;
-  iteration = parseInt(iteration)
-  iteration += 1;
+var iteration = document.getElementById('countplayers').value;
+iteration = parseInt(iteration)
+iteration += 1;
 	for (i = 1; i < iteration; ++i) {
 		validate_enable('#t2svol' + i + '');
   		validate_enable('#sonosvol' + i + '');
   		validate_enable('#maxvol' + i + '');
-  	validate_chk_object(['#t2svol' + i + '', '#sonosvol' + i + '', '#maxvol' + i + '']);
+  		validate_chk_object(['#t2svol' + i + '', '#sonosvol' + i + '', '#maxvol' + i + '']);
 	}
 	
 	

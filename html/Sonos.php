@@ -133,7 +133,7 @@
 #
 ######## Script Code (ab hier bitte nichts ändern) ###################################
 
-ini_set('max_execution_time', 120); // Max. Skriptlaufzeit auf 120 Sekunden
+ini_set('max_execution_time', 120); 							// Max. Skriptlaufzeit auf 120 Sekunden
 
 include("system/PHPSonos.php");
 include("system/Tracks.php");
@@ -150,33 +150,31 @@ include("Restore_T2S.php");
 include("Save_T2S.php");
 include("Speaker.php");
 #require_once('system/function.debug.php');
-require_once('system/debug.php');
+include('system/debug.php');
 
 // setze korrekte Zeitzone
 date_default_timezone_set(date("e"));
-$valid_playmodes = array("NORMAL","REPEAT_ALL","REPEAT_ONE","SHUFFLE_NOREPEAT","SHUFFLE","SHUFFLE_REPEAT_ONE");
-echo "<pre>"; 
+echo "<PRE>"; 
 
 # prepare variables
 $home = $lbhomedir;
-$myIP = $_SERVER["SERVER_ADDR"];
-$psubfolder = $lbpplugindir;
+$myIP = $_SERVER["SERVER_ADDR"];								// get IP of LoxBerry
+$syntax = $_SERVER['REQUEST_URI'];								// get syntax
+$psubfolder = $lbpplugindir;									// get pluginfolder
+$lbversion = LBSystem::lbversion();								// get LoxBerry Version
+$path = LBSCONFIGDIR; 											// get path to general.cfg
+$myFolder = "$lbpconfigdir";									// get config folder
+$myMessagepath = "//$myIP/sonos_tts/";							// get T2S folder to play
+$MessageStorepath = "$lbpdatadir/tts/";							// get T2S folder to store
+$pathlanguagefile = "$lbphtmldir/voice_engines/langfiles/";		// get languagefiles
+$logpath = "$lbplogdir/$psubfolder";							// get log folder
+ 
+# create entry in logfile of called syntax
+LOGGING("called syntax: ".$myIP."".$syntax,5);
 
-#-- Start Loxberry ------------------------------------------------------------------
-	
-	$path = "$home/config/system/general.cfg";
-	$general = parse_ini_file($path, TRUE);
-	if ($general['BASE']['VERSION'] === "0.2.2") {
-		trigger_error('The Sonos4lox Plugin require minimum LoxBerry Version 0.2.3! Please upgrade LoxBerry', E_USER_NOTICE);
-		exit;
-	}
-	
-	$myFolder = "$home/config/plugins/$psubfolder/";
-	$myMessagepath = "//$myIP/sonos_tts/";
-	$MessageStorepath = "$home/data/plugins/$psubfolder/tts/";
-	$pathlanguagefile = "$home/webfrontend/html/plugins/$psubfolder/voice_engines/langfiles/";
-	$logpath = "$home/log/plugins/$psubfolder";
 
+#-- Start Preparation ------------------------------------------------------------------
+	
 	// Parsen der Konfigurationsdatei sonos.cfg
 	if (!file_exists($myFolder.'/sonos.cfg')) {
 		trigger_error('The file sonos.cfg could not be opened, please try again!', E_USER_NOTICE);
@@ -199,21 +197,11 @@ $psubfolder = $lbpplugindir;
 		
 	// Umbennennen des ursprünglichen Array Keys
 	$config['SYSTEM']['messageStorePath'] = $MessageStorepath;
-		
-#-- Ende Loxberry ---------------------------------------------------------------------
 
-#-- Start allgemeiner Teil ----------------------------------------------------------------------
+	// Übernahme und Deklaration von Variablen aus der Konfiguration
+	$sonoszonen = $config['sonoszonen'];
 
-$debug = $config['SYSTEM']['debuggen'];
-if($debug == 1) { 
-	echo "<pre><br>"; 
-}
-echo "<pre><br>"; 
- 
-// Übernahme und Deklaration von Variablen aus der Konfiguration
-$sonoszonen = $config['sonoszonen'];
-
-// prüft den Onlinestatus jeder Zone
+	// prüft den Onlinestatus jeder Zone
 	foreach($sonoszonen as $zonen => $ip) {
 		$port = 1400;
 		$timeout = 3;
@@ -233,7 +221,12 @@ $sonoszonen = $config['sonoszonen'];
 # checking size of LoxBerry logfile
 check_size_logfile();
 
-debug("Entering plugin for ".$_SERVER['REMOTE_ADDR'],7);
+#-- End Preparation ---------------------------------------------------------------------
+
+
+#-- Start allgemeiner Teil ----------------------------------------------------------------------
+
+$valid_playmodes = array("NORMAL","REPEAT_ALL","REPEAT_ONE","SHUFFLE_NOREPEAT","SHUFFLE","SHUFFLE_REPEAT_ONE");
 
 # Start des eigentlichen Srcipts
 if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
@@ -370,11 +363,9 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'mute';
 			if($_GET['mute'] == 'false') {
 				$sonos->SetMute(false);
-				logging();
 			}
 			else if($_GET['mute'] == 'true') {
 				$sonos->SetMute(true);
-				logging();
 			} else {
 				trigger_error('Wrong Mute Parameter selected. Please correct', E_USER_NOTICE);
 			}       
@@ -482,7 +473,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				} else{
 					$sonos->Play();
 				}
-			logging();
 			} else {
 				trigger_error("No tracks in Playlist to play.", E_USER_NOTICE);
 			}
@@ -494,7 +484,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			checkifmaster($master);
 			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 			$sonos->ClearQueue();
-			logging();
 		break;
 		
 		  
@@ -595,7 +584,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 							  
 		case 'sonosplaylist':
-			logging();
 			playlist();
 		break;
 		
@@ -603,34 +591,29 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'groupsonosplaylist':
 			AddMemberTo();
 			playlist();
-			logging();
 		break;
 		
 
 		case 'radioplaylist':
 			radio();
-			logging();
 		break;
 		
 		
 		case 'groupradioplaylist': 
 			AddMemberTo();
 			radio();
-			logging();
 		break;
 		
 		
 		case 'radio': 
 			AddMemberTo();
 			radio();
-			logging();
 		break;
 		
 		
 		case 'playlist':
 			AddMemberTo();
 			playlist();
-			logging();
 		break;
 		
 			
@@ -1237,50 +1220,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
     exit; 	 
  }
  
-
-/**
-/* Funktion : logging --> erstellt monatliche Log Datei
-/*
-/* @return: Log Datei
-**/
- function logging() {
- global $master, $log, $logpath, $general;
- 
- if ($general['BASE']['VERSION'] === "0.2.3") {
-
-	$format = "txt"; //Moeglichkeiten: csv und txt
- 	$datum_zeit = date("d.m.Y H:i:s");
-	$ip = $_SERVER["REMOTE_ADDR"];
-	$site = $_SERVER['REQUEST_URI'];
-	$browser = $master;
- 
-	$monate = array(1=>"Januar", 2=>"Februar", 3=>"Maerz", 4=>"April", 5=>"Mai", 6=>"Juni", 7=>"Juli", 8=>"August", 9=>"September", 10=>"Oktober", 11=>"November", 12=>"Dezember");
-	$monat = date("n");
-	$jahr = date("y");
- 
-	$dateiname=$logpath."/log_".$monate[$monat]."_$jahr.$format";
- 	$header = array("Datum/Uhrzeit", "    Zone  ", "Syntax");
-	$infos = array($datum_zeit, $master, $site);
- 	if($format == "csv") {
-		$eintrag= '"'.implode('", "', $infos).'"';
-	} else { 
-		$eintrag = implode("\t", $infos);
-	}
- 	$write_header = file_exists($dateiname);
- 	$datei=fopen($dateiname,"a");
- 	if(!$write_header) {
-		if($format == "csv") {
-			$header_line = '"'.implode('", "', $header).'"';
-		} else {
-			$header_line = implode("\t", $header);
-		}
-	fputs($datei, $header_line."\n");
-	}
-	fputs($datei,$eintrag."\n");
-	fclose($datei);
-	}
-}
-  
 
 /**
 /* Funktion : SetGroupVolume --> setzt Volume für eine Gruppe

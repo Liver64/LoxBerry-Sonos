@@ -9,7 +9,7 @@ global $config, $debug, $town;
 
 $town = $config['LOCATION']['town'];
 if (empty($town)) {
-	trigger_error('Es ist keine Stadt in der Konfiguration gepflegt. Bitte erst eingeben!', E_USER_ERROR);
+	LOGGING('There is no entry in config maintained, please update your Sonos config!',3);
 	exit;
 }
 #$town = "München";
@@ -175,6 +175,7 @@ curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
 $text = preg_replace("/[^a-z0-9!. ]/i", "", $text);
 $url = urlencode($text);
 echo $url;
+LOGGING('Pollen level announcement: '.$url,6);
 return $url;
 
 curl_setopt($curl, CURLOPT_URL, $url);

@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright 2016 Michael Schlenstedt, michael@loxberry.de
+# Copyright 2018 Oliver Lewald, olewald64@gmail.com
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,9 +31,9 @@ use File::HomeDir;
 use Cwd 'abs_path';
 use JSON qw( decode_json );
 use utf8;
-use Data::Dumper;
 use warnings;
 use strict;
+#use Data::Dumper;
 #no strict "refs"; # we need it for template system
 
 ##########################################################################
@@ -49,19 +49,20 @@ my $saveformdata = 0;
 my $do = "form";
 my $msselectlist;
 my $helpurl;
-our $countplayers;
-our $rowssonosplayer;
 my $miniserver;
 my $maxzap;
 my $helptemplate;
-my $lang;
+my $lblang;
 my $i;
+our $countplayers;
+our $rowssonosplayer;
 
 my $helptemplatefilename		= "help.html";
 my $languagefile 				= "sonos.ini";
 my $maintemplatefilename	 	= "sonos.html";
 my $successtemplatefilename 	= "success.html";
 my $errortemplatefilename 		= "error.html";
+my $noticetemplatefilename 		= "notice.html";
 my $no_error_template_message	= "<b>Sonos4lox:</b> The error template is not readable. We must abort here. Please try to reinstall the plugin.";
 my $pluginconfigfile 			= "sonos.cfg";
 my $pluginplayerfile 			= "player.cfg";
@@ -73,20 +74,6 @@ my $helplink 					= "http://www.loxwiki.eu/display/LOXBERRY/Sonos4Loxone";
 my $pcfg 						= new Config::Simple($lbpconfigdir . "/" . $pluginconfigfile);
 my %Config 						= $pcfg->vars() if ( $pcfg );
 our $error_message				= "";
-
-# Logging
-if ($pcfg)
-{
-	$log->loglevel(int($Config{'SYSTEM.LOGLEVEL'}));
-	$LoxBerry::System::DEBUG 	= 1 if int($Config{'SYSTEM.LOGLEVEL'}) eq 7;
-	$LoxBerry::Web::DEBUG 		= 1 if int($Config{'SYSTEM.LOGLEVEL'}) eq 7;
-}
-else
-{
-	$log->loglevel(7);
-	$LoxBerry::System::DEBUG 	= 1;
-	$LoxBerry::Web::DEBUG 		= 1;
-}
 
 
 ##########################################################################
@@ -100,37 +87,25 @@ my $MSWebPort	= $cfg->param("MINISERVER1.PORT");
 my $MSUser		= $cfg->param("MINISERVER1.ADMIN");
 my $MSPass		= $cfg->param("MINISERVER1.PASS");
 
-my $template = HTML::Template->new(
-			filename => $lbptemplatedir . "/" . $maintemplatefilename,
-			global_vars => 1,
-			loop_context_vars => 1,
-			die_on_bad_params=> 0,
-			associate => $pcfg,
-			);
-			
 # read language
-my %SL = LoxBerry::System::readlanguage($template, $languagefile);
+my $lblang = lblanguage();
+#my %SL = LoxBerry::System::readlanguage($template, $languagefile);
 
-# übergibt Plugin Verzeichnis an HTML
-$template->param("PLUGINDIR" => $lbpplugindir);
+
 #---** GEHT NICHT **--
 #$template->param("LOGFILE" , $lbplogdir . "/" . $pluginlogfile );
 
 # Read Plugin Version
 my $sversion = LoxBerry::System::pluginversion();
 
+# Read LoxBerry Version
+my $lbversion = LoxBerry::System::lbversion();
+
 # read all POST-Parameter in namespace "R".
 my $cgi = CGI->new;
 $cgi->import_names('R');
 
 ##########################################################################
-# Language Settings
-##########################################################################
-
-my $lang = lblanguage();
-$template->param("LBHOSTNAME", lbhostname());
-$template->param("LBLANG", $lang);
-$template->param("SELFURL", $ENV{REQUEST_URI});
 
 # deletes the log file sonos.log
 if ( $R::delete_log )
@@ -140,8 +115,9 @@ if ( $R::delete_log )
 	my $pluginlogfile = $log->close;
 	system("/usr/bin/date > $pluginlogfile");
 	$log->open;
-	LOGSTART "Logfile restarted.";
+	LOGSTART "Logfile started.\n Loxberry: v".$lbversion." \n Sonos Plugin: v".$sversion." \n --------------------------------------------------------------------------------";
 	print "Content-Type: text/plain\n\nOK";
+	#LOGSTART "\n Loxberry: v".$lbversion." \n Sonos Plugin: v".$sversion;
 	exit;
 }
 
@@ -190,11 +166,8 @@ defined $saveformdata ? $saveformdata =~ tr/0-1//cd : undef;
 ##########################################################################
 # Various checks
 ##########################################################################
-my %SL;
-# Check, if filename for the maintemplate is readable, if not raise an error
-my $error_message = $SL{'ERRORS.ERR_MAIN_TEMPLATE_NOT_READABLE'};
-stat($lbptemplatedir . "/" . $maintemplatefilename);
-&error if !-r _;
+
+
 
 #**************************************************************************
 
@@ -212,15 +185,15 @@ if ( !-r _ )
 
 # Filename for the errortemplate is ok, preparing template";
 my $errortemplate = HTML::Template->new(
-		filename => $lbptemplatedir . "/" . $errortemplatefilename,
-		global_vars => 1,
-		loop_context_vars => 1,
-		die_on_bad_params=> 0,
-		associate => $cgi,
-		%htmltemplate_options,
-		debug => 1,
-		);
-# my %ERR = LoxBerry::System::readlanguage($errortemplate, $languagefile);
+					filename => $lbptemplatedir . "/" . $errortemplatefilename,
+					global_vars => 1,
+					loop_context_vars => 1,
+					die_on_bad_params=> 0,
+					associate => $cgi,
+					%htmltemplate_options,
+					debug => 1,
+					);
+my %ERR = LoxBerry::System::readlanguage($errortemplate, $languagefile);
 
 #**************************************************************************
 
@@ -228,46 +201,77 @@ my $errortemplate = HTML::Template->new(
 stat($lbptemplatedir . "/" . $successtemplatefilename);
 if ( !-r _ )
 {
-	$error_message = $SL{'ERRORS.ERR_SUCCESS_TEMPLATE_NOT_READABLE'};
+	$error_message = $ERR{'ERRORS.ERR_SUCCESS_TEMPLATE_NOT_READABLE'};
 	LOGERR "The ".$successtemplatefilename." file could not be loaded. Abort plugin loading";
 	&error;
 }
 #LOGDEB "Filename for the successtemplate is ok, preparing template";
-my $successtemplate = HTML::Template->new(
-		filename => $lbptemplatedir . "/" . $successtemplatefilename,
-		global_vars => 1,
-		loop_context_vars => 1,
-		die_on_bad_params=> 0,
-		associate => $cgi,
-		%htmltemplate_options,
-		debug => 1,
-		);
-# my %L = LoxBerry::System::readlanguage($successtemplate, $languagefile);
+my $successtemplate = 	HTML::Template->new(
+						filename => $lbptemplatedir . "/" . $successtemplatefilename,
+						global_vars => 1,
+						loop_context_vars => 1,
+						die_on_bad_params=> 0,
+						associate => $cgi,
+						%htmltemplate_options,
+						debug => 1,
+						);
+my %SUC = LoxBerry::System::readlanguage($successtemplate, $languagefile);
 
 #**************************************************************************
+# Logging
+#**************************************************************************
+
+if ($pcfg)
+{
+	$log->loglevel(int($Config{'SYSTEM.LOGLEVEL'}));
+	$LoxBerry::System::DEBUG 	= 1 if int($Config{'SYSTEM.LOGLEVEL'}) eq 7;
+	$LoxBerry::Web::DEBUG 		= 1 if int($Config{'SYSTEM.LOGLEVEL'}) eq 7;
+	#LOGSTART "Logfile started.\n Loxberry: v".$lbversion." \n Sonos Plugin: v".$sversion." \n --------------------------------------------------------------------------------";
+}
+else
+{
+	$log->loglevel(7);
+	$LoxBerry::System::DEBUG 	= 1;
+	$LoxBerry::Web::DEBUG 		= 1;
+	$error_message				= $ERR{'ERRORS.ERR_NO_SONOS_CONFIG_FILE'};
+	&error;
+	exit;
+}
 
 # Check, if filename for the maintemplate is readable, if not raise an error
-$error_message = $SL{'ERRORS.ERR_MAIN_TEMPLATE_NOT_READABLE'};
+my $error_message = $ERR{'ERRORS.ERR_MAIN_TEMPLATE_NOT_READABLE'};
 stat($lbptemplatedir . "/" . $maintemplatefilename);
 &error if !-r _;
-LOGDEB "Filename for the maintemplate is ok, preparing template";
-my $maintemplate = HTML::Template->new(
-		filename => $lbptemplatedir . "/" . $maintemplatefilename,
-		global_vars => 1,
-		loop_context_vars => 1,
-		die_on_bad_params=> 0,
-		%htmltemplate_options,
-		debug => 1
-		);
 
-# my %L = LoxBerry::System::readlanguage($maintemplate, $languagefile);
+my $template =  HTML::Template->new(
+				filename => $lbptemplatedir . "/" . $maintemplatefilename,
+				global_vars => 1,
+				loop_context_vars => 1,
+				die_on_bad_params=> 0,
+				associate => $pcfg,
+				%htmltemplate_options,
+				debug => 1
+				);
+my %SL = LoxBerry::System::readlanguage($template, $languagefile);			
+
+
+##########################################################################
+# Language Settings
+##########################################################################
+
+$template->param("LBHOSTNAME", lbhostname());
+$template->param("LBLANG", $lblang);
+$template->param("SELFURL", $ENV{REQUEST_URI});
 
 #**************************************************************************
+
+# übergibt Plugin Verzeichnis an HTML
+$template->param("PLUGINDIR" => $lbpplugindir);
 
 # Check if plugin config file is readable
 if (!-r $lbpconfigdir . "/" . $pluginconfigfile) 
 {
-	$error_message = $SL{'ERRORS.ERR_NO_CONFIG_FILE'};
+	$error_message = $ERR{'ERRORS.ERR_NO_SONOS_CONFIG_FILE'};
 	&error;
 	exit;	
 }
@@ -277,7 +281,7 @@ if (!-r $lbpconfigdir . "/" . $pluginconfigfile)
 # Check if plugin player details file is readable
 if (!-r $lbpconfigdir . "/" . $pluginplayerfile) 
 {
-	$error_message = $SL{'ERRORS.ERR_NO_CONFIG_FILE'};
+	$error_message = $ERR{'ERRORS.ERR_NO_SONOS_PLAYER_FILE'};
 	&error;
 	exit;	
 }
@@ -287,7 +291,7 @@ if (!-r $lbpconfigdir . "/" . $pluginplayerfile)
 # Main program
 ##########################################################################
 
-if ($saveformdata) {
+if ($R::saveformdata) {
   &save;
 
 } else {
@@ -306,7 +310,7 @@ exit;
 #####################################################
 
 sub form {
-
+	
 	# fill saved values into form
 	$template		->param("SELFURL", $ENV{REQUEST_URI});
 	$template		->param("T2S_ENGINE" 	=> $pcfg->param("TTS.t2s_engine"));
@@ -345,7 +349,7 @@ sub form {
 	our $countplayers = 0;
 	our $rowssonosplayer;
 	
-	my $error_volume = $SL{'T2S.ERROR_VOLUME_PLAYER'};
+	my $error_volume = $ERR{'T2S.ERROR_VOLUME_PLAYER'};
 	my $playercfg = new Config::Simple($lbpconfigdir . "/" . $pluginplayerfile);
 	my %config = $playercfg->vars();	
 	
@@ -356,8 +360,8 @@ sub form {
 		$room =~ s/\[\]$//g;
 		my @fields = $playercfg->param($key);
 		$rowssonosplayer .= "<tr><td style='height: 25px; width: 43px;' class='auto-style1'><INPUT type='checkbox' style='width: 20px' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
-		$rowssonosplayer .= "<td style='height: 25px; width: 196px;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$room' style='width: 133px' /> </td>\n";
-		$rowssonosplayer .= "<td style='height: 28px; width: 147px;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='@fields[2]' style='width: 153px' /> </td>\n";
+		$rowssonosplayer .= "<td style='height: 25px; width: 176px;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$room' style='width: 196px; background-color: #e6e6e6;' /> </td>\n";
+		$rowssonosplayer .= "<td style='height: 28px; width: 147px;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='@fields[2]' style='width: 153px; background-color: #e6e6e6;' /> </td>\n";
 		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='@fields[3]' style='width: 52px' /> </td>\n";
 		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='@fields[4]' style='width: 52px' /> </td>\n";
 		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='@fields[5]' style='width: 52px' /> </td> </tr>\n";
@@ -367,6 +371,11 @@ sub form {
 		
 	# Call Subroutine to scan/import Sonos Zones
 	if ( $do eq "scan" ) {
+		&attention_scan;
+	}
+	
+	# Call Subroutine to scan/import Sonos Zones
+	if ( $do eq "scanning" ) {
 		&scan;
 	}
 
@@ -393,7 +402,7 @@ sub form {
 	if (!$miniserver) {$miniserver = "MINISERVER1"};
 	if (!$maxzap) {$maxzap = "40"};
 	
-	LOGOK "Sonos Plugin has been successfully loaded.";
+	#LOGOK "Sonos Plugin has been successfully loaded.";
 	# Print Template
 	my $sversion = LoxBerry::System::pluginversion();
 	$template_title = "$SL{'BASIS.MAIN_TITLE'}: v$sversion";
@@ -419,9 +428,8 @@ sub form {
 
 sub save 
 {
-
 	# Read Config
-	my $pcfg    = new Config::Simple($lbpconfigdir . "/" . $pluginconfigfile);
+	#my $pcfg    = new Config::Simple($lbpconfigdir . "/" . $pluginconfigfile);
 	
 	# Everything from Forms
 	my $t2s_engine 		= param('t2s_engine');
@@ -448,7 +456,7 @@ sub save
 	my $maxzap			= param('maxzap');
 	my $wastecal		= param('wastecal');
 	my $cal				= param('cal');
-	my $code		    = param('lang');
+	my $code		    = param('t2slang');
 	my $loglevel	    = param('LOGLEVEL');
 	
 	# turn on/off function "fetch_sonos"
@@ -511,13 +519,12 @@ sub save
 	}
 
 	$playercfg->save() or &error; 
-
-	
-	$template_title = $SL{'SAVE.MY_NAME'};
+	my $lblang = lblanguage();
+	$template_title = "$SL{'BASIS.MAIN_TITLE'}: v$sversion";
 	LoxBerry::Web::lbheader($template_title, $helpurl, $helptemplatefilename);
-	$successtemplate->param('SAVE_ALL_OK'		, $SL{'SAVE.SAVE_ALL_OK'});
-	$successtemplate->param('SAVE_MESSAGE'		, $SL{'SAVE.SAVE_MESSAGE'});
-	$successtemplate->param('SAVE_BUTTON_OK' 	, $SL{'SAVE.SAVE_BUTTON_OK'});
+	$successtemplate->param('SAVE_ALL_OK'		, $SUC{'SAVE.SAVE_ALL_OK'});
+	$successtemplate->param('SAVE_MESSAGE'		, $SUC{'SAVE.SAVE_MESSAGE'});
+	$successtemplate->param('SAVE_BUTTON_OK' 	, $SUC{'SAVE.SAVE_BUTTON_OK'});
 	$successtemplate->param('SAVE_NEXTURL'		, $ENV{REQUEST_URI});
 	print $successtemplate->output();
 	LoxBerry::Web::lbfooter();
@@ -527,16 +534,47 @@ sub save
 
 
 
+
+#####################################################
+# Attention Scan Sonos Player - Sub
+#####################################################
+
+sub attention_scan
+{
+	# Filename for the notice template is ok, preparing template";
+	my $noticetemplate = HTML::Template->new(
+					filename => $lbptemplatedir . "/" . $noticetemplatefilename,
+					global_vars => 1,
+					loop_context_vars => 1,
+					die_on_bad_params=> 0,
+					associate => $cgi,
+					%htmltemplate_options,
+					debug => 1,
+					);
+	my %NOT = LoxBerry::System::readlanguage($noticetemplate, $languagefile);
+	
+	$template_title = "$SL{'BASIS.MAIN_TITLE'}: v$sversion";
+	LoxBerry::Web::lbheader($template_title, $helpurl, $noticetemplatefilename);
+	$noticetemplate->param('SONOS_SCAN_HEADER'		, $SUC{'ZONES.SONOS_SCAN_HEADER'});
+	$noticetemplate->param('SONOS_SCAN_TEXT'		, $SUC{'ZONES.SONOS_SCAN_TEXT'});
+	$noticetemplate->param('BUTTON_NEXT' 			, $SUC{'ZONES.BUTTON_NEXT'});
+	$noticetemplate->param('BUTTON_BACK' 			, $SUC{'ZONES.BUTTON_BACK'});
+	print $noticetemplate->output();
+	LoxBerry::Web::lbfooter();
+	exit;
+}
+
+
+
+
 #####################################################
 # Scan Sonos Player - Sub
 #####################################################
 
-sub scan 
+sub scan
 {
-	#print Dumper(%so_config);
-	# read language
-	my %SL = LoxBerry::System::readlanguage($template, $languagefile);	
 	my $error_volume = $SL{'T2S.ERROR_VOLUME_PLAYER'};
+	
 	# executes PHP network.php script (reads player.cfg and add new zones if been added)
 	my $response = qx(/usr/bin/php $lbphtmldir/system/$scanzonesfile);
 			
@@ -552,14 +590,13 @@ sub scan
 		# creates table of Sonos devices
 		foreach my $key (keys %{$config})
 		{
-			my $error_volume = $SL{'T2S.ERROR_VOLUME_PLAYER'};
 			$countplayers++;
 			$rowssonosplayer .= "<tr><td style='height: 25px; width: 43px;' class='auto-style1'><INPUT type='checkbox' style='width: 20px' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
-			$rowssonosplayer .= "<td style='height: 25px; width: 196px;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$key' style='width: 133px' /> </td>\n";
-			$rowssonosplayer .= "<td style='height: 28px; width: 147px;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='$config->{$key}->[2]' style='width: 153px' /> </td>\n";
+			$rowssonosplayer .= "<td style='height: 25px; width: 176px;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$key' style='width: 196px; background-color: #e6e6e6;' /> </td>\n";
+			$rowssonosplayer .= "<td style='height: 28px; width: 147px;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='$config->{$key}->[2]' style='width: 153px; background-color: #e6e6e6;' /> </td>\n";
 			$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='$config->{$key}->[3]' style='width: 52px' /> </td>\n";
 			$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='$config->{$key}->[4]' style='width: 52px' /> </td>\n";
-			$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$config->{$key}->[5]' style='width: 52px' /> </td> </tr>\n";
+			$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$config->{$key}->[5]' style='width: 52px' /> </td>\n";
 			$rowssonosplayer .= "<input type='hidden' id='ip$countplayers' name='ip$countplayers' value='$config->{$key}->[0]'>\n";
 			$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' value='$config->{$key}->[1]'>\n";
 		}
@@ -574,13 +611,14 @@ sub scan
 
 sub error 
 {
-	my %SL = LoxBerry::System::readlanguage($template, $languagefile);	
-	$template_title = $SL{'ERRORS.MY_NAME'} . " - " . $SL{'ERRORS.ERR_TITLE'};
+	#my $lblang = lblanguage();
+	#my %ERR = LoxBerry::System::readlanguage($errortemplate, $languagefile);
+	$template_title = $ERR{'ERRORS.MY_NAME'} . ": v$sversion - " . $ERR{'ERRORS.ERR_TITLE'};
 	LoxBerry::Web::lbheader($template_title, $helpurl, $helptemplatefilename);
 	$errortemplate->param('ERR_MESSAGE'		, $error_message);
-	$errortemplate->param('ERR_TITLE'		, $SL{'ERRORS.ERR_TITLE'});
-	$errortemplate->param('ERR_BUTTON_BACK' , $SL{'ERRORS.ERR_BUTTON_BACK'});
-	#$successtemplate->param('ERR_NEXTURL'	, $ENV{REQUEST_URI});
+	$errortemplate->param('ERR_TITLE'		, $ERR{'ERRORS.ERR_TITLE'});
+	$errortemplate->param('ERR_BUTTON_BACK' , $ERR{'ERRORS.ERR_BUTTON_BACK'});
+	$successtemplate->param('ERR_NEXTURL'	, $ENV{REQUEST_URI});
 	print $errortemplate->output();
 	LoxBerry::Web::lbfooter();
 	
