@@ -201,6 +201,7 @@ function play_tts($messageid) {
 			// if no batch has been created add single T2S
 			$sonos->AddToQueue('x-file-cifs:'.$mpath."/".$messageid.".mp3");
 		}
+		#echo $mpath."/".$messageid.".mp3";
 		#$t = 'x-file-cifs:'.$mpath."/".$messageid.".mp3";
 		$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
 		$sonos->SetPlayMode('NORMAL');

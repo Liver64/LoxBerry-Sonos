@@ -63,7 +63,6 @@ then
 	echo "   read only = no" >> $LBHOMEDIR/system/samba/smb.conf
 	echo "   directory mask = 0700" >> $LBHOMEDIR/system/samba/smb.conf
 	echo "   create mask = 0700" >> $LBHOMEDIR/system/samba/smb.conf
-	echo "<INFO> Sonos plugin requires a reboot to enable the TTS share" >> $LBHOMEDIR/log/system_tmpfs/reboot.required
 fi
 
 # Exit with Status 0

@@ -158,6 +158,7 @@ echo "<PRE>";
 
 # prepare variables
 $home = $lbhomedir;
+$hostname = gethostname();									// hostname LoxBerry
 $myIP = $_SERVER["SERVER_ADDR"];								// get IP of LoxBerry
 $syntax = $_SERVER['REQUEST_URI'];								// get syntax
 $psubfolder = $lbpplugindir;									// get pluginfolder
@@ -165,6 +166,7 @@ $lbversion = LBSystem::lbversion();								// get LoxBerry Version
 $path = LBSCONFIGDIR; 											// get path to general.cfg
 $myFolder = "$lbpconfigdir";									// get config folder
 $myMessagepath = "//$myIP/sonos_tts/";							// get T2S folder to play
+#$myMessagepath = "//$hostname/loxberry/data/plugins/tts";		// get T2S folder to play
 $MessageStorepath = "$lbpdatadir/tts/";							// get T2S folder to store
 $pathlanguagefile = "$lbphtmldir/voice_engines/langfiles/";		// get languagefiles
 $logpath = "$lbplogdir/$psubfolder";							// get log folder

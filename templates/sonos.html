@@ -1,4 +1,4 @@
-﻿<style type="text/css">
+<style type="text/css">
 
 
 .form {
@@ -187,10 +187,10 @@
 		</td>
 		<td width="50%" style="height: 60px">
 			<table border=0 width="100%">
-				<tr class="colmp3">
+				<tr>
 					<td style="width: 25%">
 					<fieldset>
-							<select onchange="selection()"  id="sendlox" name="sendlox" data-role="flipswitch" style="width: 104px">
+							<select onchange="selection()" id="sendlox" name="sendlox" data-role="flipswitch" style="width: 104px">
 								<option <TMPL_VAR SELECTEDSENDLOX1> value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
 								<option <TMPL_VAR SELECTEDSENDLOX2> value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
 							</select>
@@ -701,7 +701,6 @@ function disable() {
 		$('#linkvoicerss').removeClass('ui-disabled');
 		$('#linkpolly').addClass('ui-disabled');
 		$(".t2sdet").fadeToggle(600);
-
 		$('.field-voice').fadeOut(200);
 		$('.colapi').fadeIn(200);
 		$('.colsec').fadeOut(200);
@@ -710,7 +709,7 @@ function disable() {
 		$('.keylinks').fadeIn(200);		
   }
   if ( document.main_form.tts_mac_osx.checked == true ) {
-     $('#voice').addClass('ui-disabled');
+     	$('#voice').addClass('ui-disabled');
         $('#t2slang').removeClass('ui-disabled');
         $('.field-voice').fadeOut(200);
 		$('.colapi').fadeOut(200);

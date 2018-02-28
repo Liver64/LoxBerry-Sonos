@@ -14,17 +14,17 @@ test=`cat /etc/samba/smb.conf | grep sonos_tts | wc -l`
 
 if [ $test = 0 ]
 then
-	$pluginname=$(basename $0 .sh)
+	#pluginname=$(dirname $0 .sh)
 	# to ensure that Sonos can read from folder structure
 	echo " " >> $LBHOMEDIR/system/samba/smb.conf
 	echo "[sonos_tts]" >> $LBHOMEDIR/system/samba/smb.conf
 	echo "   comment = Loxberry Files" >> $LBHOMEDIR/system/samba/smb.conf
-	echo "   path = $LBPDATA/$pluginname/tts" >> $LBHOMEDIR/system/samba/smb.conf
+	echo "   path = $LBPDATA/sonos4lox/tts" >> $LBHOMEDIR/system/samba/smb.conf
 	echo "   guest ok = yes" >> $LBHOMEDIR/system/samba/smb.conf
 	echo "   read only = no" >> $LBHOMEDIR/system/samba/smb.conf
 	echo "   directory mask = 0700" >> $LBHOMEDIR/system/samba/smb.conf
 	echo "   create mask = 0700" >> $LBHOMEDIR/system/samba/smb.conf
-	echo "<INFO> Sonos plugin requires a reboot to enable the TTS share" >> $LBHOMEDIR/log/system_tmpfs/reboot.required
+	echo "   Sonos plugin requires a reboot to enable the TTS share" >> $LBHOMEDIR/log/system_tmpfs/reboot.required
 fi
 
 exit 0
