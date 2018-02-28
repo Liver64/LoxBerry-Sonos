@@ -58,7 +58,7 @@ then
 	echo " " >> $LBHOMEDIR/system/samba/smb.conf
 	echo "[sonos_tts]" >> $LBHOMEDIR/system/samba/smb.conf
 	echo "   comment = Loxberry Files" >> $LBHOMEDIR/system/samba/smb.conf
-	echo "   path = $LBPDATA/tts" >> $LBHOMEDIR/system/samba/smb.conf
+	echo "   path = $LBPDATA/$3/tts" >> $LBHOMEDIR/system/samba/smb.conf
 	echo "   guest ok = yes" >> $LBHOMEDIR/system/samba/smb.conf
 	echo "   read only = no" >> $LBHOMEDIR/system/samba/smb.conf
 	echo "   directory mask = 0700" >> $LBHOMEDIR/system/samba/smb.conf
