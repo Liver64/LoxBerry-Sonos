@@ -1,0 +1,9 @@
+; Language phrases DE
+
+TXT0000="LoxBerry"
+TXT0001="Sonos4Lox"
+TXT0003="Der angegebene API-Key scheint ungültig zu sein."
+TXT0004="Der angegebene Secret-Key scheint ungültig zu sein."
+TXT0005="Alle Einstellungen erfolgreich gespeichert und aktiviert. Viel Spaß mit Sonos."
+TXT0006="Es sind noch keine Player angelegt. Bitte Scan Zones ausführen um nach neuen Playern zu suchen!"
+TXT0007="Es sind noch keine Radiosender angelegt."

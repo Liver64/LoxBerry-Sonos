@@ -1,0 +1,10 @@
+# These packages will be installed by apt-get -y install PACKAGENAME
+# One line per package, use exact packagename as you would do for apt-get.
+#
+libjson-perl
+lame
+curl 
+libcurl3
+libttspico-utils
+php-soap
+git
