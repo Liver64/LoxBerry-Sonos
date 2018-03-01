@@ -69,7 +69,7 @@ my $no_error_template_message	= "<b>Sonos4lox:</b> The error template is not rea
 my $pluginconfigfile 			= "sonos.cfg";
 my $pluginplayerfile 			= "player.cfg";
 my $pluginlogfile				= "sonos.log";
-my $url 						= "https://raw.githubusercontent.com/Liver64/LoxBerry-Sonos/master/webfrontend/html/release/info.txt";
+my $urlfile						= "https://raw.githubusercontent.com/Liver64/LoxBerry-Sonos/master/webfrontend/html/release/info.txt";
 my $log 						= LoxBerry::Log->new ( name => 'Sonos', filename => $lbplogdir ."/". $pluginlogfile, append => 1 );
 my $plugintempplayerfile	 	= "tmp_player.json";
 my $scanzonesfile	 			= "network.php";
@@ -327,9 +327,9 @@ exit;
 sub form {
 
 	# read info file from Github and save in $info
-	my $info = get($url);
+	my $info = get($urlfile);
 	$template		->param("INFO" 			=> "$info");
-	
+			
 	# fill saved values into form
 	$template		->param("SELFURL", $ENV{REQUEST_URI});
 	$template		->param("T2S_ENGINE" 	=> $pcfg->param("TTS.t2s_engine"));
@@ -344,8 +344,8 @@ sub form {
 	our $countradios = 0;
 	our $rowsradios;
 	
-	my %config = $pcfg->vars();	
-	foreach my $key (keys %config) {
+	my %Config = $pcfg->vars();	
+	foreach my $key (keys %Config) {
 		if ( $key =~ /^RADIO/ ) {
 			$countradios++;
 			my @fields = $pcfg->param($key);
