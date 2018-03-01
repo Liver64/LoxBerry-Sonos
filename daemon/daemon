@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# This is a sample DAEMON file which is started at boottime. 
+# CAUTION! MAKE SURE YOUR SCRIPT EXITS CLEANLY! It is a good idea
+# to start your daemon as background process. If you do something wrong here
+# your user's systems may hang forever during boottime!
+
+# Will be executed as user "root".
+
+# Name this file "daemon" in your plugin-archive. It will be renamed to NAME
+# during installation
+
+test=`cat /etc/samba/smb.conf | grep sonos_tts | wc -l`
+
+if [ $test = 0 ]
+then
+	# to ensure that Sonos can read from folder structure
+	echo " " >> REPLACELBHOMEDIR/system/samba/smb.conf
+	echo "[sonos_tts]" >> REPLACELBHOMEDIR/system/samba/smb.conf
+	echo "   comment = Loxberry Files" >> REPLACELBHOMEDIR/system/samba/smb.conf
+	echo "   path = REPLACELBHOMEDIR/data/plugins/REPLACELBPPLUGINDIR/tts" >> REPLACELBHOMEDIR/system/samba/smb.conf
+	echo "   guest ok = yes" >> REPLACELBHOMEDIR/system/samba/smb.conf
+	echo "   read only = no" >> REPLACELBHOMEDIR/system/samba/smb.conf
+	echo "   directory mask = 0700" >> REPLACELBHOMEDIR/system/samba/smb.conf
+	echo "   create mask = 0700" >> REPLACELBHOMEDIR/system/samba/smb.conf
+	#echo "   Sonos plugin requires a reboot to enable the TTS share" >> REPLACELBHOMEDIR/log/system_tmpfs/reboot.required
+fi
+
+# Restart Samba Server
+sudo /etc/init.d/samba restart
+exit 0
