@@ -106,7 +106,7 @@ function muellkalender() {
 	#echo urlencode($speak);
 	#echo '<br><br>';
 	LOGGING('Waste calendar Announcement: '.$speak,7);
-	LOGGING('Message been generated and pushed to T2S creation',6);
+	LOGGING('Message been generated and pushed to T2S creation',5);
 	return $speak;
 }
 
@@ -162,7 +162,7 @@ function calendar() {
 	echo ($speak);
 	#echo '<br><br>';
 	LOGGING('Calendar Announcement: '.$speak,7);
-	LOGGING('Message been generated and pushed to T2S creation',6);
+	LOGGING('Message been generated and pushed to T2S creation',5);
 	return $speak;
 	}
 }

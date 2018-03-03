@@ -21,7 +21,7 @@ function LineIn() {
 	$model = $xml->device->modelNumber;
 	$model = allowLineIn($model);
 	if ($model == true) {
-		LOGGING("Line in has been selected succesful",6);
+		LOGGING("Line in has been selected successful",6);
 		$sonos->SetAVTransportURI("x-rincon-stream:" . $sonoszone[$master][1]);
 		$sonos->Play();	
 	} else {
@@ -49,12 +49,13 @@ function SetVolumeModeConnect($mode, $zonenew)  {
 	if ($model === true) {
 		$uuid = $sonoszone[$zonenew][1];
 		$sonos->SetVolumeMode($mode, $uuid);
+		#LOGGING("Type of volume for CONNECT has been set successful",6);
 	}
 }
 
 
 /**
-* Funktion : 	GetVolumeModeConnect --> setzt für CONNECT ggf. die Lautstärke von fix auf variabel
+* Funktion : 	GetVolumeModeConnect --> erfragt für CONNECT ggf. die Lautstärke von fix auf variabel
 *
 * @param: $model --> alle gefundenen Devices
 * @return: $models --> true (Volume fixed) or false (Volume flexible)
@@ -71,6 +72,7 @@ function GetVolumeModeConnect($player)  {
 		$uuid = $sonoszone[$player][1];
 		$modeback = $sonos->GetVolumeMode($uuid);
 		$modeback === true ? $modeback = 'true' : $modeback = 'false';
+		#LOGGING("Type of volume for CONNECT has been detected",6);
 	}
 	return $modeback;
 }

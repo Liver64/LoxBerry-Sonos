@@ -108,7 +108,7 @@ function tt2t()
 		$ttd .= "Entfernung = " . $distance . "km / Zeit = " . $hours . " Stunden " . $minutes . " Minuten";
 
 	LOGGING('Destination announcement: '.($ttd),7);
-	LOGGING('Message been generated and pushed to T2S creation',6);
+	LOGGING('Message been generated and pushed to T2S creation',5);
 	return $words;
 }
 

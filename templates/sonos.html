@@ -69,7 +69,7 @@
 		<td style="width: 201px; height: 20px;" valign="top">
 		</td>
 		<td style="width: 201px; height: 20px;" valign="top">
-			<p class="marquee" align="middle" id="info"><FONT COLOR="#FF0000"><TMPL_VAR INFO></FONT></p>
+			<p class="marquee" id="infotext" align="middle" id="info"><FONT COLOR="#FF0000"><TMPL_VAR INFO></FONT></p>
 		</td>
 	</tr>
 
@@ -427,7 +427,7 @@
 								</td>
 								<td style="text-align: right;">
 									<input id="rmpvol" name="rmpvol" type="text" data-validation="number" class="textfield" value="<TMPL_VAR TTS.volrampto>"
-									data-validation-allowing="range[1;100]"
+									data-validation-allowing="special:number-min-max-value:1:100"
 									data-validation-error-msg="* Rampto Volume: Bitte nur Zahlen von 1 bis 100 eingeben.">
 								</td>
 							</tr>
@@ -1078,15 +1078,17 @@ function initial_lang_voice_load()  {
 			if (selectlang == '')  {
 				alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 				$('html, body').animate({
-			        scrollTop: $("#apikey").offset().top
+			        scrollTop: $("#infotext").offset().top
 			    }, 2000);
+			    $("#t2slang").focus();
 				return false;
 			}
 			if (selectvoice == '')  {
 				alert('<TMPL_VAR T2S.VALIDATE_VOICE>');
 				$('html, body').animate({
-			        scrollTop: $("#apikey").offset().top
+			        scrollTop: $("#infotext").offset().top
 			    }, 2000);
+			    $("#voice").focus();
 				return false;
 			}
 		}
@@ -1094,8 +1096,9 @@ function initial_lang_voice_load()  {
 			if (selectlang == '')  {
 				alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 				$('html, body').animate({
-			        scrollTop: $("#apikey").offset().top
+			        scrollTop: $("#infotext").offset().top
 			    }, 2000);
+			    $("#t2slang").focus();
 				return false;
 			}
 		}
@@ -1103,17 +1106,19 @@ function initial_lang_voice_load()  {
 			if (selectlang == '')  {  
 				alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 				$('html, body').animate({
-			        scrollTop: $("#apikey").offset().top
+			        scrollTop: $("#infotext").offset().top
 			    }, 2000);
-				return false;
+			    $("#t2slang").focus();
+      			return false;
 			}
 		}
 		else if (document.main_form.tts_pico.checked == true ) {
 			if (selectlang == '')  {  
 				alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 				$('html, body').animate({
-			        scrollTop: $("#apikey").offset().top
+			        scrollTop: $("#infotext").offset().top
 			    }, 2000);
+			    $("#t2slang").focus();
 				return false;
 			}
 		}
@@ -1121,8 +1126,9 @@ function initial_lang_voice_load()  {
 			if (selectlang == '')  { 
 				alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 				$('html, body').animate({
-			        scrollTop: $("#apikey").offset().top
+			        scrollTop: $("#infotext").offset().top
 			    }, 2000);
+			    $("#t2slang").focus();
 				return false;
 			}
 		}
@@ -1130,8 +1136,9 @@ function initial_lang_voice_load()  {
 			if (selectlang == '')  {  
 				alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 				$('html, body').animate({
-			        scrollTop: $("#apikey").offset().top
+			        scrollTop: $("#infotext").offset().top
 			    }, 2000);
+			    $("#t2slang").focus();
 				return false;
 			}
 		}

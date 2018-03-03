@@ -17,6 +17,7 @@ function playlist() {
 	if(isset($_GET['playlist'])) {
 		$sonos->SetQueue("x-rincon-queue:" . trim($sonoszone[$master][1]) . "#0"); 
 		$playlist = $_GET['playlist'];
+		LOGGING("Playlist has been found.", 7);
 	} else {
 		LOGGING("No playlist with the specified name found.", 3);
 		exit;
@@ -30,8 +31,10 @@ function playlist() {
 		if($playlist == $sonoslists[$pleinzeln]["title"]) {
 			$plfile = urldecode($sonoslists[$pleinzeln]["file"]);
 			$sonos->ClearQueue();
+			LOGGING("Queue has been cleared.", 7);
 			#$sonos->SetMute(false);
 			$sonos->AddToQueue($plfile); //Datei hinzufügen
+			LOGGING("Playlist has been added to Queue.", 7);
 			$sonos->SetQueue("x-rincon-queue:". trim($sonoszone[$master][1]) ."#0"); 
 			if ((isset($_GET['member'])) and isset($_GET['standardvolume'])) {
 				$member = $_GET['member'];
@@ -42,11 +45,14 @@ function playlist() {
 					$volume = $config['sonoszonen'][$zone][4];
 					$sonos->SetVolume($config['sonoszonen'][$zone][4]);
 				}
+				LOGGING("Standardvolume for members has been set.", 7);
 				$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 				$sonos->SetMute(false);
 				$sonos->SetVolume($config['sonoszonen'][$master][4]);
+				LOGGING("Standardvolume for master has been set.", 7);
 				$sonos->Play();
 			} else {
+				LOGGING("Volume from syntax has been set.", 7);
 				if($sonos->GetVolume() <= $config['TTS']['volrampto'])	{
 					$sonos->RampToVolume($config['TTS']['rampto'], $volume);
 					$sonos->Play();
@@ -54,6 +60,7 @@ function playlist() {
 					$sonos->Play();
 				}
 			}
+			LOGGING("Playlist is playing.", 7);
 			$gefunden = 1;
 		}
 		$pleinzeln++;
@@ -229,6 +236,7 @@ function SavePlaylist() {
 		LOGGING("The temporary Playlist (PL) could not be saved because the list contains min. 1 Song (URL) which is not longer valid! Please check or remove the list!", 3);
 		exit;
 	}
+	LOGGING("Temporally playlist has been saved.", 6);
 }
 
 
@@ -247,6 +255,7 @@ function DelPlaylist() {
 	if(!empty($t2splaylist)) {
 		$sonos->DelSonosPlaylist($playlists[$t2splaylist]['id']);
 	}
+	LOGGING("Temporally playlist has been deleted.", 6);
 }
 
 
@@ -292,6 +301,7 @@ function random_playlist() {
 			$sonos->RampToVolume($config['TTS']['rampto'], $volume);
 		}	
 	}
+	LOGGING("Random playlist has been added to Queue.", 6);
 	$sonos->Play();
 }
 
@@ -315,10 +325,12 @@ function next_dynamic() {
 		checkifmaster($master);
 		$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 		$sonos->Next();
+		LOGGING("Next Song in Playlist.", 7);
 	} else {
 		checkifmaster($master);
 		$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 		$sonos->SetTrack("1");
+		LOGGING("Playlist starts at Song Number 1.", 7);
 	}
 	$sonos->Play();
 }

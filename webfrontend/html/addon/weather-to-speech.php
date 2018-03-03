@@ -164,7 +164,7 @@ function w2s()
 				break;
 		}
 		$textcode = utf8_encode($text);
-		LOGGING('Weather announcement: '.utf8_encode($text),6);
+		LOGGING('Weather announcement: '.utf8_encode($text),5);
 		LOGGING('Message been generated and pushed to T2S creation',7);
 		return $textcode;
 	}

@@ -40,7 +40,7 @@ function s2s()
 		}
 		$text = utf8_encode($text);
 		LOGGING('Song Announcement: '.($text),7);
-		LOGGING('Message been generated and pushed to T2S creation',6);
+		LOGGING('Message been generated and pushed to T2S creation',5);
 		return ($text);
 	} 
 }

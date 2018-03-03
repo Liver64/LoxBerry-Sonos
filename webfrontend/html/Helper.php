@@ -789,6 +789,7 @@ function select_t2s_engine()  {
 * @param: 
 * @return: array 
 **/
+
 function load_t2s_text(){
 	global $config, $t2s_langfile, $t2s_text_stand, $templatepath;
 	
@@ -799,7 +800,34 @@ function load_t2s_text(){
 		exit;
 	}
 	return $TL;
+}
+
+
+
+/**
+* Function : check_sambashare --> check if what sambashare been used
+*
+* @param: 
+* @return: array 
+**/
+
+function check_sambashare($sambaini, $searchfor) {
+	global $hostname, $psubfolder;
 	
+	$contents = file_get_contents($sambaini);
+	// escape special characters in the query
+	$pattern = preg_quote($searchfor, '/');
+	// finalise the regular expression, matching the whole line
+	$pattern = "/^.*$pattern.*\$/m";
+	if(preg_match_all($pattern, $contents, $matches)){
+		$myMessagepath = "//$hostname/plugindata/$psubfolder/tts/";
+		LOGGING("Samba share 'pluigndata' has been dedected",5);
+	}
+	else {
+		$myMessagepath = "//$myIP/sonos_tts/";
+		LOGGING("Samba share 'sonos_tts' has been dedected",5);
+	}
+	return $myMessagepath;
 }
 
 

@@ -10,22 +10,24 @@
 # Name this file "daemon" in your plugin-archive. It will be renamed to NAME
 # during installation
 
-test=`cat /etc/samba/smb.conf | grep sonos_tts | wc -l`
+shareavailable=`cat /etc/samba/smb.conf | grep plugindata | wc -l`
 
-if [ $test = 0 ]
+if [ $shareavailable = 0 ]
 then
 	# to ensure that Sonos can read from folder structure
 	echo " " >> $LBHOMEDIR/system/samba/smb.conf
-	echo "[sonos_tts]" >> $LBHOMEDIR/system/samba/smb.conf
-	echo "   comment = Loxberry Files" >> $LBHOMEDIR/system/samba/smb.conf
-	echo "   path = $LBPDATA/REPLACELBPPLUGINDIR/tts" >> $LBHOMEDIR/system/samba/smb.conf
+	echo "[plugindata]" >> $LBHOMEDIR/system/samba/smb.conf
+	echo "   comment = LoxBerry Plugin Data" >> $LBHOMEDIR/system/samba/smb.conf
+	echo "   path = $LBPDATA" >> $LBHOMEDIR/system/samba/smb.conf
 	echo "   guest ok = yes" >> $LBHOMEDIR/system/samba/smb.conf
 	echo "   read only = no" >> $LBHOMEDIR/system/samba/smb.conf
 	echo "   directory mask = 0700" >> $LBHOMEDIR/system/samba/smb.conf
 	echo "   create mask = 0700" >> $LBHOMEDIR/system/samba/smb.conf
+	echo "   follow symlinks = yes" >> $LBHOMEDIR/system/samba/smb.conf
+	echo "   wide links = yes" >> $LBHOMEDIR/system/samba/smb.conf
 	#echo "   Sonos plugin requires a reboot to enable the TTS share" >> $LBHOMEDIR/log/system_tmpfs/reboot.required
+	# Restart Samba Server
+	systemctl reload smbd.service
 fi
 
-# Restart Samba Server
-sudo /etc/init.d/samba restart
 exit 0
