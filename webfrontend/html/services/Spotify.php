@@ -58,6 +58,7 @@ function AddSpotify() {
 			LOGGING("The entered Spotify-Track-URI: ".$trackuri." is not valid! Please check!", 3);
 			exit;
 		}
+		LOGGING('The entered Spotify-Track has been loaded',6);
 		$sonos->SetTrack($message_pos);
 	}
 	// Spotify Playlist
@@ -70,7 +71,7 @@ function AddSpotify() {
 		} catch (Exception $e) {
 			LOGGING("The entered Spotify-Playlist-URI: ".$pl." is not valid! Please check!", 3);
 			exit;
-		}
+		}LOGGING('The entered Spotify-Playlist has been loaded',6);
 	}
 	// Spotify Album
 	if (isset($_GET['albumuri'])) {
@@ -83,6 +84,7 @@ function AddSpotify() {
 			LOGGING("The entered Spotify-Album-URI: ".$pl." is not valid! Please check!", 3);
 			exit;
 		}
+		LOGGING('The entered Spotify-Album has been loaded',6);
 	}
 	$sonos->SetVolume($volume);
 	$sonos->SetMute(false);

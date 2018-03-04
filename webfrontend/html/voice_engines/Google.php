@@ -16,8 +16,9 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 			$isvalid = array_multi_search($language, $valid_languages, $sKey = "value");
 			if (!empty($isvalid)) {
 				$language = $_GET['lang'];	
+				LOGGING('T2S language has been successful entered',5);
 			} else {
-				trigger_error('The entered Google language key is not supported. Please correct (see Wiki)!', E_USER_ERROR);
+				LOGGING('The entered Google language key is not supported. Please correct (see Wiki)!',3);
 				exit;
 			}
 		} else {
@@ -32,15 +33,15 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 		# $textstring = str_replace($search,$replace,$textstring);
 		#####################################################################################################################
 		
-		if (strlen($textstring) > 100) {
-            LOGGING("The Google T2S contains more than 100 characters and therefor could not be generated. Please reduce characters in your message!",3);
+		if (strlen($textstring) > 150) {
+            LOGGING("The Google T2S contains more than 150 characters and therefor could not be generated. Please reduce characters in your message!",3);
 			exit;
         }
 								  
 		# Speicherort der MP3 Datei
 		$mpath = $config['SYSTEM']['messageStorePath'];
 		$file = $MessageStorepath . $filename . ".mp3";
-		#$textstring = utf8_encode($textstring);
+		$textstring = urlencode($textstring);
 		
 		#Generieren des strings der an Google geschickt wird.
 		$inlay = "ie=UTF-8&total=1&idx=0&textlen=100&client=tw-ob&q=$textstring&tl=$language";	
@@ -51,6 +52,9 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 			# Übermitteln des strings an Google.com
 			$mp3 = file_get_contents("http://translate.google.com/translate_tts?".$inlay);
 			file_put_contents($file, $mp3);
+			LOGGING('The text has been passed to google engine for translation',5);
+		} else {
+			LOGGING('Requested T2s has been grabbed from cache',6);
 		}
 	$messageid = $filename;
 	return ($messageid);

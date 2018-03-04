@@ -174,7 +174,7 @@ curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
 // Text ansagen
 $text = preg_replace("/[^a-z0-9!. ]/i", "", $text);
 $url = $text;
-echo $url;
+#echo $url;
 LOGGING('Pollen level announcement: '.($url),5);
 LOGGING('Message been generated and pushed to T2S creation',7);
 return $url;

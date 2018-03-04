@@ -87,15 +87,15 @@ function muellkalender() {
 		} elseif ((count($muellheute)) === 2 AND ($Stunden >=0 && $Stunden <11)) {
 			$welcomemorning = welcomemorning();
 			$speak = $welcomemorning." ".$TL['WASTE-CALENDAR-TO-SPEECH']['TODAY_MORNING_START']." ".$muellheute[0]." ".$TL['WASTE-CALENDAR-TO-SPEECH']['IN_CASE_2TIMES_WASTE']." ".$muellheute[1]." ".$TL['WASTE-CALENDAR-TO-SPEECH']['TODAY_MORNING_END'];
-		} elseif ((count($muellmorgen)) === 1 AND ($Stunden >=18 && $Stunden <24)) {
+		} elseif ((count($muellmorgen)) === 1 AND ($Stunden >=11 && $Stunden <24)) {
 			$welcomeevening = welcomeevening();
 			$speak = $welcomeevening." ".$TL['WASTE-CALENDAR-TO-SPEECH']['EVENING_BEFORE_START']." ".$muellmorgen[0]." ".$TL['WASTE-CALENDAR-TO-SPEECH']['EVENING_BEFORE_END'];
-		} elseif ((count($muellmorgen)) === 2 AND ($Stunden >=18 && $Stunden <24)) {
+		} elseif ((count($muellmorgen)) === 2 AND ($Stunden >=11 && $Stunden <24)) {
 			$welcomeevening = welcomeevening();
 			$speak = $welcomeevening." ".$TL['WASTE-CALENDAR-TO-SPEECH']['EVENING_BEFORE_START']." ".$muellmorgen[0]." ".$TL['WASTE-CALENDAR-TO-SPEECH']['IN_CASE_2TIMES_WASTE']." ".$muellmorgen[1]." ".$TL['WASTE-CALENDAR-TO-SPEECH']['EVENING_BEFORE_END'];
 		} elseif ((empty($muellheute)) or (empty($muellmorgen)))  {
 			$text = $TL['WASTE-CALENDAR-TO-SPEECH']['NO_WASTE_FOUND_ONLY_LOGGING'];
-			echo $text;
+			#echo $text;
 			LOGGING('Waste calendar: '.$text,6);
 			exit;
 		}
@@ -120,6 +120,8 @@ function muellkalender() {
 function calendar() {
 	
 	global $config, $home, $myIP;
+	
+	$TL = LOAD_T2S_TEXT();
 	
 	if (!file_exists("$home/webfrontend/html/plugins/caldav4lox/caldav.php")) {
 		LOGGING('The required Caldav-4-Lox Plugin is already not installed. Please install Plugin!',3);
@@ -159,7 +161,7 @@ function calendar() {
 			$monate = array("Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember");
 			$speak .= $calendar['']['Summary'] . " am " . $tage[$calendar['']['wkDay']] . " den ". date_format($zeit, 'd'). " " .$monate[date_format($zeit, 'm') - 1] ." um ". date_format($zeit, 'G:i');
 		}
-	echo ($speak);
+	#echo ($speak);
 	#echo '<br><br>';
 	LOGGING('Calendar Announcement: '.$speak,7);
 	LOGGING('Message been generated and pushed to T2S creation',5);
@@ -174,6 +176,8 @@ function calendar() {
 * @return: 
 **/
 function welcomemorning() {
+	global $TL;
+	
 	$welcomearraymorning = array(
 		$TL['WASTE-CALENDAR-TO-SPEECH']['RANDOM_WELCOME_MORNING1'],
 		$TL['WASTE-CALENDAR-TO-SPEECH']['RANDOM_WELCOME_MORNING2'],
@@ -183,7 +187,8 @@ function welcomemorning() {
 		$TL['WASTE-CALENDAR-TO-SPEECH']['RANDOM_WELCOME_MORNING6'],
 		$TL['WASTE-CALENDAR-TO-SPEECH']['RANDOM_WELCOME_MORNING7'],
 		$TL['WASTE-CALENDAR-TO-SPEECH']['RANDOM_WELCOME_MORNING8'],
-		$TL['WASTE-CALENDAR-TO-SPEECH']['RANDOM_WELCOME_MORNING9'],
+		$TL['WASTE-CALENDAR-TO-SPEECH']['RANDOM_WELCOME_MORNING9']
+		);
 	$welcomemorning = $welcomearraymorning[array_rand($welcomearraymorning)];
 	return $welcomemorning;
 	}
@@ -196,6 +201,8 @@ function welcomemorning() {
 * @return: 
 **/
 function welcomeevening() {
+	global $TL;
+	
 	$welcomearrayevening = array(
 		$TL['WASTE-CALENDAR-TO-SPEECH']['RANDOM_WELCOME_EVENING1'],
 		$TL['WASTE-CALENDAR-TO-SPEECH']['RANDOM_WELCOME_EVENING2'],
@@ -206,6 +213,7 @@ function welcomeevening() {
 		$TL['WASTE-CALENDAR-TO-SPEECH']['RANDOM_WELCOME_EVENING7'],
 		$TL['WASTE-CALENDAR-TO-SPEECH']['RANDOM_WELCOME_EVENING8'],
 		$TL['WASTE-CALENDAR-TO-SPEECH']['RANDOM_WELCOME_EVENING9'],
+		);
 	$welcomeevening = $welcomearrayevening[array_rand($welcomearrayevening)];
 	return $welcomeevening;
 	}

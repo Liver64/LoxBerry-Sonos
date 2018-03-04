@@ -80,12 +80,13 @@ $url = $text;
 #echo $url;
 LOGGING('Wetter Warnung Ansage: '.($url),7);
 LOGGING('Message been generated and pushed to T2S creation',5);
-return $url;
+#return $url;
 
 curl_setopt($curl, CURLOPT_URL, $url);
 $return = curl_exec($curl);
 
 curl_close($curl);
+return $url;
 }
 
 ?>

@@ -53,6 +53,7 @@ function AddGoogle() {
 			LOGGING("The entered Google-Track-URI: ".$trackuri." is not valid! Please check!", 3);
 			exit;
 		}
+		LOGGING('The entered Google-Track has been loaded',6);
 		$sonos->SetTrack($message_pos);
 	}
 	// Google Playlist -> NOT REALLY WORKING
@@ -67,6 +68,7 @@ function AddGoogle() {
 			LOGGING("The entered Google-Playlist-URI: ".$pl." is not valid or is a User Playlist! Please check!", 3);
 			exit;
 		}
+		LOGGING('The entered Google-Playlist has been loaded',6);
 	}
 	// Google Album -> NOT WORKING
 	if (isset($_GET['albumuri'])) {
@@ -79,6 +81,7 @@ function AddGoogle() {
 			LOGGING("The entered Google-Album-URI: ".$pl." is not valid! Please check!", 3);
 			exit;
 		}
+		LOGGING('The entered Google-Album has been loaded',6);
 	}
 	$sonos->SetVolume($volume);
 	$sonos->SetMute(false);

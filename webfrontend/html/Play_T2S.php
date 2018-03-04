@@ -114,7 +114,7 @@ function create_tts() {
 		}
 	elseif ((empty($messageid)) && ($text <> '')) {
 		// prepares the T2S message
-		$textstring = substr($_GET['text'], 0, 500);
+		$textstring = (substr($_GET['text'], 0, 500));
 		LOGGING("textstring has been entered", 7);		
 		}	
 	
@@ -294,7 +294,7 @@ function sendmessage() {
 					LOGGING("There is no T2S batch file to be written!", 3);
 					exit();
 				}
-				if ($messageid == '0') {
+				if (strlen($messageid) == '32') {
 					fwrite($file, "$filename\n" );
 					LOGGING("T2S has been entered to batch", 7);		
 				} else {

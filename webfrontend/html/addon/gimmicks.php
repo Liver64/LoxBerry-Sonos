@@ -14,7 +14,7 @@ function GetTodayBauernregel() {
 		echo "<br>Bauernregel: $regel";
 		echo '<br>';
 		LOGGING('Bauernregel been generated and pushed to T2S creation',7);
-		return urlencode($regel);
+		return ($regel);
 	}
 }
 
@@ -30,7 +30,7 @@ function GetWitz()  {
 	echo "<br>WITZ: $witz";
 	echo '<br>';
 	LOGGING('Witz been generated and pushed to T2S creation',7);
-	return urlencode($witz);
+	return ($witz);
 }
 	
 ?>

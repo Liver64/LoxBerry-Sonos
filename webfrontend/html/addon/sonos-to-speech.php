@@ -32,14 +32,14 @@ function s2s()
 			# Generiert Titelinfo wenn MP3 läuft
 			$artist = substr($temp["artist"], 0, 30);
 			$titel = substr($temp["title"], 0, 70);
-			$text = $this_song . $titel . $by . $artist ; 
+			$text = $this_song." ".$titel." ".$by." ".$artist ; 
 		} elseif(empty($temp["duration"])) {
 			# Generiert Ansage des laufenden Senders
 			$sender = $temp_radio['title'];
 			$text = $this_radio." ".$sender;
 		}
-		$text = utf8_encode($text);
-		LOGGING('Song Announcement: '.($text),7);
+		$text = ($text);
+		LOGGING('Song Announcement: '.utf8_encode($text),7);
 		LOGGING('Message been generated and pushed to T2S creation',5);
 		return ($text);
 	} 

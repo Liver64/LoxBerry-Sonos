@@ -60,6 +60,7 @@ function AddNapster() {
 			LOGGING("The entered Napster-Track-ID's: ".$uri." are not valid! Please check!", 3);
 			exit;
 		}
+		LOGGING('The entered Napster-Track has been loaded',6);
 		$sonos->SetTrack($message_pos);
 	}
 	// Napster Playlist
@@ -73,6 +74,7 @@ function AddNapster() {
 			LOGGING("The entered Napster-Playlist-ID: ".$pl." is not valid! Please check!", 3);
 			exit;
 		}
+		LOGGING('The entered Napster-Playlist has been loaded',6);
 	}
 	// Napster Album
 	if (isset($_GET['albumuri'])) {
@@ -85,6 +87,7 @@ function AddNapster() {
 			LOGGING("The entered Napster-Album-ID ".$pl." is not valid! Please check!", 3);
 			exit;
 		}
+		LOGGING('The entered Napster-Album has been loaded',6);
 	}
 	$sonos->SetVolume($volume);
 	$sonos->SetMute(false);

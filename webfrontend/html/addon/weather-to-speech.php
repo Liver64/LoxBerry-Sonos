@@ -4,8 +4,12 @@ function w2s()
 // TTS Nachricht, übermittelt sie an VoiceRRS und speichert das zurückkommende file lokal ab
 // @Parameter = $text von sonos2.php
  	{
-		global $config, $debug, $town, $home, $psubfolder;
+		global $config, $debug, $town, $home, $psubfolder, $myIP;
 		
+		$TL = LOAD_T2S_TEXT();
+		#print_r($TL);
+		#exit;
+				
 		// Einlesen der Daten vom Wunderground Plugin
 		if (!file_exists("$home/data/plugins/wu4lox/current.dat")) {
 			LOGGING('Data from Wunderground could be obtainend.',3);
@@ -63,8 +67,8 @@ function w2s()
 		if(ctype_upper($wind_dir)) 
 		{
 			# Ersetzen der Windrichtungskürzel für Windrichtung
-			$search = array('W','S','N','O');
-			$replace = array('west','sued','nord','ost');
+			$search = array("W","S","N","O");
+			$replace = array($TL['WEATHER-TO-SPEECH']['DIRECTION_WEST'],$TL['WEATHER-TO-SPEECH']['DIRECTION_SOUTH'],$TL['WEATHER-TO-SPEECH']['DIRECTION_NORTH'],$TL['WEATHER-TO-SPEECH']['DIRECTION_EAST']);
 			$wind_dir = str_replace($search,$replace,$wind_dir);
 		}
 		# Erstellen der Windtexte basierend auf der Windgeschwindigkeit
@@ -72,37 +76,37 @@ function w2s()
 		switch ($windtxt) 
 		{
 			case $windspeed >=1 && $windspeed <=5:
-				$WindText= "ein leiser Zug";
+				$WindText= $TL['WEATHER-TO-SPEECH']['WINDSPEED_KM/H_1_TO_5'];
 				break;
 			case $windspeed >5 && $windspeed <=11:
-				$WindText= "eine leichte Briese";
+				$WindText= $TL['WEATHER-TO-SPEECH']['WINDSPEED_KM/H_5_TO_11'];
 				break;
 			case $windspeed >11 && $windspeed <=19:
-				$WindText= "eine schwache Briese";
+				$WindText= $TL['WEATHER-TO-SPEECH']['WINDSPEED_KM/H_11_TO_19'];
 				break;
 			case $windspeed >19 && $windspeed <=28:
-				$WindText= "ein mäßiger Wind";
+				$WindText= $TL['WEATHER-TO-SPEECH']['WINDSPEED_KM/H_19_TO_28'];
 				break;
 			case $windspeed >28 && $windspeed <=38:
-				$WindText= "ein frischer Wind";
+				$WindText= $TL['WEATHER-TO-SPEECH']['WINDSPEED_KM/H_28_TO_38'];
 				break;
 			case $windspeed >38 && $windspeed <=49:
-				$WindText= "ein starker Wind";
+				$WindText= $TL['WEATHER-TO-SPEECH']['WINDSPEED_KM/H_38_TO_49'];
 				break;
 			case $windspeed >49 && $windspeed <=61:
-				$WindText= "ein steifer Wind";
+				$WindText= $TL['WEATHER-TO-SPEECH']['WINDSPEED_KM/H_49_TO_61'];
 				break;
 			case $windspeed >61 && $windspeed <=74:
-				$WindText= "ein stürmischer Wind";
+				$WindText= $TL['WEATHER-TO-SPEECH']['WINDSPEED_KM/H_61_TO_74'];
 				break;
 			case $windspeed >74 && $windspeed <=88:
-				$WindText= "ein Sturm";
+				$WindText= $TL['WEATHER-TO-SPEECH']['WINDSPEED_KM/H_74_TO_88'];
 				break;
 			case $windspeed >88 && $windspeed <=102:
-				$WindText= "ein schwerer Sturm";
+				$WindText= $TL['WEATHER-TO-SPEECH']['WINDSPEED_KM/H_88_TO_102'];
 				break;
 			case $windspeed >102:
-				$WindText= "ein orkanartiger Sturm";
+				$WindText= $TL['WEATHER-TO-SPEECH']['WINDSPEED_KM/H_GREATER_THEN_102'];
 				break;
 			default:
 				$WindText= "";
@@ -113,10 +117,10 @@ function w2s()
 			switch ($windspeed) 
 			{
 				case $windspeed <$windschwelle:
-					$WindAnsage="";
+					$WindAnsage = "";
 					break;
 				case $windspeed >=$windschwelle:
-					$WindAnsage=". Es weht ".$WindText. " aus Richtung ". utf8_decode($wind_dir). " mit Geschwindigkeiten bis zu ".$windspeed." km/h";
+					$WindAnsage = ". ".$TL['WEATHER-TO-SPEECH']['WIND_ANNOUNCEMENT_1']." ".$WindText." ".$TL['WEATHER-TO-SPEECH']['WIND_ANNOUNCEMENT_2']." ".utf8_decode($wind_dir)." ".$TL['WEATHER-TO-SPEECH']['WIND_ANNOUNCEMENT_3']." ".$windspeed." ".$TL['WEATHER-TO-SPEECH']['WIND_ANNOUNCEMENT_4'];
 					break;
 				default:
 					$WindAnsage="";
@@ -131,7 +135,7 @@ function w2s()
 				$RegenAnsage="";
 				break;
 			case $regenwahrscheinlichkeit0 >=$regenschwelle:
-				$RegenAnsage="Die Regenwahrscheinlichkeit beträgt " .$regenwahrscheinlichkeit0." Prozent.";
+				$RegenAnsage=$TL['WEATHER-TO-SPEECH']['RAIN_ANNOUNCEMENT_1']." ".$regenwahrscheinlichkeit0." ".$TL['WEATHER-TO-SPEECH']['RAIN_ANNOUNCEMENT_2']." ";
 				break;
 			default:
 				$RegenAnsage="";
@@ -143,28 +147,28 @@ function w2s()
 		# Aufpassen das bei Textänderungen die Werte nicht überschrieben werden
 		###############################################################################################
 		switch ($Stunden) {
-			# Wettervorhersage für die Zeit zwischen 06:00 und 11:00h
-			case $Stunden >=6 && $Stunden <8:
-				$text="Guten morgen. Ich möchte euch eine kurze Wettervorhersage für den heutigen Taach geben. Vormittags wird das Wetter ". utf8_decode($wetter). ", die Höchsttemperatur beträgt voraussichtlich ". round($high0)." Grad, die aktuelle Temperatur beträgt ". round($temp_c)." Grad. ". $RegenAnsage.". ".$WindAnsage.". Ich wünsche euch einen wundervollen Tag.";
+			# Wettervorhersage für die Zeit zwischen 06:00 und 10:00h
+			case $Stunden >=6 && $Stunden <10:
+				$text=($TL['WEATHER-TO-SPEECH']['WEATHERTEXT_1_HOUR_FROM_6AM_TO_10AM']." ". ($wetter). ", ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_2_HOUR_FROM_6AM_TO_10AM']." ".round($high0)." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_3_HOUR_FROM_6AM_TO_10AM']." ". round($temp_c)." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_4_HOUR_FROM_6AM_TO_10AM']." ". $RegenAnsage.". ".$WindAnsage.". ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_5_HOUR_FROM_6AM_TO_10AM']);
 				break;
-			# Wettervorhersage für die Zeit zwischen 11:00 und 17:00h
-			case $Stunden >=8 && $Stunden <17:
-				$text="Hallo zusammen. Heute Mittag, beziehungsweise heute Nachmittag, wird das Wetter ". utf8_decode($wetter_hc). ". Die momentane Außentemperatur beträgt ". round($temp_c)." Grad. " .$RegenAnsage.". ".$WindAnsage.". Ich wünsche euch noch einen schönen Nachmitag.";
+			# Wettervorhersage für die Zeit zwischen 10:00 und 17:00h
+			case $Stunden >=10 && $Stunden <17:
+				$text=($TL['WEATHER-TO-SPEECH']['WEATHERTEXT_1_HOUR_FROM_10AM_TO_5PM']." ". utf8_encode($wetter_hc)." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_2_HOUR_FROM_10AM_TO_5PM']." ". round($temp_c)." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_3_HOUR_FROM_10AM_TO_5PM']." ".$RegenAnsage.". ".$WindAnsage.". ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_4_HOUR_FROM_10AM_TO_5PM']);
 				break;
 			# Wettervorhersage für die Zeit zwischen 17:00 und 22:00h
 			case $Stunden >=17 && $Stunden <22:
-				$text="Guten Abend. Hier noch mal eine kurze Aktualisierung. In den Abendstunden wird es ". utf8_decode($wetter). ". Die aktuelle Außentemperatur ist ". round($temp_c)." Grad, die zu erwartende Tiefsttemperatur heute abend beträgt ". round($low0). " Grad. ". $RegenAnsage.". ".$WindAnsage.". Einen schönen Abend noch.";
+				$text=$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_1_HOUR_FROM_5PM_TO_10PM']." ". utf8_decode($wetter). ". ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_2_HOUR_FROM_5PM_TO_10PM']." ". round($temp_c)." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_3_HOUR_FROM_5PM_TO_10PM']." ". round($low0). " ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_4_HOUR_FROM_5PM_TO_10PM'].". ". $RegenAnsage.". ".$WindAnsage.". ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_5_HOUR_FROM_5PM_TO_10PM'].". ";
 				break;
 			# Wettervorhersage für den morgigen Tag nach 22:00h
 			case $Stunden >=22:
-				$text="Guten Abend. Das Wetter morgen wird voraussichtlich ".utf8_decode($conditions1). ", die Höchsttemperatur beträgt ". round($high1) ." Grad, die Tiefsttemperatur beträgt " . round($low1). " Grad und die Regenwahrscheinlichkeit liegt bei ".$regenwahrscheinlichkeit1." Prozent. Gute Nacht und schlaft gut.";
+				$text=$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_1_HOUR_AFTER_10PM']." ".utf8_decode($conditions1). ", ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_2_HOUR_AFTER_10PM']." ". round($high1) ." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_3_HOUR_AFTER_10PM']." ". round($low1)." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_4_HOUR_AFTER_10PM']." ".$regenwahrscheinlichkeit1." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_5_HOUR_AFTER_10PM'].".";
 				break;
 			default:
 				$text="";
 				break;
 		}
-		$textcode = utf8_encode($text);
-		LOGGING('Weather announcement: '.utf8_encode($text),5);
+		$textcode = ($text);
+		LOGGING('Weather announcement: '.($text),5);
 		LOGGING('Message been generated and pushed to T2S creation',7);
 		return $textcode;
 	}

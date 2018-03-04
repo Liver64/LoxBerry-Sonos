@@ -35,11 +35,14 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 					if (!empty($valid_voice)) {
 						$voice = $valid_voice[0]['voice'];
 						shell_exec("say -v $voice $textstring -o $messageStorePath$filename.aiff; ".$lamePath."lame $MessageStorepath$filename.aiff 2>&1");
+						LOGGING('T2S language/voice has been successful entered',5);
 					} else {
-						trigger_error('The entered OSX Voice is not supported. Please correct (see Wiki)!', E_USER_ERROR);	
+						LOGGING("The entered OSX Voice is not supported. Please correct (see Wiki)!!",3);
+						exit;
 					}
 			} else {
 				shell_exec("say $textstring -o $messageStorePath$filename.aiff; ".$lamePath."lame $mpath$filename.aiff 2>&1");
+				LOGGING('The text has been passed to OSX engine for translation',5);
 			}
 		}
 	$messageid = $filename;

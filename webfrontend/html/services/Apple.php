@@ -52,6 +52,7 @@ function AddApple() {
 			LOGGING("The entered Apple-Track-ID's: ".$uri." are not valid! Please check!", 3);
 			exit;
 		}
+		LOGGING('The entered Apple-Track has been loaded',6);
 		$sonos->SetTrack($message_pos);
 	}
 	// Apple Playlist
@@ -65,6 +66,7 @@ function AddApple() {
 			LOGGING("The entered Apple-Playlist-ID: ".$pl." is not valid! Please check!", 3);
 			exit;
 		}
+		LOGGING('The entered Apple-Playlist has been loaded',6);
 	}
 	// Apple Album
 	if (isset($_GET['albumuri'])) {
@@ -77,6 +79,7 @@ function AddApple() {
 			LOGGING("The entered Apple-Album-ID ".$pl." is not valid! Please check!", 3);
 			exit;
 		}
+		LOGGING('The entered Apple-Album has been loaded',6);
 	}
 	$sonos->SetVolume($volume);
 	$sonos->SetMute(false);

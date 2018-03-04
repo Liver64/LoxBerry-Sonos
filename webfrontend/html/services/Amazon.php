@@ -64,6 +64,7 @@ function AddAmazon() {
 			LOGGING("The entered Amazon-Track-ID's: ".$uri." are not valid! Please check!", 3);
 			exit;
 		}
+		LOGGING('The entered Amazon-Track has been loaded',6);
 		$sonos->SetTrack($message_pos);
 	}
 	// Amazon Playlist
@@ -77,6 +78,7 @@ function AddAmazon() {
 			LOGGING("The entered Amazon-Playlist-ID: ".$pl." is not valid! Please check!",3);
 			exit;
 		}
+		LOGGING('The entered Amazon-Playlist has been loaded',6);
 	}
 	// Amazon Album
 	if (isset($_GET['albumuri'])) {
@@ -89,6 +91,7 @@ function AddAmazon() {
 			LOGGING("The entered Amazon-Album-ID ".$pl." is not valid! Please check!", 3);
 			exit;
 		}
+		LOGGING('The entered Amazon-Album has been loaded',6);
 	}
 	$sonos->SetVolume($volume);
 	$sonos->SetMute(false);

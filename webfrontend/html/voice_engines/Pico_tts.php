@@ -8,7 +8,7 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 {
 	global $config, $messageid, $pathlanguagefile, $MessageStorepath, $textstring, $filename;
 		
-		$textstring = urldecode($textstring);
+		$textstring = ($textstring);
 		$file = "pico.json";
 		$url = $pathlanguagefile."".$file;
 		$valid_languages = File_Get_Array_From_JSON($url, $zip=false);
@@ -17,9 +17,10 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 			$language = $_GET['lang'];
 			$isvalid = array_multi_search($language, $valid_languages, $sKey = "value");
 			if (!empty($isvalid)) {
-				$ttslanguage = $_GET['lang'];		
+				$ttslanguage = $_GET['lang'];
+				LOGGING('T2S language has been successful entered',5);				
 			} else {
-				trigger_error('The entered Pico language key is not supported. Please correct (see Wiki)!', E_USER_ERROR);	
+				LOGGING("The entered Pico language key is not supported. Please correct (see Wiki)!",3);
 				exit;
 			}
 		} else {
@@ -38,9 +39,10 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 				exec('/usr/bin/lame '.$MessageStorepath . $filename . ".wav".' '.$MessageStorepath . $filename . ".mp3");
 				unlink($MessageStorepath . $filename . ".wav");
 			} catch(Exception $e) {
-				trigger_error("The T2S could not be created! Please try again.", E_USER_WARNING);
+				LOGGING("The T2S could not be created! Please try again.",4);
 			}
 		}
+	LOGGING('The text has been passed to Pico engine for translation',5);
 	# Ersetze die messageid durch die von TTS gespeicherte Datei
 	$messageid = $filename;
 	return ($messageid);

@@ -4,14 +4,17 @@ function tt2t()
 {
 	// https://developers.google.com/maps/documentation/distance-matrix/intro#DistanceMatrixRequests
 	
-	global $config, $debug, $traffic;
-    	
+	global $config, $debug, $traffic, $home, $myIP;
+	
+	$TL = LOAD_T2S_TEXT();
+	    	
 	$valid_traffic_models = array("pessimistic","best_guess","optimistic");
 	if (empty($_GET['to'])) {
 		LOGGING('You do not have a destination address maintained in syntax. Please enter address!',3);
 		exit;
     } else {
 		$arrival = $_GET['to'];
+		LOGGING('Valid destination address has been found!',5);
 	}
 	$key 		= trim($config['LOCATION']['googlekey']);
 	$street		= $config['LOCATION']['googlestreet'];
@@ -28,6 +31,7 @@ function tt2t()
 		$traffic_model 	= $_GET['model'];
 		if (in_array($traffic_model, $valid_traffic_models)) {
 			$traffic_model 	= $_GET['model'];
+			LOGGING('Valid traffic model has been entered!',5);
 		} else {
 			LOGGING('The traffic model you have entered is invalid. Please correct!',3);
 			exit;
@@ -73,23 +77,23 @@ function tt2t()
         }
 		if ($traffic == '0') {
             $hours   = $dhours;
-            $minutes = $dminutes;
-			$textpart1 = "Die Fahrzeit für die Strecke von " . $distance . " km nach " . $arrival . " beträgt bei geplanter Abfahrtszeit von ". date("H", $time) ." Uhr ". date("i", $time) ." ohne Berücksichtigung des Verkehrs ca. ";
+            $minutes = $dminutes;    
+			$textpart1 = $TL['DESTINATION-TO-SPEECH']['TEXT_ANNOUNCEMENT1']." ".$distance." ".$TL['DESTINATION-TO-SPEECH']['TEXT_ANNOUNCEMENT2']." ".$arrival." ".$TL['DESTINATION-TO-SPEECH']['TEXT_ANNOUNCEMENT3']." ". date("H", $time) ." ".$TL['DESTINATION-TO-SPEECH']['TEXT_ANNOUNCEMENT4']." ".date("i", $time)." ".$TL['DESTINATION-TO-SPEECH']['TEXT_ANNOUNCEMENT5']." ";
         } else {
             $hours   = $dthours;
             $minutes = $dtminutes;
-			$textpart1 = "Die Fahrzeit für die Strecke von " . $distance . " km nach " . $arrival . " beträgt bei geplanter Abfahrtszeit von ". date("H", $time) ." Uhr ". date("i", $time) ." unter Berücksichtigung des Verkehrs ca. ";
+			$textpart1 = $TL['DESTINATION-TO-SPEECH']['TEXT_ANNOUNCEMENT1']." ".$distance." ".$TL['DESTINATION-TO-SPEECH']['TEXT_ANNOUNCEMENT2']." ".$arrival." ".$TL['DESTINATION-TO-SPEECH']['TEXT_ANNOUNCEMENT3']." ". date("H", $time) ." ".$TL['DESTINATION-TO-SPEECH']['TEXT_ANNOUNCEMENT4']." ".date("i", $time)." ".$TL['DESTINATION-TO-SPEECH']['TEXT_ANNOUNCEMENT6']." ";
         }
 		if ($hours == 0 && $minutes == 1) {
-            $textpart2 = "eine Minute";
+            $textpart2 = $TL['DESTINATION-TO-SPEECH']['ONE_MINUTE'];
         } else if ($hours == 0 && $minutes > 1) {
-            $textpart2 = $minutes . " Minuten";
+            $textpart2 = $minutes . $TL['DESTINATION-TO-SPEECH']['MORE_THEN_ONE_MINUTE'];
         } else if ($hours == 1 && $minutes == 1) {
-            $textpart2 = "eine Stunde und eine Minute";
+            $textpart2 = $TL['DESTINATION-TO-SPEECH']['ONE_HOUR_AND_MINUTES'];
         } else if ($hours == 1 && $minutes >= 1) {
-            $textpart2 = "eine Stunde und " . $minutes . " Minuten";
+            $textpart2 = $TL['DESTINATION-TO-SPEECH']['ONE_HOUR_AND']." ".$minutes." ".$TL['DESTINATION-TO-SPEECH']['MORE_THEN_ONE_MINUTE'];
         } else if ($hours > 1 && $minutes > 1) {
-            $textpart2 = $hours . " Stunden und " . $minutes . " Minuten";
+            $textpart2 = $hours . " ".$TL['DESTINATION-TO-SPEECH']['HOUR_AND_MINUTES']." ". $minutes." ".$TL['DESTINATION-TO-SPEECH']['MORE_THEN_ONE_MINUTE'];
         }
         $text = $textpart1 . $textpart2;
     } else {
@@ -100,13 +104,14 @@ function tt2t()
 	#echo $request;
 	
 		$ttd = "Text = " . $text . "\r\n";
-		$ttd .= "Abfahrtsort = " . $start . "\r\n";
-		$ttd .= "Ankunftsort = " . $arrival . "\r\n";
-		$ttd .= "geplante Abfahrtszeit = " . date("H:i", $time) . "\r\n";
+		$ttd .= "starting address = " . $start . "\r\n";
+		$ttd .= "destination address = " . $arrival . "\r\n";
+		$ttd .= "planned departuretime = " . date("H:i", $time) . "\r\n";
 		$ttd .= "Traffic Model = " . $traffic_model . "\r\n";
 		$ttd .= "Mode = " . $mode . "\r\n";
-		$ttd .= "Entfernung = " . $distance . "km / Zeit = " . $hours . " Stunden " . $minutes . " Minuten";
+		$ttd .= "Dictance = " . $distance . "km / Zeit = " . $hours . " Stunden " . $minutes . " Minuten";
 
+	#echo $text;
 	LOGGING('Destination announcement: '.($ttd),7);
 	LOGGING('Message been generated and pushed to T2S creation',5);
 	return $words;

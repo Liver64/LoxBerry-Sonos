@@ -61,6 +61,7 @@ function AddTrack() {
 			LOGGING("The entered file: ".$uri." is not valid or could not be accessed! Please check!", 3);
 			exit;
 		}
+		LOGGING('The entered Local-Track has been loaded',6);
 		$sonos->SetTrack($message_pos);
 	}
 	$sonos->SetVolume($volume);
