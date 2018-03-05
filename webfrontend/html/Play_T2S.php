@@ -512,9 +512,8 @@ function t2s_playbatch() {
 function say_radio_station() {
 			
 	# nach nextradio();
-	global $text, $master, $messageid, $sonoszone, $logging, $textstring, $voice, $config, $actual, $player, $volume, $sonos, $coord, $time_start, $filename, $tmp_batch;
-	include_once("text2speech.php");
-	include_once("addon/sonos-to-speech.php");
+	global $master, $sonoszone, $config, $volume, $sonos, $coord, $messageid, $filename, $MessageStorepath;
+	require_once("addon/sonos-to-speech.php");
 	
 	// if batch has been choosed abort
 	if(isset($_GET['batch'])) {
@@ -534,13 +533,13 @@ function say_radio_station() {
 	$sonos = new PHPSonos($sonoszone[$master][0]);
 	$temp_radio = $sonos->GetMediaInfo();
 	# Generiert und kodiert Ansage des laufenden Senders
-	$text = utf8_encode('Radio '.$temp_radio['title']);
-	$textstring = urlencode($text);
+	$text = ('Radio '.$temp_radio['title']);
+	$textstring = ($text);
 	$rawtext = md5($textstring);
 	$filename = "$rawtext";
 	$messageid = $filename;
 	select_t2s_engine();
-	t2s($messageid);
+	t2s($messageid, $MessageStorepath, $textstring, $filename);
 	// get Coordinator of (maybe) pair or single player
 	$coord = getRoomCoordinator($master);
 	LOGGING("Room Coordinator been identified", 7);		

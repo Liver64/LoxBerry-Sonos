@@ -240,17 +240,15 @@
 					<table border=0 style="width: 91%">
 						<tr>
 							<td class="field_ms" align="right" style="width: 245px">
-							
-							<select id="miniserver" name="miniserver" data-mini="true" data-native-menu="false" style="width: 142px">
-								 <TMPL_VAR MSSELECTLIST>
+							<select id="miniserver" name="miniserver" data-mini="true" data-native-menu="false" style="width: 142px"><TMPL_VAR MSSELECTLIST>
 							</select>
-							
-							</td>	
-							<td class="field_lab_udp" align="right" style="width: 184px">
-							<TMPL_VAR T2S.LABEL_UDP_PORT></td>
+						
+						</td>	
+					<td class="field_lab_udp" align="right" style="width: 184px">
+					<TMPL_VAR T2S.LABEL_UDP_PORT></td>
 						
 				<td class="field_udp" style="width: 27px">
-					<input id="udpport" name="udpport" type="text" value="<TMPL_VAR LOXONE.LoxPort>" style="width: 71px; margin-left: 35px;"
+					<input id="udpport" name="udpport" type="text" value="<TMPL_VAR LOXONE.LoxPort>" align="left" style="width: 71px; "
 					data-validation-error-msg="<TMPL_VAR ERRORS.ERR_UDPPORT>" data-validation-rule="special:port">
 				</td>
 			</tr>

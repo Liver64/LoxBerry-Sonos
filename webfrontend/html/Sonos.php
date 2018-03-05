@@ -26,7 +26,6 @@ include("Save_T2S.php");
 include("Speaker.php");
 #require_once('system/function.debug.php');
 include('system/debug.php');
-include('system/ini/INI.class.php'); 
 
 // setze korrekte Zeitzone
 date_default_timezone_set(date("e"));
@@ -55,7 +54,7 @@ $searchfor = '[plugindata]';									// search for already existing Samba share
 
 	# create entry in logfile of called syntax
 	LOGGING("called syntax: ".$myIP."".$syntax,5);
-	LOGGING("All variables has been collected",7);
+	#LOGGING("All variables has been collected",7);
 
 #-- Start Preparation ------------------------------------------------------------------
 	
@@ -64,14 +63,14 @@ $searchfor = '[plugindata]';									// search for already existing Samba share
 		LOGGING('The file sonos.cfg could not be opened, please try again!', 4);
 	} else {
 		$tmpsonos = parse_ini_file($myFolder.'/sonos.cfg', TRUE);
-		LOGGING("Sonos config has been loaded",7);
+		#LOGGING("Sonos config has been loaded",7);
 	}
 	// Parsen der Sonos Zonen Konfigurationsdatei player.cfg
 	if (!file_exists($myFolder.'/player.cfg')) {
 		LOGGING('The file player.cfg  could not be opened, please try again!', 4);
 	} else {
 		$tmpplayer = parse_ini_file($myFolder.'/player.cfg', true);
-		LOGGING("Player config has been loaded",7);
+		#LOGGING("Player config has been loaded",7);
 	}
 	$player = ($tmpplayer['SONOSZONEN']);
 	foreach ($player as $zonen => $key) {
@@ -88,7 +87,7 @@ $searchfor = '[plugindata]';									// search for already existing Samba share
 	$sonoszonen = $config['sonoszonen'];
 
 	// prüft den Onlinestatus jeder Zone
-	LOGGING("check Zones for Online mode will be executed",7);
+	#LOGGING("check Zones for Online mode will be executed",7);
 	foreach($sonoszonen as $zonen => $ip) {
 		$port = 1400;
 		$timeout = 3;
@@ -100,9 +99,9 @@ $searchfor = '[plugindata]';									// search for already existing Samba share
 	}
 	# check if samba share "plugindata" exist
 	check_sambashare($sambaini, $searchfor);
-	LOGGING("All Zones are Online",6);
+	#LOGGING("All Zones are Online",6);
 	$sonoszone;
-	LOGGING("Configuration has been successful loaded",6);
+	#LOGGING("Configuration has been successful loaded",6);
 	
 #$sonoszone = $sonoszonen;
 #print_r($sonoszone);
@@ -115,7 +114,7 @@ $t2s_langfile = "t2s-text_".substr($config['TTS']['messageLang'],0,2).".ini";			
 
 # checking size of LoxBerry logfile
 check_size_logfile();
-LOGGING("Perform Logfile size check",7);
+#LOGGING("Perform Logfile size check",7);
 
 
 #-- End Preparation ---------------------------------------------------------------------

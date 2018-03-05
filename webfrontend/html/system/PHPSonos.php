@@ -2080,6 +2080,7 @@ SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
 <EnqueuedURI>'.htmlspecialchars($file).'</EnqueuedURI>
 <EnqueuedURIMetaData>'.htmlspecialchars($meta).'</EnqueuedURIMetaData>
 <DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>1</EnqueueAsNext></u:AddURIToQueue></s:Body></s:Envelope>';
+#var_dump(htmlspecialchars($meta));
 
       $this->sendPacket($content);
    }

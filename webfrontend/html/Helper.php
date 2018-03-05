@@ -821,11 +821,11 @@ function check_sambashare($sambaini, $searchfor) {
 	$pattern = "/^.*$pattern.*\$/m";
 	if(preg_match_all($pattern, $contents, $matches)){
 		$myMessagepath = "//$hostname/plugindata/$psubfolder/tts/";
-		LOGGING("Samba share 'pluigndata' has been dedected",5);
+		#LOGGING("Samba share 'plugindata' has been dedected",5);
 	}
 	else {
 		$myMessagepath = "//$myIP/sonos_tts/";
-		LOGGING("Samba share 'sonos_tts' has been dedected",5);
+		#LOGGING("Samba share 'sonos_tts' has been dedected",5);
 	}
 	return $myMessagepath;
 }

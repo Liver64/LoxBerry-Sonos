@@ -72,7 +72,7 @@ function nextradio() {
 	global $sonos, $config, $master, $debug, $volume;
 	
 	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
-	$radioanzahl_check = $result = count($config['RADIO']);
+	$radioanzahl_check = count($config['RADIO']);
 	if($radioanzahl_check == 0)  {
 		LOGGING("There are no Radio Stations maintained in the configuration. Pls update before using function NEXTRADIO or ZAPZONE!", 3);
 		exit;
@@ -99,19 +99,20 @@ function nextradio() {
 	if( $senderaktuell == "" && $senderuri == "" || substr($senderuri, 0, 12) == "x-file-cifs:" ) {
 		$senderaktuell = -1;
 	}
+	if ($senderaktuell == ($radioanzahl) ) {
+		$sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[0], $radio_name[0]);
+	}
     if ($senderaktuell < ($radioanzahl) ) {
 		@$sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[$senderaktuell + 1], $radio_name[$senderaktuell + 1]);
 	}
     if ($senderaktuell == $radioanzahl - 1) {
 	    $sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[0], $radio_name[0]);
-		    }
-    if( $debug == 2) {
-        echo "Senderuri vorher: " . $senderuri . "<br>";
-        echo "Sender aktuell: " . $senderaktuell . "<br>";
-        echo "Radioanzahl: " .$radioanzahl . "<br>";
-    }
-	if ($config['VARIOUS']['announceradio'] == 1) {
-		#include_once("text2speech.php");
+	}
+	$info_r = "\r\n Senderuri vorher: " . $senderuri . "\r\n";
+	$info_r .= "Sender aktuell: " . $senderaktuell . "\r\n";
+	$info_r .= "Radioanzahl: " .$radioanzahl;
+	LOGGING('Next Radio Info: '.($info_r),7);
+    if ($config['VARIOUS']['announceradio'] == 1) {
 		say_radio_station();
 	}
     if($playstatus == 1) {

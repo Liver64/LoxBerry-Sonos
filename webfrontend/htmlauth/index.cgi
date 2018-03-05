@@ -49,11 +49,11 @@ my $error;
 my $saveformdata = 0;
 my $do = "form";
 my $msselectlist;
-my $helpurl;
-my $miniserver;
+my $helplink;
+#my $miniserver;
 my $maxzap;
 my $helptemplate;
-my $lblang;
+#my $lblang;
 my $i;
 our $countplayers;
 our $rowssonosplayer;
@@ -83,17 +83,9 @@ our $error_message				= "";
 # Read Settings
 ##########################################################################
 
-my $cfg         = new Config::Simple("$lbsconfigdir/general.cfg");
-my $miniservers	= $cfg->param("BASE.MINISERVERS");
-my $MiniServer	= $cfg->param("MINISERVER1.IPADDRESS");
-my $MSWebPort	= $cfg->param("MINISERVER1.PORT");
-my $MSUser		= $cfg->param("MINISERVER1.ADMIN");
-my $MSPass		= $cfg->param("MINISERVER1.PASS");
-
 # read language
 my $lblang = lblanguage();
 #my %SL = LoxBerry::System::readlanguage($template, $languagefile);
-
 
 #---** GEHT NICHT **--
 #$template->param("LOGFILE" , $lbplogdir . "/" . $pluginlogfile );
@@ -185,7 +177,7 @@ stat($lbptemplatedir . "/" . $errortemplatefilename);
 if ( !-r _ )
 {
 	$error_message = $no_error_template_message;
-	LoxBerry::Web::lbheader($template_title, $helpurl, $helptemplatefilename);
+	LoxBerry::Web::lbheader($template_title, $helplink, $helptemplatefilename);
 	print $error_message;
 	LOGCRIT $error_message;
 	LoxBerry::Web::lbfooter();
@@ -250,7 +242,7 @@ else
 }
 
 # Check, if filename for the maintemplate is readable, if not raise an error
-my $error_message = $ERR{'ERRORS.ERR_MAIN_TEMPLATE_NOT_READABLE'};
+$error_message = $ERR{'ERRORS.ERR_MAIN_TEMPLATE_NOT_READABLE'};
 stat($lbptemplatedir . "/" . $maintemplatefilename);
 &error if !-r _;
 
@@ -305,6 +297,15 @@ if (!-r $lbpconfigdir . "/" . $pluginplayerfile)
 
 LOGDEB "The Sonos player file has been loaded";
 
+# Check for miniservers
+my %miniservers;
+%miniservers = LoxBerry::System::get_miniservers();
+  
+if (! %miniservers) {
+LOGWARN "No Loxone Miniservers been found";
+}
+
+
 ##########################################################################
 # Main program
 ##########################################################################
@@ -344,14 +345,14 @@ sub form {
 	our $countradios = 0;
 	our $rowsradios;
 	
-	my %Config = $pcfg->vars();	
-	foreach my $key (keys %Config) {
+	my %radioconfig = $pcfg->vars();	
+	foreach my $key (keys %radioconfig) {
 		if ( $key =~ /^RADIO/ ) {
 			$countradios++;
 			my @fields = $pcfg->param($key);
 			$rowsradios .= "<tr><td style='height: 25px; width: 43px;' class='auto-style1'><INPUT type='checkbox' style='width: 20px' name='chkradios$countradios' id='chkradios$countradios' align='center'/></td>\n";
-			$rowsradios .= "<td style='height: 28px'><input type='text' id='radioname$countradios' name='radioname$countradios' size='20' value='@fields[0]' /> </td>\n";
-			$rowsradios .= "<td style='width: 888px; height: 28px'><input type='text' id='radiourl$countradios' name='radiourl$countradios' size='100' value='@fields[1]' style='width: 862px' /> </td></tr>\n";
+			$rowsradios .= "<td style='height: 28px'><input type='text' id='radioname$countradios' name='radioname$countradios' size='20' value='$fields[0]' /> </td>\n";
+			$rowsradios .= "<td style='width: 888px; height: 28px'><input type='text' id='radiourl$countradios' name='radiourl$countradios' size='100' value='$fields[1]' style='width: 862px' /> </td></tr>\n";
 		}
 	}
 
@@ -380,12 +381,12 @@ sub form {
 		my @fields = $playercfg->param($key);
 		$rowssonosplayer .= "<tr><td style='height: 25px; width: 43px;' class='auto-style1'><INPUT type='checkbox' style='width: 20px' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
 		$rowssonosplayer .= "<td style='height: 25px; width: 176px;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$room' style='width: 196px; background-color: #e6e6e6;' /> </td>\n";
-		$rowssonosplayer .= "<td style='height: 28px; width: 147px;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='@fields[2]' style='width: 153px; background-color: #e6e6e6;' /> </td>\n";
-		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='@fields[3]'' /> </td>\n";
-		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='@fields[4]'' /> </td>\n";
-		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='@fields[5]'' /> </td> </tr>\n";
-		$rowssonosplayer .= "<input type='hidden' id='ip$countplayers' name='ip$countplayers' value='@fields[0]'>\n";
-		$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' value='@fields[1]'>\n";
+		$rowssonosplayer .= "<td style='height: 28px; width: 147px;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='$fields[2]' style='width: 153px; background-color: #e6e6e6;' /> </td>\n";
+		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='$fields[3]'' /> </td>\n";
+		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='$fields[4]'' /> </td>\n";
+		$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$fields[5]'' /> </td> </tr>\n";
+		$rowssonosplayer .= "<input type='hidden' id='ip$countplayers' name='ip$countplayers' value='$fields[0]'>\n";
+		$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' value='$fields[1]'>\n";
 	}
 	LOGDEB "$countplayers Sonos players has been loaded.";
 	
@@ -410,13 +411,24 @@ sub form {
 	$rowssonosplayer .= "<input type='hidden' id='countplayers' name='countplayers' value='$countplayers'>\n";
 	$template->param("ROWSSONOSPLAYER", $rowssonosplayer);
 	
-	# read Miniservers
+	# Get saved value from config
+	my $msselected = $pcfg->param("LOXONE.Loxone");
+	
+	# read Miniservers and prepare form
 	my $cfgd  = new Config::Simple($lbsconfigdir ."/general.cfg");
 	for (my $i = 1; $i <= $cfgd->param('BASE.MINISERVERS');$i++) {
-	    if ("MINISERVER$i" eq $miniserver) {
-		    $msselectlist .= '<option selected value="'.$i.'">'.$cfgd->param("MINISERVER$i.NAME")."</option>\n";
+		if (! $msselected) {
+			if ("MINISERVER$i" eq $miniserver) {
+				$msselectlist .= '<option selected value="'.$i.'">'.$cfgd->param("MINISERVER$i.NAME")."</option>\n";
+			} else {
+				$msselectlist .= '<option value="'.$i.'">'.$cfgd->param("MINISERVER$i.NAME")."</option>\n";
+			}
 		} else {
-		    $msselectlist .= '<option value="'.$i.'">'.$cfgd->param("MINISERVER$i.NAME")."</option>\n";
+			if ("MINISERVER$i" eq $msselected) {
+				$msselectlist .= '<option selected value="'.$i.'">'.$cfgd->param("MINISERVER$i.NAME")."</option>\n";
+			} else {
+				$msselectlist .= '<option value="'.$i.'">'.$cfgd->param("MINISERVER$i.NAME")."</option>\n";
+			}
 		}
 	}
 	$template->param("MSSELECTLIST", $msselectlist);
@@ -439,8 +451,8 @@ sub form {
 	LoxBerry::Web::lbfooter();
 	
 	# Test Print to UI
-	
-	#my $template_title = $region;
+	#my $content =  "Miniserver Nr. 1 heißt: $MiniServer und hat den Port: $MSWebPort User ist: $MSUser und PW: $MSPass.";
+	#my $template_title = '';
 	#LoxBerry::Web::lbheader($template_title);
 	#print $content;
 	#LoxBerry::Web::lbfooter();
@@ -457,20 +469,30 @@ sub save
 	# Everything from Forms
 	my $countplayers	= param('countplayers');
 	my $countradios 	= param('countradios');
+	my $LoxDaten	 	= param('sendlox');
+	my $selminiserver	= param('miniserver');
+	
+	my $cfg         = new Config::Simple("$lbsconfigdir/general.cfg");
+	my $miniservers	= $cfg->param("BASE.MINISERVERS");
+	my $MiniServer	= $cfg->param("MINISERVER$selminiserver.IPADDRESS");
+	my $MSWebPort	= $cfg->param("MINISERVER$selminiserver.PORT");
+	my $MSUser		= $cfg->param("MINISERVER$selminiserver.ADMIN");
+	my $MSPass		= $cfg->param("MINISERVER$selminiserver.PASS");
 		
 	# turn on/off function "fetch_sonos"
 	my $ms = LWP::UserAgent->new;
-	if (my $LoxDaten eq "true") {
+	if ($LoxDaten eq "true") {
 		my $req = $ms->get("http://$MSUser:$MSPass\@$MiniServer:$MSWebPort/dev/sps/io/fetch_sonos/Ein");
-		LOGDEB "Coummunication to Miniserver is switched on";
+		LOGOK "Coummunication to Miniserver is switched on";
 	} else {
 		my $req = $ms->get("http://$MSUser:$MSPass\@$MiniServer:$MSWebPort/dev/sps/io/fetch_sonos/Aus");
-		LOGDEB "Coummunication to Miniserver is switched off.";
+		LOGOK "Coummunication to Miniserver is switched off.";
 	}
 	
 	# OK - now installing...
 
 	# Write configuration file(s)
+	#$pcfg->param("LOXONE.Loxone", "MINISERVER$R::miniserver");
 	$pcfg->param("LOXONE.Loxone", "MINISERVER$R::miniserver");
 	$pcfg->param("LOXONE.LoxDaten", "$R::sendlox");
 	$pcfg->param("LOXONE.LoxPort", "$R::udpport");
@@ -524,7 +546,7 @@ sub save
 	$playercfg->save() or &error; 
 	my $lblang = lblanguage();
 	$template_title = "$SL{'BASIS.MAIN_TITLE'}: v$sversion";
-	LoxBerry::Web::lbheader($template_title, $helpurl, $helptemplatefilename);
+	LoxBerry::Web::lbheader($template_title, $helplink, $helptemplatefilename);
 	$successtemplate->param('SAVE_ALL_OK'		, $SUC{'SAVE.SAVE_ALL_OK'});
 	$successtemplate->param('SAVE_MESSAGE'		, $SUC{'SAVE.SAVE_MESSAGE'});
 	$successtemplate->param('SAVE_BUTTON_OK' 	, $SUC{'SAVE.SAVE_BUTTON_OK'});
@@ -532,6 +554,14 @@ sub save
 	print $successtemplate->output();
 	LoxBerry::Web::lbfooter();
 	exit;
+	
+	# Test Print to UI
+	#my $content =  "http://$MSUser:$MSPass\@$MiniServer:$MSWebPort/dev/sps/io/fetch_sonos/Ein";
+	#my $template_title = '';
+	#LoxBerry::Web::lbheader($template_title);
+	#print $content;
+	#LoxBerry::Web::lbfooter();
+	#exit;
 		
 }
 
@@ -557,7 +587,7 @@ sub attention_scan
 	my %NOT = LoxBerry::System::readlanguage($noticetemplate, $languagefile);
 	
 	$template_title = "$SL{'BASIS.MAIN_TITLE'}: v$sversion";
-	LoxBerry::Web::lbheader($template_title, $helpurl, $noticetemplatefilename);
+	LoxBerry::Web::lbheader($template_title, $helplink, $noticetemplatefilename);
 	$noticetemplate->param('SONOS_SCAN_HEADER'		, $SUC{'ZONES.SONOS_SCAN_HEADER'});
 	$noticetemplate->param('SONOS_SCAN_TEXT'		, $SUC{'ZONES.SONOS_SCAN_TEXT'});
 	$noticetemplate->param('BUTTON_NEXT' 			, $SUC{'ZONES.BUTTON_NEXT'});
@@ -616,7 +646,7 @@ sub scan
 sub error 
 {
 	$template_title = $ERR{'ERRORS.MY_NAME'} . ": v$sversion - " . $ERR{'ERRORS.ERR_TITLE'};
-	LoxBerry::Web::lbheader($template_title, $helpurl, $helptemplatefilename);
+	LoxBerry::Web::lbheader($template_title, $helplink, $helptemplatefilename);
 	$errortemplate->param('ERR_MESSAGE'		, $error_message);
 	$errortemplate->param('ERR_TITLE'		, $ERR{'ERRORS.ERR_TITLE'});
 	$errortemplate->param('ERR_BUTTON_BACK' , $ERR{'ERRORS.ERR_BUTTON_BACK'});

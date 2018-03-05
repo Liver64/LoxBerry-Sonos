@@ -84,7 +84,7 @@
 
  function sendTEXTdata() {
 	global $config, $countms, $sonoszone, $sonos, $lox_ip, $home, $sonoszonen, $tmp_lox; 
-		
+	
 	if($config['LOXONE']['LoxDaten'] == 1) {	
 		$lox_ip		 = $tmp_lox[$config['LOXONE']['Loxone']]['IPADDRESS'];
 		$lox_port 	 = $tmp_lox[$config['LOXONE']['Loxone']]['PORT'];
@@ -170,6 +170,29 @@
 		LOGGING("The error message could not be deleted!", 4);	
 	}							
 	echo '<PRE>';
+ }
+ 
+ 
+ 
+ 
+ function check_playing($i)  {
+	global $master, $config, $sonoszone, $i;
+	#$i = 0;
+	foreach ($sonoszone as $player => $ip) {
+		$sonos = new PHPSonos($ip[0]); //Slave Sonos ZP IPAddress
+		$running = $sonos->GetTransportInfo();
+		#echo $r = "Zone: ".$player." hat Status: ".$running."<br>"; 
+		if ($running == "1" ) {
+			echo "Zone: ".$player."<br>";
+			$i++;
+		}
+	}
+	echo $i;
+	if ($i < 1) {
+		exit;
+	} else {
+		return $i;
+	}
  }
 
 ?>
