@@ -446,7 +446,7 @@ function broadcast_scan($devices) {
     }
 	$devices = $return;
     if (empty($devices)) {
-		LOGGING('System has not detected any Sonos devices by scanning BROADCAST in your network!',2);
+		LOGGING('System has not detected any Sonos devices by scanning BROADCAST in your network!',3);
 		exit;
 	} else {
 		LOGGING('IP-adresses from Sonos devices has been successful detected by BROADCAST.',5);
