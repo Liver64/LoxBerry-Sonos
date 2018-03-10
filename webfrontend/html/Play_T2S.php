@@ -162,12 +162,12 @@ function create_tts() {
 **/		
 
 function play_tts($messageid) {
-	global $volume, $config, $sonos, $text, $messageid, $sonoszone, $sonoszonen, $master, $myMessagepath, $coord, $actual, $player, $time_start, $t2s_batch, $filename, $textstring, $home;
+	global $volume, $config, $sonos, $text, $messageid, $sonoszone, $sonoszonen, $master, $myMessagepath, $coord, $actual, $player, $time_start, $t2s_batch, $filename, $textstring, $home, $MP3path, $sleeptimegong, $lbpplugindir, $logpath;
 		
 		$sonos = new PHPSonos($coord[0]);
 		if (isset($_GET['messageid'])) {
 			// Set path if messageid
-			$mpath = $myMessagepath."".$config['MP3']['MP3path'];
+			$mpath = $myMessagepath."".$MP3path;
 			LOGGING("path for messageid permission has changed", 7);		
 			chmod_r();
 		} else {
@@ -203,7 +203,7 @@ function play_tts($messageid) {
 		}
 		// Playgong/jingle to be played upfront
 		if(isset($_GET['playgong']) && ($_GET['playgong'] == "yes")) {
-			$jinglepath = $myMessagepath."".$config['MP3']['MP3path']."/".$config['MP3']['file_gong'];
+			$jinglepath = $myMessagepath."".$MP3path."/".$config['MP3']['file_gong'];
 			$sonos->AddToQueue("x-file-cifs:".$jinglepath.".mp3");
 			LOGGING("Jingle has been played", 7);		
 		}
@@ -227,13 +227,22 @@ function play_tts($messageid) {
 		$sonos->SetTrack($message_pos);
 		$sonos->SetGroupMute(false);
 		try {
-			$sonos->Play();
+			$try_play = $sonos->Play();
 			LOGGING("T2S has been played", 7);		
 		} catch (Exception $e) {
-			LOGGING("T2S message(s) could not be played!", 3);
+			LOGGING("The requested T2S message could not be played!", 3);
+			$notification = array (	"PACKAGE" => $lbpplugindir,
+									"NAME" => "Sonos",
+									"MESSAGE" => "The requested T2S message could not be played!",
+									"SEVERITY" => 3,
+									"fullerror" => "the received error: ".$try_play,
+									"msnumber" => 1,
+									"LOGFILE" => LBPLOGDIR . "/sonos.log"
+									);
+			notify_ext($notification);
 		}
 		$abort = false;
-		sleep($config['TTS']['sleeptimegong']); // wait according to config
+		sleep($sleeptimegong); // wait according to config
 		while ($sonos->GetTransportInfo()==1) {
 			usleep(200000); // check every 200ms
 		}
@@ -298,7 +307,7 @@ function sendmessage() {
 					fwrite($file, "$filename\n" );
 					LOGGING("T2S has been entered to batch", 7);		
 				} else {
-					$mp3_path = $config['MP3']['MP3path'];
+					$mp3_path = $MP3path;
 					fwrite($file, "$mp3_path/$messageid\n" );
 					LOGGING("messageid has been entered to batch", 7);		
 				}
@@ -330,7 +339,7 @@ function sendmessage() {
 			$test = $sonos->GetPositionInfo();
 			if (($return == 'master') or ($return == 'member')) {
 				$sonos->BecomeCoordinatorOfStandaloneGroup();  // in case Member or Master then remove Zone from Group
-				LOGGING("Zone ".$master," has been removed from group", 6);		
+				LOGGING("Zone ".$master." has been removed from group", 6);		
 			}
 			if (substr($test['TrackURI'], 0, 18) !== "x-sonos-htastream:") {
 				$sonos->SetQueue("x-rincon-queue:". $sonoszone[$master][1] ."#0");

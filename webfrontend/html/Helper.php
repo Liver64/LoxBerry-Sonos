@@ -532,9 +532,9 @@ function isStreaming() {
 **/
 
 function chmod_r($Path="") {
-	global $Path, $MessageStorepath, $config;
+	global $Path, $MessageStorepath, $config, $MP3path;
 	
-	$Path = $MessageStorepath."".$config['MP3']['MP3path'];
+	$Path = $MessageStorepath."".$MP3path;
 	#echo $Path;
 	$dp = opendir($Path);
      while($File = readdir($dp)) {
@@ -811,8 +811,8 @@ function load_t2s_text(){
 * @return: array 
 **/
 
-function check_sambashare($sambaini, $searchfor) {
-	global $hostname, $psubfolder;
+function check_sambashare($sambaini, $searchfor, $sambashare) {
+	global $hostname, $psubfolder, $lbpplugindir, $sambashare;
 	
 	$contents = file_get_contents($sambaini);
 	// escape special characters in the query
@@ -820,14 +820,14 @@ function check_sambashare($sambaini, $searchfor) {
 	// finalise the regular expression, matching the whole line
 	$pattern = "/^.*$pattern.*\$/m";
 	if(preg_match_all($pattern, $contents, $matches)){
-		$myMessagepath = "//$hostname/plugindata/$psubfolder/tts/";
-		#LOGGING("Samba share 'plugindata' has been dedected",5);
+		$myMessagepath = "//$hostname/plugindata/$psubfolder/tts";
+		$smbfolder = "Samba share 'plugindata' has been found";
 	}
 	else {
-		$myMessagepath = "//$myIP/sonos_tts/";
-		#LOGGING("Samba share 'sonos_tts' has been dedected",5);
+		$myMessagepath = "//$myIP/sonos_tts";
+		$smbfolder = "Samba share 'sonos_tts' has been found";
 	}
-	return $myMessagepath;
+	return $sambashare = array($myMessagepath, $smbfolder);
 }
 
 

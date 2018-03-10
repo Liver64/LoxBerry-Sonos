@@ -4,12 +4,12 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 // voicerss: Erstellt basierend auf Input eine TTS Nachricht, übermittelt sie an VoiceRRS und 
 // speichert das zurückkommende file lokal ab
 
-
+# 08/03/2018 added $ttsaudiocodec from sonos.cfg
 {
 	global $config, $messageid, $pathlanguagefile;
 	
 		$ttskey = $config['TTS']['API-key'];
-		$ttsaudiocodec = $config['TTS']['audiocodec'];
+		$ttsaudiocodec = "48khz_16bit_stereo";
 		$textstring = urlencode($textstring);
 		
 		$file = "voicerss.json";

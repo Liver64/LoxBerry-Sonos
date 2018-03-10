@@ -2,6 +2,8 @@
 function t2s($messageid, $MessageStorepath, $textstring, $filename)
 // text-to-speech: Erstellt mit dem OS X Command "say" eine AIFF Datei und speichert diese in einem Verzeichnis 
 // @Parameter = $messageid von sonos2.php
+
+# 08/03/2018 added $lamePath from sonos.cfg
 {
 	#echo "bin in der MAC_OSX.php angekommen\n";
 	global $config, $messageid;
@@ -26,7 +28,7 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 	$voices[] = array('voice' => 'Yuna','lang' => 'ko_KR');
 
 		#$mpath = $config['SYSTEM']['messageStorePath'];
-		$lamePath = $config['TTS']['lamePath'];
+		$lamePath = "/usr/local/bin/";
 		$textstring = urldecode($textstring);
 		if($engine = '3001') {
 			if (isset($_GET['voice'])) {

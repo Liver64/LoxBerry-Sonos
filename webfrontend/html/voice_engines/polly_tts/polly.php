@@ -31,9 +31,11 @@ class POLLY_TTS{
     public function get_mp3( $text )
     {
 		global $voice;
+		
 		$payload = json_encode(array( ('OutputFormat')  => 'mp3',
-                                      ('Text')          => urldecode($text),
-                                      ('VoiceId')       => $voice ) );
+                                      ('Text')          => $text,
+                                      ('VoiceId')       => $voice ) 
+									  );
         $datestamp                = new \DateTime( "now", $this->utc_tz );
         $longdate                 = $datestamp->format( "Ymd\\THis\\Z");
         $shortdate                = $datestamp->format( "Ymd" );
@@ -53,6 +55,7 @@ class POLLY_TTS{
         /*
          * Execute Crafted Request
          */
+		#echo urldecode($text);
         $url    = "https://".$this->endpoint[$this->region]."/v1/speech";
         $ch     = curl_init();
         $curl_headers = array();

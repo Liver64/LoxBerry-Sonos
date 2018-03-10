@@ -137,3 +137,9 @@
 			[Bugfix] Ansage des Radiosenders bei nextradio wurde korrigiert
 			[Bugfix] Anwahl der Radiosender bei nextradio wurde korrigiert
 			[Bugfix] Ansage beim Abfallkalender wurde korrigiert
+ 3.0.1		[Bugfix] Lautstärke bei randomradio korrigiert.
+			[Bugfix] Typo bei nextradio korrigiert
+			[Bugfix] Scannen von Zonen optimiert
+			[New] Automatische Information bei schweren Fehlern direkt über das Plugin bzw. per Mail (falls LoxBerry Mail konfiguriert ist)
+			[Feature] Logging ergänzt
+			[New] Error handling falls Konfigurationsdateien nicht lesbar sind

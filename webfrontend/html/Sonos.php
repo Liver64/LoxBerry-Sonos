@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	3.0.0
-# Datum: 	02.03.2018
+# Version: 	3.0.1
+# Datum: 	10.03.2018
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
@@ -41,7 +41,7 @@ $lbversion = LBSystem::lbversion();								// get LoxBerry Version
 $path = LBSCONFIGDIR; 											// get path to general.cfg
 $myFolder = "$lbpconfigdir";									// get config folder
 #$myMessagepath = "//$myIP/sonos_tts/";							// get T2S folder to play
-$myMessagepath = "//$hostname/plugindata/$psubfolder/tts/";		// get T2S folder to play
+#$myMessagepath = "//$hostname/plugindata/$psubfolder/tts/";	// get T2S folder to play
 $MessageStorepath = "$lbpdatadir/tts/";							// get T2S folder to store
 $pathlanguagefile = "$lbphtmldir/voice_engines/langfiles/";		// get languagefiles
 $logpath = "$lbplogdir/$psubfolder";							// get log folder
@@ -49,8 +49,10 @@ $templatepath = "$lbptemplatedir";								// get templatedir
 $t2s_text_stand = "t2s-text_en.ini";							// T2S text Standardfile
 $sambaini = $lbhomedir.'/system/samba/smb.conf';				// path to Samba file smb.conf
 $searchfor = '[plugindata]';									// search for already existing Samba share
+$MP3path = "mp3";												// path to preinstalled numeric MP§ files
+$sleeptimegong = "3";											// waiting time before playing t2s
 
-	echo '<PRE>'; 
+echo '<PRE>'; 
 	
 
 	
@@ -96,22 +98,23 @@ $searchfor = '[plugindata]';									// search for already existing Samba share
 			fclose($handle);
 		}
 	}
-	# check if samba share "plugindata" exist
-	check_sambashare($sambaini, $searchfor);
-	
 	$sonoszone;
 	
-#$sonoszone = $sonoszonen;
-#print_r($sonoszone);
-#print_r($config);
-#exit;
+	// check if samba share "plugindata" or "sonos_tts" exist
+	$sambashare = array();
+	check_sambashare($sambaini, $searchfor, $sambashare);
+	$myMessagepath = $sambashare[0];					// get T2S folder Sonos to play
+		
+	#$sonoszone = $sonoszonen;
+	#print_r($sonoszone);
+	#print_r($config);
+	#exit;
 
+	# select language file for text-to-speech
+	$t2s_langfile = "t2s-text_".substr($config['TTS']['messageLang'],0,2).".ini";				// language file for text-speech
 
-# select langauge file for text-to-speech
-$t2s_langfile = "t2s-text_".substr($config['TTS']['messageLang'],0,2).".ini";				// language file for text-speech
-
-# checking size of LoxBerry logfile
-check_size_logfile();
+	# checking size of LoxBerry logfile
+	check_size_logfile();
 
 	// check if getsonosinfo has been executed, if yes, skip LOGGING
 	$synlength = strlen($syntax);
@@ -129,7 +132,9 @@ check_size_logfile();
 		LOGGING("All Zones are Online",6);
 		LOGGING("Sonos config has been loaded",7);
 		LOGGING("Configuration has been successful loaded",6);
+		LOGGING($sambashare[1],5);
 		LOGGING("Perform Logfile size check",7);
+		#LBlog::get_notifications_html($lbpplugindir, "Sonos");			// prepare for HTML notifications
 	}
 
 

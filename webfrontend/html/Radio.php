@@ -57,9 +57,9 @@ function radio(){
 		}
 		$sonos->Play();
     }
-	LOGGIN("Radio Station has been loaded successful",6);
-    $rleinzeln++;
+	$rleinzeln++;
 	}   
+	LOGGING("Radio Station '".$playlist."' has been loaded successful",6);
 }
 
 /**
@@ -122,6 +122,7 @@ function nextradio() {
 		$sonos->RampToVolume($config['TTS']['rampto'], $volume);
 		$sonos->Play();
 	}
+	LOGGING("Radio Station '".$radioname["title"]."' has been loaded successful by nextradio",6);
 	#print_r($radio_name);
 }
 
@@ -165,8 +166,12 @@ function random_radio() {
 		if($sonos->GetVolume() <= $config['TTS']['volrampto']) {
 			$sonos->RampToVolume($config['TTS']['rampto'], $volume);
 		}	
+	} else {
+		$radiovolume = $sonos->GetVolume();
+		$sonos->SetVolume($radiovolume);
 	}
 	$sonos->Play();
+	LOGGING("Radio Station '".$sonoslists[$random]["title"]."' has been loaded successful by randomradio",6);
 }
 
 ?>

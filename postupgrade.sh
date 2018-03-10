@@ -55,9 +55,6 @@ cp -p -v -r /tmp/$1\_upgrade/log/$3/* $5/log/plugins/$3/
 echo "<INFO> Copy back existing MP3 files"
 cp -p -v -r /tmp/$1\_upgrade/data/$3/* $5/data/plugins/$3/ 
 
-# Replace by subfolder
-bin/sed -i "s%MP3path=MP3%$MP3path=mp3%" $5/config/plugins/$3/sonos.cfg
-
 echo "<INFO> Remove temporary folders"
 rm -r /tmp/$1\_upgrade
 

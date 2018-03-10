@@ -102,7 +102,7 @@ LOGGING("Sonos Plugin v".$pluginversion." is installed at folder ".$folder,5);
 	$devices = $return;
 	#unset($devices);				// für BROADCAST testzwecke
     if (empty($devices)) {
-		LOGGING('System has not detected any Sonos devices by scanning MULTICAST in your network!',3);
+		LOGGING('System has not detected any Sonos devices by scanning MULTICAST in your network!',4);
 		// if no multicast addresses were detected run for broadcast addresses
 		broadcast_scan($devices);
 	} else {
@@ -446,7 +446,7 @@ function broadcast_scan($devices) {
     }
 	$devices = $return;
     if (empty($devices)) {
-		LOGGING('System has not detected any Sonos devices by scanning BROADCAST in your network!',3);
+		LOGGING('System has not detected any Sonos devices by scanning BROADCAST in your network!',4);
 		exit;
 	} else {
 		LOGGING('IP-adresses from Sonos devices has been successful detected by BROADCAST.',5);
