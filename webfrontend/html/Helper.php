@@ -820,11 +820,11 @@ function check_sambashare($sambaini, $searchfor, $sambashare) {
 	// finalise the regular expression, matching the whole line
 	$pattern = "/^.*$pattern.*\$/m";
 	if(preg_match_all($pattern, $contents, $matches)){
-		$myMessagepath = "//$hostname/plugindata/$psubfolder/tts";
+		$myMessagepath = "//$hostname/plugindata/$psubfolder/tts/";
 		$smbfolder = "Samba share 'plugindata' has been found";
 	}
 	else {
-		$myMessagepath = "//$myIP/sonos_tts";
+		$myMessagepath = "//$myIP/sonos_tts/";
 		$smbfolder = "Samba share 'sonos_tts' has been found";
 	}
 	return $sambashare = array($myMessagepath, $smbfolder);
