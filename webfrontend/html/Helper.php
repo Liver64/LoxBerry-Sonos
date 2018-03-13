@@ -812,7 +812,7 @@ function load_t2s_text(){
 **/
 
 function check_sambashare($sambaini, $searchfor, $sambashare) {
-	global $hostname, $psubfolder, $lbpplugindir, $sambashare;
+	global $hostname, $psubfolder, $lbpplugindir, $sambashare, $myIP;
 	
 	$contents = file_get_contents($sambaini);
 	// escape special characters in the query
@@ -820,11 +820,11 @@ function check_sambashare($sambaini, $searchfor, $sambashare) {
 	// finalise the regular expression, matching the whole line
 	$pattern = "/^.*$pattern.*\$/m";
 	if(preg_match_all($pattern, $contents, $matches)){
-		$myMessagepath = "//$hostname/plugindata/$psubfolder/tts";
+		$myMessagepath = "//$myIP/plugindata/$psubfolder/tts/";
 		$smbfolder = "Samba share 'plugindata' has been found";
 	}
 	else {
-		$myMessagepath = "//$myIP/sonos_tts";
+		$myMessagepath = "//$myIP/sonos_tts/";
 		$smbfolder = "Samba share 'sonos_tts' has been found";
 	}
 	return $sambashare = array($myMessagepath, $smbfolder);

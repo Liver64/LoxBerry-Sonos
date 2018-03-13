@@ -290,22 +290,6 @@ $info = get($urlfile);
 $template		->param("INFO" 			=> "$info");		
 
 
-##########################################################################
-# Language Settings
-##########################################################################
-
-$template->param("LBHOSTNAME", lbhostname());
-$template->param("LBLANG", $lblang);
-$template->param("SELFURL", $ENV{REQUEST_URI});
-
-LOGDEB "Read main settings from " . $languagefile . " for language " . $lblang;
-
-#**************************************************************************
-
-# übergibt Plugin Verzeichnis an HTML
-$template->param("PLUGINDIR" => $lbpplugindir);
-
-#**************************************************************************
 
 
 # Check if player.cfg file is readable
@@ -339,6 +323,23 @@ if ($player eq "0") {
 }	
 LOGDEB "The Sonos player file has been loaded";
 
+
+##########################################################################
+# Language Settings
+##########################################################################
+
+$template->param("LBHOSTNAME", lbhostname());
+$template->param("LBLANG", $lblang);
+$template->param("SELFURL", $ENV{REQUEST_URI});
+
+LOGDEB "Read main settings from " . $languagefile . " for language " . $lblang;
+
+#**************************************************************************
+
+# übergibt Plugin Verzeichnis an HTML
+$template->param("PLUGINDIR" => $lbpplugindir);
+
+#**************************************************************************
 
 # Check for miniservers
 my %miniservers;
@@ -430,22 +431,7 @@ sub form {
 	}
 	LOGDEB "$countplayers Sonos players has been loaded.";
 	
-	#####################################################
-	# Subroutines
-	#####################################################	
-	
-	# Call Subroutine to scan/import Sonos Zones
-	if ( $do eq "scan" ) {
-		&attention_scan;
-	}
-	
-	# Call Subroutine to scan/import Sonos Zones
-	if ( $do eq "scanning" ) {
-		&scan;
-	}
-	#####################################################	
-
-	if ( $countplayers < 1 ) {
+		if ( $countplayers < 1 ) {
 		$rowssonosplayer .= "<tr><td colspan=6>" . $SL{'ZONES.SONOS_EMPTY_ZONES'} . "</td></tr>\n";
 	}
 	$rowssonosplayer .= "<input type='hidden' id='countplayers' name='countplayers' value='$countplayers'>\n";
@@ -473,6 +459,20 @@ sub form {
 	}
 	$template->param("MSSELECTLIST", $msselectlist);
 	
+	#####################################################
+	# Subroutines
+	#####################################################	
+	
+	# Call Subroutine to scan/import Sonos Zones
+	if ( $do eq "scan" ) {
+		&attention_scan;
+	}
+	
+	# Call Subroutine to scan/import Sonos Zones
+	if ( $do eq "scanning" ) {
+		&scan;
+	}
+	#####################################################	
 	
 	# Prepare form defaults
 	if (!$rmpvol) {$rmpvol = "25"};
@@ -566,7 +566,7 @@ sub save
 			$pcfg->param( "RADIO.radio" . "[$i]", param("radioname$i") . "," . param("radiourl$i") );
 		}
 	}
-	LOGDEB "Radio Stations has been saved.";
+	LOGDEB "Radio Stations has been prepared for saving";
 
 	$pcfg->save() or &error;;
 
@@ -580,8 +580,8 @@ sub save
 			$playercfg->param( "SONOSZONEN." . param("zone$i") . "[]", param("ip$i") . "," . param("rincon$i") . "," . param("model$i") . "," . param("t2svol$i") . "," . param("sonosvol$i") . "," . param("maxvol$i") );
 		}
 	}
-	LOGDEB "Sonos Zones has been saved.";
-	LOGOK "All settings has been saved successful";
+	LOGDEB "Sonos Zones has been prepared for saving.";
+	LOGOK "All settings has been saved successful, leaving sub save and return to main form";
 
 	$playercfg->save() or &error; 
 	my $lblang = lblanguage();
@@ -614,24 +614,40 @@ sub save
 
 sub attention_scan
 {
+	LOGDEB "Scan request for Sonos Zones has been executed.";
+	my $cfg         = new Config::Simple("$lbsconfigdir/general.cfg");
+	my $ssdp		= $cfg->param("SSDP.DISABLED");
+	my $buttnext;
+		
 	# Filename for the notice template is ok, preparing template";
 	my $noticetemplate = HTML::Template->new(
 					filename => $lbptemplatedir . "/" . $noticetemplatefilename,
 					global_vars => 1,
 					loop_context_vars => 1,
 					die_on_bad_params=> 0,
-					associate => $cgi,
+					associate => $cfg,
 					%htmltemplate_options,
 					debug => 1,
 					);
 	my %NOT = LoxBerry::System::readlanguage($noticetemplate, $languagefile);
 	
+	if (($ssdp eq "no") or ($ssdp eq "0")) {
+		$noticetemplate->param(BOOL => 0);
+		$buttnext = "Scanning()";
+		LOGDEB "SSDP-Service is up and running";
+	} else {
+		$noticetemplate->param(BOOL => 1);
+		$buttnext = "SSDP_widget()";
+		LOGDEB "SSDP-Service is switched off";
+	}
+		
 	$template_title = "$SL{'BASIS.MAIN_TITLE'}: v$sversion";
-	LoxBerry::Web::lbheader($template_title, $helplink, $noticetemplatefilename);
+	LoxBerry::Web::lbheader($template_title, $buttnext, $noticetemplatefilename);
 	$noticetemplate->param('SONOS_SCAN_HEADER'		, $SUC{'ZONES.SONOS_SCAN_HEADER'});
 	$noticetemplate->param('SONOS_SCAN_TEXT'		, $SUC{'ZONES.SONOS_SCAN_TEXT'});
 	$noticetemplate->param('BUTTON_NEXT' 			, $SUC{'ZONES.BUTTON_NEXT'});
 	$noticetemplate->param('BUTTON_BACK' 			, $SUC{'ZONES.BUTTON_BACK'});
+	$noticetemplate->param("BUTTNEXT"				, $buttnext);
 	print $noticetemplate->output();
 	LoxBerry::Web::lbfooter();
 	exit;
@@ -646,11 +662,12 @@ sub attention_scan
 
 sub scan
 {
+	LOGDEB "Scan for Sonos Zones has been finally called.";
 	my $error_volume = $SL{'T2S.ERROR_VOLUME_PLAYER'};
 	
 	# executes PHP network.php script (reads player.cfg and add new zones if been added)
 	my $response = qx(/usr/bin/php $lbphtmldir/system/$scanzonesfile);
-			
+
 	#import Sonos Player from JSON file
 	open (my $fh, '<:raw', $lbpconfigdir . '/' . $plugintempplayerfile) or die("Die Datei: $plugintempplayerfile konnte nicht geöffnet werden! $!\n");
 	my $file;
@@ -674,12 +691,12 @@ sub scan
 			$rowssonosplayer .= "<input type='hidden' id='ip$countplayers' name='ip$countplayers' value='$config->{$key}->[0]'>\n";
 			$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' value='$config->{$key}->[1]'>\n";
 		}
-	LOGDEB "Scan for Sonos Zones has been executed.";
 	$template->param("ROWSSONOSPLAYER", $rowssonosplayer);
 	}
-	LOGDEB "Content of 'tmp_player.json' has been copied to 'player.cfg'";
+	LOGDEB "Content of 'tmp_player.json' has been loaded into 'player.cfg'";
 	unlink ($lbpconfigdir."/tmp_player.json");
 	LOGDEB "Temporary scan file 'tmp_player.json' has been deleted";
+	LOGDEB "Scan for Sonos Zones has been successful ended, return to main form.";
 	return();
 }
 	
@@ -689,6 +706,9 @@ sub scan
 
 sub error 
 {
+	LOGDEB "Sub error";
+	LOGERR $error_message;
+	LOGDEB "Set page title/header/footer and parse variables, end with error";
 	$template_title = $ERR{'ERRORS.MY_NAME'} . ": v$sversion - " . $ERR{'ERRORS.ERR_TITLE'};
 	LoxBerry::Web::lbheader($template_title, $helplink, $helptemplatefilename);
 	$errortemplate->param('ERR_MESSAGE'		, $error_message);
@@ -697,6 +717,9 @@ sub error
 	$successtemplate->param('ERR_NEXTURL'	, $ENV{REQUEST_URI});
 	print $errortemplate->output();
 	LoxBerry::Web::lbfooter();
+	LOGDEB "Leaving Sonos Plugin with an error";
+	exit;
+	
 	
 	
 }

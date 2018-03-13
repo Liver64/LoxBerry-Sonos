@@ -128,24 +128,31 @@ function create_tts() {
 	if (($messageid == '0') && ($textstring != '')) {
 		if ($config['TTS']['t2s_engine'] == 1001) {
 			include_once("voice_engines/VoiceRSS.php");
+			LOGGING("VoiceRSS has been successful selected", 7);		
 		}
 		if ($config['TTS']['t2s_engine'] == 3001) {
 			include_once("voice_engines/MAC_OSX.php");
+			LOGGING("/MAC_OSX has been successful selected", 7);		
 		}
 		if ($config['TTS']['t2s_engine'] == 6001) {
 			include_once("voice_engines/ResponsiveVoice.php");
+			LOGGING("ResponsiveVoice has been successful selected", 7);		
 		}
 		if ($config['TTS']['t2s_engine'] == 7001) {
 			include_once("voice_engines/Google.php");
+			LOGGING("Google has been successful selected", 7);		
 		}
 		if ($config['TTS']['t2s_engine'] == 8001) {
 			include_once("voice_engines/micro.php");
+			LOGGING("Microsoft has been successful selected", 7);		
 		}
 		if ($config['TTS']['t2s_engine'] == 5001) {
 			include_once("voice_engines/Pico_tts.php");
+			LOGGING("Pico has been successful selected", 7);		
 		}
 		if ($config['TTS']['t2s_engine'] == 4001) {
 			include_once("voice_engines/Polly.php");
+			LOGGING("AWS Polly has been successful selected", 7);		
 		}
 		
 	t2s($messageid, $MessageStorepath, $textstring, $filename);
@@ -162,17 +169,18 @@ function create_tts() {
 **/		
 
 function play_tts($messageid) {
-	global $volume, $config, $sonos, $text, $messageid, $sonoszone, $sonoszonen, $master, $myMessagepath, $coord, $actual, $player, $time_start, $t2s_batch, $filename, $textstring, $home, $MP3path, $sleeptimegong, $lbpplugindir, $logpath;
+	global $volume, $config, $sonos, $text, $messageid, $sonoszone, $sonoszonen, $master, $myMessagepath, $coord, $actual, $player, $time_start, $t2s_batch, $filename, $textstring, $home, $MP3path, $sleeptimegong, $lbpplugindir, $logpath, $try_play;
 		
 		$sonos = new PHPSonos($coord[0]);
 		if (isset($_GET['messageid'])) {
 			// Set path if messageid
 			$mpath = $myMessagepath."".$MP3path;
-			LOGGING("path for messageid permission has changed", 7);		
+			LOGGING("path for messageid's been adopted", 7);		
 			chmod_r();
 		} else {
 			// Set path if T2S
 			$mpath = $myMessagepath;
+			LOGGING("path for T2S been adopted", 7);	
 		}
 		// if Playbar is in Modus TV switch to Playlist 1st
 		if (substr($actual[$master]['PositionInfo']["TrackURI"], 0, 18) == "x-sonos-htastream:")  {  
@@ -191,6 +199,7 @@ function play_tts($messageid) {
 			// save temporally playlist
 			SavePlaylist();
 			$sonos->ClearQueue();
+			LOGGING("Queue has been cleared", 7);		
 			$message_pos = 1;
 			LOGGING("Playlist has more then 998 songs", 4);		
 		}
@@ -203,9 +212,9 @@ function play_tts($messageid) {
 		}
 		// Playgong/jingle to be played upfront
 		if(isset($_GET['playgong']) && ($_GET['playgong'] == "yes")) {
-			$jinglepath = $myMessagepath."".$MP3path."/".$config['MP3']['file_gong'];
+			$jinglepath = $myMessagepath."".$MP3path."/".trim($config['MP3']['file_gong']);
 			$sonos->AddToQueue("x-file-cifs:".$jinglepath.".mp3");
-			LOGGING("Jingle has been played", 7);		
+			LOGGING("Jingle ".$jinglepath.".mp3 has been played", 7);		
 		}
 		// if batch has been created add all T2S
 		$filename = "t2s_batch.txt";
@@ -213,30 +222,31 @@ function play_tts($messageid) {
 			$t2s_batch = read_txt_file_to_array($t2s_batch);
 			foreach ($t2s_batch as $t2s => $messageid) {
 				$sonos->AddToQueue('x-file-cifs:'.$mpath."/".trim($messageid).".mp3");
-				LOGGING("T2S batch Queue has been created", 7);		
+				LOGGING("T2S from batch Queue has been added to Play Queue", 7);		
 			}
 		} else {
 			// if no batch has been created add single T2S
-			$sonos->AddToQueue('x-file-cifs:'.$mpath."/".$messageid.".mp3");
-			LOGGING("T2S has been added", 7);		
+			$sonos->AddToQueue('x-file-cifs:'.$mpath."/".trim($messageid).".mp3");
+			LOGGING("T2S with ".trim($messageid).".mp3 has been added to Queue", 7);		
 		}
 		#echo $mpath."/".$messageid.".mp3";
 		#$t = 'x-file-cifs:'.$mpath."/".$messageid.".mp3";
 		$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
 		$sonos->SetPlayMode('NORMAL');
+		LOGGING("Playmode has been set to NORMAL", 7);		
 		$sonos->SetTrack($message_pos);
 		$sonos->SetGroupMute(false);
+		LOGGING("Mute has been turned off", 7);		
 		try {
 			$try_play = $sonos->Play();
 			LOGGING("T2S has been played", 7);		
 		} catch (Exception $e) {
-			LOGGING("The requested T2S message could not be played!", 3);
+			LOGGING("The requested T2S message ".trim($messageid).".mp3 could not be played!", 3);
 			$notification = array (	"PACKAGE" => $lbpplugindir,
 									"NAME" => "Sonos",
 									"MESSAGE" => "The requested T2S message could not be played!",
 									"SEVERITY" => 3,
 									"fullerror" => "the received error: ".$try_play,
-									"msnumber" => 1,
 									"LOGFILE" => LBPLOGDIR . "/sonos.log"
 									);
 			notify_ext($notification);
@@ -249,8 +259,11 @@ function play_tts($messageid) {
 		// if Playlist has more than 998 entries
 		if ($save_plist > 998) {
 			$sonos->ClearQueue();
+			LOGGING("Queue has been cleared", 7);		
 			LoadPlaylist("temp_t2s");
+			LOGGING("Temporary saved playlist 'temp_t2s' has been loaded back into Queue", 7);		
 			DelPlaylist();
+			LOGGING("Temporary playlist 'temp_t2s' has been finally deleted", 7);		
 		// if Playlist has less than or equal 998 entries
 		} else {
 			// If batch T2S has been be played
@@ -262,6 +275,7 @@ function play_tts($messageid) {
 					$i++;
 				} 
 				LOGGING("T2S batch has been played", 7);		
+				LOGGING("T2S batch has been removed from Queue", 7);		
 			} else {
 				// If single T2S has been be played
 				$sonos->RemoveFromQueue($message_pos);
@@ -317,7 +331,7 @@ function sendmessage() {
 			#var_dump($modeback = GetVolumeModeConnect());
 			if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
 				$volume = $_GET['volume'];
-				LOGGING("Volume from syntax been used", 7);		
+				LOGGING("Volume from syntax been adopted", 7);		
 			} else 	{
 				// übernimmt Standard Lautstärke der angegebenen Zone aus config.php
 				$volume = $config['sonoszonen'][$master][3];
@@ -348,7 +362,7 @@ function sendmessage() {
 			#if ((substr($test, 0, 18) !== "x-sonos-htastream:") and (!isset($_GET['sonos'])))  {
 			if (!isset($_GET['sonos']))  {
 				$sonos->Stop();
-				usleep(500000);
+				usleep(200000);
 			}
 			// get Coordinator of (maybe) pair or single player
 			$coord = getRoomCoordinator($master);
@@ -366,6 +380,7 @@ function sendmessage() {
 			SetVolumeModeConnect($mode, $master);
 			#logging();
 			delmp3();
+			LOGGING("Deletion of no longer needed MP3 files has been executed", 7);		
 	}
 
 /**
@@ -402,6 +417,15 @@ function sendgroupmessage() {
 			checkTTSkeys();
 			$master = $_GET['zone'];
 			$member = $_GET['member'];
+			create_tts();
+			# check if weather warning exist
+			#if (isset($_GET['warning'])) {
+			#	require_once('addon/weather-warning-to-speech.php');
+			#	$warning = check_warning();
+			#	if ($warning === NULL)  {
+			#		exit;
+			#	}
+			#}
 			// if parameter 'all' has been entered all zones were grouped
 			if($member === 'all') {
 				$member = array();
@@ -439,7 +463,7 @@ function sendgroupmessage() {
 				$sonos = new PHPSonos($sonoszone[$zone][0]);
 				if ($zone != $master) {
 					$sonos->SetAVTransportURI("x-rincon:" . $masterrincon); 
-					LOGGING("All Members has been connected to Master Zone", 7);		
+					LOGGING("Member '.$zone.' is now connected to Master Zone", 7);		
 				}
 			}
 			#sleep($config['TTS']['sleepgroupmessage']); // warten gemäß config.php bis Gruppierung abgeschlossen ist
@@ -449,7 +473,7 @@ function sendgroupmessage() {
 			if (!isset($_GET['sonos']))  {
 				$sonos->Stop();
 			}
-			create_tts();
+			#create_tts();
 			$group = $member;
 			// master der array hinzufügen
 			array_push($group, $master);
@@ -460,16 +484,17 @@ function sendgroupmessage() {
 					isset($_GET['volume']) ? $groupvolume = $_GET['volume'] : $groupvolume = $_GET['groupvolume'];
 					if(isset($_GET['volume'])) {
 						$final_vol = $groupvolume;
-						LOGGING("Volume for all Zone Members of group has been set", 7);		
+						LOGGING("Groupvolume for all Zone Members of group has been set", 7);		
 					} else {
 						$newvolume = $sonos->GetVolume();
 						$final_vol = $newvolume + ($newvolume * ($groupvolume / 100));  // multiplizieren
 						// prüfen ob errechnete Volume > 100 ist, falls ja max. auf 100 setzen
 						$final_vol > 100 ? $final_vol = 100 : $final_vol;
-						LOGGING("Volume for all Zone Members of group has been set", 7);		
+						LOGGING("Individual Volume for all Zone Members of group has been set", 7);		
 					}
 				} else {
 					$final_vol = $sonoszone[$zone2][3];
+					LOGGING("Standard Volume from config for all Zone Members of group has been set", 7);		
 				}
 				$sonos->SetVolume($final_vol);
 				$sonos->SetMute(false);
@@ -478,6 +503,7 @@ function sendgroupmessage() {
 			play_tts($messageid);
 			// wiederherstellen der Ursprungszustände
 			restoreGroupZone();
+			LOGGING("Restore previous settings will be called", 7);		
 			foreach($member as $newzone) {
 				$mode = "";
 				$actual[$newzone]['CONNECT'] == 'true' ? $mode = '1' : $mode = '0';
@@ -490,6 +516,7 @@ function sendgroupmessage() {
 			#SetVolumeModeConnect($mode);
 			#logging();
 			delmp3();
+			LOGGING("Deletion of no longer needed MP3 files has been executed", 7);		
 			
 }
 

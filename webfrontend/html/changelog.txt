@@ -143,3 +143,7 @@
 			[New] Automatische Information bei schweren Fehlern direkt über das Plugin bzw. per Mail (falls LoxBerry Mail konfiguriert ist)
 			[Feature] Logging ergänzt
 			[New] Error handling falls Konfigurationsdateien nicht lesbar sind
+ 3.0.2		[Bugfix] Gruppenansage Wetterwarnung und Wastekalender gefixt (kein Gruppierung mehr falls keine Daten)
+			[Bugfix] trim/encode bei messageid's bzw. T2S um Leerzeichen in Syntax abzufangen
+			[Feature] Abfrage vorm Scannen ob SSDP deaktiviert
+			[Bugfix] Logging erweitert

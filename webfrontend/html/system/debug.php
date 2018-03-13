@@ -15,8 +15,9 @@ function LOGGING($message = "", $loglevel, $raw = 0)
 {
 	global $pcfg, $L, $config;
 	
-	$config_loglevel = $config['SYSTEM']['LOGLEVEL'];
-	if (empty($config_loglevel)) {
+	try {
+		$config_loglevel = $config['SYSTEM']['LOGLEVEL'];
+	} catch (Exception $e) {
 		$config_loglevel = 7;
 	}
 	if (intval($config_loglevel) >= intval($loglevel) )
