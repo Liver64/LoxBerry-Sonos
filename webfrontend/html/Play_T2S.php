@@ -301,7 +301,7 @@ function play_tts($messageid) {
 **/
 
 function sendmessage() {
-			global $text, $master, $messageid, $logging, $textstring, $voice, $config, $actual, $player, $volume, $sonos, $coord, $time_start, $filename, $sonoszone, $tmp_batch, $mode;
+			global $text, $master, $messageid, $logging, $textstring, $voice, $config, $actual, $player, $volume, $sonos, $coord, $time_start, $filename, $sonoszone, $tmp_batch, $mode, $MP3path;
 						
 			// if batch has been choosed save filenames to a txt file and exit
 			if(isset($_GET['batch'])) {

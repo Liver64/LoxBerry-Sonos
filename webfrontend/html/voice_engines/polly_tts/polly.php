@@ -33,7 +33,7 @@ class POLLY_TTS{
 		global $voice;
 		
 		$payload = json_encode(array( ('OutputFormat')  => 'mp3',
-                                      ('Text')          => $text,
+                                      ('Text')          => urldecode($text),
                                       ('VoiceId')       => $voice ) 
 									  );
         $datestamp                = new \DateTime( "now", $this->utc_tz );
