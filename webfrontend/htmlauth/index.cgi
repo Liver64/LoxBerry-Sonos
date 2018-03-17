@@ -34,14 +34,12 @@ use JSON qw( decode_json );
 use utf8;
 use warnings;
 use strict;
-no strict "refs"; # we need it for template system
 #use Data::Dumper;
-
+#no strict "refs"; # we need it for template system
 
 ##########################################################################
 # Variables
 ##########################################################################
-
 
 my $namef;
 my $value;
@@ -52,10 +50,11 @@ my $saveformdata = 0;
 my $do = "form";
 my $msselectlist;
 my $helplink;
+#my $miniserver;
 my $maxzap;
 my $helptemplate;
+#my $lblang;
 my $i;
-our $cfg;
 our $countplayers;
 our $rowssonosplayer;
 our $miniserver;
@@ -75,19 +74,10 @@ my $log 						= LoxBerry::Log->new ( name => 'Sonos', filename => $lbplogdir ."/
 my $plugintempplayerfile	 	= "tmp_player.json";
 my $scanzonesfile	 			= "network.php";
 my $helplink 					= "http://www.loxwiki.eu/display/LOXBERRY/Sonos4Loxone";
-our $pcfg 						= new Config::Simple($lbpconfigdir . "/" . $pluginconfigfile);
-my %config 						= $pcfg->vars() if ( $pcfg );
+my $pcfg 						= new Config::Simple($lbpconfigdir . "/" . $pluginconfigfile);
+my %Config 						= $pcfg->vars() if ( $pcfg );
 our $error_message				= "";
 
-#**************************************************************************
-# Logging
-#**************************************************************************
-
-my $plugin = LoxBerry::System::plugindata();
-
-$LoxBerry::System::DEBUG 	= 1 if $plugin->{PLUGINDB_LOGLEVEL} eq 7;
-$LoxBerry::Web::DEBUG 		= 1 if $plugin->{PLUGINDB_LOGLEVEL} eq 7;
-$log->loglevel($plugin->{PLUGINDB_LOGLEVEL});
 
 ##########################################################################
 # Read Settings
@@ -95,6 +85,10 @@ $log->loglevel($plugin->{PLUGINDB_LOGLEVEL});
 
 # read language
 my $lblang = lblanguage();
+#my %SL = LoxBerry::System::readlanguage($template, $languagefile);
+
+#---** GEHT NICHT **--
+#$template->param("LOGFILE" , $lbplogdir . "/" . $pluginlogfile );
 
 # Read Plugin Version
 my $sversion = LoxBerry::System::pluginversion();
@@ -227,101 +221,41 @@ my $successtemplate = 	HTML::Template->new(
 						);
 my %SUC = LoxBerry::System::readlanguage($successtemplate, $languagefile);
 
+#**************************************************************************
+# Logging
+#**************************************************************************
 
-
-# Check if sonos.cfg details file is readable
-if (!-r $lbpconfigdir . "/" . $pluginconfigfile) 
+if ($pcfg)
 {
-	LOGWARN "Plugin config file is not readable.";
-	LOGDEB "Check if config directory exists, if not, try to create file.";
-	$error_message = $ERR{'ERRORS.ERR_CREATE_CONFIG_DIRECTORY'};
-	mkdir $lbpconfigdir unless -d $lbpconfigdir or &error;
+	$log->loglevel(int($Config{'SYSTEM.LOGLEVEL'}));
+	$LoxBerry::System::DEBUG 	= 1 if int($Config{'SYSTEM.LOGLEVEL'}) eq 7;
+	$LoxBerry::Web::DEBUG 		= 1 if int($Config{'SYSTEM.LOGLEVEL'}) eq 7;
 }
-# Check if sonos.cfg is valid
-open (my $file,  "<",  $lbpconfigdir . "/" . $pluginconfigfile);
-my $config_cfg = grep /SYSTEM/i, <$file>;
-if ($config_cfg eq "0") {
-	close $file;
-	LOGWARN "file 'sonos.cfg' is not valid.";
-	rename $lbpconfigdir . "/" . $pluginconfigfile, $lbpconfigdir . "/sonos.old";
-	LOGDEB "Backup of existing file has been created. (new name: sonos.old)";
-	unlink $file;
-	LOGDEB "'sonos.cfg' has been deleted";
-	LOGDEB "Try to create a default config";
-	$error_message = $ERR{'ERRORS.ERR_CREATE_CONFIG_FILE'};
-	open my $configfileHandle, ">", $lbpconfigdir . "/" . $pluginconfigfile or &error;
-		print $configfileHandle '[RADIO]'."\n\n";
-		print $configfileHandle '[LOCATION]'."\n\n";
-		print $configfileHandle '[MP3]'."\n\n";
-		print $configfileHandle '[LOXONE]'."\n\n";
-		print $configfileHandle '[SYSTEM]'."\n\n";
-		print $configfileHandle '[VARIOUS]'."\n\n";
-		print $configfileHandle '[TTS]'."\n\n";
-	close $configfileHandle;
-	LOGOK "Default 'sonos.cfg' file successful created.";
-	$error_message = $ERR{'ERRORS.ERR_NO_CONFIG_FILE'};
-	notify( $lbpplugindir, "Sonos", "A new Sonos Konfiguration has been loaded successfully. Please check Log File for details", 1);
-	&error; 
-}	
-LOGDEB "The Sonos config file has been loaded";
-
+else
+{
+	$log->loglevel(7);
+	$LoxBerry::System::DEBUG 	= 1;
+	$LoxBerry::Web::DEBUG 		= 1;
+	$error_message				= $ERR{'ERRORS.ERR_NO_SONOS_CONFIG_FILE'};
+	&error;
+	exit;
+}
 
 # Check, if filename for the maintemplate is readable, if not raise an error
 $error_message = $ERR{'ERRORS.ERR_MAIN_TEMPLATE_NOT_READABLE'};
 stat($lbptemplatedir . "/" . $maintemplatefilename);
 &error if !-r _;
 
-my $template = HTML::Template->new(
-		filename => $lbptemplatedir . "/" . $maintemplatefilename,
-		global_vars => 1,
-		loop_context_vars => 1,
-		die_on_bad_params=> 0,
-		associate => $pcfg,
-		%htmltemplate_options,
-		debug => 1
-		);
-
-
-my %SL = LoxBerry::System::readlanguage($template, $languagefile);	
-
-# read info file from Github and save in INFO
-my $info = "";
-$info = get($urlfile);
-$template		->param("INFO" 			=> "$info");		
-
-
-
-
-# Check if player.cfg file is readable
-if (!-r $lbpconfigdir . "/" . $pluginplayerfile) 
-{
-	LOGWARN "Plugin player file is not readable.";
-	LOGDEB "Check if config directory exists, if not, try to create file.";
-	$error_message = $ERR{'ERRORS.ERR_CREATE_CONFIG_DIRECTORY'};
-	mkdir $lbpconfigdir unless -d $lbpconfigdir or &error; 
-}
-
-# Check if player.cfg is valid
-open (my $file,  "<",  $lbpconfigdir . "/" . $pluginplayerfile);
-my $player = grep /SONOSZONEN/i, <$file>;
-if ($player eq "0") {
-	close $file;
-	LOGWARN "file 'player.cfg' is not valid.";
-	rename $lbpconfigdir . "/" . $pluginplayerfile, $lbpconfigdir . "/player.old";
-	LOGDEB "Backup of existing file has been created. (new name: player.old)";
-	unlink $file;
-	LOGDEB "'player.cfg' has been deleted";
-	LOGDEB "Try to create a default player file";
-	$error_message = $ERR{'ERRORS.ERR_CREATE_PLAYER_FILE'};
-	open my $configfileHandle, ">", $lbpconfigdir . "/" . $pluginplayerfile or &error;
-		print $configfileHandle '[SONOSZONEN]'."\n";
-	close $configfileHandle;
-	LOGOK "Default 'player.cfg' file successful created.";
-	notify( $lbpplugindir, "Sonos", "A new Sonos Player Konfiguration has been loaded successfully. Please check Log File for details", 1);
-	$error_message = $ERR{'ERRORS.ERR_NO_PLAYER_FILE'};
-	&error; 
-}	
-LOGDEB "The Sonos player file has been loaded";
+my $template =  HTML::Template->new(
+				filename => $lbptemplatedir . "/" . $maintemplatefilename,
+				global_vars => 1,
+				loop_context_vars => 1,
+				die_on_bad_params=> 0,
+				associate => $pcfg,
+				%htmltemplate_options,
+				debug => 1
+				);
+my %SL = LoxBerry::System::readlanguage($template, $languagefile);			
 
 
 ##########################################################################
@@ -339,7 +273,30 @@ LOGDEB "Read main settings from " . $languagefile . " for language " . $lblang;
 # übergibt Plugin Verzeichnis an HTML
 $template->param("PLUGINDIR" => $lbpplugindir);
 
+# Check if plugin config file is readable
+if (!-r $lbpconfigdir . "/" . $pluginconfigfile) 
+{
+	$error_message = $ERR{'ERRORS.ERR_NO_SONOS_CONFIG_FILE'};
+	LOGERR "The Sonos config file could not be loaded";
+	&error;
+	exit;	
+}
+
+LOGDEB "The Sonos config file has been loaded";
+
 #**************************************************************************
+
+# Check if plugin player details file is readable
+if (!-r $lbpconfigdir . "/" . $pluginplayerfile) 
+{
+	$error_message = $ERR{'ERRORS.ERR_NO_SONOS_PLAYER_FILE'};
+	LOGERR "The Sonos player file could not be loaded";
+	&error;
+	exit;	
+}
+
+LOGDEB "The Sonos player file has been loaded";
+
 
 # Check for miniservers
 my %miniservers;
@@ -371,6 +328,10 @@ exit;
 
 sub form {
 
+	# read info file from Github and save in $info
+	my $info = get($urlfile);
+	$template		->param("INFO" 			=> "$info");
+			
 	# fill saved values into form
 	$template		->param("SELFURL", $ENV{REQUEST_URI});
 	$template		->param("T2S_ENGINE" 	=> $pcfg->param("TTS.t2s_engine"));
@@ -385,9 +346,8 @@ sub form {
 	our $countradios = 0;
 	our $rowsradios;
 	
-	my %config = $pcfg->vars();	
-	
-	foreach my $key (keys %config) {
+	my %radioconfig = $pcfg->vars();	
+	foreach my $key (keys %radioconfig) {
 		if ( $key =~ /^RADIO/ ) {
 			$countradios++;
 			my @fields = $pcfg->param($key);
@@ -412,9 +372,9 @@ sub form {
 	
 	my $error_volume = $ERR{'T2S.ERROR_VOLUME_PLAYER'};
 	my $playercfg = new Config::Simple($lbpconfigdir . "/" . $pluginplayerfile);
-	my %config = $playercfg->vars();	
+	my %configzones = $playercfg->vars();	
 	
-	foreach my $key (keys %config) {
+	foreach my $key (keys %configzones) {
 		$countplayers++;
 		my $room = $key;
 		$room =~ s/^SONOSZONEN\.//g;
@@ -431,7 +391,22 @@ sub form {
 	}
 	LOGDEB "$countplayers Sonos players has been loaded.";
 	
-		if ( $countplayers < 1 ) {
+	#####################################################
+	# Subroutines
+	#####################################################	
+	
+	# Call Subroutine to scan/import Sonos Zones
+	if ( $do eq "scan" ) {
+		&attention_scan;
+	}
+	
+	# Call Subroutine to scan/import Sonos Zones
+	if ( $do eq "scanning" ) {
+		&scan;
+	}
+	#####################################################	
+
+	if ( $countplayers < 1 ) {
 		$rowssonosplayer .= "<tr><td colspan=6>" . $SL{'ZONES.SONOS_EMPTY_ZONES'} . "</td></tr>\n";
 	}
 	$rowssonosplayer .= "<input type='hidden' id='countplayers' name='countplayers' value='$countplayers'>\n";
@@ -459,20 +434,6 @@ sub form {
 	}
 	$template->param("MSSELECTLIST", $msselectlist);
 	
-	#####################################################
-	# Subroutines
-	#####################################################	
-	
-	# Call Subroutine to scan/import Sonos Zones
-	if ( $do eq "scan" ) {
-		&attention_scan;
-	}
-	
-	# Call Subroutine to scan/import Sonos Zones
-	if ( $do eq "scanning" ) {
-		&scan;
-	}
-	#####################################################	
 	
 	# Prepare form defaults
 	if (!$rmpvol) {$rmpvol = "25"};
@@ -480,13 +441,12 @@ sub form {
 	if (!$maxzap) {$maxzap = "40"};
 	
 	LOGOK "Sonos Plugin has been successfully loaded.";
-		
+	
 	# Print Template
 	my $sversion = LoxBerry::System::pluginversion();
 	$template_title = "$SL{'BASIS.MAIN_TITLE'}: v$sversion";
 	LoxBerry::Web::head();
 	LoxBerry::Web::pagestart($template_title, $helplink, $helptemplate);
-	print LoxBerry::Log::get_notifications_html($lbpplugindir);
 	print $template->output();
 	undef $template;	
 	LoxBerry::Web::lbfooter();
@@ -495,9 +455,9 @@ sub form {
 	#my $content =  "Miniserver Nr. 1 heißt: $MiniServer und hat den Port: $MSWebPort User ist: $MSUser und PW: $MSPass.";
 	#my $template_title = '';
 	#LoxBerry::Web::lbheader($template_title);
-	#print $test;
+	#print $content;
 	#LoxBerry::Web::lbfooter();
-	exit;
+	#exit;
 
 }
 
@@ -533,6 +493,7 @@ sub save
 	# OK - now installing...
 
 	# Write configuration file(s)
+	#$pcfg->param("LOXONE.Loxone", "MINISERVER$R::miniserver");
 	$pcfg->param("LOXONE.Loxone", "MINISERVER$R::miniserver");
 	$pcfg->param("LOXONE.LoxDaten", "$R::sendlox");
 	$pcfg->param("LOXONE.LoxPort", "$R::udpport");
@@ -566,7 +527,7 @@ sub save
 			$pcfg->param( "RADIO.radio" . "[$i]", param("radioname$i") . "," . param("radiourl$i") );
 		}
 	}
-	LOGDEB "Radio Stations has been prepared for saving";
+	LOGDEB "Radio Stations has been saved.";
 
 	$pcfg->save() or &error;;
 
@@ -580,8 +541,8 @@ sub save
 			$playercfg->param( "SONOSZONEN." . param("zone$i") . "[]", param("ip$i") . "," . param("rincon$i") . "," . param("model$i") . "," . param("t2svol$i") . "," . param("sonosvol$i") . "," . param("maxvol$i") );
 		}
 	}
-	LOGDEB "Sonos Zones has been prepared for saving.";
-	LOGOK "All settings has been saved successful, leaving sub save and return to main form";
+	LOGDEB "Sonos Zones has been saved.";
+	LOGOK "All settings has been saved successful";
 
 	$playercfg->save() or &error; 
 	my $lblang = lblanguage();
@@ -656,22 +617,21 @@ sub attention_scan
 
 
 
+
 #####################################################
 # Scan Sonos Player - Sub
 #####################################################
 
 sub scan
 {
-	LOGDEB "Scan for Sonos Zones has been finally called.";
 	my $error_volume = $SL{'T2S.ERROR_VOLUME_PLAYER'};
 	
 	# executes PHP network.php script (reads player.cfg and add new zones if been added)
 	my $response = qx(/usr/bin/php $lbphtmldir/system/$scanzonesfile);
-
+			
 	#import Sonos Player from JSON file
 	open (my $fh, '<:raw', $lbpconfigdir . '/' . $plugintempplayerfile) or die("Die Datei: $plugintempplayerfile konnte nicht geöffnet werden! $!\n");
 	my $file;
-	LOGDEB "Temporary scan file 'tmp_player.json' has been loaded";
 	local $/ = undef;
 	$file = <$fh>;
 	close($fh);
@@ -691,12 +651,9 @@ sub scan
 			$rowssonosplayer .= "<input type='hidden' id='ip$countplayers' name='ip$countplayers' value='$config->{$key}->[0]'>\n";
 			$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' value='$config->{$key}->[1]'>\n";
 		}
+	LOGDEB "Scan for Sonos Zones has been executed.";
 	$template->param("ROWSSONOSPLAYER", $rowssonosplayer);
 	}
-	LOGDEB "Content of 'tmp_player.json' has been loaded into 'player.cfg'";
-	unlink ($lbpconfigdir."/tmp_player.json");
-	LOGDEB "Temporary scan file 'tmp_player.json' has been deleted";
-	LOGDEB "Scan for Sonos Zones has been successful ended, return to main form.";
 	return();
 }
 	
@@ -706,9 +663,6 @@ sub scan
 
 sub error 
 {
-	LOGDEB "Sub error";
-	LOGERR $error_message;
-	LOGDEB "Set page title/header/footer and parse variables, end with error";
 	$template_title = $ERR{'ERRORS.MY_NAME'} . ": v$sversion - " . $ERR{'ERRORS.ERR_TITLE'};
 	LoxBerry::Web::lbheader($template_title, $helplink, $helptemplatefilename);
 	$errortemplate->param('ERR_MESSAGE'		, $error_message);
@@ -717,9 +671,6 @@ sub error
 	$successtemplate->param('ERR_NEXTURL'	, $ENV{REQUEST_URI});
 	print $errortemplate->output();
 	LoxBerry::Web::lbfooter();
-	LOGDEB "Leaving Sonos Plugin with an error";
-	exit;
-	
 	
 	
 }

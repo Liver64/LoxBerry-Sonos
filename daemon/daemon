@@ -20,7 +20,7 @@ then
 	echo "   comment = LoxBerry Plugin Data" >> $LBHOMEDIR/system/samba/smb.conf
 	echo "   path = $LBPDATA" >> $LBHOMEDIR/system/samba/smb.conf
 	echo "   guest ok = yes" >> $LBHOMEDIR/system/samba/smb.conf
-	echo "   read only = no" >> $LBHOMEDIR/system/samba/smb.conf
+	echo "   read only = yes" >> $LBHOMEDIR/system/samba/smb.conf
 	echo "   directory mask = 0700" >> $LBHOMEDIR/system/samba/smb.conf
 	echo "   create mask = 0700" >> $LBHOMEDIR/system/samba/smb.conf
 	echo "   follow symlinks = yes" >> $LBHOMEDIR/system/samba/smb.conf
