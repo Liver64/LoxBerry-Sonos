@@ -147,3 +147,11 @@
 			[Bugfix] trim/encode bei messageid's bzw. T2S um Leerzeichen in Syntax abzufangen
 			[Feature] Abfrage vorm Scannen ob SSDP deaktiviert
 			[Bugfix] Logging erweitert
+ 3.0.3		[Bugfix] added decoding to Polly
+			[Bugfix] fixed messageid by adding global variable
+			[Bugfix] Update plugin.cfg in order to reflect correct release
+ 3.0.4		[Bugfix] Scan after initial Installation
+			[Change] Adopted Samba settings from LB 1.0.4 from daemon
+ 3.0.5      [Bugfix] minor changes to logging
+			[Bugfix] build in auto configuration if config files are missing
+			[Bugfix] fixed logging for Zone scanning
