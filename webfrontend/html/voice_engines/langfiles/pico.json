@@ -1,0 +1,32 @@
+[
+ {
+   "t2s": 5001,
+   "country": "Deutsch (German)",
+   "value": "de-DE"
+ },
+ {
+   "t2s": 5001,
+   "country": "French",
+   "value": "fr-FR"
+ },
+ {
+   "t2s": 5001,
+   "country": "English (British)",
+   "value": "en-GB"
+ },
+ {
+   "t2s": 5001,
+   "country": "English (US)",
+   "value": "en-US"
+ },
+ {
+   "t2s": 5001,
+   "country": "Spain",
+   "value": "es-ES"
+ },
+ {
+   "t2s": 5001,
+   "country": "Italian",
+   "value": "it-IT"
+ }
+]
