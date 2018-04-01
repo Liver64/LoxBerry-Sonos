@@ -228,7 +228,6 @@ my %SUC = LoxBerry::System::readlanguage($successtemplate, $languagefile);
 ##########################################################################
 
 # Check if sonos.cfg file exist/directory exists
-LOGDEB "Perform check if plugin config file/directory exist";
 if (!-r $lbpconfigdir . "/" . $pluginconfigfile) 
 {
 	LOGWARN "Plugin config file/directory does not exist";
@@ -271,7 +270,6 @@ LOGDEB "The Sonos config file has been loaded";
 #**************************************************************************
 
 # Check if player.cfg file exist/directory exists
-LOGDEB "Perform check if plugin config file/directory exist";
 if (!-r $lbpconfigdir . "/" . $pluginplayerfile) 
 {
 	LOGWARN "Plugin player file/directory does not exist";
@@ -439,6 +437,36 @@ sub form {
 	}
 	LOGDEB "$countplayers Sonos zones has been loaded.";
 	
+	if ( $countplayers < 1 ) {
+		$rowssonosplayer .= "<tr><td colspan=6>" . $SL{'ZONES.SONOS_EMPTY_ZONES'} . "</td></tr>\n";
+	}
+	$rowssonosplayer .= "<input type='hidden' id='countplayers' name='countplayers' value='$countplayers'>\n";
+	$template->param("ROWSSONOSPLAYER", $rowssonosplayer);
+	
+	
+	# fill dropdown with list of files from tts/mp3 folder
+	my $dir = $lbpdatadir.'/tts/mp3/';
+	my $mp3_list;
+	
+    opendir(DIR, $dir) or die $!;
+	my @dots 
+        = grep { 
+            /\.mp3$/      # just files ending with .mp3
+	    && -f "$dir/$_"   # and is a file
+	} 
+	readdir(DIR);
+	my @sorted_dots = sort { $a <=> $b } @dots;
+    # Loop through the array adding filenames to dropdown
+    foreach my $file (@sorted_dots) {
+		$mp3_list.= "<option value='$file'>" . $file . "</option>\n";
+    }
+	closedir(DIR);
+	$template->param("MP3_LIST", $mp3_list);
+	LOGDEB "List of available MP3 files has been successful loaded";
+	
+	
+	
+	
 	#####################################################
 	# Subroutines
 	#####################################################	
@@ -454,12 +482,6 @@ sub form {
 	}
 	#####################################################	
 
-	if ( $countplayers < 1 ) {
-		$rowssonosplayer .= "<tr><td colspan=6>" . $SL{'ZONES.SONOS_EMPTY_ZONES'} . "</td></tr>\n";
-	}
-	$rowssonosplayer .= "<input type='hidden' id='countplayers' name='countplayers' value='$countplayers'>\n";
-	$template->param("ROWSSONOSPLAYER", $rowssonosplayer);
-	
 	# Get saved value from config
 	my $msselected = $pcfg->param("LOXONE.Loxone");
 	
@@ -553,6 +575,7 @@ sub save
 	$pcfg->param("TTS.secret-key", "$R::seckey");
 	$pcfg->param("TTS.voice", "$R::voice");
 	$pcfg->param("MP3.file_gong", "$R::file_gong");
+	#$pcfg->param("MP3.file_gong", "$R::mp3_list");
 	$pcfg->param("MP3.volumedown", "$R::volume");
 	$pcfg->param("MP3.volumeup", "$R::volume");
 	$pcfg->param("MP3.MP3store", "$R::mp3store");
@@ -679,34 +702,34 @@ sub scan
 	my $response = qx(/usr/bin/php $lbphtmldir/system/$scanzonesfile);
 			
 	#import Sonos Player from JSON file
-	open (my $fh, '<:raw', $lbpconfigdir . '/' . $plugintempplayerfile) or die("Die Datei: $plugintempplayerfile konnte nicht geöffnet werden! $!\n");
+	open (my $fh, '<:raw', $lbpconfigdir . '/' . $plugintempplayerfile) or die("The file: ".$plugintempplayerfile." could not be opened! $!\n");
 	my $file;
 	local $/ = undef;
 	$file = <$fh>;
 	close($fh);
-	if ( $file ne "[]" ) {
-	my $config = decode_json($file);
-	
-		# creates table of Sonos devices
-		foreach my $key (keys %{$config})
-		{
-			$countplayers++;
-			$rowssonosplayer .= "<tr><td style='height: 25px; width: 43px;' class='auto-style1'><INPUT type='checkbox' style='width: 20px' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
-			$rowssonosplayer .= "<td style='height: 25px; width: 176px;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$key' style='width: 196px; background-color: #e6e6e6;' /> </td>\n";
-			$rowssonosplayer .= "<td style='height: 28px; width: 147px;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='$config->{$key}->[2]' style='width: 153px; background-color: #e6e6e6;' /> </td>\n";
-			$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='$config->{$key}->[3]'' /> </td>\n";
-			$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='$config->{$key}->[4]'' /> </td>\n";
-			$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$config->{$key}->[5]'' /> </td>\n";
-			$rowssonosplayer .= "<input type='hidden' id='ip$countplayers' name='ip$countplayers' value='$config->{$key}->[0]'>\n";
-			$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' value='$config->{$key}->[1]'>\n";
-		}
-	LOGDEB "Scan for Sonos Zones has been executed.";
-	$template->param("ROWSSONOSPLAYER", $rowssonosplayer);
-	
+	if ( $file ne "[]" ) 
+	{
+		my $config = decode_json($file);
+		
+			# creates table of Sonos devices
+			foreach my $key (keys %{$config})
+			{
+				$countplayers++;
+				$rowssonosplayer .= "<tr><td style='height: 25px; width: 43px;' class='auto-style1'><INPUT type='checkbox' style='width: 20px' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
+				$rowssonosplayer .= "<td style='height: 25px; width: 176px;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$key' style='width: 196px; background-color: #e6e6e6;' /> </td>\n";
+				$rowssonosplayer .= "<td style='height: 28px; width: 147px;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='$config->{$key}->[2]' style='width: 153px; background-color: #e6e6e6;' /> </td>\n";
+				$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='$config->{$key}->[3]'' /> </td>\n";
+				$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='$config->{$key}->[4]'' /> </td>\n";
+				$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$config->{$key}->[5]'' /> </td>\n";
+				$rowssonosplayer .= "<input type='hidden' id='ip$countplayers' name='ip$countplayers' value='$config->{$key}->[0]'>\n";
+				$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' value='$config->{$key}->[1]'>\n";
+			}
+		LOGDEB "Scan for Sonos Zones has been executed.";
+		$template->param("ROWSSONOSPLAYER", $rowssonosplayer);
+	}
 	LOGDEB "Content of 'tmp_player.json' has been loaded into form";
 	unlink ($lbpconfigdir."/tmp_player.json");
 	LOGDEB "Temporary scan file 'tmp_player.json' has been deleted";
-	}
 	return();
 }
 

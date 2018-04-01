@@ -154,4 +154,8 @@
 			[Change] Adopted Samba settings from LB 1.0.4 from daemon
  3.0.5      [Bugfix] minor changes to logging
 			[Bugfix] build in auto configuration if config files are missing
-			[Bugfix] fixed logging for Zone scanning
+			[Bugfix] fixed logging for Zone scannin
+ 3.1.0		New Release
+ 3.1.1		[Bugfix] Error handling bei playgong hinzugefügt
+			[Feature] Jingle MP3 Datei Auswahl für playgong als Dropdown hinzugefügt
+			[Feature] das Jingle kann jetzt auch indiviuell per T2S hinzugefügt werden.

@@ -75,13 +75,13 @@ function create_tts() {
 		// calls the weather warning-to-speech Function
 		include_once("addon/gimmicks.php");
 		$textstring = substr(GetWitz(), 0, 1000);
-		LOGGING("joke plugin has been called", 7);
+		LOGGING("Joke plugin has been called", 7);
 		}
 	elseif (isset($_GET['bauernregel'])) {
 		// calls the weather warning-to-speech Function
 		include_once("addon/gimmicks.php");
 		$textstring = substr(GetTodayBauernregel(), 0, 500);
-		LOGGING("bauernregeln plugin has been called", 7);
+		LOGGING("Bauernregeln plugin has been called", 7);
 		}
 	elseif (isset($_GET['abfall'])) {
 		// calls the wastecalendar-to-speech Function
@@ -211,23 +211,46 @@ function play_tts($messageid) {
 			$message_pos = count($save_plist);
 		}
 		// Playgong/jingle to be played upfront
-		if(isset($_GET['playgong']) && ($_GET['playgong'] == "yes")) {
-			$jinglepath = $myMessagepath."".$MP3path."/".trim($config['MP3']['file_gong']);
-			$sonos->AddToQueue("x-file-cifs:".$jinglepath.".mp3");
-			LOGGING("Jingle ".$jinglepath.".mp3 has been played", 7);		
+		#*****************************************************************************************************
+		if(isset($_GET['playgong'])) {
+			if ($_GET['playgong'] == 'no')	{
+				LOGGING("'playgong=no' could not be used in syntax, only 'playgong=yes' or 'playgong=file.mp3' are allowed", 3);
+				exit;
+			}
+			if(empty($config['MP3']['file_gong'])) {
+				LOGGING("file name for playgong is missing in config. Please maintain in Sonos Plugin", 3);
+				exit;	
+			}
+			if (($_GET['playgong'] != "yes") and ($_GET['playgong'] != "no") and ($_GET['playgong'] != " ")) {
+				$file = $_GET['playgong'];
+				$valid = mp3_files($file);
+				if ($valid === true) {
+					$jinglepath = $myMessagepath."".$MP3path."/".trim($file);
+					$sonos->AddToQueue("x-file-cifs:".$jinglepath);
+					LOGGING("Jingle '".trim($file)."' added to Queue", 7);	
+				} else {
+					LOGGING("Entered jingle '".$file."' for playgong is not valid or nothing been entered. Please correct your syntax", 3);
+					exit;
+				}
+			} else {
+				$jinglepath = $myMessagepath."".$MP3path."/".trim($config['MP3']['file_gong']);
+				$sonos->AddToQueue("x-file-cifs:".$jinglepath);
+				LOGGING("Standard jingle '".trim($config['MP3']['file_gong'])."' added to Queue", 7);	
+			}
 		}
+		#******************************************************************************************************
 		// if batch has been created add all T2S
 		$filename = "t2s_batch.txt";
 		if ((file_exists($filename)) and (!isset($_GET['playbatch']))){
 			$t2s_batch = read_txt_file_to_array($t2s_batch);
 			foreach ($t2s_batch as $t2s => $messageid) {
 				$sonos->AddToQueue('x-file-cifs:'.$mpath."/".trim($messageid).".mp3");
-				LOGGING("T2S from batch Queue has been added to Play Queue", 7);		
 			}
+			LOGGING("Messages from batch has been added to Play Queue", 7);	
 		} else {
 			// if no batch has been created add single T2S
 			$sonos->AddToQueue('x-file-cifs:'.$mpath."/".trim($messageid).".mp3");
-			LOGGING("T2S with ".trim($messageid).".mp3 has been added to Queue", 7);		
+			LOGGING("T2S '".trim($messageid).".mp3' has been added to Queue", 7);		
 		}
 		#echo $mpath."/".$messageid.".mp3";
 		#$t = 'x-file-cifs:'.$mpath."/".$messageid.".mp3";
@@ -281,7 +304,8 @@ function play_tts($messageid) {
 				$sonos->RemoveFromQueue($message_pos);
 				LOGGING("All T2S has been removed from Queue", 7);		
 			}
-			if(isset($_GET['playgong']) && ($_GET['playgong'] == "yes")) {		
+			if(isset($_GET['playgong'])) {		
+			#if(isset($_GET['playgong']) && ($_GET['playgong'] == "yes")) {		
 				$sonos->RemoveFromQueue($message_pos);
 				LOGGING("Jingle has been removed from Queue", 7);		
 			}
@@ -463,7 +487,7 @@ function sendgroupmessage() {
 				$sonos = new PHPSonos($sonoszone[$zone][0]);
 				if ($zone != $master) {
 					$sonos->SetAVTransportURI("x-rincon:" . $masterrincon); 
-					LOGGING("Member '.$zone.' is now connected to Master Zone", 7);		
+					LOGGING("Member '$zone' is now connected to Master Zone", 7);		
 				}
 			}
 			#sleep($config['TTS']['sleepgroupmessage']); // warten gemäß config.php bis Gruppierung abgeschlossen ist

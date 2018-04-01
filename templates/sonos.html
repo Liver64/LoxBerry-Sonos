@@ -1,4 +1,4 @@
-<style type="text/css">
+﻿<style type="text/css">
 
 
 .form {
@@ -48,14 +48,14 @@
 		<td valign="middle" style="height: 41px; width: 50%;">
 		<table width="100%" cellpadding="2" cellspacing="0" border="1px" border="1" id="tblzonen">
 			  <tr>
-			    <th style="width: 35px">
+			    <th style="width: 35px; height: 45px;">
 				<img class='ico_delete' src='/plugins/<TMPL_VAR PLUGINDIR>/images/recycle-bin.png' border='0' width='24' height='24'>
 				</th>
 				<th align="left" style="height: 45px; width: 196px"><TMPL_VAR ZONES.SONOS_ROOM></th>
-			    <th align="left" style="height: 25px; width: 147px;"><TMPL_VAR ZONES.SONOS_MODEL></th>
-   			    <th align="left" style="height: 25px; width: 98px;"><TMPL_VAR ZONES.SONOS_T2S-VOL></th>
-			    <th align="left" style="height: 25px; width: 98px;"><TMPL_VAR ZONES.SONOS_SONOS-VOL></th>
-			    <th align="left" style="height: 25px; width: 98px;"><TMPL_VAR ZONES.SONOS_MAX-VOL></th>
+			    <th align="left" style="height: 45px; width: 147px;"><TMPL_VAR ZONES.SONOS_MODEL></th>
+   			    <th align="left" style="height: 45px; width: 98px;"><TMPL_VAR ZONES.SONOS_T2S-VOL></th>
+			    <th align="left" style="height: 45px; width: 98px;"><TMPL_VAR ZONES.SONOS_SONOS-VOL></th>
+			    <th align="left" style="height: 45px; width: 98px;"><TMPL_VAR ZONES.SONOS_MAX-VOL></th>
 			  </tr>
 			  <TMPL_VAR ROWSSONOSPLAYER>
 			</table>
@@ -195,15 +195,22 @@
 			<td>
 				<table border=0 width="100%">
 					<tr>
-						<td width="50%" style="height: 30px; text-align: center;">
+						<td style="height: 30px; text-align: center; width: 40%;">
 							<label id="lfile_gong"><TMPL_VAR T2S.LABEL_MP3_FILE></label>
 						</td>
 						<td style="height: 30px">
-							<input id="file_gong" name="file_gong" type="text" class="textfield" value="<TMPL_VAR MP3.file_gong>">
+							<select id='file_gong' name='file_gong' data-mini='true' 
+								data-validation-error-msg="<TMPL_VAR T2S.SELECT_JINGLE_DROPDOWN>" 
+								data-validation-rule="^([A-Za-z0-9]){4,10}$" style="width: 210px">
+								<option selected='true' value='' disabled><TMPL_VAR T2S.SELECT_JINGLE_DROPDOWN></option>
+								<TMPL_VAR MP3_LIST>
+							</select>
+							<script>
+							$('#file_gong').val('<TMPL_VAR MP3.file_gong>');
+							</script>
+							<font size="-1"><TMPL_VAR T2S.JINGLE_SOURCE></font>
 						</td>
-						<td style="height: 30px">
-							.mp3
-						</td>
+						
 					</tr>
 				</table>
 			</td>
@@ -1146,7 +1153,19 @@ function initial_lang_voice_load()  {
 		}
 		$("#langiso").textinput("refresh");
 		
-		  
+		
+		
+		// validate jingle file selection
+		var selectjingle 	= document.getElementById("file_gong").value;
+		var selectt2s 		= $("input[name=t2s_engine]:checked").val();
+		if ((selectjingle == '') && (selectt2s != ''))  {
+			alert('<TMPL_VAR T2S.VALIDATE_JINGLE>');
+			$('html, body').animate({
+		        scrollTop: $("#infotext").offset().top
+		    }, 2000);
+		    $("#file_gong").focus();
+			return false;
+		}
 		
 	});
 

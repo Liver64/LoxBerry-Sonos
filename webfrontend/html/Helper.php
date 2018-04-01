@@ -831,6 +831,78 @@ function check_sambashare($sambaini, $searchfor, $sambashare) {
 }
 
 
+	/**
+     * Create the xml metadata required by Sonos.
+     *
+     * @param string $id The ID of the track
+     * @param string $parent The ID of the parent
+     * @param array $extra An xml array of extra attributes for this item
+     * @param string $service The Sonos service ID to use
+     *
+     * @return string
+	 *
+	 * https://github.com/duncan3dc/sonos/blob/master/src/Helper.php
+     */
+	 
+	
+	function createMetaDataXml(string $id, string $parent = "-1", array $extra = [], string $service = null): string
+    {
+		$xmlnew = New XmlWriter();
+        if ($service !== null) {
+            $extra["desc"] = [
+                "_attributes"   =>  [
+                    "id"        =>  "cdudn",
+                    "nameSpace" =>  "urn:schemas-rinconnetworks-com:metadata-1-0/",
+                ],
+                "_value"        =>  "SA_RINCON{$service}_X_#Svc{$service}-0-Token",
+            ];
+        }
+        $xml = $xmlnew->createXml([
+            "DIDL-Lite" =>  [
+                "_attributes"   =>  [
+                    "xmlns:dc"      =>  "http://purl.org/dc/elements/1.1/",
+                    "xmlns:upnp"    =>  "urn:schemas-upnp-org:metadata-1-0/upnp/",
+                    "xmlns:r"       =>  "urn:schemas-rinconnetworks-com:metadata-1-0/",
+                    "xmlns"         =>  "urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/",
+                ],
+                "item"  =>  array_merge([
+                    "_attributes"   =>  [
+                        "id"            =>  $id,
+                        "parentID"      =>  $parent,
+                        "restricted"    =>  "true",
+                    ],
+                ], $extra),
+            ],
+        ]);
+        # Get rid of the xml header as only the DIDL-Lite element is required
+        $metadata = explode("\n", $xml)[1];
+        return $metadata;
+    }
+
+
+	
+/**
+* Function : mp3_files --> check if playgong mp3 file is valid in ../tts/mp3/
+*
+* @param: 
+* @return: array 
+**/
+
+function mp3_files($playgongfile) {
+	global $MessageStorepath;
+	
+	$scanned_directory = array_diff(scandir($MessageStorepath.'/mp3/', SCANDIR_SORT_DESCENDING), array('..', '.'));
+	$file_only = array();
+	foreach ($scanned_directory as $file) {
+		$extension = pathinfo($file, PATHINFO_EXTENSION);
+		if ($extension == 'mp3') {
+			array_push($file_only, $file);
+		}
+	}
+	#print_r($file_only);
+	return (in_array($playgongfile, $file_only));
+}
+
  
  
 ?>
