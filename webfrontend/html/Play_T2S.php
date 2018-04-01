@@ -214,22 +214,23 @@ function play_tts($messageid) {
 		#*****************************************************************************************************
 		if(isset($_GET['playgong'])) {
 			if ($_GET['playgong'] == 'no')	{
-				LOGGING("'playgong=no' could not be used in syntax, only 'playgong=yes' or 'playgong=file.mp3' are allowed", 3);
+				LOGGING("'playgong=no' could not be used in syntax, only 'playgong=yes' or 'playgong=file' are allowed", 3);
 				exit;
 			}
 			if(empty($config['MP3']['file_gong'])) {
-				LOGGING("file name for playgong is missing in config. Please maintain in Sonos Plugin", 3);
+				LOGGING("file name for jingle is missing in Plugin config. Please maintain before usage.", 3);
 				exit;	
 			}
 			if (($_GET['playgong'] != "yes") and ($_GET['playgong'] != "no") and ($_GET['playgong'] != " ")) {
 				$file = $_GET['playgong'];
+				$file = $file.'.mp3';
 				$valid = mp3_files($file);
 				if ($valid === true) {
 					$jinglepath = $myMessagepath."".$MP3path."/".trim($file);
 					$sonos->AddToQueue("x-file-cifs:".$jinglepath);
-					LOGGING("Jingle '".trim($file)."' added to Queue", 7);	
+					LOGGING("Individual jingle '".trim($file)."' added to Queue", 7);	
 				} else {
-					LOGGING("Entered jingle '".$file."' for playgong is not valid or nothing been entered. Please correct your syntax", 3);
+					LOGGING("Entered jingle '".$file."' for playgong is not valid or nothing has been entered. Please correct your syntax", 3);
 					exit;
 				}
 			} else {
@@ -326,7 +327,12 @@ function play_tts($messageid) {
 
 function sendmessage() {
 			global $text, $master, $messageid, $logging, $textstring, $voice, $config, $actual, $player, $volume, $sonos, $coord, $time_start, $filename, $sonoszone, $tmp_batch, $mode, $MP3path;
-						
+			
+
+			if ((empty($config['TTS']['t2s_engine'])) or (empty($config['TTS']['messageLang'])))  {
+				LOGGING("There is no T2S engine/language selected in Plugin config. Please select before using T2S functionality.", 3);
+				exit();
+			}
 			// if batch has been choosed save filenames to a txt file and exit
 			if(isset($_GET['batch'])) {
 				if((isset($_GET['volume'])) or (isset($_GET['rampto'])) or (isset($_GET['playmode']))) {
@@ -416,7 +422,11 @@ function sendmessage() {
 			
 function sendgroupmessage() {			
 			global $coord, $sonos, $text, $sonoszone, $member, $master, $zone, $messageid, $logging, $textstring, $voice, $config, $mute, $membermaster, $getgroup, $checkgroup, $time_start, $mode, $modeback, $actual;
-						
+			
+			if ((empty($config['TTS']['t2s_engine'])) or (empty($config['TTS']['messageLang'])))  {
+				LOGGING("There is no T2S engine/language selected in Plugin config. Please select before using T2S functionality.", 3);
+				exit();
+			}			
 			if(isset($_GET['batch'])) {
 				LOGGING("The parameter batch is not allowed to be used in groups. Please use single message to prepare your batch!", 4);
 				exit;
@@ -428,7 +438,7 @@ function sendgroupmessage() {
 				}
 			}
 			if(isset($_GET['sonos'])) {
-				LOGGING("The parameter 'sonos' can not be used for group T2S!", 4);
+				LOGGING("The parameter 'sonos' couldn't be used for group T2S!", 4);
 				exit;
 			}
 			
