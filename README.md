@@ -1,4 +1,4 @@
-Sonos for Loxberry
+Sonos for LoxBerry
 ==================
 
 A PHP based library for interacting with [Sonos](http://www.sonos.com/) speakers based on 
