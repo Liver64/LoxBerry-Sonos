@@ -115,7 +115,10 @@
 			<label id="lapikey"><TMPL_VAR T2S.LABEL_API_KEY></label>
 		</td>
 		<td style="width: 50%; height: 48px">
-			<input id="apikey" name="apikey" type="text" class="textfield" value="<TMPL_VAR TTS.API-key>">
+			<input id="apikey" name="apikey" type="text" class="textfield" value="<TMPL_VAR TTS.api-key>"
+			data-validation-error-msg="<TMPL_VAR ERRORS.ERR_APIKEY>" 
+			data-validation-rule="^(([A-Za-z0-9]){20}|([A-Za-z0-9]){32})$"
+			>
 		</td>
 		<td style="height: 48px; width: 201px;" class="auto-style4">
 		</td>
@@ -1212,8 +1215,15 @@ function initial_lang_voice_load()  {
 // validate Polly secret key
 if (document.main_form.tts_polly.checked == true) {
 		$('#voice').selectmenu('refresh', true);  
+		validate_enable('#apikey');
 		validate_enable('#seckey');
-		validate_chk_object(['#seckey']);
+		validate_chk_object(['#seckey', '#apikey']);
+	}
+	// validate Polly secret key
+	else if (document.main_form.tts_voicerss.checked == true) {
+		$('#voice').selectmenu('refresh', true);  
+		validate_enable('#apikey');
+		validate_chk_object(['#apikey']);
 	}
 	else 
 	{
