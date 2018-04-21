@@ -52,12 +52,13 @@ function playlist() {
 				LOGGING("Standardvolume for master has been set.", 7);
 				$sonos->Play();
 			} else {
-				LOGGING("Volume from syntax has been set.", 7);
 				if($sonos->GetVolume() <= $config['TTS']['volrampto'])	{
 					$sonos->RampToVolume($config['TTS']['rampto'], $volume);
 					$sonos->Play();
+					LOGGING("Rampto Volume from Syntax has been set.", 7);
 				} else {
 					$sonos->Play();
+					LOGGING("Volume from Syntax has been set.", 7);
 				}
 			}
 			LOGGING("Playlist is playing.", 7);
@@ -81,8 +82,7 @@ function playlist() {
 
 function zapzone() {
 	global $config, $sonos, $sonoszone, $master, $playzones, $count;
-	#include_once("text2speech.php");
-
+	
 	$sonos = new PHPSonos($sonoszone[$master][0]);
 	if (substr($sonos->GetPositionInfo()["TrackURI"], 0, 15) == "x-rincon:RINCON") {
 		$sonos->BecomeCoordinatorOfStandaloneGroup();

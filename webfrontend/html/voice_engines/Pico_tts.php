@@ -42,7 +42,7 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 				LOGGING("The T2S could not be created! Please try again.",4);
 			}
 		}
-	LOGGING('The text has been passed to Pico engine for translation',5);
+	LOGGING('The text has been passed to Pico engine for MP3 creation',5);
 	# Ersetze die messageid durch die von TTS gespeicherte Datei
 	$messageid = $filename;
 	return ($messageid);

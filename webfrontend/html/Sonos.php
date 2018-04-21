@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	3.0.2
-# Datum: 	10.03.2018
+# Version: 	3.4.0
+# Datum: 	17.04.2018
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
@@ -24,8 +24,7 @@ include("Radio.php");
 include("Restore_T2S.php");
 include("Save_T2S.php");
 include("Speaker.php");
-#require_once('system/function.debug.php');
-include('system/debug.php');
+include('system/logging.php');
 
 // setze korrekte Zeitzone
 date_default_timezone_set(date("e"));
@@ -86,27 +85,42 @@ echo '<PRE>';
 
 	// Übernahme und Deklaration von Variablen aus der Konfiguration
 	$sonoszonen = $config['sonoszonen'];
-
-	// prüft den Onlinestatus jeder Zone
-	$performonlinecheck = "check Zones for Online mode will be executed";
-	foreach($sonoszonen as $zonen => $ip) {
-		$port = 1400;
-		$timeout = 3;
-		$handle = @stream_socket_client("$ip[0]:$port", $errno, $errstr, $timeout);
-		if($handle) {
-			$sonoszone[$zonen] = $ip;
-			fclose($handle);
-		}
-	}
-	$sonoszone;
 	
+	if (!isset($config['SYSTEM']['checkonline']))  {
+		$checkonline = true;
+	} else if ($config['SYSTEM']['checkonline'] == "1")  {
+		$checkonline = true;
+	} else {
+		$checkonline = false;
+	}
+	if ($checkonline === true)  {
+		// prüft den Onlinestatus jeder Zone
+		$performonlinecheck = "Online check for Players will be executed";
+		foreach($sonoszonen as $zonen => $ip) {
+			$port = 1400;
+			$timeout = 3;
+			$handle = @stream_socket_client("$ip[0]:$port", $errno, $errstr, $timeout);
+			if($handle) {
+				$sonoszone[$zonen] = $ip;
+				#LOGGING('Zone: '.$zonen.' is Online', 7);
+				fclose($handle);
+			} else {
+				LOGGING('Zone: '.$zonen.' seems to be offline', 3);
+			}
+		}
+		$sonoszone;
+	} else {
+		$performonlinecheck = "Online check for Players is turned off";
+		$sonoszone = $sonoszonen;
+	}
+		
 	// check if samba share "plugindata" or "sonos_tts" exist
 	$sambashare = array();
 	check_sambashare($sambaini, $searchfor, $sambashare);
 	$myMessagepath = $sambashare[0];					// get T2S folder Sonos to play
 		
 	#$sonoszone = $sonoszonen;
-	#print_r($sonoszone);
+	#print_r($sonoszonen);
 	#print_r($config);
 	#exit;
 
@@ -117,25 +131,22 @@ echo '<PRE>';
 	check_size_logfile();
 
 	// check if getsonosinfo has been executed, if yes, skip LOGGING
-	$synlength = strlen($syntax);
-	$start = $synlength - 12;
-	$sonospush = substr($syntax, $start, 200);
-	if ($sonospush =='getsonosinfo')  {
-		#echo 'SONOS';
-	} else {
+	$find = strripos($syntax, "=");
+	$sonospush = substr($syntax, $find + 1, 300);
+	if ($sonospush !== 'getsonosinfo')  {
 		# create entry in logfile of called syntax
-		LOGGING("called syntax: ".$myIP."".$syntax,5);
+		LOGGING("called syntax: ".$myIP."".urldecode($syntax),5);
+		LOGGING("$performonlinecheck",7);
 		LOGGING("All variables has been collected",7);
 		LOGGING("$sonosconfig",7);
 		LOGGING("$playerconfig",7);
-		LOGGING("$performonlinecheck",7);
-		LOGGING("All Zones are Online",6);
 		LOGGING("Sonos config has been loaded",7);
 		LOGGING("Configuration has been successful loaded",6);
 		LOGGING($sambashare[1],5);
 		LOGGING("Perform Logfile size check",7);
 		#LBlog::get_notifications_html($lbpplugindir, "Sonos");			// prepare for HTML notifications
 	}
+	#exit;
 
 
 #-- End Preparation ---------------------------------------------------------------------
@@ -463,12 +474,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;	
 		
 		
-		case 'setbass':
-			$Bass = $_GET['bass'];
-			$sonos->SetBass($Bass);
-		break;
-		
-
 		case 'addmember':
 			addmember();
 			LOGGING("Member has been added to ".$master,7);
@@ -1078,6 +1083,28 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			random_radio();
 		break;
 		
+		case 'browse':
+		$t = createMetaDataXml('x-sonos-http:track%3a295580498.mp3?sid=160&amp;flags=8224&amp;sn=3');
+		print_r($t);
+		break;
+		
+		case 'files':
+			mp3_files();
+		break;
+		
+		case 'test':
+			$sonos->FavTest();
+		break;
+		
+		case 'balance':
+			SetBalance();
+		break;
+		
+		case 'resetbasic':
+			$sonos->ResetBasicEQ();
+			LOGGING("EQ Settings for Player ".$master." has been reset.", 7);
+		break;
+		
 		
 		case 'getzoneinfo':
 			$GetZoneInfo = $sonos->GetzoneInfo();
@@ -1127,17 +1154,17 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
             if (strtotime($store) > @filemtime($dir.$dateiname)) {
 					if (strlen($dateiname) == 36) {
 						if (@unlink($dir.$dateiname) != false)
-							echo $dateiname.' has been deleted<br>';
+							LOGGING($dateiname.' has been deleted<br>', 7);
 						else
-							echo $dateiname.' could not be deleted<br>';
+							LOGGING($dateiname.' could not be deleted<br>', 7);
 					}
 			}
         }
     }
-	if($debug == 1) { 
-		echo "<br>All files according to the criteria were successfully deleted";
-		LOGGING("All files according to the criteria were successfully deleted", 7);
-	}
+	#if($debug == 1) { 
+		#echo "<br>All files according to criteria were successfully deleted";
+		LOGGING("All files according to criteria were successfully deleted", 7);
+	#}
     $folder->close();
     exit; 	 
  }
@@ -1195,7 +1222,7 @@ function SnapshotGroupVolume() {
  }
 
 
-/** NICHT LIVE **
+/** NICHT LIVE - EXPERIMENTAL**
 *
 * Funktion : 	GetSonosFavorites --> lädt die Sonos Favoriten in die Queue (kein Radio)
 *
@@ -1206,36 +1233,61 @@ function SnapshotGroupVolume() {
 function GetSonosFavorites() {
 	global $sonoszone, $master;
 	
-	$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos ZP lox_ipesse 
-	$browselist = $sonos->GetSonosFavorites("FV:2","c"); 
-	print_r($browselist);
+	$sonos = new PHPSonos($sonoszone[$master][0]); 
+	$sonos->ClearQueue();
+	$favoriteslist = $sonos->GetSonosFavorites("FV:2","BrowseDirectChildren"); 
+	print_r($favoriteslist);
 	$posinfo = $sonos->GetPositionInfo();
-	#echo $uri = $posinfo['TrackURI'];
-	#echo '<br>';
-	#echo $meta = $posinfo['TrackMetaData'];
-	
-
-	#$finalstring = urldecode($scope);
-	#$sonos->AddFavToQueue($uri, $meta);	
-	#exit;
-	foreach ($browselist as $favorite) {
+	foreach ($favoriteslist as $favorite) {
 		$scope = $favorite['res'];
 		if ((substr($scope,0,11) != "x-sonosapi-") and (substr($scope,0,11) != "x-rincon-cp")) {
 			$finalstring = urldecode($scope);
 			$track = $favorite['res'];
 			$title = $favorite['title'];
 			$artist = $favorite['artist'];
-			$metadata = '<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:r="urn:schemas-rinconnetworks-com:metadata-1-0/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"><item id="-1" parentID="-1" restricted="true"><res protocolInfo="sonos.com-http:*:audio/mpeg:*>'.$track.'</res><r:streamContent></r:streamContent><upnp:albumArtURI></upnp:albumArtURI><dc:title>'.$title.'</dc:title><upnp:class>object.item.audioItem.musicTrack</upnp:class><dc:creator>'.$artist.'</dc:creator></item></DIDL-Lite>';
-			#$metadata = '<DIDL-Lite xmlns:dc=http://purl.org/dc/elements/1.1/ xmlns:upnp=urn:schemas-upnp-org:metadata-1-0/upnp/ xmlns:r=urn:schemas-rinconnetworks-com:metadata-1-0/ xmlns=urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/item id=-1; parentID=-1; restricted=truedc:title'.$title.'/dc:titleupnp:classobject.item.audioItem.musicTrack.#editorialViewTracks.sonos-favorite/upnp:classdesc id=cdudn nameSpace=urn:schemas-rinconnetworks-com:metadata-1-0/SA_RINCON40967_X_#Svc40967-0-Token/desc/item/DIDL-Lite>';
-			$sonos->AddFavToQueue($finalstring, $metadata);
-			try {
-			#$sonos->AddToQueue($track);	
-			} catch (Exception $e) {
-#			LOGGING("The connection to Loxone could not be initiated!", 5);	
+			$posinfo = $sonos->GetPositionInfo();
+			$metadata = $posinfo['TrackMetaData'].'<br>';
+			$sonos->AddFavoritesToQueue($finalstring, $metadata);
 		}	
-		}
 	}
-	#$sonos->Play();
+	$currlist = $sonos->GetCurrentPlaylist();
+}
+
+
+/**
+/* Funktion : SetBalance --> setzt die Balance für angegeben Zone
+/* einer Gruppe
+/*
+/* @param: 	balance=LF oder RF, wert 
+/* @return: 
+**/	
+
+function SetBalance()  {
+	global $sonos, $master;
+	
+	if (isset($_GET['member']))  {
+		LOGGING('For groups the function could not be used, please correct!', 3);
+		exit;
+	}
+	if ((isset($_GET['balance'])) && (isset($_GET['value']))) {
+		if(is_numeric($_GET['value']) && $_GET['value'] >= 0 && $_GET['value'] <= 100) {
+			$balance_dir = $_GET['balance'];
+			$valid_directions = array('LF' => 'left speaker','RF' => 'right speaker', 'lf' => 'left speaker', 'rf' => 'right speaker');
+			if (array_key_exists($balance_dir, $valid_directions)) {
+				$sonos->SetBalance($balance_dir, $_GET['value']);
+				LOGGING('Balance for '.$valid_directions[$balance_dir].' of Player '.$master.' has been set to '.$_GET['value'].'.', 5);
+			} else {
+				LOGGING('Entered balance direction for Player '.$master.' is not valid. Only "LF/lf" or "RF/rf" are allowed, please correct!', 3);
+				exit;
+			}
+		} else {
+			LOGGING('Entered balance '.$_GET['value'].' for Player '.$master.' is even not numeric or not between 1 and 100, please correct!', 3);
+			exit;
+		}
+	} else {
+		LOGGING('No valid entry for Balance has been entered or syntax is incomplete, please correct!', 3);
+		exit;
+	}
 }
 ?>
 

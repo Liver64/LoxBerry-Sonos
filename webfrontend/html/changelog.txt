@@ -154,8 +154,17 @@
 			[Change] Adopted Samba settings from LB 1.0.4 from daemon
  3.0.5      [Bugfix] minor changes to logging
 			[Bugfix] build in auto configuration if config files are missing
-			[Bugfix] fixed logging for Zone scannin
+			[Bugfix] fixed logging for Zone scanning
  3.1.0		New Release
  3.1.1		[Bugfix] Error handling bei playgong hinzugefügt
 			[Feature] Jingle MP3 Datei Auswahl für playgong als Dropdown hinzugefügt
 			[Feature] das Jingle kann jetzt auch indiviuell per T2S hinzugefügt werden.
+ 3.2.0		[Bugfix] Error handling bei playgong hinzugefügt
+			[Feature] Jingle MP3 Datei Auswahl für playgong als Dropdown hinzugefügt
+			[Feature] individuelles Jingle je T2S möglich.
+ 3.3.0		[Bugfix] Fehler beim Scannen der Zonen korrigiert
+ 3.4.0		[Feature] Möglichkeit die Online-Verfügbarkeitsprüfung der Player zu deaktivieren (auf eigenes Risiko)
+			[Feature] Balance der Player kann jetzt eingestellt werden
+			[Feature] Reset der Balance/Bass und Höhen Einstellungen der Player
+			[Bugfix] Umschalten von TV Modus auf T2S bei Playbar korrigiert
+			[Feature] Logging/Error handling für T2S erweitert

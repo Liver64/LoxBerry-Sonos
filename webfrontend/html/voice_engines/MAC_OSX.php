@@ -44,7 +44,7 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 					}
 			} else {
 				shell_exec("say $textstring -o $messageStorePath$filename.aiff; ".$lamePath."lame $mpath$filename.aiff 2>&1");
-				LOGGING('The text has been passed to OSX engine for translation',5);
+				LOGGING('The text has been passed to OSX engine for MP3 creation',5);
 			}
 		}
 	$messageid = $filename;

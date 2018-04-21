@@ -9,13 +9,13 @@
 
 header('Content-Type: text/html; charset=utf-8');
 
-#error_reporting(E_ALL);
-#ini_set('display_errors', true);
-#ini_set('html_errors', true);
+error_reporting(E_ALL);
+ini_set('display_errors', true);
+ini_set('html_errors', true);
 
-error_reporting(~E_ALL & ~E_STRICT);     // Alle Fehler reporten (Außer E_STRICT)
-ini_set("display_errors", false);        // Fehler nicht direkt via PHP ausgeben
-ini_set('html_errors', false);			 
+#error_reporting(~E_ALL & ~E_STRICT);     // Alle Fehler reporten (Außer E_STRICT)
+#ini_set("display_errors", false);        // Fehler nicht direkt via PHP ausgeben
+#ini_set('html_errors', false);			 
 
 require_once "loxberry_system.php";
 require_once "loxberry_log.php";
@@ -25,13 +25,14 @@ $lb_hostname = lbhostname();
 $lb_version = LBSystem::lbversion();
 $L = LBSystem::readlanguage("sonos.ini");
 #$pluginversion = LBSystem::pluginversion();
-$pluginversion = LBSystem::plugindata();
-$pluginversion = $pluginversion['PLUGINDB_VERSION'];
+$pluginversion_temp = LBSystem::plugindata();
+$pluginversion = $pluginversion_temp['PLUGINDB_VERSION'];
 $home = $lbhomedir;
 $folder = $lbpplugindir;
 echo "<PRE>"; 
 
-ini_set("log_errors", 1);
+
+ini_set("log_errors", 7);
 ini_set("error_log", LBPLOGDIR."/sonos.log");
 
 LOGGING("LoxBerry v".$lb_version." with hostname ".$lb_hostname." has been detected",5);
@@ -48,6 +49,7 @@ LOGGING("Sonos Plugin v".$pluginversion." is installed at folder ".$folder,5);
 	$sock = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
 	$level = getprotobyname("ip");
 	socket_set_option($sock, $level, IP_MULTICAST_TTL, 2);
+	
 		
 	$data = "M-SEARCH * HTTP/1.1\r\n";
 	$data .= "HOST: {$ip}:reservedSSDPport\r\n";
@@ -64,6 +66,7 @@ LOGGING("Sonos Plugin v".$pluginversion." is installed at folder ".$folder,5);
     $name = null;
     $port = null;
     $tmp = "";
+	
     $response = "";
     while (socket_select($read, $write, $except, 1)) {
         socket_recvfrom($sock, $tmp, 2048, null, $name, $port);
@@ -203,7 +206,7 @@ LOGGING("Sonos Plugin v".$pluginversion." is installed at folder ".$folder,5);
     $models = [
         "S1"    =>  "PLAY:1",
 		"S12"   =>  "PLAY:1",
-		"S13"   =>  "PLAY:1",
+		"S13"   =>  "ONE",
         "S3"    =>  "PLAY:3",
 		"S5"    =>  "PLAY:5",
         "S6"    =>  "PLAY:5",

@@ -117,8 +117,7 @@
 		<td style="width: 50%; height: 48px">
 			<input id="apikey" name="apikey" type="text" class="textfield" value="<TMPL_VAR TTS.api-key>"
 			data-validation-error-msg="<TMPL_VAR ERRORS.ERR_APIKEY>" 
-			data-validation-rule="^(([A-Za-z0-9]){20}|([A-Za-z0-9]){32})$"
-			>
+			data-validation-rule="^(([A-Za-z0-9\!\#\$\%\&\'\*\+\-\,\/\:\;\=\?\@\[\]\\\]]){20}|([A-Za-z0-9\!\#\$\%\&\'\*\+\-\,\/\:\;\=\?\@\[\]\\\]]){32})$"			>
 		</td>
 		<td style="height: 48px; width: 201px;" class="auto-style4">
 		</td>
@@ -198,22 +197,21 @@
 			<td>
 				<table border=0 width="100%">
 					<tr>
-						<td style="height: 30px; text-align: center; width: 40%;">
+						<td style="height: 30px; text-align: center; width: 34%;">
 							<label id="lfile_gong"><TMPL_VAR T2S.LABEL_MP3_FILE></label>
 						</td>
 						<td style="height: 30px">
 							<select id='file_gong' name='file_gong' data-mini='true' 
 								data-validation-error-msg="<TMPL_VAR T2S.SELECT_JINGLE_DROPDOWN>" 
-								data-validation-rule="^([A-Za-z0-9]){4,10}$" style="width: 210px">
+								data-validation-rule="^([A-Za-z0-9]){4,10}$" style="width: 244px">
 								<option selected='true' value='' disabled><TMPL_VAR T2S.SELECT_JINGLE_DROPDOWN></option>
 								<TMPL_VAR MP3_LIST>
 							</select>
 							<script>
 							$('#file_gong').val('<TMPL_VAR MP3.file_gong>');
 							</script>
-							<font size="-1"><TMPL_VAR T2S.JINGLE_SOURCE></font>
+							<font size="-1"><TMPL_VAR T2S.JINGLE_SOURCE> <TMPL_VAR DATADIR>/tts/mp3/</font>
 						</td>
-						
 					</tr>
 				</table>
 			</td>
@@ -277,6 +275,56 @@
 				</font>
 				
 			</td>
+		</tr>
+		<tr>
+		<td style="height: 60px; width: 25%;">
+			<a id="lcheckonline" <TMPL_VAR T2S.ONLINECHECK_LINK> target="_blank"><TMPL_VAR T2S.ONLINECHECK></a>
+
+		</td>
+		<td width="50%" style="height: 60px">
+			<table border=0 width="100%">
+				<tr>
+					<td style="width: 25%">
+					<fieldset>
+							<select id="checkonline" name="checkonline" data-role="flipswitch" style="width: 104px">
+								<option <TMPL_VAR SELECTONLINE1> value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
+								<option <TMPL_VAR SELECTONLINE2> value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
+							</select>
+							</fieldset>
+						<script>
+						$('#checkonline').val('<TMPL_VAR SYSTEM.checkonline>')
+						</script>	
+					</td>
+				
+				<td style="width: 23px; text-align: center;">	
+					&nbsp;</td>
+				<td>
+					<table border=0 style="width: 91%">
+						<tr>
+							<td style="width: 27px"></td>
+					<td style="width: 184px">
+					
+					</td>
+						
+				<td style="width: 27px">				
+				</td>
+			</tr>
+		</table>
+	</td>
+</tr>
+	</table>
+		</td>
+			<td style="height: 30px; width: 201px;">
+				
+			</td>
+			<td style="height: 30px; width: 24px;">
+				<font size="-1">
+					<div id="testurl">
+					</div>
+				</font>
+				
+			</td>
+
 		</tr>
 		<tr>
 			<td style="height: 60px; width: 25%;">
@@ -749,7 +797,10 @@ function disable() {
 		$('.collang').fadeIn(600);
 		$('.colmp3').fadeIn(600);
 		$('.keylinks').fadeIn(600);
-		$('.googleinfo').fadeOut(600);		
+		$('.googleinfo').fadeOut(600);
+		validate_enable('#apikey');
+		validate_chk_object(['#apikey']);
+		
   }
   if ( document.main_form.tts_mac_osx.checked == true ) {
      	$('#voice').addClass('ui-disabled');
@@ -796,6 +847,11 @@ function disable() {
 		$('.colmp3').fadeIn(600);
 		$('.keylinks').fadeIn(600);
 		$('.googleinfo').fadeOut(600);
+		$('#voice').selectmenu('refresh', true);  
+		validate_enable('#apikey');
+		validate_enable('#seckey');
+		validate_chk_object(['#seckey', '#apikey']);
+
  }
  if ( document.main_form.tts_google.checked == true ) {
 		$('#voice').addClass('ui-disabled');
@@ -1214,20 +1270,19 @@ function initial_lang_voice_load()  {
 
 // validate Polly secret key
 if (document.main_form.tts_polly.checked == true) {
-		$('#voice').selectmenu('refresh', true);  
-		validate_enable('#apikey');
-		validate_enable('#seckey');
-		validate_chk_object(['#seckey', '#apikey']);
+		//$('#voice').selectmenu('refresh', true);  
+		//validate_enable('#apikey');
+		//validate_enable('#seckey');
+		//validate_chk_object(['#seckey', '#apikey']);
 	}
 	// validate Polly secret key
 	else if (document.main_form.tts_voicerss.checked == true) {
-		$('#voice').selectmenu('refresh', true);  
-		validate_enable('#apikey');
-		validate_chk_object(['#apikey']);
+		//validate_enable('#apikey');
+		//validate_chk_object(['#apikey']);
 	}
 	else 
 	{
-		validate_enable('#seckey');
+		//validate_enable('#seckey');
 	}
 
 
