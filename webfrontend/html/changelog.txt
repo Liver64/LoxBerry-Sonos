@@ -168,3 +168,4 @@
 			[Feature] Reset der Balance/Bass und Höhen Einstellungen der Player
 			[Bugfix] Umschalten von TV Modus auf T2S bei Playbar korrigiert
 			[Feature] Logging/Error handling für T2S erweitert
+			[Bugfix] Sonderzeichen beim API/secret key zur Validierung hinzugefügt
