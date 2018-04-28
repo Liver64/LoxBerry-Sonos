@@ -19,7 +19,7 @@ ini_set('html_errors', true);
 
 require_once "loxberry_system.php";
 require_once "loxberry_log.php";
-require_once "debug.php";
+require_once "logging.php";
 
 $lb_hostname = lbhostname();
 $lb_version = LBSystem::lbversion();
