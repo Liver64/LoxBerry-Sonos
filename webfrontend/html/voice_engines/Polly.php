@@ -36,13 +36,20 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 		# $textstring = str_replace($search,$replace,$textstring);
 		#####################################################################################################################
 		
-		#-- Aufruf der POLLY Class zum generieren der t2s --
-		$a = new POLLY_TTS();
-		$a->save_mp3($textstring, $MessageStorepath."/".$filename.".mp3", $language, $voice);
-		LOGGING('The text has been passed to Polly engine for MP3 creation',5);
+		# Speicherort der MP3 Datei
+		$file = $MessageStorepath . $filename . ".mp3";
+			
+		if (!file_exists($file)) 
+		{
+			#-- Aufruf der POLLY Class zum generieren der t2s --
+			$a = new POLLY_TTS();
+			$a->save_mp3($textstring, $MessageStorepath."/".$filename.".mp3", $language, $voice);
+			LOGGING('The text has been passed to Polly engine for MP3 creation',5);
+		} else {
+			LOGGING('Requested T2s has been grabbed from cache',6);
+		}
 		$messageid = $filename;
-	
-	return ($messageid);
+		return ($messageid);
 }
 
 

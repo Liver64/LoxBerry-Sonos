@@ -169,3 +169,7 @@
 			[Bugfix] Umschalten von TV Modus auf T2S bei Playbar korrigiert
 			[Feature] Logging/Error handling für T2S erweitert
 			[Bugfix] Sonderzeichen beim API/secret key zur Validierung hinzugefügt
+ 3.4.1		[Bugfix] Fehler beim Scannen der Zonen korrigiert
+ 3.4.2		[Feature] Sonos Alarme können einzeln oder gesamt aktiviert/deaktiviert werden
+			[Feature] Notification Messages hinzugefügt (NUR bei Error)
+			[Feature] Logging erweitert

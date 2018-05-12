@@ -58,12 +58,12 @@ function getPlayerList(){
 			'Host' =>"$ip",
 			'Sonos Name' =>utf8_encode($zonename),
 			'Master' =>((string)$player_data->coordinator == 'true'),
-			#'Group-ID' => $group,
+			'Group-ID' => $group,
 			'Rincon' =>'RINCON_'.explode('RINCON_',(string)$player_data->uuid)[1]
 		);
-		$sonostopology[$group][] = $player;
+		$sonostopology[] = $player;
 	}
-	#print_r($sonostopology);
+	print_r($sonostopology);
 	return($sonostopology);
 }
 	
@@ -173,7 +173,7 @@ function checkZonesOnline($member) {
 		if(!$socket = @fsockopen($sonoszonen[$zonen][0], 1400, $errno, $errstr, 2)) {
 			LOGGING("The zone ".$zonen." is OFFLINE!!", 4);
 		} else {
-			LOGGING("All zones are ONLINE!!", 6);
+			LOGGING("Zone ".$zonen." is ONLINE!!", 6);
 			$member[] = $zonen;
 		}
 	}
@@ -219,20 +219,6 @@ function getLoxoneData() {
 }
 
 
-/**
-* Function : getPluginFolder --> ermittelt den Plugin Folder
-* @param: leer                             
-*
-* @return: Plugin Folder
-**/
-
-function getPluginFolder(){
-	$logpath = $_SERVER["SCRIPT_FILENAME"].'<br>';
-	$folder = explode('/', $logpath);
-	print_r ($folder[6]);
-	return($folder);
-}
-
 
 /**
 * Function: settimestamp --> Timestamp in Datei schreiben
@@ -276,11 +262,11 @@ function networkstatus() {
 	foreach($sonoszonen as $zonen => $ip) {
 		$start = microtime(true);
 		if (!$socket = @fsockopen($ip[0], 1400, $errno, $errstr, 3)) {
-			echo "The Zone ".$zonen." using IP: ".$ip[0]." ==> Offline :-( Please check status!<br/>"; 
+			echo "Player ".strtoupper($zonen)." using IP: ".$ip[0]." ==> Offline :-( Please check status!<br/>"; 
 		} else { 
 			$latency = microtime(true) - $start;
 			$latency = round($latency * 10000);
-			echo "The Zone ".$zonen." using IP: ".$ip[0]." ==> Online :-) The response time was ".$latency." Milliseconds <br/>";
+			echo "Player ".strtoupper($zonen)." using IP: ".$ip[0]." ==> Online :-) Response time was ".$latency." Milliseconds <br/>";
 		}
 	}
 	
@@ -398,23 +384,7 @@ function URL_Encode($string) {
  } 
  
  
-/** - OBSOLETE -
-*
-* Function : getRINCON --> ermittelt die Rincon-ID der angegebenen Zone
-*
-* @param: 	IP-Adresse der Zone
-* @return: Rincon-ID
-**/
- function getRINCON($zoneplayerIp) { // gibt die RINCON der Sonos Zone zurück
-  $url = "http://" . $zoneplayerIp . ":1400/status/zp";
-  $xml = simpleXML_load_file($url);
-  $uid = $xml->ZPInfo->LocalUID;
-  return $uid;  
-  return $playerIP;
- }
 
- 
- 
 /**
 *
 * Function : AddMemberTo --> fügt ggf. Member zu Playlist oder Radio hinzu
@@ -445,59 +415,6 @@ global $sonoszone, $master, $config;
 		}
 	}
 }	
-}
-
-
-function previous_el($array, $current, $use_key = false)
-{
-    // we'll return null if $current is the first in the array (there is no previous)
-    $previous = null;
-
-    foreach ($array as $key => $value)
-    {
-        $matched = $use_key ? $key === $current : $value === $current;
-        if ($matched)
-        {
-            return $previous;
-        }
-        $previous = $use_key ? $key : $value;
-    }
-
-    // we'll return false if $current does not exist in the array
-    return false;
-}
-
-
-
-// return the key or value after whatever is in $current
-function next_el($array, $current, $use_key = false)
-{
-    $found = false;
-
-    foreach ($array as $key => $value)
-    {
-        // $current was found on the previous loop
-        if ($found)
-        {
-            return $use_key ? $key : $value;
-        }
-        $matched = $use_key ? $key === $current : $value === $current;
-        if ($matched)
-        {
-            $found = true;
-        }
-    }
-
-    if ($found)
-    {
-        // we'll return null if $current was the last one (there is no next)
-        return null;
-    }
-    else
-    {
-        // we'll return false if $current does not exist in the array
-        return false;
-    }
 }
 
 
@@ -558,7 +475,7 @@ function chmod_r($Path="") {
 /* @return: true oder Abbruch
 /*************************************************************************************************************/
  function checkaddon() {
-	global $home;
+	global $home, $time_start;
 	
 	if(isset($_GET['weather'])) {
 		# ruft die weather-to-speech Funktion auf
@@ -612,7 +529,7 @@ function chmod_r($Path="") {
 /* @return: falls OK --> nichts, andernfalls Abbruch und Eintrag in error log
 /********************************************************************************************/
 function checkTTSkeys() {
-	Global $config;
+	Global $config, $checkTTSkeys, $time_start;
 	
 	if ($config['TTS']['t2s_engine'] == 1001) {
 		if (!file_exists("voice_engines/VoiceRSS.php")) {

@@ -149,7 +149,7 @@ function CreateStereoPair() {
 */
 
 function getRoomCoordinator($room){
-	global $sonoszone, $zone, $debug, $master, $sonosclass, $config;
+	global $sonoszone, $zone, $debug, $master, $sonosclass, $config, $time_start;
 		
 		#$room = $master;
 		if(!$xml=deviceCmdRaw('/status/topology')){
@@ -269,7 +269,7 @@ function getGroups() {
 **/
 
  function getZoneStatus($room) {
-	global $sonoszone, $sonos, $grouping, $debug, $config;	
+	global $sonoszone, $sonos, $grouping, $debug, $config, $time_start;	
 	
 	if(empty($room)) {
 		$room = $_GET['zone'];

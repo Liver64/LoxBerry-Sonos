@@ -44,7 +44,7 @@ function LOGGING($message = "", $loglevel, $raw = 0)
 		        error_log( "PHP-> ".$message );
 		        break;
 		}
-		if ( $loglevel < 3 ) 
+		if ( $loglevel < 4 ) 
 		{
 			if (isset($message) && $message != "" ) notify (LBPPLUGINDIR, $L['BASIS.MAIN_TITLE'], $message);
 		}
@@ -62,7 +62,7 @@ function LOGGING($message = "", $loglevel, $raw = 0)
 function check_size_logfile()  {
 	global $L;
 	
-	$logsize = filesize(LBPLOGDIR."/sonos.log");
+	$logsize = @filesize(LBPLOGDIR."/sonos.log");
 	if ( $logsize > 5242880 )
 	{
 		LOGGING($L["ERRORS.ERROR_LOGFILE_TOO_BIG"]." (".$logsize." Bytes)",4);

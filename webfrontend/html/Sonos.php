@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	3.4.0
-# Datum: 	26.04.2018
+# Version: 	3.4.2
+# Datum: 	08.05.2018
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
@@ -54,7 +54,7 @@ $sleeptimegong = "3";											// waiting time before playing t2s
 echo '<PRE>'; 
 	
 
-	
+	#LOGGING('The file sonos.cfg could not be opened, please try again!', 7);
 
 #-- Start Preparation ------------------------------------------------------------------
 	
@@ -93,8 +93,10 @@ echo '<PRE>';
 	} else {
 		$checkonline = false;
 	}
+	$zonesoff = "";
 	if ($checkonline === true)  {
 		// prüft den Onlinestatus jeder Zone
+		$zonesonline = array();
 		$performonlinecheck = "Online check for Players will be executed";
 		foreach($sonoszonen as $zonen => $ip) {
 			$port = 1400;
@@ -102,18 +104,20 @@ echo '<PRE>';
 			$handle = @stream_socket_client("$ip[0]:$port", $errno, $errstr, $timeout);
 			if($handle) {
 				$sonoszone[$zonen] = $ip;
-				#LOGGING('Zone: '.$zonen.' is Online', 7);
+				array_push($zonesonline, $zonen);
 				fclose($handle);
 			} else {
-				LOGGING('Zone: '.$zonen.' seems to be offline', 3);
+				$zonesoff = "Zone(s) $zonen seems to be Offline";
 			}
 		}
 		$sonoszone;
+		$zoon = implode(", ", $zonesonline);
+		$zoneson = "Zone(s) $zoon are Online";
 	} else {
 		$performonlinecheck = "Online check for Players is turned off";
 		$sonoszone = $sonoszonen;
 	}
-		
+	
 	// check if samba share "plugindata" or "sonos_tts" exist
 	$sambashare = array();
 	check_sambashare($sambaini, $searchfor, $sambashare);
@@ -134,9 +138,11 @@ echo '<PRE>';
 	$find = strripos($syntax, "=");
 	$sonospush = substr($syntax, $find + 1, 300);
 	if ($sonospush !== 'getsonosinfo')  {
-		# create entry in logfile of called syntax
+		# create entries in logfile
 		LOGGING("called syntax: ".$myIP."".urldecode($syntax),5);
 		LOGGING("$performonlinecheck",7);
+		($checkonline === true) ? LOGGING("$zoneson",7) : "";
+		($zonesoff != "") ? LOGGING("$zonesoff",4) : "";
 		LOGGING("All variables has been collected",7);
 		LOGGING("$sonosconfig",7);
 		LOGGING("$playerconfig",7);
@@ -144,10 +150,8 @@ echo '<PRE>';
 		LOGGING("Configuration has been successful loaded",6);
 		LOGGING($sambashare[1],5);
 		LOGGING("Perform Logfile size check",7);
-		#LBlog::get_notifications_html($lbpplugindir, "Sonos");			// prepare for HTML notifications
 	}
-	#exit;
-
+	
 
 #-- End Preparation ---------------------------------------------------------------------
 
@@ -743,7 +747,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$mute = $_GET['mute'];
 				$sonos->SetGroupMute($mute);
 			} else {
-				echo "Der Mute Mode ist unbekannt";
+				LOGGING("Der Mute Mode ist unbekannt", 4);
 			}
 		break;
 		
@@ -835,15 +839,23 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		
 		case 'alarmoff':
-			turn_off_alarms();
+			if (isset($_GET['id'])) {
+				turn_off_alarm();
+			} else {
+				turn_off_alarms();
+			}
 		break;
 		
 		
 		case 'alarmon':
-			restore_alarms();
+			if (isset($_GET['id'])) {
+				restore_alarm();
+			} else {
+				restore_alarms();
+			}
 		break;
 		
-		
+			
 		case 'getledstate':
 			echo '<PRE>';
 			die ($sonos->GetLEDState());
@@ -937,11 +949,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		case 'delmp3':
 			delmp3();
-		break;
-		
-		
-		case 'getpluginfolder':
-			getPluginFolder();
 		break;
 		
 		
@@ -1143,7 +1150,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 /* @return: nichts
 **/
  function delmp3() {
-	global $config, $debug;
+	global $config, $debug, $time_start;
 	
 	# http://www.php-space.info/php-tutorials/75-datei,nach,alter,loeschen.html	
 	$dir = $config['SYSTEM']['messageStorePath'];
@@ -1166,7 +1173,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		LOGGING("All files according to criteria were successfully deleted", 7);
 	#}
     $folder->close();
-    exit; 	 
+    return; 	 
  }
  
 

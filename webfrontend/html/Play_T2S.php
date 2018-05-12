@@ -13,8 +13,7 @@
 **/
 
 function say() {
-	#include_once("text2speech.php");
-		
+			
 	if(!isset($_GET['member'])) {
 		sendmessage();
 	} else {
@@ -103,7 +102,6 @@ function create_tts() {
 		LOGGING("sonos-to-speech plugin has been called", 7);
 		}
 	elseif ((empty($messageid)) && (!isset($_GET['text'])) and (isset($_GET['playbatch']))) {
-		echo 'The input is invalid. Please enter text';
 		LOGGING("no text has been entered", 3);
 		exit();
 		}
@@ -332,7 +330,7 @@ function play_tts($messageid) {
 function sendmessage() {
 			global $text, $master, $messageid, $logging, $textstring, $voice, $config, $actual, $player, $volume, $sonos, $coord, $time_start, $filename, $sonoszone, $tmp_batch, $mode, $MP3path;
 			
-
+			$time_start = microtime(true);
 			if ((empty($config['TTS']['t2s_engine'])) or (empty($config['TTS']['messageLang'])))  {
 				LOGGING("There is no T2S engine/language selected in Plugin config. Please select before using T2S functionality.", 3);
 				exit();
@@ -364,7 +362,6 @@ function sendmessage() {
 				fclose($file);
 				exit;
 			}
-			#var_dump($modeback = GetVolumeModeConnect());
 			if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
 				$volume = $_GET['volume'];
 				LOGGING("Volume from syntax been adopted", 7);		
@@ -407,15 +404,16 @@ function sendmessage() {
 			$sonos->SetMute(false);
 			$sonos->SetVolume($volume);
 			play_tts($messageid);
-			#$time_end = microtime(true);
-			#$t2s_time = $time_end - $time_start;
-			#echo "Die T2S dauerte $t2s_time Sekunden.\n";
 			restoreSingleZone();
 			$mode = "";
 			$actual[$master]['CONNECT'] == 'true' ? $mode = '1' : $mode = '0';
 			SetVolumeModeConnect($mode, $master);
 			delmp3();
+			$time_end = microtime(true);
+			$t2s_time = $time_end - $time_start;
+			#echo "Die T2S dauerte ".round($t2s_time, 2)." Sekunden.\n";
 			LOGGING("Deletion of no longer needed MP3 files has been executed", 7);		
+			LOGGING("Die Single T2S dauerte ".round($t2s_time, 2)." Sekunden.", 5);		
 	}
 
 /**
@@ -469,7 +467,7 @@ function sendgroupmessage() {
 				exit;
 			}
 			// prüft alle Member ob Sie Online sind und löscht ggf. Member falls nicht Online
-			checkZonesOnline($member);
+			#checkZonesOnline($member);
 			$coord = getRoomCoordinator($master);
 			LOGGING("Room Coordinator has been identified", 7);		
 			// speichern der Zonen Zustände

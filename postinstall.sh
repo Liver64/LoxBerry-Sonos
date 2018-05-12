@@ -43,12 +43,6 @@ PCONFIG=$LBPCONFIG/$PDIR
 PSBIN=$LBPSBIN/$PDIR
 PBIN=$LBPBIN/$PDIR
 
-# Replace by subfolder
-#/bin/sed -i "s%REPLACEBYSUBFOLDER%$3%" $LBPCONFIG/$PDIR/sonos.cfg
-#/bin/sed -i "s%REPLACEBYSUBFOLDER%$3%" $LBPHTML/$PDIR/system/network.php
-#/bin/sed -i "s%sonos4lox_dev%$3%" $LBPHTML/$PDIR/system/network.php
-#/bin/sed -i "s%REPLACEBYDOMAIN%$5%" $LBPHTML/$PDIR/system/network.php
-
 test=`cat /etc/samba/smb.conf | grep plugindata | wc -l`
 
 if [ $test = 0 ]

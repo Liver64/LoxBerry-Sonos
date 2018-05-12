@@ -41,7 +41,7 @@ function LineIn() {
 **/
 
 function SetVolumeModeConnect($mode, $zonenew)  {
-	global $sonoszone, $sonos, $mode;
+	global $sonoszone, $sonos, $mode, $time_start;
 	
 	$sonos = new PHPSonos($sonoszone[$zonenew][0]);
 	$getModel = $sonoszone[$zonenew][2];
