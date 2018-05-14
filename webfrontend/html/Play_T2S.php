@@ -336,10 +336,10 @@ function sendmessage() {
 				LOGGING("There is no T2S engine/language selected in Plugin config. Please select before using T2S functionality.", 3);
 				exit();
 			}
-			if ((!isset($_GET['text'])) && (!isset($_GET['messageid'])))  {
-				LOGGING("Wrong Syntax, please correct! Even 'say&text=' or 'say&messageid=' is necessary to play an anouncement", 3);
-				exit;
-			}
+			#if ((!isset($_GET['text'])) && (!isset($_GET['messageid'])))  {
+			#	LOGGING("Wrong Syntax, please correct! Even 'say&text=' or 'say&messageid=' is necessary to play an anouncement", 3);
+			#	exit;
+			#}
 			// if batch has been choosed save filenames to a txt file and exit
 			if(isset($_GET['batch'])) {
 				if((isset($_GET['volume'])) or (isset($_GET['rampto'])) or (isset($_GET['playmode']))) {
@@ -436,10 +436,10 @@ function sendgroupmessage() {
 				LOGGING("There is no T2S engine/language selected in Plugin config. Please select before using T2S functionality.", 3);
 				exit();
 			}
-			if ((!isset($_GET['text'])) && (!isset($_GET['messageid'])))  {
-				LOGGING("Wrong Syntax, please correct! Even 'say&text=' or 'say&messageid=' is necessary to play an anouncement", 3);
-				exit;
-			}		
+			#if ((!isset($_GET['text'])) && (!isset($_GET['messageid'])))  {
+			#	LOGGING("Wrong Syntax, please correct! Even 'say&text=' or 'say&messageid=' is necessary to play an anouncement", 3);
+			#	exit;
+			#}		
 			if(isset($_GET['batch'])) {
 				LOGGING("The parameter batch is not allowed to be used in groups. Please use single message to prepare your batch!", 4);
 				exit;
