@@ -266,7 +266,8 @@ function play_tts($messageid) {
 		LOGGING("Mute for relevant Player(s) has been turned off", 7);		
 		try {
 			$try_play = $sonos->Play();
-			LOGGING("T2S has been played", 7);			
+			LOGGING("T2S has been passed to Sonos Application", 5);	
+			LOGGING("In case the announcement wasn't played please check any Messages appearing in the Sonos App during processing the request.", 5);	
 		} catch (Exception $e) {
 			LOGGING("The requested T2S message ".trim($messageid).".mp3 could not be played!", 3);
 			$notification = array (	"PACKAGE" => $lbpplugindir,
@@ -334,6 +335,10 @@ function sendmessage() {
 			if ((empty($config['TTS']['t2s_engine'])) or (empty($config['TTS']['messageLang'])))  {
 				LOGGING("There is no T2S engine/language selected in Plugin config. Please select before using T2S functionality.", 3);
 				exit();
+			}
+			if ((!isset($_GET['text'])) && (!isset($_GET['messageid'])))  {
+				LOGGING("Wrong Syntax, please correct! Even 'say&text=' or 'say&messageid=' is necessary to play an anouncement", 3);
+				exit;
 			}
 			// if batch has been choosed save filenames to a txt file and exit
 			if(isset($_GET['batch'])) {
@@ -413,7 +418,7 @@ function sendmessage() {
 			$t2s_time = $time_end - $time_start;
 			#echo "Die T2S dauerte ".round($t2s_time, 2)." Sekunden.\n";
 			LOGGING("Deletion of no longer needed MP3 files has been executed", 7);		
-			LOGGING("Die Single T2S dauerte ".round($t2s_time, 2)." Sekunden.", 5);		
+			LOGGING("The requested single T2S tooks ".round($t2s_time, 2)." seconds to be processed.", 5);		
 	}
 
 /**
@@ -426,10 +431,15 @@ function sendmessage() {
 function sendgroupmessage() {			
 			global $coord, $sonos, $text, $sonoszone, $member, $master, $zone, $messageid, $logging, $textstring, $voice, $config, $mute, $membermaster, $getgroup, $checkgroup, $time_start, $mode, $modeback, $actual;
 			
+			$time_start = microtime(true);
 			if ((empty($config['TTS']['t2s_engine'])) or (empty($config['TTS']['messageLang'])))  {
 				LOGGING("There is no T2S engine/language selected in Plugin config. Please select before using T2S functionality.", 3);
 				exit();
-			}			
+			}
+			if ((!isset($_GET['text'])) && (!isset($_GET['messageid'])))  {
+				LOGGING("Wrong Syntax, please correct! Even 'say&text=' or 'say&messageid=' is necessary to play an anouncement", 3);
+				exit;
+			}		
 			if(isset($_GET['batch'])) {
 				LOGGING("The parameter batch is not allowed to be used in groups. Please use single message to prepare your batch!", 4);
 				exit;
@@ -538,8 +548,11 @@ function sendgroupmessage() {
 			#$modeback = '1' ? $mode = '1' : $mode = '0';
 			#SetVolumeModeConnect($mode);
 			delmp3();
+			$time_end = microtime(true);
+			$t2s_time = $time_end - $time_start;
+			#echo "Die T2S dauerte ".round($t2s_time, 2)." Sekunden.\n";
 			LOGGING("Deletion of no longer needed MP3 files has been executed", 7);		
-			
+			LOGGING("The requested group T2S tooks ".round($t2s_time, 2)." seconds to be processed.", 5);					
 }
 
 /**

@@ -1134,7 +1134,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		  
 		default:
-		   LOGGING("This command is not known. <br>index.php?zone=SONOSPLAYER&action=FUNCTION&VALUE=Option", 4);
+		   LOGGING("This command is not known. <br>index.php?zone=SONOSPLAYER&action=FUNCTION&VALUE=Option", 3);
 		} 
 	} else 	{
 	LOGGING("The Zone ".$master." is not available or offline. Please check and if necessary add in the Config the zone", 4);

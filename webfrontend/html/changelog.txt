@@ -173,3 +173,4 @@
  3.4.2		[Feature] Sonos Alarme können einzeln oder gesamt aktiviert/deaktiviert werden
 			[Feature] Notification Messages hinzugefügt (NUR bei Error)
 			[Feature] Logging erweitert
+ 3.4.3		[Bugfix] Fehler bei Notification korrigiert
