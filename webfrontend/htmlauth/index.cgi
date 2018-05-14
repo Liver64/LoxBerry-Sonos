@@ -524,6 +524,7 @@ sub form {
 	$template_title = "$SL{'BASIS.MAIN_TITLE'}: v$sversion";
 	LoxBerry::Web::head();
 	LoxBerry::Web::pagestart($template_title, $helplink, $helptemplate);
+	print LoxBerry::Log::get_notifications_html($lbpplugindir);
 	print $template->output();
 	undef $template;	
 	LoxBerry::Web::lbfooter();
