@@ -7,11 +7,6 @@ A PHP based library for interacting with [Sonos](http://www.sonos.com/) speakers
 Full documentation is available at http://www.loxwiki.eu/display/LOXBERRY/Sonos4Loxone  
 
 
-[Latest stable release](https://github.com/Liver64/LoxBerry-Sonos/archive/v3.1.0.zip)
-
-
-
-
 Changelog
 ---------
 A [Changelog](//github.com/Liver64/LoxBerry-Sonos/blob/master/webfrontend/html/changelog.txt) has been available since version 1.0.0
