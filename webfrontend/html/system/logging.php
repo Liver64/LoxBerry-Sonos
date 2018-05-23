@@ -15,6 +15,7 @@ function LOGGING($message = "", $loglevel, $raw = 0)
 {
 	global $pcfg, $L, $config;
 	
+	$L = LBSystem::readlanguage("sonos.ini");
 	$config_loglevel = $config['SYSTEM']['LOGLEVEL'];
 	if (empty($config_loglevel)) {
 		$config_loglevel = 7;

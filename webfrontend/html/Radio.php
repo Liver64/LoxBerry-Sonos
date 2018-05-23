@@ -49,6 +49,10 @@ function radio(){
 			$sonos = new PHPSonos($roomcord[0]); //Sonos IP Adresse
 			$sonosroom->SetVolume($config['sonoszonen'][$master][4]);
 		} else {
+			if(empty($config['TTS']['volrampto'])) {
+				$config['TTS']['volrampto'] = "25";
+				LOGGING("Rampto Volume in config has not been set. Default of 25% Volume has been taken, please update Plugin Config (T2S Optionen).", 4);
+			}
 			if($sonos->GetVolume() <= $config['TTS']['volrampto'])	{
 				$sonos->RampToVolume($config['TTS']['rampto'], $volume);
 			} else {
@@ -74,7 +78,7 @@ function nextradio() {
 	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
 	$radioanzahl_check = count($config['RADIO']);
 	if($radioanzahl_check == 0)  {
-		LOGGING("There are no Radio Stations maintained in the configuration. Pls update before using function NEXTRADIO or ZAPZONE!", 3);
+		LOGGING("There are no Radio Stations maintained in the config. Pls update before using function NEXTRADIO or ZAPZONE!", 3);
 		exit;
 	}
 	$playstatus = $sonos->GetTransportInfo();
@@ -86,6 +90,7 @@ function nextradio() {
 		$senderuri = "";
 	}
 	$radio = $config['RADIO']['radio'];
+	ksort($radio);
 	$radioanzahl = count($config['RADIO']['radio']);
 	$radio_name = array();
 	$radio_adresse = array();
@@ -163,6 +168,10 @@ function random_radio() {
 	$sonos->SetMute(false);
 	$sonos->SetRadio(urldecode($sonoslists[$random]["res"]),$sonoslists[$random]["title"]);
 	if (!isset($_GET['volume'])) {
+		if(empty($config['TTS']['volrampto'])) {
+			$config['TTS']['volrampto'] = "25";
+			LOGGING("Rampto Volume in config has not been set. Default of 25% Volume has been taken, please update Plugin Config (T2S Optionen).", 4);
+		}
 		if($sonos->GetVolume() <= $config['TTS']['volrampto']) {
 			$sonos->RampToVolume($config['TTS']['rampto'], $volume);
 		}	

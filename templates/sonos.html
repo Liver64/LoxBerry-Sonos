@@ -1,4 +1,4 @@
-﻿<style type="text/css">
+<style type="text/css">
 
 
 .form {
@@ -34,7 +34,7 @@
 <table class="formtable" border="0" width="100%" cellpadding="10">
 	<tr>
 		<td valign="middle" style="height: 33px; width: 25%; text-align: center;">
-			<h2 class="auto-style3" style="width: 255px"><TMPL_VAR ZONES.SONOS_CONFIG></h2>
+			<h2 class="auto-style3" style="width: 100%"><TMPL_VAR ZONES.SONOS_CONFIG></h2>
 		<td style="height: 33px; text-align: center;">
 			<img class='ico_sonos' src='/plugins/<TMPL_VAR PLUGINDIR>/images/sonos_logo.png' border='0' width='186' height='125' align="absmiddle">
 		</td>
@@ -349,7 +349,7 @@
 						            }	}); return false;" data-role="button" data-inline="true" data-mini="true" data-icon="delete"><TMPL_VAR TEMPLATE.LOG_BUTTON_DELETE></button>
 								</div>
 								<div style="display:table-cell;">
-								 	<button onclick="window.open('/admin/system/tools/logfile.cgi?logfile=plugins/sonos4lox/sonos.log&amp;header=html&amp;format=template', 'log'); return false;" id="logview" data-role="button" data-inline="true" data-mini="true" data-icon="bars"><TMPL_VAR TEMPLATE.BUTTON_LOG_VIEW></button>
+								 	<button onclick="window.open('/admin/system/tools/logfile.cgi?logfile=<TMPL_VAR LOGFILE>&amp;header=html&amp;format=template', 'log'); return false;" id="logview" data-role="button" data-inline="true" data-mini="true" data-icon="bars"><TMPL_VAR TEMPLATE.BUTTON_LOG_VIEW></button>
 								</div>
 								<div style="display:table-cell;">
 									<select id="LOGLEVEL" name="LOGLEVEL" data-mini="true">

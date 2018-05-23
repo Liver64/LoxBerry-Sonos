@@ -33,8 +33,8 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 		# $textstring = str_replace($search,$replace,$textstring);
 		#####################################################################################################################
 		
-		if (strlen($textstring) > 150) {
-            LOGGING("The Google T2S contains more than 150 characters and therefor could not be generated. Please reduce characters in your message!",3);
+		if (strlen($textstring) > 100) {
+            LOGGING("The Google T2S contains more than 100 characters and therefor could not be generated. Please reduce characters to max. 100!",3);
 			exit;
         }
 								  

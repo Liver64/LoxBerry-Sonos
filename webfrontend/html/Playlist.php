@@ -52,6 +52,10 @@ function playlist() {
 				LOGGING("Standardvolume for master has been set.", 7);
 				$sonos->Play();
 			} else {
+				if(empty($config['TTS']['volrampto'])) {
+					$config['TTS']['volrampto'] = "25";
+					LOGGING("Rampto Volume in config has not been set. Default of 25% Volume has been taken, please update Plugin Config (T2S Optionen).", 4);
+				}
 				if($sonos->GetVolume() <= $config['TTS']['volrampto'])	{
 					$sonos->RampToVolume($config['TTS']['rampto'], $volume);
 					$sonos->Play();
@@ -122,6 +126,10 @@ function zapzone() {
 	}
 	#echo '<br>Zone: ['.$nextZoneKey.']';
 	saveCurrentZone($nextZoneKey);
+	if ($config['VARIOUS']['announceradio'] == 1) {
+		say_zone($nextZoneKey);
+	}
+	unset ($playingzones[$nextZoneKey]);
 	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
 	$sonos->SetAVTransportURI("x-rincon:" . $sonoszone[$nextZoneKey][1]);
 	$sonos->SetMute(false);
@@ -195,6 +203,7 @@ function play_zones() {
 		}
 	}
 	$_SESSION["playingzone"] = $playingzones;
+	#print_r($playingzones);
 	return array($playingzones);
 }
 
@@ -209,9 +218,10 @@ function play_zones() {
 function countzones() {
 	if(!file_exists("count.txt")){
         fopen("count.txt", "a" );
-        $aufruf=0;
+        #$aufruf=0;
 	}
-	$counter=fopen("count.txt","r+"); $output=fgets($counter,100);
+	$counter=fopen("count.txt","r+"); 
+	$output=fgets($counter,100);
 	$output=$output+1;
 	rewind($counter);
 	fputs($counter,$output);
@@ -262,7 +272,7 @@ function DelPlaylist() {
 /**
 * Funktion : 	random_playlist --> lädt per Zufallsgenerator eine Playliste und spielt sie ab.
 *
-* @param: empty
+* @param: exceptions from Syntax
 * @return: Playliste
 **/
 
@@ -297,6 +307,10 @@ function random_playlist() {
 	$sonos->AddToQueue($plfile);
 	$sonos->SetQueue("x-rincon-queue:". trim($sonoszone[$master][1]) ."#0"); 
 	if (!isset($_GET['volume'])) {
+		if(empty($config['TTS']['volrampto'])) {
+			$config['TTS']['volrampto'] = "25";
+			LOGGING("Rampto Volume in config has not been set. Default of 25% Volume has been taken, please update Plugin Config (T2S Optionen).", 4);
+		}
 		if($sonos->GetVolume() <= $config['TTS']['volrampto']) {
 			$sonos->RampToVolume($config['TTS']['rampto'], $volume);
 		}	
@@ -323,16 +337,68 @@ function next_dynamic() {
 	$sonos->SetMute(false);
 	if (($titelaktuel < $playlistgesammt) or (substr($titelgesammt["TrackURI"], 0, 9) == "x-rincon:")) {
 		checkifmaster($master);
-		$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
+		$sonos = new PHPSonos($sonoszone[$master][0]);
 		$sonos->Next();
 		LOGGING("Next Song in Playlist.", 7);
 	} else {
 		checkifmaster($master);
-		$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
+		$sonos = new PHPSonos($sonoszone[$master][0]);
 		$sonos->SetTrack("1");
 		LOGGING("Playlist starts at Song Number 1.", 7);
 	}
 	$sonos->Play();
+}
+
+
+/**
+* Optional Sub-Function for zapzone: say_zone --> announce Zone before adding zone to master
+*
+* @param: $zone
+* @return: 
+**/
+function say_zone($zone) {
+			
+	global $master, $sonoszone, $config, $volume, $sonos, $coord, $messageid, $filename, $MessageStorepath, $nextZoneKey;
+	require_once("addon/sonos-to-speech.php");
+	
+	// if batch has been choosed abort
+	if(isset($_GET['batch'])) {
+		LOGGING("The parameter batch could not be used to announce zone!", 4);
+		exit;
+	}
+	#$sonos->Stop();
+	if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
+		$volume = $_GET['volume'];
+		LOGGING("Volume from syntax been used", 7);		
+	} else 	{
+		// übernimmt Standard Lautstärke der angegebenen Zone aus config.php
+		$volume = $config['sonoszonen'][$master][3];
+		LOGGING("Standard Volume from config been used", 7);		
+	}
+	#saveZonesStatus(); // saves all Zones Status
+	$sonos = new PHPSonos($sonoszone[$master][0]);
+	#********************** NEW get text variables **********************
+	$TL = LOAD_T2S_TEXT();
+		
+	$play_zone = $TL['SONOS-TO-SPEECH']['ANNOUNCE_ZONE'] ; 
+ 	#********************************************************************
+	# Generiert und kodiert Ansage der Zone
+	$text = ($play_zone.' '.$zone);
+	$textstring = ($text);
+	$rawtext = md5($textstring);
+	$filename = "$rawtext";
+	$messageid = $filename;
+	select_t2s_engine();
+	t2s($messageid, $MessageStorepath, $textstring, $filename);
+	// get Coordinator of (maybe) pair or single player
+	$coord = getRoomCoordinator($master);
+	LOGGING("Room Coordinator been identified", 7);		
+	$sonos = new PHPSonos($coord[0]); 
+	$sonos->SetMute(false);
+	$sonos->SetVolume($volume);
+	play_tts($messageid);
+	LOGGING("Zone Announcement has been played", 6);	
+	#restoreSingleZone();
 }
 
 ?>

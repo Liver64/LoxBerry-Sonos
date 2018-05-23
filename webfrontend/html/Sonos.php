@@ -26,9 +26,15 @@ include("Save_T2S.php");
 include("Speaker.php");
 include('system/logging.php');
 
+
 // setze korrekte Zeitzone
 date_default_timezone_set(date("e"));
 echo "<PRE>"; 
+
+# https://duncan3dc.github.io/sonos/
+#require_once __DIR__ . "/system/vendor/autoload.php";
+#use duncan3dc\Sonos\Network;
+#$sonos3dc = new Network;
 
 # prepare variables
 $home = $lbhomedir;
@@ -50,12 +56,11 @@ $sambaini = $lbhomedir.'/system/samba/smb.conf';				// path to Samba file smb.co
 $searchfor = '[plugindata]';									// search for already existing Samba share
 $MP3path = "mp3";												// path to preinstalled numeric MP§ files
 $sleeptimegong = "3";											// waiting time before playing t2s
+$maxzap = '60';													// waiting time before zapzone been initiated again
 
 echo '<PRE>'; 
 	
-
-	#LOGGING('The file sonos.cfg could not be opened, please try again!', 7);
-
+	
 #-- Start Preparation ------------------------------------------------------------------
 	
 	// Parsen der Konfigurationsdatei sonos.cfg
@@ -80,8 +85,9 @@ echo '<PRE>';
 	// finale config für das Script
 	$config = array_merge($sonoszonen, $tmpsonos);
 		
-	// Umbennennen des ursprünglichen Array Keys
+	// Update config array
 	$config['SYSTEM']['messageStorePath'] = $MessageStorepath;
+	$config['VARIOUS']['maxzap'] = $maxzap;
 
 	// Übernahme und Deklaration von Variablen aus der Konfiguration
 	$sonoszonen = $config['sonoszonen'];
@@ -224,6 +230,10 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'play';
 			$posinfo = $sonos->GetPositionInfo();
 			if(!empty($posinfo['TrackURI'])) {
+				if(empty($config['TTS']['volrampto'])) {
+					$config['TTS']['volrampto'] = "25";
+					LOGGING("Rampto Volume in config has not been set. Default of 25% Volume has been taken, please update Plugin Config (T2S Optionen).", 4);
+				}
 				if($sonos->GetVolume() <= $config['TTS']['volrampto']) {
 					$sonos->RampToVolume($config['TTS']['rampto'], $volume);
 					if($config['LOXONE']['LoxDaten'] == 1) {
@@ -241,7 +251,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 					$sonos->Play();
 				}
 			} else {
-				LOGGING("No tracks in play list to play.", 4);
+				LOGGING("No tracks in Queue to be played.", 4);
 			}
 		break;
 		
@@ -250,6 +260,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			checkifmaster($master);
 			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 			$sonos->Pause();
+			LOGGING("Pause been executed.", 7);
 		break;
 		
 				
@@ -266,6 +277,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 				$sonos->SetTrack("1");
 			}
+			LOGGING("Next been executed.", 7);
 		break;
 		
 		
@@ -282,13 +294,15 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 				$sonos->SetTrack("$playlistgesammt");
 			}
+			LOGGING("Previous been executed.", 7);
 		break; 
 		
 			
 		case 'rewind':
-				checkifmaster($master);
-				$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
-				$sonos->Rewind();
+			checkifmaster($master);
+			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
+			$sonos->Rewind();
+			LOGGING("Rewind been executed.", 7);
 		break;
 		
 		
@@ -299,8 +313,10 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			else if($_GET['mute'] == 'true') {
 				$sonos->SetMute(true);
 			} else {
-				LOGGING('Wrong Mute Parameter selected. Please correct', 4);
+				LOGGING('Wrong Mute Parameter selected. Please correct', 3);
+				exit;
 			}       
+			LOGGING("Mute/Unmute been executed.", 7);
 		break;
 		
 		
@@ -326,6 +342,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			checkifmaster($master);
 			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 			$sonos->Stop();
+			LOGGING("Stop been executed.", 7);
 		break; 
 		
 			
@@ -333,7 +350,8 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			foreach ($sonoszonen as $zone => $player) {
 				$sonos = new PHPSonos($sonoszonen[$zone][0]);
 				$sonos->Stop();
-			}	
+			}
+			LOGGING("Stopall been executed.", 7);
 		break; 
 		
 
@@ -347,6 +365,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 			$sonos->Stop();
 			$sonos->SetVolume($save_vol_stop);
+			LOGGING("Softstop been executed.", 7);
 		break; 
 		
 		  
@@ -360,6 +379,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 				$sonos->Play();
 			}
+			LOGGING("Toggle been executed.", 7);
 		break; 
 		
 					
@@ -369,7 +389,8 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$sonos->SetPlayMode($playmode);
 			} else {
 				LOGGING('Wrong PlayMode Parameter selected. Please correct', 4);
-			}    
+			}   
+			LOGGING("Playmode been executed.", 7);
 		break; 
 		
 	  
@@ -378,8 +399,10 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$crossfade = $_GET['crossfade'];
 			} else {
 				LOGGING("Wrong Crossfade entered -> 0 = off / 1 = on", 4);
+				exit;
 			}
 				$sonos->SetCrossfadeMode($crossfade);
+				LOGGING("Crossfade been executed.", 7);
 		break; 
 		
 		  
@@ -388,6 +411,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				checkifmaster($master);
 				$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 				$sonos->RemoveFromQueue($_GET['remove']);
+				LOGGING("Remove Song been executed.", 7);
 			} 
 		break; 
 		
@@ -399,6 +423,10 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 						
 			if ($titelaktuel < $playlistgesammt) {
 			$sonos->SetQueue("x-rincon-queue:" . trim($sonoszone[$master][1]) . "#0");
+				if(empty($config['TTS']['volrampto'])) {
+					$config['TTS']['volrampto'] = "25";
+					LOGGING("Rampto Volume in config has not been set. Default of 25% Volume has been taken, please update Plugin Config (T2S Optionen).", 4);
+				}
 				if($sonos->GetVolume() <= $config['TTS']['volrampto'])	{
 					$sonos->RampToVolume($config['TTS']['rampto'], $volume);
 					$sonos->Play();
@@ -408,6 +436,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			} else {
 				LOGGING("No tracks in Playlist to play.", 5);
 			}
+			LOGGING("Playqueue been executed.", 7);
 		break;
 		
 		
@@ -427,7 +456,8 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 					sendUDPdata();
 				}
 			} else {
-				LOGGING('Wrong range of values for the volume been entered, only 0-100 is permitted', 4);
+				LOGGING('Wrong range of values for volume been entered, only 0-100 is permitted', 4);
+				exit;
 			}
 		break; 
 		
@@ -461,20 +491,23 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$loud = $_GET['loudness'];
 				$sonos->SetLoudness($loud);
 			} else {
-				LOGGING('Wrong LoudnessMode selected', 5);
+				LOGGING('Wrong Loudness Mode selected', 5);
 			}    
+			LOGGING("Loudness been executed.", 7);
 		break;
 		
 		
 		case 'settreble':
 			$Treble = $_GET['treble'];
 			$sonos->SetTreble($Treble);
+			LOGGING("Treble been executed.", 7);
 		break;
 		
 		
 		case 'setbass':
 			$Bass = $_GET['bass'];
 			$sonos->SetBass($Bass);
+			LOGGING("Bass been executed.", 7);
 		break;	
 		
 		
@@ -502,6 +535,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			((!empty($state)) and empty($duration)) ? nextradio() : '';
 			// Playliste läuft
 			((!empty($state)) and !empty($duration)) ? next_dynamic() : '';
+			LOGGING("Nextpush been executed.", 7);
 		break;
 		
 		
@@ -642,6 +676,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				print_r($sonos->GetZoneGroupAttributes());
 				echo '<br><br>';
 			}
+			LOGGING("Checksonos been executed.", 7);
 		break;
 		
 			
@@ -1134,10 +1169,11 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		  
 		default:
-		   LOGGING("This command is not known. <br>index.php?zone=SONOSPLAYER&action=FUNCTION&VALUE=Option", 3);
+		   LOGGING("This command is not known. Pls use syntax as: 'http://<IP or HOSTENAME of LoxBerry>/plugins/sonos4lox/index.php/?zone=sonosplayer&action=function&value=option'", 3);
 		} 
 	} else 	{
-	LOGGING("The Zone ".$master." is not available or offline. Please check and if necessary add in the Config the zone", 4);
+	LOGGING("The Zone ".$master." is not available or offline. Please check and if necessary add zone to Config", 3);
+	exit;
 }
 
 # Funktionen für Skripte ------------------------------------------------------

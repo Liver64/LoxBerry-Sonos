@@ -116,8 +116,10 @@ function restoreGroupZone() {
 	// add Master to array
 	array_push($member, $master);
 	// Restore former settings for each Zone
+	#print_r($actual);
 	foreach($member as $zone => $player) {
 		#echo $player.'<br>';
+		#echo $zone.'<br>';
 		$restore = $actual[$player]['ZoneStatus'];
 		$sonos = new PHPSonos($sonoszone[$player][0]);
 		switch($restore) {

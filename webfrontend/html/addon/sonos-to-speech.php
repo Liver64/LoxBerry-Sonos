@@ -34,11 +34,19 @@ function s2s()
 			$titel = substr($temp["title"], 0, 70);
 			$text = $this_song." ".$titel." ".$by." ".$artist ; 
 		} elseif(empty($temp["duration"])) {
-			# Generiert Ansage des laufenden Senders
-			$sender = $temp_radio['title'];
-			$text = $this_radio." ".$sender;
+			$find1st = strpos($temp['streamContent'], " - ");
+			$findlast = strrpos($temp['streamContent'], " - ");
+			if (($find1st === false) or ($find1st <> $findlast)) {
+				# Generiert Ansage des laufenden Senders
+				$sender = $temp_radio['title'];
+				$text = $this_radio." ".$sender;
+			} else {
+				# Generiert Titelinfo wenn Artist / Title vom Sender geliefert wird
+				$artist = substr($temp["streamContent"], 0, $find1st);
+				$titel = substr($temp["streamContent"], $find1st + 3, 70);
+				$text = $this_song." ".$titel." ".$by." ".$artist ; 
+			}
 		}
-		$text = ($text);
 		LOGGING('Song Announcement: '.utf8_encode($text),7);
 		LOGGING('Message been generated and pushed to T2S creation',5);
 		return ($text);

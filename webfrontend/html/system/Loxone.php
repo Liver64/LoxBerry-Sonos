@@ -71,7 +71,7 @@
 		}
 		socket_close($socket);
 	} else { 
-		LOGGING("Data transmission to Loxone is not active. Please activate!", 4); 
+		LOGGING("Data transmission to Loxone for UDP is not active. Please activate!", 4); 
 	}
 }
 
@@ -142,7 +142,7 @@
 			}
 		}
 	} else { 
-		LOGGING("Data transmission to Loxone is not active. Please activate!", 4); 
+		LOGGING("Data transmission to Loxone for REST Service is not active. Please activate!", 4); 
 	}
  }
  

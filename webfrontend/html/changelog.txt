@@ -173,4 +173,8 @@
  3.4.2		[Feature] Sonos Alarme können einzeln oder gesamt aktiviert/deaktiviert werden
 			[Feature] Notification Messages hinzugefügt (NUR bei Error)
 			[Feature] Logging erweitert
- 3.4.3		[Bugfix] Fehler bei Notification korrigiert
+ 3.4.3		[Bugfix] Notification Messages korrigiert
+ 3.4.4		[Bugfix] Funktion zapzone korrigiert (fehler beim springen)
+			[Bugfix] Network Scan optimiert
+			[Feature] Logging und Error handling erweitert
+			[Feature] Ansage der Zone bei ...action=zapzone (wenn über Radio Favoriten eingeschaltet)

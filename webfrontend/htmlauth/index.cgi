@@ -33,8 +33,8 @@ use File::HomeDir;
 use Cwd 'abs_path';
 use JSON qw( decode_json );
 use utf8;
-use warnings;
-use strict;
+#use warnings;
+#use strict;
 #use Data::Dumper;
 #no strict "refs"; # we need it for template system
 
@@ -69,7 +69,7 @@ my $pluginconfigfile 			= "sonos.cfg";
 my $pluginplayerfile 			= "player.cfg";
 my $pluginlogfile				= "sonos.log";
 my $urlfile						= "https://raw.githubusercontent.com/Liver64/LoxBerry-Sonos/master/webfrontend/html/release/info.txt";
-my $log 						= LoxBerry::Log->new ( name => 'Sonos', filename => $lbplogdir ."/". $pluginlogfile, append => 1 );
+my $log 						= LoxBerry::Log->new ( name => 'Sonos', filename => $lbplogdir ."/". $pluginlogfile, append => 1, addtime => 1 );
 my $plugintempplayerfile	 	= "tmp_player.json";
 my $scanzonesfile	 			= "network.php";
 my $helplink 					= "http://www.loxwiki.eu/display/LOXBERRY/Sonos4Loxone";
@@ -100,7 +100,7 @@ $cgi->import_names('R');
 if (-z $lbplogdir."/".$pluginlogfile) {
 	system("/usr/bin/date > $pluginlogfile");
 	$log->open;
-	LOGSTART "Logfile started.\n Loxberry: v".$lbversion." \n Sonos Plugin: v".$sversion." \n --------------------------------------------------------------------------------";
+	LOGSTART "Sonos Logfile started";
 }
 
 ##########################################################################
@@ -113,7 +113,7 @@ if ( $R::delete_log )
 	my $pluginlogfile = $log->close;
 	system("/usr/bin/date > $pluginlogfile");
 	$log->open;
-	LOGSTART "Logfile started.\n Loxberry: v".$lbversion." \n Sonos Plugin: v".$sversion." \n --------------------------------------------------------------------------------";
+	LOGSTART "Sonos Logfile restarted";
 	print "Content-Type: text/plain\n\nOK";
 	exit;
 }
@@ -273,6 +273,9 @@ $template->param("PLUGINDIR" => $lbpplugindir);
 
 # übergibt Data Verzeichnis an HTML
 $template->param("DATADIR" => $lbpdatadir);
+
+# übergibt Log Verzeichnis und Dateiname an HTML
+$template->param("LOGFILE" , $lbplogdir . "/" . $pluginlogfile);
 
 ##########################################################################
 # check if config files exist and they are readable
@@ -515,7 +518,7 @@ sub form {
 		# Prepare form defaults
 	if (!$rmpvol) {$rmpvol = "25"};
 	if (!$miniserver) {$miniserver = "MINISERVER1"};
-	if (!$maxzap) {$maxzap = "40"};
+	
 	
 	LOGOK "Sonos Plugin has been successfully loaded.";
 		
@@ -591,7 +594,7 @@ sub save
 	$pcfg->param("LOCATION.googletown", "$R::googletown");
 	$pcfg->param("LOCATION.googlestreet", "$R::googlestreet");
 	$pcfg->param("VARIOUS.announceradio", "$R::announceradio");
-	$pcfg->param("VARIOUS.maxzap", "$R::maxzap");
+	#$pcfg->param("VARIOUS.maxzap", "$R::maxzap");
 	$pcfg->param("VARIOUS.CALDavMuell", "\"$R::wastecal\"");
 	$pcfg->param("VARIOUS.CALDav2", "\"$R::cal\"");
 	$pcfg->param("SYSTEM.LOGLEVEL", "$R::LOGLEVEL");
@@ -655,7 +658,8 @@ sub attention_scan
 {
 	LOGDEB "Scan request for Sonos Zones has been executed.";
 	my $cfg         = new Config::Simple("$lbsconfigdir/general.cfg");
-	my $ssdp		= $cfg->param("SSDP.DISABLED");
+	#my $ssdp		= $cfg->param("SSDP.DISABLED");
+	my $ssdp		= "0";
 	my $buttnext;
 		
 	# Filename for the notice template is ok, preparing template";
@@ -708,34 +712,38 @@ sub scan
 	my $response = qx(/usr/bin/php $lbphtmldir/system/$scanzonesfile);
 			
 	#import Sonos Player from JSON file
-	open (my $fh, '<:raw', $lbpconfigdir . '/' . $plugintempplayerfile) or die("Die Datei: $plugintempplayerfile konnte nicht geöffnet werden! $!\n");
-	my $file;
-	local $/ = undef;
-	$file = <$fh>;
-	close($fh);
-	if ( $file ne "[]" ) {
-	my $config = decode_json($file);
-	
-		# creates table of Sonos devices
-		foreach my $key (keys %{$config})
-		{
-			$countplayers++;
-			$rowssonosplayer .= "<tr><td style='height: 25px; width: 43px;' class='auto-style1'><INPUT type='checkbox' style='width: 20px' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
-			$rowssonosplayer .= "<td style='height: 25px; width: 176px;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$key' style='width: 196px; background-color: #e6e6e6;' /> </td>\n";
-			$rowssonosplayer .= "<td style='height: 28px; width: 147px;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='$config->{$key}->[2]' style='width: 153px; background-color: #e6e6e6;' /> </td>\n";
-			$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='$config->{$key}->[3]'' /> </td>\n";
-			$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='$config->{$key}->[4]'' /> </td>\n";
-			$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$config->{$key}->[5]'' /> </td>\n";
-			$rowssonosplayer .= "<input type='hidden' id='ip$countplayers' name='ip$countplayers' value='$config->{$key}->[0]'>\n";
-			$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' value='$config->{$key}->[1]'>\n";
+	if (!open (my $fh, '<:raw', $lbpconfigdir . '/' . $plugintempplayerfile)) {
+		LOGERR "File: ".$plugintempplayerfile." could not be opened! Please execute Scan Zones again.";
+		notify($lbpplugindir, "Sonos", "The temporary scan file '".$plugintempplayerfile."' could not be opened!", 3);
+	} else {
+		my $file;
+		local $/ = undef;
+		$file = <$fh>;
+		close($fh);
+		if ( $file ne "[]" ) {
+		my $config = decode_json($file);
+		
+			# creates table of Sonos devices
+			foreach my $key (keys %{$config})
+			{
+				$countplayers++;
+				$rowssonosplayer .= "<tr><td style='height: 25px; width: 43px;' class='auto-style1'><INPUT type='checkbox' style='width: 20px' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
+				$rowssonosplayer .= "<td style='height: 25px; width: 176px;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$key' style='width: 196px; background-color: #e6e6e6;' /> </td>\n";
+				$rowssonosplayer .= "<td style='height: 28px; width: 147px;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='$config->{$key}->[2]' style='width: 153px; background-color: #e6e6e6;' /> </td>\n";
+				$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='$config->{$key}->[3]'' /> </td>\n";
+				$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='$config->{$key}->[4]'' /> </td>\n";
+				$rowssonosplayer .= "<td style='width: 98px; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$config->{$key}->[5]'' /> </td>\n";
+				$rowssonosplayer .= "<input type='hidden' id='ip$countplayers' name='ip$countplayers' value='$config->{$key}->[0]'>\n";
+				$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' value='$config->{$key}->[1]'>\n";
+			}
+		LOGDEB "Scan for Sonos Zones has been executed.";
+		$template->param("ROWSSONOSPLAYER", $rowssonosplayer);
 		}
-	LOGDEB "Scan for Sonos Zones has been executed.";
-	$template->param("ROWSSONOSPLAYER", $rowssonosplayer);
+		LOGDEB "Content of 'tmp_player.json' has been loaded into form";
+		unlink ($lbpconfigdir."/tmp_player.json");
+		LOGDEB "Temporary scan file 'tmp_player.json' has been deleted";
+		return();
 	}
-	LOGDEB "Content of 'tmp_player.json' has been loaded into form";
-	unlink ($lbpconfigdir."/tmp_player.json");
-	LOGDEB "Temporary scan file 'tmp_player.json' has been deleted";
-	return();
 }
 	
 #####################################################

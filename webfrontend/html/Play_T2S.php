@@ -118,7 +118,7 @@ function create_tts() {
 	elseif ((empty($messageid)) && ($text <> '')) {
 		// prepares the T2S message
 		$textstring = (substr($_GET['text'], 0, 500));
-		LOGGING("textstring has been entered", 7);		
+		LOGGING("Textstring has been entered", 7);		
 		}	
 	
 	// encrypt MP3 file as MD5 Hash
@@ -336,10 +336,14 @@ function sendmessage() {
 				LOGGING("There is no T2S engine/language selected in Plugin config. Please select before using T2S functionality.", 3);
 				exit();
 			}
-			#if ((!isset($_GET['text'])) && (!isset($_GET['messageid'])))  {
-			#	LOGGING("Wrong Syntax, please correct! Even 'say&text=' or 'say&messageid=' is necessary to play an anouncement", 3);
-			#	exit;
-			#}
+			if ((!isset($_GET['text'])) && (!isset($_GET['messageid'])) && (!isset($_GET['sonos'])) &&
+				(!isset($_GET['text'])) && (!isset($_GET['weather'])) && (!isset($_GET['abfall'])) &&
+				(!isset($_GET['witz'])) && (!isset($_GET['pollen'])) && (!isset($_GET['warning'])) &&
+				(!isset($_GET['bauernregel'])) && (!isset($_GET['distance'])) && (!isset($_GET['clock'])) && 
+				(!isset($_GET['calendar'])) && (!isset($_GET['action'])) == 'playbatch') {
+				LOGGING("Wrong Syntax, please correct! Even 'say&text=' or 'say&messageid=' are necessary to play an anouncement. (check Wiki)", 3);	
+				exit;
+			}
 			// if batch has been choosed save filenames to a txt file and exit
 			if(isset($_GET['batch'])) {
 				if((isset($_GET['volume'])) or (isset($_GET['rampto'])) or (isset($_GET['playmode']))) {
@@ -375,8 +379,8 @@ function sendmessage() {
 				$volume = $config['sonoszonen'][$master][3];
 				LOGGING("Standard Volume from zone ".$master."  been used", 7);		
 			}
-			checkaddon();
-			checkTTSkeys();
+			#checkaddon();
+			#checkTTSkeys();
 			$save = saveZonesStatus(); // saves all Zones Status
 			SetVolumeModeConnect($mode = '0', $master);
 			$return = getZoneStatus($master); // get current Zone Status (Single, Member or Master)
@@ -436,10 +440,14 @@ function sendgroupmessage() {
 				LOGGING("There is no T2S engine/language selected in Plugin config. Please select before using T2S functionality.", 3);
 				exit();
 			}
-			#if ((!isset($_GET['text'])) && (!isset($_GET['messageid'])))  {
-			#	LOGGING("Wrong Syntax, please correct! Even 'say&text=' or 'say&messageid=' is necessary to play an anouncement", 3);
-			#	exit;
-			#}		
+			if ((!isset($_GET['text'])) && (!isset($_GET['messageid'])) && (!isset($_GET['sonos'])) &&
+				(!isset($_GET['text'])) && (!isset($_GET['weather'])) && (!isset($_GET['abfall'])) &&
+				(!isset($_GET['witz'])) && (!isset($_GET['pollen'])) && (!isset($_GET['warning'])) &&
+				(!isset($_GET['bauernregel'])) && (!isset($_GET['distance'])) && (!isset($_GET['clock'])) && 
+				(!isset($_GET['calendar'])) && (!isset($_GET['action'])) == 'playbatch') {
+				LOGGING("Wrong Syntax, please correct! Even 'say&text=' or 'say&messageid=' are necessary to play an anouncement. (check Wiki)", 3);	
+				exit;
+			}
 			if(isset($_GET['batch'])) {
 				LOGGING("The parameter batch is not allowed to be used in groups. Please use single message to prepare your batch!", 4);
 				exit;
@@ -454,8 +462,8 @@ function sendgroupmessage() {
 				LOGGING("The parameter 'sonos' couldn't be used for group T2S!", 4);
 				exit;
 			}
-			checkaddon();
-			checkTTSkeys();
+			#checkaddon();
+			#checkTTSkeys();
 			$master = $_GET['zone'];
 			$member = $_GET['member'];
 			create_tts();
@@ -466,9 +474,9 @@ function sendgroupmessage() {
 					// exclude master Zone
 					if ($zone != $master) {
 						array_push($member, $zone);
-						LOGGING("All zones has been grouped", 5);		
 					}
 				}
+				LOGGING("All zones has been grouped", 5);	
 			} else {
 				$member = explode(',', $member);
 			}
@@ -575,7 +583,7 @@ function t2s_playbatch() {
 
 
 /**
-* Function : say_radio_station --> announce radio station before playing appropriate
+* Function : say_radio_station --> announce radio station before playing Station
 *
 * @param: 
 * @return: 
@@ -583,7 +591,7 @@ function t2s_playbatch() {
 function say_radio_station() {
 			
 	# nach nextradio();
-	global $master, $sonoszone, $config, $volume, $sonos, $coord, $messageid, $filename, $MessageStorepath;
+	global $master, $sonoszone, $config, $volume, $sonos, $coord, $messageid, $filename, $MessageStorepath, $nextZoneKey;
 	require_once("addon/sonos-to-speech.php");
 	
 	// if batch has been choosed abort
@@ -603,8 +611,13 @@ function say_radio_station() {
 	saveZonesStatus(); // saves all Zones Status
 	$sonos = new PHPSonos($sonoszone[$master][0]);
 	$temp_radio = $sonos->GetMediaInfo();
+	#********************** NEW get text variables*********** ***********
+	$TL = LOAD_T2S_TEXT();
+		
+	$play_stat = $TL['SONOS-TO-SPEECH']['ANNOUNCE_RADIO'] ; 
+	#********************************************************************
 	# Generiert und kodiert Ansage des laufenden Senders
-	$text = ('Radio '.$temp_radio['title']);
+	$text = ($play_stat.' '.$temp_radio['title']);
 	$textstring = ($text);
 	$rawtext = md5($textstring);
 	$filename = "$rawtext";

@@ -1,0 +1,5 @@
+{
+    "require": {
+        "duncan3dc/sonos": "^1.9"
+    }
+}
