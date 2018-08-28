@@ -178,3 +178,6 @@
 			[Bugfix] Network Scan optimiert
 			[Feature] Logging und Error handling erweitert
 			[Feature] Ansage der Zone bei ...action=zapzone (wenn über Radio Favoriten eingeschaltet)
+ 3.4.5		[Bugfix] Korrektur des Links für DWD (Wetter Warnung)
+			[Bugfix] Bauernregel entfernt (Service nicht mehr verfügbar)
+			[Bugfix] Weather4Lox integriert

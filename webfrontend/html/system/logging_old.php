@@ -11,53 +11,42 @@
 * @return: 	log entry
 **/
 
-function LOGGING($message = "", $loglevel = 7, $raw = 0)
+function LOGGING($message = "", $loglevel, $raw = 0)
 {
-	global $pcfg, $L, $config, $lbplogdir, $logfile;
+	global $pcfg, $L, $config;
 	
-	$params = [
-			"name" => "Sonos",
-			"filename" => "$lbplogdir/sonos.log",
-			"append" => 1,
-			];
-	$log = LBLog::newLog($params);	
-	
-	$plugindata = LBSystem::plugindata();
-	#echo $plugindata['PLUGINDB_LOGLEVEL'];	
-	#$config_loglevel = $config['SYSTEM']['LOGLEVEL'];
-	#if (empty($config_loglevel)) {
-	#	$config_loglevel = 7;
-	#}
-	if ($plugindata['PLUGINDB_LOGLEVEL'] >= intval($loglevel) || $loglevel == 8)  {
+	$L = LBSystem::readlanguage("sonos.ini");
+	$config_loglevel = $config['SYSTEM']['LOGLEVEL'];
+	if (empty($config_loglevel)) {
+		$config_loglevel = 7;
+	}
+	if (intval($config_loglevel) >= intval($loglevel) )
+	{
 		($raw == 1)?$message="<br>".$message:$message=htmlentities($message);
-		switch ($loglevel) 	{
-		    case 0:
-		        #LOGEMERGE("$message");
-		        break;
-		    case 1:
-		        LOGALERT("$message");
-		        break;
+		switch ($loglevel)
+		{
 		    case 2:
-		        LOGCRIT("$message");
+		        error_log( "<CRITICAL> PHP-> ".$message );
 		        break;
-			case 3:
-		        LOGERR("$message");
+		    case 3:
+		        error_log( "<ERROR> PHP-> ".$message );
 		        break;
-			case 4:
-				LOGWARN("$message");
+		    case 4:
+		        error_log( "<WARNING> PHP-> ".$message );
 		        break;
 			case 5:
-				LOGOK("$message");
+		        error_log( "<INFO> PHP-> ".$message );
 		        break;
 			case 6:
-				LOGINF("$message");
+				error_log( "<OK> PHP-> ".$message );
 		        break;
 			case 7:
-				LOGDEB("$message");
-			default:
+		    default:
+		        error_log( "PHP-> ".$message );
 		        break;
 		}
-		if ($loglevel < 4) {
+		if ( $loglevel < 4 ) 
+		{
 			if (isset($message) && $message != "" ) notify (LBPPLUGINDIR, $L['BASIS.MAIN_TITLE'], $message);
 		}
 	}
@@ -74,7 +63,7 @@ function LOGGING($message = "", $loglevel = 7, $raw = 0)
 function check_size_logfile()  {
 	global $L;
 	
-	$logsize = filesize(LBPLOGDIR."/sonos.log");
+	$logsize = @filesize(LBPLOGDIR."/sonos.log");
 	if ( $logsize > 5242880 )
 	{
 		LOGGING($L["ERRORS.ERROR_LOGFILE_TOO_BIG"]." (".$logsize." Bytes)",4);

@@ -16,7 +16,7 @@ if (empty($town) or empty($region)) {
 	exit;
 }
 
-$stadtgemeinde = file_get_contents("http://www.dwd.de/DE/wetter/warnungen_gemeinden/warntabellen/warntab_".$region."_node.html");
+$stadtgemeinde = file_get_contents("https://www.dwd.de/DE/wetter/warnungen_gemeinden/warntabellen/warntab_".$region."_node.html");
 
 // Verarbeitung des zurückerhaltenen Strings
 $stadtgemeinde = preg_replace("/<[^>]+>/", "", $stadtgemeinde);

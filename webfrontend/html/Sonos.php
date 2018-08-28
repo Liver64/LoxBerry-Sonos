@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	3.4.2
-# Datum: 	08.05.2018
+# Version: 	3.4.5
+# Datum: 	27.08.2018
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
@@ -34,7 +34,14 @@ echo "<PRE>";
 # https://duncan3dc.github.io/sonos/
 #require_once __DIR__ . "/system/vendor/autoload.php";
 #use duncan3dc\Sonos\Network;
-#$sonos3dc = new Network;
+#$sonos = new Network;
+
+#$controllers = $sonos->getControllers();
+#foreach ($controllers as $controller) {
+#	$room = strtolower($controller->room);
+#    echo "$room = {$controller->getStateName()}\n";
+#}
+#exit;
 
 # prepare variables
 $home = $lbhomedir;

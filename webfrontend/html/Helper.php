@@ -710,6 +710,7 @@ function select_t2s_engine()  {
 function load_t2s_text(){
 	global $config, $t2s_langfile, $t2s_text_stand, $templatepath;
 	
+	echo $templatepath.'/lang/'.$t2s_langfile;
 	if (file_exists($templatepath.'/lang/'.$t2s_langfile)) {
 		$TL = parse_ini_file($templatepath.'/lang/'.$t2s_langfile, true);
 	} else {

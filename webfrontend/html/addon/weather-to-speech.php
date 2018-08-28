@@ -1,7 +1,7 @@
 <?php
 function w2s() 
-// weather-to-speech: Erstellt basierend auf Wunderground eine Wettervorhersage zur Generierung einer
-// TTS Nachricht, übermittelt sie an VoiceRRS und speichert das zurückkommende file lokal ab
+// weather-to-speech: Erstellt basierend auf Weather4Lox eine Wettervorhersage zur Generierung einer
+// TTS Nachricht
 // @Parameter = $text von sonos2.php
  	{
 		global $config, $debug, $town, $home, $psubfolder, $myIP;
@@ -10,32 +10,32 @@ function w2s()
 		#print_r($TL);
 		#exit;
 				
-		// Einlesen der Daten vom Wunderground Plugin
-		if (!file_exists("$home/data/plugins/wu4lox/current.dat")) {
-			LOGGING('Data from Wunderground could be obtainend.',3);
-			LOGGING('The file current.dat could not been opened. Please check Wunderground Plugin!',3);
+		// Einlesen der Daten vom Weather4Lox Plugin
+		if (!file_exists("$home/data/plugins/weather4lox/current.dat")) {
+			LOGGING('Data from Weather4Lox could be obtainend.',3);
+			LOGGING('The file current.dat could not been opened. Please check Weather4Lox Plugin!',3);
 			exit;
 		} else {
-			$current = file_get_contents("$home/data/plugins/wu4lox/current.dat");
+			$current = file_get_contents("$home/data/plugins/weather4lox/current.dat");
 			$current = explode('|',$current);
 		}
-		if (!file_exists("$home/data/plugins/wu4lox/dailyforecast.dat")) {
-			LOGGING('Data from Wunderground could be obtainend.',3);
-			LOGGING('The file dailyforecast.dat could not been opened. Please check Wunderground Plugin!',3);
+		if (!file_exists("$home/data/plugins/weather4lox/dailyforecast.dat")) {
+			LOGGING('Data from Weather4Lox could be obtainend.',3);
+			LOGGING('The file dailyforecast.dat could not been opened. Please check Weather4Lox Plugin!',3);
 			exit;
 		} else {
-			$dailyforecast = file_get_contents("$home/data/plugins/wu4lox/dailyforecast.dat");
+			$dailyforecast = file_get_contents("$home/data/plugins/weather4lox/dailyforecast.dat");
 			$dailyforecast = explode('|',$dailyforecast);
 		}
-		if (!file_exists("$home/data/plugins/wu4lox/hourlyforecast.dat")) {
-			LOGGING('Data from Wunderground could be obtainend.',3);
-			LOGGING('The file hourlyforecast.dat could not been opened. Please check Wunderground Plugin!',3);
+		if (!file_exists("$home/data/plugins/weather4lox/hourlyforecast.dat")) {
+			LOGGING('Data from Weather4Lox could be obtainend.',3);
+			LOGGING('The file hourlyforecast.dat could not been opened. Please check Weather4Lox Plugin!',3);
 			exit;
 		} else {
-			$hourlyforecast = file_get_contents("$home/data/plugins/wu4lox/hourlyforecast.dat");
+			$hourlyforecast = file_get_contents("$home/data/plugins/weather4lox/hourlyforecast.dat");
 			$hourlyforecast = explode('|',$hourlyforecast);
 		}
-		LOGGING('Data from Wunderground has been successful obtainend.',7);
+		LOGGING('Data from Weather4Lox has been successful obtainend.',7);
 		#print_r($current);
 		#print_r($dailyforecast);
 		#print_r($hourlyforecast);

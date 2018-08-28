@@ -71,16 +71,13 @@ function create_tts() {
 		LOGGING("time-to-distance speech plugin has been called", 7);
 		}
 	elseif (isset($_GET['witz'])) {
-		// calls the weather warning-to-speech Function
+		// calls the gimmick Function
 		include_once("addon/gimmicks.php");
 		$textstring = substr(GetWitz(), 0, 1000);
 		LOGGING("Joke plugin has been called", 7);
 		}
 	elseif (isset($_GET['bauernregel'])) {
-		// calls the weather warning-to-speech Function
-		include_once("addon/gimmicks.php");
-		$textstring = substr(GetTodayBauernregel(), 0, 500);
-		LOGGING("Bauernregeln plugin has been called", 7);
+		LOGGING("Service is not longer available", 4);
 		}
 	elseif (isset($_GET['abfall'])) {
 		// calls the wastecalendar-to-speech Function
@@ -257,6 +254,7 @@ function play_tts($messageid) {
 				exit;
 			}
 		}
+		#echo "x-file-cifs:".$mpath."/".trim($messageid).".mp3";
 		$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
 		$sonos->SetPlayMode('NORMAL');
 		LOGGING("Playmode has been set to NORMAL", 7);		
