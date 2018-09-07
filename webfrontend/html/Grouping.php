@@ -140,6 +140,7 @@ function CreateStereoPair() {
 }
 
  
+// NOT IN USE - aufgrund des Wegfalles von ststus/topology nicht mehr nutzbar
 
 /**
 * Function: getRoomCoordinator --> identify the Coordinator for provided room (typically for StereoPair)
@@ -148,7 +149,7 @@ function CreateStereoPair() {
 * @return: array of (0) IP address and (1) Rincon-ID of Master
 */
 
-function getRoomCoordinator($room){
+function getRoomCoordinator_OLD($room){
 	global $sonoszone, $zone, $debug, $master, $sonosclass, $config, $time_start;
 		
 		#$room = $master;
@@ -197,6 +198,20 @@ function getRoomCoordinator($room){
 	if($debug == 1) { 
 		echo 'Group Coordinator-IP: '.$coord[0].'<br><br>';
 	}
+	return $coord;
+ }
+ 
+ 
+ /**
+* Function: getRoomCoordinator --> identify the Coordinator for provided room (typically for StereoPair)
+*
+* @param:  $room
+* @return: array of (0) IP address and (1) Rincon-ID of Master
+*/
+ function getRoomCoordinator($room){
+	global $sonoszone, $zone, $debug, $master, $sonosclass, $config, $time_start;
+	
+	$coord = array($sonoszone[$room][0], $sonoszone[$room][1]);
 	return $coord;
  }
  

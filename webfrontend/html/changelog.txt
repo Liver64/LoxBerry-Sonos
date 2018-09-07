@@ -181,3 +181,4 @@
  3.4.5		[Bugfix] Korrektur des Links für DWD (Wetter Warnung)
 			[Bugfix] Bauernregel entfernt (Service nicht mehr verfügbar)
 			[Bugfix] Weather4Lox integriert
+ 3.4.6		[Bugfix] Quick Fix um die Änderungen seitens Sonos zu kompensieren
