@@ -1,1 +1,1 @@
-*** Quick Fix v3.4.6 to fix functions. Scan for Zones will be a 2nd Quick fix ***
+*** Pre-Release v3.4.7 to fix zone scan function. Pls test and report issues in Forum ***
