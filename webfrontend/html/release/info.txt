@@ -1,1 +1,1 @@
-*** Pre-Release v3.4.7 to fix zone scan function. Pls test and report issues in Forum ***
+*** New Release v3.4.8 to fix Sonos change. ***
