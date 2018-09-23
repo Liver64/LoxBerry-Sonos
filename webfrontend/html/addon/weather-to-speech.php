@@ -48,9 +48,9 @@ function w2s()
 		#-- Aufbereiten der Wetterdaten ---------------------------------------------------------------------
 		$temp_c = $current[11]; 
 		$high0 = $dailyforecast[11]; // Höchsttemperatur heute
-		$high1 = $dailyforecast[38]; // Höchsttemperatur morgen
+		$high1 = $dailyforecast[50]; // Höchsttemperatur morgen
 		$low0 = $dailyforecast[12]; // Tiefsttemperatur heute
-		$low1 = $dailyforecast[39]; // Tiefsttemperatur morgen
+		$low1 = $dailyforecast[51]; // Tiefsttemperatur morgen
 		$wind = $dailyforecast[16]; // max. Windgeschwindigkeit heute
 		$wetter_hc = $current[29]; // Wetterkonditionen
 		$windspeed = $hourlyforecast[17]; // maximale Windgeschwindigkeit nächste Stunde
@@ -58,11 +58,11 @@ function w2s()
 		$wind_dir = $hourlyforecast[15]; // Windrichtung für die nächste Stunde
 		$wetter = $current[29]; // Wetterkonditionen aktuell
 		$conditions0 = $dailyforecast[27]; // allgemeine Wetterdaten heute
-		$conditions1 = $dailyforecast[54]; // allgemeine Wetterdaten morgen
+		$conditions1 = $dailyforecast[66]; // allgemeine Wetterdaten morgen
 		$forecast0 = $dailyforecast[27]; // Wetterlage heute
-		$forecast1 = $dailyforecast[54]; // Wetterlage morgen
+		$forecast1 = $dailyforecast[66]; // Wetterlage morgen
 		$regenwahrscheinlichkeit0 = $dailyforecast[13]; // Regenwahrscheinlichkeit heute
-		$regenwahrscheinlichkeit1 = $dailyforecast[40]; // Regenwahrscheinlichkeit morgen
+		$regenwahrscheinlichkeit1 = $dailyforecast[52]; // Regenwahrscheinlichkeit morgen
 		# Prüfen ob Wetterkürzel vorhanden, wenn ja durch Wörter ersetzen
 		if(ctype_upper($wind_dir)) 
 		{
