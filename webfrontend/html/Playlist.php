@@ -128,6 +128,15 @@ function zapzone() {
 	saveCurrentZone($nextZoneKey);
 	if ($config['VARIOUS']['announceradio'] == 1) {
 		say_zone($nextZoneKey);
+	} else {
+		if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
+			$volume = $_GET['volume'];
+			LOGGING("Volume from syntax been used", 7);		
+		} else 	{
+			// übernimmt Standard Lautstärke der angegebenen Zone aus config.php
+			$volume = $config['sonoszonen'][$master][3];
+			LOGGING("Standard Volume from config been used", 7);		
+		}
 	}
 	unset ($playingzones[$nextZoneKey]);
 	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);

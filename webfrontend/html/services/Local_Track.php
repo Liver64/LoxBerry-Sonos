@@ -34,7 +34,7 @@ function AddTrack() {
 		$length = strripos($uri,'.');
 		$format = trim(substr($uri, $length +1 , $length + 5));
 		$check_audio = AudioFormat(strtoupper($format));
-		$check_audio === false ? LOGGING("The entered audio format: '.".$format."' is not supported by Sonos. Please correct!", 3); exit; : '';
+		$check_audio === false ? LOGGING("The entered audio format: '.".$format."' is not supported by Sonos. Please correct!", 3) : '';
 		// check diff. usage of syntax (WIN or LINUX)
 		$tmp = substr($uri, 0 ,2);
 		if ($tmp == "\\\\") {

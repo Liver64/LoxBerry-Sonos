@@ -1,1 +1,0 @@
-*** New Release v3.4.8 to fix Sonos change. ***

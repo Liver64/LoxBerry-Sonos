@@ -231,8 +231,9 @@ function getRoomCoordinator_OLD($room){
 	}
 	$sonos = new PHPSonos($sonoszone[$room][0]);
 	$group = $sonos->GetZoneGroupAttributes();
+	
 	$tmp_name = $group["CurrentZoneGroupName"];
-	$group = explode(',', $group["CurrentZonePlayerUUIDsInGroup"]);
+	($group = explode(',', $group["CurrentZonePlayerUUIDsInGroup"]));
 	$grouping = array();
 	if(!empty($tmp_name)) {
 		if(count($group) > 1) {
@@ -243,9 +244,10 @@ function getRoomCoordinator_OLD($room){
 		}
 	}
 	if(!empty($grouping)) {
-		if($debug == 1) { 
-			#print_r($grouping);
-		}
+		#if($debug == 1) { 
+			print_r($grouping);
+			echo 'OLLI';
+		#}
 		return $grouping;
 	} else {
 		return false;
@@ -265,10 +267,10 @@ function getGroups() {
 
 	foreach ($sonoszone as $room => $value) {
 		$groups[] = getGroup($room);
-		if($debug == 1) { 
-			#print_r($groups);
+		#if($debug == 1) { 
+			print_r($groups);
 			
-		}
+		#}
 		#return($groups);
 	}
 	#print_r($groups);
