@@ -710,7 +710,7 @@ function select_t2s_engine()  {
 function load_t2s_text(){
 	global $config, $t2s_langfile, $t2s_text_stand, $templatepath;
 	
-	echo $templatepath.'/lang/'.$t2s_langfile;
+	$templatepath.'/lang/'.$t2s_langfile;
 	if (file_exists($templatepath.'/lang/'.$t2s_langfile)) {
 		$TL = parse_ini_file($templatepath.'/lang/'.$t2s_langfile, true);
 	} else {
@@ -819,6 +819,38 @@ function mp3_files($playgongfile) {
 	}
 	#print_r($file_only);
 	return (in_array($playgongfile, $file_only));
+}
+
+
+/**
+* Function : check_rampto --> check if rampto settings in config are set
+*
+* @param: 
+* @return: array 
+**/
+
+function check_rampto() {
+	global $config, $volume, $sonos, $sonoszonen, $master;
+	
+	if(empty($config['TTS']['volrampto'])) {
+		$ramptovol = "25";
+		LOGGING("Rampto Volume in config has not been set. Default Volume '".$sonoszonen[$master][4]."' from Zone '".$master."' has been taken, please update Plugin Config (T2S Optionen).", 4);
+	} else {
+		$ramptovol = $config['TTS']['volrampto'];
+		#LOGGING("Rampto Volume from config has been set.", 7);
+	}
+	if(empty($config['TTS']['rampto'])) {
+		$rampto = "ALARM_RAMP_TYPE";
+		LOGGING("Rampto Parameter (sleep, alarm, auto) in config has not been set. Default of 'auto' has been taken, please update Plugin Config (T2S Optionen).", 4);
+	} else {
+		$rampto = $config['TTS']['rampto'];	
+		#LOGGING("Rampto Parameter from config has been set.", 7);
+	}
+	if($sonos->GetVolume() <= $ramptovol)	{
+		$ramptovol = $volume;
+	}
+	$sonos->RampToVolume($rampto, $ramptovol);	
+	return;	
 }
 
  

@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	3.4.6
-# Datum: 	07.09.2018
+# Version: 	3.5.0
+# Datum: 	04.10.2018
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
@@ -237,12 +237,8 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'play';
 			$posinfo = $sonos->GetPositionInfo();
 			if(!empty($posinfo['TrackURI'])) {
-				if(empty($config['TTS']['volrampto'])) {
-					$config['TTS']['volrampto'] = "25";
-					LOGGING("Rampto Volume in config has not been set. Default of 25% Volume has been taken, please update Plugin Config (T2S Optionen).", 4);
-				}
 				if($sonos->GetVolume() <= $config['TTS']['volrampto']) {
-					$sonos->RampToVolume($config['TTS']['rampto'], $volume);
+					check_rampto();
 					if($config['LOXONE']['LoxDaten'] == 1) {
 						sendUDPdata();
 					}
@@ -334,7 +330,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 					$SaveVol = $sonos->GetVolume();
 					$sonos->SetVolume(5);
 					$sonos->SetMute(false);
-					$sonos->RampToVolume("ALARM_RAMP_TYPE", $SaveVol);
+					#$sonos->RampToVolume("ALARM_RAMP_TYPE", $SaveVol);
 				}
 			}
 			else if($_GET['mute'] == 'true') {
@@ -429,17 +425,9 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$playlistgesammt = count($sonos->GetCurrentPlaylist());
 						
 			if ($titelaktuel < $playlistgesammt) {
-			$sonos->SetQueue("x-rincon-queue:" . trim($sonoszone[$master][1]) . "#0");
-				if(empty($config['TTS']['volrampto'])) {
-					$config['TTS']['volrampto'] = "25";
-					LOGGING("Rampto Volume in config has not been set. Default of 25% Volume has been taken, please update Plugin Config (T2S Optionen).", 4);
-				}
-				if($sonos->GetVolume() <= $config['TTS']['volrampto'])	{
-					$sonos->RampToVolume($config['TTS']['rampto'], $volume);
-					$sonos->Play();
-				} else{
-					$sonos->Play();
-				}
+				$sonos->SetQueue("x-rincon-queue:" . trim($sonoszone[$master][1]) . "#0");
+				check_rampto();
+				$sonos->Play();
 			} else {
 				LOGGING("No tracks in Playlist to play.", 5);
 			}
@@ -656,7 +644,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 	# Debug Bereich ------------------------------------------------------
 
 		case 'checksonos':
-			if($debug == 1) { 
+			#if($debug == 1) { 
 				echo '<PRE>';
 				echo 'Test GetMediaInfo()';
 				echo '<br>';
@@ -682,7 +670,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				echo '<br>';
 				print_r($sonos->GetZoneGroupAttributes());
 				echo '<br><br>';
-			}
+			#}
 			LOGGING("Checksonos been executed.", 7);
 		break;
 		
@@ -691,6 +679,9 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			getZoneStatus($master);
 		break;
 			
+		case 'getzonegroupstate':
+			print_r($sonos->GetZoneGroupState1($master));
+		break;
 
 		case 'getmediainfo':
 			echo '</PRE>';

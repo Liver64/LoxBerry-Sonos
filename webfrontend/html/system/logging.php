@@ -14,7 +14,7 @@
 function LOGGING($message = "", $loglevel = 7, $raw = 0)
 {
 	global $pcfg, $L, $config, $lbplogdir, $logfile;
-	
+
 	$params = [
 			"name" => "Sonos",
 			"filename" => "$lbplogdir/sonos.log",

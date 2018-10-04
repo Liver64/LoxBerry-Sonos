@@ -50,11 +50,7 @@ function radio(){
 			$sonosroom->SetVolume($config['sonoszonen'][$master][4]);
 		} else {
 			if(empty($config['TTS']['volrampto'])) {
-				$config['TTS']['volrampto'] = "25";
-				LOGGING("Rampto Volume in config has not been set. Default of 25% Volume has been taken, please update Plugin Config (T2S Optionen).", 4);
-			}
-			if($sonos->GetVolume() <= $config['TTS']['volrampto'])	{
-				$sonos->RampToVolume($config['TTS']['rampto'], $volume);
+				check_rampto();
 			} else {
 				$sonos->SetVolume($volume);
 			}
@@ -124,7 +120,7 @@ function nextradio() {
 		$sonos->SetVolume($radiovolume);
 		$sonos->Play();
 	} else {
-		$sonos->RampToVolume($config['TTS']['rampto'], $volume);
+		check_rampto();
 		$sonos->Play();
 	}
 	LOGGING("Radio Station '".$radioname["title"]."' has been loaded successful by nextradio",6);
@@ -168,13 +164,7 @@ function random_radio() {
 	$sonos->SetMute(false);
 	$sonos->SetRadio(urldecode($sonoslists[$random]["res"]),$sonoslists[$random]["title"]);
 	if (!isset($_GET['volume'])) {
-		if(empty($config['TTS']['volrampto'])) {
-			$config['TTS']['volrampto'] = "25";
-			LOGGING("Rampto Volume in config has not been set. Default of 25% Volume has been taken, please update Plugin Config (T2S Optionen).", 4);
-		}
-		if($sonos->GetVolume() <= $config['TTS']['volrampto']) {
-			$sonos->RampToVolume($config['TTS']['rampto'], $volume);
-		}	
+		check_rampto();
 	} else {
 		$radiovolume = $sonos->GetVolume();
 		$sonos->SetVolume($radiovolume);

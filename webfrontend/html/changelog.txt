@@ -186,3 +186,4 @@
  3.4.8		[Bugfix] Release: Änderungen bzgl. Scannen nach Zonen und Korrektur um Darksky zu supporten
  3.4.9		[Bugfix] Typo in Local Track behoben
 			[Bugfix] Volumeübernahme bei Zapzone hinzugefügt
+ 3.5.0		[Bugfix] Div. Probleme bei PL und Radiofuktionen behoben (rampto Parameter in config nicht gesetzt)

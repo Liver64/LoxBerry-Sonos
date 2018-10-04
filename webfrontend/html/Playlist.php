@@ -17,9 +17,9 @@ function playlist() {
 	if(isset($_GET['playlist'])) {
 		$sonos->SetQueue("x-rincon-queue:" . trim($sonoszone[$master][1]) . "#0"); 
 		$playlist = $_GET['playlist'];
-		LOGGING("Playlist has been found.", 7);
+		LOGGING("Playlist '".$_GET['playlist']."' has been found.", 7);
 	} else {
-		LOGGING("No playlist with the specified name found.", 3);
+		LOGGING("No playlist named '".$_GET['playlist']."' has been found.", 3);
 		exit;
 	}
 	
@@ -52,19 +52,9 @@ function playlist() {
 				LOGGING("Standardvolume for master has been set.", 7);
 				$sonos->Play();
 			} else {
-				if(empty($config['TTS']['volrampto'])) {
-					$config['TTS']['volrampto'] = "25";
-					LOGGING("Rampto Volume in config has not been set. Default of 25% Volume has been taken, please update Plugin Config (T2S Optionen).", 4);
-				}
-				if($sonos->GetVolume() <= $config['TTS']['volrampto'])	{
-					$sonos->RampToVolume($config['TTS']['rampto'], $volume);
-					$sonos->Play();
-					LOGGING("Rampto Volume from Syntax has been set.", 7);
-				} else {
-					$sonos->Play();
-					LOGGING("Volume from Syntax has been set.", 7);
-				}
+				check_rampto();
 			}
+			$sonos->Play();
 			LOGGING("Playlist is playing.", 7);
 			$gefunden = 1;
 		}
@@ -316,13 +306,7 @@ function random_playlist() {
 	$sonos->AddToQueue($plfile);
 	$sonos->SetQueue("x-rincon-queue:". trim($sonoszone[$master][1]) ."#0"); 
 	if (!isset($_GET['volume'])) {
-		if(empty($config['TTS']['volrampto'])) {
-			$config['TTS']['volrampto'] = "25";
-			LOGGING("Rampto Volume in config has not been set. Default of 25% Volume has been taken, please update Plugin Config (T2S Optionen).", 4);
-		}
-		if($sonos->GetVolume() <= $config['TTS']['volrampto']) {
-			$sonos->RampToVolume($config['TTS']['rampto'], $volume);
-		}	
+		check_rampto();
 	}
 	LOGGING("Random playlist has been added to Queue.", 6);
 	$sonos->Play();
