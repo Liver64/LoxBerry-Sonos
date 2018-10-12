@@ -97,7 +97,7 @@ my $cgi = CGI->new;
 $cgi->import_names('R');
 
 LOGSTART "Sonos UI started";
-}
+
 
 ##########################################################################
 
