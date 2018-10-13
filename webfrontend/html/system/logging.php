@@ -11,18 +11,20 @@
 * @return: 	log entry
 **/
 
+$params = [
+		"name" => "Sonos",
+		"filename" => "$lbplogdir/sonos.log",
+		"append" => 1,
+		];
+$log_sonos = LBLog::newLog($params);	
+LOGSTART "Sonos";
+
+$plugindata = LBSystem::plugindata();
+	
 function LOGGING($message = "", $loglevel = 7, $raw = 0)
 {
-	global $pcfg, $L, $config, $lbplogdir, $logfile;
+	global $log_sonos, $plugindata, $pcfg, $L, $config, $lbplogdir, $logfile;
 
-	$params = [
-			"name" => "Sonos",
-			"filename" => "$lbplogdir/sonos.log",
-			"append" => 1,
-			];
-	$log = LBLog::newLog($params);	
-	
-	$plugindata = LBSystem::plugindata();
 	#echo $plugindata['PLUGINDB_LOGLEVEL'];	
 	#$config_loglevel = $config['SYSTEM']['LOGLEVEL'];
 	#if (empty($config_loglevel)) {
@@ -35,25 +37,25 @@ function LOGGING($message = "", $loglevel = 7, $raw = 0)
 		        #LOGEMERGE("$message");
 		        break;
 		    case 1:
-		        LOGALERT("$message");
+		        $log_sonos->LOGALERT("$message");
 		        break;
 		    case 2:
-		        LOGCRIT("$message");
+		        $log_sonos->LOGCRIT("$message");
 		        break;
 			case 3:
-		        LOGERR("$message");
+		        $log_sonos->LOGERR("$message");
 		        break;
 			case 4:
-				LOGWARN("$message");
+				$log_sonos->LOGWARN("$message");
 		        break;
 			case 5:
-				LOGOK("$message");
+				$log_sonos->LOGOK("$message");
 		        break;
 			case 6:
-				LOGINF("$message");
+				$log_sonos->LOGINF("$message");
 		        break;
 			case 7:
-				LOGDEB("$message");
+				$log_sonos->LOGDEB("$message");
 			default:
 		        break;
 		}
