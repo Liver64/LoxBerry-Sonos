@@ -334,7 +334,7 @@
 		<div style="display:table; width:80%;">
 			<div style="display:table-row;">
 				<div style="display:table-cell; min-witdh:30%; width:30%;">
-						<div style="display:table; width:90%; padding:10px; border: 1px solid black; border-radius: 5px; background-color: #bebebe;">
+						<div style="display:table; width:50%; padding:10px; border: 1px solid black; border-radius: 5px; background-color: #bebebe;">
 							 <div style="display:table-row;">
 								<div style="display:table-cell; border-radius: 5px;" id="delete_log_div">
 								 <button id="delete_log_btn" onclick="$('#delete_log_btn').html('<TMPL_VAR TEMPLATE.LOG_BUTTON_DELETE_WAIT>'); $.ajax({url: '', type: 'GET', data: { 'delete_log':1},
@@ -351,15 +351,7 @@
 								<div style="display:table-cell;">
 								 	<button onclick="window.open('/admin/system/tools/logfile.cgi?logfile=<TMPL_VAR LOGFILE>&amp;header=html&amp;format=template', 'log'); return false;" id="logview" data-role="button" data-inline="true" data-mini="true" data-icon="bars"><TMPL_VAR TEMPLATE.BUTTON_LOG_VIEW></button>
 								</div>
-								<div style="display:table-cell;">
-									<select id="LOGLEVEL" name="LOGLEVEL" data-mini="true">
-										<option value="7" selected><TMPL_VAR TEMPLATE.LOGLEVEL> <TMPL_VAR TEMPLATE.LOGLEVEL7></option>
-										<option value="4"><TMPL_VAR TEMPLATE.LOGLEVEL> <TMPL_VAR TEMPLATE.LOGLEVEL4></option>
-										<option value="3"><TMPL_VAR TEMPLATE.LOGLEVEL> <TMPL_VAR TEMPLATE.LOGLEVEL3></option>
-										<option value="2"><TMPL_VAR TEMPLATE.LOGLEVEL> <TMPL_VAR TEMPLATE.LOGLEVEL2></option>
-									 </select>
-								 <script> $("#LOGLEVEL").val('<TMPL_VAR SYSTEM.LOGLEVEL>'); </script>
-								</div>
+								
 								</div>
 							 </div>
 							</div>
@@ -367,7 +359,7 @@
 					</div>
 				</td>
 			<td style="height: 60px; width: 201px;">
-				<font size="-1"><TMPL_VAR T2S.NOTE_DEBUGGING></font>
+				<!--<font size="-1"><TMPL_VAR T2S.NOTE_DEBUGGING></font>-->
 			</td>
 			<td style="height: 60px"></td>
 			<tr>

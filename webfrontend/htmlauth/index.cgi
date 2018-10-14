@@ -69,7 +69,7 @@ my $pluginconfigfile 			= "sonos.cfg";
 my $pluginplayerfile 			= "player.cfg";
 my $pluginlogfile				= "sonos.log";
 my $urlfile						= "https://raw.githubusercontent.com/Liver64/LoxBerry-Sonos/master/webfrontend/html/release/info.txt";
-my $log 						= LoxBerry::Log->new ( name => 'Sonos', filename => $lbplogdir ."/". $pluginlogfile, append => 1, addtime => 1 );
+my $log 						= LoxBerry::Log->new ( name => 'UI', filename => $lbplogdir ."/". $pluginlogfile, append => 1, addtime => 1 );
 my $plugintempplayerfile	 	= "tmp_player.json";
 my $scanzonesfile	 			= "network.php";
 my $helplink 					= "http://www.loxwiki.eu/display/LOXBERRY/Sonos4Loxone";
@@ -96,12 +96,8 @@ my $lbversion = LoxBerry::System::lbversion();
 my $cgi = CGI->new;
 $cgi->import_names('R');
 
-# check if logfile is empty
-if (-z $lbplogdir."/".$pluginlogfile) {
-	system("/usr/bin/date > $pluginlogfile");
-	$log->open;
-	LOGSTART "Sonos Logfile started";
-}
+LOGSTART "Sonos UI started";
+
 
 ##########################################################################
 
@@ -113,7 +109,7 @@ if ( $R::delete_log )
 	my $pluginlogfile = $log->close;
 	system("/usr/bin/date > $pluginlogfile");
 	$log->open;
-	LOGSTART "Sonos Logfile restarted";
+	LOGSTART "Sonos UI restarted";
 	print "Content-Type: text/plain\n\nOK";
 	exit;
 }
@@ -762,4 +758,15 @@ sub error
 	LoxBerry::Web::lbfooter();
 }
 
+#####################################################
+# Close log on every end
+#####################################################
 
+END 
+{
+	eval {
+		if(defined $log) {
+			LOGEND;
+		}
+	};
+}

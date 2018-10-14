@@ -146,12 +146,18 @@ echo '<PRE>';
 
 	# checking size of LoxBerry logfile
 	check_size_logfile();
-
+	
+	$params = [	"name" => "Sonos PHP",
+			"filename" => "$lbplogdir/sonos.log",
+			"append" => 1,
+			];
+	LBLog::newLog($params);	
 	// check if getsonosinfo has been executed, if yes, skip LOGGING
 	$find = strripos($syntax, "=");
 	$sonospush = substr($syntax, $find + 1, 300);
 	if ($sonospush !== 'getsonosinfo')  {
 		# create entries in logfile
+		LOGSTART("Sonos PHP started");
 		LOGGING("called syntax: ".$myIP."".urldecode($syntax),5);
 		LOGGING("$performonlinecheck",7);
 		($checkonline === true) ? LOGGING("$zoneson",7) : "";
@@ -350,7 +356,9 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 			
 		case 'stopall';
+			checkifmaster($master);
 			foreach ($sonoszonen as $zone => $player) {
+				checkifmaster($zone);
 				$sonos = new PHPSonos($sonoszonen[$zone][0]);
 				$sonos->Stop();
 			}
@@ -1329,6 +1337,9 @@ function SetBalance()  {
 		LOGGING('No valid entry for Balance has been entered or syntax is incomplete, please correct!', 3);
 		exit;
 	}
+}
+if ($sonospush !== 'getsonosinfo')  {
+	LOGEND("Sonos PHP finished");
 }
 ?>
 

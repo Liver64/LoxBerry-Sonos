@@ -187,3 +187,6 @@
  3.4.9		[Bugfix] Typo in Local Track behoben
 			[Bugfix] Volumeübernahme bei Zapzone hinzugefügt
  3.5.0		[Bugfix] Div. Probleme bei PL und Radiofuktionen behoben (rampto Parameter in config nicht gesetzt)
+ 3.5.1		[Bugfix] Funktion stopall korrigiert um Fehler bei Gruppen zu verhindern
+			[Bugfix] Logging optimiert 
+			[Feature] Loglevel aus Plugin entfernt (default ist LB Plugin level)

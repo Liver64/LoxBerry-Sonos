@@ -245,8 +245,8 @@ function getRoomCoordinator_OLD($room){
 	}
 	if(!empty($grouping)) {
 		#if($debug == 1) { 
-			print_r($grouping);
-			echo 'OLLI';
+			#print_r($grouping);
+			#echo 'OLLI';
 		#}
 		return $grouping;
 	} else {
