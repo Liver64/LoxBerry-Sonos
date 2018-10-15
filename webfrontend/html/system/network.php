@@ -35,8 +35,15 @@ echo "<PRE>";
 ini_set("log_errors", 7);
 ini_set("error_log", LBPLOGDIR."/sonos.log");
 
-LOGGING("LoxBerry v".$lb_version." with hostname ".$lb_hostname." has been detected",5);
-LOGGING("Sonos Plugin v".$pluginversion." is installed at folder ".$folder,5);
+$params = [	"name" => "Sonos PHP",
+			"filename" => "$lbplogdir/sonos.log",
+			"append" => 1,
+			];
+LBLog::newLog($params);
+$plugindata = LBSystem::plugindata();
+
+LOGGING("LoxBerry v".$lb_version." with hostname ".$lb_hostname." has been detected",6);
+LOGGING("Sonos Plugin v".$pluginversion." is installed at folder ".$folder,6);
 
 
 	$ip = '239.255.255.250';
@@ -131,11 +138,22 @@ LOGGING("Sonos Plugin v".$pluginversion." is installed at folder ".$folder,5);
 	#print_r($sonosnet);
 	if(empty($sonosnet)) {
 		$finalzones = $sonosfinal;
+		$count_player = count($finalzones);
+		foreach ($finalzones as $found_zones => $key)  {
+			LOGGING("New Sonos Player: '".$key[2]."' called: '".$found_zones."' using IP: '".$key[0]."' and Rincon-ID: '".$key[1]."' will be added to your Plugin." ,5);
+		}
 	} else {
 		// computes the difference of arrays with additional index check
 		$finalzones = @array_diff_assoc($sonosfinal, $sonosnet);
+		if (empty($finalzones))  {
+			LOGGING("No new Sonos Player has been detected." ,5);
+		} else {
+			foreach ($finalzones as $found_zones => $key)  {
+				LOGGING("New Sonos Player: '".$key[2]."' called: '".$found_zones."' using IP: '".$key[0]."' and Rincon-ID: '".$key[1]."' will be added to your Plugin." ,5);
+			}
+		}
 	}
-	print_r($finalzones);
+	#print_r($finalzones);
 	// save array as JSON file
 	$d = array2json($finalzones);
 	$fh = fopen($home.'/config/plugins/'.$folder.'/tmp_player.json', 'w');

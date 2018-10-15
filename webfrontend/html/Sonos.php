@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	3.5.0
-# Datum: 	04.10.2018
+# Version: 	3.5.1
+# Datum: 	14.10.2018
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
@@ -152,6 +152,8 @@ echo '<PRE>';
 			"append" => 1,
 			];
 	LBLog::newLog($params);	
+	$plugindata = LBSystem::plugindata();
+	
 	// check if getsonosinfo has been executed, if yes, skip LOGGING
 	$find = strripos($syntax, "=");
 	$sonospush = substr($syntax, $find + 1, 300);

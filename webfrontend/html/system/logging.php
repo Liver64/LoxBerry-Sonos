@@ -13,16 +13,8 @@
 
 function LOGGING($message = "", $loglevel = 7, $raw = 0)
 {
-	global $pcfg, $L, $config, $lbplogdir, $logfile;
+	global $pcfg, $L, $config, $lbplogdir, $logfile, $plugindata;
 
-	$params = [
-			"name" => "Sonos PHP",
-			"filename" => "$lbplogdir/sonos.log",
-			"append" => 1,
-			];
-	$log = LBLog::newLog($params);	
-	$plugindata = LBSystem::plugindata();
-	
 	if ($plugindata['PLUGINDB_LOGLEVEL'] >= intval($loglevel) || $loglevel == 8)  {
 		($raw == 1)?$message="<br>".$message:$message=htmlentities($message);
 		switch ($loglevel) 	{
