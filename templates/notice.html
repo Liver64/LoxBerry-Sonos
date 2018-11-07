@@ -1,4 +1,6 @@
+﻿
 	<center>
+		<form method="post" data-ajax="false" name="notice_form" id="notice_form" action="<TMPL_VAR SELFURL>">
 		<table width="100%" border=0>
 			<tr>
 				<td align="center">
@@ -19,27 +21,18 @@
 				<td align="center">
 					<p>
 						<a id="btnok" data-role="button" data-inline="true" data-mini="true" data-icon="check" onclick="location.href='index.cgi?form=main_form'"><TMPL_VAR BUTTON_BACK></a>
-						<a id="btok" data-role="button" data-inline="true" data-mini="true" data-icon="check" onclick="<TMPL_VAR BUTTNEXT>"><TMPL_IF NAME="BOOL"><TMPL_VAR ZONES.BUTTON_SSDP><TMPL_ELSE><TMPL_VAR ZONES.BUTTON_NEXT></TMPL_IF></a>
+						<a id="btok" data-role="button" data-inline="true" data-mini="true" data-icon="check" onclick="location.href='index.cgi?do=scanning'"><TMPL_VAR ZONES.BUTTON_NEXT></a>
 					</p>
 				</td>
 			</tr>
 		</table>
+		</form>
 	</center>
-	<script>
-	
-	// Scan for Players
-	function Scanning() 
-	{
-		url = './index.cgi?do=scanning';
-		document.location.href = url;
-	}
-	
-	// Scan for Players
-	function SSDP_widget() 
-	{
-		url = '/admin/system/services.php?load=2';
-		document.location.href = url;
-	}
 
-	</script>
+
+
+	
+	
+	
+
 

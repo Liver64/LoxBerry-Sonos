@@ -71,13 +71,16 @@ function create_tts() {
 		LOGGING("time-to-distance speech plugin has been called", 7);
 		}
 	elseif (isset($_GET['witz'])) {
-		// calls the gimmick Function
+		// calls the weather warning-to-speech Function
 		include_once("addon/gimmicks.php");
 		$textstring = substr(GetWitz(), 0, 1000);
 		LOGGING("Joke plugin has been called", 7);
 		}
 	elseif (isset($_GET['bauernregel'])) {
-		LOGGING("Service is not longer available", 4);
+		// calls the weather warning-to-speech Function
+		include_once("addon/gimmicks.php");
+		$textstring = substr(GetTodayBauernregel(), 0, 500);
+		LOGGING("Bauernregeln plugin has been called", 7);
 		}
 	elseif (isset($_GET['abfall'])) {
 		// calls the wastecalendar-to-speech Function
@@ -254,7 +257,6 @@ function play_tts($messageid) {
 				exit;
 			}
 		}
-		#echo "x-file-cifs:".$mpath."/".trim($messageid).".mp3";
 		$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
 		$sonos->SetPlayMode('NORMAL');
 		LOGGING("Playmode has been set to NORMAL", 7);		
@@ -415,7 +417,7 @@ function sendmessage() {
 			$mode = "";
 			$actual[$master]['CONNECT'] == 'true' ? $mode = '1' : $mode = '0';
 			SetVolumeModeConnect($mode, $master);
-			delmp3();
+			#delmp3();
 			$time_end = microtime(true);
 			$t2s_time = $time_end - $time_start;
 			#echo "Die T2S dauerte ".round($t2s_time, 2)." Sekunden.\n";
@@ -553,7 +555,7 @@ function sendgroupmessage() {
 			SetVolumeModeConnect($mode, $master);
 			#$modeback = '1' ? $mode = '1' : $mode = '0';
 			#SetVolumeModeConnect($mode);
-			delmp3();
+			#delmp3();
 			$time_end = microtime(true);
 			$t2s_time = $time_end - $time_start;
 			#echo "Die T2S dauerte ".round($t2s_time, 2)." Sekunden.\n";

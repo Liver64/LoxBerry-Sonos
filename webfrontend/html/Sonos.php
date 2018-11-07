@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	3.5.1
-# Datum: 	14.10.2018
+# Version: 	3.4.2
+# Datum: 	08.05.2018
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
@@ -34,14 +34,7 @@ echo "<PRE>";
 # https://duncan3dc.github.io/sonos/
 #require_once __DIR__ . "/system/vendor/autoload.php";
 #use duncan3dc\Sonos\Network;
-#$sonos = new Network;
-
-#$controllers = $sonos->getControllers();
-#foreach ($controllers as $controller) {
-#	$room = strtolower($controller->room);
-#    echo "$room = {$controller->getStateName()}\n";
-#}
-#exit;
+#$sonos3dc = new Network;
 
 # prepare variables
 $home = $lbhomedir;
@@ -94,7 +87,7 @@ echo '<PRE>';
 		
 	// Update config array
 	$config['SYSTEM']['messageStorePath'] = $MessageStorepath;
-	$config['VARIOUS']['maxzap'] = $maxzap;
+	#$config['VARIOUS']['maxzap'] = $maxzap;
 
 	// Übernahme und Deklaration von Variablen aus der Konfiguration
 	$sonoszonen = $config['sonoszonen'];
@@ -145,21 +138,13 @@ echo '<PRE>';
 	$t2s_langfile = "t2s-text_".substr($config['TTS']['messageLang'],0,2).".ini";				// language file for text-speech
 
 	# checking size of LoxBerry logfile
-	check_size_logfile();
-	
-	$params = [	"name" => "Sonos PHP",
-			"filename" => "$lbplogdir/sonos.log",
-			"append" => 1,
-			];
-	LBLog::newLog($params);	
-	$plugindata = LBSystem::plugindata();
-	
+	#check_size_logfile();
+
 	// check if getsonosinfo has been executed, if yes, skip LOGGING
 	$find = strripos($syntax, "=");
 	$sonospush = substr($syntax, $find + 1, 300);
 	if ($sonospush !== 'getsonosinfo')  {
 		# create entries in logfile
-		LOGSTART("Sonos PHP started");
 		LOGGING("called syntax: ".$myIP."".urldecode($syntax),5);
 		LOGGING("$performonlinecheck",7);
 		($checkonline === true) ? LOGGING("$zoneson",7) : "";
@@ -239,14 +224,21 @@ if(isset($_GET['rampto'])) {
 	}
 
 if(array_key_exists($_GET['zone'], $sonoszone)){ 
+
+	global $json;
+	
 	$master = $_GET['zone'];
 	$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 	switch($_GET['action'])	{
 		case 'play';
 			$posinfo = $sonos->GetPositionInfo();
 			if(!empty($posinfo['TrackURI'])) {
+				if(empty($config['TTS']['volrampto'])) {
+					$config['TTS']['volrampto'] = "25";
+					LOGGING("Rampto Volume in config has not been set. Default of 25% Volume has been taken, please update Plugin Config (T2S Optionen).", 4);
+				}
 				if($sonos->GetVolume() <= $config['TTS']['volrampto']) {
-					check_rampto();
+					$sonos->RampToVolume($config['TTS']['rampto'], $volume);
 					if($config['LOXONE']['LoxDaten'] == 1) {
 						sendUDPdata();
 					}
@@ -338,7 +330,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 					$SaveVol = $sonos->GetVolume();
 					$sonos->SetVolume(5);
 					$sonos->SetMute(false);
-					#$sonos->RampToVolume("ALARM_RAMP_TYPE", $SaveVol);
+					$sonos->RampToVolume("ALARM_RAMP_TYPE", $SaveVol);
 				}
 			}
 			else if($_GET['mute'] == 'true') {
@@ -358,9 +350,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 			
 		case 'stopall';
-			checkifmaster($master);
 			foreach ($sonoszonen as $zone => $player) {
-				checkifmaster($zone);
 				$sonos = new PHPSonos($sonoszonen[$zone][0]);
 				$sonos->Stop();
 			}
@@ -435,9 +425,17 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$playlistgesammt = count($sonos->GetCurrentPlaylist());
 						
 			if ($titelaktuel < $playlistgesammt) {
-				$sonos->SetQueue("x-rincon-queue:" . trim($sonoszone[$master][1]) . "#0");
-				check_rampto();
-				$sonos->Play();
+			$sonos->SetQueue("x-rincon-queue:" . trim($sonoszone[$master][1]) . "#0");
+				if(empty($config['TTS']['volrampto'])) {
+					$config['TTS']['volrampto'] = "25";
+					LOGGING("Rampto Volume in config has not been set. Default of 25% Volume has been taken, please update Plugin Config (T2S Optionen).", 4);
+				}
+				if($sonos->GetVolume() <= $config['TTS']['volrampto'])	{
+					$sonos->RampToVolume($config['TTS']['rampto'], $volume);
+					$sonos->Play();
+				} else{
+					$sonos->Play();
+				}
 			} else {
 				LOGGING("No tracks in Playlist to play.", 5);
 			}
@@ -654,7 +652,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 	# Debug Bereich ------------------------------------------------------
 
 		case 'checksonos':
-			#if($debug == 1) { 
 				echo '<PRE>';
 				echo 'Test GetMediaInfo()';
 				echo '<br>';
@@ -680,7 +677,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				echo '<br>';
 				print_r($sonos->GetZoneGroupAttributes());
 				echo '<br><br>';
-			#}
 			LOGGING("Checksonos been executed.", 7);
 		break;
 		
@@ -689,9 +685,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			getZoneStatus($master);
 		break;
 			
-		case 'getzonegroupstate':
-			print_r($sonos->GetZoneGroupState1($master));
-		break;
 
 		case 'getmediainfo':
 			echo '</PRE>';
@@ -1155,7 +1148,24 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			LOGGING("EQ Settings for Player ".$master." has been reset.", 7);
 		break;
 		
-		
+		case 'ttsp':
+			$text = ($_GET['text']);
+			isset($_GET['greet']) ? $greet = 1 : $greet = 0;
+			$jsonstr = get_results($text, $greet);  // 
+			$json = json_decode($jsonstr, True);
+			#print_r($jsonstr);
+			#sleep(2);
+			#echo $json['full-httpinterface'];
+			$sonos->AddToQueue($json['full-httpinterface']);
+			$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
+			$sonos->SetTrack(1);
+			$sonos->SetVolume($volume);
+			$sonos->Play();
+			usleep($json['duration-ms'] * 1000);
+			$sonos->ClearQueue();
+			
+		break;
+				
 		case 'getzoneinfo':
 			$GetZoneInfo = $sonos->GetzoneInfo();
 			echo '<PRE>';
@@ -1180,7 +1190,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		   LOGGING("This command is not known. Pls use syntax as: 'http://<IP or HOSTENAME of LoxBerry>/plugins/sonos4lox/index.php/?zone=sonosplayer&action=function&value=option'", 3);
 		} 
 	} else 	{
-	LOGGING("The Zone ".$master." is not available or offline. Please check and if necessary add zone to Config", 3);
+	LOGGING("The Zone ".$master." is not available or offline. Please check and if necessary add zone to Config", 4);
 	exit;
 }
 
@@ -1197,7 +1207,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 	global $config, $debug, $time_start;
 	
 	# http://www.php-space.info/php-tutorials/75-datei,nach,alter,loeschen.html	
-	$dir = $config['SYSTEM']['messageStorePath'];
+	$dir = $MessageStorepath;
     $folder = dir($dir);
 	$store = '-'.$config['MP3']['MP3store'].' days';
 	while ($dateiname = $folder->read()) {
@@ -1212,11 +1222,8 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			}
         }
     }
-	#if($debug == 1) { 
-		#echo "<br>All files according to criteria were successfully deleted";
-		LOGGING("All files according to criteria were successfully deleted", 7);
-	#}
-    $folder->close();
+	LOGGING("All files according to criteria were successfully deleted", 7);
+	$folder->close();
     return; 	 
  }
  
@@ -1340,8 +1347,61 @@ function SetBalance()  {
 		exit;
 	}
 }
-if ($sonospush !== 'getsonosinfo')  {
-	LOGEND("Sonos PHP finished");
+
+
+  
+function get_results($text, $greet) {
+	 
+	global $myIP;
+	
+	// API Url
+	$url = 'http://'.$myIP.'/plugins/text2speech/index.php';
+	#$url = 'http://'.$myIP.'/plugins/text2speech/index.php?json=1';
+	
+	// Initiate cURL.
+	$ch = curl_init($url);
+	 
+	// populate JSON data.
+	$jsonData = array(
+		'text' => $text,
+		'greet' => $greet
+	);
+		 
+	// Encode the array into JSON.
+	$jsonDataEncoded = json_encode($jsonData);
+		 
+	// Tell cURL that we want to send a POST request.
+	curl_setopt($ch, CURLOPT_POST, 1);
+	 
+	// Attach our encoded JSON string to the POST fields.
+	curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonDataEncoded);
+	 
+	// Set the content type to application/json
+	curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json')); 
+	
+	// Request response from Call
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		 
+	// Execute the request
+	$result = curl_exec($ch);
+	
+	// was the request successful?
+	if($result === false)  {
+		LOGGIN("Der POST Request war nicht erfolgreich!", 7);
+		#echo'<br>';
+		#echo'<br>';
+	} else {
+		LOGGING("Der POST Request war erfolgreich!", 7);
+		#echo'<br>';
+		#echo'<br>';
+	}
+	// close cURL
+	curl_close($ch);
+	return $result;
+
+
+
+
 }
 ?>
 

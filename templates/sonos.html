@@ -26,6 +26,10 @@
 
 </style>
 
+<TMPL_IF FORM>
+<!-- form 'FORM' START -->
+
+
 
 <form method="post" data-ajax="false" accept-charset="utf-8" name="main_form" id="main_form" action="<TMPL_VAR SELFURL>">
 	<input type="hidden" name="saveformdata" value="1">
@@ -182,16 +186,14 @@
 			<tr>
 				<td width="19%">
 					<select id="mp3store" name="mp3store" data-mini="true" data-native-menu="false" width="50%">
-						<option value="1" <TMPL_VAR MP3STORE1>><TMPL_VAR T2S.1DAY_MP3_STORE></option>
-						<option value="2" <TMPL_VAR MP3STORE2>><TMPL_VAR T2S.2DAY_MP3_STORE></option>
-						<option value="3" <TMPL_VAR MP3STORE3>><TMPL_VAR T2S.3DAY_MP3_STORE></option>
-						<option value="4" <TMPL_VAR MP3STORE4>><TMPL_VAR T2S.4DAY_MP3_STORE></option>
-						<option value="5" <TMPL_VAR MP3STORE5>><TMPL_VAR T2S.5DAY_MP3_STORE></option>
-						<option value="6" <TMPL_VAR MP3STORE6>><TMPL_VAR T2S.6DAY_MP3_STORE></option>
-						<option value="7" <TMPL_VAR MP3STORE7>><TMPL_VAR T2S.7DAY_MP3_STORE></option>
+						<option value="1"><TMPL_VAR T2S.1DAY_MP3_STORE></option>
+						<option value="7"><TMPL_VAR T2S.7DAY_MP3_STORE></option>
+						<option value="30"><TMPL_VAR T2S.30DAY_MP3_STORE></option>
+						<option value="365"><TMPL_VAR T2S.365DAY_MP3_STORE></option>
+						<option value="0"><TMPL_VAR T2S.ENDLESS_MP3_STORE></option>
 					</select>
 					<script>
-					$('#mp3store').val('<TMPL_VAR MP3.MP3store>');
+						$('#mp3store option[value="<TMPL_VAR MP3.MP3store>"').prop('selected', 'selected');
 					</script>
 				</td>
 			<td>
@@ -210,7 +212,7 @@
 							<script>
 							$('#file_gong').val('<TMPL_VAR MP3.file_gong>');
 							</script>
-							<font size="-1"><TMPL_VAR T2S.JINGLE_SOURCE> <TMPL_VAR DATADIR>/tts/mp3/</font>
+							
 						</td>
 					</tr>
 				</table>
@@ -223,6 +225,23 @@
 		<td style="height: 60px; width: 24px;">
 		</td>
 	</tr>
+	
+	<tr>
+	<td style="height: 60px; width: 25%;">
+			<label id="lcachesize"><TMPL_VAR T2S.LABEL_CACHESIZE></label>
+		</td>
+		<td width="50%" style="height: 60px">
+			<input type="range" name="cachesize" id="cachesize" value="<TMPL_VAR MP3.cachesize>" min="100" max="5000" step="100">
+		</td>
+		<td style="height: 30px; width: 201px;">
+		</td>
+		<td style="height: 30px; width: 201px;">
+		</td>
+
+	
+	
+	</tr>
+
 	<tr>
 		<td style="height: 60px; width: 25%;">
 			<a id="lsendlox" <TMPL_VAR T2S.DATA_TRANSFER_MINISERVER_LINK> target="_blank"><TMPL_VAR T2S.DATA_TRANSFER_MINISERVER></a>
@@ -248,9 +267,9 @@
 					<table border=0 style="width: 91%">
 						<tr>
 							<td class="field_ms" align="right" style="width: 245px">
-							<select id="miniserver" name="miniserver" data-mini="true" data-native-menu="false" style="width: 142px"><TMPL_VAR MSSELECTLIST>
-							</select>
-						
+							<!--<select id="miniserver" name="miniserver" data-mini="true" data-native-menu="false" style="width: 142px"><TMPL_VAR MSSELECTLIST>
+							</select>-->
+						<TMPL_VAR MS>
 						</td>	
 					<td class="field_lab_udp" align="right" style="width: 184px">
 					<TMPL_VAR T2S.LABEL_UDP_PORT></td>
@@ -301,14 +320,23 @@
 				<td>
 					<table border=0 style="width: 91%">
 						<tr>
-							<td style="width: 27px"></td>
-					<td style="width: 184px">
-					
-					</td>
+							
+					<td style="width: 50%; height: 60px;">
+				<label id="lvolume"><TMPL_VAR T2S_DETAILS.LABEL_T2S_VOLUME_CHANGE></label>
+			</td>
+
 						
-				<td style="width: 27px">				
-				</td>
-			</tr>
+				<td style="width: 19%">
+							<select id="volume" name="volume" data-mini="true" data-native-menu="false" style="width: 62%">
+								<option value="3" <TMPL_VAR VOLUME1>>3 %</option>
+								<option value="5" <TMPL_VAR VOLUME2>>5 %</option>
+								<option value="7" <TMPL_VAR VOLUME3>>7 %</option>
+								<option value="10" <TMPL_VAR VOLUME4>>10 %</option>
+							</select>
+							<script>$('#volume').val('<TMPL_VAR MP3.volumedown>');</script>
+						</td>
+				
+							</tr>
 		</table>
 	</td>
 </tr>
@@ -326,133 +354,12 @@
 			</td>
 
 		</tr>
-		<tr>
-			<td style="height: 60px; width: 25%;">
-			<label id="ldebug"><TMPL_VAR T2S.LABEL_DEBUGGING></label>
-		</td>
-		<td width="50%" style="height: 60px">
-		<div style="display:table; width:80%;">
-			<div style="display:table-row;">
-				<div style="display:table-cell; min-witdh:30%; width:30%;">
-						<div style="display:table; width:50%; padding:10px; border: 1px solid black; border-radius: 5px; background-color: #bebebe;">
-							 <div style="display:table-row;">
-								<div style="display:table-cell; border-radius: 5px;" id="delete_log_div">
-								 <button id="delete_log_btn" onclick="$('#delete_log_btn').html('<TMPL_VAR TEMPLATE.LOG_BUTTON_DELETE_WAIT>'); $.ajax({url: '', type: 'GET', data: { 'delete_log':1},
-								    success: function (data) {
-						                $('#delete_log_btn').html('<TMPL_VAR TEMPLATE.LOG_BUTTON_DELETE_OK>');
-						                setTimeout( function() { $('#delete_log_btn').html('<TMPL_VAR TEMPLATE.LOG_BUTTON_DELETE>'); }, 2000);
-						            },
-						            error: function (textStatus, errorThrown) {
-						                $('#delete_log_btn').html('<TMPL_VAR TEMPLATE.LOG_BUTTON_DELETE_FAIL>');
-						                setTimeout( function() { $('#delete_log_btn').html('<TMPL_VAR TEMPLATE.LOG_BUTTON_DELETE>');}, 2000);
-						
-						            }	}); return false;" data-role="button" data-inline="true" data-mini="true" data-icon="delete"><TMPL_VAR TEMPLATE.LOG_BUTTON_DELETE></button>
-								</div>
-								<div style="display:table-cell;">
-								 	<button onclick="window.open('/admin/system/tools/logfile.cgi?logfile=<TMPL_VAR LOGFILE>&amp;header=html&amp;format=template', 'log'); return false;" id="logview" data-role="button" data-inline="true" data-mini="true" data-icon="bars"><TMPL_VAR TEMPLATE.BUTTON_LOG_VIEW></button>
-								</div>
-								
-								</div>
-							 </div>
-							</div>
-						 </div>
-					</div>
-				</td>
-			<td style="height: 60px; width: 201px;">
-				<!--<font size="-1"><TMPL_VAR T2S.NOTE_DEBUGGING></font>-->
-			</td>
-			<td style="height: 60px"></td>
-			<tr>
-				<td colspan=3 valign="middle" style="height: 33px">
-				<hr style="border:solid #bebebe 3px;height:2px; width: 100%;"></td>
-			</tr>
-		
-		
-		<!-- Options-->
-		<tr>
-			<td colspan=3 style="height: 30px; ">
-				<h3><TMPL_VAR TEMPLATE.MAIN_LABEL_OPTIONS></h3>
-			</td>
-		</tr>
-		<td style="height: 30px; width: 10%;">
-			<TMPL_VAR TEMPLATE.LABEL_OPTIONS>
-		</td>
-			<td colspan=3 valign="middle">
-				<div style="display:table-cell; width:60%;">
-					<div style="display:table; padding:10px; border: 1px solid black; border-radius: 5px; background-color: #6dac20;">
-						<fieldset data-role="controlgroup">
-							 <div style="display:table-row;">
-								<div style="display:table-cell;">
-									<input name="Checkbox1" type="checkbox" onclick="t2slayout()" id="t2s_det" data-icon="check" style="width: 142px">
-									<label for="t2s_det"><TMPL_VAR T2S_DETAILS.LAYOUT_CHECKBOX></label>
-									</div>
-								<div style="display:table-cell;">
-									<input name="Checkbox2" type="checkbox" onclick="radlayout() "id="radio_det" data-icon="check" style="width: 142px">
-									<label for="radio_det"><TMPL_VAR RADIO.LAYOUT_CHECKBOX></label>
-								</div>
-								<div style="display:table-cell;">
-									<input name="Checkbox3" type="checkbox" onclick="weatherlayout()" id="weather_det" data-icon="check" style="width: 142px">								
-									<label for="weather_det"><TMPL_VAR WEATHER.LAYOUT_CHECKBOX></label>
-								</div>
-								<div style="display:table-cell;">
-									<input name="Checkbox4" type="checkbox" onclick="destlayout()" id="dest_det" data-icon="check" style="width: 142px">								
-									<label for="dest_det"><TMPL_VAR DESTINATION.LAYOUT_CHECKBOX></label>
-								</div>
-								<div style="display:table-cell;">
-									<input name="Checkbox5" type="checkbox" onclick="callayout()" id="cal_det" data-icon="check" style="width: 142px">								
-									<label for="cal_det"><TMPL_VAR CALENDAR.LAYOUT_CHECKBOX></label>
-								</div>
-							</div>
-						</fieldset>
-					</div>
-				</div>
-			</td>
-		
 		
 		<!-- Anfang T2S Details-->
 		<tr class="t2sdet">
-
-				<td colspan=3 valign="middle" style="height: 33px">
-					<hr/>
-					<h3><a <TMPL_VAR T2S_DETAILS.LABEL_HEADER_T2S_DETAILS_LINK> target="_blank"><TMPL_VAR T2S_DETAILS.LABEL_HEADER_T2S_DETAILS></a></h3>
-				</td>
-			</tr>
-		
-
-		<tr class="t2sdet">
-			<td colspan=3 valign="middle" style="height: 33px">
-				<font size="-1"><TMPL_VAR T2S_DETAILS.LABEL_TEXT_T2S_DETAILS></font>
-			</td>
-		</tr>
-		
-
-		<tr class="t2sdet">
-			<td style="width: 25%; height: 60px;">
-				<label id="lvolume"><TMPL_VAR T2S_DETAILS.LABEL_T2S_VOLUME_CHANGE></label>
-			</td>
-			<td style="width: 50%; height: 60px;">
-				<table border=0 width="100%">
-					<tr>
-						<td style="width: 19%">
-							<select id="volume" name="volume" data-mini="true" data-native-menu="false" style="width: 62%">
-								<option value="3" <TMPL_VAR VOLUME1>>3 %</option>
-								<option value="5" <TMPL_VAR VOLUME2>>5 %</option>
-								<option value="7" <TMPL_VAR VOLUME3>>7 %</option>
-								<option value="10" <TMPL_VAR VOLUME4>>10 %</option>
-							</select>
-							<script>$('#volume').val('<TMPL_VAR MP3.volumedown>');</script>
-						</td>
-						<td valign="middle" style="height: 30px; width: 201px;"></td>
-					</tr>
-				</table>
-			<td valign="middle" style="height: 60px; width: 201px;">
-			</td>
-		</tr>
-		
-		
-		<tr class="t2sdet">
 		<td style="width: 25%; height: 40px;">
-			<label id="lrampto"><TMPL_VAR T2S_DETAILS.LABEL_RAMPTO></label>
+			<a id="lrampto" <TMPL_VAR T2S_DETAILS.LABEL_LINK> target="_blank"><TMPL_VAR T2S_DETAILS.LABEL_RAMPTO></a>
+			<!--<label id="lrampto"><TMPL_VAR T2S_DETAILS.LABEL_RAMPTO></label>-->
 		</td>
 		<td style="width: 50%; height: 60px;">
 			<table border=0 width="100%">
@@ -483,15 +390,56 @@
 					</td>
 			</table>
 		<td valign="middle" style="height: 60px; width: 201px;"></td>
-	
 	</tr>
-	<tr class="t2sdet">
-		<td colspan=3 valign="middle"></td>
+	<tr>
+</tr>
+<!-- Ende T2S Details -->			
 		
-	</tr>
-	
-	
-	<!-- Ende T2S Details -->
+		
+		<!-- Options-->
+		<tr>
+			<td colspan=3 style="height: 30px; ">
+				<hr/>
+
+				<h3><TMPL_VAR TEMPLATE.MAIN_LABEL_OPTIONS></h3>
+			</td>
+		</tr>
+		<td style="height: 30px; width: 10%;">
+			<TMPL_VAR TEMPLATE.LABEL_OPTIONS>
+		</td>
+			<td colspan=3 valign="middle">
+				<div style="display:table-cell; width:60%;">
+					<div style="display:table; padding:10px; border: 1px solid black; border-radius: 5px; background-color: #6dac20;">
+						<fieldset data-role="controlgroup">
+							 <div style="display:table-row;">
+								<!--<div style="display:table-cell;">-->
+									<!--<input name="Checkbox1" type="checkbox" onclick="t2slayout()" id="t2s_det" data-icon="check" style="width: 142px">-->
+									<!--<label for="t2s_det"><TMPL_VAR T2S_DETAILS.LAYOUT_CHECKBOX></label>-->
+									<!--</div>-->
+								<div style="display:table-cell;">
+									<input name="Checkbox2" type="checkbox" onclick="radlayout() "id="radio_det" data-icon="check" style="width: 142px">
+									<label for="radio_det"><TMPL_VAR RADIO.LAYOUT_CHECKBOX></label>
+								</div>
+								<div style="display:table-cell;">
+									<input name="Checkbox3" type="checkbox" onclick="weatherlayout()" id="weather_det" data-icon="check" style="width: 142px">								
+									<label for="weather_det"><TMPL_VAR WEATHER.LAYOUT_CHECKBOX></label>
+								</div>
+								<div style="display:table-cell;">
+									<input name="Checkbox4" type="checkbox" onclick="destlayout()" id="dest_det" data-icon="check" style="width: 142px">								
+									<label for="dest_det"><TMPL_VAR DESTINATION.LAYOUT_CHECKBOX></label>
+								</div>
+								<div style="display:table-cell;">
+									<input name="Checkbox5" type="checkbox" onclick="callayout()" id="cal_det" data-icon="check" style="width: 142px">								
+									<label for="cal_det"><TMPL_VAR CALENDAR.LAYOUT_CHECKBOX></label>
+								</div>
+							</div>
+						</fieldset>
+					</div>
+				</div>
+			</td>
+		
+		
+		
 	
 	<!-- Start Radio-->
 	
@@ -724,7 +672,7 @@ disable();
 
 selection();
 
-t2slayout();
+// t2slayout();
 callayout();
 destlayout();
 radlayout();
@@ -1310,6 +1258,15 @@ iteration += 1;
 </script>
 
 
+
+</TMPL_IF>
+
+
+<TMPL_IF LOGFILES>
+<!-- form 'LOGFILES' START -->
+	<TMPL_VAR LOGLIST_HTML>
+<!-- form 'LOGFILES' END -->
+</TMPL_IF LOGFILES>
 
 
 
