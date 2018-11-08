@@ -313,6 +313,7 @@ function getGroups() {
 }
 
 
+
 /** --> OBSOLETE
 * Function for T2S: checkDeltaArray() --> identify differencies between Group area and current grouping
 *

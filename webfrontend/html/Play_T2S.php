@@ -158,6 +158,10 @@ function create_tts() {
 		}
 		
 	t2s($messageid, $MessageStorepath, $textstring, $filename);
+	// ** generiere MP3 ID3 Tags **
+	require_once("system/bin/getid3/getid3.php");
+	$getID3 = new getID3;
+	write_MP3_IDTag($textstring);
 	return $messageid;
 	}
 }
@@ -176,14 +180,15 @@ function play_tts($messageid) {
 		$sonos = new PHPSonos($coord[0]);
 		if (isset($_GET['messageid'])) {
 			// Set path if messageid
-			$mpath = $myMessagepath."".$MP3path;
+			$mpath = $config['SYSTEM']['mp3path'];
 			LOGGING("Path for messageid's been adopted", 7);		
-			chmod_r();
+			#chmod_r();
 		} else {
 			// Set path if T2S
-			$mpath = $myMessagepath;
+			$mpath = $config['SYSTEM']['ttspath'];
 			LOGGING("Path for T2S been adopted", 7);	
 		}
+		#echo $mpath;
 		// if Playbar is in Modus TV switch to Playlist 1st
 		if (substr($actual[$master]['PositionInfo']["TrackURI"], 0, 18) == "x-sonos-htastream:")  {  
 			$sonos->SetQueue("x-rincon-queue:".$coord[1]."#0");
@@ -223,16 +228,16 @@ function play_tts($messageid) {
 				$file = $file.'.mp3';
 				$valid = mp3_files($file);
 				if ($valid === true) {
-					$jinglepath = $myMessagepath."".$MP3path."/".trim($file);
-					$sonos->AddToQueue("x-file-cifs:".$jinglepath);
+					$jinglepath = $config['SYSTEM']['httpinterface']."/mp3/".trim($file);
+					$sonos->AddToQueue($jinglepath);
 					LOGGING("Individual jingle '".trim($file)."' added to Queue", 7);	
 				} else {
 					LOGGING("Entered jingle '".$file."' for playgong is not valid or nothing has been entered. Please correct your syntax", 3);
 					exit;
 				}
 			} else {
-				$jinglepath = $myMessagepath."".$MP3path."/".trim($config['MP3']['file_gong']);
-				$sonos->AddToQueue("x-file-cifs:".$jinglepath);
+				$jinglepath = $config['SYSTEM']['httpinterface']."/mp3/".trim($config['MP3']['file_gong']);
+				$sonos->AddToQueue($jinglepath);
 				LOGGING("Standard jingle '".trim($config['MP3']['file_gong'])."' added to Queue", 7);	
 			}
 		}
@@ -242,16 +247,21 @@ function play_tts($messageid) {
 		if ((file_exists($filename)) and (!isset($_GET['playbatch']))){
 			$t2s_batch = read_txt_file_to_array($t2s_batch);
 			foreach ($t2s_batch as $t2s => $messageid) {
-				$sonos->AddToQueue('x-file-cifs:'.$mpath."/".trim($messageid).".mp3");
+				$sonos->AddToQueue($config['SYSTEM']['ttspath']."/".trim($messageid).".mp3");
 			}
 			LOGGING("Messages from batch has been added to Queue", 7);	
 		} else {
 			// if no batch has been created add single T2S
-			$t2s_file = file_exists($MessageStorepath."".$messageid.".mp3");
-			$meid_file = file_exists($MessageStorepath."".$MP3path."/".$messageid.".mp3");
+			$t2s_file = file_exists($config['SYSTEM']['ttspath']."/".$messageid.".mp3");
+			$meid_file = file_exists($config['SYSTEM']['mp3path']."/".$messageid.".mp3");
 			if (($t2s_file  === true) or ($meid_file  === true))  {
-				$sonos->AddToQueue('x-file-cifs:'.$mpath."/".trim($messageid).".mp3");
-				LOGGING("T2S '".trim($messageid).".mp3' has been added to Queue", 7);
+				if ($t2s_file  === true)  {
+					$sonos->AddToQueue($config['SYSTEM']['httpinterface']."/".$messageid.".mp3");
+					LOGGING("T2S '".trim($messageid).".mp3' has been added to Queue", 7);
+				} else {
+					$sonos->AddToQueue($config['SYSTEM']['httpinterface']."/mp3/".$messageid.".mp3");
+					LOGGING("T2S '".trim($messageid).".mp3' has been added to Queue", 7);
+				}
 			} else {
 				LOGGING("The file '".trim($messageid).".mp3' does not exist or could not be played. Please check your directory or your T2S settings!", 3);
 				exit;
@@ -421,7 +431,6 @@ function sendmessage() {
 			$time_end = microtime(true);
 			$t2s_time = $time_end - $time_start;
 			#echo "Die T2S dauerte ".round($t2s_time, 2)." Sekunden.\n";
-			LOGGING("Deletion of no longer needed MP3 files has been executed", 7);		
 			LOGGING("The requested single T2S tooks ".round($t2s_time, 2)." seconds to be processed.", 5);		
 	}
 
@@ -559,7 +568,6 @@ function sendgroupmessage() {
 			$time_end = microtime(true);
 			$t2s_time = $time_end - $time_start;
 			#echo "Die T2S dauerte ".round($t2s_time, 2)." Sekunden.\n";
-			LOGGING("Deletion of no longer needed MP3 files has been executed", 7);		
 			LOGGING("The requested group T2S tooks ".round($t2s_time, 2)." seconds to be processed.", 5);					
 }
 

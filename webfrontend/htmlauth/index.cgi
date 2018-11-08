@@ -80,6 +80,7 @@ my $no_error_template_message	= "<b>Sonos4lox:</b> The error template is not rea
 my $pluginconfigfile 			= "sonos.cfg";
 my $pluginplayerfile 			= "player.cfg";
 my $pluginlogfile				= "sonos.log";
+my $lbip 						= LoxBerry::System::get_localip();
 my $ttsfolder					= "tts";
 my $mp3folder					= "mp3";
 my $urlfile						= "https://raw.githubusercontent.com/Liver64/LoxBerry-Sonos/master/webfrontend/html/release/info.txt";
@@ -269,6 +270,17 @@ exit;
 
 sub form {
 
+	my $storage = LoxBerry::Storage::get_storage_html(
+					formid => 'STORAGEPATH', 
+					currentpath => $pcfg->param("SYSTEM.path"),
+					custom_folder => 1,
+					type_all => 1, 
+					readwriteonly => 1, 
+					data_mini => 1,
+					label => "$SL{'T2S.SAFE_DETAILS'}");
+					
+	$template->param("STORAGEPATH", $storage);
+
 	# read info file from Github and save in $info
 	my $info 		= get($urlfile);
 	$template		->param("INFO" 			=> "$info");
@@ -279,10 +291,11 @@ sub form {
 	$template		->param("VOICE" 		=> $pcfg->param("TTS.voice"));
 	$template		->param("CODE" 			=> $pcfg->param("TTS.messageLang"));
 	$template		->param("DATADIR" 		=> $pcfg->param("SYSTEM.path"));
-			
+		
 	# Load saved values for "select"
 	my $t2s_engine		  = $pcfg->param("TTS.t2s_engine");
 	my $rmpvol	 	  	  = $pcfg->param("TTS.volrampto");
+	my $storepath = $pcfg->param("SYSTEM.path"),
 	
 	# *******************************************************************************************************************
 	# Radiosender einlesen
@@ -441,8 +454,42 @@ sub save
 	$pcfg->param("VARIOUS.CALDavMuell", "\"$R::wastecal\"");
 	$pcfg->param("VARIOUS.CALDav2", "\"$R::cal\"");
 	$pcfg->param("SYSTEM.checkonline", "$R::checkonline");
-	
+	$pcfg->param("SYSTEM.path", "$R::STORAGEPATH");
+	$pcfg->param("SYSTEM.mp3path", "$R::STORAGEPATH/$ttsfolder/$mp3folder");
+	$pcfg->param("SYSTEM.ttspath", "$R::STORAGEPATH/$ttsfolder");
+	$pcfg->param("SYSTEM.httpinterface", "http://$lbip/plugins/$lbpplugindir/interfacedownload");
+	$pcfg->param("SYSTEM.cifsinterface", "//$lbip/plugindata/$lbpplugindir/interfacedownload");
 		
+	LOGINF "Writing configuration file";
+	
+	$pcfg->save() or &error;
+
+	LOGOK "All settings has been saved successful";
+
+	# If storage folders do not exist, copy default mp3 files
+	my $copy = 0;
+	if (!-e "$R::STORAGEPATH/$ttsfolder/$mp3folder") {
+		$copy = 1;
+	}
+	
+	if ((!-e "$R::STORAGEPATH/$ttsfolder/$mp3folder") or (!-e "$R::STORAGEPATH/$ttsfolder $lbphtmldir/interfacedownload"))  {
+		LOGINF "Creating folders and symlinks";
+		system ("mkdir -p $R::STORAGEPATH/$ttsfolder/$mp3folder");
+		system ("mkdir -p $R::STORAGEPATH/$ttsfolder");
+		system ("rm $lbpdatadir/interfacedownload");
+		system ("rm $lbphtmldir/interfacedownload");
+		system ("ln -s $R::STORAGEPATH/$ttsfolder $lbpdatadir/interfacedownload");
+		system ("ln -s $R::STORAGEPATH/$ttsfolder $lbphtmldir/interfacedownload");
+		LOGOK "All folders and symlinks created successfully.";
+	} else {
+		LOGINF "All folders and symlinks already exist";
+	}
+
+	if ($copy) {
+		LOGINF "Copy existing mp3 files from $lbpdatadir/$mp3folder to $R::STORAGEPATH/$ttsfolder/$mp3folder";
+		system ("cp -r $lbpdatadir/$mp3folder/* $R::STORAGEPATH/$ttsfolder/$mp3folder");
+	}
+	
 	# save all radiostations
 	for ($i = 1; $i <= $countradios; $i++) {
 		if ( param("chkradios$i") ) { # if radio should be deleted

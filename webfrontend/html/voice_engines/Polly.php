@@ -37,7 +37,7 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 		#####################################################################################################################
 		
 		# Speicherort der MP3 Datei
-		$file = $MessageStorepath . $filename . ".mp3";
+		$file = $config['SYSTEM']['ttspath'] ."/". $filename . ".mp3";
 			
 		if (!file_exists($file)) 
 		{

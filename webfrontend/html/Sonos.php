@@ -59,6 +59,20 @@ $sleeptimegong = "3";											// waiting time before playing t2s
 $maxzap = '60';													// waiting time before zapzone been initiated again
 
 echo '<PRE>'; 
+
+$level = LBSystem::pluginloglevel();
+	
+$params = [	"name" => "Sonos",
+			"filename" => "$lbplogdir/sonos.log",
+			"append" => 1,
+			"addtime" => 1,
+			];
+LBLog::newLog($params);	
+
+// used for single logging
+$plugindata = LBSystem::plugindata();
+
+LOGSTART("PHP started");
 	
 	
 #-- Start Preparation ------------------------------------------------------------------
@@ -128,7 +142,7 @@ echo '<PRE>';
 	$sambashare = array();
 	check_sambashare($sambaini, $searchfor, $sambashare);
 	$myMessagepath = $sambashare[0];					// get T2S folder Sonos to play
-		
+	
 	#$sonoszone = $sonoszonen;
 	#print_r($sonoszonen);
 	#print_r($config);
@@ -157,8 +171,8 @@ echo '<PRE>';
 		LOGGING($sambashare[1],5);
 		LOGGING("Perform Logfile size check",7);
 	}
+	create_symlinks();
 	
-
 #-- End Preparation ---------------------------------------------------------------------
 
 
@@ -1155,7 +1169,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$json = json_decode($jsonstr, True);
 			#print_r($jsonstr);
 			#sleep(2);
-			#echo $json['full-httpinterface'];
+			echo $json['full-httpinterface'];
 			$sonos->AddToQueue($json['full-httpinterface']);
 			$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
 			$sonos->SetTrack(1);
@@ -1191,6 +1205,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		} 
 	} else 	{
 	LOGGING("The Zone ".$master." is not available or offline. Please check and if necessary add zone to Config", 4);
+	LOGEND("PHP finished"); 
 	exit;
 }
 
@@ -1399,6 +1414,12 @@ function get_results($text, $greet) {
 	curl_close($ch);
 	return $result;
 
+	
+	function send_lox()  {
+		sendUDPdata();
+		sendTEXTdata();
+	}
+	 
 
 
 

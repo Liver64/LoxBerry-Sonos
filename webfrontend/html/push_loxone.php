@@ -1,27 +1,130 @@
+#!/usr/bin/env php
 <?php
 
-/**
-* Submodul: Loxone
-*
-**/
+require_once "loxberry_system.php";
+require_once "loxberry_log.php";
 
-/**
-/* Funktion : sendUDPdata --> send for each Zone as UDP package Volume and Playmode Info
-/*			  Playmode: Play=1/Stop=3/Pause=2
-/* @param: 	empty
-/*
-/* @return: Volume and Play Status per Zone
-**/
+require_once("$lbphtmldir/system/PHPSonos.php");
+require_once("$lbphtmldir/system/error.php");
+require_once("$lbphtmldir/system/logging.php");
+require_once("$lbphtmldir/Helper.php");
+require_once("$lbphtmldir/Grouping.php");
 
- function sendUDPdata() {
-	global $config, $sonoszone, $sonoszonen, $mstopology, $sonos_array_diff, $home, $tmp_lox;
+register_shutdown_function('shutdown');
+
+$ms = LBSystem::get_miniservers();
+$log = LBLog::newLog( [ "name" => "Push Data", "addtime" => 1, "filename" => "$lbplogdir/sonos.log", "append" => 1 ] );
+
+#LOGSTART("push data");
+#echo '<PRE>'; 
+
+$myFolder = "$lbpconfigdir";
+
+// Parsen der Konfigurationsdatei sonos.cfg
+	if (!file_exists($myFolder.'/sonos.cfg')) {
+		LOGERR('The file sonos.cfg could not be opened, please try again!');
+		exit(1);
+	} else {
+		$tmpsonos = parse_ini_file($myFolder.'/sonos.cfg', TRUE);
+	}
+		
+	// check if Data transmission is switched off
+	if(!is_enabled($tmpsonos['LOXONE']['LoxDaten'])) {
+		exit;
+	}
 	
-	$tmp_lox =  parse_ini_file("$home/config/system/general.cfg", TRUE);
-	if($config['LOXONE']['LoxDaten'] == 1) {
+	// Parsen der Sonos Zonen Konfigurationsdatei player.cfg
+	if (!file_exists($myFolder.'/player.cfg')) {
+		LOGERR('The file player.cfg  could not be opened, please try again!');
+		exit(1);
+	} else {
+		$tmpplayer = parse_ini_file($myFolder.'/player.cfg', true);
+	}
+	$player = ($tmpplayer['SONOSZONEN']);
+	foreach ($player as $zonen => $key) {
+		$sonosnet[$zonen] = explode(',', $key[0]);
+	} 
+	$sonoszonen['sonoszonen'] = $sonosnet;
+	
+	// finale config für das Script
+	$config = array_merge($sonoszonen, $tmpsonos);
+		
+	// Übernahme und Deklaration von Variablen aus der Konfiguration
+	$sonoszonen = $config['sonoszonen'];
+	
+// check if zones are connected	
+	if (!isset($config['SYSTEM']['checkonline']))  {
+		$checkonline = true;
+	} else if ($config['SYSTEM']['checkonline'] == "1")  {
+		$checkonline = true;
+	} else {
+		$checkonline = false;
+	}
+	$zonesoff = "";
+	if ($checkonline === true)  {
+		// prüft den Onlinestatus jeder Zone
+		$zonesonline = array();
+		foreach($sonoszonen as $zonen => $ip) {
+			$port = 1400;
+			$timeout = 3;
+			$handle = @stream_socket_client("$ip[0]:$port", $errno, $errstr, $timeout);
+			if($handle) {
+				$sonoszone[$zonen] = $ip;
+				array_push($zonesonline, $zonen);
+				fclose($handle);
+			}
+		}
+		$zoon = implode(", ", $zonesonline);
+	} else {
+		$sonoszone = $sonoszonen;
+	}
+	#print_r($zonesonline);
+	
+	// identify those zones which are not single/master
+	$tmp_playing = array();
+	foreach ($sonoszone as $zone => $player) {
+		$sonos = new PHPSonos($sonoszone[$zone][0]);
+		$zoneStatus = getZoneStatus($zone);
+		if ($zoneStatus === 'single') {
+			array_push($tmp_playing, $zone);
+		}
+		if ($zoneStatus === 'master') {
+			array_push($tmp_playing, $zone);
+		}
+	}	
+	#print_r($tmp_playing);	
+	
+	// identify single/master zone currently playing
+	$playing = array();
+	foreach ($tmp_playing as $tmp_player)  {
+		$sonos = new PHPSonos($sonoszone[$tmp_player][0]);
+		if ($sonos->GetTransportInfo() == "1")  {
+			array_push($playing, $tmp_player);
+		}
+	}
+	#print_r($playing);
+	
+	// if no zone is currently playing, abort script
+	if (count($playing) === 0)  {
+		exit;
+	}
+	
+	// ceck if configured MS is fully configured
+	if (!isset($ms[$config['LOXONE']['Loxone']])) {
+		LOGWARN ("Your selected Miniserver from Sonos4lox Plugin config seems not to be fully configured. Please check your LoxBerry miniserver config!") ;
+		exit(1);
+	}
+	
+	// obtain selected Miniserver form config
+	$my_ms = $ms[$config['LOXONE']['Loxone']];
+	#print_r($my_ms);
+
+		
 		// LoxBerry **********************
+		# send UDP data
 		$sonos_array_diff = @array_diff_key($sonoszonen, $sonoszone);
 		$sonos_array_diff = @array_keys($sonos_array_diff);
-		$server_ip = $tmp_lox['MINISERVER'.$config['LOXONE']['Loxone']]['IPADDRESS'];
+		$server_ip = $my_ms['IPAddress'];
 		$server_port = $config['LOXONE']['LoxPort'];
 		$tmp_array = array();
 		if ($socket = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP)) {
@@ -39,6 +142,7 @@
 				if ($zoneStatus === 'member') {
 					$zone_stat = 3;
 				}
+				#echo $zone." ".$zoneStatus.'<br>';
 				// Zone ist Member einer Gruppe
 				if (substr($orgsource['TrackURI'] ,0 ,9) == "x-rincon:") {
 					$tmp_rincon = substr($orgsource['TrackURI'] ,9 ,24);
@@ -49,12 +153,12 @@
 				} else {
 					$gettransportinfo = $sonos->GetTransportInfo();
 				}
-				#$message = "vol_$zone@".$sonos->GetVolume()."; stat_$zone@".$sonos->GetTransportInfo();
 				$message = "vol_$zone@".$temp_volume."; stat_$zone@".$gettransportinfo."; grp_$zone@".$zone_stat;
 				array_push($tmp_array, $message);
 			}
 		} else {
-			LOGGING("Can't create UDP socket to $server_ip", 4);
+			LOGERR("Can't create UDP socket to $server_ip");
+			exit(1);
 		}
 		// fügt die Offline Zonen hinzu
 		if (!empty($sonos_array_diff)) {
@@ -67,29 +171,16 @@
 		try {
 			socket_sendto($socket, $UDPmessage, strlen($UDPmessage), 0, $server_ip, $server_port);
 		} catch (Exception $e) {
-			LOGGING("The connection to Loxone could not be initiated!", 4);	
+			LOGERR("The connection to Loxone could not be initiated!");	
+			exit(1);
 		}
 		socket_close($socket);
-	} else { 
-		LOGGING("Data transmission to Loxone for UDP is not active. Please activate!", 4); 
-	}
-}
-
-/**
-/* Funktion : sendTEXTdata --> send Title/Interpret or name of Radio Station data in case zone is in playmode 
-/* @param: 	empty
-/*
-/* @return: title/Interpret for each Zone
-**/
-
- function sendTEXTdata() {
-	global $config, $countms, $sonoszone, $sonos, $lox_ip, $home, $sonoszonen, $tmp_lox; 
 	
-	if($config['LOXONE']['LoxDaten'] == 1) {	
-		$lox_ip		 = $tmp_lox['MINISERVER'.$config['LOXONE']['Loxone']]['IPADDRESS'];
-		$lox_port 	 = $tmp_lox['MINISERVER'.$config['LOXONE']['Loxone']]['PORT'];
-		$loxuser 	 = $tmp_lox['MINISERVER'.$config['LOXONE']['Loxone']]['ADMIN'];
-		$loxpassword = $tmp_lox['MINISERVER'.$config['LOXONE']['Loxone']]['PASS'];
+		# send TEXT data
+		$lox_ip		 = $my_ms['IPAddress'];
+		$lox_port 	 = $my_ms['Port'];
+		$loxuser 	 = $my_ms['Admin'];
+		$loxpassword = $my_ms['Pass'];
 		$loxip = $lox_ip.':'.$lox_port;
 		foreach ($sonoszone as $zone => $player) {
 			$sonos = new PHPSonos($sonoszone[$zone][0]);
@@ -125,8 +216,6 @@
 				}
 				// Übergabe der Titelinformation an Loxone (virtueller Texteingang)
 				$sonos = new PHPSonos($sonoszone[$zone][0]);
-				#echo $value.'<br>';
-				#echo $zone;
 				$valueurl = rawurlencode($value);
 				$valuesplit[0] = rawurlencode($valuesplit[0]);
 				$valuesplit[1] = rawurlencode($valuesplit[1]);
@@ -136,63 +225,19 @@
 						$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/int_$zone/$valuesplit[1]"); // Nur Interpreteninfo für Loxone
 						$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/source_$zone/$source"); // Radio oder Playliste
 					} catch (Exception $e) {
-						LOGGING("The connection to Loxone could not be initiated!", 4);	
+						LOGERR("The connection to Loxone could not be initiated!");	
+						exit;
 					}							
-				echo '<PRE>';
 			}
 		}
-	} else { 
-		LOGGING("Data transmission to Loxone for REST Service is not active. Please activate!", 4); 
-	}
- }
- 
- 
- 
-/**
-/* Funktion : clear_error --> löscht die Fehlermeldung in der Visu
-/* @param: 	Ein/Aus
-/*
-/* @return: 0 oder 1
-**/
-
- function clear_error() {
-	global $config, $countms, $sonoszone, $home, $sonos, $lox_ip, $sonoszonen, $tmp_lox; 
+		#LOGINF ("Push");
 	
-	$tmp_lox =  parse_ini_file("$home/config/system/general.cfg", TRUE);
-	$lox_ip		 = $tmp_lox[$config['LOXONE']['Loxone']]['IPADDRESS'];
-	$lox_port 	 = $tmp_lox[$config['LOXONE']['Loxone']]['PORT'];
-	$loxuser 	 = $tmp_lox[$config['LOXONE']['Loxone']]['ADMIN'];
-	$loxpassword = $tmp_lox[$config['LOXONE']['Loxone']]['PASS'];
-	$loxip = $lox_ip.':'.$lox_port;
-	try {
-		$handle = fopen("http://$loxuser:$loxpassword@$loxip/dev/sps/io/S-Error/''", "r");
-	} catch (Exception $e) {
-		LOGGING("The error message could not be deleted!", 4);	
-	}							
-	echo '<PRE>';
- }
  
  
  
- 
- function check_playing($i)  {
-	global $master, $config, $sonoszone, $i;
-	#$i = 0;
-	foreach ($sonoszone as $player => $ip) {
-		$sonos = new PHPSonos($ip[0]); //Slave Sonos ZP IPAddress
-		$running = $sonos->GetTransportInfo();
-		#echo $r = "Zone: ".$player." hat Status: ".$running."<br>"; 
-		if ($running == "1" ) {
-			echo "Zone: ".$player."<br>";
-			$i++;
-		}
-	}
-	echo $i;
-	if ($i < 1) {
-		exit;
-	} else {
-		return $i;
-	}
- }
+ function shutdown()  {
+	global $log;
+	#$log->LOGEND("");
+}
 
 ?>
