@@ -410,6 +410,9 @@ sub save
 	my $LoxDaten	 	= param('sendlox');
 	my $selminiserver	= param('ms');
 	
+	# get Miniserver entry from former Versions prior to v3.5.2 (MINISERVER1) and extract last character to save
+	my $sel_ms = substr($selminiserver, -1, 1);
+	
 	my $cfg         = new Config::Simple("$lbsconfigdir/general.cfg");
 	my $miniservers	= $cfg->param("BASE.MINISERVERS");
 	my $MiniServer	= $cfg->param("MINISERVER$selminiserver.IPADDRESS");
@@ -430,7 +433,7 @@ sub save
 	# OK - now installing...
 
 	# Write configuration file(s)
-	$pcfg->param("LOXONE.Loxone", "$R::ms");
+	$pcfg->param("LOXONE.Loxone", "$sel_ms");
 	$pcfg->param("LOXONE.LoxDaten", "$R::sendlox");
 	$pcfg->param("LOXONE.LoxPort", "$R::udpport");
 	$pcfg->param("TTS.t2s_engine", "$R::t2s_engine");
@@ -486,8 +489,8 @@ sub save
 	}
 
 	if ($copy) {
-		LOGINF "Copy existing mp3 files from $lbpdatadir/$mp3folder to $R::STORAGEPATH/$ttsfolder/$mp3folder";
-		system ("cp -r $lbpdatadir/$mp3folder/* $R::STORAGEPATH/$ttsfolder/$mp3folder");
+		LOGINF "Copy existing mp3 files from $lbpdatadir//$ttsfolder/$mp3folder to $R::STORAGEPATH/$ttsfolder/$mp3folder";
+		system ("cp -r $lbpdatadir/$ttsfolder/$mp3folder/* $R::STORAGEPATH/$ttsfolder/$mp3folder");
 	}
 	
 	# save all radiostations

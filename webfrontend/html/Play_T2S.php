@@ -245,9 +245,9 @@ function play_tts($messageid) {
 		// if batch has been created add all T2S
 		$filename = "t2s_batch.txt";
 		if ((file_exists($filename)) and (!isset($_GET['playbatch']))){
-			$t2s_batch = read_txt_file_to_array($t2s_batch);
+			$t2s_batch = file($filename, FILE_IGNORE_NEW_LINES);
 			foreach ($t2s_batch as $t2s => $messageid) {
-				$sonos->AddToQueue($config['SYSTEM']['ttspath']."/".trim($messageid).".mp3");
+				$sonos->AddToQueue($messageid.".mp3");
 			}
 			LOGGING("Messages from batch has been added to Queue", 7);	
 		} else {
@@ -259,7 +259,7 @@ function play_tts($messageid) {
 					$sonos->AddToQueue($config['SYSTEM']['httpinterface']."/".$messageid.".mp3");
 					LOGGING("T2S '".trim($messageid).".mp3' has been added to Queue", 7);
 				} else {
-					$sonos->AddToQueue($config['SYSTEM']['httpinterface']."/mp3/".$messageid.".mp3");
+					$sonos->AddToQueue($config['SYSTEM']['httpinterface']."/".$MP3path."/".$messageid.".mp3");
 					LOGGING("T2S '".trim($messageid).".mp3' has been added to Queue", 7);
 				}
 			} else {
@@ -312,6 +312,7 @@ function play_tts($messageid) {
 					$sonos->RemoveFromQueue($mess_pos);
 					$i++;
 				} 
+				unlink ($filename);
 				LOGGING("T2S batch files has been removed from Queue", 7);		
 			} else {
 				// If single T2S has been be played
@@ -369,12 +370,12 @@ function sendmessage() {
 					exit();
 				}
 				if (strlen($messageid) == '32') {
-					fwrite($file, "$filename\n" );
+					fwrite($file, $config['SYSTEM']['httpinterface']."/".$filename."\r\n");
 					LOGGING("T2S '".$filename.".mp3' has been added to batch", 7);
 					LOGGING("Please ensure to call later '...action=playbatch', otherwise the messages could be played uncontrolled", 5);					
 				} else {
 					$mp3_path = $MP3path;
-					fwrite($file, "$mp3_path/$messageid\n" );
+					fwrite($file, $config['SYSTEM']['httpinterface']."/".$MP3path."/".$messageid."\r\n");
 					LOGGING("Messageid '".$messageid."' has been added to batch", 7);
 					LOGGING("Please ensure to call later '...action=playbatch', otherwise the messages could be played uncontrolled", 5);										
 				}

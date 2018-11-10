@@ -2,17 +2,27 @@
 
 ##############################################################################################################################
 #
-# Version: 	3.4.2
-# Datum: 	08.05.2018
+# Version: 	3.2.2
+# Datum: 	09.11.2018
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
+
+
+// ToDo
+
+// playbatch auf HTML testen ggf. umstellen - DONE
+// config von MINISERVER1 (alt) auf i (neu) umstellen - DONE
+// scan for zones funktioniert nicht
+// preparation for XML Template für Loxone
+// cron und Verzeichnisse testen
+// interfacedownlaod im config ordner ???? --> vermutlich backup
 
 ini_set('max_execution_time', 120); 							// Max. Skriptlaufzeit auf 120 Sekunden
 
 include("system/PHPSonos.php");
 include("system/Tracks.php");
-include("system/Loxone.php");
+#include("system/Loxone.php");
 include("Grouping.php");
 include("Helper.php");
 include("Alarm.php");
@@ -72,8 +82,6 @@ LBLog::newLog($params);
 // used for single logging
 $plugindata = LBSystem::plugindata();
 
-LOGSTART("PHP started");
-	
 	
 #-- Start Preparation ------------------------------------------------------------------
 	
@@ -158,6 +166,7 @@ LOGSTART("PHP started");
 	$find = strripos($syntax, "=");
 	$sonospush = substr($syntax, $find + 1, 300);
 	if ($sonospush !== 'getsonosinfo')  {
+		LOGSTART("PHP started");
 		# create entries in logfile
 		LOGGING("called syntax: ".$myIP."".urldecode($syntax),5);
 		LOGGING("$performonlinecheck",7);
@@ -169,7 +178,6 @@ LOGSTART("PHP started");
 		LOGGING("Sonos config has been loaded",7);
 		LOGGING("Configuration has been successful loaded",6);
 		LOGGING($sambashare[1],5);
-		LOGGING("Perform Logfile size check",7);
 	}
 	create_symlinks();
 	
@@ -1205,9 +1213,10 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		} 
 	} else 	{
 	LOGGING("The Zone ".$master." is not available or offline. Please check and if necessary add zone to Config", 4);
-	LOGEND("PHP finished"); 
-	exit;
+	
 }
+LOGEND("PHP finished"); 
+exit;
 
 # Funktionen für Skripte ------------------------------------------------------
 

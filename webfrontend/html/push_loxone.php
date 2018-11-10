@@ -13,7 +13,7 @@ require_once("$lbphtmldir/Grouping.php");
 register_shutdown_function('shutdown');
 
 $ms = LBSystem::get_miniservers();
-$log = LBLog::newLog( [ "name" => "Push Data", "addtime" => 1, "filename" => "$lbplogdir/sonos.log", "append" => 1 ] );
+#$log = LBLog::newLog( [ "name" => "Push Data", "addtime" => 1, "filename" => "$lbplogdir/sonos.log", "append" => 1 ] );
 
 #LOGSTART("push data");
 #echo '<PRE>'; 
@@ -27,8 +27,9 @@ $myFolder = "$lbpconfigdir";
 	} else {
 		$tmpsonos = parse_ini_file($myFolder.'/sonos.cfg', TRUE);
 	}
+	$tmpsonos['LOXONE']['Loxone'] = substr($tmpsonos['LOXONE']['Loxone'], -1, 1);
 		
-	// check if Data transmission is switched off
+	// check if Data transmission is switched on/off
 	if(!is_enabled($tmpsonos['LOXONE']['LoxDaten'])) {
 		exit;
 	}
@@ -117,9 +118,7 @@ $myFolder = "$lbpconfigdir";
 	
 	// obtain selected Miniserver form config
 	$my_ms = $ms[$config['LOXONE']['Loxone']];
-	#print_r($my_ms);
-
-		
+			
 		// LoxBerry **********************
 		# send UDP data
 		$sonos_array_diff = @array_diff_key($sonoszonen, $sonoszone);

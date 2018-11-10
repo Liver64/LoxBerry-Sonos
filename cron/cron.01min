@@ -8,9 +8,10 @@
 # cron script will not be uninstalled cleanly.
 
 # Will be executed as user "loxberry".
-REPLACELBPBINDIR/push_loxone.php 
-sleep 10; REPLACELBPBINDIR/push_loxone.php 
-sleep 20; REPLACELBPBINDIR/push_loxone.php  
-sleep 30; REPLACELBPBINDIR/push_loxone.php  
-sleep 40; REPLACELBPBINDIR/push_loxone.php 
-sleep 50; REPLACELBPBINDIR/push_loxone.php
+
+i=0
+while [ $i -lt 6 ]; do
+  REPLACELBPBINDIR/push_loxone.php &
+  sleep 10
+  i=$(( i + 1 ))
+done
