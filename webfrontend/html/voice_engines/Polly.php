@@ -43,7 +43,7 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 		{
 			#-- Aufruf der POLLY Class zum generieren der t2s --
 			$a = new POLLY_TTS();
-			$a->save_mp3($textstring, $MessageStorepath."/".$filename.".mp3", $language, $voice);
+			$a->save_mp3($textstring, $config['SYSTEM']['ttspath']."/".$filename.".mp3", $language, $voice);
 			LOGGING('The text has been passed to Polly engine for MP3 creation',5);
 		} else {
 			LOGGING('Requested T2s has been grabbed from cache',6);

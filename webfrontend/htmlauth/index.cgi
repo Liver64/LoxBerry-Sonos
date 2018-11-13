@@ -34,7 +34,7 @@ use Cwd 'abs_path';
 use JSON qw( decode_json );
 use utf8;
 use warnings;
-use strict;
+#use strict;
 #use Data::Dumper;
 #no strict "refs"; # we need it for template system
 
@@ -87,13 +87,14 @@ my $urlfile						= "https://raw.githubusercontent.com/Liver64/LoxBerry-Sonos/mas
 my $log 						= LoxBerry::Log->new ( name => 'Sonos UI', filename => $lbplogdir ."/". $pluginlogfile, append => 1, addtime => 1 );
 my $plugintempplayerfile	 	= "tmp_player.json";
 my $scanzonesfile	 			= "network.php";
+my $udp_file	 				= "ms_inbound.php";
 my $helplink 					= "http://www.loxwiki.eu/display/LOXBERRY/Sonos4Loxone";
 my $pcfg 						= new Config::Simple($lbpconfigdir . "/" . $pluginconfigfile);
 my %Config 						= $pcfg->vars() if ( $pcfg );
 our $error_message				= "";
 
 # Set new config options for upgrade installations
-# cachsize
+# cachesize
 if (!defined $pcfg->param("MP3.cachesize")) {
 	$pcfg->param("MP3.cachesize", "100");
 } 
@@ -235,10 +236,14 @@ $navbar{1}{Name} = "$SL{'BASIS.MENU_SETTINGS'}";
 $navbar{1}{URL} = './index.cgi';
 $navbar{99}{Name} = "$SL{'BASIS.MENU_LOGFILES'}";
 $navbar{99}{URL} = './index.cgi?do=logfiles';
+$navbar{99}{target} = '_blank';
 
 if ($R::saveformdata) {
 	&save;
 }
+
+#my $php_call = exec($lbphtmldir."/system/".$udp_file);
+#my $php_call = shell_exec(php -f $lbphtmldir."/system/".$udp_file);
 
 if(!defined $R::do or $R::do eq "form") {
 	$navbar{1}{active} = 1;
@@ -251,12 +256,18 @@ if(!defined $R::do or $R::do eq "form") {
 	$template->param("LOGLIST_HTML", LoxBerry::Web::loglist_html());
 	printtemplate();
 } elsif ($R::do eq "scan") {
-	attention_scan();
+	&attention_scan;
 	# ab hier wird nicht mehr sonos.html sondern notice.html genutzt
 } elsif ($R::do eq "scanning") {
-	#LOGDEB("Hallo");
-	#print "Hallo";
-	scan();
+	&scan;
+	$template->param("FORM", "1");
+	&form;
+#} elsif ($R::do eq "udp") {
+#	&download;
+#	my $phpOutput = `/usr/bin/php $lbphtmldir/system/ms_inbound.php`;
+	#my $templatewe = qx(/usr/bin/php $lbphtmldir/system/ms_inbound.php);
+#	$template->param("FORM", "1");
+#	&form;
 }
 $error_message = "Invalid do parameter: ".$R::do;
 error();
@@ -269,7 +280,12 @@ exit;
 #####################################################
 
 sub form {
-
+	
+	
+	#my $php_call = exec($lbphtmldir."/system/".$udp_file);
+			
+	LOGINF("$lbphtmldir/system/ms_inbound.php");
+	
 	my $storage = LoxBerry::Storage::get_storage_html(
 					formid => 'STORAGEPATH', 
 					currentpath => $pcfg->param("SYSTEM.path"),
@@ -354,6 +370,10 @@ sub form {
 	$rowssonosplayer .= "<input type='hidden' id='countplayers' name='countplayers' value='$countplayers'>\n";
 	$template->param("ROWSSONOSPLAYER", $rowssonosplayer);
 	
+	#print "Content-Type: text/html; charset=utf-8\n\n"; 
+	#print %configzones; 
+	#exit;
+	
 	# *******************************************************************************************************************
 	# Get Miniserver
 	my $mshtml = LoxBerry::Web::mslist_select_html( 
@@ -366,7 +386,7 @@ sub form {
 		
 	LOGDEB "List of available Miniserver(s) has been successful loaded";
 	# *******************************************************************************************************************
-	
+		
 	# fill dropdown with list of files from tts/mp3 folder
 	my $dir = $lbpdatadir.'/tts/mp3/';
 	my $mp3_list;
@@ -388,10 +408,10 @@ sub form {
 	LOGDEB "List of MP3 files has been successful loaded";
 	
 	LOGOK "Sonos Plugin has been successfully loaded.";
-		
 	printtemplate();
+	
 	# ** $content will be send to UI
-	#our $content =  "$lbpconfigdir . "/" . $pluginplayerfile";
+	#our $content = %configzones;
 	#printtesttemplate;
 	exit;
 	
@@ -617,7 +637,7 @@ sub scan
 		return();
 	}
 }
-	
+
 	
 #####################################################
 # Error-Sub
@@ -686,8 +706,9 @@ sub printtemplate
 ##########################################################################
 sub printtesttemplate
 {
-	my $template_title = '';
+	my $template_title = 'TEST OUTPUT';
 	LoxBerry::Web::head();
+	LoxBerry::Web::pagestart($template_title, $helplink, $helptemplate);
 	LoxBerry::Web::lbheader($template_title);
 	print $content->output();
 	LoxBerry::Web::lbfooter();

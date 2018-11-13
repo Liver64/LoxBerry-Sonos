@@ -14,9 +14,14 @@
 // playbatch auf HTML testen ggf. umstellen - DONE
 // config von MINISERVER1 (alt) auf i (neu) umstellen - DONE
 // scan for zones funktioniert nicht
-// preparation for XML Template für Loxone
+// preparation for XML Template für Loxone - DONE
 // cron und Verzeichnisse testen
-// interfacedownlaod im config ordner ???? --> vermutlich backup
+// interfacedownlaod im config ordner ???? --> DONE kam von backup bei Upgrade
+// weather4lox Ansage prüfen auf Ansage "Punkt"
+// Wenn T2S vorhanden dann kein Absprung zu den voice engines
+// LoxBerry UDP io Modul (nur senden wenn Änderung)
+// group korrigiert - DONE
+// urldecode bei Abfall Ansage Bsp.: Gelbe Tonne
 
 ini_set('max_execution_time', 120); 							// Max. Skriptlaufzeit auf 120 Sekunden
 
@@ -81,7 +86,6 @@ LBLog::newLog($params);
 
 // used for single logging
 $plugindata = LBSystem::plugindata();
-
 	
 #-- Start Preparation ------------------------------------------------------------------
 	
@@ -153,7 +157,7 @@ $plugindata = LBSystem::plugindata();
 	
 	#$sonoszone = $sonoszonen;
 	#print_r($sonoszonen);
-	#print_r($config);
+	print_r($config);
 	#exit;
 
 	# select language file for text-to-speech

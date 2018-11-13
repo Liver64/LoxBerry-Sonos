@@ -29,7 +29,7 @@ $pluginversion_temp = LBSystem::plugindata();
 $pluginversion = $pluginversion_temp['PLUGINDB_VERSION'];
 $home = $lbhomedir;
 $folder = $lbpplugindir;
-echo "<PRE>"; 
+#echo "<PRE>"; 
 
 
 ini_set("log_errors", 7);

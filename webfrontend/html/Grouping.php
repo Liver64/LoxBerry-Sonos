@@ -388,7 +388,7 @@ function checkifmaster($master) {
 **/
 
 function group_all() {
-	global $sonoszone, $master;
+	global $sonoszone, $config, $master;
 	
 	# Alle Zonen gruppieren
 	foreach ($sonoszone as $zone => $ip) {
