@@ -190,3 +190,16 @@
  3.5.1		[Bugfix] Funktion stopall korrigiert um Fehler bei Gruppen zu verhindern
 			[Bugfix] Logging optimiert 
 			[Feature] Loglevel aus Plugin entfernt (default ist LB Plugin level)
+ 3.5.2		[Bugfix] waste2speech Ansage korrigiert (leerzeichen durch ein + ersetzen)
+			[Bugfix] weather2speech Ansagen korrigiert
+			[Feature] Logging und Error handling erweitert bzw. optimiert
+			[Feature] T2S MP3 files sind jetzt mit ID3 Tags versehen
+			[Feature] T2S Sequencer implementiert
+			[Feature] Freie Wahl des Speicherortes für MP3 Dateien
+			[Feature] Cron job 10-sekündlich um Daten via UDP/HTTP an Miniserver zu senden
+			[Feature] UDP Daten XML Template zum importieren in den Miniserver wird gemäß Konfiguration erstellt. 
+			[Feature] Logging in der UI seperiert
+			[Feature] Konfigurierbare Reorganisation der MP3 Dateien (Cachegröße oder Zeit)
+			[Feature] Plugin Layout optimiert
+			[Feature] Automatische Grußformel für T2S kann über Parameter &greet genutzt werden
+			

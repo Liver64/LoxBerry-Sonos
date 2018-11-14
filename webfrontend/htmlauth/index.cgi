@@ -34,7 +34,7 @@ use Cwd 'abs_path';
 use JSON qw( decode_json );
 use utf8;
 use warnings;
-#use strict;
+use strict;
 #use Data::Dumper;
 #no strict "refs"; # we need it for template system
 
@@ -80,6 +80,7 @@ my $no_error_template_message	= "<b>Sonos4lox:</b> The error template is not rea
 my $pluginconfigfile 			= "sonos.cfg";
 my $pluginplayerfile 			= "player.cfg";
 my $pluginlogfile				= "sonos.log";
+my $XML_file					= "VIU_Sonos_UDP.xml";
 my $lbip 						= LoxBerry::System::get_localip();
 my $ttsfolder					= "tts";
 my $mp3folder					= "mp3";
@@ -242,9 +243,6 @@ if ($R::saveformdata) {
 	&save;
 }
 
-#my $php_call = exec($lbphtmldir."/system/".$udp_file);
-#my $php_call = shell_exec(php -f $lbphtmldir."/system/".$udp_file);
-
 if(!defined $R::do or $R::do eq "form") {
 	$navbar{1}{active} = 1;
 	$template->param("FORM", "1");
@@ -262,12 +260,6 @@ if(!defined $R::do or $R::do eq "form") {
 	&scan;
 	$template->param("FORM", "1");
 	&form;
-#} elsif ($R::do eq "udp") {
-#	&download;
-#	my $phpOutput = `/usr/bin/php $lbphtmldir/system/ms_inbound.php`;
-	#my $templatewe = qx(/usr/bin/php $lbphtmldir/system/ms_inbound.php);
-#	$template->param("FORM", "1");
-#	&form;
 }
 $error_message = "Invalid do parameter: ".$R::do;
 error();
@@ -280,12 +272,7 @@ exit;
 #####################################################
 
 sub form {
-	
-	
-	#my $php_call = exec($lbphtmldir."/system/".$udp_file);
-			
-	LOGINF("$lbphtmldir/system/ms_inbound.php");
-	
+		
 	my $storage = LoxBerry::Storage::get_storage_html(
 					formid => 'STORAGEPATH', 
 					currentpath => $pcfg->param("SYSTEM.path"),
@@ -370,10 +357,6 @@ sub form {
 	$rowssonosplayer .= "<input type='hidden' id='countplayers' name='countplayers' value='$countplayers'>\n";
 	$template->param("ROWSSONOSPLAYER", $rowssonosplayer);
 	
-	#print "Content-Type: text/html; charset=utf-8\n\n"; 
-	#print %configzones; 
-	#exit;
-	
 	# *******************************************************************************************************************
 	# Get Miniserver
 	my $mshtml = LoxBerry::Web::mslist_select_html( 
@@ -407,12 +390,14 @@ sub form {
 	$template->param("MP3_LIST", $mp3_list);
 	LOGDEB "List of MP3 files has been successful loaded";
 	
+	# call to prepare XML Template
+	&prep_XML;
+	
 	LOGOK "Sonos Plugin has been successfully loaded.";
 	printtemplate();
 	
-	# ** $content will be send to UI
-	#our $content = %configzones;
-	#printtesttemplate;
+	#print "Content-Type: text/html; charset=utf-8\n\n"; 
+	#print $lbphtmlauthdir; 
 	exit;
 	
 }
@@ -430,7 +415,7 @@ sub save
 	my $LoxDaten	 	= param('sendlox');
 	my $selminiserver	= param('ms');
 	
-	# get Miniserver entry from former Versions prior to v3.5.2 (MINISERVER1) and extract last character to save
+	# get Miniserver entry from former Versions prior to v3.5.2 (MINISERVER1) and extract last character
 	my $sel_ms = substr($selminiserver, -1, 1);
 	
 	my $cfg         = new Config::Simple("$lbsconfigdir/general.cfg");
@@ -588,9 +573,28 @@ sub attention_scan
 	print $noticetemplate->output();
 	LoxBerry::Web::lbfooter();
 	return;
-	#exit;
 }
 
+
+#####################################################
+# execute PHP script ot generate XML Template - Sub
+#####################################################
+ 
+ sub prep_XML
+{
+	# executes PHP script and saves XML Template local
+	my $udp_temp = qx(/usr/bin/php $lbphtmldir/system/$udp_file);
+	
+	if (!-r $lbphtmlauthdir . "/" . $XML_file) 
+	{
+		LOGERR "File ".$XML_file." has not been generated and therefore could not be downloaded. Please update your Plugin config";
+		$error_message = $ERR{'ERRORS.ERR_CHECK_XML_FILE'};
+		notify($lbpplugindir, "Sonos UI ", "File ".$XML_file." has not been generated. Please update your Plugin config", 1);
+		&error; 
+	}
+	return();
+}
+ 
 
 #####################################################
 # Scan Sonos Player - Sub
@@ -697,22 +701,6 @@ sub printtemplate
 	print $template->output();
 	LoxBerry::Web::lbfooter();
 	LOGOK "Website printed";
-	exit;
-}
-
-
-##########################################################################
-# Print Testing Template
-##########################################################################
-sub printtesttemplate
-{
-	my $template_title = 'TEST OUTPUT';
-	LoxBerry::Web::head();
-	LoxBerry::Web::pagestart($template_title, $helplink, $helptemplate);
-	LoxBerry::Web::lbheader($template_title);
-	print $content->output();
-	LoxBerry::Web::lbfooter();
-	LOGOK "Test Website printed";
 	exit;
 }
 

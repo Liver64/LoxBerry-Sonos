@@ -135,13 +135,13 @@ function w2s()
 				$RegenAnsage="";
 				break;
 			case $regenwahrscheinlichkeit0 >=$regenschwelle:
-				$RegenAnsage=$TL['WEATHER-TO-SPEECH']['RAIN_ANNOUNCEMENT_1']." ".$regenwahrscheinlichkeit0." ".$TL['WEATHER-TO-SPEECH']['RAIN_ANNOUNCEMENT_2']." ";
+				$RegenAnsage=". ".$TL['WEATHER-TO-SPEECH']['RAIN_ANNOUNCEMENT_1']." ".$regenwahrscheinlichkeit0." ".$TL['WEATHER-TO-SPEECH']['RAIN_ANNOUNCEMENT_2']." ";
 				break;
 			default:
 				$RegenAnsage="";
 				break;
 		}
-		
+						
 		# Aufbereitung der TTS Ansage
 		# 
 		# Aufpassen das bei Textänderungen die Werte nicht überschrieben werden
@@ -149,15 +149,15 @@ function w2s()
 		switch ($Stunden) {
 			# Wettervorhersage für die Zeit zwischen 06:00 und 10:00h
 			case $Stunden >=6 && $Stunden <10:
-				$text=($TL['WEATHER-TO-SPEECH']['WEATHERTEXT_1_HOUR_FROM_6AM_TO_10AM']." ". ($wetter). ", ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_2_HOUR_FROM_6AM_TO_10AM']." ".round($high0)." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_3_HOUR_FROM_6AM_TO_10AM']." ". round($temp_c)." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_4_HOUR_FROM_6AM_TO_10AM']." ". $RegenAnsage.". ".$WindAnsage.". ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_5_HOUR_FROM_6AM_TO_10AM']);
+				$text=($TL['WEATHER-TO-SPEECH']['WEATHERTEXT_1_HOUR_FROM_6AM_TO_10AM']." ". ($wetter). ", ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_2_HOUR_FROM_6AM_TO_10AM']." ".round($high0)." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_3_HOUR_FROM_6AM_TO_10AM']." ". round($temp_c)." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_4_HOUR_FROM_6AM_TO_10AM']." ". $RegenAnsage." ".$WindAnsage.". ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_5_HOUR_FROM_6AM_TO_10AM']);
 				break;
 			# Wettervorhersage für die Zeit zwischen 10:00 und 17:00h
 			case $Stunden >=10 && $Stunden <17:
-				$text=($TL['WEATHER-TO-SPEECH']['WEATHERTEXT_1_HOUR_FROM_10AM_TO_5PM']." ". ($wetter_hc)." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_2_HOUR_FROM_10AM_TO_5PM']." ". round($temp_c)." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_3_HOUR_FROM_10AM_TO_5PM']." ".$RegenAnsage.". ".$WindAnsage.". ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_4_HOUR_FROM_10AM_TO_5PM']);
+				$text=($TL['WEATHER-TO-SPEECH']['WEATHERTEXT_1_HOUR_FROM_10AM_TO_5PM']." ". ($wetter_hc).". ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_2_HOUR_FROM_10AM_TO_5PM']." ". round($temp_c)." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_3_HOUR_FROM_10AM_TO_5PM']."".$RegenAnsage." ".$WindAnsage.". ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_4_HOUR_FROM_10AM_TO_5PM']);
 				break;
 			# Wettervorhersage für die Zeit zwischen 17:00 und 22:00h
 			case $Stunden >=17 && $Stunden <22:
-				$text=$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_1_HOUR_FROM_5PM_TO_10PM']." ". ($wetter). ". ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_2_HOUR_FROM_5PM_TO_10PM']." ". round($temp_c)." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_3_HOUR_FROM_5PM_TO_10PM']." ". round($low0). " ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_4_HOUR_FROM_5PM_TO_10PM'].". ". $RegenAnsage.". ".$WindAnsage.". ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_5_HOUR_FROM_5PM_TO_10PM'].". ";
+				$text=$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_1_HOUR_FROM_5PM_TO_10PM']." ". ($wetter). ". ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_2_HOUR_FROM_5PM_TO_10PM']." ". round($temp_c)." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_3_HOUR_FROM_5PM_TO_10PM']." ". round($low0). " ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_4_HOUR_FROM_5PM_TO_10PM']."". $RegenAnsage." ".$WindAnsage.". ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_5_HOUR_FROM_5PM_TO_10PM'].". ";
 				break;
 			# Wettervorhersage für den morgigen Tag nach 22:00h
 			case $Stunden >=22:
@@ -168,6 +168,7 @@ function w2s()
 				break;
 		}
 		$textcode = ($text);
+		#echo $textcode;
 		LOGGING('Weather announcement: '.($text),5);
 		LOGGING('Message been generated and pushed to T2S creation',7);
 		return $textcode;

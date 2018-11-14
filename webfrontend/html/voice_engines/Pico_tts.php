@@ -29,6 +29,8 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 		
 		$file = $config['SYSTEM']['ttspath'] ."/". $filename . ".wav";
 		
+		LOGGING("Pico has been successful selected", 7);	
+		
 		# Prüfung ob die Voice Datei bereits vorhanden ist
 		if (!file_exists($file)) 
 		{

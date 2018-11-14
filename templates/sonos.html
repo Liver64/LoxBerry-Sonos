@@ -298,10 +298,10 @@
 </tr>
 	</table>
 		</td>
-			<td style="height: 30px; width: 201px;">
+			<td class="empty_template" style="height: 30px; width: 201px;">
 				<font size="-1"><TMPL_VAR T2S.LABEL_SONOS_DATA_TRANSFER></font>
 			</td>
-			<td style="height: 30px; width: 24px;">
+			<td class="empty_template" style="height: 30px; width: 24px;">
 				<font size="-1">
 					<div id="testurl">
 					</div>
@@ -311,40 +311,42 @@
 		</tr>
 		
 		<tr>
-		<td style="height: 60px; width: 25%;">
+		<td class="label_template" style="height: 60px; width: 25%;">
 			<label id="ltemplate"><TMPL_VAR T2S.LABEL_TEMPLATE></label>
 
 		</td>
-		<td width="50%" style="height: 60px">
+		<td class="template" width="50%" style="height: 60px">
 			<table border=0 width="100%">
 				<tr>
-					<td style="width: 25%">
+					<td class="empty_template" style="width: 25%">
 					<a download="VIU_Sonos_UDP.xml" title="UDP Inputs" data-role="button" data-inline="true" data-mini="true" 
-					href="/plugins/<TMPL_VAR PLUGINDIR>/system/VIU_Sonos_UDP.xml"><TMPL_VAR T2S.BUTTON_TEMPLATE></a>
+					href="<TMPL_VAR SELFURL>/VIU_Sonos_UDP.xml"><TMPL_VAR T2S.BUTTON_TEMPLATE></a>
 
 				
 				<td style="width: 23px; text-align: center;">	
 					&nbsp;</td>
 				<td>
-					<table border=0 style="width: 91%">
+					<table border=0 style="width: 99%">
 						<tr>
 							
-					<td style="width: 50%; height: 60px;">
+					<td class="empty_template" style="width: 50%; height: 60px;">
+				
+				<font size="-1"><TMPL_VAR T2S.HELP_TEMPLATE></font>
 				
 			</td>
 
 						
-				<td style="width: 19%"></td>
+				
 		</tr>
 		</table>
 	</td>
 </tr>
 	</table>
 		</td>
-			<td style="height: 30px; width: 201px;">
+			<td class="empty_template" style="height: 30px; width: 201px;">
 				
 			</td>
-			<td style="height: 30px; width: 24px;">
+			<td class="empty_template" style="height: 30px; width: 24px;">
 				<font size="-1">
 					<div id="testurl">
 					</div>
@@ -875,12 +877,20 @@ var cat = document.getElementById('sendlox').value;
 		$('.field_ms').fadeIn(600);
 		$('.field_udp').fadeIn(600);
 		$('.field_lab_udp').fadeIn(600);
+		$('.label_template').fadeIn(600);
+		$('.template').fadeIn(600);
+		$('.empty_template').fadeIn(600);
+
 	} else {
 		//$('#miniserver').addClass('ui-disabled');
 		$('#udpport').addClass('ui-disabled');
 		$('.field_ms').fadeOut(600);
 		$('.field_udp').fadeOut(600);
 		$('.field_lab_udp').fadeOut(600);
+		$('.label_template').fadeOut(600);
+		$('.template').fadeOut(600);
+		$('.empty_template').fadeOut(600);
+
 
     }
 $("#sendlox").flipswitch("refresh"); 

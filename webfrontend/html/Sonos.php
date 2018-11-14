@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	3.2.2
-# Datum: 	09.11.2018
+# Version: 	3.5.2
+# Datum: 	13.11.2018
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
@@ -11,17 +11,8 @@
 
 // ToDo
 
-// playbatch auf HTML testen ggf. umstellen - DONE
-// config von MINISERVER1 (alt) auf i (neu) umstellen - DONE
-// scan for zones funktioniert nicht
-// preparation for XML Template für Loxone - DONE
 // cron und Verzeichnisse testen
-// interfacedownlaod im config ordner ???? --> DONE kam von backup bei Upgrade
-// weather4lox Ansage prüfen auf Ansage "Punkt"
-// Wenn T2S vorhanden dann kein Absprung zu den voice engines
-// LoxBerry UDP io Modul (nur senden wenn Änderung)
-// group korrigiert - DONE
-// urldecode bei Abfall Ansage Bsp.: Gelbe Tonne
+// Wenn T2S file vorhanden dann kein Absprung zu den voice engines
 
 ini_set('max_execution_time', 120); 							// Max. Skriptlaufzeit auf 120 Sekunden
 
@@ -44,12 +35,6 @@ include('system/logging.php');
 
 // setze korrekte Zeitzone
 date_default_timezone_set(date("e"));
-echo "<PRE>"; 
-
-# https://duncan3dc.github.io/sonos/
-#require_once __DIR__ . "/system/vendor/autoload.php";
-#use duncan3dc\Sonos\Network;
-#$sonos3dc = new Network;
 
 # prepare variables
 $home = $lbhomedir;
@@ -72,8 +57,6 @@ $searchfor = '[plugindata]';									// search for already existing Samba share
 $MP3path = "mp3";												// path to preinstalled numeric MP§ files
 $sleeptimegong = "3";											// waiting time before playing t2s
 $maxzap = '60';													// waiting time before zapzone been initiated again
-
-echo '<PRE>'; 
 
 $level = LBSystem::pluginloglevel();
 	
@@ -157,7 +140,8 @@ $plugindata = LBSystem::plugindata();
 	
 	#$sonoszone = $sonoszonen;
 	#print_r($sonoszonen);
-	print_r($config);
+	#echo '<PRE>'; 
+	#print_r($config);
 	#exit;
 
 	# select language file for text-to-speech
@@ -1177,7 +1161,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'ttsp':
 			$text = ($_GET['text']);
 			isset($_GET['greet']) ? $greet = 1 : $greet = 0;
-			$jsonstr = get_results($text, $greet);  // 
+			$jsonstr = t2s_post_request($text, $greet);  // 
 			$json = json_decode($jsonstr, True);
 			#print_r($jsonstr);
 			#sleep(2);
@@ -1377,8 +1361,14 @@ function SetBalance()  {
 }
 
 
+/**
+/* Funktion : t2s_post_request --> generiert einen POST request zum text2speech Plugin
+/*
+/* @param: 	$text, $greet
+/* @return: JSON
+**/	
   
-function get_results($text, $greet) {
+function t2s_post_request($text, $greet) {
 	 
 	global $myIP;
 	
@@ -1416,26 +1406,14 @@ function get_results($text, $greet) {
 	// was the request successful?
 	if($result === false)  {
 		LOGGIN("Der POST Request war nicht erfolgreich!", 7);
-		#echo'<br>';
-		#echo'<br>';
 	} else {
 		LOGGING("Der POST Request war erfolgreich!", 7);
-		#echo'<br>';
-		#echo'<br>';
 	}
 	// close cURL
 	curl_close($ch);
 	return $result;
 
 	
-	function send_lox()  {
-		sendUDPdata();
-		sendTEXTdata();
-	}
-	 
-
-
-
 }
 ?>
 

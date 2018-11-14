@@ -38,16 +38,18 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 		
 		# Speicherort der MP3 Datei
 		$file = $config['SYSTEM']['ttspath'] ."/". $filename . ".mp3";
+		
+		LOGGING("AWS Polly has been successful selected", 7);	
 			
-		if (!file_exists($file)) 
-		{
+		#if (!file_exists($file)) 
+		#{
 			#-- Aufruf der POLLY Class zum generieren der t2s --
 			$a = new POLLY_TTS();
 			$a->save_mp3($textstring, $config['SYSTEM']['ttspath']."/".$filename.".mp3", $language, $voice);
 			LOGGING('The text has been passed to Polly engine for MP3 creation',5);
-		} else {
-			LOGGING('Requested T2s has been grabbed from cache',6);
-		}
+		#} else {
+		#	LOGGING('Requested T2s has been grabbed from cache',6);
+		#}
 		$messageid = $filename;
 		return ($messageid);
 }

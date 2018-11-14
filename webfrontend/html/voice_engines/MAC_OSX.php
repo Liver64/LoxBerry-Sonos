@@ -27,6 +27,8 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 	$voices[] = array('voice' => 'Satu','lang' => 'fi_FI');
 	$voices[] = array('voice' => 'Yuna','lang' => 'ko_KR');
 
+		LOGGING("MAC_OSX has been successful selected", 7);	
+		
 		#$mpath = $config['SYSTEM']['messageStorePath'];
 		$lamePath = "/usr/local/bin/";
 		$textstring = urldecode($textstring);

@@ -27,11 +27,16 @@ function muellkalender() {
 		LOGGING('Please remove &debug from your syntax entry in Sonos4lox configuration!',3);
 		exit;
 	}
-	$callurl = trim($config['VARIOUS']['CALDavMuell'].'&debug');
+	$callurl = (trim($config['VARIOUS']['CALDavMuell'].'&debug'));
+	
+	# Leerzeichen durch ein Plus ersetzen
+	$search = array(' ');
+	$replace = array('+');
+	$callurl = str_replace($search,$replace,$callurl);
+	
 	$Stunden = intval(strftime("%H"));
 	$muellarten = array();
-	
-	// call the waste calendar
+		// call the waste calendar
 	$dienst = json_decode(file_get_contents("$callurl"), TRUE);
 	$utc = new DateTimeZone('UTC'); 
 	$today = date('m/d/Y');
