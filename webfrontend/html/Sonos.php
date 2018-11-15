@@ -140,7 +140,7 @@ $plugindata = LBSystem::plugindata();
 	
 	#$sonoszone = $sonoszonen;
 	#print_r($sonoszonen);
-	#echo '<PRE>'; 
+	echo '<PRE>'; 
 	#print_r($config);
 	#exit;
 
@@ -167,6 +167,7 @@ $plugindata = LBSystem::plugindata();
 		LOGGING("Configuration has been successful loaded",6);
 		LOGGING($sambashare[1],5);
 	}
+
 	create_symlinks();
 	
 #-- End Preparation ---------------------------------------------------------------------

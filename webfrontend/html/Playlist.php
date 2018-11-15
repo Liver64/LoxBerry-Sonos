@@ -131,6 +131,7 @@ function zapzone() {
 	unset ($playingzones[$nextZoneKey]);
 	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
 	$sonos->SetAVTransportURI("x-rincon:" . $sonoszone[$nextZoneKey][1]);
+	LOGGING("Zone ".$master." has been grouped as member to Zone ".$nextZoneKey, 7);
 	$sonos->SetMute(false);
 	}
 
