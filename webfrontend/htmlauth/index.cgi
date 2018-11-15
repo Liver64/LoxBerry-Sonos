@@ -237,7 +237,7 @@ $navbar{1}{Name} = "$SL{'BASIS.MENU_SETTINGS'}";
 $navbar{1}{URL} = './index.cgi';
 $navbar{99}{Name} = "$SL{'BASIS.MENU_LOGFILES'}";
 $navbar{99}{URL} = './index.cgi?do=logfiles';
-$navbar{99}{target} = '_blank';
+#$navbar{99}{target} = '_blank';
 
 if ($R::saveformdata) {
 	&save;
@@ -255,7 +255,6 @@ if(!defined $R::do or $R::do eq "form") {
 	printtemplate();
 } elsif ($R::do eq "scan") {
 	&attention_scan;
-	# ab hier wird nicht mehr sonos.html sondern notice.html genutzt
 } elsif ($R::do eq "scanning") {
 	&scan;
 	$template->param("FORM", "1");
