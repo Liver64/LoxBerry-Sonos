@@ -13,7 +13,7 @@ require_once("$lbphtmldir/Grouping.php");
 register_shutdown_function('shutdown');
 
 $ms = LBSystem::get_miniservers();
-$log = LBLog::newLog( [ "name" => "Push Data", "addtime" => 1, "filename" => "$lbplogdir/sonos.log", "append" => 1 ] );
+#$log = LBLog::newLog( [ "name" => "Push Data", "addtime" => 1, "filename" => "$lbplogdir/sonos.log", "append" => 1 ] );
 
 #LOGSTART("push data");
 #echo '<PRE>'; 
@@ -103,12 +103,7 @@ $myFolder = "$lbpconfigdir";
 		}
 	}
 	#print_r($playing);
-	
-	// if no zone is currently playing, abort script
-	if (count($playing) === 0)  {
-		exit;
-	}
-	
+		
 	// ceck if configured MS is fully configured
 	if (!isset($ms[$config['LOXONE']['Loxone']])) {
 		LOGWARN ("Your selected Miniserver from Sonos4lox Plugin config seems not to be fully configured. Please check your LoxBerry miniserver config!") ;
@@ -118,8 +113,22 @@ $myFolder = "$lbpconfigdir";
 	// obtain selected Miniserver form config
 	$my_ms = $ms[$config['LOXONE']['Loxone']];
 	#print_r($my_ms);
+	
+	// if no zone is currently playing, abort script
+	#if (count($playing) === 0)  {
+	#	send_udp();
+	#	send_vit();
+	#	exit(1);
+	#}
+	
+	send_udp();
+	send_vit();
+	#exit;
 
-		
+	function send_udp()  {	
+	
+	global $config, $my_ms, $sonoszone, $sonoszonen, $sonos; 
+	
 		// LoxBerry **********************
 		# send UDP data
 		$sonos_array_diff = @array_diff_key($sonoszonen, $sonoszone);
@@ -175,7 +184,12 @@ $myFolder = "$lbpconfigdir";
 			exit(1);
 		}
 		socket_close($socket);
+	}
 	
+	function send_vit()  {
+		
+		global $config, $my_ms, $sonoszone, $sonoszonen, $sonos; 
+		
 		# send TEXT data
 		$lox_ip		 = $my_ms['IPAddress'];
 		$lox_port 	 = $my_ms['Port'];
@@ -231,7 +245,7 @@ $myFolder = "$lbpconfigdir";
 			}
 		}
 		#LOGINF ("Push");
-	
+	}
  
  
  
