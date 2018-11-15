@@ -75,7 +75,7 @@ function playlist() {
 **/
 
 function zapzone() {
-	global $config, $sonos, $sonoszone, $master, $playzones, $count;
+	global $config, $sonos, $sonoszone, $master, $playzones, $count, $maxzap;
 	
 	$sonos = new PHPSonos($sonoszone[$master][0]);
 	if (substr($sonos->GetPositionInfo()["TrackURI"], 0, 15) == "x-rincon:RINCON") {
@@ -89,7 +89,7 @@ function zapzone() {
 	// if no zone is playing switch to nextradio
 	if (empty($playingzones) or $count > count($playingzones)) {
 		nextradio();
-		sleep($config['VARIOUS']['maxzap']);
+		sleep($maxzap);
 		if(file_exists("count.txt"))  {
 			unlink("count.txt");
 		}
