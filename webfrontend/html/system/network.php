@@ -9,17 +9,10 @@
 
 header('Content-Type: text/html; charset=utf-8');
 
-error_reporting(E_ALL);
-ini_set('display_errors', true);
-ini_set('html_errors', true);
-
-#error_reporting(~E_ALL & ~E_STRICT);     // Alle Fehler reporten (Außer E_STRICT)
-#ini_set("display_errors", false);        // Fehler nicht direkt via PHP ausgeben
-#ini_set('html_errors', false);			 
-
 require_once "loxberry_system.php";
 require_once "loxberry_log.php";
 require_once "logging.php";
+require_once "error.php";
 
 $lb_hostname = lbhostname();
 $lb_version = LBSystem::lbversion();
@@ -31,9 +24,12 @@ $home = $lbhomedir;
 $folder = $lbpplugindir;
 #echo "<PRE>"; 
 
+error_reporting(E_ALL);
+ini_set("display_errors", "off");
+define('ERROR_LOG_FILE', "$lbplogdir/sonos.log");
 
-ini_set("log_errors", 7);
-ini_set("error_log", LBPLOGDIR."/sonos.log");
+//calling custom error handler
+set_error_handler("handleError");
 
 $params = [	"name" => "Sonos PHP",
 			"filename" => "$lbplogdir/sonos.log",
@@ -42,9 +38,9 @@ $params = [	"name" => "Sonos PHP",
 LBLog::newLog($params);
 $plugindata = LBSystem::plugindata();
 
-LOGGING("LoxBerry v".$lb_version." with hostname ".$lb_hostname." has been detected",6);
-LOGGING("Sonos Plugin v".$pluginversion." is installed at folder ".$folder,6);
-
+#LOGGING("LoxBerry v".$lb_version." with hostname ".$lb_hostname." has been detected",6);
+#LOGGING("Sonos Plugin v".$pluginversion." is installed at folder ".$folder,6);
+#print_r($arra); // undefined variable
 
 	$ip = '239.255.255.250';
 	$port = 1900;

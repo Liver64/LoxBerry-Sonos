@@ -68,6 +68,7 @@ our $rowssonosplayer;
 our $miniserver;
 our $template;
 our $content;
+our $countplayersreturn;
 our %navbar;
 
 my $helptemplatefilename		= "help.html";
@@ -254,6 +255,7 @@ if(!defined $R::do or $R::do eq "form") {
 	$template->param("LOGLIST_HTML", LoxBerry::Web::loglist_html());
 	printtemplate();
 } elsif ($R::do eq "scan") {
+	LOGTITLE "Execute Scan";
 	&attention_scan;
 } elsif ($R::do eq "scanning") {
 	&scan;
@@ -326,7 +328,6 @@ sub form {
 	# *******************************************************************************************************************
 	# Player einlesen
 	
-	our $countplayers = 0;
 	our $rowssonosplayer;
 	
 	my $error_volume = $ERR{'T2S.ERROR_VOLUME_PLAYER'};
@@ -350,6 +351,8 @@ sub form {
 	}
 	LOGDEB "$countplayers Sonos players has been loaded.";
 	
+	
+	#if( ($countplayersreturn < 1) and ($countplayers < 1)) {
 	if ( $countplayers < 1 ) {
 		$rowssonosplayer .= "<tr><td colspan=6>" . $SL{'ZONES.SONOS_EMPTY_ZONES'} . "</td></tr>\n";
 	}
@@ -393,10 +396,9 @@ sub form {
 	&prep_XML;
 	
 	LOGOK "Sonos Plugin has been successfully loaded.";
-	printtemplate();
 	
-	#print "Content-Type: text/html; charset=utf-8\n\n"; 
-	#print $lbphtmlauthdir; 
+	printtemplate();
+	#print_test();
 	exit;
 	
 }
@@ -575,25 +577,6 @@ sub attention_scan
 }
 
 
-#####################################################
-# execute PHP script ot generate XML Template - Sub
-#####################################################
- 
- sub prep_XML
-{
-	# executes PHP script and saves XML Template local
-	my $udp_temp = qx(/usr/bin/php $lbphtmldir/system/$udp_file);
-	
-	if (!-r $lbphtmlauthdir . "/" . $XML_file) 
-	{
-		LOGERR "File ".$XML_file." has not been generated and therefore could not be downloaded. Please update your Plugin config";
-		$error_message = $ERR{'ERRORS.ERR_CHECK_XML_FILE'};
-		notify($lbpplugindir, "Sonos UI ", "File ".$XML_file." has not been generated. Please update your Plugin config", 1);
-		&error; 
-	}
-	return();
-}
- 
 
 #####################################################
 # Scan Sonos Player - Sub
@@ -601,6 +584,7 @@ sub attention_scan
 
 sub scan
 {
+	our $countplayers = 0;
 	my $error_volume = $SL{'T2S.ERROR_VOLUME_PLAYER'};
 	
 	# executes PHP network.php script (reads player.cfg and add new zones if been added)
@@ -635,11 +619,37 @@ sub scan
 		$template->param("ROWSSONOSPLAYER", $rowssonosplayer);
 		}
 		LOGDEB "Content of 'tmp_player.json' has been loaded into form";
-		unlink ($lbpconfigdir."/tmp_player.json");
+		#unlink ($lbpconfigdir."/tmp_player.json");
 		LOGDEB "Temporary scan file 'tmp_player.json' has been deleted";
-		return();
+		#my $countplayersreturn = $countplayers;
+		#print "Content-Type: text/html; charset=utf-8\n\n"; 
+		#print "Count: ".$countplayersreturn; 
+		#exit;
+		return($countplayers);
 	}
 }
+
+
+
+#####################################################
+# execute PHP script ot generate XML Template - Sub
+#####################################################
+ 
+ sub prep_XML
+{
+	# executes PHP script and saves XML Template local
+	my $udp_temp = qx(/usr/bin/php $lbphtmldir/system/$udp_file);
+	
+	if (!-r $lbphtmlauthdir . "/" . $XML_file) 
+	{
+		LOGERR "File ".$XML_file." has not been generated and therefore could not be downloaded. Please update your Plugin config";
+		$error_message = $ERR{'ERRORS.ERR_CHECK_XML_FILE'};
+		notify($lbpplugindir, "Sonos UI ", "File ".$XML_file." has not been generated. Please update your Plugin config", 1);
+		&error; 
+	}
+	return();
+}
+ 
 
 	
 #####################################################
@@ -700,6 +710,25 @@ sub printtemplate
 	print $template->output();
 	LoxBerry::Web::lbfooter();
 	LOGOK "Website printed";
+	exit;
+}
+
+
+##########################################################################
+# Print for testing
+##########################################################################
+sub print_test
+{
+	# Print Template
+	print "Content-Type: text/html; charset=utf-8\n\n"; 
+	print "*********************************************************************************************";
+	print "<br>";
+	print " *** Ausgabe zu Testzwecken";
+	print "<br>";
+	print "*********************************************************************************************";
+	print "<br>";
+	print "<br>";
+	print "Count: ".$countplayers; 
 	exit;
 }
 
