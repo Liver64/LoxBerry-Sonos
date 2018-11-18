@@ -369,7 +369,7 @@ sub form {
 	# *******************************************************************************************************************
 		
 	# fill dropdown with list of files from tts/mp3 folder
-	my $dir = $lbpdatadir.'/tts/mp3/';
+	my $dir = $lbpdatadir.'/'.$ttsfolder.'/'.$mp3folder.'/';
 	my $mp3_list;
 	
     opendir(DIR, $dir) or die $!;
@@ -474,7 +474,7 @@ sub save
 		$copy = 1;
 	}
 	
-	if ((!-e "$R::STORAGEPATH/$ttsfolder/$mp3folder") or (!-e "$R::STORAGEPATH/$ttsfolder $lbphtmldir/interfacedownload"))  {
+	#if (!-d "$R::STORAGEPATH/$ttsfolder $lbphtmldir/interfacedownload")  {
 		LOGINF "Creating folders and symlinks";
 		system ("mkdir -p $R::STORAGEPATH/$ttsfolder/$mp3folder");
 		system ("mkdir -p $R::STORAGEPATH/$ttsfolder");
@@ -483,12 +483,12 @@ sub save
 		system ("ln -s $R::STORAGEPATH/$ttsfolder $lbpdatadir/interfacedownload");
 		system ("ln -s $R::STORAGEPATH/$ttsfolder $lbphtmldir/interfacedownload");
 		LOGOK "All folders and symlinks created successfully.";
-	} else {
-		LOGINF "All folders and symlinks already exist";
-	}
+	#} else {
+	#	LOGINF "All folders and symlinks already exist";
+	#}
 
 	if ($copy) {
-		LOGINF "Copy existing mp3 files from $lbpdatadir//$ttsfolder/$mp3folder to $R::STORAGEPATH/$ttsfolder/$mp3folder";
+		LOGINF "Copy existing mp3 files from $lbpdatadir/$ttsfolder/$mp3folder to $R::STORAGEPATH/$ttsfolder/$mp3folder";
 		system ("cp -r $lbpdatadir/$ttsfolder/$mp3folder/* $R::STORAGEPATH/$ttsfolder/$mp3folder");
 	}
 	
