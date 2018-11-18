@@ -208,4 +208,5 @@
 			[Bugfix] download vom XML Template korrigiert
 			[Bugfix] PHP Logging Ende über shutdown Funktion implementiert
 			[Bugfix] zusätzliche Info des aktuellen Speicherortes in der UI hinzugefügt
+			[Feature] Standard 'path' für Upgrade hinzugefügt
 			
