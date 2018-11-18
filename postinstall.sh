@@ -43,23 +43,5 @@ PCONFIG=$LBPCONFIG/$PDIR
 PSBIN=$LBPSBIN/$PDIR
 PBIN=$LBPBIN/$PDIR
 
-test=`cat /etc/samba/smb.conf | grep plugindata | wc -l`
-
-if [ $test = 0 ]
-then
-	# to ensure that Sonos can read from folder structure
-	#/bin/sed -i "s%guest ok = no%guest ok = yes%" $ARGV5/system/samba/smb.conf
-	echo " " >> $LBHOMEDIR/system/samba/smb.conf
-	echo "[plugindata]" >> $LBHOMEDIR/system/samba/smb.conf
-	echo "   comment = LoxBerry Plugin Data" >> $LBHOMEDIR/system/samba/smb.conf
-	echo "   path = $LBPDATA" >> $LBHOMEDIR/system/samba/smb.conf
-	echo "   guest ok = yes" >> $LBHOMEDIR/system/samba/smb.conf
-	echo "   read only = yes" >> $LBHOMEDIR/system/samba/smb.conf
-	echo "   directory mask = 0700" >> $LBHOMEDIR/system/samba/smb.conf
-	echo "   create mask = 0700" >> $LBHOMEDIR/system/samba/smb.conf
-	echo "   follow symlinks = yes" >> $LBHOMEDIR/system/samba/smb.conf
-	echo "   wide links = yes" >> $LBHOMEDIR/system/samba/smb.conf
-fi
-
 # Exit with Status 0
 exit 0
