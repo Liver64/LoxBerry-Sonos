@@ -68,7 +68,6 @@ our $rowssonosplayer;
 our $miniserver;
 our $template;
 our $content;
-our $countplayersreturn;
 our %navbar;
 
 my $helptemplatefilename		= "help.html";
@@ -238,7 +237,6 @@ $navbar{1}{Name} = "$SL{'BASIS.MENU_SETTINGS'}";
 $navbar{1}{URL} = './index.cgi';
 $navbar{99}{Name} = "$SL{'BASIS.MENU_LOGFILES'}";
 $navbar{99}{URL} = './index.cgi?do=logfiles';
-#$navbar{99}{target} = '_blank';
 
 if ($R::saveformdata) {
 	&save;
@@ -351,8 +349,6 @@ sub form {
 	}
 	LOGDEB "$countplayers Sonos players has been loaded.";
 	
-	
-	#if( ($countplayersreturn < 1) and ($countplayers < 1)) {
 	if ( $countplayers < 1 ) {
 		$rowssonosplayer .= "<tr><td colspan=6>" . $SL{'ZONES.SONOS_EMPTY_ZONES'} . "</td></tr>\n";
 	}
@@ -392,13 +388,10 @@ sub form {
 	$template->param("MP3_LIST", $mp3_list);
 	LOGDEB "List of MP3 files has been successful loaded";
 	
-	# call to prepare XML Template
-	&prep_XML;
-	
 	LOGOK "Sonos Plugin has been successfully loaded.";
 	
 	printtemplate();
-	#print_test();
+	#print_test($content);
 	exit;
 	
 }
@@ -526,6 +519,9 @@ sub save
 	LOGDEB "Sonos Zones has been saved.";
 	LOGOK "All settings has been saved successful";
 	
+	# call to prepare XML Template
+	&prep_XML;
+		
 	my $lblang = lblanguage();
 	$template_title = "$SL{'BASIS.MAIN_TITLE'}: v$sversion";
 	LoxBerry::Web::lbheader($template_title, $helplink, $helptemplatefilename);
@@ -619,12 +615,8 @@ sub scan
 		$template->param("ROWSSONOSPLAYER", $rowssonosplayer);
 		}
 		LOGDEB "Content of 'tmp_player.json' has been loaded into form";
-		#unlink ($lbpconfigdir."/tmp_player.json");
+		unlink ($lbpconfigdir."/tmp_player.json");
 		LOGDEB "Temporary scan file 'tmp_player.json' has been deleted";
-		#my $countplayersreturn = $countplayers;
-		#print "Content-Type: text/html; charset=utf-8\n\n"; 
-		#print "Count: ".$countplayersreturn; 
-		#exit;
 		return($countplayers);
 	}
 }
@@ -640,7 +632,7 @@ sub scan
 	# executes PHP script and saves XML Template local
 	my $udp_temp = qx(/usr/bin/php $lbphtmldir/system/$udp_file);
 	
-	if (!-r $lbphtmlauthdir . "/" . $XML_file) 
+	if (!-r $lbphtmldir . "/system/" . $XML_file) 
 	{
 		LOGERR "File ".$XML_file." has not been generated and therefore could not be downloaded. Please update your Plugin config";
 		$error_message = $ERR{'ERRORS.ERR_CHECK_XML_FILE'};
@@ -666,12 +658,14 @@ sub error
 	$successtemplate->param('ERR_NEXTURL'	, $ENV{REQUEST_URI});
 	print $errortemplate->output();
 	LoxBerry::Web::lbfooter();
+	exit;
 }
 
 
 ##########################################################################
 # Init Template
 ##########################################################################
+
 sub inittemplate
 {
 	# Check, if filename for the maintemplate is readable, if not raise an error
@@ -700,6 +694,7 @@ sub inittemplate
 ##########################################################################
 # Print Template
 ##########################################################################
+
 sub printtemplate
 {
 	# Print Template
@@ -717,6 +712,7 @@ sub printtemplate
 ##########################################################################
 # Print for testing
 ##########################################################################
+
 sub print_test
 {
 	# Print Template
@@ -728,7 +724,7 @@ sub print_test
 	print "*********************************************************************************************";
 	print "<br>";
 	print "<br>";
-	print "Count: ".$countplayers; 
+	print $content; 
 	exit;
 }
 

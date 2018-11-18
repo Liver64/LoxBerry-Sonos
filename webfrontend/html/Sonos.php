@@ -32,6 +32,7 @@ include("Save_T2S.php");
 include("Speaker.php");
 include('system/logging.php');
 
+register_shutdown_function('shutdown');
 
 // setze korrekte Zeitzone
 date_default_timezone_set(date("e"));
@@ -1204,7 +1205,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 	LOGGING("The Zone ".$master." is not available or offline. Please check and if necessary add zone to Config", 4);
 	
 }
-LOGEND("PHP finished"); 
 exit;
 
 # Funktionen für Skripte ------------------------------------------------------
@@ -1413,7 +1413,15 @@ function t2s_post_request($text, $greet) {
 	// close cURL
 	curl_close($ch);
 	return $result;
+}
 
+
+
+function shutdown()
+{
+	#global $log;
+	#$log->LOGEND("PHP finished");
+	LOGEND("PHP finished");
 	
 }
 ?>

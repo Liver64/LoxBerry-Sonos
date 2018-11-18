@@ -203,4 +203,9 @@
 			[Feature] Konfigurierbare Reorganisation der MP3 Dateien (Cachegröße oder Zeit)
 			[Feature] Plugin Layout optimiert
 			[Feature] Automatische Grußformel für T2S kann über Parameter &greet genutzt werden
+ 3.5.3		[Bugfix] Ansgae des Radiosenders bei nextradio korrigiert
+			[Bugfix] Zapzone Funktion korrigiert (Variable aktiviert)
+			[Bugfix] download vom XML Template korrigiert
+			[Bugfix] PHP Logging Ende über shutdown Funktion implementiert
+			[Bugfix] zusätzliche Info des aktuellen Speicherortes in der UI hinzugefügt
 			

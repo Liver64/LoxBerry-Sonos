@@ -8,36 +8,57 @@
 /* @return: 
 **/	
 
-include("PHPSonos.php");
+require_once "PHPSonos.php";
 require_once "loxberry_system.php";
 require_once "loxberry_log.php";
 
+register_shutdown_function('shutdown');
+
 global $sonoszonen, $config, $myIP;
-#echo '<PRE>';
+echo '<PRE>';
 
 // Deklaration Variablen
 $myFolder = "$lbpconfigdir";
 $myIP = $_SERVER["SERVER_ADDR"];
 
+$params = [	"name" => "Sonos",
+			"filename" => "$lbplogdir/sonos.log",
+			"append" => 1,
+			"addtime" => 1,
+			];
+$log = LBLog::newLog($params);
+
+#LOGSTART("create XML file");	
+
 // laden der config Dateien
 if (!file_exists($myFolder.'/sonos.cfg')) {
-	LOGERR('The file sonos.cfg could not be opened, please try again!');
+	LOGERR('The file sonos.cfg could not be opened, please check/complete your Plugin Config!');
+	exit(1);
 } else {
 	$tmpconfig = parse_ini_file($myFolder.'/sonos.cfg', true);
 }
 if (!file_exists($myFolder.'/player.cfg')) {
-	LOGERR('The file player.cfg  could not be opened, please try again!');
+	LOGERR('The file player.cfg  could not be opened, please check/complete your Plugin Config!');
+	exit(1);
 } else {
 	$tmpplayer = parse_ini_file($myFolder.'/player.cfg', true);
 }
+if (count($tmpplayer['SONOSZONEN']) < 1)  {
+	LOGERR('There are no Sonos Players already fully configured, please check/complete your Plugin Config and save your config before downloading your Template!');
+	exit(1);
+}
+if (empty($tmpconfig['LOXONE']['LoxPort']))  {
+	LOGERR('The Loxone UDP port is missing in your config, please check/complete your Plugin Config and save your config before downloading your Template!');
+	exit(1);
+}
+
 
 $xmldoc = "VIU_Sonos_UDP.xml";
 
 // prüfen ob Datei existiert, falls ja vorher löschen
 if (file_exists($xmldoc)) {
-	unlink ($xmldoc);
+	unlink ($lbphtmldir."/system/".$xmldoc);
 }
-$fh = fopen($xmldoc, 'a+');
 
 // Vorbereitung der XML Datei
 $text = '<?xml version="1.0" encoding="utf-8"?>';
@@ -49,11 +70,17 @@ foreach ($tmpplayer['SONOSZONEN'] as $zone => $key)  {
 }
 $text .= '</VirtualInUdp>';
 
-#$fh = fopen($xmldoc, +a);
-fwrite($fh, $text);
-fclose($fh);
-LOGINF("virtual input executed");
+#LOGINF("virtual input executed");
+file_put_contents($lbphtmldir."/system/".$xmldoc, $text);
+return;
 
-#file_put_contents($xmldoc, $text);
+
+function shutdown()
+{
+	global $log;
+	#$log->LOGEND("PHP finished");
+	$log = LOGEND("");
+	
+}
 
 ?>

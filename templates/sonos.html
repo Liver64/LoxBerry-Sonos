@@ -246,8 +246,10 @@
 		<td style="height: 60px; width: 25%;">
 			<label id="lcard1"><TMPL_VAR T2S.LABEL_SOUNDCARD></label>
 		</td>
-		<td style="height: 60px; width: 25%;">
+		<td id="mypath" name="mypath" style="height: 60px; width: 25%;">
 			<TMPL_VAR STORAGEPATH>
+			<font size="-1"><TMPL_VAR T2S.JINGLE_SOURCE></font> <font size="-1" color="blue"><TMPL_VAR DATADIR>/tts/</font>
+
         </td>
         	<td style="height: 60px; width: 201px;">
 		</td>
@@ -320,9 +322,7 @@
 				<tr>
 					<td class="empty_template" style="width: 25%">
 					<a download="VIU_Sonos_UDP.xml" title="UDP Inputs" data-role="button" data-inline="true" data-mini="true" 
-					href="<TMPL_VAR SELFURL>/VIU_Sonos_UDP.xml"><TMPL_VAR T2S.BUTTON_TEMPLATE></a>
-
-				
+					href="/plugins/<TMPL_VAR PLUGINDIR>/system/VIU_Sonos_UDP.xml"><TMPL_VAR T2S.BUTTON_TEMPLATE></a>
 				<td style="width: 23px; text-align: center;">	
 					&nbsp;</td>
 				<td>

@@ -36,7 +36,7 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 
 		# Speicherort der MP3 Datei
 		$file = $config['SYSTEM']['ttspath'] ."/". $filename . ".mp3";
-
+		
 		LOGGING("ResponsiveVoice has been successful selected", 7);	
 		
 		# Prüfung ob die MP3 Datei bereits vorhanden ist
