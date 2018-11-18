@@ -271,6 +271,13 @@ exit;
 #####################################################
 
 sub form {
+
+	# check if path exist (upgrade from v3.5.1)
+	if ($pcfg->param("SYSTEM.path") eq "")   {
+		$pcfg->param("SYSTEM.path", "$lbpdatadir");
+		$pcfg->save() or &error;
+		LOGINF("default path has been added to config");
+	}
 		
 	my $storage = LoxBerry::Storage::get_storage_html(
 					formid => 'STORAGEPATH', 
@@ -286,6 +293,11 @@ sub form {
 	# read info file from Github and save in $info
 	my $info 		= get($urlfile);
 	$template		->param("INFO" 			=> "$info");
+	
+	if ($pcfg->param("SYSTEM.path") eq "")   {
+		$pcfg->param("SYSTEM.path", "$lbpdatadir");
+		$pcfg->save() or &error;
+	}
 			
 	# fill saved values into form
 	$template		->param("SELFURL", $ENV{REQUEST_URI});
