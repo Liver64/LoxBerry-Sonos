@@ -50,6 +50,7 @@ mkdir -p /tmp/$1\_upgrade
 mkdir -p /tmp/$1\_upgrade/config
 mkdir -p /tmp/$1\_upgrade/log
 mkdir -p /tmp/$1\_upgrade/data
+mkdir -p /tmp/$1\_upgrade/templates
 
 echo "<INFO> Backing up existing config files"
 cp -p -v -r $5/config/plugins/$3/ /tmp/$1\_upgrade/config
