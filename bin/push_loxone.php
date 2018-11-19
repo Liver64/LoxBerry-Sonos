@@ -1,8 +1,10 @@
 #!/usr/bin/env php
 <?php
 
+
 require_once "loxberry_system.php";
 require_once "loxberry_log.php";
+require_once "loxberry_io.php";
 
 require_once("$lbphtmldir/system/PHPSonos.php");
 require_once("$lbphtmldir/system/error.php");
@@ -19,6 +21,15 @@ $ms = LBSystem::get_miniservers();
 #echo '<PRE>'; 
 
 $myFolder = "$lbpconfigdir";
+$htmldir = "$lbphtmldir";
+$tmp_play = "stat.txt";
+$stat = $htmldir."/".$tmp_play;
+
+$mem_sendall = 1;
+$mem_sendall_sec = 3600;
+#use LoxBerry::IO;
+
+global $mem_sendall, $mem_sendall_sec;
 
 // Parsen der Konfigurationsdatei sonos.cfg
 	if (!file_exists($myFolder.'/sonos.cfg')) {
@@ -110,21 +121,37 @@ $myFolder = "$lbpconfigdir";
 		exit(1);
 	}
 	
-	// obtain selected Miniserver form config
+	// obtain selected Miniserver from config
 	$my_ms = $ms[$config['LOXONE']['Loxone']];
 	#print_r($my_ms);
 	
-	// if no zone is currently playing, abort script
-	#if (count($playing) === 0)  {
-	#	send_udp();
-	#	send_vit();
-	#	exit(1);
-	#}
-	
-	send_udp();
-	send_vit();
-	#exit;
+	// if zone is currently playing... 
+	if (count($playing) > 0)  {
+		send_udp();
+		send_vit();
+		@unlink($stat);
+		exit;
+	} else {
+		// ... if not, push data one more time...
+		if (@!file_exists($stat))  {
+			file_put_contents($stat, "1");
+			send_udp();
+			send_vit();
+		#} else {
+		#	//... don't push data any more
+		#	exit;
+		}
+	}
+	exit;
 
+	
+	/**
+	/* Funktion : send_udp --> sendet Statusdaten je player Daten an UDP
+	/*
+	/* @param: nichts                             
+	/* @return: div. Stati je Player
+	**/
+	
 	function send_udp()  {	
 	
 	global $config, $my_ms, $sonoszone, $sonoszonen, $sonos; 
@@ -186,6 +213,13 @@ $myFolder = "$lbpconfigdir";
 		socket_close($socket);
 	}
 	
+	/**
+	/* Funktion : send_vit --> sendet Titel/Interpret/Radiosender Daten an virtuelle Texteingänge
+	/*
+	/* @param: nichts                             
+	/* @return: Texte je Player
+	**/
+	
 	function send_vit()  {
 		
 		global $config, $my_ms, $sonoszone, $sonoszonen, $sonos; 
@@ -246,8 +280,8 @@ $myFolder = "$lbpconfigdir";
 		}
 		#LOGINF ("Push");
 	}
- 
- 
+	
+
  
  function shutdown()  {
 	global $log;
