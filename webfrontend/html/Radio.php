@@ -55,7 +55,9 @@ function radio(){
 				$sonos->SetVolume($volume);
 			}
 		}
-		$sonos->Play();
+		if(!isset($_GET['load'])) {
+			$sonos->Play();
+		}
     }
 	$rleinzeln++;
 	}   
