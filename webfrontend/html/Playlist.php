@@ -14,6 +14,7 @@
 
 function playlist() {
 	Global $debug, $sonos, $master, $sonoszone, $config, $volume;
+	
 	if(isset($_GET['playlist'])) {
 		$sonos->SetQueue("x-rincon-queue:" . trim($sonoszone[$master][1]) . "#0"); 
 		$playlist = $_GET['playlist'];
@@ -54,7 +55,9 @@ function playlist() {
 			} else {
 				check_rampto();
 			}
-			$sonos->Play();
+			if(!isset($_GET['load'])) {
+				$sonos->Play();
+			}
 			LOGGING("Playlist is playing.", 7);
 			$gefunden = 1;
 		}
@@ -380,10 +383,10 @@ function say_zone($zone) {
 	$text = ($play_zone.' '.$zone);
 	$textstring = ($text);
 	$rawtext = md5($textstring);
-	$filename = "$rawtext";
-	$messageid = $filename;
+	$filenameplay = "$rawtext";
+	$messageid = $filenameplay;
 	select_t2s_engine();
-	t2s($messageid, $MessageStorepath, $textstring, $filename);
+	t2s($messageid, $config['SYSTEM']['ttspath'], $textstring, $filenameplay);
 	// get Coordinator of (maybe) pair or single player
 	$coord = getRoomCoordinator($master);
 	LOGGING("Room Coordinator been identified", 7);		
