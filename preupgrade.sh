@@ -60,5 +60,9 @@ cp -p -v -r $5/log/plugins/$3/ /tmp/$1\_upgrade/log
 echo "<INFO> Backing up existing MP3 files"
 cp -p -v -r $5/data/plugins/$3/ /tmp/$1\_upgrade/data
 
+echo "<INFO> Backing up existing Text files"
+cp -p -v -r $5/templates/plugins/$3/lang/t2s-text_de.ini /tmp/$1\_upgrade/templates
+cp -p -v -r $5/templates/plugins/$3/lang/t2s-text_en.ini /tmp/$1\_upgrade/templates
+
 # Exit with Status 0
 exit 0

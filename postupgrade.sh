@@ -55,6 +55,9 @@ cp -p -v -r /tmp/$1\_upgrade/log/$3/* $5/log/plugins/$3/
 echo "<INFO> Copy back existing MP3 files"
 cp -p -v -r /tmp/$1\_upgrade/data/$3/* $5/data/plugins/$3/ 
 
+echo "<INFO> Copy back existing Text files"
+cp -p -v -r /tmp/$1\_upgrade/upgrade/templates/$3/* $5/templates/plugins/$3/lang/ 
+
 echo "<INFO> Remove temporary folders"
 rm -r /tmp/$1\_upgrade
 
