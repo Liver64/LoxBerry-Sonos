@@ -43,7 +43,7 @@ global $mem_sendall, $mem_sendall_sec;
 		
 	// check if Data transmission is switched off
 	if(!is_enabled($tmpsonos['LOXONE']['LoxDaten'])) {
-		#exit;
+		exit;
 	}
 	
 	// Parsen der Sonos Zonen Konfigurationsdatei player.cfg
