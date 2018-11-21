@@ -12,6 +12,7 @@ require_once("$lbphtmldir/system/logging.php");
 require_once("$lbphtmldir/Helper.php");
 require_once("$lbphtmldir/Grouping.php");
 require_once("$lbphtmldir/system/io-modul.php");
+#require_once("$lbphtmldir/system/io-modul-http.php");
 
 register_shutdown_function('shutdown');
 
@@ -19,7 +20,7 @@ $ms = LBSystem::get_miniservers();
 #$log = LBLog::newLog( [ "name" => "Push Data", "addtime" => 1, "filename" => "$lbplogdir/sonos.log", "append" => 1 ] );
 
 #LOGSTART("push data");
-#echo '<PRE>'; 
+ 
 
 $myFolder = "$lbpconfigdir";
 $htmldir = "$lbphtmldir";
@@ -188,12 +189,12 @@ global $mem_sendall, $mem_sendall_sec;
 				} else {
 					$gettransportinfo = $sonos->GetTransportInfo();
 				}
-				$tmp_array["vol_$zone@"] = $temp_volume;
-				$tmp_array["stat_$zone@"] = $gettransportinfo;
-				$tmp_array["grp_$zone@"] = $zone_stat;
-				#$tmp_array["vol_$zone"] = $temp_volume;
-				#$tmp_array["stat_$zone"] = $gettransportinfo;
-				#$tmp_array["grp_$zone"] = $zone_stat;
+				#$tmp_array["vol_$zone@"] = $temp_volume;
+				#$tmp_array["stat_$zone@"] = $gettransportinfo;
+				#$tmp_array["grp_$zone@"] = $zone_stat;
+				$tmp_array["vol_$zone"] = $temp_volume;
+				$tmp_array["stat_$zone"] = $gettransportinfo;
+				$tmp_array["grp_$zone"] = $zone_stat;
 				}
 		} else {
 			LOGERR("Can't create UDP socket to $server_ip");
@@ -203,6 +204,12 @@ global $mem_sendall, $mem_sendall_sec;
 		$response = udp_send_mem($no_ms, $server_port, "Sonos4lox", $tmp_array);
 		#$response = msudp_send_mem($no_ms, $server_port, "Sonos4lox", $tmp_array, "@");
 		
+			
+		#if (!isset($response)) {
+		#	echo "Error sending to Miniserver";
+		#} else {
+		#	echo "Sent ok.";
+		#}
 	}
 	
 	
@@ -218,11 +225,11 @@ global $mem_sendall, $mem_sendall_sec;
 		global $config, $my_ms, $sonoszone, $sonoszonen, $sonos; 
 		
 		# send TEXT data
-		$lox_ip		 = $my_ms['IPAddress'];
-		$lox_port 	 = $my_ms['Port'];
-		$loxuser 	 = $my_ms['Admin'];
-		$loxpassword = $my_ms['Pass'];
-		$loxip = $lox_ip.':'.$lox_port;
+		#$lox_ip		 = $my_ms['IPAddress'];
+		#$lox_port 	 = $my_ms['Port'];
+		#$loxuser 	 = $my_ms['Admin'];
+		#$loxpassword = $my_ms['Pass'];
+		#$loxip = $lox_ip.':'.$lox_port;
 		foreach ($sonoszone as $zone => $player) {
 			$sonos = new PHPSonos($sonoszone[$zone][0]);
 			$temp = $sonos->GetPositionInfo();
@@ -257,20 +264,29 @@ global $mem_sendall, $mem_sendall_sec;
 				}
 				// Übergabe der Titelinformation an Loxone (virtueller Texteingang)
 				$sonos = new PHPSonos($sonoszone[$zone][0]);
-				$valueurl = rawurlencode($value);
-				$valuesplit[0] = rawurlencode($valuesplit[0]);
-				$valuesplit[1] = rawurlencode($valuesplit[1]);
+				#$valueurl = rawurlencode($value);
+				#$valuesplit[0] = rawurlencode($valuesplit[0]);
+				#$valuesplit[1] = rawurlencode($valuesplit[1]);
+				$valueurl = ($value);
+				$valuesplit[0] = ($valuesplit[0]);
+				$valuesplit[1] = ($valuesplit[1]);
 					try {
-						$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/titint_$zone/$valueurl"); // Titel- und Interpretinfo für Loxone
-						$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/tit_$zone/$valuesplit[0]"); // Nur Titelinfo für Loxone
-						$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/int_$zone/$valuesplit[1]"); // Nur Interpreteninfo für Loxone
-						$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/source_$zone/$source"); // Radio oder Playliste
+						$data['titint_'.$zone] = $valueurl;
+						$data['tit_'.$zone] = $valuesplit[0];
+						$data['int_'.$zone] = $valuesplit[1];
+						$data['source_'.$zone] = $source;
+						#$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/titint_$zone/$valueurl"); // Titel- und Interpretinfo für Loxone
+						#$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/tit_$zone/$valuesplit[0]"); // Nur Titelinfo für Loxone
+						#$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/int_$zone/$valuesplit[1]"); // Nur Interpreteninfo für Loxone
+						#$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/source_$zone/$source"); // Radio oder Playliste
 					} catch (Exception $e) {
 						LOGERR("The connection to Loxone could not be initiated!");	
 						exit;
-					}							
+					}
 			}
 		}
+		ms_send_mem($config['LOXONE']['Loxone'], $data, $value = null);
+		#print_r($data);
 		#LOGINF ("Push");
 	}
 

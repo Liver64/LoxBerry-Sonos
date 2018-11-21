@@ -33,7 +33,7 @@ function udp_send_mem($msnr, $udpport, $prefix, $params)
 	if (empty($mem['Main']['lastMSRebootCheck']) || $mem['Main']['lastMSRebootCheck'] < (time()-300)) {
 		// Check if Miniserver was rebooted after 5 minutes
 		$mem['Main']['lastMSRebootCheck'] = time();
-		list($newtxp, $code) = mshttp_call($msnr, "/dev/lan/txp");
+		list($newtxp, $code) = rest_call($msnr, "/dev/lan/txp");
 		// echo "newtxp: $newtxp Code: $code\n";
 		if($code == "200" && ( !isset($mem['Main']['MSTXP']) || $newtxp < $mem['Main']['MSTXP']) ) {
 			$mem_sendall = 1;
@@ -126,7 +126,7 @@ function ms_udp_send($msnr, $udpport, $prefix, $params)
 		// echo "Param: $param Value $value\n";
 		$parinline++;
 		$oldline = $line;
-		$line .= $param . '' . $value . ' ';
+		$line .= $param . '@' . $value . ' ';
 		// echo "Line: $line\n";
 		$currlen = strlen($prefix) + strlen($line);
 		if ($parinline == 1 && $currlen > 220) {
@@ -143,7 +143,7 @@ function ms_udp_send($msnr, $udpport, $prefix, $params)
 			if(!empty($udpresp)) {
 				$udperror = 1;
 			}
-			$line = $param . '' . $value . ' ';
+			$line = $param . '@' . $value . ' ';
 			$parinline = 1;
 		}
 	}
@@ -162,6 +162,171 @@ function ms_udp_send($msnr, $udpport, $prefix, $params)
 		return Null;
 	} else {
 		return "OK";
+	}
+}
+
+
+// rest_call
+function rest_call($msnr, $command) 
+{
+	$ms = LBSystem::get_miniservers();
+	if (!isset($ms[$msnr])) {
+		error_log("Miniserver $msnr not defined\n");
+		return array (null, 601, null);
+	}
+	
+	$mscred = $ms[$msnr]['Credentials'];
+	$msip = $ms[$msnr]['IPAddress'];
+	$msport = $ms[$msnr]['Port'];
+	
+	$url = "http://$mscred@$msip:$msport" . $command;
+	
+	// echo "URL: $url\n";
+	
+	$xmlresp = simplexml_load_file($url);
+	if ($xmlresp === false) {
+		// echo "Errors occured\n";
+		$errors = libxml_get_errors();
+		LOGERR("rest_call: An error occured loading the XML:");
+		foreach($errors as $error) {
+			LOGERR(display_xml_error($error, $xmlresp));
+		}
+		return array (null, 500, null);
+	}
+	
+	$value = (string)$xmlresp->attributes()->value;
+	$code = (string)$xmlresp->attributes()->Code;
+	
+	return array ($value, $code, $xmlresp);
+	
+}
+
+
+// http_send
+function http_send($msnr, $inputs, $value = null)
+{
+	
+	$ms = LBSystem::get_miniservers();
+	if (!isset($ms[$msnr])) {
+		LOGERR("Miniserver $msnr not defined\n");
+		return;
+	}
+	
+	if(!is_array($inputs)) {
+		if($value === null) {
+			LOGERR("http_send: Input string provided, but value missing");
+			return;
+		}
+		// echo "Input is flat\n";
+		$inputs = [ $inputs => $value ];
+		$input_was_string = true;
+	}
+	
+	foreach ($inputs as $input => $val) {
+		// echo "Sending param: $input = $val \n";
+		list($respvalue, $respcode) = rest_call($msnr, '/dev/sps/io/' . rawurlencode($input) . '/' . rawurlencode($val)); 
+		// echo "Responseval: $respvalue Respcode: $respcode\n";
+		if($respcode == 200) {
+			$response[$input] = $respvalue;
+		} else {
+			$response[$input] = null;
+		}
+	}
+	
+	if (isset($input_was_string)) {
+		
+		return array_values($response)[0];
+	} else {
+		return $response;
+	}
+}
+
+// ms_send_mem
+function ms_send_mem($msnr, $params, $value = null)
+{
+	global $mem_sendall_sec;
+	global $mem_sendall;
+	
+	$memfile = "/run/shm/mshttp_mem_${msnr}.json";
+	
+	if(file_exists($memfile)) {
+		// echo "Read file\n";
+		$jsonstr = file_get_contents($memfile);
+		if(isset($jsonstr)) {
+			$mem = json_decode($jsonstr, true);
+		}
+	}
+	
+	if(empty($mem['Main']['timestamp'])) {
+		$mem['Main']['timestamp'] = time();
+	}
+	
+	if( $mem['Main']['timestamp'] < (time()-$mem_sendall_sec) ) {
+		$mem_sendall = 1;
+	}
+	
+	if ( empty($mem['Main']['lastMSRebootCheck']) || $mem['Main']['lastMSRebootCheck'] < (time()-300)) {
+		// Check if Miniserver was rebooted after 5 minutes
+		$mem['Main']['lastMSRebootCheck'] = time();
+		list($newtxp, $code) = rest_call($msnr, "/dev/lan/txp");
+		// echo "newtxp: $newtxp Code: $code\n";
+		if($code == "200" && ( !isset($mem['Main']['MSTXP']) || $newtxp < $mem['Main']['MSTXP']) ) {
+			$mem_sendall = 1;
+			$mem['Main']['MSTXP'] = $newtxp;
+		}
+	}
+	//echo "mem_sendall: $mem_sendall\n";
+	
+	if( $mem_sendall <> 0 ) {
+		$mem['Params'] = Null;
+		$mem['Main']['timestamp'] = time();
+		$mem_sendall = 0;
+	}
+	
+	if(!is_array($params)) {
+		if($value === null) {
+			LOGERR("ms_send_mem: Input string provided, but value missing");
+			return;
+		}
+		// echo "Input is flat\n";
+		$params = [ $params => $value ];
+		$input_was_string = true;
+	}
+	
+	
+	$newparams = array();
+	
+	foreach ($params as $param => $value) {
+		if( !isset($mem['Params'][$param]) || $mem['Params'][$param] !== $value ) {
+			// Param has changed
+			// echo "Param changed: $param = $value\n";
+			$newparams[$param] = $value;
+		}
+	}
+	
+	if(!empty($newparams)) {
+		$httpres = http_send($msnr, $newparams);
+		if ($httpres != null) {
+			if(!isset($mem['Params'])) {
+				$mem['Params'] = array();
+			}
+			$mem['Params'] = array_merge($mem['Params'], $newparams);
+			$jsonstr = json_encode( $mem, JSON_PRETTY_PRINT, 20);
+			file_put_contents($memfile, $jsonstr);
+		}
+	}
+	
+	// We need to generate a response for all values if it came from ram
+	foreach ($params as $param => $value) {
+		if(isset($mem['Params'][$param])) {
+			$httpres[$param] = $value;
+		}
+	}
+	
+	if (isset($input_was_string)) {
+		return array_values($httpres)[0];
+	} else {
+		return $httpres;
 	}
 }
 
