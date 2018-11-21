@@ -11,6 +11,7 @@ require_once("$lbphtmldir/system/error.php");
 require_once("$lbphtmldir/system/logging.php");
 require_once("$lbphtmldir/Helper.php");
 require_once("$lbphtmldir/Grouping.php");
+require_once("$lbphtmldir/system/io-modul.php");
 
 register_shutdown_function('shutdown');
 
@@ -25,9 +26,10 @@ $htmldir = "$lbphtmldir";
 $tmp_play = "stat.txt";
 $stat = $htmldir."/".$tmp_play;
 
-$mem_sendall = 1;
+$mem_sendall = 0;
 $mem_sendall_sec = 3600;
-#use LoxBerry::IO;
+
+#echo '<PRE>';
 
 global $mem_sendall, $mem_sendall_sec;
 
@@ -41,7 +43,7 @@ global $mem_sendall, $mem_sendall_sec;
 		
 	// check if Data transmission is switched off
 	if(!is_enabled($tmpsonos['LOXONE']['LoxDaten'])) {
-		exit;
+		#exit;
 	}
 	
 	// Parsen der Sonos Zonen Konfigurationsdatei player.cfg
@@ -130,16 +132,12 @@ global $mem_sendall, $mem_sendall_sec;
 		send_udp();
 		send_vit();
 		@unlink($stat);
-		exit;
 	} else {
 		// ... if not, push data one more time...
 		if (@!file_exists($stat))  {
 			file_put_contents($stat, "1");
 			send_udp();
 			send_vit();
-		#} else {
-		#	//... don't push data any more
-		#	exit;
 		}
 	}
 	exit;
@@ -154,7 +152,7 @@ global $mem_sendall, $mem_sendall_sec;
 	
 	function send_udp()  {	
 	
-	global $config, $my_ms, $sonoszone, $sonoszonen, $sonos; 
+	global $config, $my_ms, $sonoszone, $sonoszonen, $sonos, $mem_sendall_sec, $mem_sendall, $response; 
 	
 		// LoxBerry **********************
 		# send UDP data
@@ -162,6 +160,7 @@ global $mem_sendall, $mem_sendall_sec;
 		$sonos_array_diff = @array_keys($sonos_array_diff);
 		$server_ip = $my_ms['IPAddress'];
 		$server_port = $config['LOXONE']['LoxPort'];
+		$no_ms = $config['LOXONE']['Loxone'];
 		$tmp_array = array();
 		if ($socket = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP)) {
 			foreach ($sonoszone as $zone => $player) {
@@ -189,29 +188,23 @@ global $mem_sendall, $mem_sendall_sec;
 				} else {
 					$gettransportinfo = $sonos->GetTransportInfo();
 				}
-				$message = "vol_$zone@".$temp_volume."; stat_$zone@".$gettransportinfo."; grp_$zone@".$zone_stat;
-				array_push($tmp_array, $message);
-			}
+				$tmp_array["vol_$zone@"] = $temp_volume;
+				$tmp_array["stat_$zone@"] = $gettransportinfo;
+				$tmp_array["grp_$zone@"] = $zone_stat;
+				#$tmp_array["vol_$zone"] = $temp_volume;
+				#$tmp_array["stat_$zone"] = $gettransportinfo;
+				#$tmp_array["grp_$zone"] = $zone_stat;
+				}
 		} else {
 			LOGERR("Can't create UDP socket to $server_ip");
 			exit(1);
 		}
-		// fügt die Offline Zonen hinzu
-		if (!empty($sonos_array_diff)) {
-			foreach ($sonos_array_diff as $zoneoff) {
-				$messageoff = "vol_$zoneoff@0; stat_$zoneoff@3";
-				array_push($tmp_array, $messageoff);
-			}
-		}
-		$UDPmessage = implode("; ", $tmp_array);
-		try {
-			socket_sendto($socket, $UDPmessage, strlen($UDPmessage), 0, $server_ip, $server_port);
-		} catch (Exception $e) {
-			LOGERR("The connection to Loxone could not be initiated!");	
-			exit(1);
-		}
-		socket_close($socket);
+		
+		$response = udp_send_mem($no_ms, $server_port, "Sonos4lox", $tmp_array);
+		#$response = msudp_send_mem($no_ms, $server_port, "Sonos4lox", $tmp_array, "@");
+		
 	}
+	
 	
 	/**
 	/* Funktion : send_vit --> sendet Titel/Interpret/Radiosender Daten an virtuelle Texteingänge
@@ -280,9 +273,7 @@ global $mem_sendall, $mem_sendall_sec;
 		}
 		#LOGINF ("Push");
 	}
-	
 
- 
  function shutdown()  {
 	global $log;
 	#$log->LOGEND("");
