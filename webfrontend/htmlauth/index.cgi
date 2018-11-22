@@ -431,13 +431,12 @@ sub save
 	my $MSUser		= $cfg->param("MINISERVER$selminiserver.ADMIN");
 	my $MSPass		= $cfg->param("MINISERVER$selminiserver.PASS");
 			
-	# turn on/off function "fetch_sonos"
-	my $ms = LWP::UserAgent->new;
+	# turn on/off MS inbound function 
 	if ($LoxDaten eq "true") {
-		my $req = $ms->get("http://$MSUser:$MSPass\@$MiniServer:$MSWebPort/dev/sps/io/fetch_sonos/Ein");
 		LOGOK "Coummunication to Miniserver is switched on";
+		# call to prepare XML Template
+		&prep_XML;
 	} else {
-		my $req = $ms->get("http://$MSUser:$MSPass\@$MiniServer:$MSWebPort/dev/sps/io/fetch_sonos/Aus");
 		LOGOK "Coummunication to Miniserver is switched off.";
 	}
 		
@@ -531,9 +530,6 @@ sub save
 	LOGDEB "Sonos Zones has been saved.";
 	LOGOK "All settings has been saved successful";
 	
-	# call to prepare XML Template
-	&prep_XML;
-		
 	my $lblang = lblanguage();
 	$template_title = "$SL{'BASIS.MAIN_TITLE'}: v$sversion";
 	LoxBerry::Web::lbheader($template_title, $helplink, $helptemplatefilename);
@@ -646,10 +642,9 @@ sub scan
 	
 	if (!-r $lbphtmldir . "/system/" . $XML_file) 
 	{
-		LOGERR "File ".$XML_file." has not been generated and therefore could not be downloaded. Please update your Plugin config";
-		$error_message = $ERR{'ERRORS.ERR_CHECK_XML_FILE'};
-		notify($lbpplugindir, "Sonos UI ", "File ".$XML_file." has not been generated. Please update your Plugin config", 1);
-		&error; 
+		LOGWARN "File ".$XML_file." has not been generated and could not be downloaded. Please check log file";
+		# $error_message = $ERR{'ERRORS.ERR_CHECK_XML_FILE'};
+		# &error; 
 	}
 	return();
 }
