@@ -881,11 +881,11 @@ function create_symlinks()  {
 		mkdir($symmp3folder, 0755);
 		LOGGING("Folder: '".$symmp3folder."' has been created", 7);
 	}
-	if (!is_dir($myFolder."/interfacedownload")) {
+	if (!is_link($myFolder."/interfacedownload")) {
 		symlink($symttsfolder, $myFolder."/interfacedownload");
 		LOGGING("Symlink: '".$myFolder.'/interfacedownload'."' has been created", 7);
 	}
-	if (!is_dir($lbphtmldir."/interfacedownload")) {
+	if (!is_link($lbphtmldir."/interfacedownload")) {
 		symlink($symttsfolder, $lbphtmldir."/interfacedownload");
 		LOGGING("Symlink: '".$lbphtmldir.'/interfacedownload'."' has been created", 7);
 	}
