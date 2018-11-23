@@ -209,4 +209,8 @@
 			[Bugfix] PHP Logging Ende über shutdown Funktion implementiert
 			[Bugfix] zusätzliche Info des aktuellen Speicherortes in der UI hinzugefügt
 			[Feature] Standard 'path' für Upgrade hinzugefügt
+			[Feature] Parameter &load für Syntax hinzugefügt. Dieser lädt ein PL oder Radiosender ohne play
+			[Feature] UDP und HTTP Kommunikation zum Miniserver optimiert
+			[Bugfix] symlink Prüfung während der Laufzeit korrigiert
+			[Bugfix] Datentransfer zum MS optimiert
 			
