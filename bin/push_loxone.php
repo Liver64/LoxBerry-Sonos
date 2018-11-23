@@ -1,7 +1,6 @@
 #!/usr/bin/env php
 <?php
 
-
 require_once "loxberry_system.php";
 require_once "loxberry_log.php";
 require_once "loxberry_io.php";
@@ -126,17 +125,16 @@ global $mem_sendall, $mem_sendall_sec;
 	
 	// obtain selected Miniserver from config
 	$my_ms = $ms[$config['LOXONE']['Loxone']];
-	#print_r($my_ms);
 	
 	// if zone is currently playing... 
 	if (count($playing) > 0)  {
 		send_udp();
 		send_vit();
-		@unlink($stat);
+		unset($_SESSION['stat']);
 	} else {
 		// ... if not, push data one more time...
-		if (@!file_exists($stat))  {
-			file_put_contents($stat, "1");
+		if (@$pl_stat != "1")  {
+			$pl_stat = $_SESSION['stat'] = "1";
 			send_udp();
 			send_vit();
 		}
