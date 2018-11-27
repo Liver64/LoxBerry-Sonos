@@ -78,7 +78,7 @@ function playlist() {
 **/
 
 function zapzone() {
-	global $config, $sonos, $sonoszone, $master, $playzones, $count, $maxzap;
+	global $config, $sonos, $sonoszone, $master, $playzones, $count, $maxzap, $count_file, $curr_zone_file;
 	
 	$sonos = new PHPSonos($sonoszone[$master][0]);
 	if (substr($sonos->GetPositionInfo()["TrackURI"], 0, 15) == "x-rincon:RINCON") {
@@ -93,8 +93,8 @@ function zapzone() {
 	if (empty($playingzones) or $count > count($playingzones)) {
 		nextradio();
 		sleep($maxzap);
-		if(file_exists("count.txt"))  {
-			unlink("count.txt");
+		if(file_exists($count_file))  {
+			unlink($count_file);
 		}
 		exit;
 	}
@@ -147,11 +147,15 @@ function zapzone() {
 **/
 
 function saveCurrentZone($nextZoneKey) {
-    if(!touch('curr_Zone.txt')) {
-		LOGGING("No permission to write to curr_Zone.txt", 3);
+	global $curr_zone_file;
+	
+	$curr_zone_file = "/run/shm/sonos_currzone_mem.txt";
+	
+    if(!touch($curr_zone_file)) {
+		LOGGING("No permission to write file", 3);
 		exit;
     }
-	$handle = fopen ('curr_Zone.txt', 'w');
+	$handle = fopen ($curr_zone_file, 'w');
     fwrite ($handle, $nextZoneKey);
     fclose ($handle);                
 } 
@@ -165,14 +169,16 @@ function saveCurrentZone($nextZoneKey) {
 **/      
 
 function currentZone() {
-	global $config, $master;
-
+	global $config, $master, $curr_zone_file;
+	
+	$curr_zone_file = "/run/shm/sonos_currzone_mem.txt";
+		
 	$playingzones = $_SESSION["playingzone"];
-	if(!touch('curr_Zone.txt')) {
-		LOGGING("Could not open file curr_Zone.txt", 3);
+	if(!touch($curr_zone_file)) {
+		LOGGING("Could not open file", 3);
 		exit;
     }
-	$currentZone = file('curr_Zone.txt');
+	$currentZone = file($curr_zone_file);
 	if(empty($currentZone)) {
 		reset($playingzones);
         $currentZone[0] = key($playingzones);
@@ -219,11 +225,16 @@ function play_zones() {
 **/
 
 function countzones() {
-	if(!file_exists("count.txt")){
-        fopen("count.txt", "a" );
+	
+	global $count_file;
+	
+	$count_file = "/run/shm/sonos_zapzone_mem_count.txt";
+	
+	if(!file_exists($count_file)){
+        fopen($count_file, "a" );
         #$aufruf=0;
 	}
-	$counter=fopen("count.txt","r+"); 
+	$counter=fopen($count_file,"r+"); 
 	$output=fgets($counter,100);
 	$output=$output+1;
 	rewind($counter);
@@ -355,7 +366,7 @@ function next_dynamic() {
 **/
 function say_zone($zone) {
 			
-	global $master, $sonoszone, $config, $volume, $sonos, $coord, $messageid, $filename, $MessageStorepath, $nextZoneKey;
+	global $master, $sonoszone, $config, $volume, $sonos, $coord, $messageid, $filename, $MessageStorepath, $nextZoneKey, $filenameplaysay;
 	require_once("addon/sonos-to-speech.php");
 	
 	// if batch has been choosed abort
@@ -381,19 +392,18 @@ function say_zone($zone) {
  	#********************************************************************
 	# Generiert und kodiert Ansage der Zone
 	$text = ($play_zone.' '.$zone);
-	$textstring = ($text);
-	$rawtext = md5($textstring);
-	$filenameplay = "$rawtext";
-	$messageid = $filenameplay;
+	$textstring = $text;
+	$rawtext = md5($text);
+	$filename = "$rawtext";
 	select_t2s_engine();
-	t2s($messageid, $config['SYSTEM']['ttspath'], $textstring, $filenameplay);
+	t2s($textstring, $filename);
 	// get Coordinator of (maybe) pair or single player
 	$coord = getRoomCoordinator($master);
 	LOGGING("Room Coordinator been identified", 7);		
 	$sonos = new PHPSonos($coord[0]); 
 	$sonos->SetMute(false);
 	$sonos->SetVolume($volume);
-	play_tts($messageid);
+	play_tts($filename);
 	LOGGING("Zone Announcement has been played", 6);	
 	#restoreSingleZone();
 }

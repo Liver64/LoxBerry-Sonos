@@ -48,7 +48,7 @@ $path = LBSCONFIGDIR; 											// get path to general.cfg
 $myFolder = "$lbpconfigdir";									// get config folder
 #$myMessagepath = "//$myIP/sonos_tts/";							// get T2S folder to play
 #$myMessagepath = "//$hostname/plugindata/$psubfolder/tts/";	// get T2S folder to play
-$MessageStorepath = "$lbpdatadir/tts/";							// get T2S folder to store
+#$MessageStorepath = "$lbpdatadir/tts/";							// get T2S folder to store
 $pathlanguagefile = "$lbphtmldir/voice_engines/langfiles/";		// get languagefiles
 $logpath = "$lbplogdir/$psubfolder";							// get log folder
 $templatepath = "$lbptemplatedir";								// get templatedir
@@ -94,11 +94,7 @@ $plugindata = LBSystem::plugindata();
 	$sonoszonen['sonoszonen'] = $sonosnet;
 	// finale config für das Script
 	$config = array_merge($sonoszonen, $tmpsonos);
-		
-	// Update config array
-	$config['SYSTEM']['messageStorePath'] = $MessageStorepath;
-	#$config['VARIOUS']['maxzap'] = $maxzap;
-
+	
 	// Übernahme und Deklaration von Variablen aus der Konfiguration
 	$sonoszonen = $config['sonoszonen'];
 	
@@ -141,15 +137,15 @@ $plugindata = LBSystem::plugindata();
 	
 	#$sonoszone = $sonoszonen;
 	#print_r($sonoszonen);
-	echo '<PRE>'; 
+	#echo '<PRE>'; 
 	#print_r($config);
 	#exit;
 
 	# select language file for text-to-speech
 	$t2s_langfile = "t2s-text_".substr($config['TTS']['messageLang'],0,2).".ini";				// language file for text-speech
 
-	# checking size of LoxBerry logfile
-	#check_size_logfile();
+	# Standardpath for saving MP3
+	$MessageStorepath = $config['SYSTEM']['ttspath'];
 
 	// check if getsonosinfo has been executed, if yes, skip LOGGING
 	$find = strripos($syntax, "=");
@@ -168,7 +164,6 @@ $plugindata = LBSystem::plugindata();
 		LOGGING("Configuration has been successful loaded",6);
 		LOGGING($sambashare[1],5);
 	}
-
 	create_symlinks();
 	
 #-- End Preparation ---------------------------------------------------------------------

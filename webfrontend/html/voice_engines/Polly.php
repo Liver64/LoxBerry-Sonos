@@ -1,5 +1,5 @@
 <?php
-function t2s($messageid, $MessageStorepath, $textstring, $filename)
+function t2s($textstring, $filename)
 
 // polly: Erstellt basierend auf Input eine TTS Nachricht, übermittelt sie an Ivona.com und 
 // speichert das zurückkommende file lokal ab
@@ -41,17 +41,11 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 		
 		LOGGING("AWS Polly has been successful selected", 7);	
 			
-		#if (!file_exists($file)) 
-		#{
-			#-- Aufruf der POLLY Class zum generieren der t2s --
-			$a = new POLLY_TTS();
-			$a->save_mp3($textstring, $config['SYSTEM']['ttspath']."/".$filename.".mp3", $language, $voice);
-			LOGGING('The text has been passed to Polly engine for MP3 creation',5);
-		#} else {
-		#	LOGGING('Requested T2s has been grabbed from cache',6);
-		#}
-		$messageid = $filename;
-		return ($messageid);
+		#-- Aufruf der POLLY Class zum generieren der t2s --
+		$a = new POLLY_TTS();
+		$a->save_mp3($textstring, $config['SYSTEM']['ttspath']."/".$filename.".mp3", $language, $voice);
+		LOGGING('The text has been passed to Polly engine for MP3 creation',5);
+		return $filename;
 }
 
 

@@ -591,43 +591,35 @@ sub scan
 	our $countplayers = 0;
 	my $error_volume = $SL{'T2S.ERROR_VOLUME_PLAYER'};
 	
+	LOGDEB "Scan for Sonos Zones has been executed.";
+	
 	# executes PHP network.php script (reads player.cfg and add new zones if been added)
 	my $response = qx(/usr/bin/php $lbphtmldir/system/$scanzonesfile);
-			
-	#import Sonos Player from JSON file
-	if (!open (my $fh, '<:raw', $lbpconfigdir . '/' . $plugintempplayerfile)) {
-		LOGERR "File: ".$plugintempplayerfile." could not be opened! Please execute Scan Zones again.";
-		notify($lbpplugindir, "Sonos", "The temporary scan file '".$plugintempplayerfile."' could not be opened!", 3);
-	} else {
-		my $file;
-		local $/ = undef;
-		$file = <$fh>;
-		close($fh);
-		if ( $file ne "[]" ) {
-		my $config = decode_json($file);
-		
-			# creates table of Sonos devices
-			foreach my $key (keys %{$config})
-			{
-				$countplayers++;
-				$rowssonosplayer .= "<tr><td style='height: 25px; width: 4%;' class='auto-style1'><INPUT type='checkbox' style='width: 20px' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
-				$rowssonosplayer .= "<td style='height: 28px; width: 20%;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$key' style='width: 100%; background-color: #e6e6e6;' /> </td>\n";
-				$rowssonosplayer .= "<td style='height: 28px; width: 20%;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='$config->{$key}->[2]' style='width: 100%; background-color: #e6e6e6;' /> </td>\n";
-				$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='$config->{$key}->[3]'' /> </td>\n";
-				$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='$config->{$key}->[4]'' /> </td>\n";
-				$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$config->{$key}->[5]'' /> </td>\n";
-				$rowssonosplayer .= "<input type='hidden' id='ip$countplayers' name='ip$countplayers' value='$config->{$key}->[0]'>\n";
-				$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' value='$config->{$key}->[1]'>\n";
-			}
-		LOGDEB "Scan for Sonos Zones has been executed.";
-		$template->param("ROWSSONOSPLAYER", $rowssonosplayer);
+	
+	if ( $response ne "[]" ) {
+	LOGOK "JSON data from application has been succesfully received.";
+	my $config = decode_json($response);
+	
+		# create table of Sonos devices
+		foreach my $key (keys %{$config})
+		{
+			$countplayers++;
+			$rowssonosplayer .= "<tr><td style='height: 25px; width: 4%;' class='auto-style1'><INPUT type='checkbox' style='width: 20px' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
+			$rowssonosplayer .= "<td style='height: 28px; width: 20%;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$key' style='width: 100%; background-color: #e6e6e6;' /> </td>\n";
+			$rowssonosplayer .= "<td style='height: 28px; width: 20%;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='$config->{$key}->[2]' style='width: 100%; background-color: #e6e6e6;' /> </td>\n";
+			$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='$config->{$key}->[3]'' /> </td>\n";
+			$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='$config->{$key}->[4]'' /> </td>\n";
+			$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$config->{$key}->[5]'' /> </td>\n";
+			$rowssonosplayer .= "<input type='hidden' id='ip$countplayers' name='ip$countplayers' value='$config->{$key}->[0]'>\n";
+			$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' value='$config->{$key}->[1]'>\n";
 		}
-		LOGDEB "Content of 'tmp_player.json' has been loaded into form";
-		unlink ($lbpconfigdir."/tmp_player.json");
-		LOGDEB "Temporary scan file 'tmp_player.json' has been deleted";
-		return($countplayers);
+	
+	$template->param("ROWSSONOSPLAYER", $rowssonosplayer);
+	LOGOK "New Players has been added to form.";
+	return($countplayers);
 	}
 }
+
 
 
 

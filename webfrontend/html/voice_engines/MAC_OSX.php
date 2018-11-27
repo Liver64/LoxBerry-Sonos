@@ -1,5 +1,6 @@
 <?php
-function t2s($messageid, $MessageStorepath, $textstring, $filename)
+function t2s($textstring, $filename)
+
 // text-to-speech: Erstellt mit dem OS X Command "say" eine AIFF Datei und speichert diese in einem Verzeichnis 
 // @Parameter = $messageid von sonos2.php
 
@@ -29,7 +30,6 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 
 		LOGGING("MAC_OSX has been successful selected", 7);	
 		
-		#$mpath = $config['SYSTEM']['messageStorePath'];
 		$lamePath = "/usr/local/bin/";
 		$textstring = urldecode($textstring);
 		if($engine = '3001') {
@@ -49,8 +49,7 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 				LOGGING('The text has been passed to OSX engine for MP3 creation',5);
 			}
 		}
-	$messageid = $filename;
-	return ($messageid);
+	return $filename;
 				  	
 }
 

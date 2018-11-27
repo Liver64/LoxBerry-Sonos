@@ -213,4 +213,8 @@
 			[Feature] UDP und HTTP Kommunikation zum Miniserver optimiert
 			[Bugfix] symlink Prüfung während der Laufzeit korrigiert
 			[Bugfix] Datentransfer zum MS optimiert
+			[Bugfix] Volumesteuerung zapzone und nextradio vereinheitlicht
+			[Bugfix] Scan nach Playern optimiert
+			[Bugfix] Announcements (T2S und messageid) optimiert
+			
 			

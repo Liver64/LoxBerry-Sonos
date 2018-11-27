@@ -59,8 +59,19 @@ function create_tts() {
 	} else {
 		$greet = "";
 	}
+	// messageid has been entered so skip rest and start with play
+	if (isset($_GET['messageid'])) {
+		$messageid = $_GET['messageid'];
+		if (file_exists($config['SYSTEM']['mp3path']."/".$messageid.".mp3") === true)  {
+			LOGGING("Messageid '".$messageid."' has been entered", 7);
+		} else {
+			LOGGING("The corrosponding messageid file '".$messageid.".mp3' does not exist or could not be played. Please check your directory or syntax!", 3);
+			exit;
+		}	
+		play_tts($messageid);
+		exit(0);
+	}
 						
-	$messageid = !empty($_GET['messageid']) ? $_GET['messageid'] : '0';
 	$rampsleep = $config['TTS']['rampto'];
 	
 	isset($_GET['text']) ? $text = $_GET['text'] : $text = '';
@@ -129,21 +140,11 @@ function create_tts() {
 		$rampsleep = false;
 		LOGGING("sonos-to-speech plugin has been called", 7);
 		}
-	elseif ((empty($messageid)) && (!isset($_GET['text'])) and (isset($_GET['playbatch']))) {
+	elseif ((!isset($_GET['text'])) and (isset($_GET['playbatch']))) {
 		LOGGING("no text has been entered", 3);
 		exit();
 		}
-	elseif (!empty($messageid)) { # && ($rawtext != '')) {
-		// takes the messageid
-		$messageid = $_GET['messageid'];
-		if (file_exists($MessageStorepath."".$MP3path."/".$messageid.".mp3") === true)  {
-			LOGGING("Messageid '".$messageid."' has been entered", 7);
-		} else {
-			LOGGING("The corrosponding messageid file '".$messageid.".mp3' does not exist or could not be played. Please check your directory or syntax!", 3);
-			exit;
-		}	
-		}
-	elseif ((empty($messageid)) && ($text <> '')) {
+	elseif ($text <> '') {
 		// prepares the T2S message
 		if (empty($greet))  {
 			$textstring = $text;
@@ -156,11 +157,10 @@ function create_tts() {
 	
 	// encrypt MP3 file as MD5 Hash
 	$filename  = md5($textstring);
-	#echo 'messageid: '.$messageid.'<br>';
 	#echo 'textstring: '.$textstring.'<br>';
 	#echo 'filename: '.$filename.'<br>';
 	// calls the various T2S engines depending on config)
-	if (($messageid == '0') && ($textstring != '')) {
+	if ($textstring != '') {
 		if ($config['TTS']['t2s_engine'] == 1001) {
 			include_once("voice_engines/VoiceRSS.php");
 		}
@@ -179,17 +179,19 @@ function create_tts() {
 		if ($config['TTS']['t2s_engine'] == 4001) {
 			include_once("voice_engines/Polly.php");	
 		}
-		$filenameplay = $filename;
+		$filename;
 	if(file_exists($config['SYSTEM']['ttspath']."/".$filename.".mp3") && empty($_GET['nocache'])) {
 		LOGGING("MP3 grabbed from cache: '$textstring' ", 6);
 	} else {
-		t2s($messageid, $MessageStorepath, $textstring, $filename);
-		// ** generiere MP3 ID3 Tags **
-		require_once("system/bin/getid3/getid3.php");
-		$getID3 = new getID3;
-		write_MP3_IDTag($textstring);
+		t2s($textstring, $filename);
+		if (($config['TTS']['t2s_engine'] == 6001) or ($config['TTS']['t2s_engine'] == 7001) or ($config['TTS']['t2s_engine'] == 4001))    {
+			// ** generiere MP3 ID3 Tags **
+			require_once("system/bin/getid3/getid3.php");
+			$getID3 = new getID3;
+			write_MP3_IDTag($textstring);
+		}
 	}
-	return $messageid;
+	return $filename;
 	}
 }
 
@@ -201,28 +203,27 @@ function create_tts() {
 * @return: empty
 **/		
 
-function play_tts($messageid) {
-	global $volume, $config, $sonos, $text, $messageid, $sonoszone, $sonoszonen, $master, $myMessagepath, $coord, $actual, $player, $time_start, $t2s_batch, $filename, $textstring, $home, $MP3path, $sleeptimegong, $lbpplugindir, $logpath, $try_play, $MessageStorepath, $filenameplay;
+function play_tts($filename) {
+	global $volume, $config, $messageid, $sonos, $text, $messageid, $sonoszone, $sonoszonen, $master, $myMessagepath, $coord, $actual, $player, $time_start, $t2s_batch, $filename, $textstring, $home, $MP3path, $sleeptimegong, $lbpplugindir, $logpath, $try_play, $MessageStorepath, $filename;
 		
-		$sonos = new PHPSonos($coord[0]);
+		
+		new PHPSonos($sonoszonen[$master][0]);
 		if (isset($_GET['messageid'])) {
 			// Set path if messageid
-			$mpath = $config['SYSTEM']['mp3path'];
-			LOGGING("Path for messageid's been adopted", 7);		
-			#chmod_r();
+			LOGGING("Path for messageid's been adopted", 7);
+			$messageid = $_GET['messageid'];
 		} else {
 			// Set path if T2S
-			$mpath = $config['SYSTEM']['ttspath'];
 			LOGGING("Path for T2S been adopted", 7);	
 		}
-		#echo $mpath;
 		// if Playbar is in Modus TV switch to Playlist 1st
 		if (substr($actual[$master]['PositionInfo']["TrackURI"], 0, 18) == "x-sonos-htastream:")  {  
 			$sonos->SetQueue("x-rincon-queue:".$coord[1]."#0");
 			LOGGING("Playbar was playing", 7);		
 		}
-		$save_plist = count($sonos->GetCurrentPlaylist());
 		// Playlist is playing
+		$save_plist = count($sonos->GetCurrentPlaylist());
+		
 		// if Playlist has more then 998 entries
 		if ($save_plist > 998) {
 			// save temporally playlist
@@ -239,6 +240,7 @@ function play_tts($messageid) {
 			// No Playlist is playing
 			$message_pos = count($save_plist);
 		}
+			
 		// Playgong/jingle to be played upfront
 		#*****************************************************************************************************
 		if(isset($_GET['playgong'])) {
@@ -270,28 +272,28 @@ function play_tts($messageid) {
 		}
 		#******************************************************************************************************
 		// if batch has been created add all T2S
-		$filename = "t2s_batch.txt";
-		if ((file_exists($filename)) and (!isset($_GET['playbatch']))){
-			$t2s_batch = file($filename, FILE_IGNORE_NEW_LINES);
-			foreach ($t2s_batch as $t2s => $messageid) {
-				$sonos->AddToQueue($messageid.".mp3");
+		$filenamebatch = "t2s_batch.txt";
+		if ((file_exists($filenamebatch)) and (!isset($_GET['playbatch']))){
+			$t2s_batch = file($filenamebatch, FILE_IGNORE_NEW_LINES);
+			foreach ($t2s_batch as $t2s => $t2s_value) {
+				$sonos->AddToQueue($t2s_value.".mp3");
 			}
 			LOGGING("Messages from batch has been added to Queue", 7);	
 		} else {
 			// if no batch has been created add single T2S
-			$t2s_file = file_exists($config['SYSTEM']['ttspath']."/".$filenameplay.".mp3");
+			$t2s_file = file_exists($config['SYSTEM']['ttspath']."/".$filename.".mp3");
 			$meid_file = file_exists($config['SYSTEM']['mp3path']."/".$messageid.".mp3");
 			if (($t2s_file  === true) or ($meid_file  === true))  {
 				if ($t2s_file  === true)  {
-					$sonos->AddToQueue($config['SYSTEM']['httpinterface']."/".$filenameplay.".mp3");
-					LOGGING("T2S '".trim($filenameplay).".mp3' has been added to Queue", 7);
+					$sonos->AddToQueue($config['SYSTEM']['httpinterface']."/".$filename.".mp3");
+					LOGGING("T2S '".trim($filename).".mp3' has been added to Queue", 7);
 				} else {
-					$sonos->AddToQueue($config['SYSTEM']['httpinterface']."/".$MP3path."/".$messageid.".mp3");
+					$sonos->AddToQueue($config['SYSTEM']['httpinterface']."/mp3/".$messageid.".mp3");
 					LOGGING("MP3 File '".trim($messageid).".mp3' has been added to Queue", 7);
-					$filenameplay = $messageid;
+					$filename = $messageid;
 				}
 			} else {
-				LOGGING("The file '".trim($filenameplay).".mp3' does not exist or could not be played. Please check your directory or your T2S settings!", 3);
+				LOGGING("The file '".trim($filename).".mp3' does not exist or could not be played. Please check your directory or your T2S settings!", 3);
 				exit;
 			}
 		}
@@ -335,12 +337,12 @@ function play_tts($messageid) {
 			// If batch T2S has been be played
 			if ((!empty($t2s_batch)) and (!isset($_GET['playbatch'])))  {
 				$i = $message_pos;
-				foreach ($t2s_batch as $t2si => $value) {
+				foreach ($t2s_batch as $t2s => $value) {
 					$mess_pos = $message_pos;
 					$sonos->RemoveFromQueue($mess_pos);
 					$i++;
 				} 
-				unlink ($filename);
+				unlink ($filenamebatch);
 				LOGGING("T2S batch files has been removed from Queue", 7);		
 			} else {
 				// If single T2S has been be played
@@ -348,12 +350,11 @@ function play_tts($messageid) {
 				LOGGING("T2S has been removed from Queue", 7);		
 			}
 			if(isset($_GET['playgong'])) {		
-			#if(isset($_GET['playgong']) && ($_GET['playgong'] == "yes")) {		
-				$sonos->RemoveFromQueue($message_pos);
-				LOGGING("Jingle has been removed from Queue", 7);		
+			$sonos->RemoveFromQueue($message_pos);
+			LOGGING("Jingle has been removed from Queue", 7);		
 			}
 		}
-		LOGGING("T2S play process has been successful finished", 6);		
+		LOGGING("T2S play process has been successful finished", 6);
 		return $actual;
 		
 		
@@ -385,11 +386,15 @@ function sendmessage() {
 			}
 			// if batch has been choosed save filenames to a txt file and exit
 			if(isset($_GET['batch'])) {
-				if((isset($_GET['volume'])) or (isset($_GET['rampto'])) or (isset($_GET['playmode']))) {
-					LOGGING("The parameter volume, rampto and playmode are not allowed to be used in conjunction with batch. Please remove from syntax!", 4);
+				if((isset($_GET['volume'])) or (isset($_GET['rampto'])) or (isset($_GET['playmode'])) or (isset($_GET['playgong']))) {
+					LOGGING("The parameter volume, rampto, playmode or playgong are not allowed to be used in conjunction with batch. Please remove from syntax!", 4);
 					exit;
 				}
-				create_tts();
+				if (isset($_GET['messageid'])) {
+					$messageid = $_GET['messageid'];
+				} else {
+					create_tts();
+				}
 				// creates file to store T2S filenames
 				$filenamebatch = "t2s_batch.txt";
 				$file = fopen($filenamebatch, "a+");
@@ -397,12 +402,11 @@ function sendmessage() {
 					LOGGING("There is no T2S batch file to be written!", 3);
 					exit();
 				}
-				if (strlen($messageid) == '32') {
+				if (strlen($filename) == '32') {
 					fwrite($file, $config['SYSTEM']['httpinterface']."/".$filename."\r\n");
 					LOGGING("T2S '".$filename.".mp3' has been added to batch", 7);
 					LOGGING("Please ensure to call later '...action=playbatch', otherwise the messages could be played uncontrolled", 5);					
 				} else {
-					$mp3_path = $MP3path;
 					fwrite($file, $config['SYSTEM']['httpinterface']."/".$MP3path."/".$messageid."\r\n");
 					LOGGING("Messageid '".$messageid."' has been added to batch", 7);
 					LOGGING("Please ensure to call later '...action=playbatch', otherwise the messages could be played uncontrolled", 5);										
@@ -456,7 +460,6 @@ function sendmessage() {
 			$mode = "";
 			$actual[$master]['CONNECT'] == 'true' ? $mode = '1' : $mode = '0';
 			SetVolumeModeConnect($mode, $master);
-			#delmp3();
 			$time_end = microtime(true);
 			$t2s_time = $time_end - $time_start;
 			#echo "Die T2S dauerte ".round($t2s_time, 2)." Sekunden.\n";
@@ -610,8 +613,8 @@ function t2s_playbatch() {
 	global $textstring;
 			
 	$textstring = true;
-	$filename = "t2s_batch.txt";
-	if (!file_exists($filename)) {
+	$filenamebatch = "t2s_batch.txt";
+	if (!file_exists($filenamebatch)) {
 		LOGGING("There is no T2S batch file to be played!", 4);
 		exit();
 	}
@@ -628,7 +631,7 @@ function t2s_playbatch() {
 function say_radio_station() {
 			
 	# nach nextradio();
-	global $master, $sonoszone, $config, $volume, $sonos, $coord, $messageid, $filename, $MessageStorepath, $nextZoneKey, $filenameplay;
+	global $master, $sonoszone, $config, $volume, $sonos, $coord, $messageid, $filename, $MessageStorepath, $nextZoneKey;
 	require_once("addon/sonos-to-speech.php");
 	
 	// if batch has been choosed abort
@@ -657,10 +660,9 @@ function say_radio_station() {
 	$text = ($play_stat.' '.$temp_radio['title']);
 	$textstring = ($text);
 	$rawtext = md5($textstring);
-	$filenameplay = "$rawtext";
-	$messageid = $filenameplay;
+	$filename = "$rawtext";
 	select_t2s_engine();
-	t2s($messageid, $config['SYSTEM']['ttspath'], $textstring, $filenameplay);
+	t2s($textstring, $filename);
 	// get Coordinator of (maybe) pair or single player
 	$coord = getRoomCoordinator($master);
 	LOGGING("Room Coordinator been identified", 7);		
@@ -668,7 +670,7 @@ function say_radio_station() {
 	$sonos->SetMute(false);
 	$sonos->SetVolume($volume);
 	LOGGING("Radio Station Announcement has been played", 6);		
-	play_tts($messageid);
+	play_tts($filename);
 	restoreSingleZone();
 }
 
