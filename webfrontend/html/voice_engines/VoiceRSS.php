@@ -1,16 +1,16 @@
 <?php
-function t2s($messageid, $MessageStorepath, $textstring, $filename)
+function t2s($textstring, $filename)
 
 // voicerss: Erstellt basierend auf Input eine TTS Nachricht, übermittelt sie an VoiceRRS und 
 // speichert das zurückkommende file lokal ab
 
-
+# 08/03/2018 added $ttsaudiocodec from sonos.cfg
 {
-	global $config, $messageid, $pathlanguagefile;
+	global $config, $pathlanguagefile;
 	
 		$ttskey = $config['TTS']['API-key'];
-		$ttsaudiocodec = $config['TTS']['audiocodec'];
-		#$textstring = utf8_encode($textstring);
+		$ttsaudiocodec = "48khz_16bit_stereo";
+		$textstring = urlencode($textstring);
 		
 		$file = "voicerss.json";
 		$url = $pathlanguagefile."".$file;
@@ -21,8 +21,9 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 				$isvalid = array_multi_search($language, $valid_languages, $sKey = "value");
 				if (!empty($isvalid)) {
 					$language = $_GET['lang'];
+					LOGGING('T2S language has been successful entered',5);
 				} else {
-					trigger_error('The entered VoiceRSS language key is not supported. Please correct (see Wiki)!', E_USER_ERROR);
+					LOGGING("The entered VoiceRSS language key is not supported. Please correct (see Wiki)!",3);
 					exit;
 				}
 			} else {
@@ -41,19 +42,16 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 		$inlay = "key=$ttskey&src=$textstring&hl=$language&f=$ttsaudiocodec";	
 									
 		# Speicherort der MP3 Datei
-		$file = $MessageStorepath . $filename . ".mp3";
+		$file = $config['SYSTEM']['ttspath'] ."/". $filename . ".mp3";
+		
+		LOGGING("VoiceRSS has been successful selected", 7);	
 					
-		# Prüfung ob die MP3 Datei bereits vorhanden ist
-		if (!file_exists($file)) 
-		{
-			# Übermitteln des strings an VoiceRSS.org
-			ini_set('user_agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
-			$mp3 = file_get_contents('http://api.voicerss.org/?' . $inlay);
-			file_put_contents($file, $mp3);
-		}
-	# Ersetze die messageid durch die von TTS gespeicherte Datei
-	$messageid = $filename;
-	return ($messageid);
+		# Übermitteln des strings an VoiceRSS.org
+		ini_set('user_agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
+		$mp3 = file_get_contents('http://api.voicerss.org/?' . $inlay);
+		file_put_contents($file, $mp3);
+		LOGGING('The text has been passed to VoiceRSS engine for MP3 creation',5);
+		return $filename;
 				  	
 }
 

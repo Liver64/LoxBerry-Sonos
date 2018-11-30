@@ -20,7 +20,7 @@ function radio(){
 	} elseif (isset($_GET['playlist'])) {
 		$playlist = $_GET['playlist'];		
 	} else {
-		trigger_error("No radio stations found.", E_USER_NOTICE);
+		LOGGING("No radio stations found.", 4);
     }
 	$coord = $master;
 	$roomcord = getRoomCoordinator($coord);
@@ -49,16 +49,19 @@ function radio(){
 			$sonos = new PHPSonos($roomcord[0]); //Sonos IP Adresse
 			$sonosroom->SetVolume($config['sonoszonen'][$master][4]);
 		} else {
-			if($sonos->GetVolume() <= $config['TTS']['volrampto'])	{
-				$sonos->RampToVolume($config['TTS']['rampto'], $volume);
+			if(empty($config['TTS']['volrampto'])) {
+				check_rampto();
 			} else {
 				$sonos->SetVolume($volume);
 			}
 		}
-		$sonos->Play();
+		if(!isset($_GET['load'])) {
+			$sonos->Play();
+		}
     }
-    $rleinzeln++;
+	$rleinzeln++;
 	}   
+	LOGGING("Radio Station '".$playlist."' has been loaded successful",6);
 }
 
 /**
@@ -71,12 +74,20 @@ function nextradio() {
 	global $sonos, $config, $master, $debug, $volume;
 	
 	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
-	$radioanzahl_check = $result = count($config['RADIO']);
+	$radioanzahl_check = count($config['RADIO']);
 	if($radioanzahl_check == 0)  {
-		trigger_error("There are no Radio Stations maintained in the configuration. Pls update before using function NEXTRADIO or ZAPZONE!", E_USER_ERROR);
+		LOGGING("There are no Radio Stations maintained in the config. Pls update before using function NEXTRADIO or ZAPZONE!", 3);
+		exit;
 	}
 	$playstatus = $sonos->GetTransportInfo();
-	$radiovolume = $sonos->GetVolume();
+	if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
+		$volume = $_GET['volume'];
+		LOGGING("Volume from syntax been used", 7);		
+	} else 	{
+		// übernimmt Standard Lautstärke der angegebenen Zone aus config.php
+		$volume = $config['sonoszonen'][$master][3];
+		LOGGING("Standard Volume from config been used", 7);		
+	}
 	$radioname = $sonos->GetMediaInfo();
 	if (!empty($radioname["title"])) {
 		$senderuri = $radioname["title"];
@@ -84,6 +95,7 @@ function nextradio() {
 		$senderuri = "";
 	}
 	$radio = $config['RADIO']['radio'];
+	ksort($radio);
 	$radioanzahl = count($config['RADIO']['radio']);
 	$radio_name = array();
 	$radio_adresse = array();
@@ -97,28 +109,30 @@ function nextradio() {
 	if( $senderaktuell == "" && $senderuri == "" || substr($senderuri, 0, 12) == "x-file-cifs:" ) {
 		$senderaktuell = -1;
 	}
+	if ($senderaktuell == ($radioanzahl) ) {
+		$sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[0], $radio_name[0]);
+	}
     if ($senderaktuell < ($radioanzahl) ) {
 		@$sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[$senderaktuell + 1], $radio_name[$senderaktuell + 1]);
 	}
     if ($senderaktuell == $radioanzahl - 1) {
 	    $sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[0], $radio_name[0]);
-		    }
-    if( $debug == 2) {
-        echo "Senderuri vorher: " . $senderuri . "<br>";
-        echo "Sender aktuell: " . $senderaktuell . "<br>";
-        echo "Radioanzahl: " .$radioanzahl . "<br>";
-    }
-	if ($config['VARIOUS']['announceradio'] == 1) {
-		#include_once("text2speech.php");
+	}
+	$info_r = "\r\n Senderuri vorher: " . $senderuri . "\r\n";
+	$info_r .= "Sender aktuell: " . $senderaktuell . "\r\n";
+	$info_r .= "Radioanzahl: " .$radioanzahl;
+	LOGGING('Next Radio Info: '.($info_r),7);
+    if ($config['VARIOUS']['announceradio'] == 1) {
 		say_radio_station();
 	}
     if($playstatus == 1) {
-		$sonos->SetVolume($radiovolume);
+		$sonos->SetVolume($volume);
 		$sonos->Play();
 	} else {
-		$sonos->RampToVolume($config['TTS']['rampto'], $volume);
+		check_rampto();
 		$sonos->Play();
 	}
+	LOGGING("Radio Station '".$radioname["title"]."' has been loaded successful by nextradio",6);
 	#print_r($radio_name);
 }
 
@@ -134,7 +148,7 @@ function random_radio() {
 	global $sonos, $sonoszone, $master, $volume, $config;
 	
 	if (isset($_GET['member'])) {
-		trigger_error("This function could not be used with groups!", E_USER_ERROR);
+		LOGGING("This function could not be used with groups!", 3);
 		exit;
 	}
 	$sonoslists = $sonos->Browse("R:0/0","c");
@@ -159,11 +173,13 @@ function random_radio() {
 	$sonos->SetMute(false);
 	$sonos->SetRadio(urldecode($sonoslists[$random]["res"]),$sonoslists[$random]["title"]);
 	if (!isset($_GET['volume'])) {
-		if($sonos->GetVolume() <= $config['TTS']['volrampto']) {
-			$sonos->RampToVolume($config['TTS']['rampto'], $volume);
-		}	
+		check_rampto();
+	} else {
+		$radiovolume = $sonos->GetVolume();
+		$sonos->SetVolume($radiovolume);
 	}
 	$sonos->Play();
+	LOGGING("Radio Station '".$sonoslists[$random]["title"]."' has been loaded successful by randomradio",6);
 }
 
 ?>

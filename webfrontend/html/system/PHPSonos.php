@@ -80,7 +80,10 @@
 // V2.1.1
 # - GetVolumeMode($mode, $uuid) 
 # - SetVolumeMode($uuid) 
-
+// V3.4.0
+# - AddFavoritesToQueue
+# - SetBalance($direction, $volume)
+# - ResetBasicEQ()
 
 
 
@@ -93,7 +96,6 @@ class PHPSonos {
    public function __construct( $address ) {
       $this->address = $address;
 	  #$this->port = $port;
-	  
 }
 
  
@@ -1413,6 +1415,56 @@ SOAPACTION: "urn:schemas-upnp-org:service:RenderingControl:1#SetVolume"
 
       $this->sendPacket($content);
    }
+   
+
+ /**
+ * Sets balance volume for player
+ *
+ * @param string $volume (Volume in percent), Left or right speaker
+ *
+ * @return String
+ */
+   
+   public function SetBalance($direction, $volume)
+   {
+
+$content='POST /MediaRenderer/RenderingControl/Control HTTP/1.1
+CONNECTION: close
+HOST: '.$this->address.':1400
+CONTENT-LENGTH: '.(317+strlen($volume)).'
+CONTENT-TYPE: text/xml; charset="utf-8"
+SOAPACTION: "urn:schemas-upnp-org:service:RenderingControl:1#SetVolume"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:SetVolume xmlns:u="urn:schemas-upnp-org:service:RenderingControl:1"><InstanceID>0</InstanceID><Channel>'.strtoupper($direction).'</Channel><DesiredVolume>'.$volume.'</DesiredVolume></u:SetVolume></s:Body></s:Envelope>';
+
+      $this->sendPacket($content);
+   }
+   
+
+
+/**
+ * Sets balance, bass and treble to standard
+ *
+ * @param string
+ *
+ * @return String
+ */   
+	public function ResetBasicEQ()
+   {
+	   
+$content='POST /MediaRenderer/RenderingControl/Control HTTP/1.1
+CONNECTION: close
+HOST: '.$this->address.':1400
+USER-AGENT: Linux UPnP/1.0 Sonos/42.2-52113 (WDCR:Microsoft Windows NT 6.1.7601 Service Pack 1)
+CONTENT-LENGTH: 271
+CONTENT-TYPE: text/xml; charset="utf-8"
+SOAPACTION: "urn:schemas-upnp-org:service:RenderingControl:1#ResetBasicEQ"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:ResetBasicEQ xmlns:u="urn:schemas-upnp-org:service:RenderingControl:1"><InstanceID>0</InstanceID></u:ResetBasicEQ></s:Body></s:Envelope>';
+   
+   $this->sendPacket($content);
+ }
+   
  
  
 /**
@@ -1942,6 +1994,7 @@ SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#GetPositionInfo"
          } else {
             $positionInfo["Track"] = "";
          }
+		 #$positionInfo["TrackMetaData"] = htmlentities(substr($returnContentMeta, strpos($returnContentMeta, "DIDL-Lite") - 4, strripos($returnContentMeta, "DIDL-Lite") + 5));
 		 $positionInfo["TrackMetaData"] = substr($returnContentMeta, strpos($returnContentMeta, "DIDL-Lite") - 4, strripos($returnContentMeta, "DIDL-Lite") + 5);
    
       return $positionInfo;
@@ -2057,7 +2110,7 @@ SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
    
    
 
-   /**
+ /**
  * Adds URI to Queue (not the Playlist!!)
  *
  * @param string $file     Uri or Filename
@@ -2065,7 +2118,7 @@ SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
  * @return String
  */
  
-   public function AddFavToQueue($file, $meta)
+   public function AddFavoritesToQueue($file, $meta)
    {
    
 $content='POST /MediaRenderer/AVTransport/Control HTTP/1.1
@@ -2080,11 +2133,13 @@ SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
 <EnqueuedURI>'.htmlspecialchars($file).'</EnqueuedURI>
 <EnqueuedURIMetaData>'.htmlspecialchars($meta).'</EnqueuedURIMetaData>
 <DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>1</EnqueueAsNext></u:AddURIToQueue></s:Body></s:Envelope>';
+#var_dump(htmlspecialchars($meta));
 
       $this->sendPacket($content);
    }
-
    
+   
+    
  
 /**
  * Removes track from queue (not the Playlist!!)
@@ -2442,11 +2497,11 @@ Content-Length: '. strlen($xml) .'
                       $liste[$i]['res'] = "leer";
                    }
                       $resattr = $aktrow->res->attributes();
-                           if(isset($resattr['duration'])){
-                         $liste[$i]['duration']=(string)$resattr['duration'];
-                      }else{
-                         $liste[$i]['duration']="leer";
-                      }
+                     # if(isset($resattr['duration'])){
+                      #   $liste[$i]['duration']=(string)$resattr['duration'];
+                      #}else{
+                      #   $liste[$i]['duration']="leer";
+                      #}
                   if(isset($albumart[0])){
                    $liste[$i]['albumArtURI']="http://" . $this->address . ":1400".(string)$albumart[0];
                   }else{
@@ -2528,18 +2583,19 @@ Content-Length: '. strlen($xml) .'
 '. $xml;
 
     $returnContent = $this->sendPacket($content);
-	#print_r($returnContent);
+	
 	
     $xmlParser = xml_parser_create();
         $returnContent = substr($returnContent, stripos($returnContent, '&lt;'));
         $returnContent = substr($returnContent, 0, strrpos($returnContent, '&gt;') + 4);
         $returnContent = str_replace(array("&lt;", "&gt;", "&quot;", "&amp;", "%3a", "%2f", "%25"), array("<", ">", "\"", "&", ":", "/", "%"), $returnContent);
-			
+
         $xml = new SimpleXMLElement($returnContent);
+			
 		$liste = array();
 		for($i=0,$size=count($xml);$i<$size;$i++)
         {
-			
+						
             //Wenn Container vorhanden, dann ist es ein Browse Element
             //Wenn Item vorhanden, dann ist es ein Song.
             if(isset($xml->container[$i]))  {
@@ -2555,6 +2611,8 @@ Content-Length: '. strlen($xml) .'
                //Fehler aufgetreten
 			   return;
             }
+			print_r($returnContent);	
+						
 			
 			
 
@@ -2573,14 +2631,25 @@ Content-Length: '. strlen($xml) .'
                    }else{
                       $liste[$i]['res'] = "leer";
                    }
-                      $resattr = $aktrow->res->attributes();
-                           if(isset($resattr['duration'])){
-                         $liste[$i]['duration']=(string)$resattr['duration'];
-                      }else{
-                         $liste[$i]['duration']="leer";
-                      }
-                  if(isset($albumart[0])){
-                   $liste[$i]['albumArtURI']="http://" . $this->address . ":1400".(string)$albumart[0];
+                   $resattr = $aktrow->res->attributes();
+                   if(isset($resattr['duration'])){
+                       $liste[$i]['duration']=(string)$resattr['duration'];
+                   } else {
+                       $liste[$i]['duration']="leer";
+                   }
+				   if(isset($resattr['protocolInfo'])){
+                       $liste[$i]['TypeOfAudio']=(string)$resattr['protocolInfo'];
+                   } else {
+                       $liste[$i]['TypeOfAudio']="leer";
+                   }
+				   if(isset($resattr['//DIDL-Lite'])){
+                       $liste[$i]['DIDL-Lite']=(string)$resattr['//DIDL-Lite'];
+                   } else {
+                       $liste[$i]['DIDL-Lite']="leer";
+                   }
+				   if(isset($albumart[0])){
+                   #$liste[$i]['albumArtURI']="http://" . $this->address . ":1400".(string)$albumart[0];
+				   $liste[$i]['albumArtURI']= (string)$albumart[0];
                   }else{
                    $liste[$i]['albumArtURI'] ="leer";
                   }
@@ -2591,12 +2660,14 @@ Content-Length: '. strlen($xml) .'
                      $liste[$i]['artist']="leer";
                   }
                   if(isset($id) && !empty($id)){
-                      $liste[$i]['id']=urlencode((string)$id);
+                      #$liste[$i]['id']=urlencode((string)$id);
+					  $liste[$i]['id']=(string)$id;
                   }else{
                       $liste[$i]['id']="leer";
                   }
                   if(isset($parentid) && !empty($parentid)){
-                      $liste[$i]['parentid']=urlencode((string)$parentid);
+                      #$liste[$i]['parentid']=urlencode((string)$parentid);
+					  $liste[$i]['parentid']=(string)$parentid;
                   }else{
                       $liste[$i]['parentid']="leer";
                   }
@@ -2613,8 +2684,6 @@ return $liste;
     }
 
 
-
-	
 	
 /**
  * Get Now Playing information from Radiotime via opml
@@ -2659,6 +2728,8 @@ public function RadiotimeGetNowPlaying() // added br
                }
 return $list;
       }
+	  
+	  
 
 
 /***************************************************************************

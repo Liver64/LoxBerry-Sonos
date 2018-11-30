@@ -1,0 +1,38 @@
+
+	<center>
+		<form method="post" data-ajax="false" name="notice_form" id="notice_form" action="<TMPL_VAR SELFURL>">
+		<table width="100%" border=0>
+			<tr>
+				<td align="center">
+					<h2><FONT COLOR="#FF0000"><TMPL_VAR SONOS_SCAN_HEADER></FONT></h2>
+					<p>
+						<TMPL_IF NAME="BOOL">
+							<TMPL_VAR ZONES.SONOS_SSDP_DISABLED>
+						<TMPL_ELSE>
+							<TMPL_VAR ZONES.SONOS_SCAN_TEXT>
+						</TMPL_IF>
+						<br>
+						<br>
+					</p>
+				</td>
+			</tr>
+			
+			<tr>
+				<td align="center">
+					<p>
+						<a id="btnok" data-role="button" data-inline="true" data-mini="true" data-icon="check" onclick="location.href='index.cgi?form=main_form'"><TMPL_VAR BUTTON_BACK></a>
+						<a id="btok" data-role="button" data-inline="true" data-mini="true" data-icon="check" onclick="location.href='index.cgi?do=scanning'"><TMPL_VAR ZONES.BUTTON_NEXT></a>
+					</p>
+				</td>
+			</tr>
+		</table>
+		</form>
+	</center>
+
+
+
+	
+	
+	
+
+

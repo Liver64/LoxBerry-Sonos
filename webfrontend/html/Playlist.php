@@ -14,11 +14,14 @@
 
 function playlist() {
 	Global $debug, $sonos, $master, $sonoszone, $config, $volume;
+	
 	if(isset($_GET['playlist'])) {
 		$sonos->SetQueue("x-rincon-queue:" . trim($sonoszone[$master][1]) . "#0"); 
 		$playlist = $_GET['playlist'];
+		LOGGING("Playlist '".$_GET['playlist']."' has been found.", 7);
 	} else {
-		trigger_error("No playlist with the specified name found.", E_USER_NOTICE);
+		LOGGING("No playlist named '".$_GET['playlist']."' has been found.", 3);
+		exit;
 	}
 	
 	# Sonos Playlist ermitteln und mit übergebene vergleichen	
@@ -29,8 +32,10 @@ function playlist() {
 		if($playlist == $sonoslists[$pleinzeln]["title"]) {
 			$plfile = urldecode($sonoslists[$pleinzeln]["file"]);
 			$sonos->ClearQueue();
+			LOGGING("Queue has been cleared.", 7);
 			#$sonos->SetMute(false);
 			$sonos->AddToQueue($plfile); //Datei hinzufügen
+			LOGGING("Playlist has been added to Queue.", 7);
 			$sonos->SetQueue("x-rincon-queue:". trim($sonoszone[$master][1]) ."#0"); 
 			if ((isset($_GET['member'])) and isset($_GET['standardvolume'])) {
 				$member = $_GET['member'];
@@ -41,24 +46,25 @@ function playlist() {
 					$volume = $config['sonoszonen'][$zone][4];
 					$sonos->SetVolume($config['sonoszonen'][$zone][4]);
 				}
+				LOGGING("Standardvolume for members has been set.", 7);
 				$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 				$sonos->SetMute(false);
 				$sonos->SetVolume($config['sonoszonen'][$master][4]);
+				LOGGING("Standardvolume for master has been set.", 7);
 				$sonos->Play();
 			} else {
-				if($sonos->GetVolume() <= $config['TTS']['volrampto'])	{
-					$sonos->RampToVolume($config['TTS']['rampto'], $volume);
-					$sonos->Play();
-				} else {
-					$sonos->Play();
-				}
+				check_rampto();
 			}
+			if(!isset($_GET['load'])) {
+				$sonos->Play();
+			}
+			LOGGING("Playlist is playing.", 7);
 			$gefunden = 1;
 		}
 		$pleinzeln++;
 			if (($pleinzeln == count($sonoslists) ) && ($gefunden != 1)) {
 				$sonos->Stop();
-				trigger_error("No playlist with the specified name found.", E_USER_NOTICE);
+				LOGGING("No playlist with the specified name found.", 3);
 				exit;
 			}
 		}			
@@ -72,9 +78,8 @@ function playlist() {
 **/
 
 function zapzone() {
-	global $config, $sonos, $sonoszone, $master, $playzones, $count;
-	#include_once("text2speech.php");
-
+	global $config, $sonos, $sonoszone, $master, $playzones, $count, $maxzap, $count_file, $curr_zone_file;
+	
 	$sonos = new PHPSonos($sonoszone[$master][0]);
 	if (substr($sonos->GetPositionInfo()["TrackURI"], 0, 15) == "x-rincon:RINCON") {
 		$sonos->BecomeCoordinatorOfStandaloneGroup();
@@ -87,9 +92,9 @@ function zapzone() {
 	// if no zone is playing switch to nextradio
 	if (empty($playingzones) or $count > count($playingzones)) {
 		nextradio();
-		sleep($config['VARIOUS']['maxzap']);
-		if(file_exists("count.txt"))  {
-			unlink("count.txt");
+		sleep($maxzap);
+		if(file_exists($count_file))  {
+			unlink($count_file);
 		}
 		exit;
 	}
@@ -114,8 +119,22 @@ function zapzone() {
 	}
 	#echo '<br>Zone: ['.$nextZoneKey.']';
 	saveCurrentZone($nextZoneKey);
+	if ($config['VARIOUS']['announceradio'] == 1) {
+		say_zone($nextZoneKey);
+	} else {
+		if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
+			$volume = $_GET['volume'];
+			LOGGING("Volume from syntax been used", 7);		
+		} else 	{
+			// übernimmt Standard Lautstärke der angegebenen Zone aus config.php
+			$volume = $config['sonoszonen'][$master][3];
+			LOGGING("Standard Volume from config been used", 7);		
+		}
+	}
+	unset ($playingzones[$nextZoneKey]);
 	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
 	$sonos->SetAVTransportURI("x-rincon:" . $sonoszone[$nextZoneKey][1]);
+	LOGGING("Zone ".$master." has been grouped as member to Zone ".$nextZoneKey, 7);
 	$sonos->SetMute(false);
 	}
 
@@ -128,10 +147,15 @@ function zapzone() {
 **/
 
 function saveCurrentZone($nextZoneKey) {
-    if(!touch('curr_Zone.txt')) {
-		trigger_error("No permission to write to curr_Zone.txt", E_USER_ERROR);
+	global $curr_zone_file;
+	
+	$curr_zone_file = "/run/shm/sonos_currzone_mem.txt";
+	
+    if(!touch($curr_zone_file)) {
+		LOGGING("No permission to write file", 3);
+		exit;
     }
-	$handle = fopen ('curr_Zone.txt', 'w');
+	$handle = fopen ($curr_zone_file, 'w');
     fwrite ($handle, $nextZoneKey);
     fclose ($handle);                
 } 
@@ -145,13 +169,16 @@ function saveCurrentZone($nextZoneKey) {
 **/      
 
 function currentZone() {
-	global $config, $master;
-
+	global $config, $master, $curr_zone_file;
+	
+	$curr_zone_file = "/run/shm/sonos_currzone_mem.txt";
+		
 	$playingzones = $_SESSION["playingzone"];
-	if(!touch('curr_Zone.txt')) {
-		trigger_error("Could not open file curr_Zone.txt", E_USER_ERROR);
+	if(!touch($curr_zone_file)) {
+		LOGGING("Could not open file", 3);
+		exit;
     }
-	$currentZone = file('curr_Zone.txt');
+	$currentZone = file($curr_zone_file);
 	if(empty($currentZone)) {
 		reset($playingzones);
         $currentZone[0] = key($playingzones);
@@ -185,6 +212,7 @@ function play_zones() {
 		}
 	}
 	$_SESSION["playingzone"] = $playingzones;
+	#print_r($playingzones);
 	return array($playingzones);
 }
 
@@ -197,11 +225,17 @@ function play_zones() {
 **/
 
 function countzones() {
-	if(!file_exists("count.txt")){
-        fopen("count.txt", "a" );
-        $aufruf=0;
+	
+	global $count_file;
+	
+	$count_file = "/run/shm/sonos_zapzone_mem_count.txt";
+	
+	if(!file_exists($count_file)){
+        fopen($count_file, "a" );
+        #$aufruf=0;
 	}
-	$counter=fopen("count.txt","r+"); $output=fgets($counter,100);
+	$counter=fopen($count_file,"r+"); 
+	$output=fgets($counter,100);
 	$output=$output+1;
 	rewind($counter);
 	fputs($counter,$output);
@@ -223,8 +257,10 @@ function SavePlaylist() {
 	try {
 		$sonos->SaveQueue("temp_t2s");
 	} catch (Exception $e) {
-		trigger_error("The temporary Playlist (PL) could not be saved because the list contains min. 1 Song (URL) which is not longer valid! Please check or remove the list!", E_USER_ERROR);
+		LOGGING("The temporary Playlist (PL) could not be saved because the list contains min. 1 Song (URL) which is not longer valid! Please check or remove the list!", 3);
+		exit;
 	}
+	LOGGING("Temporally playlist has been saved.", 6);
 }
 
 
@@ -243,13 +279,14 @@ function DelPlaylist() {
 	if(!empty($t2splaylist)) {
 		$sonos->DelSonosPlaylist($playlists[$t2splaylist]['id']);
 	}
+	LOGGING("Temporally playlist has been deleted.", 6);
 }
 
 
 /**
 * Funktion : 	random_playlist --> lädt per Zufallsgenerator eine Playliste und spielt sie ab.
 *
-* @param: empty
+* @param: exceptions from Syntax
 * @return: Playliste
 **/
 
@@ -257,7 +294,7 @@ function random_playlist() {
 	global $sonos, $sonoszone, $master, $volume, $config;
 	
 	if (isset($_GET['member'])) {
-		trigger_error("This function could not be used with groups!", E_USER_ERROR);
+		LOGGING("This function could not be used with groups!", 3);
 		exit;
 	}
 	$sonoslists = $sonos->GetSONOSPlaylists();
@@ -284,10 +321,9 @@ function random_playlist() {
 	$sonos->AddToQueue($plfile);
 	$sonos->SetQueue("x-rincon-queue:". trim($sonoszone[$master][1]) ."#0"); 
 	if (!isset($_GET['volume'])) {
-		if($sonos->GetVolume() <= $config['TTS']['volrampto']) {
-			$sonos->RampToVolume($config['TTS']['rampto'], $volume);
-		}	
+		check_rampto();
 	}
+	LOGGING("Random playlist has been added to Queue.", 6);
 	$sonos->Play();
 }
 
@@ -309,14 +345,67 @@ function next_dynamic() {
 	$sonos->SetMute(false);
 	if (($titelaktuel < $playlistgesammt) or (substr($titelgesammt["TrackURI"], 0, 9) == "x-rincon:")) {
 		checkifmaster($master);
-		$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
+		$sonos = new PHPSonos($sonoszone[$master][0]);
 		$sonos->Next();
+		LOGGING("Next Song in Playlist.", 7);
 	} else {
 		checkifmaster($master);
-		$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
+		$sonos = new PHPSonos($sonoszone[$master][0]);
 		$sonos->SetTrack("1");
+		LOGGING("Playlist starts at Song Number 1.", 7);
 	}
 	$sonos->Play();
+}
+
+
+/**
+* Optional Sub-Function for zapzone: say_zone --> announce Zone before adding zone to master
+*
+* @param: $zone
+* @return: 
+**/
+function say_zone($zone) {
+			
+	global $master, $sonoszone, $config, $volume, $sonos, $coord, $messageid, $filename, $MessageStorepath, $nextZoneKey, $filenameplaysay;
+	require_once("addon/sonos-to-speech.php");
+	
+	// if batch has been choosed abort
+	if(isset($_GET['batch'])) {
+		LOGGING("The parameter batch could not be used to announce zone!", 4);
+		exit;
+	}
+	#$sonos->Stop();
+	if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
+		$volume = $_GET['volume'];
+		LOGGING("Volume from syntax been used", 7);		
+	} else 	{
+		// übernimmt Standard Lautstärke der angegebenen Zone aus config.php
+		$volume = $config['sonoszonen'][$master][3];
+		LOGGING("Standard Volume from config been used", 7);		
+	}
+	#saveZonesStatus(); // saves all Zones Status
+	$sonos = new PHPSonos($sonoszone[$master][0]);
+	#********************** NEW get text variables **********************
+	$TL = LOAD_T2S_TEXT();
+		
+	$play_zone = $TL['SONOS-TO-SPEECH']['ANNOUNCE_ZONE'] ; 
+ 	#********************************************************************
+	# Generiert und kodiert Ansage der Zone
+	$text = ($play_zone.' '.$zone);
+	$textstring = $text;
+	$rawtext = md5($text);
+	$filename = "$rawtext";
+	select_t2s_engine();
+	t2s($textstring, $filename);
+	// get Coordinator of (maybe) pair or single player
+	$coord = getRoomCoordinator($master);
+	LOGGING("Room Coordinator been identified", 7);		
+	$sonos = new PHPSonos($coord[0]); 
+	$sonos->SetMute(false);
+	$sonos->SetVolume($volume);
+	play_tts($filename);
+	LOGGING("Zone Announcement has been played", 6);	
+	#restoreSingleZone();
 }
 
 ?>

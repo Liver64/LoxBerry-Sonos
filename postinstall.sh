@@ -43,28 +43,5 @@ PCONFIG=$LBPCONFIG/$PDIR
 PSBIN=$LBPSBIN/$PDIR
 PBIN=$LBPBIN/$PDIR
 
-# Replace by subfolder
-/bin/sed -i "s%REPLACEBYSUBFOLDER%$3%" $5/config/plugins/$3/sonos.cfg
-/bin/sed -i "s%REPLACEBYSUBFOLDER%$3%" $5/webfrontend/html/plugins/$3/system/network.php
-/bin/sed -i "s%sonos4lox_dev%$3%" $5/webfrontend/html/plugins/$3/system/network.php
-/bin/sed -i "s%REPLACEBYDOMAIN%$5%" $5/webfrontend/html/plugins/$3/system/network.php
-
-test=`cat /etc/samba/smb.conf | grep sonos_tts | wc -l`
-
-if [ $test = 0 ]
-then
-	# to ensure that Sonos can read from folder structure
-	#/bin/sed -i "s%guest ok = no%guest ok = yes%" $ARGV5/system/samba/smb.conf
-	echo " " >> $5/system/samba/smb.conf
-	echo "[sonos_tts]" >> $5/system/samba/smb.conf
-	echo "   comment = Loxberry Files" >> $5/system/samba/smb.conf
-	echo "   path = $ARGV5/data/plugins/$ARGV3/tts" >> $5/system/samba/smb.conf
-	echo "   guest ok = yes" >> $5/system/samba/smb.conf
-	echo "   read only = no" >> $5/system/samba/smb.conf
-	echo "   directory mask = 0700" >> $5/system/samba/smb.conf
-	echo "   create mask = 0700" >> $5/system/samba/smb.conf
-	echo "<INFO> Samba file 'smb.conf' has been updated successfully."
-fi
-
 # Exit with Status 0
 exit 0

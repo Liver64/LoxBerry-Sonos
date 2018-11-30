@@ -31,7 +31,8 @@ function AddApple() {
 	if (isset($_GET['trackuri'])) {  
 		$uri = $_GET['trackuri'];
 		if (empty($uri)) {
-			trigger_error("Please enter Apple Track-URI!", E_USER_ERROR);
+			LOGGING("Please enter Apple Track-URI!", 3);
+			exit;
 		}
 		$track_array = explode(',',$uri);
 		$curr_track = $curr_track_tmp['Track'];
@@ -48,8 +49,10 @@ function AddApple() {
 				$service->SetAppleTrack($trackuri, $message_pos);
 			}
 		} catch (Exception $e) {
-			trigger_error("The entered Apple-Track-ID's: ".$uri." are not valid! Please check!", E_USER_ERROR);
+			LOGGING("The entered Apple-Track-ID's: ".$uri." are not valid! Please check!", 3);
+			exit;
 		}
+		LOGGING('The entered Apple-Track has been loaded',6);
 		$sonos->SetTrack($message_pos);
 	}
 	// Apple Playlist
@@ -60,8 +63,10 @@ function AddApple() {
 			$service = New SonosMusicService($sonoszone[$master][0]);
 			$service->SetApplePlaylist($pl);
 		} catch (Exception $e) {
-			trigger_error("The entered Apple-Playlist-ID: ".$pl." is not valid! Please check!", E_USER_ERROR);
+			LOGGING("The entered Apple-Playlist-ID: ".$pl." is not valid! Please check!", 3);
+			exit;
 		}
+		LOGGING('The entered Apple-Playlist has been loaded',6);
 	}
 	// Apple Album
 	if (isset($_GET['albumuri'])) {
@@ -71,11 +76,14 @@ function AddApple() {
 			$service = New SonosMusicService($sonoszone[$master][0]);
 			$service->SetAppleAlbum($pl);
 		} catch (Exception $e) {
-			trigger_error("The entered Apple-Album-ID ".$pl." is not valid! Please check!", E_USER_ERROR);
+			LOGGING("The entered Apple-Album-ID ".$pl." is not valid! Please check!", 3);
+			exit;
 		}
+		LOGGING('The entered Apple-Album has been loaded',6);
 	}
 	$sonos->SetVolume($volume);
 	$sonos->SetMute(false);
+	LOGGING("Requested Apple Music plays now.", 7);
 	$sonos->Play();
 }
 

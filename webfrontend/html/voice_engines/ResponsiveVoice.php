@@ -1,23 +1,26 @@
 <?php
-function t2s($messageid, $MessageStorepath, $textstring, $filename)
+function t2s($textstring, $filename)
 
 // text-to-speech: Erstellt basierend auf Input eine TTS Nachricht, übermittelt sie an ResponsiveVoice und 
 // speichert das zurückkommende file lokal ab
 
 {
-	global $config, $messageid, $pathlanguagefile;
+	global $config, $pathlanguagefile, $filename;
 	
 	$file = "respvoice.json";
 	$url = $pathlanguagefile."".$file;
+	$textstring = urlencode($textstring);
 	$valid_languages = File_Get_Array_From_JSON($url, $zip=false);
-
+	
 		if (isset($_GET['lang'])) {
 			$language = $_GET['lang'];
 			$isvalid = array_multi_search($language, $valid_languages, $sKey = "value");
 			if (!empty($isvalid)) {
 				$language = $_GET['lang'];
+				LOGGING('T2S language has been successful entered',5);
 			} else {
-				trigger_error('The entered ResponsiveVoice language key is not supported. Please correct (see Wiki)!', E_USER_ERROR);	
+				LOGGING("The entered ResponsiveVoice language key is not supported. Please correct (see Wiki)!",3);
+				exit;
 			}
 		} else {
 			$language = $config['TTS']['messageLang'];
@@ -32,19 +35,16 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 		#####################################################################################################################	
 
 		# Speicherort der MP3 Datei
-		$file = $MessageStorepath . $filename . ".mp3";
-				
-		# Prüfung ob die MP3 Datei bereits vorhanden ist
-		if (!file_exists($file)) 
-		{
-			# Übermitteln des strings an ResponsiveVoice
-			$mp3 = file_get_contents('https://code.responsivevoice.org/getvoice.php?t='.$textstring.'&tl='.$language.'');
-			#http://responsivevoice.org/responsivevoice/getvoice.php?t=' + multipartText[i]+ '&tl=' + profile.collectionvoice.lang || profile.systemvoice.lang || 'en-US';
-			file_put_contents($file, $mp3);
-		}
-	# Ersetze die messageid durch die von TTS gespeicherte Datei
-	$messageid = $filename;
-	return $filename;
+		$file = $config['SYSTEM']['ttspath'] ."/". $filename . ".mp3";
+		
+		LOGGING("ResponsiveVoice has been successful selected", 7);	
+		
+		# Übermitteln des strings an ResponsiveVoice
+		$mp3 = file_get_contents('https://code.responsivevoice.org/getvoice.php?t='.$textstring.'&tl='.$language.'');
+		#http://responsivevoice.org/responsivevoice/getvoice.php?t=' + multipartText[i]+ '&tl=' + profile.collectionvoice.lang || profile.systemvoice.lang || 'en-US';
+		file_put_contents($file, $mp3);
+		LOGGING('The text has been passed to Responsive Voice for MP3 creation',5);
+		return $filename;
 				  	
 }
 

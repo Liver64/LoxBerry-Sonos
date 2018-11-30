@@ -29,6 +29,7 @@ function restoreSingleZone() {
 			if (($actual[$master]['TransportInfo'] == 1)) {
 				$sonos->Play();	
 			}
+			LOGGING("Single mode for zone ".$master." has been restored.", 6);
 		break;
 		
 		// Zone was Member of a group
@@ -37,6 +38,7 @@ function restoreSingleZone() {
 			$sonos->SetAVTransportURI($actual[$master]['PositionInfo']["TrackURI"]); 
 			$sonos->SetVolume($actual[$master]['Volume']);
 			$sonos->SetMute($actual[$master]['Mute']);
+			LOGGING("Zone ".$master." has been added back to group.", 6);
 		break;
 		
 		// Zone was Master of a group
@@ -87,8 +89,9 @@ function restoreSingleZone() {
 		try {
 			$sonos = new PHPSonos($sonoszone[$newMaster][0]);
 			$sonos->DelegateGroupCoordinationTo($sonoszone[$master][1], 1);
+			LOGGING("Zone ".$master." has been added back to group.", 6);
 		} catch (Exception $e) {
-			trigger_error("Assignment to new GroupCoordinator " . $master . " failed.", E_USER_NOTICE);	
+			LOGGING("Assignment to new GroupCoordinator " . $master . " failed.",5);	
 		}
 		}
 	break;
@@ -113,8 +116,10 @@ function restoreGroupZone() {
 	// add Master to array
 	array_push($member, $master);
 	// Restore former settings for each Zone
+	#print_r($actual);
 	foreach($member as $zone => $player) {
 		#echo $player.'<br>';
+		#echo $zone.'<br>';
 		$restore = $actual[$player]['ZoneStatus'];
 		$sonos = new PHPSonos($sonoszone[$player][0]);
 		switch($restore) {
@@ -148,6 +153,7 @@ function restoreGroupZone() {
 			} else {
 				$sonos->Play();
 			}
+			LOGGING("Single mode for zone ".$player." has been restored.", 6);
 		break;
 			
 		case 'member';
@@ -158,6 +164,7 @@ function restoreGroupZone() {
 			$sonos->SetAVTransportURI($tmp_checkmember);
 			$sonos->SetVolume($actual[$player]['Volume']);
 			$sonos->SetMute($actual[$player]['Mute']);
+			LOGGING("Zone ".$player."  has been added back to group.", 6);
 		break;
 			
 			
@@ -201,6 +208,7 @@ function restoreGroupZone() {
 			} else {
 				$sonos->Play();
 			}
+			LOGGING("Zone ".$player."  has been added back to group.", 6);
 		break;			
 		}
 	}
@@ -243,7 +251,7 @@ function read_txt_file_to_array() {
 	
 	$filename = "t2s_batch.txt";
     if (!file_exists($filename)) {
-		trigger_error("There is no T2S batch file to be played!", E_USER_WARNING);
+		LOGGING("There is no T2S batch file to be played!", 4);
         exit();
 	}
 	$t2s_batch = file("t2s_batch.txt");
@@ -312,6 +320,7 @@ function RestoreShuffle($actual, $player) {
 		$sonos->SetTrack($actual[$player]['PositionInfo']['Track']);
 		$sonos->Seek($actual[$player]['PositionInfo']['RelTime'],"NONE");	
 	}
+	LOGGING("Previous playmode has been restored.", 6);
 }
 	
 ?>

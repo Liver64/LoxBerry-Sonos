@@ -33,14 +33,17 @@ function AddAmazon() {
 	
 	// Amazon Track
 	if (isset($_GET['trackuri'])) { 
-		trigger_error("Amazon Track-URI is currently not supported!", E_USER_ERROR);	
+		LOGGING("Amazon Track-URI is currently not supported!",3);	
+		exit;
 		$uri = $_GET['trackuri'];
 		if (empty($uri)) {
-			trigger_error("Please enter Amazon Track-URI!", E_USER_ERROR);
+			LOGGING("Please enter Amazon Track-URI!", 3);
+			exit;
 		}
 		$track_array = explode(',',$uri);
 		if (count($track_array) > 2) {
-			trigger_error("Please enter just one Amazon Track-URI!", E_USER_ERROR);
+			LOGGING("Please enter just one Amazon Track-URI!", 3);
+			exit;
 		}
 		$curr_track = $curr_track_tmp['Track'];
 		$sonos->SetQueue("x-rincon-queue:".$sonoszone[$master][1]."#0");
@@ -58,8 +61,10 @@ function AddAmazon() {
 				$service->SetAmazonTrack($track_array[0], $track_array[1]);
 			}
 		} catch (Exception $e) {
-			trigger_error("The entered Amazon-Track-ID's: ".$uri." are not valid! Please check!", E_USER_ERROR);
+			LOGGING("The entered Amazon-Track-ID's: ".$uri." are not valid! Please check!", 3);
+			exit;
 		}
+		LOGGING('The entered Amazon-Track has been loaded',6);
 		$sonos->SetTrack($message_pos);
 	}
 	// Amazon Playlist
@@ -70,8 +75,10 @@ function AddAmazon() {
 			$service = New SonosMusicService($sonoszone[$master][0]);
 			$service->SetAmazonPlaylist($pl);
 		} catch (Exception $e) {
-			trigger_error("The entered Amazon-Playlist-ID: ".$pl." is not valid! Please check!", E_USER_ERROR);
+			LOGGING("The entered Amazon-Playlist-ID: ".$pl." is not valid! Please check!",3);
+			exit;
 		}
+		LOGGING('The entered Amazon-Playlist has been loaded',6);
 	}
 	// Amazon Album
 	if (isset($_GET['albumuri'])) {
@@ -81,11 +88,14 @@ function AddAmazon() {
 			$service = New SonosMusicService($sonoszone[$master][0]);
 			$service->SetAmazonAlbum($pl);
 		} catch (Exception $e) {
-			trigger_error("The entered Amazon-Album-ID ".$pl." is not valid! Please check!", E_USER_ERROR);
+			LOGGING("The entered Amazon-Album-ID ".$pl." is not valid! Please check!", 3);
+			exit;
 		}
+		LOGGING('The entered Amazon-Album has been loaded',6);
 	}
 	$sonos->SetVolume($volume);
 	$sonos->SetMute(false);
+	LOGGING("Requested Amazon Music plays now.", 7);
 	$sonos->Play();
 }
 

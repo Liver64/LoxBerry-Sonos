@@ -7,10 +7,15 @@
 
 function s2s()
 { 		
-	global $debug, $sonos, $sonoszone, $master;
+	global $debug, $sonos, $sonoszone, $master, $t2s_langfile, $templatepath;
 	
-	$thissong = "Der laufende Song lautet "; 
- 	$by = " von "; 
+	#********************** NEW get text variables*********** ***********
+	$TL = LOAD_T2S_TEXT();
+		
+	$this_song = $TL['SONOS-TO-SPEECH']['CURRENT_SONG'] ; 
+ 	$by = $TL['SONOS-TO-SPEECH']['CURRENT_SONG_ARTIST_BY']; 
+	$this_radio = $TL['SONOS-TO-SPEECH']['CURRENT_RADIO_STATION'];
+	#********************************************************************
 	
 	# prüft ob gerade etwas gespielt wird, falls nicht dann keine Ansage
 	$gettransportinfo = $sonos->GetTransportInfo();
@@ -27,18 +32,23 @@ function s2s()
 			# Generiert Titelinfo wenn MP3 läuft
 			$artist = substr($temp["artist"], 0, 30);
 			$titel = substr($temp["title"], 0, 70);
-			$text = $thissong . $titel . $by . $artist ; 
+			$text = $this_song." ".$titel." ".$by." ".$artist ; 
 		} elseif(empty($temp["duration"])) {
-			# Generiert Ansage des laufenden Senders
-			$sender = $temp_radio['title'];
-			$text = 'Es läuft '.$sender;
+			$find1st = strpos($temp['streamContent'], " - ");
+			$findlast = strrpos($temp['streamContent'], " - ");
+			if (($find1st === false) or ($find1st <> $findlast)) {
+				# Generiert Ansage des laufenden Senders
+				$sender = $temp_radio['title'];
+				$text = $this_radio." ".$sender;
+			} else {
+				# Generiert Titelinfo wenn Artist / Title vom Sender geliefert wird
+				$artist = substr($temp["streamContent"], 0, $find1st);
+				$titel = substr($temp["streamContent"], $find1st + 3, 70);
+				$text = $this_song." ".$titel." ".$by." ".$artist ; 
+			}
 		}
-		$text = urlencode($text);
-		if ($debug == 1) 
-		{
-			echo ($text); 
-			echo '<br />';
-		}
+		LOGGING('Song Announcement: '.utf8_encode($text),7);
+		LOGGING('Message been generated and pushed to T2S creation',5);
 		return ($text);
 	} 
 }

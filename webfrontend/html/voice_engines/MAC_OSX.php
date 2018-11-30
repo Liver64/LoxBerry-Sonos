@@ -1,7 +1,10 @@
 <?php
-function t2s($messageid, $MessageStorepath, $textstring, $filename)
+function t2s($textstring, $filename)
+
 // text-to-speech: Erstellt mit dem OS X Command "say" eine AIFF Datei und speichert diese in einem Verzeichnis 
 // @Parameter = $messageid von sonos2.php
+
+# 08/03/2018 added $lamePath from sonos.cfg
 {
 	#echo "bin in der MAC_OSX.php angekommen\n";
 	global $config, $messageid;
@@ -25,8 +28,9 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 	$voices[] = array('voice' => 'Satu','lang' => 'fi_FI');
 	$voices[] = array('voice' => 'Yuna','lang' => 'ko_KR');
 
-		#$mpath = $config['SYSTEM']['messageStorePath'];
-		$lamePath = $config['TTS']['lamePath'];
+		LOGGING("MAC_OSX has been successful selected", 7);	
+		
+		$lamePath = "/usr/local/bin/";
 		$textstring = urldecode($textstring);
 		if($engine = '3001') {
 			if (isset($_GET['voice'])) {
@@ -34,16 +38,18 @@ function t2s($messageid, $MessageStorepath, $textstring, $filename)
 					$valid_voice = array_multi_search($tmp_voice, $voices);
 					if (!empty($valid_voice)) {
 						$voice = $valid_voice[0]['voice'];
-						shell_exec("say -v $voice $textstring -o $messageStorePath$filename.aiff; ".$lamePath."lame $MessageStorepath$filename.aiff 2>&1");
+						shell_exec("say -v $voice $textstring -o $config['SYSTEM']['ttspath'] ."/". $filename.aiff; ".$lamePath."lame $config['SYSTEM']['ttspath'] ."/". $filename.aiff 2>&1");
+						LOGGING('T2S language/voice has been successful entered',5);
 					} else {
-						trigger_error('The entered OSX Voice is not supported. Please correct (see Wiki)!', E_USER_ERROR);	
+						LOGGING("The entered OSX Voice is not supported. Please correct (see Wiki)!!",3);
+						exit;
 					}
 			} else {
 				shell_exec("say $textstring -o $messageStorePath$filename.aiff; ".$lamePath."lame $mpath$filename.aiff 2>&1");
+				LOGGING('The text has been passed to OSX engine for MP3 creation',5);
 			}
 		}
-	$messageid = $filename;
-	return ($messageid);
+	return $filename;
 				  	
 }
 

@@ -30,14 +30,17 @@ function AddNapster() {
 	
 	// Napster Track(s) - NOT IMPLEMENTED
 	if (isset($_GET['trackuri'])) {  
-		trigger_error("Napster Track-URI is currently not supported!", E_USER_ERROR);	
+		LOGGING("Napster Track-URI is currently not supported!", 3);	
+		exit;
 		$uri = $_GET['trackuri'];
 		if (empty($uri)) {
-			trigger_error("Please enter Napster Track-URI!", E_USER_ERROR);
+			LOGGING("Please enter Napster Track-URI!", 3);
+			exit;
 		}
 		$track_array = explode(',',$uri);
 		if (count($track_array) > 2) {
-			trigger_error("Please enter just one Napster Track-URI!", E_USER_ERROR);
+			LOGGING("Please enter just one Napster Track-URI!", 3);
+			exit;
 		}
 		$curr_track = $curr_track_tmp['Track'];
 		empty($curr_track_tmp['duration']) ? $sonos->SetQueue("x-rincon-queue:".$sonoszone[$master][1]."#0") : '';
@@ -54,8 +57,10 @@ function AddNapster() {
 				$service->SetNapsterTrack($trackuri);
 			}
 		} catch (Exception $e) {
-			trigger_error("The entered Napster-Track-ID's: ".$uri." are not valid! Please check!", E_USER_ERROR);
+			LOGGING("The entered Napster-Track-ID's: ".$uri." are not valid! Please check!", 3);
+			exit;
 		}
+		LOGGING('The entered Napster-Track has been loaded',6);
 		$sonos->SetTrack($message_pos);
 	}
 	// Napster Playlist
@@ -66,8 +71,10 @@ function AddNapster() {
 			$service = New SonosMusicService($sonoszone[$master][0]);
 			$service->SetNapsterPlaylist($pl, $mail);
 		} catch (Exception $e) {
-			trigger_error("The entered Napster-Playlist-ID: ".$pl." is not valid! Please check!", E_USER_ERROR);
+			LOGGING("The entered Napster-Playlist-ID: ".$pl." is not valid! Please check!", 3);
+			exit;
 		}
+		LOGGING('The entered Napster-Playlist has been loaded',6);
 	}
 	// Napster Album
 	if (isset($_GET['albumuri'])) {
@@ -77,11 +84,14 @@ function AddNapster() {
 			$service = New SonosMusicService($sonoszone[$master][0]);
 			$service->SetNapsterAlbum($pl, $mail);
 		} catch (Exception $e) {
-			trigger_error("The entered Napster-Album-ID ".$pl." is not valid! Please check!", E_USER_ERROR);
+			LOGGING("The entered Napster-Album-ID ".$pl." is not valid! Please check!", 3);
+			exit;
 		}
+		LOGGING('The entered Napster-Album has been loaded',6);
 	}
 	$sonos->SetVolume($volume);
 	$sonos->SetMute(false);
+	LOGGING("Requested Napster Music plays now.", 7);
 	$sonos->Play();
 }
 

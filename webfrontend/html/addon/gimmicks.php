@@ -7,15 +7,15 @@ function GetTodayBauernregel() {
 	$bauernregel = str_replace("St. ", "Sankt ", $bauernregel);
 	$search = "zit[" . date('j') . "]";
 	$posstart = strpos($bauernregel, $search);
-	if ($posstart !== FALSE)
-		{
-		  $posstart = $posstart + 10;
-		  $posend = strpos($bauernregel, "\"", $posstart+1);
-		  $regel = "Die Bauernregel des Tages lautet: " . substr($bauernregel, $posstart, $posend-$posstart);
-		  echo "<br>Bauernregel: $regel";
-		  echo '<br>';
-		  return $regel;
-		}
+	if ($posstart !== FALSE)  {
+		$posstart = $posstart + 10;
+		$posend = strpos($bauernregel, "\"", $posstart+1);
+		$regel = "Die Bauernregel des Tages lautet: " . substr($bauernregel, $posstart, $posend-$posstart);
+		echo "<br>Bauernregel: $regel";
+		echo '<br>';
+		LOGGING('Bauernregel been generated and pushed to T2S creation',7);
+		return ($regel);
+	}
 }
 
 
@@ -29,7 +29,8 @@ function GetWitz()  {
 	$witz = str_replace("\"", "", $witz);
 	echo "<br>WITZ: $witz";
 	echo '<br>';
-	return urlencode($witz);
+	LOGGING('Witz been generated and pushed to T2S creation',7);
+	return ($witz);
 }
 	
 ?>

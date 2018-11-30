@@ -36,7 +36,8 @@ function AddSpotify() {
 	if (isset($_GET['trackuri'])) {
 		$uri = $_GET['trackuri'];
 		if (empty($uri)) {
-			trigger_error("Please enter Spotify Track-URI!", E_USER_ERROR);
+			LOGGING("Please enter Spotify Track-URI!", 3);
+			exit;
 		}
 		$track_array = explode(',',$uri);
 		$curr_track = $curr_track_tmp['Track'];
@@ -54,8 +55,10 @@ function AddSpotify() {
 				$service->SetSpotifyTrack($trackuri, $message_pos);
 			}
 		} catch (Exception $e) {
-			trigger_error("The entered Spotify-Track-URI: ".$trackuri." is not valid! Please check!", E_USER_ERROR);
+			LOGGING("The entered Spotify-Track-URI: ".$trackuri." is not valid! Please check!", 3);
+			exit;
 		}
+		LOGGING('The entered Spotify-Track has been loaded',6);
 		$sonos->SetTrack($message_pos);
 	}
 	// Spotify Playlist
@@ -66,8 +69,9 @@ function AddSpotify() {
 			$service = New SonosMusicService($sonoszone[$master][0]);
 			$service->SetSpotifyPlaylist($pl, $user);
 		} catch (Exception $e) {
-			trigger_error("The entered Spotify-Playlist-URI: ".$pl." is not valid! Please check!", E_USER_ERROR);
-		}
+			LOGGING("The entered Spotify-Playlist-URI: ".$pl." is not valid! Please check!", 3);
+			exit;
+		}LOGGING('The entered Spotify-Playlist has been loaded',6);
 	}
 	// Spotify Album
 	if (isset($_GET['albumuri'])) {
@@ -77,11 +81,14 @@ function AddSpotify() {
 			$service = New SonosMusicService($sonoszone[$master][0]);
 			$service->SetSpotifyAlbum($pl);
 		} catch (Exception $e) {
-			trigger_error("The entered Spotify-Album-URI: ".$pl." is not valid! Please check!", E_USER_ERROR);
+			LOGGING("The entered Spotify-Album-URI: ".$pl." is not valid! Please check!", 3);
+			exit;
 		}
+		LOGGING('The entered Spotify-Album has been loaded',6);
 	}
 	$sonos->SetVolume($volume);
 	$sonos->SetMute(false);
+	LOGGING("Requested Spotify Music plays now.", 7);
 	$sonos->Play();
 }
 

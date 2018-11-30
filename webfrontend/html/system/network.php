@@ -7,30 +7,53 @@
 * @return: Array mit allen gefunden Zonen, IP-Adressen, Rincon-ID's und Sonos Modell
 **/
 
-// ermittelt das home Verzeichnis für Loxberry
-if (!function_exists('posix_getpwuid')) {
-	$home = @getenv('DOCUMENT_ROOT');
-} else {
-	$home = posix_getpwuid(posix_getuid());
-	$home = $home['dir'];
-}
+header('Content-Type: text/html; charset=utf-8');
 
-// ermittelt das Plugin Verzeichnis für Loxberry
-$path = $_SERVER["SCRIPT_FILENAME"];
-$folder_array = explode('/', $path);
-$folder =($folder_array[6]);
+require_once "loxberry_system.php";
+require_once "loxberry_log.php";
+require_once "logging.php";
+require_once "error.php";
 
-echo "<PRE>"; 
-trigger_error('The home and plugin folder has been successful detected!', E_USER_NOTICE);
+$lb_hostname = lbhostname();
+$lb_version = LBSystem::lbversion();
+$L = LBSystem::readlanguage("sonos.ini");
+#$pluginversion = LBSystem::pluginversion();
+$pluginversion_temp = LBSystem::plugindata();
+$pluginversion = $pluginversion_temp['PLUGINDB_VERSION'];
+$home = $lbhomedir;
+$folder = $lbpplugindir;
+$myIP = $_SERVER["SERVER_ADDR"];
+#echo "<PRE>"; 
+
+error_reporting(E_ALL);
+ini_set("display_errors", "off");
+define('ERROR_LOG_FILE', "$lbplogdir/sonos.log");
+
+//calling custom error handler
+set_error_handler("handleError");
+
+// Test error handler
+#print_r($arra); // undefined variable
+
+$params = [	"name" => "Sonos PHP",
+			"filename" => "$lbplogdir/sonos.log",
+			"append" => 1,
+			"addtime" => 1,
+			];
+LBLog::newLog($params);
+$plugindata = LBSystem::plugindata();
 
 	$ip = '239.255.255.250';
 	$port = 1900;
 	
+	LOGDEB('Start scanning for Sonos Players using MULTICAST IP: '.$ip.':'.$port);
+		
 	global $sonosfinal, $sonosnet, $devices;
 
 	$sock = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
 	$level = getprotobyname("ip");
 	socket_set_option($sock, $level, IP_MULTICAST_TTL, 2);
+	
 		
 	$data = "M-SEARCH * HTTP/1.1\r\n";
 	$data .= "HOST: {$ip}:reservedSSDPport\r\n";
@@ -47,6 +70,7 @@ trigger_error('The home and plugin folder has been successful detected!', E_USER
     $name = null;
     $port = null;
     $tmp = "";
+	
     $response = "";
     while (socket_select($read, $write, $except, 1)) {
         socket_recvfrom($sock, $tmp, 2048, null, $name, $port);
@@ -83,44 +107,52 @@ trigger_error('The home and plugin folder has been successful detected!', E_USER
         $unique[] = $device["usn"];
     }
 	$devices = $return;
+	#unset($devices);				// für BROADCAST testzwecke
     if (empty($devices)) {
-		trigger_error(count($devices).' System has not detected any Sonos devices in your network!', E_USER_ERROR);
+		LOGWARN('System has not detected any Sonos devices by scanning MULTICAST in your network!');
+		// if no multicast addresses were detected run for broadcast addresses
+		broadcast_scan($devices);
 	} else {
-		trigger_error(count($devices).' IP-adresses from Sonos devices has been successful detected!', E_USER_NOTICE);	
+		LOGINF('IP-adresses from Sonos devices has been successful detected by MULTICAST!');
 	}
-	// in case there are groups ungroup them first
-	#require_once("PHPSonos.php");
-	#foreach ($devices as $scanzone) {
-	#	try {
-	#		$sonos = New PHPSonos($scanzone);
-	#		$sonos->BecomeCoordinatorOfStandaloneGroup();
-	#		#usleep(100000); // warte 200ms
-	#	} catch (Exception $e) {
-	#		trigger_error("Minimum One Stereo pair or a Surround Config has been identified!", E_USER_NOTICE);	
-	#	}
-	#}
+		
 	getSonosDevices($devices);
-	$devicelist = implode(" / ", $devices);
-	trigger_error("Following Sonos Player IP addresses has been detected (exclude Boost, Subwoofer, Bridges) :". $devicelist, E_USER_NOTICE);
+	$devicelist = implode(", ", $devices);
+	LOGGING("Following Sonos IP-addresses has been detected: ". $devicelist,5);
+	
 	parse_cfg_file(); // $sonosnet
+	#print_r($sonosnet);
 	if(empty($sonosnet)) {
 		$finalzones = $sonosfinal;
+		$count_player = count($finalzones);
+		foreach ($finalzones as $found_zones => $key)  {
+			LOGINF("New Sonos Player: '".$key[2]."' called: '".$found_zones."' using IP: '".$key[0]."' and Rincon-ID: '".$key[1]."' will be added to your Plugin.");
+		}
 	} else {
 		// computes the difference of arrays with additional index check
 		$finalzones = @array_diff_assoc($sonosfinal, $sonosnet);
+		if (empty($finalzones))  {
+			LOGINF("No new Sonos Player has been detected.");
+		} else {
+			foreach ($finalzones as $found_zones => $key)  {
+				LOGOK("New Sonos Player: '".$key[2]."' called: '".$found_zones."' using IP: '".$key[0]."' and Rincon-ID: '".$key[1]."' will be added to your Plugin.");
+			}
+		}
 	}
+	LOGINF("The initial setup has been completed.",7);
 	#print_r($finalzones);
-	// save array as JSON file
-	$d = array2json($finalzones);
-	$fh = fopen($home.'/config/plugins/'.$folder.'/tmp_player.json', 'w');
-	$checkInst = file_exists($home.'/config/plugins/'.$folder.'/tmp_player.json');
-	if ($checkInst === false) {
-		trigger_error("Error during initial installation, please re-install the Plugin. The Scan could not be completed due to missing temporary file!!", E_USER_ERROR);
-	}
-	trigger_error('The setup has been completed.', E_USER_NOTICE);
-	fwrite($fh, json_encode($finalzones));
-	fclose($fh);
-	trigger_error('File has been saved and system setup passed over to LoxBerry Configuration.', E_USER_NOTICE);
+	
+	// convert array to JSON
+	$post_json = array2json($finalzones);
+	
+	if (!empty($finalzones)) {
+		LOGINF("New Players has been detected and data converted to JSON");
+		LOGOK("JSON data has been successfully passed to application");
+	} 
+	echo $post_json;
+		
+
+
 	
 	
 
@@ -134,15 +166,16 @@ trigger_error('The home and plugin folder has been successful detected!', E_USER
 	global $sonosfinal, $sodevices;
 	
 	$sodevices = $devices[0];
-	$soplayer = getRoomCoordinator($sodevices);
-	$soplayernew = getRoomCoordinatorSetup($sodevices);
+	#$soplayer = getRoomCoordinator($sodevices);
+	#$soplayernew = getRoomCoordinatorSetup($sodevices);
 	$zonen = array();
-	foreach ($soplayer as $zoneip) {
+	foreach ($devices as $zoneip) {
 		$url = "http://" . $zoneip . ":1400/xml/device_description.xml";
 		$xml = simpleXML_load_file($url);
 		$model = $xml->device->modelNumber;
 		$roomraw = $xml->device->roomName;
 		$device = $xml->device->displayName;
+		$rinconid = $xml->device->UDN;
 		# Ersetzen der Umlaute
 		$search = array('Ä','ä','Ö','ö','Ü','ü','ß');
 		$replace = array('Ae','ae','Oe','oe','Ue','ue','ss');
@@ -150,7 +183,9 @@ trigger_error('The home and plugin folder has been successful detected!', E_USER
 		$room = strtolower(str_replace($search,$replace,$roomraw));
 		if(isSpeaker($model) == true) {
 			$zonen = 	[$room, 
-						(string)$device,
+						$zoneip,
+						(string)substr($rinconid, 5, 20)."1400",
+						(string)strtoupper($device),
 						'',
 						'', 						
 						''
@@ -160,12 +195,16 @@ trigger_error('The home and plugin folder has been successful detected!', E_USER
 		}
 		$sonosplayerfinal[$raum] = $zonen;
 	}
-	$match = @array_intersect_assoc($soplayernew, $sonosplayerfinal);
-	$sonosfinal = @array_merge_recursive($match, $sonosplayerfinal);
-	ksort($sonosfinal);
-	#echo "<PRE>";
-	#print_r($sonosfinal);
+	#print_r($sonosplayerfinal);
+	#$match = @array_intersect_assoc($soplayernew, $sonosplayerfinal);
+	#$sonosfinal = @array_merge_recursive($match, $sonosplayerfinal);
+	ksort($sonosplayerfinal);
+	$sonosfinal = $sonosplayerfinal;
+	#$rooms = implode(", ", array_keys($sonosfinal));
+	#$countroom = count(array_keys($sonosfinal));
+	#LOGGING("Following ".$countroom." rooms has been detected: ".$rooms,5);
 	return $sonosfinal;	
+	#return $sonosplayerfinal;
  }
 
   
@@ -179,18 +218,19 @@ trigger_error('The home and plugin folder has been successful detected!', E_USER
 **/
  function isSpeaker($model) {
     $models = [
-        "S1"    =>  "PLAY:1",
-		"S12"   =>  "PLAY:1",
-		"S13"   =>  "PLAY:1",
-        "S3"    =>  "PLAY:3",
-		"S5"    =>  "PLAY:5",
-        "S6"    =>  "PLAY:5",
-        "S9"    =>  "PLAYBAR",
-		"S11"   =>  "PLAYBASE",
-        "ZP80"  =>  "CONNECT",
-        "ZP90"  =>  "CONNECT",
-        "ZP100" =>  "CONNECT:AMP",
-        "ZP120" =>  "CONNECT:AMP",
+            "S1"    =>  "PLAY:1",
+            "S12"   =>  "PLAY:1",
+            "S3"    =>  "PLAY:3",
+            "S5"    =>  "PLAY:5",
+            "S6"    =>  "PLAY:5",
+            "S9"    =>  "PLAYBAR",
+            "S11"   =>  "PLAYBASE",
+            "S13"   =>  "ONE",
+            "S14"   =>  "BEAM",
+            "ZP80"  =>  "ZONEPLAYER",
+            "ZP90"  =>  "CONNECT",
+            "ZP100" =>  "CONNECT:AMP",
+            "ZP120" =>  "CONNECT:AMP",
         ];
     return in_array($model, array_keys($models));
 }
@@ -210,7 +250,7 @@ function parse_cfg_file() {
 	foreach ($player as $zonen => $key) {
 		$sonosnet[$zonen] = explode(',', $key[0]);
 	}
-	trigger_error('Existing configuration file player.cfg has been loaded successfully.', E_USER_NOTICE);
+	LOGOK("Existing configuration file 'player.cfg' has been loaded successfully.");
 	return $sonosnet;
 	}
 
@@ -298,9 +338,8 @@ function getRoomCoordinatorSetup($devices){
 			}
 		}
 		ksort($coordinators);
-		#echo "<PRE>";
 		#print_r($coordinators);
-		trigger_error('All player details has been collected (room, IP, Rincon-ID and Model).', E_USER_NOTICE);
+		LOGDEB("All player details has been collected (room, IP, Rincon-ID and Model).");
 		return $coordinators;
 }
 
@@ -330,6 +369,7 @@ function getRoomCoordinator($devices){
 				array_push($playernew, $ip);
 			}
 		}
+		print_r($playernew);
 		return $playernew;
 }
 
@@ -353,7 +393,85 @@ function deviceCmdRawSetup($url, $ip='', $port=1400) {
  }
  
  
+/**
+* Funktion : broadcast_scan --> Subfunction necessary to read Sonos Topology
+* @param: 	empty
+*
+* @return: array
+**/ 
+function broadcast_scan($devices) {
+	
+	#$ip = '239.255.255.250';
+	$broadcastip = '255.255.255.255';
+	$port = 1900;
+	
+	global $sonosfinal, $sonosnet, $devices;
+	
+	LOGINF('Start scanning for Sonos Players using BROADCAST IP: '.$broadcastip.':'.$port);
 
+	$sock = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
+	$level = getprotobyname("broadcastip");
+	socket_set_option($sock, SOL_SOCKET, SO_BROADCAST, 1);
+		
+	$data = "M-SEARCH * HTTP/1.1\r\n";
+	$data .= "HOST: {broadcastip}:reservedSSDPport\r\n";
+	$data .= "MAN: ssdp:discover\r\n";
+	$data .= "MX: 1\r\n";
+	$data .= "ST: urn:schemas-upnp-org:device:ZonePlayer:1\r\n";
+
+	socket_sendto($sock, $data, strlen($data), null, $broadcastip, $port);
+	
+	// All passed by ref
+	$read = [$sock];
+    $write = [];
+    $except = [];
+    $name = null;
+    $port = null;
+    $tmp = "";
+    $response = "";
+    while (socket_select($read, $write, $except, 1)) {
+        socket_recvfrom($sock, $tmp, 2048, null, $name, $port);
+        $response .= $tmp;
+    }
+    $devices = [];
+    foreach (explode("\r\n\r\n", $response) as $reply) {
+        if (!$reply) {
+            continue;
+        }
+        $data = [];
+        foreach (explode("\r\n", $reply) as $line) {
+            if (!$pos = strpos($line, ":")) {
+                continue;
+            }
+            $key = strtolower(substr($line, 0, $pos));
+            $val = trim(substr($line, $pos + 1));
+            $data[$key] = $val;
+        }
+        $devices[] = $data;
+    }
+    $return = [];
+    $unique = [];
+    foreach ($devices as $device) {
+        if ($device["st"] !== "urn:schemas-upnp-org:device:ZonePlayer:1") {
+            continue;
+        }
+        if (in_array($device["usn"], $unique)) {
+            continue;
+        }
+        $url = parse_url($device["location"]);
+        $ip = $url["host"];
+        $return[] = $ip;
+        $unique[] = $device["usn"];
+    }
+	$devices = $return;
+    if (empty($devices)) {
+		LOGWARN('System has not detected any Sonos devices by scanning BROADCAST in your network!');
+		exit;
+	} else {
+		LOGINF('IP-adresses from Sonos devices has been successful detected by BROADCAST.');
+	}
+	return $devices;
+}
 
 
 ?>

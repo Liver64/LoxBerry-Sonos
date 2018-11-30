@@ -58,10 +58,10 @@ function getPlayerList(){
 			'Host' =>"$ip",
 			'Sonos Name' =>utf8_encode($zonename),
 			'Master' =>((string)$player_data->coordinator == 'true'),
-			#'Group-ID' => $group,
+			'Group-ID' => $group,
 			'Rincon' =>'RINCON_'.explode('RINCON_',(string)$player_data->uuid)[1]
 		);
-		$sonostopology[$group][] = $player;
+		$sonostopology[] = $player;
 	}
 	print_r($sonostopology);
 	return($sonostopology);
@@ -165,13 +165,15 @@ function checkZonesOnline($member) {
 	$memberzones = $member;
 	foreach($memberzones as $zonen) {
 		if(!array_key_exists($zonen, $sonoszonen)) {
-			trigger_error("Die angegebene Zone (Member) existiert nicht. Bitte korrigieren!!", E_USER_NOTICE);
+			LOGGING("The entered member zone does not exist, please correct your syntax!!", 3);
+			exit;
 		}
 	}
 	foreach($memberzones as $zonen) {
 		if(!$socket = @fsockopen($sonoszonen[$zonen][0], 1400, $errno, $errstr, 2)) {
-			echo '<br>';
+			LOGGING("The zone ".$zonen." is OFFLINE!!", 4);
 		} else {
+			LOGGING("Zone ".$zonen." is ONLINE!!", 6);
 			$member[] = $zonen;
 		}
 	}
@@ -217,20 +219,6 @@ function getLoxoneData() {
 }
 
 
-/**
-* Function : getPluginFolder --> ermittelt den Plugin Folder
-* @param: leer                             
-*
-* @return: Plugin Folder
-**/
-
-function getPluginFolder(){
-	$logpath = $_SERVER["SCRIPT_FILENAME"].'<br>';
-	$folder = explode('/', $logpath);
-	print_r ($folder[6]);
-	return($folder);
-}
-
 
 /**
 * Function: settimestamp --> Timestamp in Datei schreiben
@@ -274,11 +262,11 @@ function networkstatus() {
 	foreach($sonoszonen as $zonen => $ip) {
 		$start = microtime(true);
 		if (!$socket = @fsockopen($ip[0], 1400, $errno, $errstr, 3)) {
-			echo "The Zone ".$zonen." using IP: ".$ip[0]." ==> Offline :-( Please check status!<br/>"; 
+			echo "Player ".strtoupper($zonen)." using IP: ".$ip[0]." ==> Offline :-( Please check status!<br/>"; 
 		} else { 
 			$latency = microtime(true) - $start;
 			$latency = round($latency * 10000);
-			echo "The Zone ".$zonen." using IP: ".$ip[0]." ==> Online :-) The response time was ".$latency." Milliseconds <br/>";
+			echo "Player ".strtoupper($zonen)." using IP: ".$ip[0]." ==> Online :-) Response time was ".$latency." Milliseconds <br/>";
 		}
 	}
 	
@@ -291,7 +279,7 @@ function networkstatus() {
 * @return: GetPositionInfo, GetMediaInfo, GetTransportInfo, GetTransportSettings, GetCurrentPlaylist
 **/
 
-  function debug() {
+  function debugsonos() {
  	global $sonos, $sonoszone;
 	$GetPositionInfo = $sonos->GetPositionInfo();
 	$GetMediaInfo = $sonos->GetMediaInfo();
@@ -343,8 +331,8 @@ function File_Put_Array_As_JSON($FileName, $ar, $zip=false) {
 
 function File_Get_Array_From_JSON($FileName, $zip=false) {
 	// liest eine JSON Datei und erstellt eine Array
-    if (! is_file($FileName)) 	{ trigger_error("Fatal: Die Datei $FileName gibt es nicht.", E_USER_NOTICE); }
-	    if (! is_readable($FileName))	{ trigger_error("Fatal: Die Datei $FileName ist nicht lesbar.", E_USER_NOTICE); }
+    if (! is_file($FileName)) 	{ LOGGING("The file $FileName does not exist.", 3); exit; }
+		if (! is_readable($FileName))	{ LOGGING("The file $FileName could not be loaded.", 3); exit;}
             if (! $zip) {
 				return json_decode(file_get_contents($FileName), true);
             } else {
@@ -377,7 +365,8 @@ function URL_Encode($string) {
  function _assertNumeric($number) {
 	// prüft ob eine Eingabe numerisch ist
     if(!is_numeric($number)) {
-        trigger_error("The input is not numeric. Please try again", E_USER_NOTICE);
+        LOGGING("The input is not numeric. Please try again", 4);
+		exit;
     }
     return $number;
  }
@@ -395,23 +384,7 @@ function URL_Encode($string) {
  } 
  
  
-/** - OBSOLETE -
-*
-* Function : getRINCON --> ermittelt die Rincon-ID der angegebenen Zone
-*
-* @param: 	IP-Adresse der Zone
-* @return: Rincon-ID
-**/
- function getRINCON($zoneplayerIp) { // gibt die RINCON der Sonos Zone zurück
-  $url = "http://" . $zoneplayerIp . ":1400/status/zp";
-  $xml = simpleXML_load_file($url);
-  $uid = $xml->ZPInfo->LocalUID;
-  return $uid;  
-  return $playerIP;
- }
 
- 
- 
 /**
 *
 * Function : AddMemberTo --> fügt ggf. Member zu Playlist oder Radio hinzu
@@ -442,59 +415,6 @@ global $sonoszone, $master, $config;
 		}
 	}
 }	
-}
-
-
-function previous_el($array, $current, $use_key = false)
-{
-    // we'll return null if $current is the first in the array (there is no previous)
-    $previous = null;
-
-    foreach ($array as $key => $value)
-    {
-        $matched = $use_key ? $key === $current : $value === $current;
-        if ($matched)
-        {
-            return $previous;
-        }
-        $previous = $use_key ? $key : $value;
-    }
-
-    // we'll return false if $current does not exist in the array
-    return false;
-}
-
-
-
-// return the key or value after whatever is in $current
-function next_el($array, $current, $use_key = false)
-{
-    $found = false;
-
-    foreach ($array as $key => $value)
-    {
-        // $current was found on the previous loop
-        if ($found)
-        {
-            return $use_key ? $key : $value;
-        }
-        $matched = $use_key ? $key === $current : $value === $current;
-        if ($matched)
-        {
-            $found = true;
-        }
-    }
-
-    if ($found)
-    {
-        // we'll return null if $current was the last one (there is no next)
-        return null;
-    }
-    else
-    {
-        // we'll return false if $current does not exist in the array
-        return false;
-    }
 }
 
 
@@ -529,9 +449,9 @@ function isStreaming() {
 **/
 
 function chmod_r($Path="") {
-	global $Path, $MessageStorepath, $config;
+	global $Path, $MessageStorepath, $config, $MP3path;
 	
-	$Path = $MessageStorepath."".$config['MP3']['MP3path'];
+	$Path = $MessageStorepath."".$MP3path;
 	#echo $Path;
 	$dp = opendir($Path);
      while($File = readdir($dp)) {
@@ -555,46 +475,46 @@ function chmod_r($Path="") {
 /* @return: true oder Abbruch
 /*************************************************************************************************************/
  function checkaddon() {
-	global $home;
+	global $home, $time_start;
 	
 	if(isset($_GET['weather'])) {
 		# ruft die weather-to-speech Funktion auf
 		if(substr($home,0,4) == "/opt") {	
 			if(!file_exists('addon/weather-to-speech.php')) {
-				trigger_error("The weather-to-speech Addon is currently not installed!", E_USER_NOTICE);
+				LOGGING("The weather-to-speech Addon is currently not installed!", 4);
 				exit;
 			} else {
 				if(!file_exists("$home/config/plugins/wu4lox/wu4lox.cfg")) {
-					trigger_error("Bitte zuerst das Wunderground Plugin installieren!", E_USER_NOTICE);
+					LOGGING("Bitte zuerst das Wunderground Plugin installieren!", 4);
 					exit;
 				}
 			}
 		} else {
 			if(!file_exists('addon/weather-to-speech_nolb.php')) {
-				trigger_error("The weather-to-speech Addon is currently not installed!", E_USER_NOTICE);
+				LOGGING("The weather-to-speech Addon is currently not installed!", 4);
 				exit;
 			}
 		}
 	} elseif (isset($_GET['clock'])) {
 		# ruft die clock-to-speech Funktion auf
 		if(!file_exists('addon/clock-to-speech.php')) {
-			trigger_error("The clock-to-speech addon is currently not installed!", E_USER_NOTICE);
+			LOGGING("The clock-to-speech addon is currently not installed!", 4);
 			exit;
 		}
 	} elseif (isset($_GET['sonos'])) {
 		# ruft die sonos-to-speech Funktion auf
 		if(!file_exists('addon/sonos-to-speech.php')) {
-			trigger_error("The sonos-to-speech addon Is currently not installed!", E_USER_NOTICE);
+			LOGGING("The sonos-to-speech addon Is currently not installed!", 4);
 			exit;
 		}
 	} elseif (isset($_GET['abfall'])) {
 		# ruft die waste-calendar-to-speech Funktion auf
 		if(!file_exists('addon/waste-calendar-to-speech.php')) {
-				trigger_error("The waste-calendar-to-speech Addon is currently not installed!", E_USER_NOTICE);
+				LOGGING("The waste-calendar-to-speech Addon is currently not installed!", 4);
 				exit;
 			} else {
 				if(!file_exists("$home/config/plugins/caldav4lox/caldav4lox.conf")) {
-					trigger_error("Bitte zuerst das CALDAV4Lox Plugin installieren!", E_USER_NOTICE);
+					LOGGING("Bitte zuerst das CALDAV4Lox Plugin installieren!", 4);
 					exit;
 				}
 			}
@@ -609,38 +529,38 @@ function chmod_r($Path="") {
 /* @return: falls OK --> nichts, andernfalls Abbruch und Eintrag in error log
 /********************************************************************************************/
 function checkTTSkeys() {
-	Global $config;
+	Global $config, $checkTTSkeys, $time_start;
 	
 	if ($config['TTS']['t2s_engine'] == 1001) {
 		if (!file_exists("voice_engines/VoiceRSS.php")) {
-			trigger_error("VoiceRSS is currently not available. Please install!", E_USER_NOTICE);
+			LOGGING("VoiceRSS is currently not available. Please install!", 4);
 		} else {
 			if(strlen($config['TTS']['API-key']) !== 32) {
-				trigger_error("The specified VoiceRSS API key is invalid. Please correct!", E_USER_NOTICE);
+				LOGGING("The specified VoiceRSS API key is invalid. Please correct!", 4);
 			}
 		}
 	}
 	if ($config['TTS']['t2s_engine'] == 3001) {
 		if (!file_exists("voice_engines/MAC_OSX.php")) {
-			trigger_error("MAC OSX is currently not available. Please install!", E_USER_NOTICE);
+			LOGGING("MAC OSX is currently not available. Please install!", 4);
 		}
 	}
 	if ($config['TTS']['t2s_engine'] == 6001) {
 		if (!file_exists("voice_engines/ResponsiveVoice.php")) {
-			trigger_error("ResponsiveVoice is currently not available. Please install!", E_USER_NOTICE);
+			LOGGING("ResponsiveVoice is currently not available. Please install!", 4);
 		}
 	}
 	if ($config['TTS']['t2s_engine'] == 5001) {
 		if (!file_exists("voice_engines/Pico_tts.php")) {
-			trigger_error("Pico2Wave is currently not available. Please install!", E_USER_NOTICE);
+			LOGGING("Pico2Wave is currently not available. Please install!", 4);
 		}
 	}
 	if ($config['TTS']['t2s_engine'] == 4001) {
 		if (!file_exists("voice_engines/Polly.php")) {
-			trigger_error("Amazon Polly is currently not available. Please install!", E_USER_NOTICE);
+			LOGGING("Amazon Polly is currently not available. Please install!", 4);
 		} else {
 			if((strlen($config['TTS']['API-key']) !== 20) or (strlen($config['TTS']['secret-key']) !== 40)) {
-				trigger_error("The specified AWS Polly API key is invalid. Please correct!!", E_USER_NOTICE);
+				LOGGING("The specified AWS Polly API key is invalid. Please correct!!", 4);
 			}
 		}
 	}
@@ -780,7 +700,298 @@ function select_t2s_engine()  {
 
 
 
+/**
+* Function : load_t2s_text --> check if translation file exit and load into array
+*
+* @param: 
+* @return: array 
+**/
 
+function load_t2s_text(){
+	global $config, $t2s_langfile, $t2s_text_stand, $templatepath;
+	
+	$templatepath.'/lang/'.$t2s_langfile;
+	if (file_exists($templatepath.'/lang/'.$t2s_langfile)) {
+		$TL = parse_ini_file($templatepath.'/lang/'.$t2s_langfile, true);
+	} else {
+		LOGGING("For selected T2S language no translation file still exist! Please go to LoxBerry Plugin translation and create a file for selected language ".substr($config['TTS']['messageLang'],0,2),3);
+		exit;
+	}
+	return $TL;
+}
+
+
+
+/**
+* Function : check_sambashare --> check if what sambashare been used
+*
+* @param: 
+* @return: array 
+**/
+
+function check_sambashare($sambaini, $searchfor, $sambashare) {
+	global $hostname, $psubfolder, $lbpplugindir, $sambashare, $myIP;
+	
+	$contents = file_get_contents($sambaini);
+	// escape special characters in the query
+	$pattern = preg_quote($searchfor, '/');
+	// finalise the regular expression, matching the whole line
+	$pattern = "/^.*$pattern.*\$/m";
+	if(preg_match_all($pattern, $contents, $matches))  {
+		$myMessagepath = "//$myIP/plugindata/$psubfolder/tts/";
+		$smbfolder = "Samba share 'plugindata' has been found";
+	}
+	else {
+		$myMessagepath = "//$myIP/sonos_tts/";
+		$smbfolder = "Samba share 'sonos_tts' has been found";
+	}
+	return $sambashare = array($myMessagepath, $smbfolder);
+}
+
+
+	/**
+     * Create the xml metadata required by Sonos.
+     *
+     * @param string $id The ID of the track
+     * @param string $parent The ID of the parent
+     * @param array $extra An xml array of extra attributes for this item
+     * @param string $service The Sonos service ID to use
+     *
+     * @return string
+	 *
+	 * https://github.com/duncan3dc/sonos/blob/master/src/Helper.php
+     */
+	 
+	
+	function createMetaDataXml(string $id, string $parent = "-1", array $extra = [], string $service = null): string
+    {
+		$xmlnew = New XmlWriter();
+        if ($service !== null) {
+            $extra["desc"] = [
+                "_attributes"   =>  [
+                    "id"        =>  "cdudn",
+                    "nameSpace" =>  "urn:schemas-rinconnetworks-com:metadata-1-0/",
+                ],
+                "_value"        =>  "SA_RINCON{$service}_X_#Svc{$service}-0-Token",
+            ];
+        }
+        $xml = $xmlnew->createXml([
+            "DIDL-Lite" =>  [
+                "_attributes"   =>  [
+                    "xmlns:dc"      =>  "http://purl.org/dc/elements/1.1/",
+                    "xmlns:upnp"    =>  "urn:schemas-upnp-org:metadata-1-0/upnp/",
+                    "xmlns:r"       =>  "urn:schemas-rinconnetworks-com:metadata-1-0/",
+                    "xmlns"         =>  "urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/",
+                ],
+                "item"  =>  array_merge([
+                    "_attributes"   =>  [
+                        "id"            =>  $id,
+                        "parentID"      =>  $parent,
+                        "restricted"    =>  "true",
+                    ],
+                ], $extra),
+            ],
+        ]);
+        # Get rid of the xml header as only the DIDL-Lite element is required
+        $metadata = explode("\n", $xml)[1];
+        return $metadata;
+    }
+
+
+	
+/**
+* Function : mp3_files --> check if playgong mp3 file is valid in ../tts/mp3/
+*
+* @param: 
+* @return: array 
+**/
+
+function mp3_files($playgongfile) {
+	global $config;
+	
+	$scanned_directory = array_diff(scandir($config['SYSTEM']['mp3path'], SCANDIR_SORT_DESCENDING), array('..', '.'));
+	$file_only = array();
+	foreach ($scanned_directory as $file) {
+		$extension = pathinfo($file, PATHINFO_EXTENSION);
+		if ($extension == 'mp3') {
+			array_push($file_only, $file);
+		}
+	}
+	#print_r($file_only);
+	return (in_array($playgongfile, $file_only));
+}
+
+
+/**
+* Function : check_rampto --> check if rampto settings in config are set
+*
+* @param: 
+* @return: array 
+**/
+
+function check_rampto() {
+	global $config, $volume, $sonos, $sonoszonen, $master;
+	
+	if(empty($config['TTS']['volrampto'])) {
+		$ramptovol = "25";
+		LOGGING("Rampto Volume in config has not been set. Default Volume '".$sonoszonen[$master][4]."' from Zone '".$master."' has been taken, please update Plugin Config (T2S Optionen).", 4);
+	} else {
+		$ramptovol = $config['TTS']['volrampto'];
+		#LOGGING("Rampto Volume from config has been set.", 7);
+	}
+	if(empty($config['TTS']['rampto'])) {
+		$rampto = "ALARM_RAMP_TYPE";
+		LOGGING("Rampto Parameter (sleep, alarm, auto) in config has not been set. Default of 'auto' has been taken, please update Plugin Config (T2S Optionen).", 4);
+	} else {
+		$rampto = $config['TTS']['rampto'];	
+		#LOGGING("Rampto Parameter from config has been set.", 7);
+	}
+	if($sonos->GetVolume() <= $ramptovol)	{
+		$ramptovol = $volume;
+	}
+	$sonos->RampToVolume($rampto, $ramptovol);	
+	return;	
+}
+
+
+/**
+* Function : create_symlinks() --> check if symlinks for interface are there, if not create them
+*
+* @param: empty
+* @return: symlinks created 
+**/
+
+function create_symlinks()  {
+	
+	global $config, $ttsfolder, $mp3folder, $myFolder, $lbphtmldir;
+	
+	$symcurr_path = $config['SYSTEM']['path'];
+	$symttsfolder = $config['SYSTEM']['ttspath'];
+	$symmp3folder = $config['SYSTEM']['mp3path'];
+	$copy = false;
+	if (!is_dir($symmp3folder)) {
+		$copy = true;
+	}
+	LOGGING("check if folder/symlinks exists, if not create", 5);
+	if (!is_dir($symttsfolder)) {
+		mkdir($symttsfolder, 0755);
+		LOGGING("Folder: '".$symttsfolder."' has been created", 7);
+	}
+	if (!is_dir($symmp3folder)) {
+		mkdir($symmp3folder, 0755);
+		LOGGING("Folder: '".$symmp3folder."' has been created", 7);
+	}
+	if (!is_link($myFolder."/interfacedownload")) {
+		symlink($symttsfolder, $myFolder."/interfacedownload");
+		LOGGING("Symlink: '".$myFolder.'/interfacedownload'."' has been created", 7);
+	}
+	if (!is_link($lbphtmldir."/interfacedownload")) {
+		symlink($symttsfolder, $lbphtmldir."/interfacedownload");
+		LOGGING("Symlink: '".$lbphtmldir.'/interfacedownload'."' has been created", 7);
+	}
+	if ($copy === true) {
+		#LOGGING("Copy existing mp3 files from $myFolder/$mp3folder to $symcurr_path/$mp3folder", 6);
+		xcopy($myFolder."/".$mp3folder, $symcurr_path."/".$mp3folder);
+		LOGGING("All files has been copied from: '".$myFolder."/".$mp3folder."' to: '".$symcurr_path."/".$mp3folder."'", 5);
+	}
+	
+}
+
+
+/**
+ * Copy a file, or recursively copy a folder and its contents
+ * @author      Aidan Lister <aidan@php.net>
+ * @version     1.0.1
+ * @link        http://aidanlister.com/2004/04/recursively-copying-directories-in-php/
+ * @param       string   $source    Source path
+ * @param       string   $dest      Destination path
+ * @param       int      $permissions New folder creation permissions
+ * @return      bool     Returns true on success, false on failure
+ */
+function xcopy($source, $dest, $permissions = 0755)
+{
+    // Check for symlinks
+    if (is_link($source)) {
+        return symlink(readlink($source), $dest);
+    }
+    // Simple copy for a file
+    if (is_file($source)) {
+        return copy($source, $dest);
+    }
+    // Make destination directory
+    if (!is_dir($dest)) {
+        mkdir($dest, $permissions);
+    }
+    // Loop through the folder
+    $dir = dir($source);
+    while (false !== $entry = $dir->read()) {
+        // Skip pointers
+        if ($entry == '.' || $entry == '..') {
+            continue;
+        }
+        // Deep copy directories
+        xcopy("$source/$entry", "$dest/$entry", $permissions);
+    }
+    // Clean up
+    $dir->close();
+    return true;
+}
+
+
+/**
+/* Funktion : write_MP3_IDTag --> write MP3-ID Tags to file
+/* @param: 	leer
+/*
+/* @return: Message
+/**/	
+
+function write_MP3_IDTag($income_text) {
+	
+	global $config, $data, $textstring, $filename, $TextEncoding, $text;
+	
+	require_once("system/bin/getid3/getid3.php");
+	// Initialize getID3 engine
+	$getID3 = new getID3;
+	$getID3->setOption(array('encoding' => $TextEncoding));
+	 
+	require_once('system/bin/getid3/write.php');	
+	// Initialize getID3 tag-writing module
+	$tagwriter = new getid3_writetags;
+	$tagwriter->filename = $config['SYSTEM']['ttspath']."/".$filename.".mp3";
+	$tagwriter->tagformats = array('id3v2.3');
+
+	// set various options (optional)
+	$tagwriter->overwrite_tags    = true;  // if true will erase existing tag data and write only passed data; if false will merge passed data with existing tag data (experimental)
+	$tagwriter->remove_other_tags = false; // if true removes other tag formats (e.g. ID3v1, ID3v2, APE, Lyrics3, etc) that may be present in the file and only write the specified tag format(s). If false leaves any unspecified tag formats as-is.
+	$tagwriter->tag_encoding      = $TextEncoding;
+	$tagwriter->remove_other_tags = true;
+
+	// populate data array
+	$TagData = array(
+					'title'                  => array("$income_text"),
+					'artist'                 => array('sonos4lox'),
+					'album'                  => array(''),
+					'year'                   => array(date("Y")),
+					'genre'                  => array('text'),
+					'comment'                => array('generated by LoxBerry Sonos Plugin'),
+					'track'                  => array(''),
+					#'popularimeter'          => array('email'=>'user@example.net', 'rating'=>128, 'data'=>0),
+					#'unique_file_identifier' => array('ownerid'=>'user@example.net', 'data'=>md5(time())),
+				);
+	
+	$tagwriter->tag_data = $TagData;
+	
+	// write tags
+	if ($tagwriter->WriteTags()) {
+	LOGDEB("Successfully wrote id3v2.3 tags");
+		if (!empty($tagwriter->warnings)) {
+			LOGWARN('There were some warnings:<br>'.implode($tagwriter->warnings));
+		}
+	} else {
+		LOGERR('Failed to write tags!<br>'.implode($tagwriter->errors));
+	}
+	return ($TagData);
+}	
  
  
 ?>
