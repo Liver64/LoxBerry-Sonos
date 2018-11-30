@@ -246,16 +246,10 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				}
 				if($sonos->GetVolume() <= $config['TTS']['volrampto']) {
 					$sonos->RampToVolume($config['TTS']['rampto'], $volume);
-					if($config['LOXONE']['LoxDaten'] == 1) {
-						sendUDPdata();
-					}
 					checkifmaster($master);
 					$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 					$sonos->Play();
 				} else {
-					if($config['LOXONE']['LoxDaten'] == 1) {
-						sendUDPdata();
-					}
 					checkifmaster($master);
 					$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 					$sonos->Play();
@@ -462,9 +456,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'volume':
 			if(isset($volume)) {
 				$sonos->SetVolume($volume);
-				if($config['LOXONE']['LoxDaten'] == 1) {
-					sendUDPdata();
-				}
 			} else {
 				LOGGING('Wrong range of values for volume been entered, only 0-100 is permitted', 4);
 				exit;
@@ -477,9 +468,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			if($volume < 100) {
 				$volume = $volume + $config['MP3']['volumeup'];
 				$sonos->SetVolume($volume);
-				if($config['LOXONE']['LoxDaten'] == 1) {
-					sendUDPdata();
-				}
 			}      
 		break;
 		
@@ -489,9 +477,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			if($volume > 0) {
 				$volume = $volume - $config['MP3']['volumedown'];
 				$sonos->SetVolume($volume);
-				if($config['LOXONE']['LoxDaten'] == 1) {
-					sendUDPdata();
-				}
 			}
 		break;
 		
@@ -651,8 +636,8 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 	
 
 	case 'getsonosinfo':
-		sendUDPdata();
-		sendTEXTdata();
+		#sendUDPdata();
+		#sendTEXTdata();
 	break; 
 	
 	

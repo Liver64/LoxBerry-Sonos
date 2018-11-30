@@ -216,5 +216,6 @@
 			[Bugfix] Volumesteuerung zapzone und nextradio vereinheitlicht
 			[Bugfix] Scan nach Playern optimiert
 			[Bugfix] Announcements (T2S und messageid) optimiert
+			[Bugfix] sendUDPdata und sendTextData wurden herausgenommen
 			
 			
