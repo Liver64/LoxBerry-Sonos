@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<VirtualInUdp Title="Sonos4lox" Comment="by Sonos4lox" Address="" Port="8750">
+	<VirtualInUdpCmd Title="Sonos: Volume gaeste-wc" Comment="" Address="" Check="vol_gaeste-wc@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="100"/>
+	<VirtualInUdpCmd Title="Sonos: Playstate gaeste-wc" Comment="" Address="" Check="stat_gaeste-wc@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>
+	<VirtualInUdpCmd Title="Sonos: Groupstate gaeste-wc" Comment="" Address="" Check="grp_gaeste-wc@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>
+	<VirtualInUdpCmd Title="Sonos: Volume terrasse" Comment="" Address="" Check="vol_terrasse@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="100"/>
+	<VirtualInUdpCmd Title="Sonos: Playstate terrasse" Comment="" Address="" Check="stat_terrasse@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>
+	<VirtualInUdpCmd Title="Sonos: Groupstate terrasse" Comment="" Address="" Check="grp_terrasse@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>
+	<VirtualInUdpCmd Title="Sonos: Volume buero" Comment="" Address="" Check="vol_buero@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="100"/>
+	<VirtualInUdpCmd Title="Sonos: Playstate buero" Comment="" Address="" Check="stat_buero@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>
+	<VirtualInUdpCmd Title="Sonos: Groupstate buero" Comment="" Address="" Check="grp_buero@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>
+	<VirtualInUdpCmd Title="Sonos: Volume bad" Comment="" Address="" Check="vol_bad@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="100"/>
+	<VirtualInUdpCmd Title="Sonos: Playstate bad" Comment="" Address="" Check="stat_bad@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>
+	<VirtualInUdpCmd Title="Sonos: Groupstate bad" Comment="" Address="" Check="grp_bad@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>
+	<VirtualInUdpCmd Title="Sonos: Volume kueche" Comment="" Address="" Check="vol_kueche@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="100"/>
+	<VirtualInUdpCmd Title="Sonos: Playstate kueche" Comment="" Address="" Check="stat_kueche@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>
+	<VirtualInUdpCmd Title="Sonos: Groupstate kueche" Comment="" Address="" Check="grp_kueche@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>
+	<VirtualInUdpCmd Title="Sonos: Volume wohnen" Comment="" Address="" Check="vol_wohnen@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="100"/>
+	<VirtualInUdpCmd Title="Sonos: Playstate wohnen" Comment="" Address="" Check="stat_wohnen@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>
+	<VirtualInUdpCmd Title="Sonos: Groupstate wohnen" Comment="" Address="" Check="grp_wohnen@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>
+</VirtualInUdp>

@@ -44,8 +44,8 @@ if (!file_exists($myFolder.'/player.cfg')) {
 	$tmpplayer = parse_ini_file($myFolder.'/player.cfg', true);
 }
 if ($tmpconfig['LOXONE']['LoxDaten'] != 1)   {
-	LOGERR('The Communication to Loxone is switched off, please turn on 1st, save config and try again!');
-  exit(1);
+	LOGERR('The Communication to Loxone is switched off, please turn on 1st and try again!');
+	exit(1);
 }
 if (count($tmpplayer['SONOSZONEN']) < 1)  {
 	LOGERR('There are no Sonos Players already fully configured, please check/complete your Plugin Config and save your config before downloading your Template!');
