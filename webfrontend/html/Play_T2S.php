@@ -30,7 +30,8 @@ function say() {
 **/		
 
 function create_tts() {
-	global $sonos, $config, $filename, $MessageStorepath, $player, $messageid, $textstring, $home, $time_start, $tmp_batch, $MP3path, $filenameplay, $volume;
+
+	global $sonos, $config, $filename, $MessageStorepath, $player, $messageid, $textstring, $home, $time_start, $tmp_batch, $MP3path, $filenameplay;
 	
 	if (isset($_GET['greet']))  {
 		$Stunden = intval(strftime("%H"));
@@ -70,7 +71,7 @@ function create_tts() {
 		}	
 		#play_tts($messageid);
 		return;
-	}
+  }
 						
 	$rampsleep = $config['TTS']['rampto'];
 	
@@ -205,7 +206,7 @@ function create_tts() {
 
 function play_tts($filename) {
 	global $volume, $config, $messageid, $sonos, $text, $messageid, $sonoszone, $sonoszonen, $master, $myMessagepath, $coord, $actual, $player, $time_start, $t2s_batch, $filename, $textstring, $home, $MP3path, $sleeptimegong, $lbpplugindir, $logpath, $try_play, $MessageStorepath, $filename;
-		
+
 		$coord = getRoomCoordinator($master);
 		$sonos = new PHPSonos($coord[0]);
 		if (isset($_GET['messageid'])) {
