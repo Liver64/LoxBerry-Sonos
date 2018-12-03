@@ -434,8 +434,6 @@ sub save
 	# turn on/off MS inbound function 
 	if ($LoxDaten eq "true") {
 		LOGOK "Coummunication to Miniserver is switched on";
-		# call to prepare XML Template
-		&prep_XML;
 	} else {
 		LOGOK "Coummunication to Miniserver is switched off.";
 	}
@@ -473,12 +471,8 @@ sub save
 	$pcfg->param("SYSTEM.httpinterface", "http://$lbip/plugins/$lbpplugindir/interfacedownload");
 	$pcfg->param("SYSTEM.cifsinterface", "//$lbip/plugindata/$lbpplugindir/interfacedownload");
 		
-	LOGINF "Writing configuration file";
+	LOGINF "Start writing configuration file";
 	
-	$pcfg->save() or &error;
-
-	LOGOK "All settings has been saved successful";
-
 	# If storage folders do not exist, copy default mp3 files
 	my $copy = 0;
 	if (!-e "$R::STORAGEPATH/$ttsfolder/$mp3folder") {
@@ -514,7 +508,7 @@ sub save
 	
 	$pcfg->save() or &error;
 	LOGDEB "Radio Stations has been saved.";
-
+	
 	# save all Sonos devices
 	my $playercfg = new Config::Simple($lbpconfigdir . "/" . $pluginplayerfile);
 
@@ -528,6 +522,11 @@ sub save
 	
 	$playercfg->save() or &error; 
 	LOGDEB "Sonos Zones has been saved.";
+	
+	# call to prepare XML Template
+	if ($R::sendlox eq "true") {
+		&prep_XML;
+	}
 	LOGOK "All settings has been saved successful";
 	
 	my $lblang = lblanguage();
@@ -634,10 +633,10 @@ sub scan
 	
 	if (!-r $lbphtmldir . "/system/" . $XML_file) 
 	{
-		LOGWARN "File ".$XML_file." has not been generated and could not be downloaded. Please check log file";
-		# $error_message = $ERR{'ERRORS.ERR_CHECK_XML_FILE'};
-		# &error; 
+		LOGWARN "File '".$XML_file."' has not been generated and could not be downloaded. Please check log file";
+		return();
 	}
+	LOGOK "XML Template file '".$XML_file."' has been generated and saved";
 	return();
 }
  
