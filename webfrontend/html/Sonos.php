@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	3.5.2
-# Datum: 	13.11.2018
+# Version: 	3.5.4
+# Datum: 	13.12.2018
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
@@ -11,14 +11,11 @@
 
 // ToDo
 
-// cron und Verzeichnisse testen
-// Wenn T2S file vorhanden dann kein Absprung zu den voice engines
 
 ini_set('max_execution_time', 120); 							// Max. Skriptlaufzeit auf 120 Sekunden
 
 include("system/PHPSonos.php");
 include("system/Tracks.php");
-#include("system/Loxone.php");
 include("Grouping.php");
 include("Helper.php");
 include("Alarm.php");
@@ -59,6 +56,8 @@ $MP3path = "mp3";												// path to preinstalled numeric MP§ files
 $sleeptimegong = "3";											// waiting time before playing t2s
 $maxzap = '60';													// waiting time before zapzone been initiated again
 
+#echo '<PRE>';
+
 $level = LBSystem::pluginloglevel();
 	
 $params = [	"name" => "Sonos",
@@ -82,7 +81,7 @@ $plugindata = LBSystem::plugindata();
 	}
 	// Parsen der Sonos Zonen Konfigurationsdatei player.cfg
 	if (!file_exists($myFolder.'/player.cfg')) {
-		LOGGING('The file player.cfg  could not be opened, please try again!', 4);
+		LOGGING('The file player.cfg could not be opened, please try again!', 4);
 	} else {
 		$tmpplayer = parse_ini_file($myFolder.'/player.cfg', true);
 		$playerconfig = "Player config has been loaded";
@@ -122,7 +121,6 @@ $plugindata = LBSystem::plugindata();
 				$zonesoff = "Zone(s) $zonen seems to be Offline";
 			}
 		}
-		$sonoszone;
 		$zoon = implode(", ", $zonesonline);
 		$zoneson = "Zone(s) $zoon are Online";
 	} else {
@@ -351,11 +349,18 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 			
 		case 'stopall';
-			foreach ($sonoszonen as $zone => $player) {
-				$sonos = new PHPSonos($sonoszonen[$zone][0]);
-				$sonos->Stop();
+			foreach ($sonoszone as $zone => $player) {
+				checkifmaster($zone);
+				$sonos = new PHPSonos($sonoszone[$zone][0]);
+				$state = $sonos->GetTransportInfo();
+				if ($state == '1') {
+					$return = getZoneStatus($zone); // get current Zone Status (Single, Member or Master)
+					if($return <> 'member') {
+						$sonos->Pause();
+					}
+				}
 			}
-			LOGGING("Stopall been executed.", 7);
+			LOGGING("Stop/Pause all been executed.", 7);
 		break; 
 		
 

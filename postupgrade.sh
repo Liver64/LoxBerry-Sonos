@@ -61,4 +61,7 @@ cp -v /tmp/$1\_upgrade/templates/* $5/templates/plugins/$3/lang/
 echo "<INFO> Remove temporary folders"
 rm -r /tmp/$1\_upgrade
 
+echo "<INFO> Call t2s-text update check"
+REPLACELBPBINDIR/update_text.php
+
 exit 0

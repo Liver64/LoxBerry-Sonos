@@ -217,5 +217,10 @@
 			[Bugfix] Scan nach Playern optimiert
 			[Bugfix] Announcements (T2S und messageid) optimiert
 			[Bugfix] sendUDPdata und sendTextData wurden herausgenommen
+ 3.5.4		[Bugfix] Die Sequenz für XML-Template Erstellung geändert
+			[Bugfix] Bei weather2speech wird die Windgeschwindigkeit gerundet
+			[Feature] Text update Funktion für Add-on Texte
+			[Bugfix] stopall optimiert (ist faktisch jetzt Pause anstatt Stop)
+			[Feature] bei time2desintaion die gewünschte Abfahrtszeit als Parameter hinzugefügt
 			
 			

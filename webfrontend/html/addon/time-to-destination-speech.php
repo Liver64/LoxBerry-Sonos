@@ -41,9 +41,24 @@ function tt2t()
 	$mode 		= "driving"; // walking, bicycling, transit
 	$units		= "metric"; // imperial
 	$departure_time = time();
-    $start      = urlencode($start);
+	$start      = urlencode($start);
     $arrival    = urlencode($arrival);
-	$time 		= time(); # + 900; // +15 Minuten Abfahrtzeit
+	
+	if (isset($_GET['deptime']))  {
+		$deptime = strtotime($_GET['deptime']);
+		if ($deptime === false)  {
+			LOGGING('Something went wrong with your time entry, please correct! Only 24h or US/UK formats are allowed (eg. 14:30 or 2:30pm)',3);
+			exit(1);
+		}
+		if ($deptime < time())  {
+			LOGGING('The departure time from your syntax need to be a future time! Current time you have entered is in the past, please correct',3);
+			exit(1);
+		} else {
+			$time = $deptime;
+		}
+	} else {
+		$time = time();
+	}
 	$request    = "https://maps.googleapis.com/maps/api/distancematrix/json?origins=" . $start . "&destinations=" . $arrival . "&departure_time=" . $time . "&traffic_model=" . $traffic_model . "&mode=" . $mode . "&units=" . $units . "&key=" . $key . "&language=" . $lang;
     $jdata      = file_get_contents($request);
 	#print_R($jdata);
@@ -53,7 +68,11 @@ function tt2t()
 		exit;
 	} else {
 		LOGGING('Data from Google Maps has been successful obtainend.',6);
-	}	
+	}
+	if (!empty($data['error_message']))  {
+		LOGGING($data['error_message'],3);
+		exit(1);
+	}
 	$status     = $data["status"];
     $row_status = $data["rows"][0]["elements"][0]["status"];
     if ($status == "OK" && $row_status == "OK") {

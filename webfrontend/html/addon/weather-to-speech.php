@@ -120,7 +120,7 @@ function w2s()
 					$WindAnsage = "";
 					break;
 				case $windspeed >=$windschwelle:
-					$WindAnsage = ". ".$TL['WEATHER-TO-SPEECH']['WIND_ANNOUNCEMENT_1']." ".$WindText." ".$TL['WEATHER-TO-SPEECH']['WIND_ANNOUNCEMENT_2']." ".$wind_dir." ".$TL['WEATHER-TO-SPEECH']['WIND_ANNOUNCEMENT_3']." ".$windspeed." ".$TL['WEATHER-TO-SPEECH']['WIND_ANNOUNCEMENT_4'];
+					$WindAnsage = ". ".$TL['WEATHER-TO-SPEECH']['WIND_ANNOUNCEMENT_1']." ".$WindText." ".$TL['WEATHER-TO-SPEECH']['WIND_ANNOUNCEMENT_2']." ".$wind_dir." ".$TL['WEATHER-TO-SPEECH']['WIND_ANNOUNCEMENT_3']." ".round($windspeed)." ".$TL['WEATHER-TO-SPEECH']['WIND_ANNOUNCEMENT_4'];
 					break;
 				default:
 					$WindAnsage="";
