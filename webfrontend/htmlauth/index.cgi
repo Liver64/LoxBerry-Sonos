@@ -82,6 +82,7 @@ my $pluginplayerfile 			= "player.cfg";
 my $pluginlogfile				= "sonos.log";
 my $XML_file					= "VIU_Sonos_UDP.xml";
 my $lbip 						= LoxBerry::System::get_localip();
+my $lbport						= lbwebserverport();
 my $ttsfolder					= "tts";
 my $mp3folder					= "mp3";
 my $urlfile						= "https://raw.githubusercontent.com/Liver64/LoxBerry-Sonos/master/webfrontend/html/release/info.txt";
@@ -231,6 +232,7 @@ if (!-r $lbpconfigdir . "/" . $pluginplayerfile)
 ##########################################################################
 # Main program
 ##########################################################################
+
 
 #our %navbar;
 $navbar{1}{Name} = "$SL{'BASIS.MENU_SETTINGS'}";
@@ -468,8 +470,8 @@ sub save
 	$pcfg->param("SYSTEM.path", "$R::STORAGEPATH");
 	$pcfg->param("SYSTEM.mp3path", "$R::STORAGEPATH/$ttsfolder/$mp3folder");
 	$pcfg->param("SYSTEM.ttspath", "$R::STORAGEPATH/$ttsfolder");
-	$pcfg->param("SYSTEM.httpinterface", "http://$lbip/plugins/$lbpplugindir/interfacedownload");
-	$pcfg->param("SYSTEM.cifsinterface", "//$lbip/plugindata/$lbpplugindir/interfacedownload");
+	$pcfg->param("SYSTEM.httpinterface", "http://$lbip:$lbport/plugins/$lbpplugindir/interfacedownload");
+	$pcfg->param("SYSTEM.cifsinterface", "//$lbip:$lbport/plugindata/$lbpplugindir/interfacedownload");
 		
 	LOGINF "Start writing configuration file";
 	
@@ -528,6 +530,10 @@ sub save
 		&prep_XML;
 	}
 	LOGOK "All settings has been saved successful";
+	
+	#$content = $server_endpoint;
+	#print_test($content);
+	#exit;
 	
 	my $lblang = lblanguage();
 	$template_title = "$SL{'BASIS.MAIN_TITLE'}: v$sversion";

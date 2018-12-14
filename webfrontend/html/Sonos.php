@@ -2,7 +2,7 @@
 
 ##############################################################################################################################
 #
-# Version: 	3.5.4
+# Version: 	3.5.5
 # Datum: 	13.12.2018
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
@@ -45,7 +45,7 @@ $path = LBSCONFIGDIR; 											// get path to general.cfg
 $myFolder = "$lbpconfigdir";									// get config folder
 #$myMessagepath = "//$myIP/sonos_tts/";							// get T2S folder to play
 #$myMessagepath = "//$hostname/plugindata/$psubfolder/tts/";	// get T2S folder to play
-#$MessageStorepath = "$lbpdatadir/tts/";							// get T2S folder to store
+#$MessageStorepath = "$lbpdatadir/tts/";						// get T2S folder to store
 $pathlanguagefile = "$lbphtmldir/voice_engines/langfiles/";		// get languagefiles
 $logpath = "$lbplogdir/$psubfolder";							// get log folder
 $templatepath = "$lbptemplatedir";								// get templatedir
@@ -55,6 +55,7 @@ $searchfor = '[plugindata]';									// search for already existing Samba share
 $MP3path = "mp3";												// path to preinstalled numeric MP§ files
 $sleeptimegong = "3";											// waiting time before playing t2s
 $maxzap = '60';													// waiting time before zapzone been initiated again
+$lbport = lbwebserverport();										// get loxberry port
 
 #echo '<PRE>';
 
@@ -138,7 +139,14 @@ $plugindata = LBSystem::plugindata();
 	#echo '<PRE>'; 
 	#print_r($config);
 	#exit;
-
+	
+	// check LBPort
+	$response = file_get_contents("http://localhost:$lbport/");
+	if ($response === (bool)false)  {
+		LOGGING("Your LoxBerry could not be reached by using Port '".$lbport."'", 3);
+		exit;
+	}
+	
 	# select language file for text-to-speech
 	$t2s_langfile = "t2s-text_".substr($config['TTS']['messageLang'],0,2).".ini";				// language file for text-speech
 
