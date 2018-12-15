@@ -55,7 +55,7 @@ $searchfor = '[plugindata]';									// search for already existing Samba share
 $MP3path = "mp3";												// path to preinstalled numeric MP§ files
 $sleeptimegong = "3";											// waiting time before playing t2s
 $maxzap = '60';													// waiting time before zapzone been initiated again
-$lbport = lbwebserverport();										// get loxberry port
+$lbport = lbwebserverport();									// get loxberry port
 
 #echo '<PRE>';
 
@@ -140,10 +140,19 @@ $plugindata = LBSystem::plugindata();
 	#print_r($config);
 	#exit;
 	
-	// check LBPort
-	$response = file_get_contents("http://localhost:$lbport/");
-	if ($response === (bool)false)  {
-		LOGGING("Your LoxBerry could not be reached by using Port '".$lbport."'", 3);
+	# check if LBPort already exist in config (sonos.cfg), if not force user to save config
+	$checklb = explode(':', $config['SYSTEM']['httpinterface']);
+	$checklbport = explode('/', $checklb[2]);
+	if ($checklbport[0] <> $lbport)  {
+		LOGGING("Please log on to LoxBerry Sonos Plugin and save the config in order to obtain the LoxBerry Port you are using. Otherweise T2S could not be played", 3);
+		$notification = array (
+							"PACKAGE" => $psubfolder,
+							"NAME" => "Sonos",    
+							"MESSAGE" => "Please log on to LoxBerry Sonos Plugin and save the config in order to obtain the LoxBerry Port you are using. Otherweise T2S could not be played",
+							"SEVERITY" => 3,
+							"LOGFILE" => "$lbplogdir/sonos.log"
+							);
+		notify_ext($notification);
 		exit;
 	}
 	
