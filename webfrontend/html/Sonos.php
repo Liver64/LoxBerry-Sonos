@@ -71,6 +71,9 @@ LBLog::newLog($params);
 // used for single logging
 $plugindata = LBSystem::plugindata();
 $L = LBSystem::readlanguage("sonos.ini");
+
+LOGSTART("PHP started");
+LOGGING("called syntax: ".$myIP."".urldecode($syntax),5);
 	
 #-- Start Preparation ------------------------------------------------------------------
 	
@@ -79,14 +82,14 @@ $L = LBSystem::readlanguage("sonos.ini");
 		LOGGING('The file sonos.cfg could not be opened, please try again!', 4);
 	} else {
 		$tmpsonos = parse_ini_file($myFolder.'/sonos.cfg', TRUE);
-		$sonosconfig = "Sonos config has been loaded";
+		LOGGING("Sonos config has been loaded",7);
 	}
 	// Parsen der Sonos Zonen Konfigurationsdatei player.cfg
 	if (!file_exists($myFolder.'/player.cfg')) {
 		LOGGING('The file player.cfg could not be opened, please try again!', 4);
 	} else {
 		$tmpplayer = parse_ini_file($myFolder.'/player.cfg', true);
-		$playerconfig = "Player config has been loaded";
+		LOGGING("Player config has been loaded",7);
 	}
 	$player = ($tmpplayer['SONOSZONEN']);
 	foreach ($player as $zonen => $key) {
@@ -110,7 +113,7 @@ $L = LBSystem::readlanguage("sonos.ini");
 	if ($checkonline === true)  {
 		// prüft den Onlinestatus jeder Zone
 		$zonesonline = array();
-		$performonlinecheck = "Online check for Players will be executed";
+		LOGGING("Online check for Players will be executed",7);
 		foreach($sonoszonen as $zonen => $ip) {
 			$port = 1400;
 			$timeout = 3;
@@ -120,15 +123,16 @@ $L = LBSystem::readlanguage("sonos.ini");
 				array_push($zonesonline, $zonen);
 				fclose($handle);
 			} else {
-				$zonesoff = "Zone(s) $zonen seems to be Offline";
+				LOGGING("Zone(s) $zonen seems to be Offline",4);
 			}
 		}
 		$zoon = implode(", ", $zonesonline);
-		$zoneson = "Zone(s) $zoon are Online";
+		LOGGING("Zone(s) $zoon are Online",7);
 	} else {
 		$performonlinecheck = "Online check for Players is turned off";
 		$sonoszone = $sonoszonen;
 	}
+	LOGGING("All variables has been collected",7);
 	
 	// check if samba share "plugindata" or "sonos_tts" exist
 	$sambashare = array();
@@ -145,15 +149,7 @@ $L = LBSystem::readlanguage("sonos.ini");
 	$checklb = explode(':', $config['SYSTEM']['httpinterface']);
 	$checklbport = explode('/', $checklb[2]);
 	if ($checklbport[0] <> $lbport)  {
-		LOGGING("Please log on to LoxBerry Sonos Plugin and save the config in order to obtain the LoxBerry Port you are using. Otherweise T2S could not be played", 3);
-		$notification = array (
-							"PACKAGE" => $psubfolder,
-							"NAME" => "Sonos",    
-							"MESSAGE" => $L['ERRORS.ERR_CHECK_LBPORT'],
-							"SEVERITY" => 3,
-							"LOGFILE" => "$lbplogdir/sonos.log"
-							);
-		notify_ext($notification);
+		LOGGING(htmlspecialchars($L['ERRORS.ERR_CHECK_LBPORT']), 3);
 		exit;
 	}
 	
@@ -163,23 +159,6 @@ $L = LBSystem::readlanguage("sonos.ini");
 	# Standardpath for saving MP3
 	$MessageStorepath = $config['SYSTEM']['ttspath'];
 
-	// check if getsonosinfo has been executed, if yes, skip LOGGING
-	$find = strripos($syntax, "=");
-	$sonospush = substr($syntax, $find + 1, 300);
-	if ($sonospush !== 'getsonosinfo')  {
-		LOGSTART("PHP started");
-		# create entries in logfile
-		LOGGING("called syntax: ".$myIP."".urldecode($syntax),5);
-		LOGGING("$performonlinecheck",7);
-		($checkonline === true) ? LOGGING("$zoneson",7) : "";
-		($zonesoff != "") ? LOGGING("$zonesoff",4) : "";
-		LOGGING("All variables has been collected",7);
-		LOGGING("$sonosconfig",7);
-		LOGGING("$playerconfig",7);
-		LOGGING("Sonos config has been loaded",7);
-		LOGGING("Configuration has been successful loaded",6);
-		LOGGING($sambashare[1],5);
-	}
 	create_symlinks();
 	
 #-- End Preparation ---------------------------------------------------------------------
