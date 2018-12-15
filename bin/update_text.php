@@ -53,7 +53,7 @@ if (!empty($arrdiff_de))  {
 	echo "Update for '".$lang_de_ini."' file has been successfully processed\n";
 } else {
 	unlink($templatepath.'/lang/'.$lang_de_update_ini);
-	echo "<INFO> No update for '".$lang_de_ini."' file found, we skip here\n";
+	echo "<OK> No update for '".$lang_de_ini."' necessary, everything is up-to-date\n";
 }
 
 // Language EN
@@ -66,7 +66,7 @@ if (!empty($arrdiff_en))  {
 	echo "Update for '".$lang_en_ini."' file has been successfully processed\n";
 } else {
 	unlink($templatepath.'/lang/'.$lang_en_update_ini);
-	echo "<INFO> No update for '".$lang_en_ini."' file found, we skip here\n";
+	echo "<OK> No update for '".$lang_en_ini."' necessary, everything is up-to-date\n";
 }
 
 
