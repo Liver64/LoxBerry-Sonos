@@ -70,6 +70,7 @@ LBLog::newLog($params);
 
 // used for single logging
 $plugindata = LBSystem::plugindata();
+$L = LBSystem::readlanguage("sonos.ini");
 	
 #-- Start Preparation ------------------------------------------------------------------
 	
@@ -148,7 +149,7 @@ $plugindata = LBSystem::plugindata();
 		$notification = array (
 							"PACKAGE" => $psubfolder,
 							"NAME" => "Sonos",    
-							"MESSAGE" => "Please log on to LoxBerry Sonos Plugin and save the config in order to obtain the LoxBerry Port you are using. Otherweise T2S could not be played",
+							"MESSAGE" => $L['ERRORS.ERR_CHECK_LBPORT'],
 							"SEVERITY" => 3,
 							"LOGFILE" => "$lbplogdir/sonos.log"
 							);
