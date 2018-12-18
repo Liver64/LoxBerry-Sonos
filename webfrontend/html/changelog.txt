@@ -222,5 +222,8 @@
 			[Feature] Text update Funktion für Add-on Texte
 			[Bugfix] stopall optimiert (ist faktisch jetzt Pause anstatt Stop)
 			[Feature] bei time2desintaion die gewünschte Abfahrtszeit als Parameter hinzugefügt
+ 3.5.5		[Bugfix] Der LoxBerry Port wird jetzt bei http requests abgefragt
+			[Improvement] Hinweisfunktion (alle 24 Std.) falls getsonosinfo noch in Nutzung ist
+			[Improvement] Error handling wenn ein Player nicht Online bzw. nicht am Stromnetz ist
 			
 			
