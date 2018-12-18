@@ -85,7 +85,8 @@
 # - SetBalance($direction, $volume)
 # - ResetBasicEQ()
 
-
+require_once "loxberry_log.php";
+require_once "loxberry_system.php";
 
 
 
@@ -2747,9 +2748,12 @@ return $list;
     private function XMLsendPacket($content) 
     { 
         $fp = fsockopen($this->address, 1400 /* Port */, $errno, $errstr, 10); 
-        if (!$fp) 
-            throw new Exception("Error opening socket: ".$errstr." (".$errno.")"); 
-             
+        if ($fp === false)  {
+			notify( LBPPLUGINDIR, "Sonos", "It seems that Player with IP-Address ".$this->address." is offline, so the function could not be executed. Please check your Network/Power settings and try again. (XMLsendPacket from PHPSonos)", "error");
+            LOGCRIT("It seems that Player with IP-Address ".$this->address." is offline, so the function could not be executed. Please check your Network/Power settings and try again. (XMLsendPacket from PHPSonos)", "error");
+			LOGWARN("Please check if you have turned on the Onlinecheck in Pluginconfig in order to avoid these errors!");
+			exit(1);
+		}
         fputs ($fp, $content); 
         $ret = ""; 
         $buffer = ""; 
@@ -2802,10 +2806,13 @@ return $list;
 
     private function sendPacket($content) 
     { 
-        $fp = fsockopen($this->address, 1400 /* Port */, $errno, $errstr, 10); 
-        if (!$fp) 
-            throw new Exception("Error opening socket: ".$errstr." (".$errno.")"); 
-
+        $fp = @fsockopen($this->address, 1400 /* Port */, $errno, $errstr, 10); 
+		if ($fp === false)  {
+			notify( LBPPLUGINDIR, "Sonos", "It seems that Player with IP-Address ".$this->address." is offline, so the function could not be executed. Please check your Network/Power settings and try again. (sendPacket from PHPSonos)", "error");
+            LOGCRIT("It seems that Player with IP-Address ".$this->address." is offline, so the function could not be executed. Please check your Network/Power settings and try again. (sendPacket from PHPSonos)");
+			LOGWARN("Please check if you have turned on the Onlinecheck in Pluginconfig in order to avoid these errors!");
+			exit(1);
+		}
         fputs ($fp, $content); 
         $ret = ""; 
         while (!feof($fp)) { 
