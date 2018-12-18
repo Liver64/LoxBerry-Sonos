@@ -170,7 +170,8 @@ function checkZonesOnline($member) {
 		}
 	}
 	foreach($memberzones as $zonen) {
-		if(!$socket = @fsockopen($sonoszonen[$zonen][0], 1400, $errno, $errstr, 2)) {
+		$connection = @fsockopen($sonoszonen[$zonen][0], 1400, $errno, $errstr, 2);
+		if(!$connection === false) {
 			LOGGING("The zone ".$zonen." is OFFLINE!!", 4);
 		} else {
 			LOGGING("Zone ".$zonen." is ONLINE!!", 6);
@@ -180,6 +181,30 @@ function checkZonesOnline($member) {
 	// print_r($member);
 	return($member);
 }
+
+
+
+/**
+/* Function : checkZoneOnline --> Prüft ob einzelner Player Online ist
+/*
+/* @param:  Player der geprüft werden soll
+/* @return: true or nothing
+**/
+
+function checkZoneOnline($member) {
+	global $sonoszonen, $zonen, $debug, $config;
+	
+	if(!array_key_exists($member, $sonoszonen)) {
+		LOGGING("The entered member zone does not exist, please correct your syntax!!", 3);
+		exit;
+	}
+	$connection = @fsockopen($sonoszonen[$member][0], 1400, $errno, $errstr, 2);
+	if(!$connection === false) {
+		$zoneon = true;
+		return($zoneon);
+	}
+}
+
 
 
 /**

@@ -204,7 +204,7 @@ function create_tts() {
 **/		
 
 function play_tts($filename) {
-	global $volume, $config, $messageid, $sonos, $text, $messageid, $sonoszone, $sonoszonen, $master, $myMessagepath, $coord, $actual, $player, $time_start, $t2s_batch, $filename, $textstring, $home, $MP3path, $sleeptimegong, $lbpplugindir, $logpath, $try_play, $MessageStorepath, $filename;
+	global $volume, $config, $messageid, $sonos, $text, $messageid, $sonoszone, $sonoszonen, $master, $coord, $actual, $player, $time_start, $t2s_batch, $filename, $textstring, $home, $MP3path, $sleeptimegong, $lbpplugindir, $logpath, $try_play, $MessageStorepath, $filename;
 		
 		$coord = getRoomCoordinator($master);
 		$sonos = new PHPSonos($coord[0]);
@@ -510,16 +510,31 @@ function sendgroupmessage() {
 			create_tts();
 			// if parameter 'all' has been entered all zones were grouped
 			if($member === 'all') {
-				$member = array();
+				#$member = array();
+				$memberon = array();
 				foreach ($sonoszone as $zone => $ip) {
+					$zoneon = checkZoneOnline($zone);
 					// exclude master Zone
 					if ($zone != $master) {
-						array_push($member, $zone);
+						if ($zoneon === (bool)true)  {
+							array_push($memberon, $zone);
+						}
 					}
 				}
-				LOGGING("All zones has been grouped", 5);	
+				$member = $memberon;
+				LOGGING("All Players has been grouped to Player ".$master, 5);	
 			} else {
 				$member = explode(',', $member);
+				$memberon = array();
+				foreach ($member as $value) {
+					$zoneon = checkZoneOnline($value);
+					if ($zoneon === (bool)true)  {
+						array_push($memberon, $value);
+					} else {
+						LOGGING("Player '".$value."' could not be added to the group!!", 4);
+					}
+				}
+				$member = $memberon;
 			}
 			if (in_array($master, $member)) {
 				LOGGING("The zone ".$master." could not be entered as member again. Please remove from Syntax '&member=".$master."' !", 3);
@@ -596,7 +611,6 @@ function sendgroupmessage() {
 			SetVolumeModeConnect($mode, $master);
 			#$modeback = '1' ? $mode = '1' : $mode = '0';
 			#SetVolumeModeConnect($mode);
-			#delmp3();
 			$time_end = microtime(true);
 			$t2s_time = $time_end - $time_start;
 			#echo "Die T2S dauerte ".round($t2s_time, 2)." Sekunden.\n";

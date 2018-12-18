@@ -435,12 +435,22 @@ function addmember() {
 	if (in_array($master, $member)) {
 		LOGGING("The zone ".$master." could not be entered as member again. Please remove from Syntax '&member=".$master."' !", 3);
 	}
+	$memberon = array();
 	foreach ($member as $value) {
+		$zoneon = checkZoneOnline($value);
+		if ($zoneon === (bool)true)  {
+			array_push($memberon, $value);
+		} else {
+			LOGGING("Player '".$value."' could not be added to the group!!", 4);
+		}
+	}
+	foreach ($memberon as $value) {
+		$zoneon = checkZoneOnline($value);
 		$masterrincon = $config['sonoszonen'][$master][1];
 		$sonos = new PHPSonos($sonoszone[$value][0]);
 		$sonos->SetAVTransportURI("x-rincon:" . $masterrincon);
+		LOGGING("Player '".$value."' has been added to Group '".$master."'",6);
 	}
-	LOGGING('Member(s) has been added to Zone',6);
 }
 
 
@@ -456,12 +466,25 @@ function removemember() {
 	
 	$member = $_GET['member'];
 	$member = explode(',', $member);
+	if (in_array($master, $member)) {
+		LOGGING("The zone ".$master." could not be entered as member again. Please remove from Syntax '&member=".$master."' !", 3);
+	}
+	$memberon = array();
 	foreach ($member as $value) {
+		$zoneon = checkZoneOnline($value);
+		if ($zoneon === (bool)true)  {
+			array_push($memberon, $value);
+		} else {
+			LOGGING("Player '".$value."' wasn't part of the Group!!", 4);
+		}
+	}
+	foreach ($memberon as $value) {
+		$zoneon = checkZoneOnline($value);
 		$masterrincon = $config['sonoszonen'][$master][1];
 		$sonos = new PHPSonos($sonoszone[$value][0]);
 		$sonos->BecomeCoordinatorOfStandaloneGroup();
+		LOGGING("Player '".$value."' has been removed from Group '".$master."'",6);
 	}
-	LOGGING('Zones has been removed from Group',6);
 }
 
 
