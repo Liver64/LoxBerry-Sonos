@@ -43,9 +43,6 @@ $psubfolder = $lbpplugindir;									// get pluginfolder
 $lbversion = LBSystem::lbversion();								// get LoxBerry Version
 $path = LBSCONFIGDIR; 											// get path to general.cfg
 $myFolder = "$lbpconfigdir";									// get config folder
-#$myMessagepath = "//$myIP/sonos_tts/";							// get T2S folder to play
-#$myMessagepath = "//$hostname/plugindata/$psubfolder/tts/";	// get T2S folder to play
-#$MessageStorepath = "$lbpdatadir/tts/";						// get T2S folder to store
 $pathlanguagefile = "$lbphtmldir/voice_engines/langfiles/";		// get languagefiles
 $logpath = "$lbplogdir/$psubfolder";							// get log folder
 $templatepath = "$lbptemplatedir";								// get templatedir
@@ -57,10 +54,9 @@ $sleeptimegong = "3";											// waiting time before playing t2s
 $maxzap = '60';													// waiting time before zapzone been initiated again
 $lbport = lbwebserverport();									// get loxberry port
 
-#echo '<PRE>';
+echo '<PRE>';
 
 $level = LBSystem::pluginloglevel();
-	
 $params = [	"name" => "Sonos",
 			"filename" => "$lbplogdir/sonos.log",
 			"append" => 1,
@@ -68,7 +64,6 @@ $params = [	"name" => "Sonos",
 			];
 LBLog::newLog($params);	
 
-// used for single logging
 $plugindata = LBSystem::plugindata();
 $L = LBSystem::readlanguage("sonos.ini");
 
@@ -133,15 +128,9 @@ LOGGING("called syntax: ".$myIP."".urldecode($syntax),5);
 		$sonoszone = $sonoszonen;
 	}
 	LOGGING("All variables has been collected",7);
-	
-	// check if samba share "plugindata" or "sonos_tts" exist
-	$sambashare = array();
-	check_sambashare($sambaini, $searchfor, $sambashare);
-	$myMessagepath = $sambashare[0];					// get T2S folder Sonos to play
-	
+		
 	#$sonoszone = $sonoszonen;
 	#print_r($sonoszonen);
-	#echo '<PRE>'; 
 	#print_r($config);
 	#exit;
 	
@@ -510,13 +499,11 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		case 'addmember':
 			addmember();
-			LOGGING("Member has been added to ".$master,7);
 		break;
 
 		
 		case 'removemember':
 			removemember();
-			LOGGING("Member has been removed",7);
 		break;
 		
 		
@@ -638,8 +625,22 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 	
 
 	case 'getsonosinfo':
-		#sendUDPdata();
-		#sendTEXTdata();
+	
+	$lastExeLog = $lbplogdir.'/LastExeSonosInfo.log';
+		// check if file already exist
+		if (file_exists($lastExeLog)) {
+			$lastRun = file_get_contents($lastExeLog);
+			#echo time() - $lastRun;
+			if (time() - $lastRun >= 86400) {
+				 // it's been more than a day
+				LOGGING("Function 'getsonosinfo' has been replaced by Cron Job every 10 seconds. Please remove ALL 'getsonosinfo' tasks from your Miniserver config.", 4);
+				notify( LBPPLUGINDIR, "Sonos", "Function 'getsonosinfo' has been replaced by Cron Job every 10 seconds. Please remove ALL 'getsonosinfo' tasks from your Miniserver config.", "warning");
+				// update LastExeSonosInfo with current time
+				file_put_contents($lastExeLog, time());
+			}
+		} else {
+			file_put_contents($lastExeLog, time());
+		}
 	break; 
 	
 	
@@ -977,11 +978,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		
 		
-		case 'delmp3':
-			delmp3();
-		break;
-		
-		
 		case 'networkstatus';
 			networkstatus();
 		break;  
@@ -1192,7 +1188,8 @@ exit;
 # Funktionen für Skripte ------------------------------------------------------
 
  
-/**
+/** NICHT AKTIV
+/*
 /* Funktion : delmp3 --> löscht die hash5 codierten MP3 Dateien aus dem Verzeichnis 'messageStorePath'
 /*
 /* @param:  nichts
