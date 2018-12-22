@@ -225,5 +225,6 @@
  3.5.5		[Bugfix] Der LoxBerry Port wird jetzt bei http requests abgefragt
 			[Improvement] Hinweisfunktion (alle 24 Std.) falls getsonosinfo noch in Nutzung ist
 			[Improvement] Error handling wenn ein Player nicht Online bzw. nicht am Stromnetz ist
+			[Improvement] Onlineprüfung der Player in der UI disabled (Prüfung findet per default immer statt)
 			
 			
