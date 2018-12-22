@@ -1,4 +1,4 @@
-﻿<style type="text/css">
+<style type="text/css">
 
 
 .form {
@@ -376,9 +376,9 @@
 				<tr>
 					<td style="width: 25%">
 					<fieldset>
-							<select id="checkonline" name="checkonline" data-role="flipswitch" style="width: 104px">
+							<select id="checkonline" name="checkonline" disabled=disabled data-role="flipswitch" style="width: 104px">
 								<option <TMPL_VAR SELECTONLINE1> value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
-								<option <TMPL_VAR SELECTONLINE2> value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
+								<option selected=selected <TMPL_VAR SELECTONLINE2> value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
 							</select>
 							</fieldset>
 						<script>
