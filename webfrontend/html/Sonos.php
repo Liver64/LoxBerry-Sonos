@@ -3,7 +3,7 @@
 ##############################################################################################################################
 #
 # Version: 	3.5.5
-# Datum: 	13.12.2018
+# Datum: 	22.12.2018
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
@@ -118,17 +118,17 @@ LOGGING("called syntax: ".$myIP."".urldecode($syntax),5);
 				array_push($zonesonline, $zonen);
 				fclose($handle);
 			} else {
-				LOGGING("Zone(s) $zonen seems to be Offline",4);
+				LOGGING("Zone $zonen seems to be Offline, please check your power/network settings",4);
 			}
 		}
 		$zoon = implode(", ", $zonesonline);
 		LOGGING("Zone(s) $zoon are Online",7);
 	} else {
-		$performonlinecheck = "Online check for Players is turned off";
+		LOGGING("You have not turned on Function to check if all your Players are powered on/online. PLease turn on function 'checkonline' in Plugin Config in order to secure your requests!", 4);
 		$sonoszone = $sonoszonen;
 	}
 	LOGGING("All variables has been collected",7);
-		
+	
 	#$sonoszone = $sonoszonen;
 	#print_r($sonoszonen);
 	#print_r($config);
@@ -150,6 +150,7 @@ LOGGING("called syntax: ".$myIP."".urldecode($syntax),5);
 
 	create_symlinks();
 	
+		
 #-- End Preparation ---------------------------------------------------------------------
 
 
