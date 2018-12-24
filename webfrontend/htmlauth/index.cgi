@@ -86,7 +86,8 @@ my $lbport						= lbwebserverport();
 my $ttsfolder					= "tts";
 my $mp3folder					= "mp3";
 my $urlfile						= "https://raw.githubusercontent.com/Liver64/LoxBerry-Sonos/master/webfrontend/html/release/info.txt";
-my $log 						= LoxBerry::Log->new ( name => 'Sonos UI', filename => $lbplogdir ."/". $pluginlogfile, append => 1, addtime => 1 );
+#my $log 						= LoxBerry::Log->new ( name => 'Sonos UI', filename => $lbplogdir ."/". $pluginlogfile, append => 1, addtime => 1 );
+my $log 						= LoxBerry::Log->new ( name => 'Sonos UI', append => 1, addtime => 1 );
 my $plugintempplayerfile	 	= "tmp_player.json";
 my $scanzonesfile	 			= "network.php";
 my $udp_file	 				= "ms_inbound.php";
@@ -96,17 +97,22 @@ my %Config 						= $pcfg->vars() if ( $pcfg );
 our $error_message				= "";
 
 # Set new config options for upgrade installations
+
 # cachesize
 if (!defined $pcfg->param("MP3.cachesize")) {
 	$pcfg->param("MP3.cachesize", "100");
 } 
-# if Rampto Volume is empty fill in 25
+# Rampto Volume
 if ($pcfg->param("TTS.volrampto") ne " ")  {
 	$pcfg->param("TTS.volrampto", "25");
 }
-# if Rampto type is empty fill in auto
+# Rampto type
 if ($pcfg->param("TTS.rampto") ne " ")  {
 	$pcfg->param("TTS.rampto", "auto");
+}
+# checkonline
+if ($pcfg->param("SYSTEM.checkonline") ne " ")  {
+	$pcfg->param("SYSTEM.checkonline", "true");
 }
 
 ##########################################################################
@@ -255,15 +261,15 @@ if(!defined $R::do or $R::do eq "form") {
 	$template->param("LOGLIST_HTML", LoxBerry::Web::loglist_html());
 	printtemplate();
 } elsif ($R::do eq "scan") {
-	LOGTITLE "Execute Scan";
 	&attention_scan;
 } elsif ($R::do eq "scanning") {
+	LOGTITLE "Execute Scan";
 	&scan;
 	$template->param("FORM", "1");
 	&form;
 }
 $error_message = "Invalid do parameter: ".$R::do;
-error();
+&error;
 exit;
 
 
@@ -466,7 +472,8 @@ sub save
 	$pcfg->param("VARIOUS.announceradio", "$R::announceradio");
 	$pcfg->param("VARIOUS.CALDavMuell", "\"$R::wastecal\"");
 	$pcfg->param("VARIOUS.CALDav2", "\"$R::cal\"");
-	$pcfg->param("SYSTEM.checkonline", "$R::checkonline");
+	#$pcfg->param("SYSTEM.checkonline", "$R::checkonline");
+	$pcfg->param("SYSTEM.checkonline", "true");
 	$pcfg->param("SYSTEM.path", "$R::STORAGEPATH");
 	$pcfg->param("SYSTEM.mp3path", "$R::STORAGEPATH/$ttsfolder/$mp3folder");
 	$pcfg->param("SYSTEM.ttspath", "$R::STORAGEPATH/$ttsfolder");
@@ -475,7 +482,7 @@ sub save
 		
 	LOGINF "Start writing configuration file";
 	
-	# If storage folders do not exist, copy default mp3 files
+	# If storage folders does not exist, copy default mp3 files
 	my $copy = 0;
 	if (!-e "$R::STORAGEPATH/$ttsfolder/$mp3folder") {
 		$copy = 1;
@@ -582,7 +589,7 @@ sub attention_scan
 	$noticetemplate->param("BUTTNEXT"				, $buttnext);
 	print $noticetemplate->output();
 	LoxBerry::Web::lbfooter();
-	return;
+	exit;
 }
 
 
@@ -593,17 +600,23 @@ sub attention_scan
 
 sub scan
 {
-	our $countplayers = 0;
+	#$countplayers = 0;
 	my $error_volume = $SL{'T2S.ERROR_VOLUME_PLAYER'};
 	
-	LOGDEB "Scan for Sonos Zones has been executed.";
+	LOGINF "Scan for Sonos Zones has been executed.";
 	
 	# executes PHP network.php script (reads player.cfg and add new zones if been added)
 	my $response = qx(/usr/bin/php $lbphtmldir/system/$scanzonesfile);
-	
-	if ( $response ne "[]" ) {
-	LOGOK "JSON data from application has been succesfully received.";
-	my $config = decode_json($response);
+			
+	if ($response eq "[]") {
+		LOGINF "No new Players has been added to Plugin.";
+		return($countplayers);
+	} elsif ($response eq "")  {
+		$error_message = $SL{'ERRORS.ERR_SCAN'};
+		&error;
+	} else {
+		LOGOK "JSON data from application has been succesfully received.";
+		my $config = decode_json($response);
 	
 		# create table of Sonos devices
 		foreach my $key (keys %{$config})
@@ -618,10 +631,9 @@ sub scan
 			$rowssonosplayer .= "<input type='hidden' id='ip$countplayers' name='ip$countplayers' value='$config->{$key}->[0]'>\n";
 			$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' value='$config->{$key}->[1]'>\n";
 		}
-	
-	$template->param("ROWSSONOSPLAYER", $rowssonosplayer);
-	LOGOK "New Players has been added to form.";
-	return($countplayers);
+		$template->param("ROWSSONOSPLAYER", $rowssonosplayer);
+		LOGOK "New Players has been added to Plugin.";
+		return($countplayers);
 	}
 }
 
@@ -746,7 +758,7 @@ sub END
 			LOGERR @reason;
 			LOGEND "Finished with an exception";
 		} elsif ($error_message) {
-			LOGEND "Finished with handled error";
+			LOGEND "Finished with error: ".$error_message;
 		} else {
 			LOGEND "Finished successful";
 		}

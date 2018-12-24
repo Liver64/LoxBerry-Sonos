@@ -54,15 +54,15 @@ $sleeptimegong = "3";											// waiting time before playing t2s
 $maxzap = '60';													// waiting time before zapzone been initiated again
 $lbport = lbwebserverport();									// get loxberry port
 
-echo '<PRE>';
+#echo '<PRE>';
 
 $level = LBSystem::pluginloglevel();
 $params = [	"name" => "Sonos",
-			"filename" => "$lbplogdir/sonos.log",
+			#"filename" => "$lbplogdir/sonos.log",
 			"append" => 1,
 			"addtime" => 1,
 			];
-LBLog::newLog($params);	
+$log = LBLog::newLog($params);	
 
 $plugindata = LBSystem::plugindata();
 $L = LBSystem::readlanguage("sonos.ini");
@@ -1399,9 +1399,9 @@ function t2s_post_request($text, $greet) {
 
 function shutdown()
 {
-	#global $log;
-	#$log->LOGEND("PHP finished");
-	LOGEND("PHP finished");
+	global $log;
+	$log->LOGEND("PHP finished");
+	#LOGEND("PHP finished");
 	
 }
 ?>
