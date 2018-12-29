@@ -14,6 +14,8 @@ require_once "loxberry_log.php";
 require_once "logging.php";
 require_once "error.php";
 
+register_shutdown_function('shutdown');
+
 $lb_hostname = lbhostname();
 $lb_version = LBSystem::lbversion();
 $L = LBSystem::readlanguage("sonos.ini");
@@ -40,7 +42,9 @@ $params = [	"name" => "Sonos PHP",
 			"append" => 1,
 			"addtime" => 1,
 			];
-LBLog::newLog($params);
+$log = LBLog::newLog($params);
+#LOGSTART("Scan started");
+
 $plugindata = LBSystem::plugindata();
 
 	$ip = '239.255.255.250';
@@ -471,6 +475,14 @@ function broadcast_scan($devices) {
 		LOGINF('IP-adresses from Sonos devices has been successful detected by BROADCAST.');
 	}
 	return $devices;
+}
+
+function shutdown()
+{
+	global $log;
+	#$log->LOGEND("Scan finished");
+	#LOGEND("PHP finished");
+	
 }
 
 

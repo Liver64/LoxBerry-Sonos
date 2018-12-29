@@ -15,13 +15,13 @@ require_once "loxberry_log.php";
 register_shutdown_function('shutdown');
 
 global $sonoszonen, $config, $myIP;
-echo '<PRE>';
+#echo '<PRE>';
 
 // Deklaration Variablen
 $myFolder = "$lbpconfigdir";
 $myIP = $_SERVER["SERVER_ADDR"];
 
-$params = [	"name" => "Sonos",
+$params = [	"name" => "Sonos PHP",
 			"filename" => "$lbplogdir/sonos.log",
 			"append" => 1,
 			"addtime" => 1,

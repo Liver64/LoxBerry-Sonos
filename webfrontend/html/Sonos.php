@@ -56,14 +56,14 @@ $lbport = lbwebserverport();									// get loxberry port
 
 #echo '<PRE>';
 
-$level = LBSystem::pluginloglevel();
-$params = [	"name" => "Sonos",
-			#"filename" => "$lbplogdir/sonos.log",
+$params = [	"name" => "Sonos PHP",
+			"filename" => "$lbplogdir/sonos.log",
 			"append" => 1,
 			"addtime" => 1,
 			];
-$log = LBLog::newLog($params);	
+$log = LBLog::newLog($params);
 
+$level = LBSystem::pluginloglevel();
 $plugindata = LBSystem::plugindata();
 $L = LBSystem::readlanguage("sonos.ini");
 

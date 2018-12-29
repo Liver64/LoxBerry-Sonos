@@ -81,11 +81,11 @@ function nextradio() {
 	}
 	$playstatus = $sonos->GetTransportInfo();
 	if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
-		$volume = $_GET['volume'];
+		$so_volume = $_GET['volume'];
 		LOGGING("Volume from syntax been used", 7);		
 	} else 	{
-		// übernimmt Standard Lautstärke der angegebenen Zone aus config.php
-		$volume = $config['sonoszonen'][$master][3];
+		// übernimmt Standard Lautstärke der angegebenen Zone aus der config
+		$so_volume = $config['sonoszonen'][$master][4];
 		LOGGING("Standard Volume from config been used", 7);		
 	}
 	$radioname = $sonos->GetMediaInfo();
@@ -126,7 +126,7 @@ function nextradio() {
 		say_radio_station();
 	}
     if($playstatus == 1) {
-		$sonos->SetVolume($volume);
+		$sonos->SetVolume($so_volume);
 		$sonos->Play();
 	} else {
 		check_rampto();
