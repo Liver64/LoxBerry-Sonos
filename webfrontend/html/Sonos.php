@@ -66,6 +66,7 @@ $log = LBLog::newLog($params);
 $level = LBSystem::pluginloglevel();
 $plugindata = LBSystem::plugindata();
 $L = LBSystem::readlanguage("sonos.ini");
+$ms = LBSystem::get_miniservers();
 
 LOGSTART("PHP started");
 LOGGING("called syntax: ".$myIP."".urldecode($syntax),5);

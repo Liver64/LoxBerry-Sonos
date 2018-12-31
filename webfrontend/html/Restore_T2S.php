@@ -96,6 +96,9 @@ function restoreSingleZone() {
 		}
 	break;
 	}
+	# setze 0 für virtuellen Texteingang (T2S Ende)
+	$tts_stat = 0;
+	send_tts_source($tts_stat);
 }
 
 
@@ -212,6 +215,9 @@ function restoreGroupZone() {
 		break;			
 		}
 	}
+	# setze 0 für virtuellen Texteingang (T2S Ende)
+	$tts_stat = 0;
+	send_tts_source($tts_stat);
 }	
 
 /**

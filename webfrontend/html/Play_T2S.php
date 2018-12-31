@@ -32,6 +32,10 @@ function say() {
 function create_tts() {
 	global $sonos, $config, $filename, $MessageStorepath, $player, $messageid, $textstring, $home, $time_start, $tmp_batch, $MP3path, $filenameplay, $volume;
 	
+	# setze 1 für virtuellen Texteingang (T2S Start)
+	$tts_stat = 1;
+	send_tts_source($tts_stat);
+		
 	if (isset($_GET['greet']))  {
 		$Stunden = intval(strftime("%H"));
 		$TL = LOAD_T2S_TEXT();
@@ -384,15 +388,6 @@ function sendmessage() {
 				LOGGING("Wrong Syntax, please correct! Even 'say&text=' or 'say&messageid=' are necessary to play an anouncement. (check Wiki)", 3);	
 				exit;
 			}
-			
-			# **********************************
-			#$act_source = get_source($master);
-			// echo $act_source.'<br>';
-			$tts_stat = 1;
-			send_tts_source($tts_stat);
-			
-			# **********************************
-			
 			// if batch has been choosed save filenames to a txt file and exit
 			if(isset($_GET['batch'])) {
 				if((isset($_GET['volume'])) or (isset($_GET['rampto'])) or (isset($_GET['playmode'])) or (isset($_GET['playgong']))) {
@@ -466,10 +461,6 @@ function sendmessage() {
 			$sonos->SetVolume($volume);
 			play_tts($messageid);
 			restoreSingleZone();
-			
-			$tts_stat = 0;
-			send_tts_source($tts_stat);
-			
 			$mode = "";
 			$actual[$master]['CONNECT'] == 'true' ? $mode = '1' : $mode = '0';
 			SetVolumeModeConnect($mode, $master);
@@ -705,55 +696,46 @@ function say_radio_station() {
 }
 
 
-function get_source($master)   {
-	
-	global $sonoszone, $master;
-	
-	$sonos = new PHPSonos($sonoszone[$master][0]);
-	$tempradio = $sonos->GetMediaInfo();
-	$gettransportinfo = $sonos->GetTransportInfo();
-	$temp = $sonos->GetPositionInfo();
-	
-	if ($gettransportinfo == 1)  {
-		// Radio wird gerade gespielt
-		if(isset($tempradio["title"]) && (empty($temp["duration"]))) {
-			$source = 1;
-		} else {
-			// Playliste/Stream wird gerade gespielt
-			$source = 2;
-		}
-	return $source;
-	}
-	
-}
 
+/**
+* Function : send_tts_source --> sendet eine 1 zu Beginn von T2S und eine 0 am Ende
+*
+* @param: 0 oder 1
+* @return: leer
+**/
 
 function send_tts_source($tts_stat)  {
 	
 	require_once('system/io-modul.php');
-	global $config, $sonoszone, $master; 
+	global $config, $sonoszone, $master, $ms; 
 	
-	$my_ms = LBSystem::get_miniservers();
-	if($config['LOXONE']['LoxDaten'] == 1) {	
+	// ceck if configured MS is fully configured
+	if (!isset($ms[$config['LOXONE']['Loxone']])) {
+		LOGWARN ("Your selected Miniserver from Sonos4lox Plugin config seems not to be fully configured. Please check your LoxBerry miniserver config!") ;
+		exit(1);
+	}
+	
+	// obtain selected Miniserver from Plugin config
+	$my_ms = $ms[$config['LOXONE']['Loxone']];
+		
+	if($config['LOXONE']['LoxDaten'] == 1) {
 		# send TEXT data
-		$lox_ip			= $my_ms[1]['IPAddress'];
-		$lox_port 	 	= $my_ms[1]['Port'];
-		$loxuser 	 	= $my_ms[1]['Admin'];
-		$loxpassword 	= $my_ms[1]['Pass'];
+		$lox_ip			= $my_ms['IPAddress'];
+		$lox_port 	 	= $my_ms['Port'];
+		$loxuser 	 	= $my_ms['Admin'];
+		$loxpassword 	= $my_ms['Pass'];
 		$loxip = $lox_ip.':'.$lox_port;
 		try {
 			$data['t2s_'.$master] = $tts_stat;
-			ms_send_mem($config['LOXONE']['Loxone'], $data, $value = null);
+			#ms_send_mem($config['LOXONE']['Loxone'], $data, $value = null);
 			http_send($config['LOXONE']['Loxone'], $data, $value = null);
 			#$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/source_$master/$source"); // Radio oder Playliste
 		} catch (Exception $e) {
 			LOGERR("The connection to Loxone could not be initiated, we have to abort...");	
 			exit;
 		}
-	} else { 
-		LOGGING("Data transmission to Loxone is not active. Please activate in Sonos Config!", 4); 
-	}
 	return;
+	}
 }
 
 ?>
