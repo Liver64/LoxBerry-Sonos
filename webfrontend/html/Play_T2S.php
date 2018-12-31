@@ -369,7 +369,7 @@ function play_tts($filename) {
 **/
 
 function sendmessage() {
-			global $text, $master, $messageid, $logging, $textstring, $voice, $config, $actual, $player, $volume, $sonos, $coord, $time_start, $filename, $sonoszone, $tmp_batch, $mode, $MP3path;
+			global $text, $master, $messageid, $logging, $textstring, $voice, $config, $actual, $player, $volume, $source, $sonos, $coord, $time_start, $filename, $sonoszone, $tmp_batch, $mode, $MP3path;
 			
 			$time_start = microtime(true);
 			if ((empty($config['TTS']['t2s_engine'])) or (empty($config['TTS']['messageLang'])))  {
@@ -384,6 +384,15 @@ function sendmessage() {
 				LOGGING("Wrong Syntax, please correct! Even 'say&text=' or 'say&messageid=' are necessary to play an anouncement. (check Wiki)", 3);	
 				exit;
 			}
+			
+			# **********************************
+			#$act_source = get_source($master);
+			// echo $act_source.'<br>';
+			$tts_stat = 1;
+			send_tts_source($tts_stat);
+			
+			# **********************************
+			
 			// if batch has been choosed save filenames to a txt file and exit
 			if(isset($_GET['batch'])) {
 				if((isset($_GET['volume'])) or (isset($_GET['rampto'])) or (isset($_GET['playmode'])) or (isset($_GET['playgong']))) {
@@ -457,13 +466,18 @@ function sendmessage() {
 			$sonos->SetVolume($volume);
 			play_tts($messageid);
 			restoreSingleZone();
+			
+			$tts_stat = 0;
+			send_tts_source($tts_stat);
+			
 			$mode = "";
 			$actual[$master]['CONNECT'] == 'true' ? $mode = '1' : $mode = '0';
 			SetVolumeModeConnect($mode, $master);
 			$time_end = microtime(true);
 			$t2s_time = $time_end - $time_start;
 			#echo "Die T2S dauerte ".round($t2s_time, 2)." Sekunden.\n";
-			LOGGING("The requested single T2S tooks ".round($t2s_time, 2)." seconds to be processed.", 5);		
+			LOGGING("The requested single T2S tooks ".round($t2s_time, 2)." seconds to be processed.", 5);	
+					
 	}
 
 /**
@@ -688,6 +702,58 @@ function say_radio_station() {
 	LOGGING("Radio Station Announcement has been played", 6);		
 	play_tts($filename);
 	restoreSingleZone();
+}
+
+
+function get_source($master)   {
+	
+	global $sonoszone, $master;
+	
+	$sonos = new PHPSonos($sonoszone[$master][0]);
+	$tempradio = $sonos->GetMediaInfo();
+	$gettransportinfo = $sonos->GetTransportInfo();
+	$temp = $sonos->GetPositionInfo();
+	
+	if ($gettransportinfo == 1)  {
+		// Radio wird gerade gespielt
+		if(isset($tempradio["title"]) && (empty($temp["duration"]))) {
+			$source = 1;
+		} else {
+			// Playliste/Stream wird gerade gespielt
+			$source = 2;
+		}
+	return $source;
+	}
+	
+}
+
+
+function send_tts_source($tts_stat)  {
+	
+	require_once('system/io-modul.php');
+	global $config, $sonoszone, $master; 
+	
+	$my_ms = LBSystem::get_miniservers();
+	if($config['LOXONE']['LoxDaten'] == 1) {	
+		# send TEXT data
+		$lox_ip			= $my_ms[1]['IPAddress'];
+		$lox_port 	 	= $my_ms[1]['Port'];
+		$loxuser 	 	= $my_ms[1]['Admin'];
+		$loxpassword 	= $my_ms[1]['Pass'];
+		$loxip = $lox_ip.':'.$lox_port;
+		try {
+			$data['t2s_'.$master] = $tts_stat;
+			ms_send_mem($config['LOXONE']['Loxone'], $data, $value = null);
+			http_send($config['LOXONE']['Loxone'], $data, $value = null);
+			#$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/source_$master/$source"); // Radio oder Playliste
+		} catch (Exception $e) {
+			LOGERR("The connection to Loxone could not be initiated, we have to abort...");	
+			exit;
+		}
+	} else { 
+		LOGGING("Data transmission to Loxone is not active. Please activate in Sonos Config!", 4); 
+	}
+	return;
 }
 
 ?>
