@@ -64,4 +64,7 @@ rm -r /tmp/$1\_upgrade
 echo "<INFO> Call t2s-text update check"
 REPLACELBPBINDIR/update_text.php
 
+echo "<WARNING> The function 'getsonosinfo' has been replaced by Cron Job scheduled every 10 seconds. Please remove ALL 'getsonosinfo' tasks"
+echo "<WARNING> from your Miniserver config before running the new Version!!!"
+
 exit 0
