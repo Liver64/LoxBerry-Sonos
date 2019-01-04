@@ -429,6 +429,12 @@ sub save
 	my $LoxDaten	 	= param('sendlox');
 	my $selminiserver	= param('ms');
 	
+	# check if scan zones has been executed and min. 1 Player added
+	if ($countplayers < 1)  {
+		$error_message = $SUC{'ZONES.ERROR_NO_SCAN'};
+		&error;
+	}
+	
 	# get Miniserver entry from former Versions prior to v3.5.2 (MINISERVER1) and extract last character
 	my $sel_ms = substr($selminiserver, -1, 1);
 	
