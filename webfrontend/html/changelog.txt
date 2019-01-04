@@ -226,5 +226,11 @@
 			[Improvement] Hinweisfunktion (alle 24 Std.) falls getsonosinfo noch in Nutzung ist
 			[Improvement] Error handling wenn ein Player nicht Online bzw. nicht am Stromnetz ist
 			[Bugfix] Lautstärkesteuerung bei nextradio korrigiert
+			[Improvement] Onlineprüfung einzelner Player ist jetzt IMMER akti
+ 3.5.6		[Improvement] zusätzlicher virtueller Texteingang wenn T2S aktiv
+			[Bugfix] Korrektur Fehlermeldung in w2s Add-on
+			[Bugfix] Hinweisfunktion optimiert (alle 24 Std.) falls getsonosinfo noch in Nutzung ist
+			[Improvement] Error handling falls virtueller Texteingang (t2s_ZONE) noch nicht aktiv im MS vorhanden ist
+			[Improvement] Error handling falls User vergisst nach Zonen zu scannen vor dem Speichern
 			
 			
