@@ -30,7 +30,7 @@ function say() {
 **/		
 
 function create_tts() {
-	global $sonos, $config, $filename, $MessageStorepath, $player, $messageid, $textstring, $home, $time_start, $tmp_batch, $MP3path, $filenameplay, $volume;
+	global $sonos, $config, $filename, $MessageStorepath, $player, $messageid, $textstring, $home, $time_start, $tmp_batch, $MP3path, $filenameplay, $volume, $tts_stat;
 	
 	# setze 1 für virtuellen Texteingang (T2S Start)
 	$tts_stat = 1;
@@ -707,7 +707,7 @@ function say_radio_station() {
 function send_tts_source($tts_stat)  {
 	
 	require_once('system/io-modul.php');
-	global $config, $sonoszone, $master, $ms; 
+	global $config, $sonoszone, $master, $ms, $tts_stat; 
 	
 	// ceck if configured MS is fully configured
 	if (!isset($ms[$config['LOXONE']['Loxone']])) {
@@ -727,9 +727,11 @@ function send_tts_source($tts_stat)  {
 		$loxip = $lox_ip.':'.$lox_port;
 		try {
 			$data['t2s_'.$master] = $tts_stat;
+			#$check_exist = http_send($config['LOXONE']['Loxone'], $data, $value = null);
+			#var_dump($check_exist);
+			#exit;
 			#ms_send_mem($config['LOXONE']['Loxone'], $data, $value = null);
-			http_send($config['LOXONE']['Loxone'], $data, $value = null);
-			#$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/source_$master/$source"); // Radio oder Playliste
+			$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/t2s_$master/$tts_stat"); // Radio oder Playliste
 		} catch (Exception $e) {
 			LOGERR("The connection to Loxone could not be initiated, we have to abort...");	
 			exit;

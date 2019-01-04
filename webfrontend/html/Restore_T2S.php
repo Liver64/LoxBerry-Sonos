@@ -13,7 +13,7 @@
 **/		
 
 function restoreSingleZone() {
-	global $sonoszone, $sonos, $master, $actual, $time_start, $mode;
+	global $sonoszone, $sonos, $master, $actual, $time_start, $mode, $tts_stat;
 	
 	$restore = $actual;
 	switch ($restore) {
@@ -110,7 +110,7 @@ function restoreSingleZone() {
 **/		
 
 function restoreGroupZone() {
-	global $sonoszone, $logpath, $master, $sonos, $config, $member, $player, $actual, $coord, $time_start;
+	global $sonoszone, $logpath, $master, $sonos, $config, $member, $player, $actual, $coord, $time_start, $tts_stat;
 	
 	foreach ($member as $zone) {
 		$sonos = new PHPSonos($sonoszone[$zone][0]);
