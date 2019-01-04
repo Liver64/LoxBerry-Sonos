@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	3.5.5
-# Datum: 	22.12.2018
+# Version: 	3.5.6
+# Datum: 	04.01.2019
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
@@ -11,8 +11,11 @@
 
 // ToDo
 
+// Error handling falls User vergisst nach Zonen zu scannen
+// Error handling (full stop) falls getsonosinfo noch aktiv ist - DONE
+// Error handling falls t2s_ZONE noch nicht aktiv im MS vorhanden ist - DONE
 
-ini_set('max_execution_time', 120); 							// Max. Skriptlaufzeit auf 120 Sekunden
+ini_set('max_execution_time', 40); 							// Max. Skriptlaufzeit auf 120 Sekunden
 
 include("system/PHPSonos.php");
 include("system/Tracks.php");
@@ -67,6 +70,13 @@ $level = LBSystem::pluginloglevel();
 $plugindata = LBSystem::plugindata();
 $L = LBSystem::readlanguage("sonos.ini");
 $ms = LBSystem::get_miniservers();
+
+// prüfen ob User noch getsonosinfo in Nutzung hat
+$check_info = urldecode($syntax);
+if ($getsonos = strrpos($check_info, "getsonosinfo") != false)  {
+	getsonosinfo();
+	exit(0);
+}
 
 LOGSTART("PHP started");
 LOGGING("called syntax: ".$myIP."".urldecode($syntax),5);
@@ -626,24 +636,9 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 	break;
 	
 
-	case 'getsonosinfo':
+	#case 'getsonosinfo':
 	
-	$lastExeLog = $lbplogdir.'/LastExeSonosInfo.log';
-		// check if file already exist
-		if (file_exists($lastExeLog)) {
-			$lastRun = file_get_contents($lastExeLog);
-			#echo time() - $lastRun;
-			if (time() - $lastRun >= 86400) {
-				 // it's been more than a day
-				LOGGING("Function 'getsonosinfo' has been replaced by Cron Job every 10 seconds. Please remove ALL 'getsonosinfo' tasks from your Miniserver config.", 4);
-				notify( LBPPLUGINDIR, "Sonos", "Function 'getsonosinfo' has been replaced by Cron Job every 10 seconds. Please remove ALL 'getsonosinfo' tasks from your Miniserver config.", "warning");
-				// update LastExeSonosInfo with current time
-				file_put_contents($lastExeLog, time());
-			}
-		} else {
-			file_put_contents($lastExeLog, time());
-		}
-	break; 
+	
 	
 	
 	# Debug Bereich ------------------------------------------------------
@@ -945,6 +940,10 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		case 'zapzone':
 			zapzone();
+		break;
+		
+		case 'getsonosinfo':
+			
 		break;
 		
 		
@@ -1398,10 +1397,46 @@ function t2s_post_request($text, $greet) {
 
 
 
+function getsonosinfo() {
+	
+	$lastExeLog = "/run/shm/LastExeSonosInfo.log";
+    if(!touch($lastExeLog)) {
+		LOGGING("No permission to write file", 3);
+		exit;
+    }
+	// check if file already exist
+	if (file_exists($lastExeLog)) {
+		$lastRun = file_get_contents($lastExeLog);
+		// echo time() - $lastRun;
+		if (time() - $lastRun >= 86400) {
+			 // it's been more than a day
+			LOGGING("Function 'getsonosinfo' has been replaced by Cron Job scheduled every 10 seconds. Please remove ALL 'getsonosinfo' tasks from your Miniserver config.", 4);
+			notify( LBPPLUGINDIR, "Sonos", "Function 'getsonosinfo' has been replaced by Cron Job scheduled every 10 seconds. Please remove ALL 'getsonosinfo' tasks from your Miniserver config.", "warning");
+			// update LastExeSonosInfo with current time
+			file_put_contents($lastExeLog, time());
+		}
+	} else {
+		LOGGING("Function 'getsonosinfo' has been replaced by Cron Job scheduled every 10 seconds. Please remove ALL 'getsonosinfo' tasks from your Miniserver config.", 4);
+		notify( LBPPLUGINDIR, "Sonos", "Function 'getsonosinfo' has been replaced by Cron Job scheduled every 10 seconds. Please remove ALL 'getsonosinfo' tasks from your Miniserver config.", "warning");			
+		file_put_contents($lastExeLog, time());
+	}
+}
+
+
+
 function shutdown()
 {
-	global $log;
-	$log->LOGEND("PHP finished");
+	global $log, $tts_stat, $check_info;
+	# FALLBACK --> setze 0 für virtuellen Texteingang (T2S End) falls etwas schief lief
+	// echo $tts_stat.'<br>';
+	if ($tts_stat == 1)  {
+		$tts_stat = 0;
+		send_tts_source($tts_stat);
+		LOGGING("Something went wrong with T2S. Fallback scenario set virtual textinbound to 0", 4);
+	}
+	if ($getsonos = strrpos($check_info, "getsonosinfo") === false)  {
+		$log->LOGEND("PHP finished");
+	}
 	#LOGEND("PHP finished");
 	
 }
