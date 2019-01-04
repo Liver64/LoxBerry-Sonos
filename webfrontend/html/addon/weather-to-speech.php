@@ -12,7 +12,7 @@ function w2s()
 				
 		// Einlesen der Daten vom Weather4Lox Plugin
 		if (!file_exists("$home/data/plugins/weather4lox/current.dat")) {
-			LOGGING('Data from Weather4Lox could be obtainend.',3);
+			LOGGING('Data from Weather4Lox could not be obtainend. Please check if Plugin is active!',3);
 			LOGGING('The file current.dat could not been opened. Please check Weather4Lox Plugin!',3);
 			exit;
 		} else {
@@ -20,7 +20,7 @@ function w2s()
 			$current = explode('|',$current);
 		}
 		if (!file_exists("$home/data/plugins/weather4lox/dailyforecast.dat")) {
-			LOGGING('Data from Weather4Lox could be obtainend.',3);
+			LOGGING('Data from Weather4Lox could not be obtainend. Please check if Plugin is active!',3);
 			LOGGING('The file dailyforecast.dat could not been opened. Please check Weather4Lox Plugin!',3);
 			exit;
 		} else {
@@ -28,14 +28,14 @@ function w2s()
 			$dailyforecast = explode('|',$dailyforecast);
 		}
 		if (!file_exists("$home/data/plugins/weather4lox/hourlyforecast.dat")) {
-			LOGGING('Data from Weather4Lox could be obtainend.',3);
+			LOGGING('Data from Weather4Lox could not be obtainend. Please check if Plugin is active!',3);
 			LOGGING('The file hourlyforecast.dat could not been opened. Please check Weather4Lox Plugin!',3);
 			exit;
 		} else {
 			$hourlyforecast = file_get_contents("$home/data/plugins/weather4lox/hourlyforecast.dat");
 			$hourlyforecast = explode('|',$hourlyforecast);
 		}
-		LOGGING('Data from Weather4Lox has been successful obtainend.',7);
+		LOGGING('Data from Weather4Lox has been successful retrieved.',7);
 		#print_r($current);
 		#print_r($dailyforecast);
 		#print_r($hourlyforecast);
