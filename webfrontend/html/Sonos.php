@@ -15,7 +15,7 @@
 // Error handling (full stop) falls getsonosinfo noch aktiv ist - DONE
 // Error handling falls t2s_ZONE noch nicht aktiv im MS vorhanden ist - DONE
 
-ini_set('max_execution_time', 40); 							// Max. Skriptlaufzeit auf 120 Sekunden
+ini_set('max_execution_time', 60); 							// Max. Skriptlaufzeit auf 120 Sekunden
 
 include("system/PHPSonos.php");
 include("system/Tracks.php");
@@ -1132,6 +1132,22 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		case 'balance':
 			SetBalance();
+		break;
+		
+		case 'queue':
+			#file("http://192.168.50.95/plugins/sonos4lox/index.php/?zone=kueche&action=sendmessage&text=Hallo Olli&volume=20");
+			#file("http://192.168.50.95/plugins/sonos4lox/index.php/?zone=kueche&action=sendmessage&clock");
+			$ch = curl_init();
+
+			// set URL and other appropriate options
+			curl_setopt($ch, CURLOPT_URL, "http://192.168.50.95/plugins/sonos4lox/index.php/?zone=kueche&action=sendmessage&text=Hallo Olli&volume=20");
+			curl_setopt($ch, CURLOPT_HEADER, 0);
+
+			// grab URL and pass it to the browser
+			curl_exec($ch);
+
+			// close cURL resource, and free up system resources
+			curl_close($ch);
 		break;
 		
 		case 'resetbasic':

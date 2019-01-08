@@ -232,5 +232,6 @@
 			[Bugfix] Hinweisfunktion optimiert (alle 24 Std.) falls getsonosinfo noch in Nutzung ist
 			[Improvement] Error handling falls virtueller Texteingang (t2s_ZONE) noch nicht aktiv im MS vorhanden ist
 			[Improvement] Error handling falls User vergisst nach Zonen zu scannen vor dem Speichern
+			[Improvement] Block funktion fpr Aufruf T2S solange eine andere gerade läuft
 			
 			

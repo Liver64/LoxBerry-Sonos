@@ -32,10 +32,16 @@ function say() {
 function create_tts() {
 	global $sonos, $config, $filename, $MessageStorepath, $player, $messageid, $textstring, $home, $time_start, $tmp_batch, $MP3path, $filenameplay, $volume, $tts_stat;
 	
+	# check if T2S is actually running, if so exit
+	$tmp_tts = "/run/shm/tmp_tts";
+	if (file_exists($tmp_tts)) {
+		LOGERR("Currently a T2S is running, we have to abort, Sorry :-)");
+		exit(1);
+	}
 	# setze 1 für virtuellen Texteingang (T2S Start)
 	$tts_stat = 1;
 	send_tts_source($tts_stat);
-		
+	
 	if (isset($_GET['greet']))  {
 		$Stunden = intval(strftime("%H"));
 		$TL = LOAD_T2S_TEXT();
@@ -208,7 +214,7 @@ function create_tts() {
 **/		
 
 function play_tts($filename) {
-	global $volume, $config, $messageid, $sonos, $text, $messageid, $sonoszone, $sonoszonen, $master, $coord, $actual, $player, $time_start, $t2s_batch, $filename, $textstring, $home, $MP3path, $sleeptimegong, $lbpplugindir, $logpath, $try_play, $MessageStorepath, $filename;
+	global $volume, $config, $messageid, $sonos, $text, $messageid, $sonoszone, $sonoszonen, $master, $coord, $actual, $player, $time_start, $t2s_batch, $filename, $textstring, $home, $MP3path, $sleeptimegong, $lbpplugindir, $logpath, $try_play, $MessageStorepath, $filename, $tts_stat;
 		
 		$coord = getRoomCoordinator($master);
 		$sonos = new PHPSonos($coord[0]);
@@ -373,7 +379,7 @@ function play_tts($filename) {
 **/
 
 function sendmessage() {
-			global $text, $master, $messageid, $logging, $textstring, $voice, $config, $actual, $player, $volume, $source, $sonos, $coord, $time_start, $filename, $sonoszone, $tmp_batch, $mode, $MP3path;
+			global $text, $master, $messageid, $logging, $textstring, $voice, $config, $actual, $player, $volume, $source, $sonos, $coord, $time_start, $filename, $sonoszone, $tmp_batch, $mode, $MP3path, $tts_stat;
 			
 			$time_start = microtime(true);
 			if ((empty($config['TTS']['t2s_engine'])) or (empty($config['TTS']['messageLang'])))  {
@@ -713,6 +719,19 @@ function send_tts_source($tts_stat)  {
 	if (!isset($ms[$config['LOXONE']['Loxone']])) {
 		LOGWARN ("Your selected Miniserver from Sonos4lox Plugin config seems not to be fully configured. Please check your LoxBerry miniserver config!") ;
 		exit(1);
+	}
+	
+	$tmp_tts = "/run/shm/tmp_tts";
+	if ($tts_stat == 1)  {
+			if(!touch($tmp_tts)) {
+			LOGGING("No permission to write file", 3);
+			exit;
+		}
+		$handle = fopen ($tmp_tts, 'w');
+		fwrite ($handle, $tts_stat);
+		fclose ($handle); 
+	} else {
+		unlink($tmp_tts);
 	}
 	
 	// obtain selected Miniserver from Plugin config
