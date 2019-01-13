@@ -35,8 +35,8 @@ function create_tts() {
 	# check if T2S is actually running, if so exit
 	$tmp_tts = "/run/shm/tmp_tts";
 	if (file_exists($tmp_tts)) {
-		LOGERR("Currently a T2S is running, we have to abort, Sorry :-)");
-		exit(1);
+		#LOGERR("Currently a T2S is running, we have to abort, Sorry :-)");
+		#exit(1);
 	}
 	# setze 1 für virtuellen Texteingang (T2S Start)
 	$tts_stat = 1;
@@ -715,10 +715,13 @@ function send_tts_source($tts_stat)  {
 	require_once('system/io-modul.php');
 	global $config, $sonoszone, $master, $ms, $tts_stat; 
 	
-	// ceck if configured MS is fully configured
-	if (!isset($ms[$config['LOXONE']['Loxone']])) {
-		LOGWARN ("Your selected Miniserver from Sonos4lox Plugin config seems not to be fully configured. Please check your LoxBerry miniserver config!") ;
-		exit(1);
+	// check if data transmission to Loxone is turned on
+	if (!empty($config['LOXONE']['LoxDaten']))  {
+		// ceck if configured MS is fully configured
+		if (!isset($ms[$config['LOXONE']['Loxone']])) {
+			LOGWARN ("Your selected Miniserver from Sonos4lox Plugin config seems not to be fully configured. Please check your LoxBerry miniserver config!") ;
+			exit(1);
+		}
 	}
 	
 	$tmp_tts = "/run/shm/tmp_tts";
