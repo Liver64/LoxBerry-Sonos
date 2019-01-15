@@ -734,13 +734,14 @@ function send_tts_source($tts_stat)  {
 		fwrite ($handle, $tts_stat);
 		fclose ($handle); 
 	} else {
-		unlink($tmp_tts);
+		@unlink($tmp_tts);
 	}
 	
-	// obtain selected Miniserver from Plugin config
-	$my_ms = $ms[$config['LOXONE']['Loxone']];
-		
 	if($config['LOXONE']['LoxDaten'] == 1) {
+		
+		// obtain selected Miniserver from Plugin config
+		$my_ms = $ms[$config['LOXONE']['Loxone']];
+		
 		# send TEXT data
 		$lox_ip			= $my_ms['IPAddress'];
 		$lox_port 	 	= $my_ms['Port'];
