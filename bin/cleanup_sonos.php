@@ -13,13 +13,17 @@ LOGSTART("Cleanup MP3 files");
 $myConfigFolder = "$lbpconfigdir";								// get config folder
 $myConfigFile = "sonos.cfg";									// get config file
 $hostname = lbhostname();
-
+echo'<PRE>';
 // Parsen der Konfigurationsdatei
 if (!file_exists($myConfigFolder.'/sonos.cfg')) {
 	LOGCRIT('The file sonos.cfg could not be opened, please try again!');
 	exit;
 } else {
 	$config = parse_ini_file($myConfigFolder.'/sonos.cfg', TRUE);
+	if ($config === false)  {
+		LOGERR('The file sonos.cfg could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file "sonos.cfg" manually!');
+		exit(1);
+	}
 	LOGOK("Sonos config has been loaded");
 }
 
@@ -29,7 +33,7 @@ if ($folderpeace[3] != "data") {
 	$MessageStorepath = $config['SYSTEM']['path']."/".$hostname."/tts/";
 } else {
 	// wenn local dir als Speichermedium selektiert wurde
-	$MessageStorepath = $config['SYSTEM']['path']."/";
+	$MessageStorepath = $config['SYSTEM']['ttspath']."/";
 }
 
 // Set defaults if needed
@@ -41,7 +45,6 @@ if(empty($tosize)) {
 	LOGDEB("Config parameter MP3/cachesize is {$config['MP3']['cachesize']}, tosize is '$tosize'");
 	exit;
 }
-
 delmp3();
 
 exit;
@@ -57,27 +60,20 @@ exit;
 function delmp3() {
 	global $config, $MessageStorepath, $storageinterval, $tosize, $cachesize, $storageinterval;
 		
-	LOGINF("Deleting oldest files to reach $cachesize MB...");
+	LOGINF("Deleting oldest MP3 files to reach $cachesize MB...");
 
 	$dir = $MessageStorepath;
     
-	// $folder = dir($dir);
-	// // $store = '-'.$config['MP3']['MP3store'].' days';
-	// while ($dateiname = $folder->read()) {
-	    // if (filetype($dir.$dateiname) == "dir") continue;
-        // if (strtotime($store) > @filemtime($dir.$dateiname)) {
-			// if (strlen($dateiname) == 36) {
-				// if (@unlink($dir.$dateiname) != false)
-					// LOGINF($dateiname.' has been deleted');
-				// else
-					// LOGINF($dateiname.' could not be deleted');
-			// }
-		// }
-        
-    // }
-
 	LOGDEB ("Directory: $dir");
-	$files = glob("$dir/*");
+	$allfiles = glob("$dir/*");
+	$files = array();
+	foreach($allfiles as $file)  {
+		$fileType = substr($file, -3); 
+		if ($fileType == "mp3")  {
+			array_push($files, $file);
+		}
+	}
+	// print_r($files);
 	usort($files, function($a, $b) {
 		return @filemtime($a) > @filemtime($b);
 	});
@@ -96,7 +92,6 @@ function delmp3() {
 	
 	// Are we below the limit? Then nothing to do
 	if ($fullsize < $tosize) {
-
 		LOGINF("Current size $fullsize is below destination size $tosize");
 		LOGOK ("Nothing to do, quitting");
 
@@ -126,12 +121,11 @@ function delmp3() {
 		}
 			
 	}
-		
-	LOGINF("Now check if files older x days should be deleted, too...");
+	LOGINF("Now check if MP3 files older x days should be deleted, too...");
 
 	if ($storageinterval != "0") {
 
-		LOGINF("Deleting files older than $storageinterval days...");
+		LOGINF("Deleting MP3 files older than $storageinterval days...");
 
 		/******************/
 		/* Delete to time */
@@ -143,7 +137,7 @@ function delmp3() {
 			}
 			$filetime = @filemtime($file);
 			LOGDEB("Checking file ".basename($file)." (".date(DATE_ATOM, $filetime).")");
-			if($filetime < $deltime && strlen($file) == 36) {
+			if($filetime < $deltime) {
 				if ( @unlink($file) != false )
 					LOGINF(basename($file).' has been deleted');
 				else
@@ -152,7 +146,7 @@ function delmp3() {
 		}
 	} else { 
 
-		LOGINF("Files should be stored forever. Nothing to do here.");
+		LOGINF("MP3 Files should be stored forever. Nothing to do here.");
 
 	}
 		
