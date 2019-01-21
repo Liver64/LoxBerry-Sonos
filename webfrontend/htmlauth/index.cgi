@@ -103,17 +103,17 @@ if (!defined $pcfg->param("MP3.cachesize")) {
 	$pcfg->param("MP3.cachesize", "100");
 } 
 # Rampto Volume
-if ($pcfg->param("TTS.volrampto") ne " ")  {
+if ($pcfg->param("TTS.volrampto") eq '')  {
 	$pcfg->param("TTS.volrampto", "25");
 }
 # Rampto type
-if ($pcfg->param("TTS.rampto") ne " ")  {
+if ($pcfg->param("TTS.rampto") eq '')  {
 	$pcfg->param("TTS.rampto", "auto");
 }
 # checkonline
-if ($pcfg->param("SYSTEM.checkonline") ne " ")  {
-	$pcfg->param("SYSTEM.checkonline", "true");
-}
+#if ($pcfg->param("SYSTEM.checkonline") eq '')  {
+#	$pcfg->param("SYSTEM.checkonline", "true");
+#}
 
 ##########################################################################
 # Read Settings
