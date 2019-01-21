@@ -232,8 +232,10 @@
 			[Bugfix] Hinweisfunktion optimiert (alle 24 Std.) falls getsonosinfo noch in Nutzung ist
 			[Improvement] Error handling falls virtueller Texteingang (t2s_ZONE) noch nicht aktiv im MS vorhanden ist
 			[Improvement] Error handling falls User vergisst nach Zonen zu scannen vor dem Speichern
- 3.5.7		[Improvement] Job Sequencer wenn aktuell ein Durchsage läuft. Die darauffolgende wird dann ca. 5 Sekunde später ausgefüht.
+ 3.5.7		[Improvement] Job Sequencer wenn aktuell ein Durchsage läuft. Die darauffolgenden T2s/Playlist/Radio wird dann ca. 5 Sekunde später ausgefüht.
 			[Improvement] Bei einigen Funktionen (z.B. toggle usw.) von Start/Stop auf Start/Pause geändert
-			[Bugfix] Error handling beim parsen der INI Dateien
+			[Bugfix] Error handling beim Parsen der INI Dateien hinzugefügt
+			[Bugfix] Reorgnisation der MP3 Dateien korrigiert
+			
 			
 			
