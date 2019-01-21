@@ -2,18 +2,14 @@
 
 ##############################################################################################################################
 #
-# Version: 	3.5.6
-# Datum: 	04.01.2019
+# Version: 	3.5.7
+# Datum: 	20.01.2019
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
 
 
 // ToDo
-
-// Error handling falls User vergisst nach Zonen zu scannen
-// Error handling (full stop) falls getsonosinfo noch aktiv ist - DONE
-// Error handling falls t2s_ZONE noch nicht aktiv im MS vorhanden ist - DONE
 
 ini_set('max_execution_time', 60); 							// Max. Skriptlaufzeit auf 120 Sekunden
 
@@ -56,6 +52,7 @@ $MP3path = "mp3";												// path to preinstalled numeric MP§ files
 $sleeptimegong = "3";											// waiting time before playing t2s
 $maxzap = '60';													// waiting time before zapzone been initiated again
 $lbport = lbwebserverport();									// get loxberry port
+$tmp_tts = "/run/shm/tmp_tts";									// path/file for T2S functions
 
 #echo '<PRE>';
 
@@ -80,6 +77,25 @@ if ($getsonos = strrpos($check_info, "getsonosinfo") != false)  {
 
 LOGSTART("PHP started");
 LOGGING("called syntax: ".$myIP."".urldecode($syntax),5);
+
+if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or 
+	(isset($_GET['sonos'])) or (isset($_GET['weather'])) or 
+	(isset($_GET['abfall'])) or (isset($_GET['witz'])) or 
+	(isset($_GET['pollen'])) or (isset($_GET['warning'])) or
+	(isset($_GET['distance'])) or (isset($_GET['clock'])) or 
+	(isset($_GET['calendar'])) or (isset($_GET['radio'])) or
+	(isset($_GET['playlist'])) or (isset($_GET['playlisturi'])) or
+	(isset($_GET['albumuri'])) or (isset($_GET['file']))
+	)  {
+	if (file_exists($tmp_tts))  {
+		while (file_exists($tmp_tts))  {
+			usleep(200000); // check every 200ms
+		}
+		LOGINF("Currently a T2S is running, we have to wait...");
+		// echo "Currently a T2S is running, we have to wait...";
+		sleep(5);
+	}
+}
 	
 #-- Start Preparation ------------------------------------------------------------------
 	
@@ -88,6 +104,10 @@ LOGGING("called syntax: ".$myIP."".urldecode($syntax),5);
 		LOGGING('The file sonos.cfg could not be opened, please try again!', 4);
 	} else {
 		$tmpsonos = parse_ini_file($myFolder.'/sonos.cfg', TRUE);
+		if ($tmpsonos === false)  {
+			LOGERR('The file sonos.cfg could not be parsed, the file may be disruppted. Please check/save your Plugin Config or check file "sonos.cfg" manually!');
+			exit(1);
+		}
 		LOGGING("Sonos config has been loaded",7);
 	}
 	// Parsen der Sonos Zonen Konfigurationsdatei player.cfg
@@ -95,6 +115,10 @@ LOGGING("called syntax: ".$myIP."".urldecode($syntax),5);
 		LOGGING('The file player.cfg could not be opened, please try again!', 4);
 	} else {
 		$tmpplayer = parse_ini_file($myFolder.'/player.cfg', true);
+		if ($tmpplayer === false)  {
+			LOGERR('The file player.cfg could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file "player.cfg" manually!');
+			exit(1);
+		}
 		LOGGING("Player config has been loaded",7);
 	}
 	$player = ($tmpplayer['SONOSZONEN']);
@@ -370,7 +394,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			}
 			checkifmaster($master);
 			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
-			$sonos->Stop();
+			$sonos->Pause();
 			$sonos->SetVolume($save_vol_stop);
 			LOGGING("Softstop been executed.", 7);
 		break; 
@@ -380,7 +404,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			if($sonos->GetTransportInfo() == 1)  {
 				checkifmaster($master);
 				$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
-				$sonos->Stop();
+				$sonos->Pause();
 			} else {
 				checkifmaster($master);
 				$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
@@ -1030,7 +1054,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		
 		case 'alarmstop':
-			$sonos->Stop();
+			$sonos->Pause();
 			if(isset($_GET['member'])) {
 				restoreGroupZone();
 			} else {
@@ -1442,17 +1466,18 @@ function getsonosinfo() {
 
 function shutdown()
 {
-	global $log, $tts_stat, $check_info;
+	global $log, $tts_stat, $check_info, $tmp_tts;
 	# FALLBACK --> setze 0 für virtuellen Texteingang (T2S End) falls etwas schief lief
 	// echo $tts_stat.'<br>';
 	if ($tts_stat == 1)  {
 		$tts_stat = 0;
 		send_tts_source($tts_stat);
-		LOGGING("Something went wrong with T2S. Fallback scenario set virtual textinbound to 0", 4);
+		#LOGGING("Something went wrong with T2S. Fallback scenario set virtual textinbound to 0", 4);
 	}
 	if ($getsonos = strrpos($check_info, "getsonosinfo") === false)  {
 		$log->LOGEND("PHP finished");
 	}
+	@unlink($tmp_tts);
 	#LOGEND("PHP finished");
 	
 }

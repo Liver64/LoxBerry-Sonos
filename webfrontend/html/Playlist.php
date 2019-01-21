@@ -63,7 +63,7 @@ function playlist() {
 		}
 		$pleinzeln++;
 			if (($pleinzeln == count($sonoslists) ) && ($gefunden != 1)) {
-				$sonos->Stop();
+				$sonos->Pause()();
 				LOGGING("No playlist with the specified name found.", 3);
 				exit;
 			}
