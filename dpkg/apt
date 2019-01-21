@@ -2,8 +2,10 @@
 # One line per package, use exact packagename as you would do for apt-get.
 #
 libjson-perl
+libapache2-mod-php
 sox task-spooler 
 lame
 curl 
 libcurl3
 php-soap
+php-cli
