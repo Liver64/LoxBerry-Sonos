@@ -35,22 +35,34 @@ if (!file_exists($myFolder.'/sonos.cfg')) {
 	LOGERR('The file sonos.cfg could not be opened, please check/complete your Plugin Config!');
 	exit(1);
 } else {
-	$tmpconfig = parse_ini_file($myFolder.'/sonos.cfg', true);
+	$tmpconfig = parse_ini_file(LBPCONFIGDIR.'/sonos.cfg', true);
+	if ($tmpconfig === false)  {
+		LOGERR('The file sonos.cfg could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file "sonos.cfg" manually!');
+		exit(1);
+	}
 }
+
 if (!file_exists($myFolder.'/player.cfg')) {
 	LOGERR('The file player.cfg  could not be opened, please check/complete your Plugin Config!');
 	exit(1);
 } else {
 	$tmpplayer = parse_ini_file($myFolder.'/player.cfg', true);
+	if ($tmpplayer === false)  {
+		LOGERR('The file player.cfg could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file "player.cfg" manually!');
+		exit(1);
+	}
 }
+
 if ($tmpconfig['LOXONE']['LoxDaten'] != 1)   {
-	LOGERR('The Communication to Loxone is switched off, please turn on 1st, save config and try again!');
-	exit(1);
+	LOGWARN('The Communication to Loxone is switched off, please turn on 1st, save config and try again in order to use the template in Loxone!');
+	#exit(1);
 }
 if (count($tmpplayer['SONOSZONEN']) < 1)  {
 	LOGERR('There are no Sonos Players already fully configured, please check/complete your Plugin Config and save your config before downloading your Template!');
 	exit(1);
 }
+
+echo $tmpconfig['LOXONE']['LoxPort'];
 if (empty($tmpconfig['LOXONE']['LoxPort']))  {
 	LOGERR('The Loxone UDP port is missing in your config, please check/complete your Plugin Config and save your config before downloading your Template!');
 	exit(1);
@@ -87,7 +99,7 @@ function shutdown()
 {
 	global $log;
 	#$log->LOGEND("PHP finished");
-	$log = LOGEND("");
+	#$log = LOGEND("");
 	
 }
 
