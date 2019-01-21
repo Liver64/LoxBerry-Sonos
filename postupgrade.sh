@@ -45,7 +45,6 @@ PCONFIG=$LBPCONFIG/$PDIR
 PSBIN=$LBPSBIN/$PDIR
 PBIN=$LBPBIN/$PDIR
 
-
 echo "<INFO> Copy back existing config files"
 cp -p -v -r /tmp/$1\_upgrade/config/$3/* $5/config/plugins/$3/ 
 
@@ -58,11 +57,15 @@ cp -p -v -r /tmp/$1\_upgrade/data/$3/* $5/data/plugins/$3/
 echo "<INFO> Copy back existing Text files"
 cp -v /tmp/$1\_upgrade/templates/* $5/templates/plugins/$3/lang/ 
 
-echo "<INFO> Remove temporary folders"
-rm -r /tmp/$1\_upgrade
-
 echo "<INFO> Call t2s-text update check"
 REPLACELBPBINDIR/update_text.php
+
+echo "<INFO> Update of MP3 Files in tts/mp3"
+cp -v $5/data/plugins/$3/tts/mp3/update/* $5/data/plugins/$3/tts/mp3/
+
+echo "<INFO> Remove temporary/update folders"
+rm -r /tmp/$1\_upgrade
+rm -r $5/data/plugins/$3/tts/mp3/update
 
 echo "<WARNING> The function 'getsonosinfo' has been replaced by Cron Job scheduled every 10 seconds. Please remove ALL 'getsonosinfo' tasks"
 echo "<WARNING> from your Miniserver config before running the new Version!!!"
