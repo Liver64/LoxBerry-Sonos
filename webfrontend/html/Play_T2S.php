@@ -183,7 +183,12 @@ function create_tts() {
 		if ($config['TTS']['t2s_engine'] == 4001) {
 			include_once("voice_engines/Polly.php");	
 		}
-		$filename;
+		#$filename;
+		// check if filename is < 1 Byte
+	if (filesize($config['SYSTEM']['ttspath']."/".$filename.".mp3") < 1)  {
+		LOGGING("Something went wrong with your T2S, the filesize is 0 Byte :-( Please check/save your config, check authorisation for User loxberry and try again!", 3);	
+		exit(1);
+	}
 	if(file_exists($config['SYSTEM']['ttspath']."/".$filename.".mp3") && empty($_GET['nocache'])) {
 		LOGGING("MP3 grabbed from cache: '$textstring' ", 6);
 	} else {
@@ -308,7 +313,10 @@ function play_tts($filename) {
 		LOGGING("Message has been set to Position '".$message_pos."' in current Queue", 7);		
 		$sonos->SetGroupMute(false);
 		LOGGING("Mute for relevant Player(s) has been turned off", 7);		
-		try {
+		if (filesize($config['SYSTEM']['ttspath']."/".$filename.".mp3") == 0)  {
+			LOGGING("Something went wrong", 3);	
+		}
+			try {
 			$try_play = $sonos->Play();
 			LOGGING("T2S has been passed to Sonos Application", 5);	
 			LOGGING("In case the announcement wasn't played please check any Messages appearing in the Sonos App during processing the request.", 5);	

@@ -236,6 +236,8 @@
 			[Improvement] Bei einigen Funktionen (z.B. toggle usw.) von Start/Stop auf Start/Pause geändert
 			[Bugfix] Error handling beim Parsen der INI Dateien hinzugefügt
 			[Bugfix] Reorgnisation der MP3 Dateien korrigiert
+			[Bugfix] Validierung des Polly secret keys aktualisiert
+ 3.5.8		[Bugfix] Error handling falls T2S 0 Bytes groß oder falsch codiert
 			
 			
 			
