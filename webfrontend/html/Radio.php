@@ -74,7 +74,7 @@ function nextradio() {
 	global $sonos, $config, $master, $debug, $volume, $tmp_tts;
 	
 	if (file_exists($tmp_tts))  {
-		LOGGING("Currently a T2S is running, we skip nextradio for now. Please try again later.",3);
+		LOGGING("Currently a T2S is running, we skip nextradio for now. Please try again later.",4);
 		exit;
 	}
 	
