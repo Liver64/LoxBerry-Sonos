@@ -1,0 +1,1 @@
+*** Problems with T2S not working in v3.5.6 or v3.5.7, please update to v3.5.8 ***
