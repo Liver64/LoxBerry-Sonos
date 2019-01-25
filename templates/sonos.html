@@ -1,4 +1,4 @@
-<style type="text/css">
+﻿<style type="text/css">
 
 
 .form {
@@ -16,6 +16,7 @@
  padding: 2px;
  overflow: hidden;
  white-space: nowrap;
+ direction: left;
  border: solid 0px #CCCCCC;
  animation: marquee 10s linear infinite;
 }
@@ -73,7 +74,8 @@
 		<td style="width: 201px; height: 20px;" valign="top">
 		</td>
 		<td style="width: 201px; height: 20px;" valign="top">
-			<p class="marquee" id="infotext" align="middle" id="info"><FONT COLOR="#FF0000"><TMPL_VAR INFO></FONT></p>
+			<!--<p class="marquee" id="infotext" align="middle" id="info"><FONT COLOR="#FF0000"><TMPL_VAR INFO></FONT></p>-->
+			<font color=#FF0000><marquee><TMPL_VAR INFO></marquee></font>
 		</td>
 	</tr>
 
