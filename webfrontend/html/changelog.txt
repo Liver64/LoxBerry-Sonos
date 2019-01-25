@@ -239,6 +239,7 @@
 			[Bugfix] Validierung des Polly secret keys aktualisiert
  3.5.8		[Bugfix] Error handling falls T2S 0 Bytes groß oder falsch codiert
 			[Bugfix] T2S korrigiert für User die keinen MS angebunden haben
+			[Improvement] Titel - Interpret Information / Ansage bei Radio
 			[Bugfix] Ansage Radiosender zu FIFO T2S hinzugefügt
 			
 			

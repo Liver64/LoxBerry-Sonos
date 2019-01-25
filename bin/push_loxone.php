@@ -247,9 +247,16 @@ global $mem_sendall, $mem_sendall_sec;
 			if ($gettransportinfo == 1) {
 				// Radio wird gerade gespielt
 				if(isset($tempradio["title"]) && (empty($temp["duration"]))) {	
-					$value = @substr($tempradio["title"], 0, 40); 
-					$valuesplit[0] = $value; 							
-					$valuesplit[1] = $value;
+					$stream_content = $temp["streamContent"];
+					if (empty($stream_content))  {
+						$value = @substr($tempradio["title"], 0, 40); 
+						$valuesplit[0] = $value; 							
+						$valuesplit[1] = $value;
+					} else {
+						$value = $stream_content;
+						$valuesplit[0] = $stream_content; 
+						$valuesplit[1] = $stream_content;
+					}
 					$source = 1;
 				// Playliste wird gerade gespielt
 				} else {
@@ -266,8 +273,8 @@ global $mem_sendall, $mem_sendall_sec;
 				#$valuesplit[0] = rawurlencode($valuesplit[0]);
 				#$valuesplit[1] = rawurlencode($valuesplit[1]);
 				$valueurl = ($value);
-				$valuesplit[0] = ($valuesplit[0]);
-				$valuesplit[1] = ($valuesplit[1]);
+				#$valuesplit[0] = ($valuesplit[0]);
+				#$valuesplit[1] = ($valuesplit[1]);
 					try {
 						$data['titint_'.$zone] = $valueurl;
 						$data['tit_'.$zone] = $valuesplit[0];
