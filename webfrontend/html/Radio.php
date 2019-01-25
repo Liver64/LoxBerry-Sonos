@@ -71,7 +71,12 @@ function radio(){
 * @return: 
 **/
 function nextradio() {
-	global $sonos, $config, $master, $debug, $volume;
+	global $sonos, $config, $master, $debug, $volume, $tmp_tts;
+	
+	if (file_exists($tmp_tts))  {
+		LOGGING("Currently a T2S is running, we skip nextradio for now. Please try again later.",3);
+		exit;
+	}
 	
 	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
 	$radioanzahl_check = count($config['RADIO']);

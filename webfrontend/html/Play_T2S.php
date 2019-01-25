@@ -183,12 +183,8 @@ function create_tts() {
 		if ($config['TTS']['t2s_engine'] == 4001) {
 			include_once("voice_engines/Polly.php");	
 		}
-		#$filename;
-		// check if filename is < 1 Byte
-	if (filesize($config['SYSTEM']['ttspath']."/".$filename.".mp3") < 1)  {
-		LOGGING("Something went wrong with your T2S, the filesize is 0 Byte :-( Please check/save your config, check authorisation for User loxberry and try again!", 3);	
-		exit(1);
-	}
+		//echo filesize($config['SYSTEM']['ttspath']."/".$filename.".mp3");
+		
 	if(file_exists($config['SYSTEM']['ttspath']."/".$filename.".mp3") && empty($_GET['nocache'])) {
 		LOGGING("MP3 grabbed from cache: '$textstring' ", 6);
 	} else {
@@ -198,6 +194,11 @@ function create_tts() {
 			require_once("system/bin/getid3/getid3.php");
 			$getID3 = new getID3;
 			write_MP3_IDTag($textstring);
+		}
+		// check if filename is < 1 Byte
+		if (filesize($config['SYSTEM']['ttspath']."/".$filename.".mp3") < 1)  {
+			LOGGING("Something went wrong with your T2S, the filesize is 0 Byte :-( Please check/save your config, check authorisation for User loxberry and try again!", 3);	
+		exit(1);
 		}
 	}
 	return $filename;
@@ -715,13 +716,7 @@ function say_radio_station() {
 function send_tts_source($tts_stat)  {
 	
 	require_once('system/io-modul.php');
-	global $config, $sonoszone, $master, $ms, $tts_stat; 
-	
-	// ceck if configured MS is fully configured
-	if (!isset($ms[$config['LOXONE']['Loxone']])) {
-		LOGWARN ("Your selected Miniserver from Sonos4lox Plugin config seems not to be fully configured. Please check your LoxBerry miniserver config!") ;
-		exit(1);
-	}
+	global $config, $sonoszone, $master, $ms, $tts_stat, $config; 
 	
 	$tmp_tts = "/run/shm/tmp_tts";
 	if ($tts_stat == 1)  {
@@ -733,12 +728,21 @@ function send_tts_source($tts_stat)  {
 		fwrite ($handle, $tts_stat);
 		fclose ($handle); 
 	} 
-
 	
-	// obtain selected Miniserver from Plugin config
-	$my_ms = $ms[$config['LOXONE']['Loxone']];
-		
+	// check if Data transmission is switched off
+	if(!is_enabled($config['LOXONE']['LoxDaten'])) {
+		return;
+	}
+	
+	// ceck if configured MS is fully configured
+	if (!isset($ms[$config['LOXONE']['Loxone']])) {
+		LOGWARN ("Your selected Miniserver from Sonos4lox Plugin config seems not to be fully configured. Please check your LoxBerry miniserver config!") ;
+		exit(1);
+	}
+			
 	if($config['LOXONE']['LoxDaten'] == 1) {
+		// obtain selected Miniserver from Plugin config
+		$my_ms = $ms[$config['LOXONE']['Loxone']];
 		# send TEXT data
 		$lox_ip			= $my_ms['IPAddress'];
 		$lox_port 	 	= $my_ms['Port'];
