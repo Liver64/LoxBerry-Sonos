@@ -2,14 +2,17 @@
 
 ##############################################################################################################################
 #
-# Version: 	3.5.7
-# Datum: 	20.01.2019
+# Version: 	3.5.9
+# Datum: 	04.02.2019
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
 
 
 // ToDo
+
+// sending data to MS via MQTT
+// Titel bzw. Interpret bei Radio
 
 ini_set('max_execution_time', 60); 							// Max. Skriptlaufzeit auf 120 Sekunden
 
@@ -176,13 +179,11 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 		LOGGING(htmlspecialchars($L['ERRORS.ERR_CHECK_LBPORT']), 3);
 		exit;
 	}
-	
 	# select language file for text-to-speech
 	$t2s_langfile = "t2s-text_".substr($config['TTS']['messageLang'],0,2).".ini";				// language file for text-speech
 
 	# Standardpath for saving MP3
 	$MessageStorepath = $config['SYSTEM']['ttspath'];
-
 	create_symlinks();
 	
 		

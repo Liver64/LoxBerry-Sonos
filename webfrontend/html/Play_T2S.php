@@ -192,8 +192,8 @@ function create_tts() {
 		if (($config['TTS']['t2s_engine'] == 6001) or ($config['TTS']['t2s_engine'] == 7001) or ($config['TTS']['t2s_engine'] == 4001))    {
 			// ** generiere MP3 ID3 Tags **
 			require_once("system/bin/getid3/getid3.php");
-			$getID3 = new getID3;
-			write_MP3_IDTag($textstring);
+			#$getID3 = new getID3;
+			#write_MP3_IDTag($textstring);
 		}
 		// check if filename is < 1 Byte
 		if (filesize($config['SYSTEM']['ttspath']."/".$filename.".mp3") < 1)  {
@@ -314,9 +314,9 @@ function play_tts($filename) {
 		LOGGING("Message has been set to Position '".$message_pos."' in current Queue", 7);		
 		$sonos->SetGroupMute(false);
 		LOGGING("Mute for relevant Player(s) has been turned off", 7);		
-		if (filesize($config['SYSTEM']['ttspath']."/".$filename.".mp3") == 0)  {
-			LOGGING("Something went wrong", 3);	
-		}
+		#if (filesize($config['SYSTEM']['ttspath']."/".$filename.".mp3") == 0)  {
+		#	LOGGING("Something went wrong :-( The file has not been saved. Please check your storage device if enough space is availabel", 3);	
+		#}
 			try {
 			$try_play = $sonos->Play();
 			LOGGING("T2S has been passed to Sonos Application", 5);	
@@ -555,7 +555,7 @@ function sendgroupmessage() {
 				exit;
 			}
 			// prüft alle Member ob Sie Online sind und löscht ggf. Member falls nicht Online
-			checkZonesOnline($member);
+			#checkZonesOnline($member);
 			$coord = getRoomCoordinator($master);
 			LOGGING("Room Coordinator has been identified", 7);		
 			// speichern der Zonen Zustände

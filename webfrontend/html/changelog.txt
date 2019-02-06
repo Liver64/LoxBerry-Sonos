@@ -241,6 +241,12 @@
 			[Bugfix] T2S korrigiert für User die keinen MS angebunden haben
 			[Improvement] Titel - Interpret Information / Ansage bei Radio
 			[Bugfix] Ansage Radiosender zu FIFO T2S hinzugefügt
+			[Bugfix] T2S: Reihenfolge des error handling geändert
+ 3.5.9		[Bugfix] Die Radiofavoriten korrigiert. U.U. konnte eine URL die Config unlesbar machen
+			[Improvement] Model S15 = CONNECT hinzugefügt
+			[Improvement] Error handling für fehlendes Model beim scannen hinzugefügt
+			[Bugfix] Resrore für Gruppen korrigiert
+			[Bugfix] mp3 (messageid) korrigert. Konnten u.U. nicht abgespielt werden.
 			
 			
 			

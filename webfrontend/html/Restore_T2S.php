@@ -15,6 +15,7 @@
 function restoreSingleZone() {
 	global $sonoszone, $sonos, $master, $actual, $time_start, $mode, $tts_stat;
 	
+	#if (!$_GET['member']) {
 	$restore = $actual;
 	switch ($restore) {
 		// Zone was playing in Single Mode
@@ -29,7 +30,7 @@ function restoreSingleZone() {
 			if (($actual[$master]['TransportInfo'] == 1)) {
 				$sonos->Play();	
 			}
-			LOGGING("Single mode for zone ".$master." has been restored.", 6);
+			LOGGING("Single Zone ".$master." has been restored.", 6);
 		break;
 		
 		// Zone was Member of a group
@@ -99,6 +100,7 @@ function restoreSingleZone() {
 	# setze 0 für virtuellen Texteingang (T2S Ende)
 	$tts_stat = 0;
 	send_tts_source($tts_stat);
+	#}
 }
 
 
@@ -156,7 +158,7 @@ function restoreGroupZone() {
 			} else {
 				$sonos->Play();
 			}
-			LOGGING("Single mode for zone ".$player." has been restored.", 6);
+			LOGGING("Single Zone ".$player." has been restored.", 6);
 		break;
 			
 		case 'member';
@@ -167,7 +169,7 @@ function restoreGroupZone() {
 			$sonos->SetAVTransportURI($tmp_checkmember);
 			$sonos->SetVolume($actual[$player]['Volume']);
 			$sonos->SetMute($actual[$player]['Mute']);
-			LOGGING("Zone ".$player."  has been added back to group.", 6);
+			LOGGING("Member Zone ".$player." has been added back to group.", 6);
 		break;
 			
 			
@@ -194,6 +196,7 @@ function restoreGroupZone() {
 					$sonos->SetRadio($actual[$player]['PositionInfo']['TrackURI'],"$radionam");
 				}
 			# Restore Zone Members
+			#echo "TEST MEMBER<br>";
 			$tmp_group = $actual[$player]['Grouping'];
 			$tmp_group1st = array_shift($tmp_group);
 			foreach ($tmp_group as $groupmem) {
@@ -201,8 +204,10 @@ function restoreGroupZone() {
 				$sonos->SetAVTransportURI($actual[$groupmem]['PositionInfo']["TrackURI"]);
 				$sonos->SetVolume($actual[$groupmem]['Volume']);
 				$sonos->SetMute($actual[$groupmem]['Mute']);
+				#LOGGING("Member Zone ".$player." has been added back to group.", 6);
 			}
 			# Start restore Master settings
+			#echo "TEST MASTER<br>";
 			$sonos = new PHPSonos($sonoszone[$player][0]);
 			$sonos->SetVolume($actual[$player]['Volume']);
 			$sonos->SetMute($actual[$player]['Mute']);
@@ -211,7 +216,7 @@ function restoreGroupZone() {
 			} else {
 				$sonos->Play();
 			}
-			LOGGING("Zone ".$player."  has been added back to group.", 6);
+			LOGGING("Master Zone ".$player." has been added back to group.", 6);
 		break;			
 		}
 	}
