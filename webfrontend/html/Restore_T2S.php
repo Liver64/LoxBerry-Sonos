@@ -154,7 +154,7 @@ function restoreGroupZone() {
 			$sonos->SetVolume($actual[$player]['Volume']);
 			$sonos->SetMute($actual[$player]['Mute']);
 			if($actual[$player]['TransportInfo'] != 1) {
-				$sonos->Pause();
+				$sonos->Stop();
 			} else {
 				$sonos->Play();
 			}
@@ -212,7 +212,7 @@ function restoreGroupZone() {
 			$sonos->SetVolume($actual[$player]['Volume']);
 			$sonos->SetMute($actual[$player]['Mute']);
 			if($actual[$player]['TransportInfo'] != 1) {
-				$sonos->Pause();
+				$sonos->Stop();
 			} else {
 				$sonos->Play();
 			}

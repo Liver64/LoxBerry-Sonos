@@ -429,11 +429,11 @@ function sendmessage() {
 			}
 			if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
 				$volume = $_GET['volume'];
-				LOGGING("Volume from syntax been adopted", 7);		
+				#LOGGING("Volume from syntax been adopted", 7);		
 			} else 	{
 				// übernimmt Standard Lautstärke der angegebenen Zone aus config.php
 				$volume = $config['sonoszonen'][$master][3];
-				LOGGING("Standard Volume from zone ".$master."  been used", 7);		
+				#LOGGING("Standard Volume from zone ".$master."  been used", 7);		
 			}
 			#checkaddon();
 			#checkTTSkeys();

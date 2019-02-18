@@ -36,25 +36,6 @@ function radio(){
 	if ($radioplaylist == $radiolists[$rleinzeln]["title"]) {
 		$sonos->SetRadio(urldecode($radiolists[$rleinzeln]["res"]),$radiolists[$rleinzeln]["title"]);
 		#$sonos->SetRadio(urldecode($radiolists[$rleinzeln]["res"]));
-		if (isset($_GET['member'])) {
-			$member = $_GET['member'];
-			$member = explode(',', $member);
-			if (isset($_GET['standardvolume'])) {
-				foreach ($member as $zone) {
-					$sonos = new PHPSonos($sonoszone[$zone][0]); //Sonos IP Adresse
-					$volume = $config['sonoszonen'][$zone][4];
-					$sonos->SetVolume($config['sonoszonen'][$zone][4]);
-				}
-			}
-			$sonos = new PHPSonos($roomcord[0]); //Sonos IP Adresse
-			$sonosroom->SetVolume($config['sonoszonen'][$master][4]);
-		} else {
-			if(empty($config['TTS']['volrampto'])) {
-				check_rampto();
-			} else {
-				$sonos->SetVolume($volume);
-			}
-		}
 		if(!isset($_GET['load'])) {
 			$sonos->Play();
 		}

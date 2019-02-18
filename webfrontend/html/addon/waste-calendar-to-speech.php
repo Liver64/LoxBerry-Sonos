@@ -143,39 +143,59 @@ function calendar() {
 		LOGGING('Please remove &debug from your syntax in Sonos4lox Calendar URL!',3);
 		exit;
 	}
+	echo '<PRE><br>';
+	#$calendar = ('{ "": { "hStart": "16.01.2019 16:30:00", "hEnd": "16.01.2019 19:00:00", "Start": 316888200, "End": 316897200, "Summary": "Kids abholen ", "Description": "", "fwDay": 3, "wkDay": 3 }, "hnow": "13.01.2019 16:15:03", "now": 316628103 }');
 	$callurlcal = trim($config['VARIOUS']['CALDav2'].'&debug');
-	print_r($calendar = json_decode(file_get_contents("$callurlcal"), TRUE));
+	$url = $config['VARIOUS']['CALDav2'];
+	
+	$parts = parse_url($callurlcal);
+    if(isset($parts['query'])) {
+        parse_str(urldecode($parts['query']), $parts['query']);
+    }
+    #return $parts;
+
+	
+	print_r($parts);
+	$calendar = file_get_contents($callurlcal);
+	$calendar = (string)utf8_encode($calendar);
+	#print_r($calendar);
+	$calendar = str_replace("{ \"","{ \"1",$calendar); 
+	$calendar = json_decode($calendar, TRUE);
+	print_r($calendar);
+	
 	if (empty($calendar))  {
 		LOGGING('No actual appointments according to your "fwday" parameter received or something went wrong!',4);
 		LOGGING('in addition please check/maintain events to be announced in your calendar URL!',4);
 		exit(1);
 	}
-	$findMich1 = "&events=";
-	$findMich2 = "&debug";
-	$e = strpos($callurlcal, $findMich1) + 8;
-	$j = strripos($callurlcal, $findMich2);
-	$k = substr($callurlcal,$e,$j-$e);
-	($u = explode('|', $k));
+	#$findMich1 = "&events=";
+	#$findMich2 = "&debug";
+	#$e = strpos($callurlcal, $findMich1) + 8;
+	#$j = strripos($callurlcal, $findMich2);
+	#$k = substr($callurlcal,$e,$j-$e);
+	#($u = explode('|', $k));
+	#print_r($u);
+	#echo $calendar[1]['Summary'];
 	
-	if (@isset($calendar[$u[0]]['fwDay']) AND @$calendar[[0]]['fwDay'] <> -1) {
+	if (@isset($calendar[1]['fwDay']) AND @$calendar[1]['fwDay'] <> -1) {
 		$utc = new DateTimeZone('UTC'); 
 		$curtimezone = date_timezone_get(date_create());
-		$zeit = date_create_from_format('d.m.Y G:i:s', $calendar[$u[0]]['hStart'], $utc);
+		$zeit = date_create_from_format('d.m.Y G:i:s', $calendar[1]['hStart'], $utc);
 		$zeit = date_timezone_set($zeit, $curtimezone);
-		$Startzeit = $calendar[$u[0]]['Start'];
+		$Startzeit = $calendar[1]['Start'];
 		$zeit = new Datetime("@$Startzeit");
 		#echo "<br>Termin gefunden: " . date_format($zeit, 'G:i').'<br>';
 		@$speak .= "Der nächste Termin im Kalender ist ";
-		if ($calendar[$u[0]]['fwDay'] == 0)
-			$speak .= "heute um " . date_format($zeit, 'G:i') . " Uhr und lautet: " . $calendar[$u[0]]['Summary'] . ". ";
-		elseif ($calendar[$u[0]]['fwDay'] == 1)
-			$speak .= "morgen um " . date_format($zeit, 'G:i') . " Uhr: " . $calendar[$u[0]]['Summary'] . ". ";
-		elseif ($calendar[$u[0]]['fwDay'] == 2)
-			$speak .= "übermorgen um " . date_format($zeit, 'G:i') . " Uhr: " . $calendar[$u[0]]['Summary'] . ". ";
+		if ($calendar[1]['fwDay'] == 0)
+			$speak .= "heute um " . date_format($zeit, 'G:i') . " Uhr und lautet: " . $calendar[1]['Summary'] . ". ";
+		elseif ($calendar[1]['fwDay'] == 1)
+			$speak .= "morgen um " . date_format($zeit, 'G:i') . " Uhr: " . $calendar[1]['Summary'] . ". ";
+		elseif ($calendar[1]['fwDay'] == 2)
+			$speak .= "übermorgen um " . date_format($zeit, 'G:i') . " Uhr: " . $calendar[1]['Summary'] . ". ";
 		else {
 			$tage = array("Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag");
 			$monate = array("Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember");
-			$speak .= $calendar[$u[0]]['Summary'] . " am " . $tage[$calendar[$u[0]]['wkDay']] . " den ". date_format($zeit, 'd'). " " .$monate[date_format($zeit, 'm') - 1] ." um ". date_format($zeit, 'G:i');
+			$speak .= $calendar[1]['Summary'] . "am " . $tage[$calendar[1]['wkDay']] . " den ". date_format($zeit, 'd'). ". " .$monate[date_format($zeit, 'm') - 1] ." um ". date_format($zeit, 'G:i');
 		}
 	echo ($speak);
 	#echo '<br><br>';

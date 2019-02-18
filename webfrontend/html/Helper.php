@@ -648,6 +648,7 @@ function playmode_detection($zone, $settings)  {
         "S6"    =>  "PLAY:5",
         "ZP80"  =>  "CONNECT",
         "ZP90"  =>  "CONNECT",
+		"S15"   =>  "CONNECT",
         "ZP100" =>  "CONNECT:AMP",
         "ZP120" =>  "CONNECT:AMP",
         ];
@@ -666,6 +667,7 @@ function OnlyCONNECT($model) {
     $models = [
         "CONNECT"  =>  "ZP80",
         "CONNECT"  =>  "ZP90",
+		"CONNECT"  =>  "S15",
         ];
     return in_array($model, array_keys($models));
 }

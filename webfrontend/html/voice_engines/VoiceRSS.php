@@ -9,7 +9,7 @@ function t2s($textstring, $filename)
 	global $config, $pathlanguagefile;
 	
 		$ttskey = $config['TTS']['API-key'];
-		$ttsaudiocodec = "48khz_16bit_stereo";
+		$ttsaudiocodec = "44khz_16bit_stereo";
 		$textstring = urlencode($textstring);
 		
 		$file = "voicerss.json";
@@ -39,12 +39,12 @@ function t2s($textstring, $filename)
 		#####################################################################################################################	
 
 		# Generieren des strings der an VoiceRSS geschickt wird
-		$inlay = "key=$ttskey&src=$textstring&hl=$language&f=$ttsaudiocodec";	
+		$inlay = "key=$ttskey&src=$textstring&hl=$language&c=MP3&f=$ttsaudiocodec";	
 									
 		# Speicherort der MP3 Datei
 		$file = $config['SYSTEM']['ttspath'] ."/". $filename . ".mp3";
 		
-		LOGGING("VoiceRSS has been successful selected", 7);	
+		LOGGING("VoiceRSS has been successful selected", 7);
 					
 		# Übermitteln des strings an VoiceRSS.org
 		ini_set('user_agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');

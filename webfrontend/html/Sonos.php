@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	3.5.9
-# Datum: 	04.02.2019
+# Version: 	3.6.0
+# Datum: 	15.02.2019
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
@@ -195,15 +195,23 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 $valid_playmodes = array("NORMAL","REPEAT_ALL","REPEAT_ONE","SHUFFLE_NOREPEAT","SHUFFLE","SHUFFLE_REPEAT_ONE");
 
 # Start des eigentlichen Srcipts
+
+# volume for group mmember
+volume_group();
+
+# volume for master
 if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
 	$volume = $_GET['volume'];
 	$master = $_GET['zone'];
 	// prüft auf Max. Lautstärke und korrigiert diese ggf.
 	if($volume >= $config['sonoszonen'][$master][5]) {
 		$volume = $config['sonoszonen'][$master][5];
+		LOGGING("Individual Volume for Player ".$master." has been reduced to: ".$volume, 7);
 	} else {
 		$volume = $_GET['volume'];
+		LOGGING("Individual Volume for Master Player ".$master." has been set to: ".$volume, 7);
 	}
+	
 } else {
 	$master = $_GET['zone'];
 	$sonos = new PHPSonos($sonoszonen[$master][0]);
@@ -212,6 +220,7 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 		$volume = $config['sonoszonen'][$master][5];
 	}
 	$volume = $config['sonoszonen'][$master][4];
+	LOGGING("Standard Volume for Master Player ".$master." has been set to: ".$volume, 7);
 }
 
 if(isset($_GET['playmode'])) { 
@@ -694,6 +703,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				echo '<br>';
 				print_r($sonos->GetZoneGroupAttributes());
 				echo '<br><br>';
+				echo '</PRE>';
 			LOGGING("Checksonos been executed.", 7);
 		break;
 		
@@ -704,26 +714,30 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			
 
 		case 'getmediainfo':
-			echo '</PRE>';
+			echo '<PRE>';
 			print_r($sonos->GetMediaInfo());
+			echo '</PRE>';
 		break;
 		
 
 		case 'getmute':
 			echo '<PRE>';
 			print_r($sonos->GetMute());
+			echo '</PRE>';
 		break;
 
 
 		case 'getpositioninfo':
 			echo '<PRE>';
 			print_r($sonos->GetPositionInfo());
+			echo '</PRE>';
 		break; 
 		
 
 		case 'gettransportsettings':
 			echo '<PRE>';
 			print_r($sonos->GetTransportSettings());
+			echo '</PRE>';
 		break; 
 		
 		  
@@ -741,18 +755,22 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			echo '<PRE>';
 			$radio = $sonos->RadiotimeGetNowPlaying();
 			print_r($radio);
+			echo '</PRE>';
 		break;
 
 		  
 		case 'getvolume':
 			echo '<PRE>';
+			#$sonos = new PHPSonos($sonoszone[$master][0);
 			print_r($sonos->GetVolume());
+			echo '</PRE>';
 		break;
 			
 		
 		case 'getuser':
 			echo '<PRE>';
 			echo get_current_user();
+			echo '</PRE>';
 		break;	
 		
 		  
@@ -806,13 +824,15 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 
 		case 'getgroupvolume':
-			$sonos->SnapshotGroupVolume();
-			$GetGroupVolume = $sonos->GetGroupVolume();
-			print_r($GetGroupVolume);
+			$sonos = new PHPSonos($sonoszone[$master][0]);
+			#$sonos->SnapshotGroupVolume();
+			#$GetGroupVolume = $sonos->GetGroupVolume();
+			#print_r($GetGroupVolume);
 		break;
 		
 		
 		case 'setgroupvolume':
+			$sonos = new PHPSonos($sonoszone[$master][0]);
 			$GroupVolume = $_GET['volume'];
 			$sonos->SnapshotGroupVolume();
 			$GroupVolume = $sonos->SetGroupVolume($GroupVolume);
@@ -846,48 +866,56 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'getsonosplaylists':
 			echo '<PRE>';
 			print_r($sonos->GetSonosPlaylists());
+			echo '</PRE>';
 		break;
 		
 			
 		case 'getaudioinputattributes':	
 			echo '<PRE>';
 			print_r($sonos->GetAudioInputAttributes());
+			echo '</PRE>';
 		break;
 		
 		
 		case 'getzoneattributes':
 			echo '<PRE>';
 			print_r($sonos->GetZoneAttributes());
+			echo '</PRE>';
 		break;
 		
 		
 		case 'getzonegroupattributes':
 			echo '<PRE>';
 			print_r($sonos->GetZoneGroupAttributes());
+			echo '</PRE>';
 		break;
 		
 		
 		case 'getcurrenttransportactions':
 			echo '<PRE>';
 			print_r($sonos->GetCurrentTransportActions());
+			echo '</PRE>';
 		break;
 		
 		
 		case 'getcurrentplaylist':
 			echo '<PRE>';
 			print_r($sonos->GetCurrentPlaylist());
+			echo '</PRE>';
 		break;
 		
 		
 		case 'getimportedplaylists':
 			echo '<PRE>';
 			print_r($sonos->GetImportedPlaylists());
+			echo '</PRE>';
 		break;
 		
 		
 		case 'listalarms':
 			echo '<PRE>';
 			print_r($sonos->ListAlarms());
+			echo '</PRE>';
 		break;
 		
 		
@@ -912,6 +940,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'getledstate':
 			echo '<PRE>';
 			die ($sonos->GetLEDState());
+			echo '</PRE>';
 		break;
 		
 		
@@ -937,24 +966,28 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'getcurrentplaylist':
 			echo '<PRE>';
 			print_r($sonos->GetCurrentPlaylist());
+			echo '</PRE>';
 		break;
 		
 		
 		case 'getloudness':
 			echo '<PRE>';
 			print_r($sonos->GetLoudness());
+			echo '</PRE>';
 		break;
 		
 		
 		case 'gettreble':
 			echo '<PRE>';
 			print_r($sonos->GetTreble());
+			echo '</PRE>';
 		break;
 		
 					
 		case 'getbass':
 			echo '</PRE>';
 			print_r($sonos->GetBass());
+			echo '</PRE>';
 		break;
 		
 		
@@ -1216,6 +1249,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			echo '<PRE>';
 			echo '<PRE>';
 			echo "RinconID: " . trim($sonoszone[$master][1]);
+			echo '</PRE>';
 		break;
 		  
 		default:
@@ -1460,6 +1494,73 @@ function getsonosinfo() {
 		LOGGING("Function 'getsonosinfo' has been replaced by Cron Job scheduled every 10 seconds. Please remove ALL 'getsonosinfo' tasks from your Miniserver config.", 4);
 		notify( LBPPLUGINDIR, "Sonos", "Function 'getsonosinfo' has been replaced by Cron Job scheduled every 10 seconds. Please remove ALL 'getsonosinfo' tasks from your Miniserver config.", "warning");			
 		file_put_contents($lastExeLog, time());
+	}
+}
+
+function volume_group()  {
+	
+	global $sonoszone, $sonos, $master, $config, $sonoszonen;
+	
+	$master = $_GET['zone'];
+	$sonos = new PHPSonos($sonoszone[$master][0]);
+	#$sonos->SetMute(true);
+	if (isset($_GET['member']))  {
+		$member = $_GET['member'];
+		if($member === 'all') {
+			#$member = array();
+			$memberon = array();
+			foreach ($sonoszone as $zone => $ip) {
+				$zoneon = checkZoneOnline($zone);
+				// exclude master Zone
+				if ($zone != $master) {
+					if ($zoneon === (bool)true)  {
+						array_push($memberon, $zone);
+					}
+				}
+			}
+			$member = $memberon;
+			LOGGING("All Players has been grouped to Player ".$master, 5);	
+		} else {
+			$member = explode(',', $member);
+			$memberon = array();
+			foreach ($member as $value) {
+				$zoneon = checkZoneOnline($value);
+				if ($zoneon === (bool)true)  {
+					array_push($memberon, $value);
+				} else {
+					LOGGING("Player '".$value."' could not be added to the group!!", 4);
+				}
+			}
+			$member = $memberon;
+		}
+		if (in_array($master, $member)) {
+			LOGGING("The zone ".$master." could not be entered as member again. Please remove from Syntax '&member=".$master."' !", 3);
+			exit;
+		}
+		
+		foreach ($member as $memplayer => $zone2) {
+			$sonos = new PHPSonos($sonoszone[$zone2][0]);
+			$sonos->SetMute(true);
+			if(isset($_GET['volume']) or isset($_GET['groupvolume']))  { 
+				isset($_GET['volume']) ? $groupvolume = $_GET['volume'] : $groupvolume = $_GET['groupvolume'];
+				if(isset($_GET['volume'])) {
+					$final_vol = $groupvolume;
+					$volumegroup = "Individual Volume per Member of the group has been set to: ".$final_vol;
+					LOGGING("Individual Volume for Player ".$zone2." has been set to: ".$final_vol, 7);
+				} else {
+					$newvolume = $sonos->GetVolume();
+					$final_vol = $newvolume + ($newvolume * ($groupvolume / 100));  // multiplizieren
+					// prüfen ob errechnete Volume > 100 ist, falls ja max. auf 100 setzen
+					$final_vol > 100 ? $final_vol = 100 : $final_vol;
+					LOGGING("Individual Volume for Player ".$zone2." has been reduced to: ".$final_vol, 7);
+				}
+			} else {
+				$final_vol = $sonoszone[$zone2][3];
+				LOGGING("Standard Volume for Player ".$zone2." has been set to: ".$final_vol, 7);
+			}
+			$sonos->SetVolume($final_vol);
+			$sonos->SetMute(false);
+		}
 	}
 }
 

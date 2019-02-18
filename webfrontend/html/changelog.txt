@@ -245,8 +245,11 @@
  3.5.9		[Bugfix] Die Radiofavoriten korrigiert. U.U. konnte eine URL die Config unlesbar machen
 			[Improvement] Model S15 = CONNECT hinzugefügt
 			[Improvement] Error handling für fehlendes Model beim scannen hinzugefügt
-			[Bugfix] Resrore für Gruppen korrigiert
+			[Bugfix] Restore für Gruppen korrigiert
 			[Bugfix] mp3 (messageid) korrigert. Konnten u.U. nicht abgespielt werden.
+ 3.6.0		[Bugfix] Restore für Gruppen korrigiert
+			[Bugfix] Lautstärkenregelung überarbeitet
+			[Bugfix] VoiceRSS angepasst damit es wieder funktioniert
 			
 			
 			

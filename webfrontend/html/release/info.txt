@@ -1,1 +1,1 @@
-*** Bugfix Release v3.5.9 to fix "SOMETHING WENT WRONG" from v3.5.8 ***
+*** v3.6.0 Fehlerbehebung VoiceRSS und Radio wiederherstellen nach TTS ***
