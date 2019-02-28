@@ -433,10 +433,13 @@ global $sonoszone, $master, $config;
 	} else {
 		$member = explode(',', $member);
 	}
+	#print_r($member);
 	foreach ($member as $zone) {
 		$sonos = new PHPSonos($sonoszone[$zone][0]);
 		if ($zone != $master) {
+			#echo $zone.'<br>';
 			$sonos->SetAVTransportURI("x-rincon:" . trim($sonoszone[$master][1])); 
+			LOGGING("Zone: ".$zone." has been added to master: ".$master,6);
 		}
 	}
 }	

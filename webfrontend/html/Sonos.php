@@ -2,17 +2,14 @@
 
 ##############################################################################################################################
 #
-# Version: 	3.6.0
-# Datum: 	15.02.2019
+# Version: 	3.6.1
+# Datum: 	28.02.2019
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
 
 
 // ToDo
-
-// sending data to MS via MQTT
-// Titel bzw. Interpret bei Radio
 
 ini_set('max_execution_time', 60); 							// Max. Skriptlaufzeit auf 120 Sekunden
 
@@ -196,9 +193,6 @@ $valid_playmodes = array("NORMAL","REPEAT_ALL","REPEAT_ONE","SHUFFLE_NOREPEAT","
 
 # Start des eigentlichen Srcipts
 
-# volume for group mmember
-volume_group();
-
 # volume for master
 if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
 	$volume = $_GET['volume'];
@@ -208,20 +202,26 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 		$volume = $config['sonoszonen'][$master][5];
 		LOGGING("Individual Volume for Player ".$master." has been reduced to: ".$volume, 7);
 	} else {
-		$volume = $_GET['volume'];
 		LOGGING("Individual Volume for Master Player ".$master." has been set to: ".$volume, 7);
 	}
-	
 } else {
 	$master = $_GET['zone'];
 	$sonos = new PHPSonos($sonoszonen[$master][0]);
 	$tmp_vol = $sonos->GetVolume();
+	// prüft auf Max. Lautstärke und korrigiert diese ggf.
 	if ($tmp_vol >= $config['sonoszonen'][$master][5]) {
 		$volume = $config['sonoszonen'][$master][5];
 	}
-	$volume = $config['sonoszonen'][$master][4];
+	if (isset(($_GET['text'])) or isset(($_GET['messageid'])))  {
+		$volume = $config['sonoszonen'][$master][3];
+	} else {
+		$volume = $config['sonoszonen'][$master][4];
+	}
+	#$sonos = new PHPSonos($sonoszonen[$master][0]);
+	#$sonos->SetVolume($volume);
 	LOGGING("Standard Volume for Master Player ".$master." has been set to: ".$volume, 7);
 }
+
 
 if(isset($_GET['playmode'])) { 
 	$playmode = preg_replace("/[^a-zA-Z0-9_]+/", "", strtoupper($_GET['playmode']));
@@ -556,16 +556,25 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'nextpush':
 			checkifmaster($master);
 			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
-			$posinfo = $sonos->GetPositionInfo();
+			($posinfo = $sonos->GetPositionInfo());
 			$duration = $posinfo['duration'];
 			$state = $posinfo['TrackURI'];
 			// Nichts läuft
-			((empty($state)) and empty($duration)) ? nextradio() : '';
+			if ((empty($state)) and (empty($duration)))  {
+				$sonos->SetVolume($volume);
+				nextradio();
+			}
 			// TV / Radio läuft
-			((!empty($state)) and empty($duration)) ? nextradio() : '';
+			if ((!empty($state)) and (empty($duration)))  {
+				$sonos->SetVolume($volume);
+				nextradio();
+			}
 			// Playliste läuft
-			((!empty($state)) and !empty($duration)) ? next_dynamic() : '';
-			LOGGING("Nextpush been executed.", 7);
+			if ((!empty($state)) and (!empty($duration)))  {
+				$sonos->SetVolume($volume);
+				next_dynamic();
+			}
+			
 		break;
 		
 		
@@ -577,35 +586,43 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 							  
 		case 'sonosplaylist':
+			AddMemberTo();
+			volume_group();
 			playlist();
 		break;
 		
 		  
 		case 'groupsonosplaylist':
 			AddMemberTo();
+			volume_group();
 			playlist();
 		break;
 		
 
 		case 'radioplaylist':
+			AddMemberTo();
+			volume_group();
 			radio();
 		break;
 		
 		
 		case 'groupradioplaylist': 
 			AddMemberTo();
+			volume_group();
 			radio();
 		break;
 		
 		
 		case 'radio': 
 			AddMemberTo();
+			volume_group();
 			radio();
 		break;
 		
 		
 		case 'playlist':
 			AddMemberTo();
+			volume_group();
 			playlist();
 		break;
 		
@@ -642,24 +659,83 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 
 	case 'sendgroupmessage':
 		global $sonos, $coord, $text, $member, $master, $zone, $messageid, $logging, $words, $voice, $accesskey, $secretkey, $rampsleep, $config, $save_status, $mute, $membermaster, $groupvol, $checkgroup;
-		#$time_start = microtime(true);
-		sendgroupmessage();
+		LOGGING("function 'action=sendgroupmessage...' has been depreciated. Please change your syntax to 'action=say...'", 6); 
+		$oldtext="old";
+		$newtext="new";
+		$filenst="/run/shm/t2s_stat.tmp";
+		$last=time();
+
+		if (isset($_GET["text"])) $newtext=$_GET["text"];
+
+		if (file_exists($filenst)) {
+			$last=time()-filemtime($filenst);
+			$myfile = fopen($filenst, "r") or LOGGING('Unable to open file!', 4);
+			$oldtext=fread($myfile,8192);
+			fclose($myfile);
+		}	
+		if ((($oldtext==$newtext) AND( $last > 10)) OR ($oldtext!=$newtext))  {
+			sendgroupmessage();
+			$myfile = fopen($filenst, "w") or LOGGING('Unable to open file!', 4);
+			fwrite($myfile,$newtext);
+			fclose($myfile);
+		} else {
+			LOGGING("Same text has been announced within the last 10 seconds. We skip this anouncement", 5); 
+		}
 	break;
 		
 		
 	case 'sendmessage':
 		global $text, $coord, $master, $messageid, $logging, $words, $voice, $config, $actual, $player, $volume, $coord, $time_start;
-		#$time_start = microtime(true);
-		sendmessage();
+		LOGGING("function 'action=sendmessage...' has been depreciated. Please change your syntax to 'action=say...'", 6); 
+		$oldtext="old";
+		$newtext="new";
+		$filenst="/run/shm/t2s_stat.tmp";
+		$last=time();
+
+		if (isset($_GET["text"])) $newtext=$_GET["text"];
+
+		if (file_exists($filenst)) {
+			$last=time()-filemtime($filenst);
+			$myfile = fopen($filenst, "r") or LOGGING('Unable to open file!', 4);
+			$oldtext=fread($myfile,8192);
+			fclose($myfile);
+		}	
+		if ((($oldtext==$newtext) AND( $last > 10)) OR ($oldtext!=$newtext))  {
+			sendmessage();
+			$myfile = fopen($filenst, "w") or LOGGING('Unable to open file!', 4);
+			fwrite($myfile,$newtext);
+			fclose($myfile);
+		} else {
+			LOGGING("Same text has been announced within the last 10 seconds. We skip this anouncement", 5); 
+		}
 	break;
 	
 			
 	case 'say':
-		#$time_start = microtime(true);
-		say();
+		$oldtext="old";
+		$newtext="new";
+		$filenst="/run/shm/t2s_stat.tmp";
+		$last=time();
+
+		if (isset($_GET["text"])) $newtext=$_GET["text"];
+
+		if (file_exists($filenst)) {
+			$last=time()-filemtime($filenst);
+			$myfile = fopen($filenst, "r") or LOGGING('Unable to open file!', 4);
+			$oldtext=fread($myfile,8192);
+			fclose($myfile);
+		}	
+		if ((($oldtext==$newtext) AND( $last > 10)) OR ($oldtext!=$newtext))  {
+			say();
+			$myfile = fopen($filenst, "w") or LOGGING('Unable to open file!', 4);
+			fwrite($myfile,$newtext);
+			fclose($myfile);
+		} else {
+			LOGGING("Same text has been announced within the last 10 seconds. We skip this anouncement", 5); 
+		}
 	break;
-		
-			
+	
+	
 	case 'group':
 		group_all();
 	break;
@@ -825,9 +901,8 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 
 		case 'getgroupvolume':
 			$sonos = new PHPSonos($sonoszone[$master][0]);
-			#$sonos->SnapshotGroupVolume();
-			#$GetGroupVolume = $sonos->GetGroupVolume();
-			#print_r($GetGroupVolume);
+			$sonos->SnapshotGroupVolume();
+			$GetGroupVolume = $sonos->GetGroupVolume();
 		break;
 		
 		
@@ -1072,11 +1147,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		
 		
-		case 'say':
-			say();
-		break;
-		
-		
 		case 'addzones':
 			addZones();
 		break;
@@ -1263,38 +1333,7 @@ exit;
 
 # Funktionen für Skripte ------------------------------------------------------
 
- 
-/** NICHT AKTIV
-/*
-/* Funktion : delmp3 --> löscht die hash5 codierten MP3 Dateien aus dem Verzeichnis 'messageStorePath'
-/*
-/* @param:  nichts
-/* @return: nichts
-**/
- function delmp3() {
-	global $config, $debug, $time_start;
-	
-	# http://www.php-space.info/php-tutorials/75-datei,nach,alter,loeschen.html	
-	$dir = $MessageStorepath;
-    $folder = dir($dir);
-	$store = '-'.$config['MP3']['MP3store'].' days';
-	while ($dateiname = $folder->read()) {
-	    if (filetype($dir.$dateiname) != "dir") {
-            if (strtotime($store) > @filemtime($dir.$dateiname)) {
-					if (strlen($dateiname) == 36) {
-						if (@unlink($dir.$dateiname) != false)
-							LOGGING($dateiname.' has been deleted<br>', 7);
-						else
-							LOGGING($dateiname.' could not be deleted<br>', 7);
-					}
-			}
-        }
-    }
-	LOGGING("All files according to criteria were successfully deleted", 7);
-	$folder->close();
-    return; 	 
- }
- 
+  
 
 /**
 /* Funktion : SetGroupVolume --> setzt Volume für eine Gruppe
@@ -1344,7 +1383,7 @@ function SnapshotGroupVolume() {
 **/	
  function SetGroupMute($mute) {
 	global $sonos;
-		$sonos->SetGroupMute($mute);
+	$sonos->SetGroupMute($mute);
  }
 
 
@@ -1497,6 +1536,8 @@ function getsonosinfo() {
 	}
 }
 
+
+
 function volume_group()  {
 	
 	global $sonoszone, $sonos, $master, $config, $sonoszonen;
@@ -1537,29 +1578,28 @@ function volume_group()  {
 			LOGGING("The zone ".$master." could not be entered as member again. Please remove from Syntax '&member=".$master."' !", 3);
 			exit;
 		}
-		
+		//print_r($member);
 		foreach ($member as $memplayer => $zone2) {
 			$sonos = new PHPSonos($sonoszone[$zone2][0]);
-			$sonos->SetMute(true);
+			#$sonos->SetMute(true);
 			if(isset($_GET['volume']) or isset($_GET['groupvolume']))  { 
 				isset($_GET['volume']) ? $groupvolume = $_GET['volume'] : $groupvolume = $_GET['groupvolume'];
 				if(isset($_GET['volume'])) {
-					$final_vol = $groupvolume;
-					$volumegroup = "Individual Volume per Member of the group has been set to: ".$final_vol;
-					LOGGING("Individual Volume for Player ".$zone2." has been set to: ".$final_vol, 7);
+					$volume = $groupvolume;
+					LOGGING("Individual Volume for Player ".$zone2." has been set to: ".$volume, 7);
 				} else {
 					$newvolume = $sonos->GetVolume();
-					$final_vol = $newvolume + ($newvolume * ($groupvolume / 100));  // multiplizieren
+					$volume = $newvolume + ($newvolume * ($groupvolume / 100));  // multiplizieren
 					// prüfen ob errechnete Volume > 100 ist, falls ja max. auf 100 setzen
-					$final_vol > 100 ? $final_vol = 100 : $final_vol;
-					LOGGING("Individual Volume for Player ".$zone2." has been reduced to: ".$final_vol, 7);
+					$volume > 100 ? $volume = 100 : $volume;
+					LOGGING("Individual Volume for Player ".$zone2." has been reduced to: ".$volume, 7);
 				}
 			} else {
-				$final_vol = $sonoszone[$zone2][3];
-				LOGGING("Standard Volume for Player ".$zone2." has been set to: ".$final_vol, 7);
+				$volume = $sonoszone[$zone2][3];
+				LOGGING("Standard Volume for Player ".$zone2." has been set to: ".$volume, 7);
 			}
-			$sonos->SetVolume($final_vol);
 			$sonos->SetMute(false);
+			$sonos->SetVolume($volume);
 		}
 	}
 }

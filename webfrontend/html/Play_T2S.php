@@ -241,7 +241,7 @@ function play_tts($filename) {
 			$sonos->ClearQueue();
 			LOGGING("Queue has been cleared", 7);		
 			$message_pos = 1;
-			LOGGING("Playlist has more then 998 songs", 4);		
+			LOGGING("Playlist has more then 998 songs", 6);		
 		}
 		// if Playlist has more then 1 or less then 999 entries
 		if ($save_plist >= 1 && $save_plist <= 998) {
@@ -313,6 +313,7 @@ function play_tts($filename) {
 		$sonos->SetTrack($message_pos);
 		LOGGING("Message has been set to Position '".$message_pos."' in current Queue", 7);		
 		$sonos->SetGroupMute(false);
+		$sonos->SetVolume($volume);
 		LOGGING("Mute for relevant Player(s) has been turned off", 7);		
 		#if (filesize($config['SYSTEM']['ttspath']."/".$filename.".mp3") == 0)  {
 		#	LOGGING("Something went wrong :-( The file has not been saved. Please check your storage device if enough space is availabel", 3);	
@@ -337,6 +338,26 @@ function play_tts($filename) {
 		while ($sonos->GetTransportInfo()==1) {
 			usleep(200000); // check every 200ms
 		}
+		// If batch T2S has been be played
+		if (!empty($t2s_batch))  {
+			$i = $message_pos;
+			foreach ($t2s_batch as $t2s => $value) {
+				$mess_pos = $message_pos;
+				$sonos->RemoveFromQueue($mess_pos);
+				$i++;
+			} 
+			unlink ($filenamebatch);
+			LOGGING("T2S batch files has been removed from Queue", 7);	
+		} else {
+			// If single T2S has been be played
+			$sonos->RemoveFromQueue($message_pos);
+			LOGGING("T2S has been removed from Queue", 7);	
+			if(isset($_GET['playgong'])) {		
+				$sonos->RemoveFromQueue($message_pos);
+				LOGGING("Jingle has been removed from Queue", 7);	
+			}	
+		}	
+		
 		// if Playlist has more than 998 entries
 		if ($save_plist > 998) {
 			$sonos->ClearQueue();
@@ -346,26 +367,6 @@ function play_tts($filename) {
 			DelPlaylist();
 			LOGGING("Temporary playlist 'temp_t2s' has been finally deleted", 7);		
 		// if Playlist has less than or equal 998 entries
-		} else {
-			// If batch T2S has been be played
-			if ((!empty($t2s_batch)) and (!isset($_GET['playbatch'])))  {
-				$i = $message_pos;
-				foreach ($t2s_batch as $t2s => $value) {
-					$mess_pos = $message_pos;
-					$sonos->RemoveFromQueue($mess_pos);
-					$i++;
-				} 
-				unlink ($filenamebatch);
-				LOGGING("T2S batch files has been removed from Queue", 7);		
-			} else {
-				// If single T2S has been be played
-				$sonos->RemoveFromQueue($message_pos);
-				LOGGING("T2S has been removed from Queue", 7);		
-			}
-			if(isset($_GET['playgong'])) {		
-			$sonos->RemoveFromQueue($message_pos);
-			LOGGING("Jingle has been removed from Queue", 7);		
-			}
 		}
 		LOGGING("T2S play process has been successful finished", 6);
 		return $actual;
@@ -467,7 +468,6 @@ function sendmessage() {
 			LOGGING("Room Coordinator has been identified", 7);		
 			$sonos = new PHPSonos($coord[0]); 
 			$sonos->SetMute(false);
-			$sonos->SetVolume($volume);
 			play_tts($messageid);
 			restoreSingleZone();
 			$mode = "";
@@ -488,7 +488,7 @@ function sendmessage() {
 **/
 			
 function sendgroupmessage() {			
-			global $coord, $sonos, $text, $sonoszone, $member, $master, $zone, $messageid, $logging, $textstring, $voice, $config, $mute, $membermaster, $getgroup, $checkgroup, $time_start, $mode, $modeback, $actual;
+			global $coord, $sonos, $text, $sonoszone, $member, $master, $zone, $messageid, $logging, $textstring, $voice, $config, $mute, $volume, $membermaster, $getgroup, $checkgroup, $time_start, $mode, $modeback, $actual;
 			
 			$time_start = microtime(true);
 			if ((empty($config['TTS']['t2s_engine'])) or (empty($config['TTS']['messageLang'])))  {
@@ -589,28 +589,8 @@ function sendgroupmessage() {
 			// master der array hinzufügen
 			array_push($group, $master);
 			// Regelung des Volumes für T2S
-			foreach ($group as $memplayer => $zone2) {
-				$sonos = new PHPSonos($sonoszone[$zone2][0]);
-				if(isset($_GET['volume']) or isset($_GET['groupvolume']))  { 
-					isset($_GET['volume']) ? $groupvolume = $_GET['volume'] : $groupvolume = $_GET['groupvolume'];
-					if(isset($_GET['volume'])) {
-						$final_vol = $groupvolume;
-						$volumegroup = "Individual Volume per Player of the group has been set";	
-					} else {
-						$newvolume = $sonos->GetVolume();
-						$final_vol = $newvolume + ($newvolume * ($groupvolume / 100));  // multiplizieren
-						// prüfen ob errechnete Volume > 100 ist, falls ja max. auf 100 setzen
-						$final_vol > 100 ? $final_vol = 100 : $final_vol;
-						$volumegroup = "Individual Volume per Player of the group has been set";
-					}
-				} else {
-					$final_vol = $sonoszone[$zone2][3];
-					$volumegroup = "Standard Volume from config for all Zone Members of group has been set";
-				}
-				$sonos->SetVolume($final_vol);
-				$sonos->SetMute(false);
-			}
-			LOGGING("$volumegroup", 7);		
+			volume_group();
+			$sonos->SetVolume($volume);
 			play_tts($messageid);
 			// wiederherstellen der Ursprungszustände
 			restoreGroupZone();
@@ -647,61 +627,6 @@ function t2s_playbatch() {
 		exit();
 	}
 	say();
-}
-
-
-/**
-* Function : say_radio_station --> announce radio station before playing Station
-*
-* @param: 
-* @return: 
-**/
-function say_radio_station() {
-			
-	# nach nextradio();
-	global $master, $sonoszone, $config, $volume, $sonos, $coord, $messageid, $filename, $MessageStorepath, $nextZoneKey;
-	require_once("addon/sonos-to-speech.php");
-	
-	// if batch has been choosed abort
-	if(isset($_GET['batch'])) {
-		LOGGING("The parameter batch could not be used to announce the radio station!", 4);
-		exit;
-	}
-	$sonos->Stop();
-	/***** übernimmt die gleiche volume wie radio ******
-	#if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
-	#	$volume = $_GET['volume'];
-	#	LOGGING("Volume from syntax been used", 7);		
-	#} else {
-	****/
-	// übernimmt Standard Lautstärke der angegebenen Zone aus config.php
-	$volume = $config['sonoszonen'][$master][3];
-	#LOGGING("Standard Volume from config been used", 7);		
-	#}
-	saveZonesStatus(); // saves all Zones Status
-	$sonos = new PHPSonos($sonoszone[$master][0]);
-	$temp_radio = $sonos->GetMediaInfo();
-	#********************** NEW get text variables*********** ***********
-	$TL = LOAD_T2S_TEXT();
-		
-	$play_stat = $TL['SONOS-TO-SPEECH']['ANNOUNCE_RADIO'] ; 
-	#********************************************************************
-	# Generiert und kodiert Ansage des laufenden Senders
-	$text = ($play_stat.' '.$temp_radio['title']);
-	$textstring = ($text);
-	$rawtext = md5($textstring);
-	$filename = "$rawtext";
-	select_t2s_engine();
-	t2s($textstring, $filename);
-	// get Coordinator of (maybe) pair or single player
-	$coord = getRoomCoordinator($master);
-	LOGGING("Room Coordinator been identified", 7);		
-	$sonos = new PHPSonos($coord[0]); 
-	$sonos->SetMute(false);
-	$sonos->SetVolume($volume);
-	LOGGING("Radio Station Announcement has been played", 6);		
-	play_tts($filename);
-	restoreSingleZone();
 }
 
 

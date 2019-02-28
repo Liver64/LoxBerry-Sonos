@@ -15,6 +15,8 @@
 function playlist() {
 	Global $debug, $sonos, $master, $sonoszone, $config, $volume;
 	
+	$master = $_GET['zone'];
+	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
 	if(isset($_GET['playlist'])) {
 		$sonos->SetQueue("x-rincon-queue:" . trim($sonoszone[$master][1]) . "#0"); 
 		$playlist = $_GET['playlist'];
@@ -28,34 +30,19 @@ function playlist() {
 	$sonoslists=$sonos->GetSONOSPlaylists();
 	$pleinzeln = 0;
 	$gefunden = 0;
+	
+	#volume_group();
 	while ($pleinzeln < count($sonoslists) ) {
 		if($playlist == $sonoslists[$pleinzeln]["title"]) {
 			$plfile = urldecode($sonoslists[$pleinzeln]["file"]);
 			$sonos->ClearQueue();
 			LOGGING("Queue has been cleared.", 7);
-			#$sonos->SetMute(false);
 			$sonos->AddToQueue($plfile); //Datei hinzufügen
 			LOGGING("Playlist has been added to Queue.", 7);
 			$sonos->SetQueue("x-rincon-queue:". trim($sonoszone[$master][1]) ."#0"); 
-			if ((isset($_GET['member'])) and isset($_GET['standardvolume'])) {
-				$member = $_GET['member'];
-				$member = explode(',', $member);
-				foreach ($member as $zone) {
-					$sonos = new PHPSonos($sonoszone[$zone][0]); //Sonos IP Adresse
-					$sonos->SetMute(false);
-					$volume = $config['sonoszonen'][$zone][4];
-					$sonos->SetVolume($config['sonoszonen'][$zone][4]);
-				}
-				LOGGING("Standardvolume for members has been set.", 7);
-				$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
-				$sonos->SetMute(false);
-				$sonos->SetVolume($config['sonoszonen'][$master][4]);
-				LOGGING("Standardvolume for master has been set.", 7);
-				$sonos->Play();
-			} else {
-				check_rampto();
-			}
 			if(!isset($_GET['load'])) {
+				$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
+				$sonos->SetVolume($volume);
 				$sonos->Play();
 			}
 			LOGGING("Playlist is playing.", 7);
@@ -67,7 +54,10 @@ function playlist() {
 				LOGGING("No playlist with the specified name found.", 3);
 				exit;
 			}
-		}			
+		}	
+		#$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
+		#$sonos->SetVolume($volume);
+		#$sonos->Play();		
 }
 
 /**
@@ -78,7 +68,7 @@ function playlist() {
 **/
 
 function zapzone() {
-	global $config, $sonos, $sonoszone, $master, $playzones, $count, $maxzap, $count_file, $curr_zone_file;
+	global $config, $volume, $sonos, $sonoszone, $master, $playzones, $count, $maxzap, $count_file, $curr_zone_file;
 	
 	$sonos = new PHPSonos($sonoszone[$master][0]);
 	if (substr($sonos->GetPositionInfo()["TrackURI"], 0, 15) == "x-rincon:RINCON") {
@@ -121,21 +111,13 @@ function zapzone() {
 	saveCurrentZone($nextZoneKey);
 	if ($config['VARIOUS']['announceradio'] == 1) {
 		say_zone($nextZoneKey);
-	} else {
-		if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
-			$volume = $_GET['volume'];
-			LOGGING("Volume from syntax been used", 7);		
-		} else 	{
-			// übernimmt Standard Lautstärke der angegebenen Zone aus config.php
-			$volume = $config['sonoszonen'][$master][3];
-			LOGGING("Standard Volume from config been used", 7);		
-		}
 	}
 	unset ($playingzones[$nextZoneKey]);
 	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
 	$sonos->SetAVTransportURI("x-rincon:" . $sonoszone[$nextZoneKey][1]);
 	LOGGING("Zone ".$master." has been grouped as member to Zone ".$nextZoneKey, 7);
 	$sonos->SetMute(false);
+	$sonos->SetVolume($volume);
 	}
 
 
@@ -322,6 +304,8 @@ function random_playlist() {
 	$sonos->SetQueue("x-rincon-queue:". trim($sonoszone[$master][1]) ."#0"); 
 	if (!isset($_GET['volume'])) {
 		check_rampto();
+	} else {
+		$sonos->SetVolume($volume);
 	}
 	LOGGING("Random playlist has been added to Queue.", 6);
 	$sonos->Play();
@@ -366,7 +350,7 @@ function next_dynamic() {
 **/
 function say_zone($zone) {
 			
-	global $master, $sonoszone, $config, $volume, $sonos, $coord, $messageid, $filename, $MessageStorepath, $nextZoneKey, $filenameplaysay;
+	global $master, $sonoszone, $config, $volume, $actual, $sonos, $coord, $messageid, $filename, $MessageStorepath, $nextZoneKey, $filenameplaysay;
 	require_once("addon/sonos-to-speech.php");
 	
 	// if batch has been choosed abort
@@ -374,16 +358,9 @@ function say_zone($zone) {
 		LOGGING("The parameter batch could not be used to announce zone!", 4);
 		exit;
 	}
-	#$sonos->Stop();
-	if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
-		$volume = $_GET['volume'];
-		LOGGING("Volume from syntax been used", 7);		
-	} else 	{
-		// übernimmt Standard Lautstärke der angegebenen Zone aus config.php
-		$volume = $config['sonoszonen'][$master][3];
-		LOGGING("Standard Volume from config been used", 7);		
-	}
-	#saveZonesStatus(); // saves all Zones Status
+	$sonos->Stop();
+	sleep(1);
+	saveZonesStatus(); // saves all Zones Status
 	$sonos = new PHPSonos($sonoszone[$master][0]);
 	#********************** NEW get text variables **********************
 	$TL = LOAD_T2S_TEXT();
@@ -402,10 +379,16 @@ function say_zone($zone) {
 	LOGGING("Room Coordinator been identified", 7);		
 	$sonos = new PHPSonos($coord[0]); 
 	$sonos->SetMute(false);
-	$sonos->SetVolume($volume);
+	$volume = $volume + $config['TTS']['correction'];
 	play_tts($filename);
 	LOGGING("Zone Announcement has been played", 6);	
-	#restoreSingleZone();
+	restoreSingleZone();
+	if(isset($_GET['volume'])) {
+		$volume = $_GET['volume'];
+	} else {
+		$volume = $config['sonoszonen'][$master][4];
+	}
+	return $volume;
 }
 
 ?>

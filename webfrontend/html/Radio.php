@@ -22,6 +22,7 @@ function radio(){
 	} else {
 		LOGGING("No radio stations found.", 4);
     }
+	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
 	$coord = $master;
 	$roomcord = getRoomCoordinator($coord);
 	$sonosroom = new PHPSonos($roomcord[0]); //Sonos IP Adresse
@@ -37,6 +38,7 @@ function radio(){
 		$sonos->SetRadio(urldecode($radiolists[$rleinzeln]["res"]),$radiolists[$rleinzeln]["title"]);
 		#$sonos->SetRadio(urldecode($radiolists[$rleinzeln]["res"]));
 		if(!isset($_GET['load'])) {
+			$sonos->SetVolume($volume);
 			$sonos->Play();
 		}
     }
@@ -52,7 +54,7 @@ function radio(){
 * @return: 
 **/
 function nextradio() {
-	global $sonos, $config, $master, $debug, $volume, $tmp_tts;
+	global $sonos, $config, $master, $debug, $volume, $tmp_tts, $sonoszone;
 	
 	if (file_exists($tmp_tts))  {
 		LOGGING("Currently a T2S is running, we skip nextradio for now. Please try again later.",4);
@@ -66,14 +68,6 @@ function nextradio() {
 		exit;
 	}
 	$playstatus = $sonos->GetTransportInfo();
-	if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
-		$so_volume = $_GET['volume'];
-		LOGGING("Volume from syntax been used", 7);		
-	} else 	{
-		// übernimmt Standard Lautstärke der angegebenen Zone aus der config
-		$so_volume = $config['sonoszonen'][$master][4];
-		LOGGING("Standard Volume from config been used", 7);		
-	}
 	$radioname = $sonos->GetMediaInfo();
 	if (!empty($radioname["title"])) {
 		$senderuri = $radioname["title"];
@@ -111,15 +105,10 @@ function nextradio() {
     if ($config['VARIOUS']['announceradio'] == 1) {
 		say_radio_station();
 	}
-    if($playstatus == 1) {
-		$sonos->SetVolume($so_volume);
-		$sonos->Play();
-	} else {
-		check_rampto();
-		$sonos->Play();
-	}
-	LOGGING("Radio Station '".$radioname["title"]."' has been loaded successful by nextradio",6);
-	#print_r($radio_name);
+	$sonos = new PHPSonos($sonoszone[$master][0]);
+	$sonos->SetVolume($volume);
+	$sonos->Play();
+	LOGGING("Radio Station '".$radioname['title']."' has been loaded successful by nextradio",6);
 }
 
 
@@ -158,14 +147,62 @@ function random_radio() {
 	$sonos->ClearQueue();
 	$sonos->SetMute(false);
 	$sonos->SetRadio(urldecode($sonoslists[$random]["res"]),$sonoslists[$random]["title"]);
-	if (!isset($_GET['volume'])) {
-		check_rampto();
-	} else {
-		$radiovolume = $sonos->GetVolume();
-		$sonos->SetVolume($radiovolume);
-	}
+	$sonos->SetVolume($volume);
 	$sonos->Play();
 	LOGGING("Radio Station '".$sonoslists[$random]["title"]."' has been loaded successful by randomradio",6);
 }
+
+
+
+/**
+* Function : say_radio_station --> announce radio station before playing Station
+*
+* @param: 
+* @return: 
+**/
+
+function say_radio_station() {
+			
+	# nach nextradio();
+	global $master, $sonoszone, $config, $volume, $actual, $sonos, $coord, $messageid, $filename, $MessageStorepath, $nextZoneKey;
+	require_once("addon/sonos-to-speech.php");
+	
+	// if batch has been choosed abort
+	if(isset($_GET['batch'])) {
+		LOGGING("The parameter batch could not be used to announce the radio station!", 4);
+		exit;
+	}
+	$sonos->Stop();
+	saveZonesStatus(); // saves all Zones Status
+	$sonos = new PHPSonos($sonoszone[$master][0]);
+	$temp_radio = $sonos->GetMediaInfo();
+	#********************** NEW get text variables **********************
+	$TL = LOAD_T2S_TEXT();
+	$play_stat = $TL['SONOS-TO-SPEECH']['ANNOUNCE_RADIO'] ; 
+	#********************************************************************
+	# Generiert und kodiert Ansage des laufenden Senders
+	$text = ($play_stat.' '.$temp_radio['title']);
+	$textstring = ($text);
+	$rawtext = md5($textstring);
+	$filename = "$rawtext";
+	select_t2s_engine();
+	t2s($textstring, $filename);
+	// get Coordinator of (maybe) pair or single player
+	$coord = getRoomCoordinator($master);
+	LOGGING("Room Coordinator been identified", 7);		
+	$sonos = new PHPSonos($coord[0]); 
+	$sonos->SetMute(false);
+	$volume = $volume + $config['TTS']['correction'];
+	LOGGING("Radio Station Announcement has been played", 6);		
+	play_tts($filename);
+	restoreSingleZone();
+	if(isset($_GET['volume'])) {
+		$volume = $_GET['volume'];
+	} else {
+		$volume = $config['sonoszonen'][$master][4];
+	}
+	return $volume;
+}
+
 
 ?>

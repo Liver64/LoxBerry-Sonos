@@ -98,7 +98,7 @@ our $error_message				= "";
 
 # Set new config options for upgrade installations
 
-# cachesize
+# add new parameter for cachesize
 if (!defined $pcfg->param("MP3.cachesize")) {
 	$pcfg->param("MP3.cachesize", "100");
 } 
@@ -109,6 +109,10 @@ if ($pcfg->param("TTS.volrampto") eq '')  {
 # Rampto type
 if ($pcfg->param("TTS.rampto") eq '')  {
 	$pcfg->param("TTS.rampto", "auto");
+}
+# add new parameter for Volume correction
+if (!defined $pcfg->param("TTS.correction"))  {
+	$pcfg->param("TTS.correction", "8");
 }
 # checkonline
 #if ($pcfg->param("SYSTEM.checkonline") eq '')  {
@@ -459,6 +463,7 @@ sub save
 	$pcfg->param("TTS.API-key", "$R::apikey");
 	$pcfg->param("TTS.secret-key", "$R::seckey");
 	$pcfg->param("TTS.voice", "$R::voice");
+	$pcfg->param("TTS.correction", "$R::correction");
 	$pcfg->param("MP3.file_gong", "$R::file_gong");
 	$pcfg->param("MP3.volumedown", "$R::volume");
 	$pcfg->param("MP3.volumeup", "$R::volume");
