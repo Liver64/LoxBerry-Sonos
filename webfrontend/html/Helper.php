@@ -649,6 +649,7 @@ function playmode_detection($zone, $settings)  {
     $models = [
         "S5"    =>  "PLAY:5",
         "S6"    =>  "PLAY:5",
+		"ZB100" =>  "PLAY:5",
         "ZP80"  =>  "CONNECT",
         "ZP90"  =>  "CONNECT",
 		"S15"   =>  "CONNECT",

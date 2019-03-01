@@ -231,6 +231,7 @@ $plugindata = LBSystem::plugindata();
             "S3"    =>  "PLAY:3",
             "S5"    =>  "PLAY:5",
             "S6"    =>  "PLAY:5",
+			"ZB100" =>  "PLAY:5",
             "S9"    =>  "PLAYBAR",
             "S11"   =>  "PLAYBASE",
             "S13"   =>  "ONE",
