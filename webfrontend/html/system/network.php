@@ -196,10 +196,10 @@ $plugindata = LBSystem::plugindata();
 						];
 			$raum = array_shift($zonen);
 			
-		} else {
-			LOGGING("Sorry, the Sonos model '".$model."' for room '".$room."' has been found, but this model is currently not supported by the Plugin!",3);
-			LOGGING("Please send a mail to olewald64gmail.com in order to get model checked/added to the Plugin, Thanks in advance.",3);
-			continue;
+		#} else {
+		#	LOGGING("Sorry, the Sonos model '".$model."' for room '".$room."' has been found, but this model is currently not supported by the Plugin!",6);
+		#	LOGGING("Please send a mail to olewald64gmail.com in order to get model checked/added to the Plugin, Thanks in advance.",6);
+		#	continue;
 		}
 		$sonosplayerfinal[$raum] = $zonen;
 	}
@@ -231,7 +231,6 @@ $plugindata = LBSystem::plugindata();
             "S3"    =>  "PLAY:3",
             "S5"    =>  "PLAY:5",
             "S6"    =>  "PLAY:5",
-			"ZB100" =>  "PLAY:5",
             "S9"    =>  "PLAYBAR",
             "S11"   =>  "PLAYBASE",
             "S13"   =>  "ONE",

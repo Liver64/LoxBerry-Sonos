@@ -254,5 +254,4 @@
 			[Improvement] T2S Ansage hinsichtlich Verwendung von Statusbaustein optimiert (kein PicoC mehr notwendig)
 			[Improvement] Komplette Überarbeitung der Lautstärkeregelung
 			[Improvement] Neuer Parameter in der Konfig zur T2S Lautstärkeanhebung bei Ansage hinsichtlich nextradio und zapzone
-			[Improvement] Model PLAY:5 (ZB100) added
 			
