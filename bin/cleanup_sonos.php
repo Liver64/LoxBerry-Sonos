@@ -30,12 +30,13 @@ if (!file_exists($myConfigFolder.'/sonos.cfg')) {
 $folderpeace = explode("/",$config['SYSTEM']['path']);
 if ($folderpeace[3] != "data") {
 	// wenn NICHT local dir als Speichermedium selektiert wurde
-	$MessageStorepath = $config['SYSTEM']['path']."/".$hostname."/tts/";
+	#$MessageStorepath = $config['SYSTEM']['path']."/".$hostname."/tts/";
+	$MessageStorepath = $config['SYSTEM']['path']."/tts/";
 } else {
 	// wenn local dir als Speichermedium selektiert wurde
 	$MessageStorepath = $config['SYSTEM']['ttspath']."/";
 }
-
+echo $MessageStorepath;
 // Set defaults if needed
 $storageinterval = trim($config['MP3']['MP3store']);
 $cachesize = !empty($config['MP3']['cachesize']) ? trim($config['MP3']['cachesize']) : "100";
