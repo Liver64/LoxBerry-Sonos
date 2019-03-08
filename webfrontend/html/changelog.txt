@@ -256,4 +256,4 @@
 			[Improvement] Neuer Parameter in der Konfig zur T2S Lautstärkeanhebung bei Ansage hinsichtlich nextradio und zapzone
  3.6.2		[Improvement] source_ZONE=3 für TV als gegenwärtige Eingangsquelle hinzugefügt (virtueller Texteingangsverbinder)
 			[Improvement] Neuer Parameter für Lautstärkeregelung '&keepvolume'. Behält gegenwärtige Lautstärke bei, es sei denn sie ist <7, dann Standard Lautstärke
-			
+			[Bugfix] MP3 Dateien cleanup korrigiert (bei Verwendung von NAS/Netzlaufwerk oder USB wurde nicht reorganisiert)
