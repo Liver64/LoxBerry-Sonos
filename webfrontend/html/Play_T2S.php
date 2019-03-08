@@ -295,6 +295,11 @@ function play_tts($filename) {
 			$meid_file = file_exists($config['SYSTEM']['mp3path']."/".$messageid.".mp3");
 			if (($t2s_file  === true) or ($meid_file  === true))  {
 				if ($t2s_file  === true)  {
+					# check if T2S has been saved/coded correctly
+					if (filesize($config['SYSTEM']['ttspath']."/".$filename.".mp3") == 0)  {
+						LOGGING("Something went wrong :-( the file has not been saved. Please check your storage device and your T2S Engine settings!", 3);
+						exit;						
+					}
 					$sonos->AddToQueue($config['SYSTEM']['httpinterface']."/".$filename.".mp3");
 					LOGGING("T2S '".trim($filename).".mp3' has been added to Queue", 7);
 				} else {
@@ -315,10 +320,7 @@ function play_tts($filename) {
 		$sonos->SetGroupMute(false);
 		$sonos->SetVolume($volume);
 		LOGGING("Mute for relevant Player(s) has been turned off", 7);		
-		#if (filesize($config['SYSTEM']['ttspath']."/".$filename.".mp3") == 0)  {
-		#	LOGGING("Something went wrong :-( The file has not been saved. Please check your storage device if enough space is availabel", 3);	
-		#}
-			try {
+		try {
 			$try_play = $sonos->Play();
 			LOGGING("T2S has been passed to Sonos Application", 5);	
 			LOGGING("In case the announcement wasn't played please check any Messages appearing in the Sonos App during processing the request.", 5);	
@@ -428,14 +430,14 @@ function sendmessage() {
 				fclose($file);
 				exit;
 			}
-			if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
-				$volume = $_GET['volume'];
+			#if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
+			#	$volume = $_GET['volume'];
 				#LOGGING("Volume from syntax been adopted", 7);		
-			} else 	{
+			#} else 	{
 				// übernimmt Standard Lautstärke der angegebenen Zone aus config.php
-				$volume = $config['sonoszonen'][$master][3];
+			#	$volume = $config['sonoszonen'][$master][3];
 				#LOGGING("Standard Volume from zone ".$master."  been used", 7);		
-			}
+			#}
 			#checkaddon();
 			#checkTTSkeys();
 			$save = saveZonesStatus(); // saves all Zones Status

@@ -70,9 +70,28 @@ function playlist() {
 function zapzone() {
 	global $config, $volume, $sonos, $sonoszone, $master, $playzones, $count, $maxzap, $count_file, $curr_zone_file;
 	
+	if (file_exists($tmp_tts))  {
+		LOGGING("Currently a T2S is running, we skip nextradio for now. Please try again later.",6);
+		exit;
+	}
 	$sonos = new PHPSonos($sonoszone[$master][0]);
+	if (file_exists($tmp_tts))  {
+		LOGGING("Currently a T2S is running, we skip zapzone for now. Please try again later. We abort here",4);
+		exit;
+	}
 	if (substr($sonos->GetPositionInfo()["TrackURI"], 0, 15) == "x-rincon:RINCON") {
 		$sonos->BecomeCoordinatorOfStandaloneGroup();
+		LOGGING("Player (Member) ".$master." has been ungrouped!", 6);
+	}
+	if (isset($_GET['member']))  {
+		LOGGING("Function could not be used when Player ".$master." is Master of a Group! We abort here", 4);
+		exit;
+	}
+	try {
+		$sonos->BecomeCoordinatorOfStandaloneGroup();
+		#LOGGING("Player ".$master." has been ungrouped!", 6);
+	} catch (Exception $e) {
+		#LOGGING("Player ".$master." is Single!", 7);
 	}
 	play_zones();
 	$playingzones = $_SESSION["playingzone"];
@@ -273,7 +292,7 @@ function DelPlaylist() {
 **/
 
 function random_playlist() {
-	global $sonos, $sonoszone, $master, $volume, $config;
+	global $sonos, $sonoszone, $master, $min_vol, $volume, $config;
 	
 	if (isset($_GET['member'])) {
 		LOGGING("This function could not be used with groups!", 3);
@@ -298,14 +317,21 @@ function random_playlist() {
 		$random = mt_rand(0, $countpl - 1);
 	}
 	$plfile = urldecode($sonoslists[$random]["file"]);
+	$tmp_volume = $sonos->GetVolume();
 	$sonos->ClearQueue();
 	$sonos->SetMute(false);
 	$sonos->AddToQueue($plfile);
 	$sonos->SetQueue("x-rincon-queue:". trim($sonoszone[$master][1]) ."#0"); 
-	if (!isset($_GET['volume'])) {
-		check_rampto();
+	if(isset($_GET['volume'])) {
+		$volume = $_GET['volume'];
+	} elseif (isset($_GET['keepvolume'])) {
+		if ($tmp_volume >= $min_vol)  {
+			$volume = $tmp_volume;
+		} else {
+			$volume = $config['sonoszonen'][$master][4];
+		}
 	} else {
-		$sonos->SetVolume($volume);
+		$volume = $config['sonoszonen'][$master][4];
 	}
 	LOGGING("Random playlist has been added to Queue.", 6);
 	$sonos->Play();
@@ -350,7 +376,7 @@ function next_dynamic() {
 **/
 function say_zone($zone) {
 			
-	global $master, $sonoszone, $config, $volume, $actual, $sonos, $coord, $messageid, $filename, $MessageStorepath, $nextZoneKey, $filenameplaysay;
+	global $master, $sonoszone, $config, $volume, $min_vol, $actual, $sonos, $coord, $messageid, $filename, $MessageStorepath, $nextZoneKey, $filenameplaysay;
 	require_once("addon/sonos-to-speech.php");
 	
 	// if batch has been choosed abort
@@ -378,6 +404,7 @@ function say_zone($zone) {
 	$coord = getRoomCoordinator($master);
 	LOGGING("Room Coordinator been identified", 7);		
 	$sonos = new PHPSonos($coord[0]); 
+	$tmp_volume = $sonos->GetVolume();
 	$sonos->SetMute(false);
 	$volume = $volume + $config['TTS']['correction'];
 	play_tts($filename);
@@ -385,6 +412,12 @@ function say_zone($zone) {
 	restoreSingleZone();
 	if(isset($_GET['volume'])) {
 		$volume = $_GET['volume'];
+	} elseif (isset($_GET['keepvolume'])) {
+		if ($tmp_volume >= $min_vol)  {
+			$volume = $tmp_volume;
+		} else {
+			$volume = $config['sonoszonen'][$master][4];
+		}
 	} else {
 		$volume = $config['sonoszonen'][$master][4];
 	}

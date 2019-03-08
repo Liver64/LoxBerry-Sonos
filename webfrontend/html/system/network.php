@@ -196,10 +196,10 @@ $plugindata = LBSystem::plugindata();
 						];
 			$raum = array_shift($zonen);
 			
-		#} else {
-		#	LOGGING("Sorry, the Sonos model '".$model."' for room '".$room."' has been found, but this model is currently not supported by the Plugin!",6);
-		#	LOGGING("Please send a mail to olewald64gmail.com in order to get model checked/added to the Plugin, Thanks in advance.",6);
-		#	continue;
+		} else {
+			LOGGING("Sorry, the Sonos model '".$model."' for room '".$room."' has been found, but this model is currently not supported by the Plugin!",6);
+			LOGGING("Please send a mail to olewald64gmail.com in order to get model checked/added to the Plugin, Thanks in advance.",6);
+			continue;
 		}
 		$sonosplayerfinal[$raum] = $zonen;
 	}

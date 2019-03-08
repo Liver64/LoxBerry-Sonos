@@ -54,13 +54,22 @@ function radio(){
 * @return: 
 **/
 function nextradio() {
-	global $sonos, $config, $master, $debug, $volume, $tmp_tts, $sonoszone;
+	global $sonos, $config, $master, $debug, $min_vol, $volume, $tmp_tts, $sonoszone;
 	
 	if (file_exists($tmp_tts))  {
-		LOGGING("Currently a T2S is running, we skip nextradio for now. Please try again later.",4);
+		LOGGING("Currently a T2S is running, we skip nextradio for now. Please try again later.",6);
 		exit;
 	}
-	
+	if (isset($_GET['member']))  {
+		LOGGING("Function could not be used within Groups!!", 6);
+		exit;
+	}
+	try {
+		$sonos->BecomeCoordinatorOfStandaloneGroup();
+		#LOGGING("Player ".$master." has been ungrouped!", 6);
+	} catch (Exception $e) {
+		#LOGGING("Player ".$master." is Single!", 7);
+	}
 	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
 	$radioanzahl_check = count($config['RADIO']);
 	if($radioanzahl_check == 0)  {
@@ -120,11 +129,21 @@ function nextradio() {
 **/
 
 function random_radio() {
-	global $sonos, $sonoszone, $master, $volume, $config;
+	global $sonos, $sonoszone, $master, $volume, $min_vol, $config, $tmp_tts;
 	
-	if (isset($_GET['member'])) {
-		LOGGING("This function could not be used with groups!", 3);
+	if (file_exists($tmp_tts))  {
+		LOGGING("Currently a T2S is running, we skip nextradio for now. Please try again later.",6);
 		exit;
+	}
+	if (isset($_GET['member']))  {
+		LOGGING("Function could not be used within Groups!!", 6);
+		exit;
+	}
+	try {
+		$sonos->BecomeCoordinatorOfStandaloneGroup();
+		#LOGGING("Player ".$master." has been ungrouped!", 6);
+	} catch (Exception $e) {
+		#LOGGING("Player ".$master." is Single!", 7);
 	}
 	$sonoslists = $sonos->Browse("R:0/0","c");
 	print_r($sonoslists);
@@ -164,7 +183,7 @@ function random_radio() {
 function say_radio_station() {
 			
 	# nach nextradio();
-	global $master, $sonoszone, $config, $volume, $actual, $sonos, $coord, $messageid, $filename, $MessageStorepath, $nextZoneKey;
+	global $master, $sonoszone, $config, $min_vol, $volume, $actual, $sonos, $coord, $messageid, $filename, $MessageStorepath, $nextZoneKey;
 	require_once("addon/sonos-to-speech.php");
 	
 	// if batch has been choosed abort
@@ -192,12 +211,19 @@ function say_radio_station() {
 	LOGGING("Room Coordinator been identified", 7);		
 	$sonos = new PHPSonos($coord[0]); 
 	$sonos->SetMute(false);
+	$tmp_volume = $sonos->GetVolume();
 	$volume = $volume + $config['TTS']['correction'];
 	LOGGING("Radio Station Announcement has been played", 6);		
 	play_tts($filename);
 	restoreSingleZone();
 	if(isset($_GET['volume'])) {
 		$volume = $_GET['volume'];
+	} elseif (isset($_GET['keepvolume'])) {
+		if ($tmp_volume >= $min_vol)  {
+			$volume = $tmp_volume;
+		} else {
+			$volume = $config['sonoszonen'][$master][4];
+		}
 	} else {
 		$volume = $config['sonoszonen'][$master][4];
 	}

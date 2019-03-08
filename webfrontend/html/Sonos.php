@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	3.6.1
-# Datum: 	28.02.2019
+# Version: 	3.6.2
+# Datum: 	08.03.2019
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
@@ -53,6 +53,7 @@ $sleeptimegong = "3";											// waiting time before playing t2s
 $maxzap = '60';													// waiting time before zapzone been initiated again
 $lbport = lbwebserverport();									// get loxberry port
 $tmp_tts = "/run/shm/tmp_tts";									// path/file for T2S functions
+$min_vol = "7";													// min.vol as exception for current volume
 
 #echo '<PRE>';
 
@@ -194,17 +195,39 @@ $valid_playmodes = array("NORMAL","REPEAT_ALL","REPEAT_ONE","SHUFFLE_NOREPEAT","
 # Start des eigentlichen Srcipts
 
 # volume for master
-if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
-	$volume = $_GET['volume'];
-	$master = $_GET['zone'];
-	// prüft auf Max. Lautstärke und korrigiert diese ggf.
-	if($volume >= $config['sonoszonen'][$master][5]) {
-		$volume = $config['sonoszonen'][$master][5];
-		LOGGING("Individual Volume for Player ".$master." has been reduced to: ".$volume, 7);
-	} else {
-		LOGGING("Individual Volume for Master Player ".$master." has been set to: ".$volume, 7);
+if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100 or isset($_GET['keepvolume'])) {
+	# volume get from syntax
+	if (isset($_GET['volume']))  {
+		$volume = $_GET['volume'];
+		$master = $_GET['zone'];
+		// prüft auf Max. Lautstärke und korrigiert diese ggf.
+		if($volume >= $config['sonoszonen'][$master][5]) {
+			$volume = $config['sonoszonen'][$master][5];
+			LOGGING("Individual Volume for Player ".$master." has been reduced to: ".$volume, 7);
+		} else {
+			LOGGING("Individual Volume for Master Player ".$master." has been set to: ".$volume, 7);
+		}
+	# current volume should be used
+	} elseif (isset($_GET['keepvolume']))  {
+		$master = $_GET['zone'];
+		$sonos = new PHPSonos($sonoszonen[$master][0]); //Sonos IP Adresse
+		$tm_volume = $sonos->GetVolume();
+		# if current volume is less then treshold then take standard from config
+		if ($tm_volume >= $min_vol)  {
+			$volume = $tm_volume;
+			LOGGING("Volume for Master Player ".$master." has been set to current volume", 7);
+		} else {
+			if (isset(($_GET['text'])) or isset(($_GET['messageid'])))  {
+				$volume = $config['sonoszonen'][$master][3];
+				LOGGING("T2S Volume for Master Player ".$master." is less then ".$min_vol." and has been set exceptional to Standard volume ".$config['sonoszonen'][$master][3], 7);
+			} else {
+				$volume = $config['sonoszonen'][$master][4];
+				LOGGING("Volume for Master Player ".$master." is less then ".$min_vol." and has been set exceptional to Standard volume ".$config['sonoszonen'][$master][4], 7);
+			}
+		}
 	}
 } else {
+	# use standard volume from config
 	$master = $_GET['zone'];
 	$sonos = new PHPSonos($sonoszonen[$master][0]);
 	$tmp_vol = $sonos->GetVolume();
@@ -214,13 +237,13 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 	}
 	if (isset(($_GET['text'])) or isset(($_GET['messageid'])))  {
 		$volume = $config['sonoszonen'][$master][3];
+		LOGGING("Standard T2S Volume for Master Player ".$master." has been set to: ".$volume, 7);
 	} else {
 		$volume = $config['sonoszonen'][$master][4];
+		LOGGING("Standard Volume for Master Player ".$master." has been set to: ".$volume, 7);
 	}
-	#$sonos = new PHPSonos($sonoszonen[$master][0]);
-	#$sonos->SetVolume($volume);
-	LOGGING("Standard Volume for Master Player ".$master." has been set to: ".$volume, 7);
 }
+
 
 
 if(isset($_GET['playmode'])) { 
@@ -554,6 +577,16 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		
 		case 'nextpush':
+			if (isset($_GET['member']))  {
+				LOGGING("Function could not be used within Groups!!", 6);
+				exit;
+			}
+			try {
+				$sonos->BecomeCoordinatorOfStandaloneGroup();
+				#LOGGING("Player ".$master." has been ungrouped!", 6);
+			} catch (Exception $e) {
+				#LOGGING("Player ".$master." is Single!", 7);
+			}
 			checkifmaster($master);
 			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 			($posinfo = $sonos->GetPositionInfo());
@@ -908,7 +941,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		case 'setgroupvolume':
 			$sonos = new PHPSonos($sonoszone[$master][0]);
-			$GroupVolume = $_GET['volume'];
+			echo $GroupVolume = $_GET['volume'];
 			$sonos->SnapshotGroupVolume();
 			$GroupVolume = $sonos->SetGroupVolume($GroupVolume);
 		break;
@@ -1540,7 +1573,7 @@ function getsonosinfo() {
 
 function volume_group()  {
 	
-	global $sonoszone, $sonos, $master, $config, $sonoszonen;
+	global $sonoszone, $sonos, $master, $config, $sonoszonen, $min_vol;
 	
 	$master = $_GET['zone'];
 	$sonos = new PHPSonos($sonoszone[$master][0]);
@@ -1582,21 +1615,46 @@ function volume_group()  {
 		foreach ($member as $memplayer => $zone2) {
 			$sonos = new PHPSonos($sonoszone[$zone2][0]);
 			#$sonos->SetMute(true);
-			if(isset($_GET['volume']) or isset($_GET['groupvolume']))  { 
-				isset($_GET['volume']) ? $groupvolume = $_GET['volume'] : $groupvolume = $_GET['groupvolume'];
+			if(isset($_GET['volume']) or isset($_GET['groupvolume']) or isset($_GET['keepvolume']))  { 
+				//isset($_GET['volume']) ? $groupvolume = $_GET['volume'] : $groupvolume = $_GET['groupvolume'];
 				if(isset($_GET['volume'])) {
-					$volume = $groupvolume;
-					LOGGING("Individual Volume for Player ".$zone2." has been set to: ".$volume, 7);
-				} else {
+					# Volume from Syntax/URL
+					$volume = $_GET['volume'];
+					LOGGING("Individual Volume for Group Member ".$zone2." has been set to: ".$volume, 7);
+				} elseif (isset($_GET['groupvolume'])) {
+					# Groupvolume from Syntax/URL
 					$newvolume = $sonos->GetVolume();
 					$volume = $newvolume + ($newvolume * ($groupvolume / 100));  // multiplizieren
 					// prüfen ob errechnete Volume > 100 ist, falls ja max. auf 100 setzen
 					$volume > 100 ? $volume = 100 : $volume;
-					LOGGING("Individual Volume for Player ".$zone2." has been reduced to: ".$volume, 7);
+					LOGGING("Group Volume for Member ".$zone2." has been set to: ".$volume, 7);
+				} elseif (isset($_GET['keepvolume'])) {
+					# current volume from Syntax/URL
+					$tmg_volume = $sonos->GetVolume();
+					# if current volume is less then treshold then take standard from config
+					if ($tmg_volume >= $min_vol)  {
+						$volume = $tmg_volume;
+						LOGGING("Volume for Member ".$zone2." has been set to current volume", 7);
+					} else {
+						if (isset(($_GET['text'])) or isset(($_GET['messageid'])))  {
+							$volume = $config['sonoszonen'][$zone2][3];
+							LOGGING("T2S Volume for Member ".$zone2." is less then ".$min_vol." and has been set exceptional to Standard volume ".$config['sonoszonen'][$zone2][3], 7);
+						} else {
+							$volume = $config['sonoszonen'][$zone2][4];
+							LOGGING("Volume for Member ".$zone2." is less then ".$min_vol." and has been set exceptional to Standard volume ".$config['sonoszonen'][$zone2][4], 7);
+						}
+					}
 				}
 			} else {
-				$volume = $sonoszone[$zone2][3];
-				LOGGING("Standard Volume for Player ".$zone2." has been set to: ".$volume, 7);
+				# No volume from Syntax/URL
+				if (isset(($_GET['text'])) or isset(($_GET['messageid'])))  {
+					# T2S Standard Volume
+					$volume = $sonoszone[$zone2][3];
+				} else {
+					# Sonos Standard Volume
+					$volume = $sonoszone[$zone2][4];
+				}
+				LOGGING("Standard Volume for Group Member ".$zone2." has been set to: ".$volume, 7);
 			}
 			$sonos->SetMute(false);
 			$sonos->SetVolume($volume);
