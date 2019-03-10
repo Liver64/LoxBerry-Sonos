@@ -9,6 +9,7 @@
 
 header('Content-Type: text/html; charset=utf-8');
 
+require_once "PHPSonos.php";
 require_once "loxberry_system.php";
 require_once "loxberry_log.php";
 require_once "logging.php";
@@ -25,6 +26,7 @@ $pluginversion = $pluginversion_temp['PLUGINDB_VERSION'];
 $home = $lbhomedir;
 $folder = $lbpplugindir;
 $myIP = $_SERVER["SERVER_ADDR"];
+
 #echo "<PRE>"; 
 
 error_reporting(E_ALL);
@@ -119,7 +121,19 @@ $plugindata = LBSystem::plugindata();
 	} else {
 		LOGINF('IP-adresses from Sonos devices has been successful detected by MULTICAST!');
 	}
-		
+	# exclude RF of Stereo Pair
+	$devicecheck = [];
+	foreach ($devices as $newzoneip) {
+		$sonos = new PHPSonos($newzoneip);
+		$zone_details = $sonos->GetZoneGroupAttributes();
+		if (!empty($zone_details['CurrentZonePlayerUUIDsInGroup']))  {
+			array_push($devicecheck, $newzoneip);
+		} else {
+			LOGGING("IP-address '". $newzoneip. "' seems to be a part of a Stereopair/Surround setup and has not been added.",6);
+		}
+	}
+	//print_r($devicecheck);
+	$devices = $devicecheck;	
 	getSonosDevices($devices);
 	$devicelist = implode(", ", $devices);
 	LOGGING("Following Sonos IP-addresses has been detected: ". $devicelist,5);

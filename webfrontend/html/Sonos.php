@@ -54,6 +54,7 @@ $maxzap = '60';													// waiting time before zapzone been initiated again
 $lbport = lbwebserverport();									// get loxberry port
 $tmp_tts = "/run/shm/tmp_tts";									// path/file for T2S functions
 $min_vol = "7";													// min.vol as exception for current volume
+$min_sec = 5;													// min. in seconds before same mp3 been played again (Statubsaustein)
 
 #echo '<PRE>';
 
@@ -432,6 +433,31 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			LOGGING("Softstop been executed.", 7);
 		break; 
 		
+		
+		case 'softstopall':
+		foreach ($sonoszone as $zone => $player) {
+			checkifmaster($zone);
+			$sonos = new PHPSonos($sonoszone[$zone][0]);
+			$state = $sonos->GetTransportInfo();
+			if ($state == '1') {
+				$return = getZoneStatus($zone); // get current Zone Status (Single, Member or Master)
+				if($return <> 'member') {
+					//echo $zone."<br>";
+					$save_vol_stop = $sonos->GetVolume();
+					$sonos->RampToVolume("SLEEP_TIMER_RAMP_TYPE", "0");
+					while ($sonos->GetVolume() > 0) {
+						sleep('1');
+					}
+					checkifmaster($zone);
+					$sonos = new PHPSonos($sonoszone[$zone][0]); //Sonos IP Adresse
+					$sonos->Pause();
+					$sonos->SetVolume($save_vol_stop);
+				}
+			}
+		}
+		LOGGING("Softstopall been executed.", 7);
+		break; 
+		
 		  
 		case 'toggle':
 			if($sonos->GetTransportInfo() == 1)  {
@@ -691,7 +717,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 	
 
 	case 'sendgroupmessage':
-		global $sonos, $coord, $text, $member, $master, $zone, $messageid, $logging, $words, $voice, $accesskey, $secretkey, $rampsleep, $config, $save_status, $mute, $membermaster, $groupvol, $checkgroup;
+		#global $sonos, $coord, $text, $min_sec, $member, $master, $zone, $messageid, $logging, $words, $voice, $accesskey, $secretkey, $rampsleep, $config, $save_status, $mute, $membermaster, $groupvol, $checkgroup;
 		LOGGING("function 'action=sendgroupmessage...' has been depreciated. Please change your syntax to 'action=say...'", 6); 
 		$oldtext="old";
 		$newtext="new";
@@ -706,19 +732,19 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$oldtext=fread($myfile,8192);
 			fclose($myfile);
 		}	
-		if ((($oldtext==$newtext) AND( $last > 10)) OR ($oldtext!=$newtext))  {
+		if ((($oldtext==$newtext) AND( $last > $min_sec)) OR ($oldtext!=$newtext))  {
 			sendgroupmessage();
 			$myfile = fopen($filenst, "w") or LOGGING('Unable to open file!', 4);
 			fwrite($myfile,$newtext);
 			fclose($myfile);
 		} else {
-			LOGGING("Same text has been announced within the last 10 seconds. We skip this anouncement", 5); 
+			LOGGING("Same text has been announced within the last ".$min_sec." seconds. We skip this anouncement", 5); 
 		}
 	break;
 		
 		
 	case 'sendmessage':
-		global $text, $coord, $master, $messageid, $logging, $words, $voice, $config, $actual, $player, $volume, $coord, $time_start;
+		#global $text, $coord, $master, $min_sec, $messageid, $logging, $words, $voice, $config, $actual, $player, $volume, $coord, $time_start;
 		LOGGING("function 'action=sendmessage...' has been depreciated. Please change your syntax to 'action=say...'", 6); 
 		$oldtext="old";
 		$newtext="new";
@@ -733,13 +759,13 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$oldtext=fread($myfile,8192);
 			fclose($myfile);
 		}	
-		if ((($oldtext==$newtext) AND( $last > 10)) OR ($oldtext!=$newtext))  {
+		if ((($oldtext==$newtext) AND( $last > $min_sec)) OR ($oldtext!=$newtext))  {
 			sendmessage();
 			$myfile = fopen($filenst, "w") or LOGGING('Unable to open file!', 4);
 			fwrite($myfile,$newtext);
 			fclose($myfile);
 		} else {
-			LOGGING("Same text has been announced within the last 10 seconds. We skip this anouncement", 5); 
+			LOGGING("Same text has been announced within the last ".$min_sec." seconds. We skip this anouncement", 5); 
 		}
 	break;
 	
@@ -758,13 +784,13 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$oldtext=fread($myfile,8192);
 			fclose($myfile);
 		}	
-		if ((($oldtext==$newtext) AND( $last > 10)) OR ($oldtext!=$newtext))  {
+		if ((($oldtext==$newtext) AND( $last > $min_sec)) OR ($oldtext!=$newtext))  {
 			say();
 			$myfile = fopen($filenst, "w") or LOGGING('Unable to open file!', 4);
 			fwrite($myfile,$newtext);
 			fclose($myfile);
 		} else {
-			LOGGING("Same text has been announced within the last 10 seconds. We skip this anouncement", 5); 
+			LOGGING("Same text has been announced within the last ".$min_sec." seconds. We skip this anouncement", 5); 
 		}
 	break;
 	
@@ -818,7 +844,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 			
 		case 'getzonestatus':
-			getZoneStatus($master);
+			print_r(getZoneStatus($master));
 		break;
 			
 
@@ -1331,9 +1357,8 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$sonos->Play();
 			usleep($json['duration-ms'] * 1000);
 			$sonos->ClearQueue();
-			
 		break;
-				
+		
 		case 'getzoneinfo':
 			$GetZoneInfo = $sonos->GetzoneInfo();
 			echo '<PRE>';
@@ -1679,7 +1704,7 @@ function shutdown()
 	}
 	@unlink($tmp_tts);
 	#LOGEND("PHP finished");
-	
 }
+
 ?>
 

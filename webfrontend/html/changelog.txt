@@ -257,3 +257,4 @@
  3.6.2		[Improvement] source_ZONE=3 für TV als gegenwärtige Eingangsquelle hinzugefügt (virtueller Texteingangsverbinder)
 			[Improvement] Neuer Parameter für Lautstärkeregelung '&keepvolume'. Behält gegenwärtige Lautstärke bei, es sei denn sie ist <7, dann Standard Lautstärke
 			[Bugfix] MP3 Dateien cleanup korrigiert (bei Verwendung von NAS/Netzlaufwerk oder USB wurde nicht reorganisiert)
+			[Bugfix] Scannen nach Zonen optimiert um den RF (rechten Lautsprecher) eines Stereopaares auszuschließen

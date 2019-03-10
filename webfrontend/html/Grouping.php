@@ -363,7 +363,7 @@ function checkDeltaArray() {
 * Funktion : 	checkifmaster --> prüft ob die Zone aus der Syntax auch der Master ist, falls nicht wird der Gruppenmaster zurückgegeben
 *
 * @param: $master 
-* @return: $sater --> neuer master
+* @return: $master --> neuer master
 **/
 
 function checkifmaster($master) {
