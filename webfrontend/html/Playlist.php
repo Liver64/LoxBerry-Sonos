@@ -68,30 +68,17 @@ function playlist() {
 **/
 
 function zapzone() {
-	global $config, $volume, $sonos, $sonoszone, $master, $playzones, $count, $maxzap, $count_file, $curr_zone_file;
+	global $config, $volume, $tmp_tts, $sonos, $sonoszone, $master, $playzones, $count, $maxzap, $count_file, $curr_zone_file;
 	
 	if (file_exists($tmp_tts))  {
-		LOGGING("Currently a T2S is running, we skip nextradio for now. Please try again later.",6);
+		LOGGING("Currently a T2S is running, we skip zapzone for now. Please try again later.",6);
 		exit;
 	}
 	$sonos = new PHPSonos($sonoszone[$master][0]);
-	if (file_exists($tmp_tts))  {
-		LOGGING("Currently a T2S is running, we skip zapzone for now. Please try again later. We abort here",4);
-		exit;
-	}
-	if (substr($sonos->GetPositionInfo()["TrackURI"], 0, 15) == "x-rincon:RINCON") {
+	$check_stat = getZoneStatus($master);
+	if ($check_stat == "member")  {
 		$sonos->BecomeCoordinatorOfStandaloneGroup();
-		LOGGING("Player (Member) ".$master." has been ungrouped!", 6);
-	}
-	if (isset($_GET['member']))  {
-		LOGGING("Function could not be used when Player ".$master." is Master of a Group! We abort here", 4);
-		exit;
-	}
-	try {
-		$sonos->BecomeCoordinatorOfStandaloneGroup();
-		#LOGGING("Player ".$master." has been ungrouped!", 6);
-	} catch (Exception $e) {
-		#LOGGING("Player ".$master." is Single!", 7);
+		LOGGING("Zone ".$master." has been ungrouped.");
 	}
 	play_zones();
 	$playingzones = $_SESSION["playingzone"];
@@ -129,7 +116,11 @@ function zapzone() {
 	#echo '<br>Zone: ['.$nextZoneKey.']';
 	saveCurrentZone($nextZoneKey);
 	if ($config['VARIOUS']['announceradio'] == 1) {
-		say_zone($nextZoneKey);
+		if ($check_stat == "single")  {
+			say_zone($nextZoneKey);
+		} else {
+			LOGGING("Song / Artist could not be announced because Master is grouped",6);
+		}
 	}
 	unset ($playingzones[$nextZoneKey]);
 	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);

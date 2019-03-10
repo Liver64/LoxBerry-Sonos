@@ -60,17 +60,21 @@ function nextradio() {
 		LOGGING("Currently a T2S is running, we skip nextradio for now. Please try again later.",6);
 		exit;
 	}
-	if (isset($_GET['member']))  {
-		LOGGING("Function could not be used within Groups!!", 6);
-		exit;
-	}
-	try {
-		$sonos->BecomeCoordinatorOfStandaloneGroup();
+	#if (isset($_GET['member']))  {
+	#	LOGGING("Function could not be used within Groups!!", 6);
+	#	exit;
+	#}
+	#try {
+	#	$sonos->BecomeCoordinatorOfStandaloneGroup();
 		#LOGGING("Player ".$master." has been ungrouped!", 6);
-	} catch (Exception $e) {
+	#} catch (Exception $e) {
 		#LOGGING("Player ".$master." is Single!", 7);
-	}
+	#}
+	#$coord = getRoomCoordinator($master);
+	#$masterrincon = $coord[1]; 
+	#$sonos = new PHPSonos($coord[0]);
 	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
+	$sonos->ClearQueue();
 	$radioanzahl_check = count($config['RADIO']);
 	if($radioanzahl_check == 0)  {
 		LOGGING("There are no Radio Stations maintained in the config. Pls update before using function NEXTRADIO or ZAPZONE!", 3);
@@ -112,9 +116,15 @@ function nextradio() {
 	$info_r .= "Radioanzahl: " .$radioanzahl;
 	LOGGING('Next Radio Info: '.($info_r),7);
     if ($config['VARIOUS']['announceradio'] == 1) {
-		say_radio_station();
+		$check_stat = getZoneStatus($master);
+		if ($check_stat == "single")  {
+			say_radio_station();
+		} else {
+			LOGGING("Radio Station could not be announced because Master is grouped",6);
+		}
 	}
-	$sonos = new PHPSonos($sonoszone[$master][0]);
+	$coord = getRoomCoordinator($master);
+	$sonos = new PHPSonos($coord[0]);
 	$sonos->SetVolume($volume);
 	$sonos->Play();
 	LOGGING("Radio Station '".$radioname['title']."' has been loaded successful by nextradio",6);
@@ -135,16 +145,16 @@ function random_radio() {
 		LOGGING("Currently a T2S is running, we skip nextradio for now. Please try again later.",6);
 		exit;
 	}
-	if (isset($_GET['member']))  {
-		LOGGING("Function could not be used within Groups!!", 6);
-		exit;
-	}
-	try {
-		$sonos->BecomeCoordinatorOfStandaloneGroup();
+	#if (isset($_GET['member']))  {
+	#	LOGGING("Function could not be used within Groups!!", 6);
+	#	exit;
+	#}
+	#try {
+	#	$sonos->BecomeCoordinatorOfStandaloneGroup();
 		#LOGGING("Player ".$master." has been ungrouped!", 6);
-	} catch (Exception $e) {
+	#} catch (Exception $e) {
 		#LOGGING("Player ".$master." is Single!", 7);
-	}
+	#}
 	$sonoslists = $sonos->Browse("R:0/0","c");
 	print_r($sonoslists);
 	if(!isset($_GET['except'])) {
@@ -193,7 +203,9 @@ function say_radio_station() {
 	}
 	$sonos->Stop();
 	saveZonesStatus(); // saves all Zones Status
-	$sonos = new PHPSonos($sonoszone[$master][0]);
+	$coord = getRoomCoordinator($master);
+	LOGGING("Room Coordinator been identified", 7);		
+	$sonos = new PHPSonos($coord[0]); 
 	$temp_radio = $sonos->GetMediaInfo();
 	#********************** NEW get text variables **********************
 	$TL = LOAD_T2S_TEXT();
@@ -206,14 +218,10 @@ function say_radio_station() {
 	$filename = "$rawtext";
 	select_t2s_engine();
 	t2s($textstring, $filename);
-	// get Coordinator of (maybe) pair or single player
-	$coord = getRoomCoordinator($master);
-	LOGGING("Room Coordinator been identified", 7);		
-	$sonos = new PHPSonos($coord[0]); 
 	$sonos->SetMute(false);
 	$tmp_volume = $sonos->GetVolume();
 	$volume = $volume + $config['TTS']['correction'];
-	LOGGING("Radio Station Announcement has been played", 6);		
+	LOGGING("Radio Station Announcement has been announced", 6);		
 	play_tts($filename);
 	restoreSingleZone();
 	if(isset($_GET['volume'])) {

@@ -603,19 +603,9 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		
 		case 'nextpush':
-			if (isset($_GET['member']))  {
-				LOGGING("Function could not be used within Groups!!", 6);
-				exit;
-			}
-			try {
-				$sonos->BecomeCoordinatorOfStandaloneGroup();
-				#LOGGING("Player ".$master." has been ungrouped!", 6);
-			} catch (Exception $e) {
-				#LOGGING("Player ".$master." is Single!", 7);
-			}
 			checkifmaster($master);
 			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
-			($posinfo = $sonos->GetPositionInfo());
+			$posinfo = $sonos->GetPositionInfo();
 			$duration = $posinfo['duration'];
 			$state = $posinfo['TrackURI'];
 			// Nichts läuft
@@ -691,124 +681,120 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
       
     
-	case 'cover':
-		cover();
-	break;   
-		
-		
-	case 'title':
-		title();
-	break;   
-			 
-		
-	case 'artist':
-		artist();
-	break;   
-		
-			 
-	case 'album':
-		album();
-	break;
-
-		
-	case 'titelinfo':
-		titelinfo();
-	break;
-	
-
-	case 'sendgroupmessage':
-		#global $sonos, $coord, $text, $min_sec, $member, $master, $zone, $messageid, $logging, $words, $voice, $accesskey, $secretkey, $rampsleep, $config, $save_status, $mute, $membermaster, $groupvol, $checkgroup;
-		LOGGING("function 'action=sendgroupmessage...' has been depreciated. Please change your syntax to 'action=say...'", 6); 
-		$oldtext="old";
-		$newtext="new";
-		$filenst="/run/shm/t2s_stat.tmp";
-		$last=time();
-
-		if (isset($_GET["text"])) $newtext=$_GET["text"];
-
-		if (file_exists($filenst)) {
-			$last=time()-filemtime($filenst);
-			$myfile = fopen($filenst, "r") or LOGGING('Unable to open file!', 4);
-			$oldtext=fread($myfile,8192);
-			fclose($myfile);
-		}	
-		if ((($oldtext==$newtext) AND( $last > $min_sec)) OR ($oldtext!=$newtext))  {
-			sendgroupmessage();
-			$myfile = fopen($filenst, "w") or LOGGING('Unable to open file!', 4);
-			fwrite($myfile,$newtext);
-			fclose($myfile);
-		} else {
-			LOGGING("Same text has been announced within the last ".$min_sec." seconds. We skip this anouncement", 5); 
-		}
-	break;
-		
-		
-	case 'sendmessage':
-		#global $text, $coord, $master, $min_sec, $messageid, $logging, $words, $voice, $config, $actual, $player, $volume, $coord, $time_start;
-		LOGGING("function 'action=sendmessage...' has been depreciated. Please change your syntax to 'action=say...'", 6); 
-		$oldtext="old";
-		$newtext="new";
-		$filenst="/run/shm/t2s_stat.tmp";
-		$last=time();
-
-		if (isset($_GET["text"])) $newtext=$_GET["text"];
-
-		if (file_exists($filenst)) {
-			$last=time()-filemtime($filenst);
-			$myfile = fopen($filenst, "r") or LOGGING('Unable to open file!', 4);
-			$oldtext=fread($myfile,8192);
-			fclose($myfile);
-		}	
-		if ((($oldtext==$newtext) AND( $last > $min_sec)) OR ($oldtext!=$newtext))  {
-			sendmessage();
-			$myfile = fopen($filenst, "w") or LOGGING('Unable to open file!', 4);
-			fwrite($myfile,$newtext);
-			fclose($myfile);
-		} else {
-			LOGGING("Same text has been announced within the last ".$min_sec." seconds. We skip this anouncement", 5); 
-		}
-	break;
-	
+		case 'cover':
+			cover();
+		break;   
 			
-	case 'say':
-		$oldtext="old";
-		$newtext="new";
-		$filenst="/run/shm/t2s_stat.tmp";
-		$last=time();
+			
+		case 'title':
+			title();
+		break;   
+				 
+			
+		case 'artist':
+			artist();
+		break;   
+			
+				 
+		case 'album':
+			album();
+		break;
 
-		if (isset($_GET["text"])) $newtext=$_GET["text"];
-
-		if (file_exists($filenst)) {
-			$last=time()-filemtime($filenst);
-			$myfile = fopen($filenst, "r") or LOGGING('Unable to open file!', 4);
-			$oldtext=fread($myfile,8192);
-			fclose($myfile);
-		}	
-		if ((($oldtext==$newtext) AND( $last > $min_sec)) OR ($oldtext!=$newtext))  {
-			say();
-			$myfile = fopen($filenst, "w") or LOGGING('Unable to open file!', 4);
-			fwrite($myfile,$newtext);
-			fclose($myfile);
-		} else {
-			LOGGING("Same text has been announced within the last ".$min_sec." seconds. We skip this anouncement", 5); 
-		}
-	break;
-	
-	
-	case 'group':
-		group_all();
-	break;
-	
+			
+		case 'titelinfo':
+			titelinfo();
+		break;
 		
-	case 'ungroup':
-		ungroup_all();
-	break;
+
+		case 'sendgroupmessage':
+			#global $sonos, $coord, $text, $min_sec, $member, $master, $zone, $messageid, $logging, $words, $voice, $accesskey, $secretkey, $rampsleep, $config, $save_status, $mute, $membermaster, $groupvol, $checkgroup;
+			LOGGING("function 'action=sendgroupmessage...' has been depreciated. Please change your syntax to 'action=say...'", 6); 
+			$oldtext="old";
+			$newtext="new";
+			$filenst="/run/shm/t2s_stat.tmp";
+			$last=time();
+
+			if (isset($_GET["text"])) $newtext=$_GET["text"];
+
+			if (file_exists($filenst)) {
+				$last=time()-filemtime($filenst);
+				$myfile = fopen($filenst, "r") or LOGGING('Unable to open file!', 4);
+				$oldtext=fread($myfile,8192);
+				fclose($myfile);
+			}	
+			if ((($oldtext==$newtext) AND( $last > $min_sec)) OR ($oldtext!=$newtext))  {
+				sendgroupmessage();
+				$myfile = fopen($filenst, "w") or LOGGING('Unable to open file!', 4);
+				fwrite($myfile,$newtext);
+				fclose($myfile);
+			} else {
+				LOGGING("Same text has been announced within the last ".$min_sec." seconds. We skip this anouncement", 5); 
+			}
+		break;
+			
+			
+		case 'sendmessage':
+			#global $text, $coord, $master, $min_sec, $messageid, $logging, $words, $voice, $config, $actual, $player, $volume, $coord, $time_start;
+			LOGGING("function 'action=sendmessage...' has been depreciated. Please change your syntax to 'action=say...'", 6); 
+			$oldtext="old";
+			$newtext="new";
+			$filenst="/run/shm/t2s_stat.tmp";
+			$last=time();
+
+			if (isset($_GET["text"])) $newtext=$_GET["text"];
+
+			if (file_exists($filenst)) {
+				$last=time()-filemtime($filenst);
+				$myfile = fopen($filenst, "r") or LOGGING('Unable to open file!', 4);
+				$oldtext=fread($myfile,8192);
+				fclose($myfile);
+			}	
+			if ((($oldtext==$newtext) AND( $last > $min_sec)) OR ($oldtext!=$newtext))  {
+				sendmessage();
+				$myfile = fopen($filenst, "w") or LOGGING('Unable to open file!', 4);
+				fwrite($myfile,$newtext);
+				fclose($myfile);
+			} else {
+				LOGGING("Same text has been announced within the last ".$min_sec." seconds. We skip this anouncement", 5); 
+			}
+		break;
+		
+				
+		case 'say':
+			$oldtext="old";
+			$newtext="new";
+			$filenst="/run/shm/t2s_stat.tmp";
+			$last=time();
+
+			if (isset($_GET["text"])) $newtext=$_GET["text"];
+
+			if (file_exists($filenst)) {
+				$last=time()-filemtime($filenst);
+				$myfile = fopen($filenst, "r") or LOGGING('Unable to open file!', 4);
+				$oldtext=fread($myfile,8192);
+				fclose($myfile);
+			}	
+			if ((($oldtext==$newtext) AND( $last > $min_sec)) OR ($oldtext!=$newtext))  {
+				say();
+				$myfile = fopen($filenst, "w") or LOGGING('Unable to open file!', 4);
+				fwrite($myfile,$newtext);
+				fclose($myfile);
+			} else {
+				LOGGING("Same text has been announced within the last ".$min_sec." seconds. We skip this anouncement", 5); 
+			}
+		break;
+		
+		
+		case 'group':
+			group_all();
+		break;
+		
+			
+		case 'ungroup':
+			ungroup_all();
+		break;
 	
 
-	#case 'getsonosinfo':
-	
-	
-	
 	
 	# Debug Bereich ------------------------------------------------------
 
