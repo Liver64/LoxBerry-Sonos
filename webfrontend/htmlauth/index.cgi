@@ -85,7 +85,7 @@ my $lbip 						= LoxBerry::System::get_localip();
 my $lbport						= lbwebserverport();
 my $ttsfolder					= "tts";
 my $mp3folder					= "mp3";
-my $urlfile						= "https://raw.githubusercontent.com/Liver64/LoxBerry-Sonos/master/webfrontend/html/release/info.txt";
+my $urlfile						= "https://raw.githubusercontent.com/Liver64/LoxBerry-Sonos/master/webfrontend/html/info.txt";
 my $log 						= LoxBerry::Log->new ( name => 'Sonos UI', filename => $lbplogdir ."/". $pluginlogfile, append => 1, addtime => 1 );
 #my $log 						= LoxBerry::Log->new ( name => 'Sonos UI', append => 1, addtime => 1 );
 my $plugintempplayerfile	 	= "tmp_player.json";
