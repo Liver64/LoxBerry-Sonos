@@ -261,3 +261,4 @@
 			[Improvement] Neue Funktion 'softstopall'. Reduziert lamgsam für alle Player die laufen die Lautstärke auf Null
 			[Change] Ansage des Radio Senders/Titel/Interpret bei nextradio/zapzone/nextpush NUR bei Single Zonen
  3.7.1		[Bugfix] Support für PLAY:ONE Gen 2 Hinzugefügt (Model S18)
+ 3.7.2		[Bugfix] Die Radiofavoriten korrigiert. U.U. konnte eine URL die Config unlesbar machen
