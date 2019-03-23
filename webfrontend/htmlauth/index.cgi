@@ -516,7 +516,9 @@ sub save
 		if ( param("chkradios$i") ) { # if radio should be deleted
 			$pcfg->delete( "RADIO.radio" . "[$i]" );
 		} else { # save
-			$pcfg->param( "RADIO.radio" . "[$i]", param("radioname$i") . "," . param("radiourl$i") );
+			my $rname = param("radioname$i");
+			my $rurl = param("radiourl$i");
+			$pcfg->param( "RADIO.radio" . "[$i]", "\"$rname\"" . "," . "\"$rurl\"" );
 		}
 	}
 	
