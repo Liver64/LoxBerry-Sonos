@@ -214,7 +214,7 @@ function create_tts() {
 **/		
 
 function play_tts($filename) {
-	global $volume, $config, $messageid, $sonos, $text, $messageid, $sonoszone, $sonoszonen, $master, $coord, $actual, $player, $time_start, $t2s_batch, $filename, $textstring, $home, $MP3path, $sleeptimegong, $lbpplugindir, $logpath, $try_play, $MessageStorepath, $filename, $tts_stat;
+	global $volume, $config, $messageid, $sonos, $text, $messageid, $sonoszone, $sonoszonen, $master, $coord, $actual, $player, $time_start, $t2s_batch, $filename, $textstring, $home, $MP3path, $lbpplugindir, $logpath, $try_play, $MessageStorepath, $filename, $tts_stat;
 		
 		$coord = getRoomCoordinator($master);
 		$sonos = new PHPSonos($coord[0]);

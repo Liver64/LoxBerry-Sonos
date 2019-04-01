@@ -33,8 +33,8 @@ use File::HomeDir;
 use Cwd 'abs_path';
 use JSON qw( decode_json );
 use utf8;
-use warnings;
-use strict;
+#use warnings;
+#use strict;
 #use Data::Dumper;
 #no strict "refs"; # we need it for template system
 
@@ -57,9 +57,7 @@ my %query;
 my $template_title;
 my $error;
 my $saveformdata = 0;
-my $do = "form";
 my $msselectlist;
-my $helplink;
 my $maxzap;
 my $helptemplate;
 my $i;
@@ -72,10 +70,7 @@ our %navbar;
 
 my $helptemplatefilename		= "help.html";
 my $languagefile 				= "sonos.ini";
-my $maintemplatefilename	 	= "sonos.html";
-my $successtemplatefilename 	= "success.html";
-my $errortemplatefilename 		= "error.html";
-my $noticetemplatefilename 		= "notice.html";
+my $templatefilename	 		= "sonos.html";
 my $no_error_template_message	= "<b>Sonos4lox:</b> The error template is not readable. We must abort here. Please try to reinstall the plugin.";
 my $pluginconfigfile 			= "sonos.cfg";
 my $pluginplayerfile 			= "player.cfg";
@@ -87,7 +82,6 @@ my $ttsfolder					= "tts";
 my $mp3folder					= "mp3";
 my $urlfile						= "https://raw.githubusercontent.com/Liver64/LoxBerry-Sonos/master/webfrontend/html/info.txt";
 my $log 						= LoxBerry::Log->new ( name => 'Sonos UI', filename => $lbplogdir ."/". $pluginlogfile, append => 1, addtime => 1 );
-#my $log 						= LoxBerry::Log->new ( name => 'Sonos UI', append => 1, addtime => 1 );
 my $plugintempplayerfile	 	= "tmp_player.json";
 my $scanzonesfile	 			= "network.php";
 my $udp_file	 				= "ms_inbound.php";
@@ -98,7 +92,8 @@ our $error_message				= "";
 
 # Set new config options for upgrade installations
 
-# add new parameter for cachesize
+# add new parameter
+# Cachesize
 if (!defined $pcfg->param("MP3.cachesize")) {
 	$pcfg->param("MP3.cachesize", "100");
 } 
@@ -112,20 +107,17 @@ if ($pcfg->param("TTS.rampto") eq '')  {
 }
 # add new parameter for Volume correction
 if (!defined $pcfg->param("TTS.correction"))  {
-	$pcfg->param("TTS.correction", "8");
+	$pcfg->param("TTS.correction", "6");
 }
-# checkonline
-#if ($pcfg->param("SYSTEM.checkonline") eq '')  {
-#	$pcfg->param("SYSTEM.checkonline", "true");
-#}
+
 
 ##########################################################################
 # Read Settings
 ##########################################################################
 
-# read language
+# Read language
 my $lblang = lblanguage();
-#my %SL = LoxBerry::System::readlanguage($template, $languagefile);
+my %SL = LoxBerry::System::readlanguage($template, $languagefile);
 
 # Read Plugin Version
 my $sversion = LoxBerry::System::pluginversion();
@@ -144,8 +136,8 @@ LOGSTART "Sonos UI started";
 # Parameter
 #########################################################################
 
-$saveformdata = defined $R::saveformdata ? $R::saveformdata : undef;
-$do = defined $R::do ? $R::do : "form";
+#$saveformdata = defined $R::saveformdata ? $R::saveformdata : undef;
+#$form = defined $R::form ? $R::form : "form";
 
 
 ##########################################################################
@@ -154,7 +146,7 @@ $do = defined $R::do ? $R::do : "form";
 inittemplate();
 
 ##########################################################################
-# Set LoxBerry SDK to debug in plugin is in debug
+# Set LoxBerry SDK to debug in plugin if in debug
 ##########################################################################
 
 if($log->loglevel() eq "7") {
@@ -164,38 +156,9 @@ if($log->loglevel() eq "7") {
 	$LoxBerry::Log::DEBUG		= 1;
 }
 
-##########################################################################
-# Various checks
-##########################################################################
-
-# preparing error template;
-my $errortemplate = HTML::Template->new(
-					filename => $lbptemplatedir . "/" . $errortemplatefilename,
-					global_vars => 1,
-					loop_context_vars => 1,
-					die_on_bad_params=> 0,
-					associate => $cgi,
-					%htmltemplate_options,
-					debug => 1,
-					);
-my %ERR = LoxBerry::System::readlanguage($errortemplate, $languagefile);
-
-
-# preparing success template;
-my $successtemplate = 	HTML::Template->new(
-						filename => $lbptemplatedir . "/" . $successtemplatefilename,
-						global_vars => 1,
-						loop_context_vars => 1,
-						die_on_bad_params=> 0,
-						associate => $cgi,
-						%htmltemplate_options,
-						debug => 1,
-						);
-my %SUC = LoxBerry::System::readlanguage($successtemplate, $languagefile);
-
 
 ##########################################################################
-# Language Settings
+# Various Settings
 ##########################################################################
 
 $template->param("LBHOSTNAME", lbhostname());
@@ -246,40 +209,51 @@ if (!-r $lbpconfigdir . "/" . $pluginplayerfile)
 
 #our %navbar;
 $navbar{1}{Name} = "$SL{'BASIS.MENU_SETTINGS'}";
-$navbar{1}{URL} = './index.cgi';
+$navbar{1}{URL} = './index.cgi?form=1';
+$navbar{2}{Name} = "$SL{'BASIS.MENU_OPTIONS'}";
+$navbar{2}{URL} = './index.cgi?form=2';
 $navbar{99}{Name} = "$SL{'BASIS.MENU_LOGFILES'}";
-$navbar{99}{URL} = './index.cgi?do=logfiles';
+$navbar{99}{URL} = './index.cgi?form=5';
 
-if ($R::saveformdata) {
-	&save;
+if ($R::saveformdata1) {
+	&save1;
 }
 
-if(!defined $R::do or $R::do eq "form") {
+if ($R::saveformdata2) {
+	&save2;
+}
+
+if($R::form eq "1" || !$R::form) {
 	$navbar{1}{active} = 1;
-	$template->param("FORM", "1");
+	$template->param("FORM1", 1);
 	&form;
-} elsif ($R::do eq "logfiles") {
-	LOGTITLE "Show logfiles";
-	$navbar{99}{active} = 1;
-	$template->param("LOGFILES", "1");
-	$template->param("LOGLIST_HTML", LoxBerry::Web::loglist_html());
-	printtemplate();
-} elsif ($R::do eq "scan") {
+} elsif ($R::form eq "2") {
+	$navbar{2}{active} = 1;
+	$template->param("FORM2", 1);
+	&form;
+} elsif ($R::form eq "3") {
+	$template->param("FORM3", 1);
 	&attention_scan;
-} elsif ($R::do eq "scanning") {
+} elsif ($R::form eq "4") {
 	LOGTITLE "Execute Scan";
 	&scan;
-	$template->param("FORM", "1");
+	$template->param("FORM1", 1);
 	&form;
+} elsif ($R::form eq "5") {
+	LOGTITLE "Show logfiles";
+	$navbar{99}{active} = 1;
+	$template->param("FORM5", 1);
+	$template->param("LOGLIST_HTML", LoxBerry::Web::loglist_html());
+	printtemplate();
 }
-$error_message = "Invalid do parameter: ".$R::do;
+$error_message = "Invalid form parameter: ".$R::form;
 &error;
 exit;
 
 
 
 #####################################################
-# Form-Sub
+# Form1-Sub
 #####################################################
 
 sub form {
@@ -312,7 +286,7 @@ sub form {
 	}
 			
 	# fill saved values into form
-	$template		->param("SELFURL", $ENV{REQUEST_URI});
+	#$template		->param("SELFURL", $ENV{REQUEST_URI});
 	$template		->param("T2S_ENGINE" 	=> $pcfg->param("TTS.t2s_engine"));
 	$template		->param("VOICE" 		=> $pcfg->param("TTS.voice"));
 	$template		->param("CODE" 			=> $pcfg->param("TTS.messageLang"));
@@ -321,7 +295,7 @@ sub form {
 	# Load saved values for "select"
 	my $t2s_engine		  = $pcfg->param("TTS.t2s_engine");
 	my $rmpvol	 	  	  = $pcfg->param("TTS.volrampto");
-	my $storepath = $pcfg->param("SYSTEM.path"),
+	my $storepath 		  = $pcfg->param("SYSTEM.path"),
 	
 	# *******************************************************************************************************************
 	# Radiosender einlesen
@@ -422,11 +396,13 @@ sub form {
 
 
 #####################################################
-# Save-Sub
+# Save Form1-Sub
 #####################################################
 
-sub save 
+sub save1
 {
+	$template->param( FORMNO => '1' );
+	
 	# Everything from Forms
 	my $countplayers	= param('countplayers');
 	my $countradios 	= param('countradios');
@@ -457,16 +433,11 @@ sub save
 	$pcfg->param("LOXONE.LoxDaten", "$R::sendlox");
 	$pcfg->param("LOXONE.LoxPort", "$R::udpport");
 	$pcfg->param("TTS.t2s_engine", "$R::t2s_engine");
-	$pcfg->param("TTS.rampto", "$R::rampto");
-	$pcfg->param("TTS.volrampto", "$R::rmpvol");
 	$pcfg->param("TTS.messageLang", "$R::t2slang");
 	$pcfg->param("TTS.API-key", "$R::apikey");
 	$pcfg->param("TTS.secret-key", "$R::seckey");
 	$pcfg->param("TTS.voice", "$R::voice");
-	$pcfg->param("TTS.correction", "$R::correction");
 	$pcfg->param("MP3.file_gong", "$R::file_gong");
-	$pcfg->param("MP3.volumedown", "$R::volume");
-	$pcfg->param("MP3.volumeup", "$R::volume");
 	$pcfg->param("MP3.MP3store", "$R::mp3store");
 	$pcfg->param("MP3.cachesize", "$R::cachesize");
 	$pcfg->param("LOCATION.town", "\"$R::town\"");
@@ -474,11 +445,8 @@ sub save
 	$pcfg->param("LOCATION.googlekey", "$R::googlekey");
 	$pcfg->param("LOCATION.googletown", "$R::googletown");
 	$pcfg->param("LOCATION.googlestreet", "$R::googlestreet");
-	$pcfg->param("VARIOUS.announceradio", "$R::announceradio");
 	$pcfg->param("VARIOUS.CALDavMuell", "\"$R::wastecal\"");
 	$pcfg->param("VARIOUS.CALDav2", "\"$R::cal\"");
-	#$pcfg->param("SYSTEM.checkonline", "$R::checkonline");
-	$pcfg->param("SYSTEM.checkonline", "true");
 	$pcfg->param("SYSTEM.path", "$R::STORAGEPATH");
 	$pcfg->param("SYSTEM.mp3path", "$R::STORAGEPATH/$ttsfolder/$mp3folder");
 	$pcfg->param("SYSTEM.ttspath", "$R::STORAGEPATH/$ttsfolder");
@@ -555,17 +523,66 @@ sub save
 	#print_test($content);
 	#exit;
 	
-	my $lblang = lblanguage();
-	$template_title = "$SL{'BASIS.MAIN_TITLE'}: v$sversion";
-	LoxBerry::Web::lbheader($template_title, $helplink, $helptemplatefilename);
-	$successtemplate->param('SAVE_ALL_OK'		, $SUC{'SAVE.SAVE_ALL_OK'});
-	$successtemplate->param('SAVE_MESSAGE'		, $SUC{'SAVE.SAVE_MESSAGE'});
-	$successtemplate->param('SAVE_BUTTON_OK' 	, $SUC{'SAVE.SAVE_BUTTON_OK'});
-	$successtemplate->param('SAVE_NEXTURL'		, $ENV{REQUEST_URI});
-	print $successtemplate->output();
-	LoxBerry::Web::lbfooter();
+	# Error template
+	if ($error_message) {
+		# Template output
+		&error;
+
+	# Save template
+	} else {
+		# Template output
+		&save;
+	}
 	exit;
 	
+}
+
+
+
+#####################################################
+# Save Form2-Sub
+#####################################################
+
+sub save2
+{
+	$template->param( FORMNO => '2' );
+	
+	my $tcfg = new Config::Simple($lbpconfigdir . "/" . $pluginconfigfile);
+	# Everything from Forms
+	
+	# OK - now installing...
+
+	# Write configuration file(s)
+	$tcfg->param("TTS.rampto", "$R::rampto");
+	$tcfg->param("TTS.volrampto", "$R::rmpvol");
+	$tcfg->param("MP3.volumedown", "$R::volume");
+	$tcfg->param("MP3.volumeup", "$R::volume");
+	$tcfg->param("VARIOUS.announceradio", "$R::announceradio");
+	$tcfg->param("TTS.correction", "$R::correction");
+	$tcfg->param("TTS.phonemute", "$R::phonemute");
+	$tcfg->param("TTS.waiting", "$R::waiting");
+	$tcfg->param("VARIOUS.phonestop", "$R::phonestop");
+	#tcfg->param("SYSTEM.checkonline", "$R::checkonline");
+	
+	LOGINF "Start writing optional configuration file";
+	
+	$tcfg->save();
+	
+	#$content = "Volume".$R::volume;
+	#print_test($content);
+	#exit;
+	
+	# Error template
+	if ($error_message) {
+		# Template output
+		&error;
+
+	# Save template
+	} else {
+		# Template output
+		&save;
+	}
+	exit;
 }
 
 
@@ -578,29 +595,19 @@ sub save
 sub attention_scan
 {
 	LOGDEB "Scan request for Sonos Zones will be executed.";
-	my $buttnext;
-	
-	# Filename for the notice template is ok, preparing template";
-	my $noticetemplate = HTML::Template->new(
-					filename => $lbptemplatedir . "/" . $noticetemplatefilename,
-					global_vars => 1,
-					loop_context_vars => 1,
-					die_on_bad_params=> 0,
-					associate => $cgi,
-					%htmltemplate_options,
-					debug => 1,
-					);
-	my %NOT = LoxBerry::System::readlanguage($noticetemplate, $languagefile);
-	$buttnext = "Scanning()";
 		
-	$template_title = "$NOT{'BASIS.MAIN_TITLE'}: v$sversion";
-	LoxBerry::Web::lbheader($template_title, $buttnext, $noticetemplatefilename);
-	$noticetemplate->param('SONOS_SCAN_HEADER'		, $SUC{'ZONES.SONOS_SCAN_HEADER'});
-	$noticetemplate->param('SONOS_SCAN_TEXT'		, $SUC{'ZONES.SONOS_SCAN_TEXT'});
-	$noticetemplate->param('BUTTON_NEXT' 			, $SUC{'ZONES.BUTTON_NEXT'});
-	$noticetemplate->param('BUTTON_BACK' 			, $SUC{'ZONES.BUTTON_BACK'});
-	$noticetemplate->param("BUTTNEXT"				, $buttnext);
-	print $noticetemplate->output();
+	# Filename for the notice template is ok, preparing template";
+	
+	my $buttnext = "Scanning()";
+		
+	$template_title = "$SL{'BASIS.MAIN_TITLE'}: v$sversion";
+	LoxBerry::Web::lbheader($template_title, $buttnext, $helptemplatefilename);
+	$template->param('SONOS_SCAN_HEADER'		, $SL{'ZONES.SONOS_SCAN_HEADER'});
+	$template->param('SONOS_SCAN_TEXT'		, $SL{'ZONES.SONOS_SCAN_TEXT'});
+	$template->param('BUTTON_NEXT' 			, $SL{'ZONES.BUTTON_NEXT'});
+	$template->param('BUTTON_BACK' 			, $SL{'ZONES.BUTTON_BACK'});
+	$template->param("BUTTNEXT"				, $buttnext);
+	print $template->output();
 	LoxBerry::Web::lbfooter();
 	exit;
 }
@@ -613,6 +620,8 @@ sub attention_scan
 
 sub scan
 {
+	$template->param( FORMNO => '1' );
+	
 	#$countplayers = 0;
 	my $error_volume = $SL{'T2S.ERROR_VOLUME_PLAYER'};
 	
@@ -674,19 +683,38 @@ sub scan
 
 	
 #####################################################
-# Error-Sub
+# Error
 #####################################################
 
-sub error 
+sub error
 {
-	$template_title = $ERR{'ERRORS.MY_NAME'} . ": v$sversion - " . $ERR{'ERRORS.ERR_TITLE'};
+	$template->param( "ERROR", 1);
+	$template_title = $SL{'ERRORS.MY_NAME'} . ": v$sversion - " . $SL{'ERRORS.ERR_TITLE'};
 	LoxBerry::Web::lbheader($template_title, $helplink, $helptemplatefilename);
-	$errortemplate->param('ERR_MESSAGE'		, $error_message);
-	$errortemplate->param('ERR_TITLE'		, $ERR{'ERRORS.ERR_TITLE'});
-	$errortemplate->param('ERR_BUTTON_BACK' , $ERR{'ERRORS.ERR_BUTTON_BACK'});
-	$successtemplate->param('ERR_NEXTURL'	, $ENV{REQUEST_URI});
-	print $errortemplate->output();
+	$template->param('ERR_MESSAGE'		, $error_message);
+	$template->param('ERR_TITLE'		, $SL{'ERRORS.ERR_TITLE'});
+	$template->param('ERR_BUTTON_BACK'  , $SL{'ERRORS.ERR_BUTTON_BACK'});
+	print $template->output();
 	LoxBerry::Web::lbfooter();
+	
+	exit;
+}
+
+#####################################################
+# Save
+#####################################################
+
+sub save
+{
+	$template->param( "SAVE", 1);
+	$template_title = $SL{'BASIS.MAIN_TITLE'} . ": v$sversion";
+	LoxBerry::Web::lbheader($template_title, $helplink, $helptemplatefilename);
+	$template->param('SAVE_ALL_OK'		, $SL{'SAVE.SAVE_ALL_OK'});
+	$template->param('SAVE_MESSAGE'		, $SL{'SAVE.SAVE_MESSAGE'});
+	$template->param('SAVE_BUTTON_OK' 	, $SL{'SAVE.SAVE_BUTTON_OK'});
+	print $template->output();
+	LoxBerry::Web::lbfooter();
+
 	exit;
 }
 
@@ -698,7 +726,7 @@ sub error
 sub inittemplate
 {
 	# Check, if filename for the maintemplate is readable, if not raise an error
-	stat($lbptemplatedir . "/" . $maintemplatefilename);
+	stat($lbptemplatedir . "/" . $templatefilename);
 	if ( !-r _ )
 	{
 		$error_message = "Error: Main template not readable";
@@ -706,8 +734,8 @@ sub inittemplate
 		LOGCRIT $error_message;
 		&error;
 	}
-	$template =  HTML::Template->new(
-				filename => $lbptemplatedir . "/" . $maintemplatefilename,
+	$template = HTML::Template->new(
+				filename => $lbptemplatedir . "/" . $templatefilename,
 				global_vars => 1,
 				loop_context_vars => 1,
 				die_on_bad_params=> 0,
@@ -715,8 +743,7 @@ sub inittemplate
 				%htmltemplate_options,
 				debug => 1
 				);
-	%SL = LoxBerry::System::readlanguage($template, $languagefile);			
-
+	my %SL = LoxBerry::System::readlanguage($template, $languagefile);		
 }
 
 

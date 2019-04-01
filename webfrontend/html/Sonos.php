@@ -49,7 +49,6 @@ $t2s_text_stand = "t2s-text_en.ini";							// T2S text Standardfile
 $sambaini = $lbhomedir.'/system/samba/smb.conf';				// path to Samba file smb.conf
 $searchfor = '[plugindata]';									// search for already existing Samba share
 $MP3path = "mp3";												// path to preinstalled numeric MP§ files
-$sleeptimegong = "3";											// waiting time before playing t2s
 $maxzap = '60';													// waiting time before zapzone been initiated again
 $lbport = lbwebserverport();									// get loxberry port
 $tmp_tts = "/run/shm/tmp_tts";									// path/file for T2S functions
@@ -378,21 +377,13 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		
 		
-		case 'telefonmute';
-			if($_GET['mute'] == 'false') {
-				 $MuteStat = $sonos->GetMute();
-				 if($MuteStat == 'true') {
-					$SaveVol = $sonos->GetVolume();
-					$sonos->SetVolume(5);
-					$sonos->SetMute(false);
-					$sonos->RampToVolume("ALARM_RAMP_TYPE", $SaveVol);
-				}
-			}
-			else if($_GET['mute'] == 'true') {
-				 $sonos->SetMute(true);
-				 $SaveVol = $sonos->GetVolume();
-				 $sonos->SetVolume($SaveVol);
-			}
+		case 'phonemute';
+			phonemute();
+		break;
+		
+		
+		case 'phoneunmute';
+			phoneunmute();
 		break;
 		
 		
@@ -1673,6 +1664,71 @@ function volume_group()  {
 	}
 }
 
+
+function phonemute()  {
+	global $sonoszone, $sonos, $min_vol, $config, $master;
+	
+	$state = getZoneStatus($master);
+	//echo $state;
+	$lastVol = "/run/shm/PhoneMute.log";
+	switch ($state)  {
+		case 'single':
+			$sonos = new PHPSonos($sonoszone[$master][0]);
+			$actual[$master]['Volume'] = $sonos->GetVolume();
+			file_put_contents($lastVol, serialize($actual));
+			LOGGING("Volume for a Single Player has been saved", 7);
+			while ($sonos->GetVolume() > $min_vol)  {
+				$sonos->SetVolume($sonos->GetVolume() - $config['MP3']['volumeup']);
+				usleep(500000);
+			}
+			LOGGING("Phonemute for Single Player has been executed", 6);
+		break;
+		
+		case 'member' or 'master':
+			$your_master = checkifmaster($master);
+			$coord_mute = getGroup($your_master);
+			//print_r($coord_mute);
+			foreach ($coord_mute as $mutezone => $value)  {
+				$sonos = new PHPSonos($sonoszone[$value][0]);
+				$actual[$value]['Volume'] = $sonos->GetVolume();
+				while ($sonos->GetVolume() > $min_vol)  {
+					$sonos->SetVolume($sonos->GetVolume() - $config['MP3']['volumeup']);
+					usleep(300000);
+				}
+			}
+			file_put_contents($lastVol, serialize($actual));	
+			LOGGING("Volume for a Group of Players has been saved", 7);
+			LOGGING("Phonemute for Group has been executed", 6);
+		break;
+	}
+}
+
+
+
+function phoneunmute()  {
+	global $sonoszone, $sonos, $min_vol, $config, $master;
+	
+	$lastVol = "/run/shm/PhoneMute.log";
+	$array = unserialize(@file_get_contents($lastVol));
+	if ($array == false)  {
+		LOGGING("No file exist to recover. Please execute phonemute first!", 4);
+		exit;
+    } else {
+		//print_r($array);
+		foreach ($array as $key => $value) {
+			$sonos = new PHPSonos($sonoszone[$key][0]);
+			$oldVolume = $array[$key]['Volume'];
+			//echo $oldVolume;
+			while ($sonos->GetVolume() < $oldVolume)  {
+				$sonos->SetVolume($sonos->GetVolume() + $config['MP3']['volumeup']);
+				usleep(400000);
+			}
+		}
+		LOGGING("Volume has been restored", 7);
+	}
+	unlink($lastVol);
+	LOGGING("Phoneunmute has been executed", 6);
+}
 
 
 function shutdown()
