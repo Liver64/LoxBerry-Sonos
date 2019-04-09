@@ -20,6 +20,35 @@ $town = str_replace($search,$replace,$town);
 
 $polmuc = file_get_contents( "http://www.wetterdienst.de/Deutschlandwetter/".$town."/Pollenflug/" );
 
+if (isset($_GET['greet']))  {
+		$Stunden = intval(strftime("%H"));
+		$TL = LOAD_T2S_TEXT();
+		switch ($Stunden) {
+			# Gruß von 04:00 bis 10:00h
+			case $Stunden >=4 && $Stunden <10:
+				$greet = $TL['GREETINGS']['MORNING_'.mt_rand (1, 5)];
+			break;
+			# Gruß von 10:00 bis 17:00h
+			case $Stunden >=10 && $Stunden <17:
+				$greet = $TL['GREETINGS']['DAY_'.mt_rand (1, 5)];
+			break;
+			# Gruß von 17:00 bis 22:00h
+			case $Stunden >=17 && $Stunden <22:
+				$greet = $TL['GREETINGS']['EVENING_'.mt_rand (1, 5)];
+			break;
+			# Gruß nach 22:00h
+			case $Stunden >=22:
+				$greet = $TL['GREETINGS']['NIGHT_'.mt_rand (1, 5)];
+			break;
+			default:
+				$greet = "";
+			break;
+		}
+	} else {
+		$greet = "";
+	}
+
+
 // Vorhersage für heute isolieren
 $counter = 0;
 do {
@@ -164,7 +193,7 @@ $text1 = "";
 if ($gb_text !== "") {$text1 = trim($gb_text) . " " ;}
 if ($mb_text !== "") {$text1 = $text1 . trim($mb_text) . " ";}
 if ($hb_text !== "") {$text1 = $text1 . trim($hb_text) . " ";}
-$text = "Hier der heutige Hinweis zum Pollen Wetter. " . trim($text1);
+$text = $greet." Hier der heutige Hinweis zum Pollen Wetter. " . trim($text1);
 $text = trim($text);
 
 $curl = curl_init();

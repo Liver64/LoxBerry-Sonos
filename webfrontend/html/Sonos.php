@@ -3,7 +3,7 @@
 ##############################################################################################################################
 #
 # Version: 	3.7.2
-# Datum: 	30.03.2019
+# Datum: 	09.04.2019
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
@@ -48,12 +48,13 @@ $templatepath = "$lbptemplatedir";								// get templatedir
 $t2s_text_stand = "t2s-text_en.ini";							// T2S text Standardfile
 $sambaini = $lbhomedir.'/system/samba/smb.conf';				// path to Samba file smb.conf
 $searchfor = '[plugindata]';									// search for already existing Samba share
-$MP3path = "mp3";												// path to preinstalled numeric MP§ files
+$MP3path = "mp3";												// path to preinstalled numeric MP3 files
+$sleeptimegong = "3";											// waiting time before playing t2s
 $maxzap = '60';													// waiting time before zapzone been initiated again
 $lbport = lbwebserverport();									// get loxberry port
 $tmp_tts = "/run/shm/tmp_tts";									// path/file for T2S functions
-$min_vol = "7";													// min.vol as exception for current volume
-$min_sec = 5;													// min. in seconds before same mp3 been played again (Statubsaustein)
+$tmp_phone = "/run/shm/tmp_phonemute.tmp";						// path/file for phonemute function
+$POnline = "/run/shm/sonoszone.json";							// path/file for Player Online check
 
 #echo '<PRE>';
 
@@ -88,13 +89,18 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 	(isset($_GET['playlist'])) or (isset($_GET['playlisturi'])) or
 	(isset($_GET['albumuri'])) or (isset($_GET['file']))
 	)  {
+	# FIFO for T2S
 	if (file_exists($tmp_tts))  {
 		while (file_exists($tmp_tts))  {
 			usleep(200000); // check every 200ms
 		}
 		LOGINF("Currently a T2S is running, we have to wait...");
-		// echo "Currently a T2S is running, we have to wait...";
 		sleep(5);
+	}
+	# Exit during phonecall
+	if (file_exists($tmp_phone))  {
+		LOGINF("Currently a Phonecall is running, we abort...");
+		exit(0);
 	}
 }
 	
@@ -142,34 +148,43 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 	}
 	$zonesoff = "";
 	if ($checkonline === true)  {
-		// prüft den Onlinestatus jeder Zone
-		$zonesonline = array();
-		LOGGING("Online check for Players will be executed",7);
-		foreach($sonoszonen as $zonen => $ip) {
-			$port = 1400;
-			$timeout = 3;
-			$handle = @stream_socket_client("$ip[0]:$port", $errno, $errstr, $timeout);
-			if($handle) {
-				$sonoszone[$zonen] = $ip;
-				array_push($zonesonline, $zonen);
-				fclose($handle);
-			} else {
-				LOGGING("Zone $zonen seems to be Offline, please check your power/network settings",4);
+		if (!file_exists($POnline)) {
+			// prüft den Onlinestatus jeder Zone
+			$zonesonline = array();
+			LOGGING("Backup Online check for Players will be executed",7);
+			foreach($sonoszonen as $zonen => $ip) {
+				$port = 1400;
+				$timeout = 3;
+				$handle = @stream_socket_client("$ip[0]:$port", $errno, $errstr, $timeout);
+				if($handle) {
+					$sonoszone[$zonen] = $ip;
+					array_push($zonesonline, $zonen);
+					fclose($handle);
+				} else {
+					LOGGING("Zone $zonen seems to be Offline, please check your power/network settings",4);
+				}
 			}
+			$zoon = implode(", ", $zonesonline);
+			LOGGING("Zone(s) $zoon are Online",7);
+			File_Put_Array_As_JSON($POnline, $sonoszone, $zip=false);
+		} else {
+			$sonoszone = File_Get_Array_From_JSON($POnline, $zip=false);
 		}
-		$zoon = implode(", ", $zonesonline);
-		LOGGING("Zone(s) $zoon are Online",7);
 	} else {
 		LOGGING("You have not turned on Function to check if all your Players are powered on/online. PLease turn on function 'checkonline' in Plugin Config in order to secure your requests!", 4);
 		$sonoszone = $sonoszonen;
 	}
+	if (!array_key_exists($_GET['zone'], $sonoszone))  {
+		LOGGING("Requested ...zone=".$_GET['zone']." seems to be Offline. Check your Power/Onlinestatus.",4);
+		exit;
+	}
 	LOGGING("All variables has been collected",7);
 	
 	#$sonoszone = $sonoszonen;
-	#print_r($sonoszonen);
+	#print_r($sonoszone);
 	#print_r($config);
 	#exit;
-	
+		
 	# check if LBPort already exist in config (sonos.cfg), if not force user to save config
 	$checklb = explode(':', $config['SYSTEM']['httpinterface']);
 	$checklbport = explode('/', $checklb[2]);
@@ -182,6 +197,8 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 
 	# Standardpath for saving MP3
 	$MessageStorepath = $config['SYSTEM']['ttspath'];
+	$min_vol = $config['TTS']['phonemute'];													// min.vol as exception for current volume
+	$min_sec = $config['TTS']['waiting'];													// min. in seconds before same mp3 been played again (Statubsaustein)
 	create_symlinks();
 	
 		
@@ -1666,10 +1683,22 @@ function volume_group()  {
 
 
 function phonemute()  {
-	global $sonoszone, $sonos, $min_vol, $config, $master;
+	global $sonoszone, $sonos, $min_vol, $config, $master, $tmp_phone, $tts_stat;
+	
+	# if Phonestop is true avoid T2S during phone call
+	if ($config['VARIOUS']['phonestop'] == "1") {
+		$tts_stat = "1";
+		if(!touch($tmp_phone)) {
+			LOGGING("No permission to write file", 3);
+			exit;
+		}
+		$handle = fopen ($tmp_phone, 'w');
+		fwrite ($handle, $tts_stat);
+		fclose ($handle); 
+	} 
 	
 	$state = getZoneStatus($master);
-	//echo $state;
+	echo $min_vol;
 	$lastVol = "/run/shm/PhoneMute.log";
 	switch ($state)  {
 		case 'single':
@@ -1679,9 +1708,10 @@ function phonemute()  {
 			LOGGING("Volume for a Single Player has been saved", 7);
 			while ($sonos->GetVolume() > $min_vol)  {
 				$sonos->SetVolume($sonos->GetVolume() - $config['MP3']['volumeup']);
-				usleep(500000);
+				usleep(400000);
 			}
 			LOGGING("Phonemute for Single Player has been executed", 6);
+			exit(1);
 		break;
 		
 		case 'member' or 'master':
@@ -1699,6 +1729,7 @@ function phonemute()  {
 			file_put_contents($lastVol, serialize($actual));	
 			LOGGING("Volume for a Group of Players has been saved", 7);
 			LOGGING("Phonemute for Group has been executed", 6);
+			exit(1);
 		break;
 	}
 }
@@ -1706,7 +1737,7 @@ function phonemute()  {
 
 
 function phoneunmute()  {
-	global $sonoszone, $sonos, $min_vol, $config, $master;
+	global $sonoszone, $sonos, $min_vol, $config, $master, $tmp_phone, $tmp_tts;
 	
 	$lastVol = "/run/shm/PhoneMute.log";
 	$array = unserialize(@file_get_contents($lastVol));
@@ -1726,7 +1757,8 @@ function phoneunmute()  {
 		}
 		LOGGING("Volume has been restored", 7);
 	}
-	unlink($lastVol);
+	@unlink($tmp_phone);
+	@unlink($lastVol);
 	LOGGING("Phoneunmute has been executed", 6);
 }
 

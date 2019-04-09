@@ -47,18 +47,49 @@ function muellkalender() {
 		LOGGING('Please remove &events= from your syntax entry in Sonos4lox configuration or enter add the events you are looking for!',3);
 		exit;
 	}
+	
+	if (isset($_GET['greet']))  {
+		#$Stunden = intval(strftime("%H"));
+		$TL = LOAD_T2S_TEXT();
+		switch ($Stunden) {
+			# Gruß von 04:00 bis 10:00h
+			case $Stunden >=4 && $Stunden <10:
+				$greet = $TL['GREETINGS']['MORNING_'.mt_rand (1, 5)];
+			break;
+			# Gruß von 10:00 bis 17:00h
+			case $Stunden >=10 && $Stunden <17:
+				$greet = $TL['GREETINGS']['DAY_'.mt_rand (1, 5)];
+			break;
+			# Gruß von 17:00 bis 22:00h
+			case $Stunden >=17 && $Stunden <22:
+				$greet = $TL['GREETINGS']['EVENING_'.mt_rand (1, 5)];
+			break;
+			# Gruß nach 22:00h
+			case $Stunden >=22:
+				$greet = $TL['GREETINGS']['NIGHT_'.mt_rand (1, 5)];
+			break;
+			default:
+				$greet = "";
+			break;
+		}
+	} else {
+		$greet = "";
+	}
+	
 	if ($events === false) {
 		// prepare output without using events
 		$enddate = date('m/d/Y',strtotime($dienst['']['hStart']));
 		$days = (strtotime($enddate) - strtotime($today)) / (60*60*24);
 		#if($dienst['']['fwDay'] < 0) {
 		#	exit;
-		if(($dienst['']['fwDay'] === 0) AND ($Stunden >=4 && $Stunden <12)){
-			$welcomemorning = welcomemorning();
-			$speak = $welcomemorning." ".$TL['WASTE-CALENDAR-TO-SPEECH']['TODAY_MORNING_START']." ".$dienst['']['Summary']." ".$TL['WASTE-CALENDAR-TO-SPEECH']['TODAY_MORNING_END'];
-		} elseif(($dienst['']['fwDay'] === 1) AND ($Stunden >=18)){
-			$welcomeevening = welcomeevening();
-			$speak = $welcomeevening." ".$TL['WASTE-CALENDAR-TO-SPEECH']['EVENING_BEFORE_START']." ".$dienst['']['Summary']." ".$TL['WASTE-CALENDAR-TO-SPEECH']['EVENING_BEFORE_END'];
+		if(($dienst['']['fwDay'] === 0) AND ($Stunden >=4 && $Stunden <10)){
+			$speak = $greet." ".$TL['WASTE-CALENDAR-TO-SPEECH']['TODAY_MORNING_START']." ".$dienst['']['Summary']." ".$TL['WASTE-CALENDAR-TO-SPEECH']['TODAY_MORNING_END'];
+		} elseif(($dienst['']['fwDay'] === 0) AND ($Stunden >=10 && $Stunden <17)){
+			$speak = $greet." ".$TL['WASTE-CALENDAR-TO-SPEECH']['TODAY_MORNING_START']." ".$dienst['']['Summary']." ".$TL['WASTE-CALENDAR-TO-SPEECH']['TODAY_MORNING_END'];
+		} elseif(($dienst['']['fwDay'] === 1) AND ($Stunden >=17 && $Stunden <22)){
+			$speak = $greet." ".$TL['WASTE-CALENDAR-TO-SPEECH']['EVENING_BEFORE_START']." ".$dienst['']['Summary']." ".$TL['WASTE-CALENDAR-TO-SPEECH']['EVENING_BEFORE_END'];
+		} elseif(($dienst['']['fwDay'] === 1) AND ($Stunden >=22)){
+			$speak = $greet." ".$TL['WASTE-CALENDAR-TO-SPEECH']['EVENING_BEFORE_START']." ".$dienst['']['Summary']." ".$TL['WASTE-CALENDAR-TO-SPEECH']['EVENING_BEFORE_END'];
 		}
 	} else {
 		// prepare output using events
@@ -86,18 +117,22 @@ function muellkalender() {
 		#print_r($muellheute);
 		#print_r($muellmorgen);
 		// prepare speech
-		if ((count($muellheute)) === 1 AND ($Stunden >=0 && $Stunden <11)) {
-			$welcomemorning = welcomemorning();
-			$speak = $welcomemorning." ".$TL['WASTE-CALENDAR-TO-SPEECH']['TODAY_MORNING_START']." ".$muellheute[0]." ".$TL['WASTE-CALENDAR-TO-SPEECH']['TODAY_MORNING_END'];
-		} elseif ((count($muellheute)) === 2 AND ($Stunden >=0 && $Stunden <11)) {
-			$welcomemorning = welcomemorning();
-			$speak = $welcomemorning." ".$TL['WASTE-CALENDAR-TO-SPEECH']['TODAY_MORNING_START']." ".$muellheute[0]." ".$TL['WASTE-CALENDAR-TO-SPEECH']['IN_CASE_2TIMES_WASTE']." ".$muellheute[1]." ".$TL['WASTE-CALENDAR-TO-SPEECH']['TODAY_MORNING_END'];
-		} elseif ((count($muellmorgen)) === 1 AND ($Stunden >=11 && $Stunden <24)) {
-			$welcomeevening = welcomeevening();
-			$speak = $welcomeevening." ".$TL['WASTE-CALENDAR-TO-SPEECH']['EVENING_BEFORE_START']." ".$muellmorgen[0]." ".$TL['WASTE-CALENDAR-TO-SPEECH']['EVENING_BEFORE_END'];
-		} elseif ((count($muellmorgen)) === 2 AND ($Stunden >=11 && $Stunden <24)) {
-			$welcomeevening = welcomeevening();
-			$speak = $welcomeevening." ".$TL['WASTE-CALENDAR-TO-SPEECH']['EVENING_BEFORE_START']." ".$muellmorgen[0]." ".$TL['WASTE-CALENDAR-TO-SPEECH']['IN_CASE_2TIMES_WASTE']." ".$muellmorgen[1]." ".$TL['WASTE-CALENDAR-TO-SPEECH']['EVENING_BEFORE_END'];
+		if ((count($muellheute)) === 1 AND ($Stunden >=4 && $Stunden <10)) {
+			$speak = $greet." ".$TL['WASTE-CALENDAR-TO-SPEECH']['TODAY_MORNING_START']." ".$muellheute[0]." ".$TL['WASTE-CALENDAR-TO-SPEECH']['TODAY_MORNING_END'];
+		} elseif ((count($muellheute)) === 2 AND ($Stunden >=4 && $Stunden <10)) {
+			$speak = $greet." ".$TL['WASTE-CALENDAR-TO-SPEECH']['TODAY_MORNING_START']." ".$muellheute[0]." ".$TL['WASTE-CALENDAR-TO-SPEECH']['IN_CASE_2TIMES_WASTE']." ".$muellheute[1]." ".$TL['WASTE-CALENDAR-TO-SPEECH']['TODAY_MORNING_END'];
+		} elseif ((count($muellheute)) === 1 AND ($Stunden >=10 && $Stunden <17)) {
+			$speak = $greet." ".$TL['WASTE-CALENDAR-TO-SPEECH']['TODAY_MORNING_START']." ".$muellheute[0]." ".$TL['WASTE-CALENDAR-TO-SPEECH']['TODAY_MORNING_END'];
+		} elseif ((count($muellheute)) === 2 AND ($Stunden >=10 && $Stunden <17)) {
+			$speak = $greet." ".$TL['WASTE-CALENDAR-TO-SPEECH']['TODAY_MORNING_START']." ".$muellheute[0]." ".$TL['WASTE-CALENDAR-TO-SPEECH']['IN_CASE_2TIMES_WASTE']." ".$muellheute[1]." ".$TL['WASTE-CALENDAR-TO-SPEECH']['TODAY_MORNING_END'];
+		} elseif ((count($muellmorgen)) === 1 AND ($Stunden >=17 && $Stunden <22)) {
+			$speak = $greet." ".$TL['WASTE-CALENDAR-TO-SPEECH']['EVENING_BEFORE_START']." ".$muellmorgen[0]." ".$TL['WASTE-CALENDAR-TO-SPEECH']['EVENING_BEFORE_END'];
+		} elseif ((count($muellmorgen)) === 2 AND ($Stunden >=17 && $Stunden <22)) {
+			$speak = $greet." ".$TL['WASTE-CALENDAR-TO-SPEECH']['EVENING_BEFORE_START']." ".$muellmorgen[0]." ".$TL['WASTE-CALENDAR-TO-SPEECH']['IN_CASE_2TIMES_WASTE']." ".$muellmorgen[1]." ".$TL['WASTE-CALENDAR-TO-SPEECH']['EVENING_BEFORE_END'];
+		} elseif ((count($muellmorgen)) === 1 AND ($Stunden >=22 && $Stunden <4)) {
+			$speak = $greet." ".$TL['WASTE-CALENDAR-TO-SPEECH']['EVENING_BEFORE_START']." ".$muellmorgen[0]." ".$TL['WASTE-CALENDAR-TO-SPEECH']['EVENING_BEFORE_END'];
+		} elseif ((count($muellmorgen)) === 2 AND ($Stunden >=22 && $Stunden <4)) {
+			$speak = $greet." ".$TL['WASTE-CALENDAR-TO-SPEECH']['EVENING_BEFORE_START']." ".$muellmorgen[0]." ".$TL['WASTE-CALENDAR-TO-SPEECH']['IN_CASE_2TIMES_WASTE']." ".$muellmorgen[1]." ".$TL['WASTE-CALENDAR-TO-SPEECH']['EVENING_BEFORE_END'];
 		} elseif ((empty($muellheute)) or (empty($muellmorgen)))  {
 			$text = $TL['WASTE-CALENDAR-TO-SPEECH']['NO_WASTE_FOUND_ONLY_LOGGING'];
 			#echo $text;
@@ -205,7 +240,7 @@ function calendar() {
 	}
 }
 
-/**
+/** OBSOLETE
 * Function: welcomemorning() --> list of greetings for morning messages
 *
 * @param: text
@@ -225,12 +260,12 @@ function welcomemorning() {
 		$TL['WASTE-CALENDAR-TO-SPEECH']['RANDOM_WELCOME_MORNING8'],
 		$TL['WASTE-CALENDAR-TO-SPEECH']['RANDOM_WELCOME_MORNING9']
 		);
-	$welcomemorning = $welcomearraymorning[array_rand($welcomearraymorning)];
-	return $welcomemorning;
+	$greet = $welcomearraymorning[array_rand($welcomearraymorning)];
+	return $greet;
 	}
 	
 	
-/**
+/** OBSOLETE
 * Function: welcomeevening() --> list of greetings for evening messages
 *
 * @param: text
@@ -250,8 +285,8 @@ function welcomeevening() {
 		$TL['WASTE-CALENDAR-TO-SPEECH']['RANDOM_WELCOME_EVENING8'],
 		$TL['WASTE-CALENDAR-TO-SPEECH']['RANDOM_WELCOME_EVENING9'],
 		);
-	$welcomeevening = $welcomearrayevening[array_rand($welcomearrayevening)];
-	return $welcomeevening;
+	$greet = $welcomearrayevening[array_rand($welcomearrayevening)];
+	return $greet;
 	}
 	
 

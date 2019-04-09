@@ -12,27 +12,33 @@ function c2s()
 			
 	$Stunden = intval(strftime("%H"));
 	$Minuten = intval(strftime("%M"));
-	switch ($Stunden) 
-	{
-		# Uhrzeitansage für die Zeit zwischen 06:00 und 11:00h
-		case $Stunden >=6 && $Stunden <11:
-			$Vorspann=$TL['CLOCK-TO-SPEECH']['GREETING_6AM_to_11AM'];
+	
+	if (isset($_GET['greet']))  {
+		#$Stunden = intval(strftime("%H"));
+		$TL = LOAD_T2S_TEXT();
+		switch ($Stunden) {
+			# Gruß von 04:00 bis 10:00h
+			case $Stunden >=4 && $Stunden <10:
+				$greet = $TL['GREETINGS']['MORNING_'.mt_rand (1, 5)];
 			break;
-		# Uhrzeitansage für die Zeit zwischen 11:00 und 17:00h
-		case $Stunden >=11 && $Stunden <17:
-			$Vorspann=$TL['CLOCK-TO-SPEECH']['GREETING_11AM_to_5PM'];
+			# Gruß von 10:00 bis 17:00h
+			case $Stunden >=10 && $Stunden <17:
+				$greet = $TL['GREETINGS']['DAY_'.mt_rand (1, 5)];
 			break;
-		# Uhrzeitansage für die Zeit zwischen 17:00 und 22:00h
-		case $Stunden >=17 && $Stunden <22:
-			$Vorspann=$TL['CLOCK-TO-SPEECH']['GREETING_5PM_to_10PM'];
+			# Gruß von 17:00 bis 22:00h
+			case $Stunden >=17 && $Stunden <22:
+				$greet = $TL['GREETINGS']['EVENING_'.mt_rand (1, 5)];
 			break;
-		# Uhrzeitansage für die Zeit nach 22:00h
-		case $Stunden >=22 :
-			$Vorspann=$TL['CLOCK-TO-SPEECH']['GREETING_AFTER_10PM'];
+			# Gruß nach 22:00h
+			case $Stunden >=22:
+				$greet = $TL['GREETINGS']['NIGHT_'.mt_rand (1, 5)];
 			break;
-		default:
-			$Vorspann=$TL['CLOCK-TO-SPEECH']['GREETING_DEFAULT'];
+			default:
+				$greet = "";
 			break;
+		}
+	} else {
+		$greet = "";
 	}
 	
 	switch ($Stunden) 
@@ -50,7 +56,7 @@ function c2s()
 		break;
 	}
 	
-	$ttext = $Vorspann." ".$TL['CLOCK-TO-SPEECH']['TEXT_BEFORE_HOUR_ANNOUNCEMENT']." ".$Stunden." ".$TL['CLOCK-TO-SPEECH']['TEXT_BEFORE_MINUTE_ANNOUNCEMENT']." ".$Minuten. " ".$TL['CLOCK-TO-SPEECH']['TEXT_AFTER_MINUTE_ANNOUNCEMENT']." ".$Nachsatz;
+	$ttext = $greet." ".$TL['CLOCK-TO-SPEECH']['TEXT_BEFORE_HOUR_ANNOUNCEMENT']." ".$Stunden." ".$TL['CLOCK-TO-SPEECH']['TEXT_BEFORE_MINUTE_ANNOUNCEMENT']." ".$Minuten. " ".$TL['CLOCK-TO-SPEECH']['TEXT_AFTER_MINUTE_ANNOUNCEMENT']." ".$Nachsatz;
 	$text = ($ttext);
 	
 	LOGGING('Time Announcement: '.$ttext,7);

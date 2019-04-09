@@ -214,7 +214,7 @@ function create_tts() {
 **/		
 
 function play_tts($filename) {
-	global $volume, $config, $messageid, $sonos, $text, $messageid, $sonoszone, $sonoszonen, $master, $coord, $actual, $player, $time_start, $t2s_batch, $filename, $textstring, $home, $MP3path, $lbpplugindir, $logpath, $try_play, $MessageStorepath, $filename, $tts_stat;
+	global $volume, $config, $messageid, $sonos, $text, $messageid, $sleeptimegong, $sonoszone, $sonoszonen, $master, $coord, $actual, $player, $time_start, $t2s_batch, $filename, $textstring, $home, $MP3path, $lbpplugindir, $logpath, $try_play, $MessageStorepath, $filename, $tts_stat;
 		
 		$coord = getRoomCoordinator($master);
 		$sonos = new PHPSonos($coord[0]);
@@ -643,7 +643,7 @@ function t2s_playbatch() {
 function send_tts_source($tts_stat)  {
 	
 	require_once('system/io-modul.php');
-	global $config, $sonoszone, $master, $ms, $tts_stat, $config; 
+	global $config, $tmp_tts, $sonoszone, $master, $ms, $tts_stat, $config; 
 	
 	$tmp_tts = "/run/shm/tmp_tts";
 	if ($tts_stat == 1)  {

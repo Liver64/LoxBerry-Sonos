@@ -33,8 +33,8 @@ use File::HomeDir;
 use Cwd 'abs_path';
 use JSON qw( decode_json );
 use utf8;
-#use warnings;
-#use strict;
+use warnings;
+use strict;
 #use Data::Dumper;
 #no strict "refs"; # we need it for template system
 
@@ -51,13 +51,10 @@ $SIG{__DIE__} = sub { our @reason = @_ };
 # Variables
 ##########################################################################
 
-my $namef;
-my $value;
-my %query;
 my $template_title;
-my $error;
 my $saveformdata = 0;
-my $msselectlist;
+my $do = "form";
+my $helplink;
 my $maxzap;
 my $helptemplate;
 my $i;
@@ -68,10 +65,9 @@ our $template;
 our $content;
 our %navbar;
 
-my $helptemplatefilename		= "help.html";
+my $helptemplatefilename		= "help/help.html";
 my $languagefile 				= "sonos.ini";
-my $templatefilename	 		= "sonos.html";
-my $no_error_template_message	= "<b>Sonos4lox:</b> The error template is not readable. We must abort here. Please try to reinstall the plugin.";
+my $maintemplatefilename	 	= "sonos.html";
 my $pluginconfigfile 			= "sonos.cfg";
 my $pluginplayerfile 			= "player.cfg";
 my $pluginlogfile				= "sonos.log";
@@ -92,8 +88,7 @@ our $error_message				= "";
 
 # Set new config options for upgrade installations
 
-# add new parameter
-# Cachesize
+# add new parameter for cachesize
 if (!defined $pcfg->param("MP3.cachesize")) {
 	$pcfg->param("MP3.cachesize", "100");
 } 
@@ -107,15 +102,34 @@ if ($pcfg->param("TTS.rampto") eq '')  {
 }
 # add new parameter for Volume correction
 if (!defined $pcfg->param("TTS.correction"))  {
-	$pcfg->param("TTS.correction", "6");
+	$pcfg->param("TTS.correction", "8");
 }
-
+# add new parameter for Volume phonemute
+if (!defined $pcfg->param("TTS.phonemute"))  {
+	$pcfg->param("TTS.phonemute", "8");
+}
+# add new parameter for waiting time in sec.
+if (!defined $pcfg->param("TTS.waiting"))  {
+	$pcfg->param("TTS.waiting", "10");
+}
+# add new parameter for CronJob schedule
+if (!defined $pcfg->param("VARIOUS.cron"))  {
+	$pcfg->param("VARIOUS.cron", "1");
+}
+# add new parameter for phonestop
+if (!defined $pcfg->param("VARIOUS.phonestop"))  {
+	$pcfg->param("VARIOUS.phonestop", "0");
+}
+# checkonline
+#if ($pcfg->param("SYSTEM.checkonline") eq '')  {
+#	$pcfg->param("SYSTEM.checkonline", "true");
+#}
 
 ##########################################################################
 # Read Settings
 ##########################################################################
 
-# Read language
+# read language
 my $lblang = lblanguage();
 my %SL = LoxBerry::System::readlanguage($template, $languagefile);
 
@@ -137,7 +151,7 @@ LOGSTART "Sonos UI started";
 #########################################################################
 
 #$saveformdata = defined $R::saveformdata ? $R::saveformdata : undef;
-#$form = defined $R::form ? $R::form : "form";
+#$do = defined $R::do ? $R::do : "form";
 
 
 ##########################################################################
@@ -146,7 +160,7 @@ LOGSTART "Sonos UI started";
 inittemplate();
 
 ##########################################################################
-# Set LoxBerry SDK to debug in plugin if in debug
+# Set LoxBerry SDK to debug in plugin is in debug
 ##########################################################################
 
 if($log->loglevel() eq "7") {
@@ -158,7 +172,7 @@ if($log->loglevel() eq "7") {
 
 
 ##########################################################################
-# Various Settings
+# Language Settings
 ##########################################################################
 
 $template->param("LBHOSTNAME", lbhostname());
@@ -183,7 +197,7 @@ $template->param("LOGFILE" , $lbplogdir . "/" . $pluginlogfile);
 if (!-r $lbpconfigdir . "/" . $pluginconfigfile) 
 {
 	LOGCRIT "Plugin config file does not exist";
-	$error_message = $ERR{'ERRORS.ERR_CHECK_SONOS_CONFIG_FILE'};
+	$error_message = $SL{'ERRORS.ERR_CHECK_SONOS_CONFIG_FILE'};
 	notify($lbpplugindir, "Sonos UI ", "Error loading Sonos configuration file. Please try again or check config folder!", 1);
 	&error; 
 } else {
@@ -194,7 +208,7 @@ if (!-r $lbpconfigdir . "/" . $pluginconfigfile)
 if (!-r $lbpconfigdir . "/" . $pluginplayerfile)
 {
 	LOGCRIT "Plugin config file does not exist";
-	$error_message = $ERR{'ERRORS.ERR_CHECK_PLAYER_CONFIG_FILE'};
+	$error_message = $SL{'ERRORS.ERR_CHECK_PLAYER_CONFIG_FILE'};
 	notify($lbpplugindir, "Sonos UI ", "Error loading Sonos Player configuration file. Please try again or check config folder!", 1);
 	&error; 
 } else {
@@ -209,55 +223,57 @@ if (!-r $lbpconfigdir . "/" . $pluginplayerfile)
 
 #our %navbar;
 $navbar{1}{Name} = "$SL{'BASIS.MENU_SETTINGS'}";
-$navbar{1}{URL} = './index.cgi?form=1';
+$navbar{1}{URL} = './index.cgi';
 $navbar{2}{Name} = "$SL{'BASIS.MENU_OPTIONS'}";
-$navbar{2}{URL} = './index.cgi?form=2';
+$navbar{2}{URL} = './index.cgi?do=details';
 $navbar{99}{Name} = "$SL{'BASIS.MENU_LOGFILES'}";
-$navbar{99}{URL} = './index.cgi?form=5';
+$navbar{99}{URL} = './index.cgi?do=logfiles';
 
 if ($R::saveformdata1) {
-	&save1;
+	$template->param( FORMNO => 'form' );
+	&save;
 }
-
 if ($R::saveformdata2) {
-	&save2;
+	$template->param( FORMNO => 'details' );
+	&save_details;
 }
 
-if($R::form eq "1" || !$R::form) {
+if(!defined $R::do or $R::do eq "form") {
 	$navbar{1}{active} = 1;
-	$template->param("FORM1", 1);
+	$template->param("SETTINGS", "1");
 	&form;
-} elsif ($R::form eq "2") {
+} elsif($R::do eq "details") {
 	$navbar{2}{active} = 1;
-	$template->param("FORM2", 1);
+	$template->param("DETAILS", "1");
 	&form;
-} elsif ($R::form eq "3") {
-	$template->param("FORM3", 1);
-	&attention_scan;
-} elsif ($R::form eq "4") {
-	LOGTITLE "Execute Scan";
-	&scan;
-	$template->param("FORM1", 1);
-	&form;
-} elsif ($R::form eq "5") {
+} elsif ($R::do eq "logfiles") {
 	LOGTITLE "Show logfiles";
 	$navbar{99}{active} = 1;
-	$template->param("FORM5", 1);
+	$template->param("LOGFILES", "1");
 	$template->param("LOGLIST_HTML", LoxBerry::Web::loglist_html());
 	printtemplate();
+} elsif ($R::do eq "scan") {
+	&attention_scan;
+} elsif ($R::do eq "scanning") {
+	LOGTITLE "Execute Scan";
+	&scan;
+	$template->param("SETTINGS", "1");
+	&form;
 }
-$error_message = "Invalid form parameter: ".$R::form;
+$error_message = "Invalid do parameter: ".$R::do;
 &error;
 exit;
 
 
 
 #####################################################
-# Form1-Sub
+# Form-Sub
 #####################################################
 
-sub form {
-
+sub form 
+{
+	$template->param( FORMNO => 'FORM' );
+	
 	# check if path exist (upgrade from v3.5.1)
 	if ($pcfg->param("SYSTEM.path") eq "")   {
 		$pcfg->param("SYSTEM.path", "$lbpdatadir");
@@ -286,7 +302,7 @@ sub form {
 	}
 			
 	# fill saved values into form
-	#$template		->param("SELFURL", $ENV{REQUEST_URI});
+	$template		->param("SELFURL", $SL{REQUEST_URI});
 	$template		->param("T2S_ENGINE" 	=> $pcfg->param("TTS.t2s_engine"));
 	$template		->param("VOICE" 		=> $pcfg->param("TTS.voice"));
 	$template		->param("CODE" 			=> $pcfg->param("TTS.messageLang"));
@@ -295,7 +311,7 @@ sub form {
 	# Load saved values for "select"
 	my $t2s_engine		  = $pcfg->param("TTS.t2s_engine");
 	my $rmpvol	 	  	  = $pcfg->param("TTS.volrampto");
-	my $storepath 		  = $pcfg->param("SYSTEM.path"),
+	my $storepath = $pcfg->param("SYSTEM.path"),
 	
 	# *******************************************************************************************************************
 	# Radiosender einlesen
@@ -326,7 +342,7 @@ sub form {
 	
 	our $rowssonosplayer;
 	
-	my $error_volume = $ERR{'T2S.ERROR_VOLUME_PLAYER'};
+	my $error_volume = $SL{'T2S.ERROR_VOLUME_PLAYER'};
 	my $playercfg = new Config::Simple($lbpconfigdir . "/" . $pluginplayerfile);
 	my %configzones = $playercfg->vars();	
 	
@@ -395,14 +411,127 @@ sub form {
 }
 
 
+
 #####################################################
-# Save Form1-Sub
+# Save_details-Sub
 #####################################################
 
-sub save1
+sub save_details
 {
-	$template->param( FORMNO => '1' );
+	my $tcfg = new Config::Simple($lbpconfigdir . "/" . $pluginconfigfile);
+	my $countradios = param('countradios');
 	
+	LOGINF "Start writing details configuration file";
+	
+	$tcfg->param("TTS.volrampto", "$R::rmpvol");
+	$tcfg->param("TTS.rampto", "$R::rampto");
+	$tcfg->param("TTS.correction", "$R::correction");
+	$tcfg->param("TTS.waiting", "$R::waiting");
+	$tcfg->param("MP3.volumedown", "$R::volume");
+	$tcfg->param("MP3.volumeup", "$R::volume");
+	$tcfg->param("VARIOUS.announceradio", "$R::announceradio");
+	$tcfg->param("TTS.phonemute", "$R::phonemute");
+	$tcfg->param("VARIOUS.phonestop", "$R::phonestop");
+	$tcfg->param("LOCATION.town", "\"$R::town\"");
+	$tcfg->param("VARIOUS.CALDavMuell", "\"$R::wastecal\"");
+	$tcfg->param("VARIOUS.CALDav2", "\"$R::cal\"");
+	$tcfg->param("VARIOUS.cron", "$R::cron");
+	#$tcfg->param("SYSTEM.checkonline", "$R::checkonline");
+	$tcfg->param("SYSTEM.checkonline", "true");
+	
+	for ($i = 1; $i <= $countradios; $i++) 
+	{
+		my $rname = param("radioname$i");
+		my $rurl = param("radiourl$i");
+		$tcfg->param( "RADIO.radio" . "[$i]", "\"$rname\"" . "," . "\"$rurl\"" );
+	}
+	$tcfg->save() or &error;
+	
+	#if ($R::checkonline eq "true") 
+	#{
+	  if ($R::cron eq "1") 
+	  {
+	    system ("ln -s $lbpbindir/cronjob.sh $lbhomedir/system/cron/cron.01min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.15min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.hourly/$lbpplugindir");
+		LOGOK "Cron job each Minute created";
+	  }
+	  if ($R::cron eq "5") 
+	  {
+	    system ("ln -s $lbpbindir/cronjob.sh $lbhomedir/system/cron/cron.05min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.15min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.hourly/$lbpplugindir");
+		LOGOK "Cron job 5 Minutes created";
+	  }
+	  if ($R::cron eq "10") 
+	  {
+	    system ("ln -s $lbpbindir/cronjob.sh $lbhomedir/system/cron/cron.10min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.1min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.5min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.15min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.hourly/$lbpplugindir");
+		LOGOK "Cron job 10 Minutes created";
+	  }
+	  if ($R::cron eq "15") 
+	  {
+	    system ("ln -s $lbpbindir/cronjob.sh $lbhomedir/system/cron/cron.15min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.hourly/$lbpplugindir");
+		LOGOK "Cron job 15 Minutes created";
+	  }
+	  if ($R::cron eq "30") 
+	  {
+	    system ("ln -s $lbpbindir/cronjob.sh $lbhomedir/system/cron/cron.30min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.15min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.hourly/$lbpplugindir");
+		LOGOK "Cron job 30 Minutes created";
+	  }
+	  if ($R::cron eq "60") 
+	  {
+	    system ("ln -s $lbpbindir/cronjob.sh $lbhomedir/system/cron/cron.hourly/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.15min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
+		LOGOK "Cron job hourly created";
+	  }
+	#} 
+	#else
+	#{
+	#  unlink ("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
+	#  unlink ("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
+	#  unlink ("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
+	#  unlink ("$lbhomedir/system/cron/cron.15min/$lbpplugindir");
+	#  unlink ("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
+	#  unlink ("$lbhomedir/system/cron/cron.hourly/$lbpplugindir");
+	#  LOGOK "Cron job removed";
+	#}
+	
+	LOGOK "Detail settings has been saved successful";
+	&print_save;
+	exit;
+}
+
+#####################################################
+# Save-Sub
+#####################################################
+
+sub save 
+{
 	# Everything from Forms
 	my $countplayers	= param('countplayers');
 	my $countradios 	= param('countradios');
@@ -433,11 +562,16 @@ sub save1
 	$pcfg->param("LOXONE.LoxDaten", "$R::sendlox");
 	$pcfg->param("LOXONE.LoxPort", "$R::udpport");
 	$pcfg->param("TTS.t2s_engine", "$R::t2s_engine");
+	#$pcfg->param("TTS.rampto", "$R::rampto");
+	#$pcfg->param("TTS.volrampto", "$R::rmpvol");
 	$pcfg->param("TTS.messageLang", "$R::t2slang");
 	$pcfg->param("TTS.API-key", "$R::apikey");
 	$pcfg->param("TTS.secret-key", "$R::seckey");
 	$pcfg->param("TTS.voice", "$R::voice");
+	#$pcfg->param("TTS.correction", "$R::correction");
 	$pcfg->param("MP3.file_gong", "$R::file_gong");
+	#$pcfg->param("MP3.volumedown", "$R::volume");
+	#$pcfg->param("MP3.volumeup", "$R::volume");
 	$pcfg->param("MP3.MP3store", "$R::mp3store");
 	$pcfg->param("MP3.cachesize", "$R::cachesize");
 	$pcfg->param("LOCATION.town", "\"$R::town\"");
@@ -445,15 +579,18 @@ sub save1
 	$pcfg->param("LOCATION.googlekey", "$R::googlekey");
 	$pcfg->param("LOCATION.googletown", "$R::googletown");
 	$pcfg->param("LOCATION.googlestreet", "$R::googlestreet");
+	#$pcfg->param("VARIOUS.announceradio", "$R::announceradio");
 	$pcfg->param("VARIOUS.CALDavMuell", "\"$R::wastecal\"");
 	$pcfg->param("VARIOUS.CALDav2", "\"$R::cal\"");
+	#$pcfg->param("SYSTEM.checkonline", "$R::checkonline");
+	#$pcfg->param("SYSTEM.checkonline", "true");
 	$pcfg->param("SYSTEM.path", "$R::STORAGEPATH");
 	$pcfg->param("SYSTEM.mp3path", "$R::STORAGEPATH/$ttsfolder/$mp3folder");
 	$pcfg->param("SYSTEM.ttspath", "$R::STORAGEPATH/$ttsfolder");
 	$pcfg->param("SYSTEM.httpinterface", "http://$lbip:$lbport/plugins/$lbpplugindir/interfacedownload");
 	$pcfg->param("SYSTEM.cifsinterface", "//$lbip:$lbport/plugindata/$lbpplugindir/interfacedownload");
 		
-	LOGINF "Start writing configuration file";
+	LOGINF "Start writing settings configuration file";
 	
 	# If storage folders does not exist, copy default mp3 files
 	my $copy = 0;
@@ -495,7 +632,7 @@ sub save1
 	
 	# check if scan zones has been executed and min. 1 Player been added
 	if ($countplayers < 1)  {
-		$error_message = $SUC{'ZONES.ERROR_NO_SCAN'};
+		$error_message = $SL{'ZONES.ERROR_NO_SCAN'};
 		&error;
 	}
 	
@@ -517,99 +654,15 @@ sub save1
 	if ($R::sendlox eq "true") {
 		&prep_XML;
 	}
-	LOGOK "All settings has been saved successful";
+	LOGOK "Main settings has been saved successful";
 	
 	#$content = $server_endpoint;
 	#print_test($content);
 	#exit;
 	
-	# Error template
-	if ($error_message) {
-		# Template output
-		&error;
-
-	# Save template
-	} else {
-		# Template output
-		&save;
-	}
+	&print_save;
 	exit;
 	
-}
-
-
-
-#####################################################
-# Save Form2-Sub
-#####################################################
-
-sub save2
-{
-	$template->param( FORMNO => '2' );
-	
-	my $tcfg = new Config::Simple($lbpconfigdir . "/" . $pluginconfigfile);
-	# Everything from Forms
-	
-	# OK - now installing...
-
-	# Write configuration file(s)
-	$tcfg->param("TTS.rampto", "$R::rampto");
-	$tcfg->param("TTS.volrampto", "$R::rmpvol");
-	$tcfg->param("MP3.volumedown", "$R::volume");
-	$tcfg->param("MP3.volumeup", "$R::volume");
-	$tcfg->param("VARIOUS.announceradio", "$R::announceradio");
-	$tcfg->param("TTS.correction", "$R::correction");
-	$tcfg->param("TTS.phonemute", "$R::phonemute");
-	$tcfg->param("TTS.waiting", "$R::waiting");
-	$tcfg->param("VARIOUS.phonestop", "$R::phonestop");
-	#tcfg->param("SYSTEM.checkonline", "$R::checkonline");
-	
-	LOGINF "Start writing optional configuration file";
-	
-	$tcfg->save();
-	
-	#$content = "Volume".$R::volume;
-	#print_test($content);
-	#exit;
-	
-	# Error template
-	if ($error_message) {
-		# Template output
-		&error;
-
-	# Save template
-	} else {
-		# Template output
-		&save;
-	}
-	exit;
-}
-
-
-
-
-#####################################################
-# Attention Scan Sonos Player
-#####################################################
-
-sub attention_scan
-{
-	LOGDEB "Scan request for Sonos Zones will be executed.";
-		
-	# Filename for the notice template is ok, preparing template";
-	
-	my $buttnext = "Scanning()";
-		
-	$template_title = "$SL{'BASIS.MAIN_TITLE'}: v$sversion";
-	LoxBerry::Web::lbheader($template_title, $buttnext, $helptemplatefilename);
-	$template->param('SONOS_SCAN_HEADER'		, $SL{'ZONES.SONOS_SCAN_HEADER'});
-	$template->param('SONOS_SCAN_TEXT'		, $SL{'ZONES.SONOS_SCAN_TEXT'});
-	$template->param('BUTTON_NEXT' 			, $SL{'ZONES.BUTTON_NEXT'});
-	$template->param('BUTTON_BACK' 			, $SL{'ZONES.BUTTON_BACK'});
-	$template->param("BUTTNEXT"				, $buttnext);
-	print $template->output();
-	LoxBerry::Web::lbfooter();
-	exit;
 }
 
 
@@ -620,8 +673,6 @@ sub attention_scan
 
 sub scan
 {
-	$template->param( FORMNO => '1' );
-	
 	#$countplayers = 0;
 	my $error_volume = $SL{'T2S.ERROR_VOLUME_PLAYER'};
 	
@@ -683,40 +734,51 @@ sub scan
 
 	
 #####################################################
-# Error
+# Error-Sub
 #####################################################
 
-sub error
+sub error 
 {
-	$template->param( "ERROR", 1);
+	$template->param("ERROR", "1");
 	$template_title = $SL{'ERRORS.MY_NAME'} . ": v$sversion - " . $SL{'ERRORS.ERR_TITLE'};
 	LoxBerry::Web::lbheader($template_title, $helplink, $helptemplatefilename);
-	$template->param('ERR_MESSAGE'		, $error_message);
-	$template->param('ERR_TITLE'		, $SL{'ERRORS.ERR_TITLE'});
-	$template->param('ERR_BUTTON_BACK'  , $SL{'ERRORS.ERR_BUTTON_BACK'});
+	$template->param('ERR_MESSAGE', $error_message);
 	print $template->output();
 	LoxBerry::Web::lbfooter();
-	
 	exit;
 }
+
 
 #####################################################
 # Save
 #####################################################
 
-sub save
+sub print_save
 {
-	$template->param( "SAVE", 1);
-	$template_title = $SL{'BASIS.MAIN_TITLE'} . ": v$sversion";
+	$template->param("SAVE", "1");
+	$template_title = "$SL{'BASIS.MAIN_TITLE'}: v$sversion";
 	LoxBerry::Web::lbheader($template_title, $helplink, $helptemplatefilename);
-	$template->param('SAVE_ALL_OK'		, $SL{'SAVE.SAVE_ALL_OK'});
-	$template->param('SAVE_MESSAGE'		, $SL{'SAVE.SAVE_MESSAGE'});
-	$template->param('SAVE_BUTTON_OK' 	, $SL{'SAVE.SAVE_BUTTON_OK'});
 	print $template->output();
 	LoxBerry::Web::lbfooter();
-
 	exit;
 }
+
+
+#####################################################
+# Attention Scan Sonos Player
+#####################################################
+
+sub attention_scan
+{
+	LOGDEB "Scan request for Sonos Zones will be executed.";
+	$template->param("NOTICE", "1");	
+	$template_title = "$SL{'BASIS.MAIN_TITLE'}: v$sversion";
+	LoxBerry::Web::lbheader($template_title, $helplink, $helptemplatefilename);
+	print $template->output();
+	LoxBerry::Web::lbfooter();
+	exit;
+}
+	
 
 
 ##########################################################################
@@ -726,7 +788,7 @@ sub save
 sub inittemplate
 {
 	# Check, if filename for the maintemplate is readable, if not raise an error
-	stat($lbptemplatedir . "/" . $templatefilename);
+	stat($lbptemplatedir . "/" . $maintemplatefilename);
 	if ( !-r _ )
 	{
 		$error_message = "Error: Main template not readable";
@@ -734,8 +796,8 @@ sub inittemplate
 		LOGCRIT $error_message;
 		&error;
 	}
-	$template = HTML::Template->new(
-				filename => $lbptemplatedir . "/" . $templatefilename,
+	$template =  HTML::Template->new(
+				filename => $lbptemplatedir . "/" . $maintemplatefilename,
 				global_vars => 1,
 				loop_context_vars => 1,
 				die_on_bad_params=> 0,
@@ -743,7 +805,8 @@ sub inittemplate
 				%htmltemplate_options,
 				debug => 1
 				);
-	my %SL = LoxBerry::System::readlanguage($template, $languagefile);		
+	%SL = LoxBerry::System::readlanguage($template, $languagefile);			
+
 }
 
 
@@ -753,10 +816,7 @@ sub inittemplate
 
 sub printtemplate
 {
-	# Print Template
-	$template_title = "$SL{'BASIS.MAIN_TITLE'}: v$sversion";
-	LoxBerry::Web::head();
-	LoxBerry::Web::pagestart($template_title, $helplink, $helptemplate);
+	LoxBerry::Web::lbheader("$SL{'BASIS.MAIN_TITLE'}: v$sversion", $helplink, $helptemplate);
 	print LoxBerry::Log::get_notifications_html($lbpplugindir);
 	print $template->output();
 	LoxBerry::Web::lbfooter();
