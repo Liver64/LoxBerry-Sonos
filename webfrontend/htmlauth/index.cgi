@@ -27,6 +27,7 @@ use LoxBerry::Storage;
 use CGI::Carp qw(fatalsToBrowser);
 use CGI qw/:standard/;
 use CGI;
+#use Config::Simple '-strict';
 use LWP::Simple;
 use LWP::UserAgent;
 use File::HomeDir;
@@ -418,34 +419,28 @@ sub form
 
 sub save_details
 {
-	my $tcfg = new Config::Simple($lbpconfigdir . "/" . $pluginconfigfile);
+	#my $tcfg = new Config::Simple($lbpconfigdir . "/" . $pluginconfigfile);
 	my $countradios = param('countradios');
 	
 	LOGINF "Start writing details configuration file";
 	
-	$tcfg->param("TTS.volrampto", "$R::rmpvol");
-	$tcfg->param("TTS.rampto", "$R::rampto");
-	$tcfg->param("TTS.correction", "$R::correction");
-	$tcfg->param("TTS.waiting", "$R::waiting");
-	$tcfg->param("MP3.volumedown", "$R::volume");
-	$tcfg->param("MP3.volumeup", "$R::volume");
-	$tcfg->param("VARIOUS.announceradio", "$R::announceradio");
-	$tcfg->param("TTS.phonemute", "$R::phonemute");
-	$tcfg->param("VARIOUS.phonestop", "$R::phonestop");
-	$tcfg->param("LOCATION.town", "\"$R::town\"");
-	$tcfg->param("VARIOUS.CALDavMuell", "\"$R::wastecal\"");
-	$tcfg->param("VARIOUS.CALDav2", "\"$R::cal\"");
-	$tcfg->param("VARIOUS.cron", "$R::cron");
-	#$tcfg->param("SYSTEM.checkonline", "$R::checkonline");
-	$tcfg->param("SYSTEM.checkonline", "true");
+	$pcfg->param("TTS.volrampto", "$R::rmpvol");
+	$pcfg->param("TTS.rampto", "$R::rampto");
+	$pcfg->param("TTS.correction", "$R::correction");
+	$pcfg->param("TTS.waiting", "$R::waiting");
+	$pcfg->param("MP3.volumedown", "$R::volume");
+	$pcfg->param("MP3.volumeup", "$R::volume");
+	$pcfg->param("VARIOUS.announceradio", "$R::announceradio");
+	$pcfg->param("TTS.phonemute", "$R::phonemute");
+	$pcfg->param("VARIOUS.phonestop", "$R::phonestop");
+	#$pcfg->param("LOCATION.town", "\"$R::town\"");
+	#$pcfg->param("VARIOUS.CALDavMuell", "\"$R::wastecal\"");
+	#$pcfg->param("VARIOUS.CALDav2", "\"$R::cal\"");
+	$pcfg->param("VARIOUS.cron", "$R::cron");
+	#$pcfg->param("SYSTEM.checkonline", "$R::checkonline");
+	$pcfg->param("SYSTEM.checkonline", "true");
 	
-	for ($i = 1; $i <= $countradios; $i++) 
-	{
-		my $rname = param("radioname$i");
-		my $rurl = param("radiourl$i");
-		$tcfg->param( "RADIO.radio" . "[$i]", "\"$rname\"" . "," . "\"$rurl\"" );
-	}
-	$tcfg->save() or &error;
+	$pcfg->save() or &error;
 	
 	#if ($R::checkonline eq "true") 
 	#{

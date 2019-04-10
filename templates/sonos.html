@@ -1240,7 +1240,7 @@ function Scanning() {
 
 <TMPL_IF DETAILS>
 <!-- form 'FORM' DETAILS -->
-<form method="post" data-ajax="false" accept-charset="utf-8" name="det_form" id="det_form" action="./index.cgi?do=details">
+<form method="post" data-ajax="false" accept-charset="utf-8" name="main_form" id="main_form" action="./index.cgi?do=details">
 	<input type="hidden" name="saveformdata2" value="1">
 		<div class="form-group">
 			<table class="formtable" border="0" width="100%" cellpadding="10">
@@ -1430,7 +1430,7 @@ function Scanning() {
 				<p>
 					<center>
 						<!--<a id="btncancel" data-role="button" data-inline="true" data-mini="true" data-icon="delete" href="/admin/index.cgi"><TMPL_VAR SAVE.CANCEL_BUTTON></a>-->
-						<button type="submit" form="det_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SAVE.SAVE_BUTTON></button>
+						<button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SAVE.SAVE_BUTTON></button>
 					</center>
 				</p>
 
