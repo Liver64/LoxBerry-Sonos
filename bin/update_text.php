@@ -47,13 +47,14 @@ if (!file_exists($templatepath.'/lang/'.$lang_en_ini )) {
 }
 
 // Prüfen ob DE Update in der Vergangenheit durchgeführt wurde
-if ($std_de['VERSION']['V_NO'] == "1")  {
+
+if (@$std_de['VERSION']['V_NO'] == "1")  {
 	echo "<OK> Nothing to do, Update for '".$lang_de_ini."' already processed\n";
 } else {
 	update_de();
 }
 // Prüfen ob EN Update in der Vergangenheit durchgeführt wurde
-if ($std_en['VERSION']['V_NO'] == "1")  {
+if (@$std_en['VERSION']['V_NO'] == "1")  {
 	echo "<OK> Nothing to do, Update for '".$lang_en_ini."' already processed\n";
 } else {
 	update_en();
@@ -63,7 +64,7 @@ if ($std_en['VERSION']['V_NO'] == "1")  {
 function update_de()  {
 	global $upt_de, $std_de, $lang_de_ini, $lang_de_update_ini, $templatepath, $lbptemplatedir;
 	
-	mkdir($lbptemplatedir."/lang/backup",0755);
+	@mkdir($lbptemplatedir."/lang/backup",0755);
 	copy($lbptemplatedir."/lang/".$lang_de_ini, $lbptemplatedir."/lang/backup/".$lang_de_ini);
 	$arrdiff_de = @array_diff_assoc($upt_de, $std_de);
 	$arroverlap_de = array_intersect_key($upt_de, $std_de);
@@ -99,7 +100,7 @@ unlink($templatepath.'/lang/'.$lang_de_update_ini);
 function update_en()  {
 	global $upt_en, $std_en, $lang_en_ini, $lang_en_update_ini, $templatepath, $lbptemplatedir;
 	
-	mkdir($lbptemplatedir."/lang/backup",0755);
+	@mkdir($lbptemplatedir."/lang/backup",0755);
 	copy($lbptemplatedir."/lang/".$lang_en_ini, $lbptemplatedir."/lang/backup/".$lang_en_ini);
 	$arrdiff_en = @array_diff_assoc($upt_en, $std_en);
 	$arroverlap_en = array_intersect_key($upt_en, $std_en);
