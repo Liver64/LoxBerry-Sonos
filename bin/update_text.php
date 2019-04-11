@@ -3,7 +3,7 @@
 
 require_once "loxberry_system.php";
 require_once "loxberry_log.php";
-echo '<PRE>';
+#echo '<PRE>';
 
 $templatepath 			= "$lbptemplatedir";								// get templatedir
 $lang_de_ini 			= "t2s-text_de.ini";
