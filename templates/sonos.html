@@ -1421,8 +1421,20 @@ function Scanning() {
 			<td style="height: 60px; width: 800px;">
 				<input type="range" name="waiting" id="waiting" value="<TMPL_VAR TTS.waiting>" min="0" max="10" step="1">
 			</td>
+			<!--Start *** HIDDEN Workaround Felder um 3 Felder zu escapen -->
+			<td style="height: 30px; width: 201px;">
+				<input id="wastecal" name="wastecal" type="hidden" class="textfield" value="<TMPL_VAR VARIOUS.CALDavMuell>">
+			</td>
+			<td style="height: 30px; width: 201px;">
+				<input id="cal" name="cal" type="hidden" class="textfield" value="<TMPL_VAR VARIOUS.CALDav2>">
+			</td>
 			<td style="height: 30px; width: 201px;"></td>
-			<td style="height: 30px; width: 201px;"></td>
+				<input id="town" name="town" type="hidden" class="textfield" value="<TMPL_VAR LOCATION.town>" style="display:none">
+				<table id="divCheckbox" style="display:none">	
+					<TMPL_VAR ROWSRADIO>
+					</table>
+			</td>
+			<!--Ende *** HIDDEN Workaround Felder um 3 Felder zu escapen -->
 		</tr>
 
 </table>

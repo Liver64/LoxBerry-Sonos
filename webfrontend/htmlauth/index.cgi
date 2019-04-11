@@ -419,7 +419,6 @@ sub form
 
 sub save_details
 {
-	#my $tcfg = new Config::Simple($lbpconfigdir . "/" . $pluginconfigfile);
 	my $countradios = param('countradios');
 	
 	LOGINF "Start writing details configuration file";
@@ -433,12 +432,19 @@ sub save_details
 	$pcfg->param("VARIOUS.announceradio", "$R::announceradio");
 	$pcfg->param("TTS.phonemute", "$R::phonemute");
 	$pcfg->param("VARIOUS.phonestop", "$R::phonestop");
-	#$pcfg->param("LOCATION.town", "\"$R::town\"");
-	#$pcfg->param("VARIOUS.CALDavMuell", "\"$R::wastecal\"");
-	#$pcfg->param("VARIOUS.CALDav2", "\"$R::cal\"");
+	$pcfg->param("LOCATION.town", "\"$R::town\"");
+	$pcfg->param("VARIOUS.CALDavMuell", "\"$R::wastecal\"");
+	$pcfg->param("VARIOUS.CALDav2", "\"$R::cal\"");
 	$pcfg->param("VARIOUS.cron", "$R::cron");
 	#$pcfg->param("SYSTEM.checkonline", "$R::checkonline");
 	$pcfg->param("SYSTEM.checkonline", "true");
+	
+	# save all radiostations
+	for ($i = 1; $i <= $countradios; $i++) {
+		my $rname = param("radioname$i");
+		my $rurl = param("radiourl$i");
+		$pcfg->param( "RADIO.radio" . "[$i]", "\"$rname\"" . "," . "\"$rurl\"" );
+	}
 	
 	$pcfg->save() or &error;
 	
@@ -569,16 +575,16 @@ sub save
 	#$pcfg->param("MP3.volumeup", "$R::volume");
 	$pcfg->param("MP3.MP3store", "$R::mp3store");
 	$pcfg->param("MP3.cachesize", "$R::cachesize");
-	$pcfg->param("LOCATION.town", "\"$R::town\"");
 	$pcfg->param("LOCATION.region", "$R::region");
 	$pcfg->param("LOCATION.googlekey", "$R::googlekey");
 	$pcfg->param("LOCATION.googletown", "$R::googletown");
 	$pcfg->param("LOCATION.googlestreet", "$R::googlestreet");
 	#$pcfg->param("VARIOUS.announceradio", "$R::announceradio");
-	$pcfg->param("VARIOUS.CALDavMuell", "\"$R::wastecal\"");
-	$pcfg->param("VARIOUS.CALDav2", "\"$R::cal\"");
 	#$pcfg->param("SYSTEM.checkonline", "$R::checkonline");
 	#$pcfg->param("SYSTEM.checkonline", "true");
+	$pcfg->param("LOCATION.town", "\"$R::town\"");
+	$pcfg->param("VARIOUS.CALDavMuell", "\"$R::wastecal\"");
+	$pcfg->param("VARIOUS.CALDav2", "\"$R::cal\"");
 	$pcfg->param("SYSTEM.path", "$R::STORAGEPATH");
 	$pcfg->param("SYSTEM.mp3path", "$R::STORAGEPATH/$ttsfolder/$mp3folder");
 	$pcfg->param("SYSTEM.ttspath", "$R::STORAGEPATH/$ttsfolder");
