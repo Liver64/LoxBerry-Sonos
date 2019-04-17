@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	3.7.2
-# Datum: 	09.04.2019
+# Version: 	3.7.3
+# Datum: 	17.04.2019
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
@@ -55,6 +55,7 @@ $lbport = lbwebserverport();									// get loxberry port
 $tmp_tts = "/run/shm/tmp_tts";									// path/file for T2S functions
 $tmp_phone = "/run/shm/tmp_phonemute.tmp";						// path/file for phonemute function
 $POnline = "/run/shm/sonoszone.json";							// path/file for Player Online check
+$off_file = $lbplogdir."/off.tmp";								// path/file for script off
 
 #echo '<PRE>';
 
@@ -79,6 +80,13 @@ if ($getsonos = strrpos($check_info, "getsonosinfo") != false)  {
 
 LOGSTART("PHP started");
 LOGGING("called syntax: ".$myIP."".urldecode($syntax),5);
+
+# Prüfung ob Script ausgeschaltet ist
+$script_on = $_GET['action'];
+if (file_exists($off_file) and $script_on != "on")  {
+	LOGGING("Script is off",5);
+	exit;
+}
 
 if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or 
 	(isset($_GET['sonos'])) or (isset($_GET['weather'])) or 
@@ -1315,6 +1323,14 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			SetBalance();
 		break;
 		
+		case 'off':
+			scriptoff();
+		break;
+		
+		case 'on':
+			scripton();
+		break;
+		
 		case 'queue':
 			#file("http://192.168.50.95/plugins/sonos4lox/index.php/?zone=kueche&action=sendmessage&text=Hallo Olli&volume=20");
 			#file("http://192.168.50.95/plugins/sonos4lox/index.php/?zone=kueche&action=sendmessage&clock");
@@ -1682,6 +1698,7 @@ function volume_group()  {
 }
 
 
+
 function phonemute()  {
 	global $sonoszone, $sonos, $min_vol, $config, $master, $tmp_phone, $tts_stat;
 	
@@ -1698,7 +1715,7 @@ function phonemute()  {
 	} 
 	
 	$state = getZoneStatus($master);
-	echo $min_vol;
+	//echo $min_vol;
 	$lastVol = "/run/shm/PhoneMute.log";
 	switch ($state)  {
 		case 'single':
@@ -1762,6 +1779,61 @@ function phoneunmute()  {
 	LOGGING("Phoneunmute has been executed", 6);
 }
 
+
+function scriptoff()  {
+	global $sonos, $config, $lbplogdir, $lbpconfigdir, $off_file, $lbhomedir, $lbpplugindir;
+	
+	if(!touch($off_file)) {
+		LOGGING("No permission to write file", 3);
+		exit;
+	}
+	$handle = fopen ($off_file, 'w');
+	fwrite ($handle, $config['VARIOUS']['cron']);
+	fclose ($handle);
+	@unlink ("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
+	@unlink ("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
+	@unlink ("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
+	@unlink ("$lbhomedir/system/cron/cron.15min/$lbpplugindir");
+	@unlink ("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
+	@unlink ("$lbhomedir/system/cron/cron.hourly/$lbpplugindir");
+	LOGGING("Onlinecheck, UDP, HTTP und Sonos4lox has been turned OFF", 5);
+}
+
+
+
+function scripton()  {
+	global $sonos, $config, $lbplogdir, $lbpbindir, $lbhomedir, $lbpconfigdir, $off_file, $lbhomedir, $lbpplugindir;
+	
+	if (file_exists($off_file) === false)  {
+		LOGGING("Onlinecheck, UDP, HTTP und Sonos4lox has not been turned off previously", 5);
+		exit;
+	} 
+	
+	$memudpfile = "/run/shm/msudp_mem_".$config['LOXONE']['Loxone']."_".$config['LOXONE']['LoxPort'].".json";
+	$memhttpfile = "/run/shm/mshttp_mem_".$config['LOXONE']['Loxone'].".json";
+	$handle = fopen ($off_file, 'r');
+	$tmp_cron = fgets($handle);
+	//echo $tmp_cron;
+	if ($tmp_cron == 60)  {
+		symlink($lbpbindir."/cronjob.sh", $lbhomedir."/system/cron/cron.hourly/".$lbpplugindir);
+		LOGGING("Onlinecheck hourly, UDP, HTTP und Sonos4lox has been turned ON", 5);
+		//ECHO "HOURLY";
+	}
+	if (($tmp_cron >= 10) and ($tmp_cron < 60))  {
+		LOGGING("Onlinecheck each ".$tmp_cron." minute(s), UDP, HTTP und Sonos4lox has been turned ON", 5);
+		//ECHO "GRÖßER 10";
+		symlink($lbpbindir."/cronjob.sh", $lbhomedir."/system/cron/cron.".$tmp_cron."min/".$lbpplugindir);
+	}
+	if ($tmp_cron < 10)  {
+		LOGGING("Onlinecheck each 0".$tmp_cron." minute(s), UDP, HTTP und Sonos4lox has been turned ON", 5);
+		//ECHO "KLEINER 10";
+		symlink($lbpbindir."/cronjob.sh", $lbhomedir."/system/cron/cron.0".$tmp_cron."min/".$lbpplugindir);
+	}		
+	@unlink($memudpfile);
+	@unlink($memhttpfile);
+	@unlink($off_file);
+	fclose($handle);
+}
 
 function shutdown()
 {
