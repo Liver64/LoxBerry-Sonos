@@ -1,1 +1,1 @@
-*** Wer Release v3.7.1 oder v3.7.2 installiert hat muss manuell auf v3.7.2 updaten (siehe Link im Wiki). Fehler in plugin.cfg wurde korrigiert, ohne das manuelle Update ist in Zukunft kein Auto Update mehr möglich ***
+*** Wer Release v3.7.1 oder v3.7.2 installiert hat muss manuell auf v3.7.2 updaten (siehe Link im Wiki). Fehler in plugin.cfg wurde korrigiert, ohne das manuelle Update ist in Zukunft kein Auto Update mehr moeglich ***
