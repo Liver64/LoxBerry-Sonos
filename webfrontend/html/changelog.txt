@@ -264,5 +264,7 @@
  3.7.2		[Bugfix] Die Radiofavoriten korrigiert. U.U. konnte eine URL die Config unlesbar machen
 			[Enhancement] diverse Feineinstellungen die bis dato hard codiert waren sind jetzt konfigurierbar (siehe neuer tab).
 			[Enhancement] Neue Funktionen phonemute und phoneunmute verfügbar
-			[Enhancement] funktion greet kann auch bei weather-, clock-, calendar-Ansagen genutzt werden
+			[Enhancement] funktion greet kann auch bei weather-, clock-, pollen-, wastecalendar Ansagen genutzt werden
 			[Enhancement] Onlineprüfung ist per CronJob (im Hintergrund) konfigurierbar
+ 3.8.0		[Enhancement] Neue Funktion on/off um das Script komplett aus-/einzuschalten (Abwesenheit, nachts, etc.)
+			[Bugfix] Fehler in Auto Update Funktion korrigiert
