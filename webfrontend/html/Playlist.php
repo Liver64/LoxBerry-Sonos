@@ -28,6 +28,7 @@ function playlist() {
 	
 	# Sonos Playlist ermitteln und mit übergebene vergleichen	
 	$sonoslists=$sonos->GetSONOSPlaylists();
+	print_r($sonoslists);
 	$pleinzeln = 0;
 	$gefunden = 0;
 	
@@ -375,9 +376,9 @@ function say_zone($zone) {
 		LOGGING("The parameter batch could not be used to announce zone!", 4);
 		exit;
 	}
-	$sonos->Stop();
-	sleep(1);
 	saveZonesStatus(); // saves all Zones Status
+	#$sonos->Stop();
+	sleep(1);
 	$sonos = new PHPSonos($sonoszone[$master][0]);
 	#********************** NEW get text variables **********************
 	$TL = LOAD_T2S_TEXT();
@@ -412,7 +413,90 @@ function say_zone($zone) {
 	} else {
 		$volume = $config['sonoszonen'][$master][4];
 	}
+	#$sonos->Play();
 	return $volume;
 }
+
+
+/**
+* Function: nextradio --> iterate through Radio Favorites (endless)
+*
+* @param: empty
+* @return: 
+**/
+function nextplaylist() {
+	global $sonos, $config, $master, $debug, $min_vol, $volume, $tmp_tts, $sonoszone;
+	
+	if (file_exists($tmp_tts))  {
+		LOGGING("Currently a T2S is running, we skip nextradio for now. Please try again later.",6);
+		exit;
+	}
+	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
+	$sonoslists = $sonos->GetSONOSPlaylists();
+	//print_r($sonoslists);
+	$pl_anzahl_check = count($sonoslists);
+	if($pl_anzahl_check == 0)  {
+		LOGGING("There are no Sonos Playlists maintained. Please create Playlists before using function NEXTPL or ZAPZONE!", 3);
+		exit;
+	}
+	$sonos->ClearQueue();
+	$pleinzeln = 0;
+	
+	
+	exit;
+	
+	$playstatus = $sonos->GetTransportInfo();
+	#$radioname = $sonos->GetMediaInfo();
+	if (!empty($radioname["title"])) {
+		$senderuri = $radioname["title"];
+	} else {
+		$senderuri = "";
+	}
+	$radio = $config['RADIO']['radio'];
+	ksort($radio);
+	$radioanzahl = count($config['RADIO']['radio']);
+	$radio_name = array();
+	$radio_adresse = array();
+	foreach ($radio as $key) {
+		$radiosplit = explode(',',$key);
+		array_push($radio_name, $radiosplit[0]);
+		array_push($radio_adresse, $radiosplit[1]);
+	}
+	$senderaktuell = array_search($senderuri, $radio_name);
+	# Wenn nextradio aufgerufen wird ohne eine vorherigen Radiosender
+	if( $senderaktuell == "" && $senderuri == "" || substr($senderuri, 0, 12) == "x-file-cifs:" ) {
+		$senderaktuell = -1;
+	}
+	if ($senderaktuell == ($radioanzahl) ) {
+		$sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[0], $radio_name[0]);
+		$act = $radio_name[0];
+	}
+    if ($senderaktuell < ($radioanzahl) ) {
+		@$sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[$senderaktuell + 1], $radio_name[$senderaktuell + 1]);
+		$act = $radio_name[$senderaktuell + 1];
+	}
+    if ($senderaktuell == $radioanzahl - 1) {
+	    $sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[0], $radio_name[0]);
+		$act = $radio_name[0];
+	}
+	$info_r = "\r\n Senderuri vorher: " . $senderuri . "\r\n";
+	$info_r .= "Sender aktuell: " . $senderaktuell . "\r\n";
+	$info_r .= "Radioanzahl: " .$radioanzahl;
+	LOGGING('Next Radio Info: '.($info_r),7);
+    if ($config['VARIOUS']['announceradio'] == 1) {
+		$check_stat = getZoneStatus($master);
+		if ($check_stat == "single")  {
+			say_radio_station();
+		} else {
+			LOGGING("Radio Station could not be announced because Master is grouped",6);
+		}
+	}
+	$coord = getRoomCoordinator($master);
+	$sonos = new PHPSonos($coord[0]);
+	$sonos->SetVolume($volume);
+	$sonos->Play();
+	LOGGING("Radio Station '".$act."' has been loaded successful by nextradio",6);
+}
+
 
 ?>

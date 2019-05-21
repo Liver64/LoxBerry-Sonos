@@ -104,12 +104,15 @@ function nextradio() {
 	}
 	if ($senderaktuell == ($radioanzahl) ) {
 		$sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[0], $radio_name[0]);
+		$act = $radio_name[0];
 	}
     if ($senderaktuell < ($radioanzahl) ) {
 		@$sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[$senderaktuell + 1], $radio_name[$senderaktuell + 1]);
+		$act = $radio_name[$senderaktuell + 1];
 	}
     if ($senderaktuell == $radioanzahl - 1) {
 	    $sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[0], $radio_name[0]);
+		$act = $radio_name[0];
 	}
 	$info_r = "\r\n Senderuri vorher: " . $senderuri . "\r\n";
 	$info_r .= "Sender aktuell: " . $senderaktuell . "\r\n";
@@ -127,7 +130,7 @@ function nextradio() {
 	$sonos = new PHPSonos($coord[0]);
 	$sonos->SetVolume($volume);
 	$sonos->Play();
-	LOGGING("Radio Station '".$radioname['title']."' has been loaded successful by nextradio",6);
+	LOGGING("Radio Station '".$act."' has been loaded successful by nextradio",6);
 }
 
 

@@ -405,7 +405,15 @@ sub form
 	
 	LOGOK "Sonos Plugin has been successfully loaded.";
 	
+	# Donation
+	if (is_enabled($pcfg->param("VARIOUS.donate"))) {
+		$template->param("DONATE", 'checked="checked"');
+	} else {
+		$template->param("DONATE", '');
+	}
+	
 	printtemplate();
+	#$content = $donation;
 	#print_test($content);
 	exit;
 	
@@ -582,6 +590,7 @@ sub save
 	#$pcfg->param("VARIOUS.announceradio", "$R::announceradio");
 	#$pcfg->param("SYSTEM.checkonline", "$R::checkonline");
 	#$pcfg->param("SYSTEM.checkonline", "true");
+	$pcfg->param("VARIOUS.donate", "$R::donate");
 	$pcfg->param("LOCATION.town", "\"$R::town\"");
 	$pcfg->param("VARIOUS.CALDavMuell", "\"$R::wastecal\"");
 	$pcfg->param("VARIOUS.CALDav2", "\"$R::cal\"");

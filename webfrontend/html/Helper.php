@@ -893,7 +893,7 @@ function check_rampto() {
 
 function create_symlinks()  {
 	
-	global $config, $ttsfolder, $mp3folder, $myFolder, $lbphtmldir;
+	global $config, $ttsfolder, $mp3folder, $myFolder, $lbphtmldir, $myip;
 	
 	$symcurr_path = $config['SYSTEM']['path'];
 	$symttsfolder = $config['SYSTEM']['ttspath'];

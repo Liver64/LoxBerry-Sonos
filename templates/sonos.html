@@ -1,4 +1,4 @@
-﻿<style type="text/css">
+<style type="text/css">
 
 </style>
 
@@ -7,6 +7,7 @@
 <form method="post" data-ajax="false" accept-charset="utf-8" name="main_form" id="main_form" action="./index.cgi?form">
 	<input type="hidden" name="saveformdata1" value="1">
 		<div class="form-group">
+				<font COLOR="blue"><TMPL_VAR SAVE></font>
 
 <table class="formtable" border="0" width="100%" cellpadding="10">
 	<tr>
@@ -554,10 +555,44 @@
 				</center>
 				</p>
 	</div>
-</form>	
+
+
+<!-- Donation -->
+<div data-role='collapsible' id='coll_donate' data-content-theme='true' data-collapsed='true' data-collapsed-icon='carat-d' data-expanded-icon='carat-u' data-iconpos='right'>
+	<h2 class='ui-bar ui-bar-a ui-corner-all' id='head_donate'><TMPL_VAR BASIS.DONATE_HEADER></h2>
+	<TMPL_VAR donate>
+	<div style="margin:auto;text-align:left;">
+		<br>
+		<label id="lexample"><TMPL_VAR BASIS.DONATE_TEXT></label>
+	</div>
+	<div style="margin:auto;text-align:left;">
+	<br>
+	<li><a href="https://www.ikea.com/de/de/news/symfonisk-regal-wifi-speaker-und-tischleuchte-mit-wifi-speaker-pub0f4bd579" target="_blank">Link zur Preview Seite</a> </li>
+	</div>
+	<div style="margin:auto;text-align:center;">
+	<br>
+	<a href="https://paypal.me/olewald" target="_blank"><img src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" alt="Donate with PayPal.me" /></a>
+	</div>
+	<br>
+	<div style="display:flex;justify-content:center;align-content:space-around;">
+		<div style="padding: 10px 10px 10px 10px;">
+			<fieldset data-role="controlgroup">
+				<input type="checkbox" name="donate" id="donate" <TMPL_VAR DONATE>>
+				<label for="donate"><TMPL_VAR BASIS.DONATE_DONE_REMOVE></label>
+			</fieldset>
+		</div>
+		<div style="padding: 10px 10px 10px 10px;">
+			<button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true"><TMPL_VAR SAVE.SAVE_BUTTON></button>
+		</div>
+	</div>
+	<!-- <button id="remove_donate" data-mini="true"><TMPL_VAR donate_done_remove></button> -->
+</div>
+<!-- Ende Donation -->
+</form>
+<!--</form>-->
+
+
 <script>
-
-
 	
 //***************** Functions to be executed during loading the page **********************
 
@@ -576,7 +611,7 @@ callayout();
 destlayout();
 radlayout();
 weatherlayout();
-
+donation();
 });
 
 
@@ -613,6 +648,14 @@ function weatherlayout()  {
 		$(".weatherdet").fadeIn(800);
 	} else {
 		$(".weatherdet").fadeOut(800);
+	}
+}
+
+function donation()  {
+	if(document.getElementById('donate').checked) {
+			$("#coll_donate").hide();
+	} else {
+			$("#coll_donate").show();
 	}
 }
 

@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	3.8.0
-# Datum: 	17.04.2019
+# Version: 	3.8.1
+# Datum: 	21.05.2019
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
@@ -36,7 +36,7 @@ date_default_timezone_set(date("e"));
 # prepare variables
 $home = $lbhomedir;
 $hostname = gethostname();										// hostname LoxBerry
-$myIP = $_SERVER["SERVER_ADDR"];								// get IP of LoxBerry
+$myIP = LBSystem::get_localip();								// get IP of LoxBerry
 $syntax = $_SERVER['REQUEST_URI'];								// get syntax
 $psubfolder = $lbpplugindir;									// get pluginfolder
 $lbversion = LBSystem::lbversion();								// get LoxBerry Version
@@ -1329,6 +1329,10 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		case 'on':
 			scripton();
+		break;
+		
+		case 'nextpl':
+			nextplaylist();
 		break;
 		
 		case 'queue':
