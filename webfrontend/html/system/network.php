@@ -253,6 +253,7 @@ $plugindata = LBSystem::plugindata();
 			"S15"   =>  "CONNECT",
             "ZP80"  =>  "ZONEPLAYER",
 			"ZP90"  =>  "CONNECT",
+			"S16"  	=>  "CONNECT:AMP",
             "ZP100" =>  "CONNECT:AMP",
             "ZP120" =>  "CONNECT:AMP",
         ];

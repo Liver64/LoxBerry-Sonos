@@ -270,3 +270,4 @@
 			[Bugfix] Fehler in Auto Update Funktion korrigiert
  3.8.1		[Bugfix] Ansage des Players bei zapzone korrigiert
 			[Bugfix] Abfrage/Aktualisierung der IP Adresse aus dem laufenden Programm heraus
+ 3.8.2		[Improvement] Support für CONNECT:AMP Gen 2 hinzugefügt

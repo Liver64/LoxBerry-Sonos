@@ -652,6 +652,7 @@ function playmode_detection($zone, $settings)  {
         "ZP80"  =>  "CONNECT",
         "ZP90"  =>  "CONNECT",
 		"S15"   =>  "CONNECT",
+		"S16"   =>  "CONNECT:AMP",
         "ZP100" =>  "CONNECT:AMP",
         "ZP120" =>  "CONNECT:AMP",
         ];
