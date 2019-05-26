@@ -28,48 +28,6 @@
 
 
 /**
-* Function: getPlayerList --> generates Sonos Topology
-*
-* @param:  empty
-* @return: array(	Rincon-ID
-*					Group-ID,
-*					Coordinator
-*					IP-Adresse  )
-**/
-	
-function getPlayerList(){
-	global $sonoszone;
-		
-	if(!$xml=deviceCmdRaw('/status/topology')){
-		return false;
-	}	
-	$topology = simplexml_load_string($xml);
-	$myself = null;
-	$coordinators = [];
-	// Loop players, build map of coordinators and find myself
-	foreach ($topology->ZonePlayers->ZonePlayer as $player)	{
-		$player_data = $player->attributes();
-		$name=utf8_decode((string)$player);
-		$group=(string)$player_data->group[0];
-		$ip = parse_url((string)$player_data->location)['host'];
-		$port = parse_url((string)$player_data->location)['port'];
-		$zonename = recursive_array_search($ip,$sonoszone);
-		$player = array(
-			'Host' =>"$ip",
-			'Sonos Name' =>utf8_encode($zonename),
-			'Master' =>((string)$player_data->coordinator == 'true'),
-			'Group-ID' => $group,
-			'Rincon' =>'RINCON_'.explode('RINCON_',(string)$player_data->uuid)[1]
-		);
-		$sonostopology[] = $player;
-	}
-	print_r($sonostopology);
-	return($sonostopology);
-}
-	
-	
-
-/**
 * Function : objectToArray --> konvertiert ein Object (Class) in eine Array.
 * https://www.if-not-true-then-false.com/2009/php-tip-convert-stdclass-object-to-multidimensional-array-and-convert-multidimensional-array-to-stdclass-object/
 *

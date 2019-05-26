@@ -7,7 +7,7 @@
 
 function s2s()
 { 		
-	global $debug, $sonos, $sonoszone, $master, $t2s_langfile, $templatepath;
+	global $debug, $sonos, $sonoszone, $master, $t2s_langfile, $templatepath, $config;
 	
 	#********************** NEW get text variables*********** ***********
 	$TL = LOAD_T2S_TEXT();
@@ -22,12 +22,18 @@ function s2s()
 	if($gettransportinfo <> 1) {
 		exit;
 	} else {
+	$grouped = getGroup($master);
+	if ($grouped != array()) {
+		LOGGING("Player ".$master." ist grouped, we abort here",4);
+		exit;
+	}
 	# Prüft ob Playliste oder Radio läuft
 		$master = $_GET['zone'];
 		$sonos = new PHPSonos($sonoszone[$master][0]);
 		$temp = $sonos->GetPositionInfo();
 		$temp_radio = $sonos->GetMediaInfo();
 		$sonos->Stop();
+		$ann_radio = $config['VARIOUS']['announceradio_always'];
 		if(!empty($temp["duration"])) {
 			# Generiert Titelinfo wenn MP3 läuft
 			$artist = substr($temp["artist"], 0, 30);
@@ -36,7 +42,7 @@ function s2s()
 		} elseif(empty($temp["duration"])) {
 			$find1st = strpos($temp['streamContent'], " - ");
 			$findlast = strrpos($temp['streamContent'], " - ");
-			if (($find1st === false) or ($find1st <> $findlast)) {
+			if (($find1st === false) or ($find1st <> $findlast) or ($ann_radio == "1")) {
 				# Generiert Ansage des laufenden Senders
 				$sender = $temp_radio['title'];
 				$text = $this_radio." ".$sender;

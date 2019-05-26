@@ -1183,11 +1183,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		
 		
-		case 'getplayerlist':
-			getPlayerList();
-		break;
-		
-		
 		case 'grouping':
 			Group($master);
 		break;

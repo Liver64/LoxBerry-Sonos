@@ -438,6 +438,7 @@ sub save_details
 	$pcfg->param("MP3.volumedown", "$R::volume");
 	$pcfg->param("MP3.volumeup", "$R::volume");
 	$pcfg->param("VARIOUS.announceradio", "$R::announceradio");
+	$pcfg->param("VARIOUS.announceradio_always", "$R::announceradio_always");
 	$pcfg->param("TTS.phonemute", "$R::phonemute");
 	$pcfg->param("VARIOUS.phonestop", "$R::phonestop");
 	$pcfg->param("LOCATION.town", "\"$R::town\"");

@@ -1383,6 +1383,22 @@ function Scanning() {
 			</fieldset>
 			<input id="maxzap" name="maxzap" type="hidden" class="textfield" value="<TMPL_VAR MAXZAP>">
 		</td>
+		<tr>
+				<td style="width: 27%">
+						<TMPL_VAR RADIO.LABEL_RADIO_ANNOUNCE_ALWAYS>
+					</td>
+			<td style="width: 800px">
+				<fieldset style="width: 788px">
+					<select onchange="select()" id="announceradio_always" name="announceradio_always" data-role="flipswitch">
+						<option value="0"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
+						<option value="1"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
+					</select>&nbsp;&nbsp; 
+					<script>$('#announceradio_always').val('<TMPL_VAR VARIOUS.announceradio_always>')</script>
+					<span class="auto-style4"><TMPL_VAR RADIO.NOTE_RADIO_ANNOUNCE_ALWAYS></span>
+				</fieldset>
+			</td>
+
+		</tr>
 		<tr class="radioannounce">
 			<td style="height: 60px; width: 25%;">
 				<label id="lcorrection"><TMPL_VAR T2S.LABEL_CORRECTION></label>
