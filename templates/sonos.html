@@ -1389,7 +1389,7 @@ function Scanning() {
 					</td>
 			<td style="width: 800px">
 				<fieldset style="width: 788px">
-					<select onchange="select()" id="announceradio_always" name="announceradio_always" data-role="flipswitch">
+					<select onchange="select_always()" id="announceradio_always" name="announceradio_always" data-role="flipswitch">
 						<option value="0"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
 						<option value="1"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
 					</select>&nbsp;&nbsp; 
@@ -1508,11 +1508,20 @@ function Scanning() {
 				<script>
 				$(document).on('pageinit', function() {
 					select();
+					select_always();
 					cronjob();
 					
 				});
 				function select() {  
 						var rad = document.getElementById('announceradio').value;  
+						if (rad == true) {
+								$('.radioannounce').fadeIn(600);
+						} else {
+								$('.radioannounce').fadeOut(600);
+						}
+					}
+					function select_always() {  
+						var rad = document.getElementById('announceradio_always').value;  
 						if (rad == true) {
 								$('.radioannounce').fadeIn(600);
 						} else {

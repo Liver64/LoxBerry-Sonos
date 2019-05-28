@@ -260,9 +260,14 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 	if ($tmp_vol >= $config['sonoszonen'][$master][5]) {
 		$volume = $config['sonoszonen'][$master][5];
 	}
-	if (isset(($_GET['text'])) or isset(($_GET['messageid'])))  {
-		$volume = $config['sonoszonen'][$master][3];
-		LOGGING("Standard T2S Volume for Master Player ".$master." has been set to: ".$volume, 7);
+	if (isset($_GET['text']) or isset($_GET['messageid']) or
+		(isset($_GET['sonos'])) or (isset($_GET['weather'])) or 
+		(isset($_GET['abfall'])) or (isset($_GET['witz'])) or 
+		(isset($_GET['pollen'])) or (isset($_GET['warning'])) or
+		(isset($_GET['distance'])) or (isset($_GET['clock'])) or 
+		(isset($_GET['calendar'])) or (isset($_GET['radio'])))	{
+			$volume = $config['sonoszonen'][$master][3];
+			LOGGING("Standard T2S Volume for Master Player ".$master." has been set to: ".$volume, 7);
 	} else {
 		$volume = $config['sonoszonen'][$master][4];
 		LOGGING("Standard Volume for Master Player ".$master." has been set to: ".$volume, 7);
