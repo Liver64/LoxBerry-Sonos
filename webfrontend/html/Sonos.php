@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	3.8.2
-# Datum: 	25.05.2019
+# Version: 	3.8.3
+# Datum: 	31.05.2019
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
@@ -188,8 +188,8 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 	}
 	LOGGING("All variables has been collected",7);
 	
-	#$sonoszone = $sonoszonen;
-	#print_r($sonoszone);
+	$sonoszone = $sonoszonen;
+	#print_r($sonoszonen);
 	#print_r($config);
 	#exit;
 		
@@ -208,6 +208,7 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 	$min_vol = $config['TTS']['phonemute'];													// min.vol as exception for current volume
 	$min_sec = $config['TTS']['waiting'];													// min. in seconds before same mp3 been played again (Statubsaustein)
 	create_symlinks();
+	#volume_group();
 	
 		
 #-- End Preparation ---------------------------------------------------------------------
@@ -242,7 +243,12 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 			$volume = $tm_volume;
 			LOGGING("Volume for Master Player ".$master." has been set to current volume", 7);
 		} else {
-			if (isset(($_GET['text'])) or isset(($_GET['messageid'])))  {
+			if (isset($_GET['text']) or isset($_GET['messageid']) or
+				(isset($_GET['sonos'])) or (isset($_GET['weather'])) or 
+				(isset($_GET['abfall'])) or (isset($_GET['witz'])) or 
+				(isset($_GET['pollen'])) or (isset($_GET['warning'])) or
+				(isset($_GET['distance'])) or (isset($_GET['clock'])) or 
+				(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch") or (isset($_GET['radio'])))	{
 				$volume = $config['sonoszonen'][$master][3];
 				LOGGING("T2S Volume for Master Player ".$master." is less then ".$min_vol." and has been set exceptional to Standard volume ".$config['sonoszonen'][$master][3], 7);
 			} else {
@@ -265,9 +271,9 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 		(isset($_GET['abfall'])) or (isset($_GET['witz'])) or 
 		(isset($_GET['pollen'])) or (isset($_GET['warning'])) or
 		(isset($_GET['distance'])) or (isset($_GET['clock'])) or 
-		(isset($_GET['calendar'])) or (isset($_GET['radio'])))	{
-			$volume = $config['sonoszonen'][$master][3];
-			LOGGING("Standard T2S Volume for Master Player ".$master." has been set to: ".$volume, 7);
+		(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch") or (isset($_GET['radio'])))	{
+		$volume = $config['sonoszonen'][$master][3];
+		LOGGING("Standard T2S Volume for Master Player ".$master." has been set to: ".$volume, 7);
 	} else {
 		$volume = $config['sonoszonen'][$master][4];
 		LOGGING("Standard Volume for Master Player ".$master." has been set to: ".$volume, 7);
@@ -316,7 +322,6 @@ if(isset($_GET['rampto'])) {
 if(array_key_exists($_GET['zone'], $sonoszone)){ 
 
 	global $json;
-	
 	$master = $_GET['zone'];
 	$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 	switch($_GET['action'])	{
@@ -449,7 +454,11 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			}
 			checkifmaster($master);
 			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
-			$sonos->Pause();
+			try {			
+				$sonos->Pause();
+			} catch (Exception $e) {
+				$sonos->Stop();
+			}
 			$sonos->SetVolume($save_vol_stop);
 			LOGGING("Softstop been executed.", 7);
 		break; 
@@ -1675,7 +1684,12 @@ function volume_group()  {
 						$volume = $tmg_volume;
 						LOGGING("Volume for Member ".$zone2." has been set to current volume", 7);
 					} else {
-						if (isset(($_GET['text'])) or isset(($_GET['messageid'])))  {
+						if (isset($_GET['text']) or isset($_GET['messageid']) or
+							(isset($_GET['sonos'])) or (isset($_GET['weather'])) or 
+							(isset($_GET['abfall'])) or (isset($_GET['witz'])) or 
+							(isset($_GET['pollen'])) or (isset($_GET['warning'])) or
+							(isset($_GET['distance'])) or (isset($_GET['clock'])) or 
+							(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch") or (isset($_GET['radio'])))	{
 							$volume = $config['sonoszonen'][$zone2][3];
 							LOGGING("T2S Volume for Member ".$zone2." is less then ".$min_vol." and has been set exceptional to Standard volume ".$config['sonoszonen'][$zone2][3], 7);
 						} else {
@@ -1686,15 +1700,21 @@ function volume_group()  {
 				}
 			} else {
 				# No volume from Syntax/URL
-				if (isset(($_GET['text'])) or isset(($_GET['messageid'])))  {
+				if (isset($_GET['text']) or isset($_GET['messageid']) or
+					(isset($_GET['sonos'])) or (isset($_GET['weather'])) or 
+					(isset($_GET['abfall'])) or (isset($_GET['witz'])) or 
+					(isset($_GET['pollen'])) or (isset($_GET['warning'])) or
+					(isset($_GET['distance'])) or (isset($_GET['clock'])) or 
+					(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch") or (isset($_GET['radio'])))	{
 					# T2S Standard Volume
-					$volume = $sonoszone[$zone2][3];
+					$volume = $config['sonoszonen'][$zone2][3];
 				} else {
 					# Sonos Standard Volume
-					$volume = $sonoszone[$zone2][4];
+					$volume = $config['sonoszonen'][$zone2][4];
 				}
 				LOGGING("Standard Volume for Group Member ".$zone2." has been set to: ".$volume, 7);
 			}
+			#print_r($sonos);
 			$sonos->SetMute(false);
 			$sonos->SetVolume($volume);
 		}

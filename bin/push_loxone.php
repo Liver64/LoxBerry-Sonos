@@ -126,6 +126,8 @@ global $mem_sendall, $mem_sendall_sec;
 	// obtain selected Miniserver from config
 	$my_ms = $ms[$config['LOXONE']['Loxone']];
 	
+	$_SESSION['stat'] = "0";
+	
 	// if zone is currently playing... 
 	if (count($playing) > 0)  {
 		send_udp();
@@ -275,22 +277,19 @@ global $mem_sendall, $mem_sendall_sec;
 				$valueurl = ($value);
 				#$valuesplit[0] = ($valuesplit[0]);
 				#$valuesplit[1] = ($valuesplit[1]);
-					try {
-						$data['titint_'.$zone] = $valueurl;
-						$data['tit_'.$zone] = $valuesplit[0];
-						$data['int_'.$zone] = $valuesplit[1];
-						$data['source_'.$zone] = $source;
-						#$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/titint_$zone/$valueurl"); // Titel- und Interpretinfo für Loxone
-						#$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/tit_$zone/$valuesplit[0]"); // Nur Titelinfo für Loxone
-						#$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/int_$zone/$valuesplit[1]"); // Nur Interpreteninfo für Loxone
-						#$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/source_$zone/$source"); // Radio oder Playliste
-					} catch (Exception $e) {
-						LOGERR("The connection to Loxone could not be initiated!");	
-						exit;
-					}
+				try {
+					$data['titint_'.$zone] = $valueurl;
+					$data['tit_'.$zone] = $valuesplit[0];
+					$data['int_'.$zone] = $valuesplit[1];
+					$data['source_'.$zone] = $source;
+				} catch (Exception $e) {
+					LOGERR("The connection to Loxone could not be initiated!");	
+					exit;
+				}
+			ms_send_mem($config['LOXONE']['Loxone'], $data, $value = null);
 			}
 		}
-		ms_send_mem($config['LOXONE']['Loxone'], $data, $value = null);
+		#ms_send_mem($config['LOXONE']['Loxone'], $data, $value = null);
 		#print_r($data);
 		#LOGINF ("Push");
 	}

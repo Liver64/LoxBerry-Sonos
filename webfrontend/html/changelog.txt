@@ -273,3 +273,7 @@
  3.8.2		[Improvement] Support für CONNECT:AMP Gen 2 hinzugefügt
 			[Bugfix] Error handling bei der Ansage Radiosender/Titel/Interpret verbessert
 			[Improvement] Möglichkeit bei der funktion '...action=say&sonos' zwingend den Radio Sender angesagt zu bekommen
+ 3.8.3		[Bugfix] Einige Korrekturen bzgl. pushen von Daten zum MS
+			[Bugfix] Unmute bei nextradio hinzugefügt
+			[Bugfix] TTS Lautstärke bei Gruppenansagen optimiert
+			[Bugfix] Funktion softstop korrigiert

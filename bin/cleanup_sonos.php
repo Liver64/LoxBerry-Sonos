@@ -36,7 +36,7 @@ if ($folderpeace[3] != "data") {
 	// wenn local dir als Speichermedium selektiert wurde
 	$MessageStorepath = $config['SYSTEM']['ttspath']."/";
 }
-echo $MessageStorepath;
+
 // Set defaults if needed
 $storageinterval = trim($config['MP3']['MP3store']);
 $cachesize = !empty($config['MP3']['cachesize']) ? trim($config['MP3']['cachesize']) : "100";

@@ -128,6 +128,7 @@ function nextradio() {
 	}
 	$coord = getRoomCoordinator($master);
 	$sonos = new PHPSonos($coord[0]);
+	$sonos->SetMute(false);
 	$sonos->SetVolume($volume);
 	$sonos->Play();
 	LOGGING("Radio Station '".$act."' has been loaded successful by nextradio",6);

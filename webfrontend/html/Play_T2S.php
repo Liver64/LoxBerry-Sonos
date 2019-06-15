@@ -591,8 +591,8 @@ function sendgroupmessage() {
 			// master der array hinzufügen
 			array_push($group, $master);
 			// Regelung des Volumes für T2S
-			volume_group();
 			$sonos->SetVolume($volume);
+			volume_group();
 			play_tts($messageid);
 			// wiederherstellen der Ursprungszustände
 			restoreGroupZone();

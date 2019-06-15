@@ -73,7 +73,7 @@ function udp_send_mem($msnr, $udpport, $prefix, $params)
 			
 		}
 	}
-	return $udpres;
+	#return $udpres;
 }
 
 
