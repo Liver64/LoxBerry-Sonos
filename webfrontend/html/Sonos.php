@@ -2,14 +2,15 @@
 
 ##############################################################################################################################
 #
-# Version: 	3.8.3
-# Datum: 	31.05.2019
+# Version: 	3.8.4
+# Datum: 	25.06.2019
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
 
 
 // ToDo
+
 
 ini_set('max_execution_time', 60); 							// Max. Skriptlaufzeit auf 120 Sekunden
 
@@ -188,7 +189,7 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 	}
 	LOGGING("All variables has been collected",7);
 	
-	$sonoszone = $sonoszonen;
+	#$sonoszone = $sonoszonen;
 	#print_r($sonoszonen);
 	#print_r($config);
 	#exit;

@@ -248,7 +248,7 @@ global $mem_sendall, $mem_sendall_sec;
 			}
 			if ($gettransportinfo == 1) {
 				// Radio wird gerade gespielt
-				if(isset($tempradio["title"]) && (empty($temp["duration"]))) {	
+				if(isset($tempradio["title"]) && (empty($temp["duration"])) && (substr($temp["TrackURI"], 0, 18) != "x-sonos-htastream:")) {	
 					$stream_content = $temp["streamContent"];
 					if (empty($stream_content))  {
 						$value = @substr($tempradio["title"], 0, 40); 
@@ -260,8 +260,16 @@ global $mem_sendall, $mem_sendall_sec;
 						$valuesplit[1] = $stream_content;
 					}
 					$source = 1;
+				} 
+				// TV läuft
+				if((empty($temp["duration"])) && (substr($temp["TrackURI"], 0, 18) == "x-sonos-htastream:")) {	
+					$value = "TV läuft";
+					$valuesplit[0] = "TV läuft";
+					$valuesplit[1] = "TV läuft";
+					$source = 3;
 				// Playliste wird gerade gespielt
-				} else {
+				} 
+				if((!empty($temp["duration"])) && (substr($temp["TrackURI"], 0, 18) != "x-sonos-htastream:")) {	
 					$artist = substr($temp["artist"], 0, 30);
 					$title = substr($temp["title"], 0, 50); 
 					$value = $artist." - ".$title; 	// kombinierte Titel- und Interpretinfo

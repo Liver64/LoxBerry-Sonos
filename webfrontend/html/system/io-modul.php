@@ -183,7 +183,7 @@ function rest_call($msnr, $command)
 	
 	// echo "URL: $url\n";
 	
-	$xmlresp = simplexml_load_file($url);
+	$xmlresp = @simplexml_load_file($url);
 	if ($xmlresp === false) {
 		// echo "Errors occured\n";
 		$errors = libxml_get_errors();

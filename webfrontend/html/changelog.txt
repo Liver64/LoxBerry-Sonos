@@ -254,8 +254,7 @@
 			[Improvement] T2S Ansage hinsichtlich Verwendung von Statusbaustein optimiert (kein PicoC mehr notwendig)
 			[Improvement] Komplette Überarbeitung der Lautstärkeregelung
 			[Improvement] Neuer Parameter in der Konfig zur T2S Lautstärkeanhebung bei Ansage hinsichtlich nextradio und zapzone
- 3.7.0		[Improvement] source_ZONE=3 für TV als gegenwärtige Eingangsquelle hinzugefügt (virtueller Texteingangsverbinder)
-			[Improvement] Neuer Parameter für Lautstärkeregelung '&keepvolume'. Behält gegenwärtige Lautstärke bei, es sei denn sie ist <7, dann Standard Lautstärke
+ 3.7.0		[Improvement] Neuer Parameter für Lautstärkeregelung '&keepvolume'. Behält gegenwärtige Lautstärke bei, es sei denn sie ist <7, dann Standard Lautstärke
 			[Bugfix] MP3 Dateien cleanup korrigiert (bei Verwendung von NAS/Netzlaufwerk oder USB wurde nicht reorganisiert)
 			[Bugfix] Scannen nach Zonen optimiert um Stereopaare/Surround komponenten zu unterstützen
 			[Improvement] Neue Funktion 'softstopall'. Reduziert lamgsam für alle Player die laufen die Lautstärke auf Null
@@ -277,3 +276,5 @@
 			[Bugfix] Unmute bei nextradio hinzugefügt
 			[Bugfix] TTS Lautstärke bei Gruppenansagen optimiert
 			[Bugfix] Funktion softstop korrigiert
+ 3.8.4		[Bugfix] Wetteransage nach 22:00h bis 24:00h korrigiert
+			[Improvement] source_ZONE=3 für TV als gegenwärtige Eingangsquelle hinzugefügt (virtueller Texteingangsverbinder)

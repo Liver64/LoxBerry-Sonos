@@ -1508,21 +1508,22 @@ function Scanning() {
 				<script>
 				$(document).on('pageinit', function() {
 					select();
-					select_always();
+					//select_always();
 					cronjob();
 					
 				});
 				function select() {  
 						var rad = document.getElementById('announceradio').value;  
-						if (rad == true) {
+						var rad1 = document.getElementById('announceradio_always').value;  
+						if (rad == true || rad1 == true) {
 								$('.radioannounce').fadeIn(600);
 						} else {
 								$('.radioannounce').fadeOut(600);
 						}
 					}
 					function select_always() {  
-						var rad = document.getElementById('announceradio_always').value;  
-						if (rad == true) {
+						var rad1 = document.getElementById('announceradio_always').value;  
+						if (rad1 == true) {
 								$('.radioannounce').fadeIn(600);
 						} else {
 								$('.radioannounce').fadeOut(600);
