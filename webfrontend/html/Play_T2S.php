@@ -30,7 +30,7 @@ function say() {
 **/		
 
 function create_tts() {
-	global $sonos, $config, $filename, $MessageStorepath, $player, $messageid, $textstring, $home, $time_start, $tmp_batch, $MP3path, $filenameplay, $volume, $tts_stat;
+	global $sonos, $config, $filename, $MessageStorepath, $player, $messageid, $textstring, $home, $time_start, $tmp_batch, $MP3path, $filenameplay, $textstring, $volume, $tts_stat;
 	
 	# setze 1 für virtuellen Texteingang (T2S Start)
 	$tts_stat = 1;
@@ -184,7 +184,11 @@ function create_tts() {
 			include_once("voice_engines/Polly.php");	
 		}
 		//echo filesize($config['SYSTEM']['ttspath']."/".$filename.".mp3");
-		
+	# check if NULL or 0 has been entered (Loxone Status)
+	if (($textstring === "null") or ($textstring === "0"))  {
+		LOGGING("NULL or 0 or Text from Loxone Status has been entered, therefor T2S been skipped", 6);	
+		exit(1);
+	}
 	if(file_exists($config['SYSTEM']['ttspath']."/".$filename.".mp3") && empty($_GET['nocache'])) {
 		LOGGING("MP3 grabbed from cache: '$textstring' ", 6);
 	} else {
@@ -198,8 +202,10 @@ function create_tts() {
 		// check if filename is < 1 Byte
 		if (filesize($config['SYSTEM']['ttspath']."/".$filename.".mp3") < 1)  {
 			LOGGING("Something went wrong with your T2S, the filesize is 0 Byte :-( Please check/save your config, check authorisation for User loxberry and try again!", 3);	
-		exit(1);
+			exit(1);
 		}
+		echo $textstring;
+		
 	}
 	return $filename;
 	}
@@ -214,7 +220,7 @@ function create_tts() {
 **/		
 
 function play_tts($filename) {
-	global $volume, $config, $messageid, $sonos, $text, $messageid, $sleeptimegong, $sonoszone, $sonoszonen, $master, $coord, $actual, $player, $time_start, $t2s_batch, $filename, $textstring, $home, $MP3path, $lbpplugindir, $logpath, $try_play, $MessageStorepath, $filename, $tts_stat;
+	global $volume, $config, $messageid, $sonos, $text, $messageid, $sleeptimegong, $sonoszone, $sonoszonen, $master, $coord, $actual, $textstring, $player, $time_start, $t2s_batch, $filename, $textstring, $home, $MP3path, $lbpplugindir, $logpath, $try_play, $MessageStorepath, $filename, $tts_stat;
 		
 		$coord = getRoomCoordinator($master);
 		$sonos = new PHPSonos($coord[0]);
@@ -359,7 +365,6 @@ function play_tts($filename) {
 				LOGGING("Jingle has been removed from Queue", 7);	
 			}	
 		}	
-		
 		// if Playlist has more than 998 entries
 		if ($save_plist > 998) {
 			$sonos->ClearQueue();
