@@ -491,13 +491,11 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		  
 		case 'toggle':
+			checkifmaster($master);
+			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 			if($sonos->GetTransportInfo() == 1)  {
-				checkifmaster($master);
-				$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 				$sonos->Pause();
 			} else {
-				checkifmaster($master);
-				$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 				$sonos->Play();
 			}
 			LOGGING("Toggle been executed.", 7);
