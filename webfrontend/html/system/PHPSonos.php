@@ -2809,7 +2809,8 @@ return $list;
         fputs ($fp, $content); 
         $ret = ""; 
         while (!feof($fp)) { 
-            $ret.= fgetss($fp,128); 
+            $ret.= fgets($fp,128); 
+			#$ret.= fgetss($fp,128);  --> fgetss depreciated in PHP 7.3
         } 
         fclose($fp); 
 
