@@ -184,11 +184,7 @@ function create_tts() {
 			include_once("voice_engines/Polly.php");	
 		}
 		//echo filesize($config['SYSTEM']['ttspath']."/".$filename.".mp3");
-	# check if NULL or 0 has been entered (Loxone Status)
-	if (($textstring === "null") or ($textstring === "0"))  {
-		LOGGING("NULL or 0 or Text from Loxone Status has been entered, therefor T2S been skipped", 6);	
-		exit(1);
-	}
+	
 	if(file_exists($config['SYSTEM']['ttspath']."/".$filename.".mp3") && empty($_GET['nocache'])) {
 		LOGGING("MP3 grabbed from cache: '$textstring' ", 6);
 	} else {

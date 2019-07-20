@@ -279,5 +279,5 @@
  3.8.4		[Bugfix] Wetteransage nach 22:00h bis 24:00h korrigiert
 			[Improvement] source_ZONE=3 für TV als gegenwärtige Eingangsquelle hinzugefügt (virtueller Texteingangsverbinder)
 			[Bugfix] toggle für Gruppen optimiert
-			[Update] funktion fgetss durch fgets ersetzt (notwendig durch PHP Upgrade auf v7.3)
-			[Improvement] skip T2S die NULL ansagen (Thema Status Baustein)
+			[Improvement] skip bei Verwendung des Statusbausteines für T2S die NULL ansagen
+			[Feature] Die IP-Adresse des jeweilgen Players ist in der Config visualisiert

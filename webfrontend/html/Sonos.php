@@ -111,6 +111,11 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 		LOGINF("Currently a Phonecall is running, we abort...");
 		exit(0);
 	}
+	# check if NULL or 0 has been entered (Loxone Status)
+	if (($_GET['text'] === "null") or ($_GET['text'] === "0"))  {
+		LOGGING("NULL or 0 or Text from Loxone Status has been entered, therefor T2S been skipped", 6);	
+		exit(0);
+	}
 }
 	
 #-- Start Preparation ------------------------------------------------------------------
@@ -232,7 +237,7 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 			$volume = $config['sonoszonen'][$master][5];
 			LOGGING("Individual Volume for Player ".$master." has been reduced to: ".$volume, 7);
 		} else {
-			LOGGING("Individual Volume for Master Player ".$master." has been set to: ".$volume, 7);
+			LOGGING("Individual Volume for Player ".$master." has been set to: ".$volume, 7);
 		}
 	# current volume should be used
 	} elseif (isset($_GET['keepvolume']))  {
@@ -242,7 +247,7 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 		# if current volume is less then treshold then take standard from config
 		if ($tm_volume >= $min_vol)  {
 			$volume = $tm_volume;
-			LOGGING("Volume for Master Player ".$master." has been set to current volume", 7);
+			LOGGING("Volume for Player ".$master." has been set to current volume", 7);
 		} else {
 			if (isset($_GET['text']) or isset($_GET['messageid']) or
 				(isset($_GET['sonos'])) or (isset($_GET['weather'])) or 
@@ -251,10 +256,10 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 				(isset($_GET['distance'])) or (isset($_GET['clock'])) or 
 				(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch") or (isset($_GET['radio'])))	{
 				$volume = $config['sonoszonen'][$master][3];
-				LOGGING("T2S Volume for Master Player ".$master." is less then ".$min_vol." and has been set exceptional to Standard volume ".$config['sonoszonen'][$master][3], 7);
+				LOGGING("T2S Volume for Player ".$master." is less then ".$min_vol." and has been set exceptional to Standard volume ".$config['sonoszonen'][$master][3], 7);
 			} else {
 				$volume = $config['sonoszonen'][$master][4];
-				LOGGING("Volume for Master Player ".$master." is less then ".$min_vol." and has been set exceptional to Standard volume ".$config['sonoszonen'][$master][4], 7);
+				LOGGING("Volume for Player ".$master." is less then ".$min_vol." and has been set exceptional to Standard volume ".$config['sonoszonen'][$master][4], 7);
 			}
 		}
 	}
@@ -274,10 +279,10 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 		(isset($_GET['distance'])) or (isset($_GET['clock'])) or 
 		(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch") or (isset($_GET['radio'])))	{
 		$volume = $config['sonoszonen'][$master][3];
-		LOGGING("Standard T2S Volume for Master Player ".$master." has been set to: ".$volume, 7);
+		LOGGING("Standard T2S Volume for Player ".$master." has been set to: ".$volume, 7);
 	} else {
 		$volume = $config['sonoszonen'][$master][4];
-		LOGGING("Standard Volume for Master Player ".$master." has been set to: ".$volume, 7);
+		LOGGING("Standard Volume for Player ".$master." has been set to: ".$volume, 7);
 	}
 }
 
