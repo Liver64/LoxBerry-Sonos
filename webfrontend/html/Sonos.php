@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	3.8.4
-# Datum: 	25.06.2019
+# Version: 	3.8.4-1
+# Datum: 	22.07.2019
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
@@ -111,10 +111,13 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 		LOGINF("Currently a Phonecall is running, we abort...");
 		exit(0);
 	}
+	
 	# check if NULL or 0 has been entered (Loxone Status)
-	if (($_GET['text'] === "null") or ($_GET['text'] === "0"))  {
-		LOGGING("NULL or 0 or Text from Loxone Status has been entered, therefor T2S been skipped", 6);	
-		exit(0);
+	if (isset($_GET['text']))  {
+		if (($_GET['text'] === "null") or ($_GET['text'] === "0"))  {
+			LOGGING("NULL or 0 or Text from Loxone Status has been entered, therefor T2S been skipped", 6);	
+			exit(0);
+		}
 	}
 }
 	
