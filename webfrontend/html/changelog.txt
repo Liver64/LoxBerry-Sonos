@@ -281,6 +281,6 @@
 			[Bugfix] toggle für Gruppen optimiert
 			[Improvement] skip bei Verwendung des Statusbausteines für T2S die NULL ansagen
 			[Feature] Die IP-Adresse des jeweilgen Players ist in der Config visualisiert
- 3.8.5		[Bugfix] TV bei zapzone exkludiert
+ 3.9.0		[Bugfix] TV bei zapzone exkludiert
 			[Improvement] Sonos SYMFONISK (Model S20, S21) hinzugefügt (ohne Gewähr)
 			[Improvement] Kompatibilität zu LoxBerry 2.0 hergestellt
