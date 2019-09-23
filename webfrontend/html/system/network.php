@@ -23,6 +23,7 @@ $L = LBSystem::readlanguage("sonos.ini");
 #$pluginversion = LBSystem::pluginversion();
 $pluginversion_temp = LBSystem::plugindata();
 $pluginversion = $pluginversion_temp['PLUGINDB_VERSION'];
+$POnline = "/run/shm/sonoszone.json";	
 $home = $lbhomedir;
 $folder = $lbpplugindir;
 $myIP = $_SERVER["SERVER_ADDR"];
@@ -54,7 +55,7 @@ $plugindata = LBSystem::plugindata();
 	
 	LOGDEB('Start scanning for Sonos Players using MULTICAST IP: '.$ip.':'.$port);
 		
-	global $sonosfinal, $sonosnet, $devices;
+	global $sonosfinal, $sonosnet, $devices, $POnline;
 
 	$sock = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
 	$level = getprotobyname("ip");
@@ -251,6 +252,8 @@ $plugindata = LBSystem::plugindata();
 			"S18"   =>  "ONE",
             "S14"   =>  "BEAM",
 			"S15"   =>  "CONNECT",
+			"S20"   =>  "SYMFONISK LAMP",
+			"S21"   =>  "SYMFONISK WALL",
             "ZP80"  =>  "ZONEPLAYER",
 			"ZP90"  =>  "CONNECT",
 			"S16"  	=>  "CONNECT:AMP",

@@ -16,6 +16,7 @@ function muellkalender() {
 		LOGGING('The required Caldav-4-Lox Plugin is already not installed. Please install Plugin!',3);
 		exit;
 	}
+	
 	if(substr($home,0,4) !== "/opt") {
 		LOGGING('The system you are using is not a loxberry. This application runs only on LoxBerry!',3);
 		exit;
@@ -28,7 +29,7 @@ function muellkalender() {
 		exit;
 	}
 	$callurl = (trim($config['VARIOUS']['CALDavMuell'].'&debug'));
-	
+
 	# Leerzeichen durch ein Plus ersetzen
 	$search = array(' ');
 	$replace = array('+');

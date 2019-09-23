@@ -132,10 +132,12 @@ function CreateStereoPair() {
  function checkZonePairingAllowed($model) {
 		
     $models = [
-        "PLAY:1"    =>  "PLAY:1",
-        "PLAY:3"    =>  "PLAY:3",
-        "PLAY:5"    =>  "PLAY:5",
-		"ONE"    	=>  "ONE",
+        "PLAY:1"    		=>  "PLAY:1",
+        "PLAY:3"    		=>  "PLAY:3",
+        "PLAY:5"    		=>  "PLAY:5",
+		"SYMFONISK LAMP"   	=>  "SYMFONISK LAMP",
+		"SYMFONISK WALL"   	=>  "SYMFONISK WALL",
+		"ONE"    			=>  "ONE",
         ];
     return in_array($model, array_keys($models));
 }

@@ -43,7 +43,7 @@ if (empty($stadtgemeinde)) {
 
 // Falls kein Wetterhinweis oder Warnung vorliegt abbrechen
 if (substr($stadtgemeinde,0 , 12) == 'er und Klima') {
-	LOGGING('Es liegen derzeit keine Wetter Hinweise oder Warnungen für ihre Stadt bzw. Gemeinde vor.',5);
+	LOGGING('Es liegen derzeit keine Wetter Hinweise oder Warnungen fuer ihre Stadt bzw. Gemeinde vor.',5);
 	exit;
 }
 
@@ -134,7 +134,7 @@ if (empty($stadtgemeinde)) {
 
 // Falls kein Wetterhinweis oder Warnung vorliegt abbrechen
 if (substr($stadtgemeinde,0 , 12) == 'er und Klima') {
-	LOGGING('Es liegen derzeit keine Wetter Hinweise oder Warnungen für ihre Stadt bzw. Gemeinde vor.',5);
+	LOGGING('Es liegen derzeit keine Wetter Hinweise oder Warnungen fuer ihre Stadt bzw. Gemeinde vor.',5);
 	return false;
 }
 }

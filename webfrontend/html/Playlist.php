@@ -79,7 +79,7 @@ function zapzone() {
 	$check_stat = getZoneStatus($master);
 	if ($check_stat == "member")  {
 		$sonos->BecomeCoordinatorOfStandaloneGroup();
-		LOGGING("Zone ".$master." has been ungrouped.");
+		LOGGING("Zone ".$master." has been ungrouped.",5);
 	}
 	play_zones();
 	$playingzones = $_SESSION["playingzone"];
@@ -89,9 +89,11 @@ function zapzone() {
 	// if no zone is playing switch to nextradio
 	if (empty($playingzones) or $count > count($playingzones)) {
 		nextradio();
+		LOGGING("Function nextradio has been used",6);
 		sleep($maxzap);
 		if(file_exists($count_file))  {
 			unlink($count_file);
+			LOGGING("Function zapzone has been reseted",6);
 		}
 		exit;
 	}
@@ -120,7 +122,7 @@ function zapzone() {
 		if ($check_stat == "single")  {
 			say_zone($nextZoneKey);
 		} else {
-			LOGGING("Song / Artist could not be announced because Master is grouped",6);
+			LOGGING("Song/Artist could not be announced because Master is grouped",6);
 		}
 	}
 	unset ($playingzones[$nextZoneKey]);
@@ -198,8 +200,9 @@ function play_zones() {
 		// only zones which are not a group member
 		$zonestatus = getZoneStatus($key);
 		if ($zonestatus <> 'member') {
-			// check if zone is currently playing and add to array
-			if($sonos->GetTransportInfo() == 1) {
+			$tmpplay = $sonos->GetPositionInfo();
+			// check if zone is currently playing and not TV then add to array
+			if(($sonos->GetTransportInfo() == 1) and (substr($tmpplay["TrackURI"], 0, 18) != "x-sonos-htastream:")) {
 				$playingzones[$key] = $val[1];
 			}
 		}
