@@ -1,1 +1,1 @@
-*** Wer nach dem Update auf LoxBerry 2.0 Probleme mit dem Plugin hat bitte das Plugin auf v3.9.0 aktualieiseren ***
+*** Wer nach dem Update auf LoxBerry 2.0 Probleme mit dem Plugin hat bitte das Plugin auf v3.9.0 aktualisieren ***
