@@ -40,12 +40,60 @@ function t2s($textstring, $filename)
 		LOGGING("ResponsiveVoice has been successful selected", 7);	
 		
 		# Übermitteln des strings an ResponsiveVoice
-		$mp3 = file_get_contents('https://code.responsivevoice.org/getvoice.php?t='.$textstring.'&tl='.$language.'');
-		#http://responsivevoice.org/responsivevoice/getvoice.php?t=' + multipartText[i]+ '&tl=' + profile.collectionvoice.lang || profile.systemvoice.lang || 'en-US';
+		$url = 'https://code.responsivevoice.org/getvoice.php?t='.$textstring.'&tl='.$language;
+		$mp3 =  my_curl($url);
 		file_put_contents($file, $mp3);
 		LOGGING('The text has been passed to Responsive Voice for MP3 creation',5);
 		return $filename;
 				  	
+}
+
+
+
+
+function my_curl($url, $timeout=2, $error_report=FALSE)
+{
+    $curl = curl_init();
+	// HEADERS FROM FIREFOX - APPEARS TO BE A BROWSER REFERRED BY GOOGLE
+    $header[] = "Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5";
+    $header[] = "Cache-Control: max-age=0";
+    $header[] = "Connection: keep-alive";
+    $header[] = "Keep-Alive: 300";
+    $header[] = "Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7";
+    $header[] = "Accept-Language: en-us,en;q=0.5";
+    $header[] = "Pragma: "; // browsers keep this blank.
+
+    // SET THE CURL OPTIONS - SEE http://php.net/manual/en/function.curl-setopt.php
+    curl_setopt($curl, CURLOPT_URL,            $url);
+    curl_setopt($curl, CURLOPT_USERAGENT,      'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6');
+    curl_setopt($curl, CURLOPT_HTTPHEADER,     $header);
+    curl_setopt($curl, CURLOPT_REFERER,        'http://www.google.com');
+    curl_setopt($curl, CURLOPT_ENCODING,       'gzip,deflate');
+    curl_setopt($curl, CURLOPT_AUTOREFERER,    TRUE);
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);
+    curl_setopt($curl, CURLOPT_TIMEOUT,        $timeout);
+
+    // RUN THE CURL REQUEST AND GET THE RESULTS
+    $htm = curl_exec($curl);
+    $err = curl_errno($curl);
+    $inf = curl_getinfo($curl);
+    curl_close($curl);
+
+    // ON FAILURE
+    if (!$htm)
+    {
+        // PROCESS ERRORS HERE
+        if ($error_report)
+        {
+			LOGGING('CURL FAIL: $url TIMEOUT=$timeout, CURL_ERRNO=$err',3);
+            #echo "CURL FAIL: $url TIMEOUT=$timeout, CURL_ERRNO=$err";
+            #var_dump($inf);
+        }
+        return FALSE;
+    }
+
+    // ON SUCCESS
+    return $htm;
 }
 
 ?>

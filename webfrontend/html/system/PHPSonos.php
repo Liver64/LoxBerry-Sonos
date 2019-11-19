@@ -1517,7 +1517,7 @@ SOAPACTION: "urn:schemas-upnp-org:service:RenderingControl:1#SetVolume"
 
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:SetVolume xmlns:u="urn:schemas-upnp-org:service:RenderingControl:1"><InstanceID>0</InstanceID><Channel>Master</Channel><DesiredVolume>'.$volume.'</DesiredVolume></u:SetVolume></s:Body></s:Envelope>';
 
-      $this->sendPacket($content);
+      $this->sendPacketExcept($content);
    }
    
 
@@ -1589,7 +1589,7 @@ SOAPACTION: "urn:schemas-upnp-org:service:RenderingControl:1#GetVolume"
 
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:GetVolume xmlns:u="urn:schemas-upnp-org:service:RenderingControl:1"><InstanceID>0</InstanceID><Channel>Master</Channel></u:GetVolume></s:Body></s:Envelope>';
 
-      return (int)$this->sendPacket($content);
+      return (int)$this->sendPacketExcept($content);
    }
 
    
@@ -1636,7 +1636,7 @@ SOAPACTION: "urn:schemas-upnp-org:service:RenderingControl:1#GetMute"
 
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:GetMute xmlns:u="urn:schemas-upnp-org:service:RenderingControl:1"><InstanceID>0</InstanceID><Channel>Master</Channel></u:GetMute></s:Body></s:Envelope>';
 
-      return (bool)$this->sendPacket($content);
+      return (bool)$this->sendPacketExcept($content);
    }
 
    
@@ -2913,8 +2913,8 @@ return $list;
         fputs ($fp, $content); 
         $ret = ""; 
         while (!feof($fp)) { 
-            $ret.= fgets($fp,128); 
-			#$ret.= fgetss($fp,128);  //--> fgetss depreciated in PHP 7.3
+            #$ret.= fgets($fp,128); 
+			$ret.= fgetss($fp,128);  //--> fgetss depreciated in PHP 7.3
         } 
         fclose($fp); 
 
