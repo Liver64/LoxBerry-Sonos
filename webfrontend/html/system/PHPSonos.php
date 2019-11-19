@@ -84,6 +84,10 @@
 # - AddFavoritesToQueue
 # - SetBalance($direction, $volume)
 # - ResetBasicEQ()
+// V3.9.0
+# - SetNightmode($mode)
+# - SetSpeech($mode)
+# - Exception of Volume Control($mode) PHP 7.3
 
 
 
@@ -1391,6 +1395,106 @@ Content-Length: 335
 
 	$this->sendPacket($content); 
 }  
+
+
+
+/**
+ * Set nightmode for TV
+ *
+ * @param string $mode          0 or 1
+ *
+ * @return String
+ */
+ 
+   public function SetNightmode($mode)
+   {
+
+$content='POST /MediaRenderer/RenderingControl/Control HTTP/1.1
+CONNECTION: close
+HOST: '.$this->address.':1400
+USER-AGENT: Linux UPnP/1.0 Sonos/52.13-69030 (WDCR:Microsoft Windows NT 10.0.17763)
+CONTENT-LENGTH: 313
+CONTENT-TYPE: text/xml; charset="utf-8"
+SOAPACTION: "urn:schemas-upnp-org:service:RenderingControl:1#SetEQ"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:SetEQ xmlns:u="urn:schemas-upnp-org:service:RenderingControl:1"><InstanceID>0</InstanceID><EQType>NightMode</EQType><DesiredValue>'.$mode.'</DesiredValue></u:SetEQ></s:Body></s:Envelope>';
+
+      $this->sendPacket($content);
+   }
+   
+   
+ /**
+ * Set speech enhancement for TV
+ *
+ * @param string $mode          0 or 1
+ *
+ * @return String
+ */
+ 
+   public function SetSpeech($mode)
+   {
+
+$content='POST /MediaRenderer/RenderingControl/Control HTTP/1.1
+CONNECTION: close
+HOST: '.$this->address.':1400
+USER-AGENT: Linux UPnP/1.0 Sonos/52.13-69030 (WDCR:Microsoft Windows NT 10.0.17763)
+CONTENT-LENGTH: 315
+CONTENT-TYPE: text/xml; charset="utf-8"
+SOAPACTION: "urn:schemas-upnp-org:service:RenderingControl:1#SetEQ"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:SetEQ xmlns:u="urn:schemas-upnp-org:service:RenderingControl:1"><InstanceID>0</InstanceID><EQType>DialogLevel</EQType><DesiredValue>'.$mode.'</DesiredValue></u:SetEQ></s:Body></s:Envelope>';
+
+      $this->sendPacket($content);
+   }
+   
+/**
+ * Turn Bass on/off for Sub
+ *
+ * @param string $mode          0 or 1
+ *
+ * @return String
+ */
+ 
+   public function SetSubBass($mode)
+   {
+
+$content='POST /MediaRenderer/RenderingControl/Control HTTP/1.1
+CONNECTION: close
+HOST: '.$this->address.':1400
+USER-AGENT: Linux UPnP/1.0 Sonos/52.13-69030 (WDCR:Microsoft Windows NT 10.0.17763)
+CONTENT-LENGTH: 313
+CONTENT-TYPE: text/xml; charset="utf-8"
+SOAPACTION: "urn:schemas-upnp-org:service:RenderingControl:1#SetEQ"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:SetEQ xmlns:u="urn:schemas-upnp-org:service:RenderingControl:1"><InstanceID>0</InstanceID><EQType>SubEnable</EQType><DesiredValue>'.$mode.'</DesiredValue></u:SetEQ></s:Body></s:Envelope>';
+
+      $this->sendPacket($content);
+   }
+   
+   
+ /**
+ * Turn Surround on/off
+ *
+ * @param string $mode          0 or 1
+ *
+ * @return String
+ */
+ 
+   public function SetSurround($mode)
+   {
+
+$content='POST /MediaRenderer/RenderingControl/Control HTTP/1.1
+CONNECTION: close
+HOST: '.$this->address.':1400
+USER-AGENT: Linux UPnP/1.0 Sonos/52.13-69030 (WDCR:Microsoft Windows NT 10.0.17763)
+CONTENT-LENGTH: 318
+CONTENT-TYPE: text/xml; charset="utf-8"
+SOAPACTION: "urn:schemas-upnp-org:service:RenderingControl:1#SetEQ"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:SetEQ xmlns:u="urn:schemas-upnp-org:service:RenderingControl:1"><InstanceID>0</InstanceID><EQType>SurroundEnable</EQType><DesiredValue>'.$mode.'</DesiredValue></u:SetEQ></s:Body></s:Envelope>';
+
+      $this->sendPacket($content);
+   }
 
    
 /**
@@ -2844,7 +2948,65 @@ return $list;
         }  
          
         return $result; 
-    }  
+    } 
+
+/** 
+ * sendPacketExcept - exception for Volume control 
+ * 
+ * - <b>NOTE:</b> This function does send only for volumedown/volumeup/getvolume of a soap query and may filter xml answers 
+ * - <b>Returns:</b> Answer 
+ * 
+ * @return Array 
+ */ 
+	
+	private function sendPacketExcept($content) 
+    { 
+        $fp = fsockopen($this->address, 1400 /* Port */, $errno, $errstr, 10); 
+        if (!$fp) 
+            throw new Exception("Error opening socket: ".$errstr." (".$errno.")"); 
+
+        fputs ($fp, $content); 
+        $ret = ""; 
+        while (!feof($fp)) { 
+            #$ret.= fgets($fp,128); 
+			$ret.= fgetss($fp,128);  //--> fgetss depreciated in PHP 7.3
+        } 
+        fclose($fp); 
+
+        if(strpos($ret, "200 OK") === false) 
+            throw new Exception("Error sending command: ".$ret); 
+         
+        $array = preg_split("/\r\n/", $ret); 
+
+        $result = ""; 
+        if(strpos($ret, "TRANSFER-ENCODING: chunked") === false){ 
+            $result = $array[count($array) - 1]; 
+        }else{ 
+            $chunksStarted = false; 
+            $content       = false; 
+            foreach($array as $key => $value){ 
+                if($value == ""){ 
+                    $chunksStarted = true; 
+                    continue; 
+                } 
+                if($chunksStarted === false) 
+                    continue; 
+                if($content === false){ 
+                    if( $value === 0) 
+                        break; 
+                    $content = true; 
+                    continue; 
+                } 
+                $result = $result.$value; 
+                $content = false; 
+            } 
+        }  
+         
+        return $result; 
+    } 	
 }
+
+
+
 
 ?>

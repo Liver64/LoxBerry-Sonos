@@ -7,5 +7,6 @@ sox task-spooler
 lame
 curl 
 libcurl3
+libcurl4
 php-soap
 php-cli

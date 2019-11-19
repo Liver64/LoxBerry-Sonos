@@ -1,15 +1,19 @@
-<?php
+ <?php
 
 ##############################################################################################################################
 #
-# Version: 	3.9.0
-# Datum: 	23.09.2019
+# Version: 	3.9.1
+# Datum: 	19.11.2019
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
 
 
 // ToDo
+
+# Sub Bass on/off
+# Surround on/off
+# cURL for voice engines
 
 
 ini_set('max_execution_time', 60); 							// Max. Skriptlaufzeit auf 120 Sekunden
@@ -1372,6 +1376,41 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			LOGGING("EQ Settings for Player ".$master." has been reset.", 7);
 		break;
 		
+		
+		case 'nightmode':
+			$pos = $sonos->GetPositionInfo();
+			if (substr($pos["TrackURI"], 0, 18) === "x-sonos-htastream:")  {
+				$mode = $_GET['mode'];
+				if ($mode == 'on')  {
+					$sonos->SetNightmode('1');
+					LOGGING("Nightmode for Player ".$master." has been turned on.", 7);
+				} else {
+					$sonos->SetNightmode('0');
+					LOGGING("Nightmode for Player ".$master." has been turned off.", 7);
+				}
+			} else {
+				LOGGING("Player ".$master." is not in TV mode.", 7);
+			}
+		break;
+
+		
+		case 'speech':
+			$pos = $sonos->GetPositionInfo();
+			if (substr($pos["TrackURI"], 0, 18) === "x-sonos-htastream:")  {
+				$mode = $_GET['mode'];
+				if ($mode == 'on')  {
+					$sonos->SetSpeech('1');
+					LOGGING("Speech enhancement for Player ".$master." has been turned on.", 7);
+				} else {
+					$sonos->SetSpeech('0');
+					LOGGING("Speech enhancement for Player ".$master." has been turned off.", 7);
+				}
+			} else {
+				LOGGING("Player ".$master." is not in TV mode.", 7);
+			}
+		break;
+
+		
 		case 'ttsp':
 			$text = ($_GET['text']);
 			isset($_GET['greet']) ? $greet = 1 : $greet = 0;
@@ -1882,6 +1921,7 @@ function shutdown()
 	@unlink($tmp_tts);
 	#LOGEND("PHP finished");
 }
+
 
 ?>
 

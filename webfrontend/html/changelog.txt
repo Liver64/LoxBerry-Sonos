@@ -284,3 +284,7 @@
  3.9.0		[Bugfix] TV bei zapzone exkludiert
 			[Improvement] Sonos SYMFONISK (Model S20, S21) hinzugefügt (ohne Gewähr)
 			[Improvement] Kompatibilität zu LoxBerry 2.0 hergestellt
+ 3.9.1		[Bugfix] Volumensteuerung korrigiert
+			[Improvement] Sonos Move und ONE SL hinzugefügt
+			[Improvement] Sprachverbesserung für TV Modus hinzugefügt
+			[Improvement] Nachtmodus für TV Modus hinzugefügt
