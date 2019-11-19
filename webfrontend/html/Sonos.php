@@ -1389,7 +1389,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 					LOGGING("Nightmode for Player ".$master." has been turned off.", 7);
 				}
 			} else {
-				LOGGING("Player ".$master." is not in TV mode.", 7);
+				LOGGING("Player ".$master." is not in TV mode.", 4);
 			}
 		break;
 
@@ -1406,7 +1406,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 					LOGGING("Speech enhancement for Player ".$master." has been turned off.", 7);
 				}
 			} else {
-				LOGGING("Player ".$master." is not in TV mode.", 7);
+				LOGGING("Player ".$master." is not in TV mode.", 4);
 			}
 		break;
 
