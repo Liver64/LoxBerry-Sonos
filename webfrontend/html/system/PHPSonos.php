@@ -1517,7 +1517,7 @@ SOAPACTION: "urn:schemas-upnp-org:service:RenderingControl:1#SetVolume"
 
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:SetVolume xmlns:u="urn:schemas-upnp-org:service:RenderingControl:1"><InstanceID>0</InstanceID><Channel>Master</Channel><DesiredVolume>'.$volume.'</DesiredVolume></u:SetVolume></s:Body></s:Envelope>';
 
-      $this->sendPacketExcept($content);
+      $this->sendPacket($content);
    }
    
 
@@ -1589,7 +1589,7 @@ SOAPACTION: "urn:schemas-upnp-org:service:RenderingControl:1#GetVolume"
 
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:GetVolume xmlns:u="urn:schemas-upnp-org:service:RenderingControl:1"><InstanceID>0</InstanceID><Channel>Master</Channel></u:GetVolume></s:Body></s:Envelope>';
 
-      return (int)$this->sendPacketExcept($content);
+      return (int)$this->sendPacket($content);
    }
 
    
@@ -1636,7 +1636,7 @@ SOAPACTION: "urn:schemas-upnp-org:service:RenderingControl:1#GetMute"
 
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:GetMute xmlns:u="urn:schemas-upnp-org:service:RenderingControl:1"><InstanceID>0</InstanceID><Channel>Master</Channel></u:GetMute></s:Body></s:Envelope>';
 
-      return (bool)$this->sendPacketExcept($content);
+      return (bool)$this->sendPacket($content);
    }
 
    
@@ -2913,11 +2913,14 @@ return $list;
         fputs ($fp, $content); 
         $ret = ""; 
         while (!feof($fp)) { 
-            #$ret.= fgets($fp,128); 
-			$ret.= fgetss($fp,128);  //--> fgetss depreciated in PHP 7.3
+			$ret.= fgets($fp,128); 
+			#$ret.= @fgetss($fp,128);  //--> fgetss depreciated in PHP 7.3
         } 
+		# *** added because of depreciation of fgetss ***
+		$ret = strip_tags($ret);
+		# ***********************************************
         fclose($fp); 
-
+		
         if(strpos($ret, "200 OK") === false) 
             throw new Exception("Error sending command: ".$ret); 
          
@@ -2946,64 +2949,9 @@ return $list;
                 $content = false; 
             } 
         }  
-         
         return $result; 
     } 
 
-/** 
- * sendPacketExcept - exception for Volume control 
- * 
- * - <b>NOTE:</b> This function does send only for volumedown/volumeup/getvolume of a soap query and may filter xml answers 
- * - <b>Returns:</b> Answer 
- * 
- * @return Array 
- */ 
-	
-	private function sendPacketExcept($content) 
-    { 
-        $fp = fsockopen($this->address, 1400 /* Port */, $errno, $errstr, 10); 
-        if (!$fp) 
-            throw new Exception("Error opening socket: ".$errstr." (".$errno.")"); 
-
-        fputs ($fp, $content); 
-        $ret = ""; 
-        while (!feof($fp)) { 
-            #$ret.= fgets($fp,128); 
-			$ret.= fgetss($fp,128);  //--> fgetss depreciated in PHP 7.3
-        } 
-        fclose($fp); 
-
-        if(strpos($ret, "200 OK") === false) 
-            throw new Exception("Error sending command: ".$ret); 
-         
-        $array = preg_split("/\r\n/", $ret); 
-
-        $result = ""; 
-        if(strpos($ret, "TRANSFER-ENCODING: chunked") === false){ 
-            $result = $array[count($array) - 1]; 
-        }else{ 
-            $chunksStarted = false; 
-            $content       = false; 
-            foreach($array as $key => $value){ 
-                if($value == ""){ 
-                    $chunksStarted = true; 
-                    continue; 
-                } 
-                if($chunksStarted === false) 
-                    continue; 
-                if($content === false){ 
-                    if( $value === 0) 
-                        break; 
-                    $content = true; 
-                    continue; 
-                } 
-                $result = $result.$value; 
-                $content = false; 
-            } 
-        }  
-         
-        return $result; 
-    } 	
 }
 
 

@@ -290,4 +290,5 @@
 			[Improvement] Nachtmodus für TV Modus hinzugefügt
  3.9.2		[Bugfix] Volumensteuerung Typo korrigiert
 			[Bugfix] T2S Generierung bei Responsive Voice korrigiert
+ 3.9.3		[Bugfix] Volumensteuerung final korrigiert (fgetss depreciated)
  
