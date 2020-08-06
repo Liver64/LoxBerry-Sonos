@@ -1,4 +1,5 @@
 <?php
+
 function t2s($textstring, $filename)
 
 // text-to-speech: Erstellt basierend auf Input eine TTS Nachricht, übermittelt sie an ResponsiveVoice und 
@@ -7,6 +8,7 @@ function t2s($textstring, $filename)
 {
 	global $config, $pathlanguagefile, $filename;
 	
+	$Rkey = "WQAwyp72";		// ResponsiveVoice Key
 	$file = "respvoice.json";
 	$url = $pathlanguagefile."".$file;
 	$textstring = urlencode($textstring);
@@ -45,7 +47,8 @@ function t2s($textstring, $filename)
 		file_put_contents($file, $mp3);
 		LOGGING('The text has been passed to Responsive Voice for MP3 creation',5);
 		return $filename;
-				  	
+		
+						  	
 }
 
 
@@ -53,6 +56,8 @@ function t2s($textstring, $filename)
 
 function my_curl($url, $timeout=2, $error_report=FALSE)
 {
+	global $Rkey; 
+		
     $curl = curl_init();
 	// HEADERS FROM FIREFOX - APPEARS TO BE A BROWSER REFERRED BY GOOGLE
     $header[] = "Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5";
@@ -67,7 +72,7 @@ function my_curl($url, $timeout=2, $error_report=FALSE)
     curl_setopt($curl, CURLOPT_URL,            $url);
     curl_setopt($curl, CURLOPT_USERAGENT,      'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6');
     curl_setopt($curl, CURLOPT_HTTPHEADER,     $header);
-    curl_setopt($curl, CURLOPT_REFERER,        'http://www.google.com');
+    curl_setopt($curl, CURLOPT_REFERER,        'https://code.responsivevoice.org/responsivevoice.js?key='.$Rkey);
     curl_setopt($curl, CURLOPT_ENCODING,       'gzip,deflate');
     curl_setopt($curl, CURLOPT_AUTOREFERER,    TRUE);
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);

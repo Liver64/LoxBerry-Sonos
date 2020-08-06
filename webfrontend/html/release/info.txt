@@ -1,1 +1,1 @@
-*** Wer nach dem Update auf v3.9.2 Probleme mit dem Plugin hat bitte das Plugin auf Pre-Release v3.9.3 aktualisieren ***
+*** ResponsiveVoice wurde gefixt und Sonos ARC, PORT Unterstützung hinzugefügt ***

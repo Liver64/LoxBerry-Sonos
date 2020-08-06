@@ -291,4 +291,9 @@
  3.9.2		[Bugfix] Volumensteuerung Typo korrigiert
 			[Bugfix] T2S Generierung bei Responsive Voice korrigiert
  3.9.3		[Bugfix] Volumensteuerung final korrigiert (fgetss depreciated)
+ 3.9.4		[Improvement] Sonos PORT, ARC, PLAY:5 hinzugefügt
+			[Bugfix] direkte Anwahl der Radio Sender (TuneIn) korrigiert
+			[Bugfix] ResponciveVoice für T2S gefixt
+
+
  
