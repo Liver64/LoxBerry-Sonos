@@ -5,8 +5,7 @@ libjson-perl
 libapache2-mod-php
 sox task-spooler 
 lame
-curl 
-libcurl3
+curl
 libcurl4
 php-soap
 php-cli
