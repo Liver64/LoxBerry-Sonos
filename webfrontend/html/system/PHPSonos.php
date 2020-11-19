@@ -1012,8 +1012,7 @@ CONTENT-TYPE: text/xml; charset="utf-8"
 HOST: '.$this->address.':1400
 Content-Length: '.$length.'
 
-<s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><u:SetRelativeGroupVolume xmlns:u="urn:schemas-upnp-org:service:GroupRenderingControl:1"><InstanceID>0</InstanceID><Adjustment>10</Adjustment></u:SetRelativeGroupVolume></s:Body></s:Envelope>';
-
+<s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><u:SetRelativeGroupVolume xmlns:u="urn:schemas-upnp-org:service:GroupRenderingControl:1"><InstanceID>0</InstanceID><Adjustment>'.$volume.'</Adjustment></u:SetRelativeGroupVolume></s:Body></s:Envelope>';
 		$this->sendPacket($content); 
 	}
 
