@@ -294,6 +294,11 @@
  3.9.4		[Improvement] Sonos PORT, ARC, PLAY:5 hinzugefügt
 			[Bugfix] direkte Anwahl der Radio Sender (TuneIn) korrigiert
 			[Bugfix] ResponciveVoice für T2S gefixt
+ 3.9.5		[Bugfix] removed legacy lib from installation
+ 3.9.6		[Bugfix] Fix warning if playlist is empty when calling play_tts …
+			[Bugfix] say_radio_station() Add support for groups
+			[Bugfix] Say radio: Omit 'Radio' if selected station title starts with 'Radio' 
+			[Bugfix] PHPSonos: Fix SetRelativeGroupVolume(), add volume to request
 
 
  

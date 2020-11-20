@@ -120,11 +120,7 @@ function nextradio() {
 	LOGGING('Next Radio Info: '.($info_r),7);
     if ($config['VARIOUS']['announceradio'] == 1) {
 		$check_stat = getZoneStatus($master);
-		if ($check_stat == "single")  {
-			say_radio_station();
-		} else {
-			LOGGING("Radio Station could not be announced because Master is grouped",6);
-		}
+		say_radio_station();
 	}
 	$coord = getRoomCoordinator($master);
 	$sonos = new PHPSonos($coord[0]);
@@ -197,7 +193,7 @@ function random_radio() {
 function say_radio_station() {
 			
 	# nach nextradio();
-	global $master, $sonoszone, $config, $min_vol, $volume, $actual, $sonos, $coord, $messageid, $filename, $MessageStorepath, $nextZoneKey;
+	global $master, $sonoszone, $config, $min_vol, $volume, $actual, $sonos, $coord, $messageid, $filename, $MessageStorepath, $nextZoneKey, $member;
 	require_once("addon/sonos-to-speech.php");
 	
 	// if batch has been choosed abort
@@ -216,7 +212,13 @@ function say_radio_station() {
 	$play_stat = $TL['SONOS-TO-SPEECH']['ANNOUNCE_RADIO'] ; 
 	#********************************************************************
 	# Generiert und kodiert Ansage des laufenden Senders
-	$text = ($play_stat.' '.$temp_radio['title']);
+	if (strncmp($temp_radio['title'], $play_stat, strlen($play_stat))===0) {
+    	# Nur Titel des Senders ansagen, falls Titel mit dem Announce-Radio Text übereinstimmt
+	    $text = $temp_radio['title'];
+	} else {
+	    # Ansage von 'Radio' gefolgt vom Titel des Senders
+	    $text = ($play_stat.' '.$temp_radio['title']);
+	}
 	$textstring = ($text);
 	$rawtext = md5($textstring);
 	$filename = "$rawtext";
@@ -227,7 +229,15 @@ function say_radio_station() {
 	$volume = $volume + $config['TTS']['correction'];
 	LOGGING("Radio Station Announcement has been announced", 6);		
 	play_tts($filename);
-	restoreSingleZone();
+	if(isset($_GET['member'])) {
+	    // TODO should this be loaded by a helper function? or already be loaded before calling say_radio_station() 
+	    // Or should say_radio_station() use sendgroupmessage() to play T2S if zones are grouped?
+	    $member = $_GET['member'];
+	    $member = explode(',', $member);
+	    restoreGroupZone();
+	} else {
+	    restoreSingleZone();
+	}
 	if(isset($_GET['volume'])) {
 		$volume = $_GET['volume'];
 	} elseif (isset($_GET['keepvolume'])) {

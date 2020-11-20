@@ -1,1 +1,0 @@
-*** In v3.9.4 wurde ResponsiveVoice gefixt und Sonos ARC, PORT Unterstuetzung hinzugefuegt ***
