@@ -250,7 +250,7 @@ function play_tts($filename) {
 			$message_pos = count($sonos->GetCurrentPlaylist()) + 1;
 		} else {
 			// No Playlist is playing
-			$message_pos = count($save_plist);
+			$message_pos = 1;
 		}
 			
 		// Playgong/jingle to be played upfront
