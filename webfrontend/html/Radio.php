@@ -212,7 +212,13 @@ function say_radio_station() {
 	$play_stat = $TL['SONOS-TO-SPEECH']['ANNOUNCE_RADIO'] ; 
 	#********************************************************************
 	# Generiert und kodiert Ansage des laufenden Senders
-	$text = ($play_stat.' '.$temp_radio['title']);
+	if (strncmp($temp_radio['title'], $play_stat, strlen($play_stat))===0) {
+    	# Nur Titel des Senders ansagen, falls Titel mit dem Announce-Radio Text übereinstimmt
+	    $text = $temp_radio['title'];
+	} else {
+	    # Ansage von 'Radio' gefolgt vom Titel des Senders
+	    $text = ($play_stat.' '.$temp_radio['title']);
+	}
 	$textstring = ($text);
 	$rawtext = md5($textstring);
 	$filename = "$rawtext";
