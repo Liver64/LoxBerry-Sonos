@@ -299,6 +299,7 @@
 			[Bugfix] say_radio_station() Add support for groups
 			[Bugfix] Say radio: Omit 'Radio' if selected station title starts with 'Radio' 
 			[Bugfix] PHPSonos: Fix SetRelativeGroupVolume(), add volume to request
+ 3.9.7		[Improvement] Sonos ROAM hinzugefügt
 
 
  
