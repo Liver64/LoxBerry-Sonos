@@ -300,6 +300,6 @@
 			[Bugfix] Say radio: Omit 'Radio' if selected station title starts with 'Radio' 
 			[Bugfix] PHPSonos: Fix SetRelativeGroupVolume(), add volume to request
  3.9.7		[Improvement] Sonos ROAM hinzugefügt
-
+ 3.9.8		[Improvement] IP-Adresse der einzelnen Player ist in der Config änderbar
 
  
