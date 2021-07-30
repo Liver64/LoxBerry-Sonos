@@ -260,6 +260,7 @@ $plugindata = LBSystem::plugindata();
 			"S22"   =>  "ONE SL",
 			"S23"   =>  "PORT",
 			"S27"   =>  "ROAM",
+			"S29"   =>  "SYMFONISK FRAME",
             "ZP80"  =>  "ZONEPLAYER",
 			"ZP90"  =>  "CONNECT",
 			"S16"  	=>  "CONNECT:AMP",

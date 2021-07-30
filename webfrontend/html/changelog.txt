@@ -301,5 +301,6 @@
 			[Bugfix] PHPSonos: Fix SetRelativeGroupVolume(), add volume to request
  3.9.7		[Improvement] Sonos ROAM hinzugefügt
  3.9.8		[Improvement] IP-Adresse der einzelnen Player ist in der Config änderbar
+ 3.9.9		[Improvement] IKEA Frame hinzugefügt
 
  
