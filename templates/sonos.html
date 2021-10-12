@@ -862,17 +862,22 @@
                 if ($("#voice option:selected") && $("#voice option:selected").attr('data-lang') == currentLanguage) {
                     tempVal = $("#voice").val();
                 }
+                const savedVoice = '<TMPL_VAR VOICE>';
                 $("#voice > option").each(function(index, element) {
                     if (element.getAttribute('data-lang') == currentLanguage || !currentLanguage) {
                         $("#voice option[value=" + element.value + "]").show();
-                        if (tempVal == "") {
+                        if (tempVal == "" && element.value == savedVoice) {
                             tempVal = element.value;
                         }
                     } else {
                         $("#voice option[value=" + element.value + "]").hide();
                     }
                 });
-                $('#voice').val(tempVal);
+                if (tempVal) {
+                    $('#voice').val(tempVal);
+                } else {
+                    $('#voice').prop('selectedIndex', 0);
+                }
             } else {
                 $('#voice').empty();
             }
@@ -916,7 +921,6 @@
                     const langs = new Map();
                     const voices = new Map();
                     const savedLanguageCode = '<TMPL_VAR CODE>';
-                    const savedVoice = '<TMPL_VAR VOICE>';
                     data.voices.forEach(element => {
                         if (element.languageCodes.length > 0 && element.languageCodes[0].length == 5) {
                             lanIsoCode = element.languageCodes[0];

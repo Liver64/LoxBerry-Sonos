@@ -2,50 +2,62 @@
 function t2s($textstring, $filename)
 
 {
-	global $config, $pathlanguagefile;
-	
-	$file = "google.json";
-	$url = $pathlanguagefile."".$file;
-	$valid_languages = File_Get_Array_From_JSON($url, $zip=false);
-	
+	global $config;
+		
 		if (isset($_GET['lang'])) {
 			$language = $_GET['lang'];
-			$isvalid = array_multi_search($language, $valid_languages, $sKey = "value");
-			if (!empty($isvalid)) {
-				$language = $_GET['lang'];	
-				LOGGING('T2S language has been successful entered',5);
-			} else {
-				LOGGING('The entered Google language key is not supported. Please correct (see Wiki)!',3);
-				exit;
-			}
 		} else {
 			$language = $config['TTS']['messageLang'];
-		}	
+		}
 		
-		if (strlen($textstring) > 100) {
-            LOGGING("The Google T2S contains more than 100 characters and therefor could not be generated. Please reduce characters to max. 100!",3);
-			exit;
-        }
-								  
-		# Speicherort der MP3 Datei
-		$file = $config['SYSTEM']['ttspath'] ."/". $filename . ".mp3";
-		$textstring = urlencode($textstring);
+		if (isset($_GET['voice'])) {
+			$voice = $_GET['voice'];
+		} else {
+			$voice = $config['TTS']['voice'];
+		}
+								  		
+		LOGGING("Google Cloud TTS has been successful selected", 7);	
+
+		$params = [
+			"audioConfig"=>[
+				"audioEncoding"=>"MP3"
+			],
+			"input"=>[
+				"text"=>$textstring
+			],
+			"voice"=>[
+				"languageCode"=> $language,
+				"name" => $voice
+			]
+		];
+		$data_string = json_encode($params);
+		$speech_api_key = $config['TTS']['API-key'];
+		$url = 'https://texttospeech.googleapis.com/v1/text:synthesize';
+
+		$handle = curl_init($url);
+
+		curl_setopt($handle, CURLOPT_CUSTOMREQUEST, "POST"); 
+		curl_setopt($handle, CURLOPT_POSTFIELDS, $data_string);  
+		curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($handle, CURLOPT_SSL_VERIFYPEER, false);
+		curl_setopt($handle, CURLOPT_HTTPHEADER, [                                                                          
+			'Content-Type: application/json',                                                                                
+			'Content-Length: ' . strlen($data_string),
+			'X-Goog-Api-Key: ' . $speech_api_key
+			]                                                                       
+		);
+		$response = curl_exec($handle);            
+		$responseDecoded = json_decode($response, true);  
+		curl_close($handle);
 		
-		#Generieren des strings der an Google geschickt wird.
-		$inlay = "ie=UTF-8&total=1&idx=0&textlen=100&client=tw-ob&q=$textstring&tl=$language";	
-		
-		LOGGING("Google has been successful selected", 7);	
-		# �bermitteln des strings an Google.com
-		$mp3 = file_get_contents("http://translate.google.com/translate_tts?".$inlay);
-		
-		
-		
-		
-		
-		file_put_contents($file, $mp3);
-		LOGGING('The text has been passed to google engine for MP3 creation',5);
-		return ($filename);
+		if($responseDecoded['audioContent']){
+			# Speicherort der MP3 Datei
+			$file = $config['SYSTEM']['ttspath'] ."/". $filename . ".mp3";
+			file_put_contents($file, base64_decode($responseDecoded['audioContent']));  
+			LOGGING('The text has been passed to google engine for MP3 creation',5);
+			return ($filename);       
+		} 
+
+		LOGGING('Something went wrong!',5);
+		return;
 }
-
-
-?> 
