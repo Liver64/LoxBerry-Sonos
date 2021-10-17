@@ -526,6 +526,11 @@ function checkTTSkeys() {
 			}
 		}
 	}
+	if ($config['TTS']['t2s_engine'] == 8001) {
+		if (!file_exists("voice_engines/GoogleCloud.php")) {
+			LOGGING("GoogleCloudTTS is currently not available. Please install!", 4);
+		}
+	}
 	if ($config['TTS']['t2s_engine'] == 3001) {
 		if (!file_exists("voice_engines/MAC_OSX.php")) {
 			LOGGING("MAC OSX is currently not available. Please install!", 4);
