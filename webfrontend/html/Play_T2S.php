@@ -183,6 +183,9 @@ function create_tts() {
 		if ($config['TTS']['t2s_engine'] == 4001) {
 			include_once("voice_engines/Polly.php");	
 		}
+		if ($config['TTS']['t2s_engine'] == 8001) {
+			include_once("voice_engines/GoogleCloud.php");	
+		}
 		//echo filesize($config['SYSTEM']['ttspath']."/".$filename.".mp3");
 	
 	if(file_exists($config['SYSTEM']['ttspath']."/".$filename.".mp3") && empty($_GET['nocache'])) {

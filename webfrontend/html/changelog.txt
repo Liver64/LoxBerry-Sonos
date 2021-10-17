@@ -302,5 +302,8 @@
  3.9.7		[Improvement] Sonos ROAM hinzugefügt
  3.9.8		[Improvement] IP-Adresse der einzelnen Player ist in der Config änderbar
  3.9.9		[Improvement] IKEA Frame hinzugefügt
+ 4.0.0		[Improvement] Neuer ONE SL hinzugefügt
+			[Improvement] GoogleCloudT TS hinzugefügt
+ 
 
  

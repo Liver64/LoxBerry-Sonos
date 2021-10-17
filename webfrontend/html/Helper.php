@@ -391,6 +391,7 @@ global $sonoszone, $master, $config;
 	} else {
 		$member = explode(',', $member);
 	}
+	
 	#print_r($member);
 	foreach ($member as $zone) {
 		$sonos = new PHPSonos($sonoszone[$zone][0]);
@@ -524,6 +525,11 @@ function checkTTSkeys() {
 			if(strlen($config['TTS']['API-key']) !== 32) {
 				LOGGING("The specified VoiceRSS API key is invalid. Please correct!", 4);
 			}
+		}
+	}
+	if ($config['TTS']['t2s_engine'] == 8001) {
+		if (!file_exists("voice_engines/GoogleCloud.php")) {
+			LOGGING("GoogleCloudTTS is currently not available. Please install!", 4);
 		}
 	}
 	if ($config['TTS']['t2s_engine'] == 3001) {
