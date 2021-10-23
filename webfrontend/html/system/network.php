@@ -252,6 +252,7 @@ $plugindata = LBSystem::plugindata();
             "S13"   =>  "ONE",
 			"S18"   =>  "ONE",
             "S14"   =>  "BEAM",
+			"S31"   =>  "BEAM",
 			"S15"   =>  "CONNECT",
 			"S17"   =>  "MOVE",
 			"S19"   =>  "ARC",
