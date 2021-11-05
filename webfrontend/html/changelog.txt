@@ -304,7 +304,8 @@
  3.9.9		[Improvement] IKEA Frame hinzugefügt
  4.0.0		[Improvement] Neuer ONE SL hinzugefügt
 			[Improvement] GoogleCloudT TS hinzugefügt
- 4.0.0		[Improvement] Neue BEAM hinzugefügt
+ 4.0.1		[Improvement] Neue BEAM hinzugefügt
+ 4.0.2		[Improvement] Fehlerbehandlung optimiert falls T2S fehlerhaft zurück kam. Option (über Config --> Feineinstellungen alternativ einen Text ansagen zu lassen)
  
 
  

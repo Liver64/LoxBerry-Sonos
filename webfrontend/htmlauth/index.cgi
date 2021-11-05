@@ -122,9 +122,9 @@ if (!defined $pcfg->param("VARIOUS.phonestop"))  {
 	$pcfg->param("VARIOUS.phonestop", "0");
 }
 # checkonline
-#if ($pcfg->param("SYSTEM.checkonline") eq '')  {
-#	$pcfg->param("SYSTEM.checkonline", "true");
-#}
+if ($pcfg->param("SYSTEM.checkt2s") eq '')  {
+	$pcfg->param("SYSTEM.checkt2s", "false");
+}
 
 ##########################################################################
 # Read Settings
@@ -447,7 +447,7 @@ sub save_details
 	$pcfg->param("VARIOUS.CALDavMuell", "\"$R::wastecal\"");
 	$pcfg->param("VARIOUS.CALDav2", "\"$R::cal\"");
 	$pcfg->param("VARIOUS.cron", "$R::cron");
-	#$pcfg->param("SYSTEM.checkonline", "$R::checkonline");
+	$pcfg->param("SYSTEM.checkt2s", "$R::checkt2s");
 	$pcfg->param("SYSTEM.checkonline", "true");
 	
 	# save all radiostations
@@ -591,7 +591,7 @@ sub save
 	$pcfg->param("LOCATION.googletown", "$R::googletown");
 	$pcfg->param("LOCATION.googlestreet", "$R::googlestreet");
 	#$pcfg->param("VARIOUS.announceradio", "$R::announceradio");
-	#$pcfg->param("SYSTEM.checkonline", "$R::checkonline");
+	$pcfg->param("SYSTEM.checkt2s", "$R::checkt2s");
 	#$pcfg->param("SYSTEM.checkonline", "true");
 	$pcfg->param("VARIOUS.donate", "$R::donate");
 	$pcfg->param("LOCATION.town", "\"$R::town\"");

@@ -1345,13 +1345,13 @@
                                 <td style="width: 25%">
                                     <fieldset>
                                         <!--<select onchange="cronjob()" id="checkonline" name="checkonline" data-role="flipswitch" style="width: 104px">-->
-                                        <select id="checkonline" name="checkonline" disabled=disabled data-role="flipswitch" style="width: 104px">
+                                        <select id="checkt2s" name="checkt2s" data-role="flipswitch" style="width: 104px">
 										<option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
 										<option selected="selected" value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
 									</select>
                                     </fieldset>
                                     <script>
-                                        $('#checkonline').val('<TMPL_VAR SYSTEM.checkonline>')
+                                        $('#checkt2s').val('<TMPL_VAR SYSTEM.checkt2s>')
                                     </script>
                                 </td>
                                 <td style="width: 23px; text-align: center;">
@@ -1551,7 +1551,7 @@
                 $(document).on('pageinit', function() {
                     select();
                     //select_always();
-                    cronjob();
+                    //cronjob();
 
                 });
 
@@ -1573,15 +1573,16 @@
                         $('.radioannounce').fadeOut(600);
                     }
                 }
+				//function cronjob() {
+                //    var cro = document.getElementById('checkonline').value;
+                //    if (cro === "true") {
+                //        $('.cronjob').fadeIn(600);
+                //    } else {
+                //        $('.cronjob').fadeOut(600);
+                //    }
+                //}
 
-                function cronjob() {
-                    var cro = document.getElementById('checkonline').value;
-                    if (cro === "true") {
-                        $('.cronjob').fadeIn(600);
-                    } else {
-                        $('.cronjob').fadeOut(600);
-                    }
-                }
+                
             </script>
         </div>
     </form>
