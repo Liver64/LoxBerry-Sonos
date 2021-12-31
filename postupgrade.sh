@@ -67,6 +67,9 @@ echo "<INFO> Remove temporary/update folders"
 rm -r /tmp/$1\_upgrade
 rm -r $5/data/plugins/$3/tts/mp3/update
 
+echo "<INFO> Validation of Radio favorites"
+/usr/bin/php -q REPLACELBPBINDIR/checkradiourl.php
+
 echo "<WARNING> The function 'getsonosinfo' has been replaced by Cron Job scheduled every 10 seconds. Please remove ALL 'getsonosinfo' tasks"
 echo "<WARNING> from your Miniserver config before running the new Version!!!"
 

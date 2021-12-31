@@ -21,11 +21,11 @@ function LineIn() {
 	$model = $xml->device->modelNumber;
 	$model = allowLineIn($model);
 	if ($model == true) {
-		LOGGING("Line in has been selected successful",6);
+		LOGGING("Sonos: speaker.php: Line in has been selected successful",6);
 		$sonos->SetAVTransportURI("x-rincon-stream:" . $sonoszone[$master][1]);
 		$sonos->Play();	
 	} else {
-		LOGGING("The specified Zone does not support Line-in to be selected!", 3);
+		LOGGING("Sonos: speaker.php: The specified Zone does not support Line-in to be selected!", 3);
 		exit;
 	}
 	
@@ -49,7 +49,7 @@ function SetVolumeModeConnect($mode, $zonenew)  {
 	if ($model === true) {
 		$uuid = $sonoszone[$zonenew][1];
 		$sonos->SetVolumeMode($mode, $uuid);
-		#LOGGING("Type of volume for CONNECT has been set successful",6);
+		#LOGGING("Sonos: speaker.php: Type of volume for CONNECT has been set successful",6);
 	}
 }
 
@@ -72,7 +72,7 @@ function GetVolumeModeConnect($player)  {
 		$uuid = $sonoszone[$player][1];
 		$modeback = $sonos->GetVolumeMode($uuid);
 		$modeback === true ? $modeback = 'true' : $modeback = 'false';
-		#LOGGING("Type of volume for CONNECT has been detected",6);
+		#LOGGING("Sonos: speaker.php: Type of volume for CONNECT has been detected",6);
 	}
 	return $modeback;
 }

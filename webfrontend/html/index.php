@@ -5,7 +5,7 @@ require_once "loxberry_system.php";
 require_once "loxberry_log.php";
 include "system/error.php";
 
-error_reporting(E_ALL);
+error_reporting(E_ALL & ~E_NOTICE);
 ini_set("display_errors", "off");
 define('ERROR_LOG_FILE', "$lbplogdir/sonos.log");
 

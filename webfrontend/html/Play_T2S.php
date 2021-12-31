@@ -67,9 +67,9 @@ function create_tts() {
 	if (isset($_GET['messageid'])) {
 		$messageid = $_GET['messageid'];
 		if (file_exists($config['SYSTEM']['mp3path']."/".$messageid.".mp3") === true)  {
-			LOGGING("Messageid '".$messageid."' has been entered", 7);
+			LOGGING("Sonos: play_t2s.php: Messageid '".$messageid."' has been entered", 7);
 		} else {
-			LOGGING("The corrosponding messageid file '".$messageid.".mp3' does not exist or could not be played. Please check your directory or syntax!", 3);
+			LOGGING("Sonos: play_t2s.php: The corrosponding messageid file '".$messageid.".mp3' does not exist or could not be played. Please check your directory or syntax!", 3);
 			exit;
 		}	
 		#play_tts($messageid);
@@ -87,75 +87,75 @@ function create_tts() {
 			include_once("addon/weather-to-speech.php");
 		}
 		$textstring = substr(w2s(), 0, 500);
-		LOGGING("weather-to-speech plugin has been called", 7);
+		LOGGING("Sonos: play_t2s.php: weather-to-speech plugin has been called", 7);
 		} 
 	elseif (isset($_GET['clock'])) {
 		// calls the clock-to-speech Function
 		include_once("addon/clock-to-speech.php");
 		$textstring = c2s();
-		LOGGING("clock-to-speech plugin has been called", 7);
+		LOGGING("Sonos: play_t2s.php: clock-to-speech plugin has been called", 7);
 		}
 	elseif (isset($_GET['pollen'])) {
 		// calls the pollen-to-speech Function
 		include_once("addon/pollen-to-speach.php");
 		$textstring = substr(p2s(), 0, 500);
-		LOGGING("pollen-to-speech plugin has been called", 7);
+		LOGGING("Sonos: play_t2s.php: pollen-to-speech plugin has been called", 7);
 		}
 	elseif (isset($_GET['warning'])) {
 		// calls the weather warning-to-speech Function
 		include_once("addon/weather-warning-to-speech.php");
 		$textstring = substr(ww2s(), 0, 500);
-		LOGGING("weather warning-to-speech plugin has been called", 7);
+		LOGGING("Sonos: play_t2s.php: weather warning-to-speech plugin has been called", 7);
 	}
 	elseif (isset($_GET['distance'])) {
 		// calls the time-to-destination-speech Function
 		include_once("addon/time-to-destination-speech.php");
 		$textstring = substr(tt2t(), 0, 500);
-		LOGGING("time-to-distance speech plugin has been called", 7);
+		LOGGING("Sonos: play_t2s.php: time-to-distance speech plugin has been called", 7);
 		}
 	elseif (isset($_GET['witz'])) {
 		// calls the weather warning-to-speech Function
 		include_once("addon/gimmicks.php");
 		$textstring = substr(GetWitz(), 0, 1000);
-		LOGGING("Joke plugin has been called", 7);
+		LOGGING("Sonos: play_t2s.php: Joke plugin has been called", 7);
 		}
 	elseif (isset($_GET['bauernregel'])) {
 		// calls the weather warning-to-speech Function
 		include_once("addon/gimmicks.php");
 		$textstring = substr(GetTodayBauernregel(), 0, 500);
-		LOGGING("Bauernregeln plugin has been called", 7);
+		LOGGING("Sonos: play_t2s.php: Bauernregeln plugin has been called", 7);
 		}
 	elseif (isset($_GET['abfall'])) {
 		// calls the wastecalendar-to-speech Function
 		include_once("addon/waste-calendar-to-speech.php");
 		$textstring = substr(muellkalender(), 0, 500);
-		LOGGING("waste calendar-to-speech  plugin has been called", 7);
+		LOGGING("Sonos: play_t2s.php: waste calendar-to-speech  plugin has been called", 7);
 		}
 	elseif (isset($_GET['calendar'])) {
 		// calls the calendar-to-speech Function
 		include_once("addon/waste-calendar-to-speech.php");
 		$textstring = substr(calendar(), 0, 500);
-		LOGGING("calendar-to-speech plugin has been called", 7);
+		LOGGING("Sonos: play_t2s.php: calendar-to-speech plugin has been called", 7);
 		}
 	elseif (isset($_GET['sonos'])) {
 		// calls the sonos-to-speech Function
 		include_once("addon/sonos-to-speech.php");
 		$textstring = s2s();
 		$rampsleep = false;
-		LOGGING("sonos-to-speech plugin has been called", 7);
+		LOGGING("Sonos: play_t2s.php: sonos-to-speech plugin has been called", 7);
 		}
 	elseif ((!isset($_GET['text'])) and (isset($_GET['playbatch']))) {
-		LOGGING("no text has been entered", 3);
+		LOGGING("Sonos: play_t2s.php: no text has been entered", 3);
 		exit();
 		}
 	elseif ($text <> '') {
 		// prepares the T2S message
 		if (empty($greet))  {
 			$textstring = $text;
-			LOGGING("Textstring has been entered", 7);	
+			LOGGING("Sonos: play_t2s.php: Textstring has been entered", 7);	
 		} else {
 			$textstring = $greet.". ".$text;
-			LOGGING("Greeting + Textstring has been entered", 7);		
+			LOGGING("Sonos: play_t2s.php: Greeting + Textstring has been entered", 7);		
 		}	
 	}	
 	
@@ -189,7 +189,7 @@ function create_tts() {
 		//echo filesize($config['SYSTEM']['ttspath']."/".$filename.".mp3");
 	
 	if(file_exists($config['SYSTEM']['ttspath']."/".$filename.".mp3") && empty($_GET['nocache'])) {
-		LOGGING("MP3 grabbed from cache: '$textstring' ", 6);
+		LOGGING("Sonos: play_t2s.php: MP3 grabbed from cache: '$textstring' ", 6);
 	} else {
 		t2s($textstring, $filename);
 		if (($config['TTS']['t2s_engine'] == 6001) or ($config['TTS']['t2s_engine'] == 7001) or ($config['TTS']['t2s_engine'] == 4001))    {
@@ -204,26 +204,26 @@ function create_tts() {
 			$time = date("His"); 
 			if ($config['SYSTEM']['checkt2s'] === "1")  {
 				rename($config['SYSTEM']['ttspath']."/".$filename.".mp3", $config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");
-				LOGGING("Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3", 3);	
-				LOGGING("Please check...", 3);
-				LOGGING("...your internet connection", 3);	
-				LOGGING("...your storage device", 3);	
-				LOGGING("...your T2S Engine settings", 3);	
-				LOGGING("Please try your requested URL in a browser or change temporally the T2S provider.", 3);	
-				LOGGING("If no success at all please add a thread in Loxone Forum", 5);	
-				#LOGGING("Hoere was", 5);	
+				LOGGING("Sonos: play_t2s.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3", 3);	
+				LOGGING("Sonos: play_t2s.php: Please check...", 3);
+				LOGGING("Sonos: play_t2s.php: ...your internet connection", 3);	
+				LOGGING("Sonos: play_t2s.php: ...your storage device", 3);	
+				LOGGING("Sonos: play_t2s.php: ...your T2S Engine settings", 3);	
+				LOGGING("Sonos: play_t2s.php: Please try your requested URL in a browser or change temporally the T2S provider.", 3);	
+				LOGGING("Sonos: play_t2s.php: If no success at all please add a thread in Loxone Forum", 5);	
+				#LOGGING("Sonos: play_t2s.php: Hoere was", 5);	
 				$filename = "t2s_not_available";
 				copy($config['SYSTEM']['mp3path']."/t2s_not_available.mp3", $config['SYSTEM']['ttspath']."/t2s_not_available.mp3");
 			} else {
 				rename($config['SYSTEM']['ttspath']."/".$filename.".mp3", $config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");
-				LOGGING("Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3", 3);	
-				LOGGING("Please check...", 3);
-				LOGGING("...your internet connection", 3);	
-				LOGGING("...your storage device", 3);	
-				LOGGING("...your T2S Engine settings", 3);	
-				LOGGING("Please try your requested URL in a browser or change temporally the T2S provider.", 3);	
-				LOGGING("If no success at all please add a thread in Loxone Forum", 5);	
-				#LOGGING("Hoere nix", 5);	
+				LOGGING("Sonos: play_t2s.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3", 3);	
+				LOGGING("Sonos: play_t2s.php: Please check...", 3);
+				LOGGING("Sonos: play_t2s.php: ...your internet connection", 3);	
+				LOGGING("Sonos: play_t2s.php: ...your storage device", 3);	
+				LOGGING("Sonos: play_t2s.php: ...your T2S Engine settings", 3);	
+				LOGGING("Sonos: play_t2s.php: Please try your requested URL in a browser or change temporally the T2S provider.", 3);	
+				LOGGING("Sonos: play_t2s.php: If no success at all please add a thread in Loxone Forum", 5);	
+				#LOGGING("Sonos: play_t2s.php: Hoere nix", 5);	
 				exit;
 			}
 		}
@@ -249,16 +249,16 @@ function play_tts($filename) {
 		$sonos = new PHPSonos($coord[0]);
 		if (isset($_GET['messageid'])) {
 			// Set path if messageid
-			LOGGING("Path for messageid's been adopted", 7);
+			LOGGING("Sonos: play_t2s.php: Path for messageid's been adopted", 7);
 			$messageid = $_GET['messageid'];
 		} else {
 			// Set path if T2S
-			LOGGING("Path for T2S been adopted", 7);	
+			LOGGING("Sonos: play_t2s.php: Path for T2S been adopted", 7);	
 		}
 		// if Playbar is in Modus TV switch to Playlist 1st
 		if (substr($actual[$master]['PositionInfo']["TrackURI"], 0, 18) == "x-sonos-htastream:")  {  
 			$sonos->SetQueue("x-rincon-queue:".$coord[1]."#0");
-			LOGGING("Playbar was playing", 7);		
+			LOGGING("Sonos: play_t2s.php: Playbar was playing", 7);		
 		}
 		// Playlist is playing
 		$save_plist = count($sonos->GetCurrentPlaylist());
@@ -268,9 +268,9 @@ function play_tts($filename) {
 			// save temporally playlist
 			SavePlaylist();
 			$sonos->ClearQueue();
-			LOGGING("Queue has been cleared", 7);		
+			LOGGING("Sonos: play_t2s.php: Queue has been cleared", 7);		
 			$message_pos = 1;
-			LOGGING("Playlist has more then 998 songs", 6);		
+			LOGGING("Sonos: play_t2s.php: Playlist has more then 998 songs", 6);		
 		}
 		// if Playlist has more then 1 or less then 999 entries
 		if ($save_plist >= 1 && $save_plist <= 998) {
@@ -284,11 +284,11 @@ function play_tts($filename) {
 		#*****************************************************************************************************
 		if(isset($_GET['playgong'])) {
 			if ($_GET['playgong'] == 'no')	{
-				LOGGING("'playgong=no' could not be used in syntax, only 'playgong=yes' or 'playgong=file' are allowed", 3);
+				LOGGING("Sonos: play_t2s.php: 'playgong=no' could not be used in syntax, only 'playgong=yes' or 'playgong=file' are allowed", 3);
 				exit;
 			}
 			if(empty($config['MP3']['file_gong'])) {
-				LOGGING("Standard file for jingle is missing in Plugin config. Please maintain before usage.", 3);
+				LOGGING("Sonos: play_t2s.php: Standard file for jingle is missing in Plugin config. Please maintain before usage.", 3);
 				exit;	
 			}
 			if (($_GET['playgong'] != "yes") and ($_GET['playgong'] != "no") and ($_GET['playgong'] != " ")) {
@@ -298,15 +298,15 @@ function play_tts($filename) {
 				if ($valid === true) {
 					$jinglepath = $config['SYSTEM']['httpinterface']."/mp3/".trim($file);
 					$sonos->AddToQueue($jinglepath);
-					LOGGING("Individual jingle '".trim($file)."' added to Queue", 7);	
+					LOGGING("Sonos: play_t2s.php: Individual jingle '".trim($file)."' added to Queue", 7);	
 				} else {
-					LOGGING("Entered jingle '".$file."' for playgong is not valid or nothing has been entered. Please correct your syntax", 3);
+					LOGGING("Sonos: play_t2s.php: Entered jingle '".$file."' for playgong is not valid or nothing has been entered. Please correct your syntax", 3);
 					exit;
 				}
 			} else {
 				$jinglepath = $config['SYSTEM']['httpinterface']."/mp3/".trim($config['MP3']['file_gong']);
 				$sonos->AddToQueue($jinglepath);
-				LOGGING("Standard jingle '".trim($config['MP3']['file_gong'])."' added to Queue", 7);	
+				LOGGING("Sonos: play_t2s.php: Standard jingle '".trim($config['MP3']['file_gong'])."' added to Queue", 7);	
 			}
 		}
 		#******************************************************************************************************
@@ -317,7 +317,7 @@ function play_tts($filename) {
 			foreach ($t2s_batch as $t2s => $t2s_value) {
 				$sonos->AddToQueue($t2s_value.".mp3");
 			}
-			LOGGING("Messages from batch has been added to Queue", 7);	
+			LOGGING("Sonos: play_t2s.php: Messages from batch has been added to Queue", 7);	
 		} else {
 			// if no batch has been created add single T2S
 			$t2s_file = file_exists($config['SYSTEM']['ttspath']."/".$filename.".mp3");
@@ -331,54 +331,54 @@ function play_tts($filename) {
 						#echo $config['SYSTEM']['checkt2s'];
 						if ($config['SYSTEM']['checkt2s'] === "1")  {
 							rename($config['SYSTEM']['ttspath']."/".$filename.".mp3", $config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");
-							LOGGING("Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3", 3);	
-							LOGGING("Please check...", 3);
-							LOGGING("...your internet connection", 3);	
-							LOGGING("...your storage device", 3);	
-							LOGGING("...your T2S Engine settings", 3);	
-							LOGGING("Please try your requested URL in a browser or change temporally the T2S provider.", 3);	
-							LOGGING("If no success at all please add a thread in Loxone Forum", 5);	
-							LOGGING("Exception message has been announced!", 5);	
+							LOGGING("Sonos: play_t2s.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3", 3);	
+							LOGGING("Sonos: play_t2s.php: Please check...", 3);
+							LOGGING("Sonos: play_t2s.php: ...your internet connection", 3);	
+							LOGGING("Sonos: play_t2s.php: ...your storage device", 3);	
+							LOGGING("Sonos: play_t2s.php: ...your T2S Engine settings", 3);	
+							LOGGING("Sonos: play_t2s.php: Please try your requested URL in a browser or change temporally the T2S provider.", 3);	
+							LOGGING("Sonos: play_t2s.php: If no success at all please add a thread in Loxone Forum", 5);	
+							LOGGING("Sonos: play_t2s.php: Exception message has been announced!", 5);	
 							$filename = "t2s_not_available";
 							copy($config['SYSTEM']['mp3path']."/t2s_not_available.mp3", $config['SYSTEM']['ttspath']."/t2s_not_available.mp3");
 						} else {
 							rename($config['SYSTEM']['ttspath']."/".$filename.".mp3", $config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");
-							LOGGING("Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3", 3);	
-							LOGGING("Please check...", 3);
-							LOGGING("...your internet connection", 3);	
-							LOGGING("...your storage device", 3);	
-							LOGGING("...your T2S Engine settings", 3);	
-							LOGGING("Please try your requested URL in a browser or change temporally the T2S provider.", 3);	
-							LOGGING("If no success at all please add a thread in Loxone Forum", 5);	
+							LOGGING("Sonos: play_t2s.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3", 3);	
+							LOGGING("Sonos: play_t2s.php: Please check...", 3);
+							LOGGING("Sonos: play_t2s.php: ...your internet connection", 3);	
+							LOGGING("Sonos: play_t2s.php: ...your storage device", 3);	
+							LOGGING("Sonos: play_t2s.php: ...your T2S Engine settings", 3);	
+							LOGGING("Sonos: play_t2s.php: Please try your requested URL in a browser or change temporally the T2S provider.", 3);	
+							LOGGING("Sonos: play_t2s.php: If no success at all please add a thread in Loxone Forum", 5);	
 							exit;
 						}						
 					}
 					$sonos->AddToQueue($config['SYSTEM']['httpinterface']."/".$filename.".mp3");
-					LOGGING("T2S '".trim($filename).".mp3' has been added to Queue", 7);
+					LOGGING("Sonos: play_t2s.php: T2S '".trim($filename).".mp3' has been added to Queue", 7);
 				} else {
 					$sonos->AddToQueue($config['SYSTEM']['httpinterface']."/mp3/".$messageid.".mp3");
-					LOGGING("MP3 File '".trim($messageid).".mp3' has been added to Queue", 7);
+					LOGGING("Sonos: play_t2s.php: MP3 File '".trim($messageid).".mp3' has been added to Queue", 7);
 					$filename = $messageid;
 				}
 			} else {
-				LOGGING("The file '".trim($filename).".mp3' does not exist or could not be played. Please check your directory or your T2S settings!", 3);
+				LOGGING("Sonos: play_t2s.php: The file '".trim($filename).".mp3' does not exist or could not be played. Please check your directory or your T2S settings!", 3);
 				exit;
 			}
 		}
 		$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
 		$sonos->SetPlayMode('NORMAL');
-		LOGGING("Playmode has been set to NORMAL", 7);		
+		LOGGING("Sonos: play_t2s.php: Playmode has been set to NORMAL", 7);		
 		$sonos->SetTrack($message_pos);
-		LOGGING("Message has been set to Position '".$message_pos."' in current Queue", 7);		
+		LOGGING("Sonos: play_t2s.php: Message has been set to Position '".$message_pos."' in current Queue", 7);		
 		$sonos->SetGroupMute(false);
 		$sonos->SetVolume($volume);
-		LOGGING("Mute for relevant Player(s) has been turned off", 7);		
+		LOGGING("Sonos: play_t2s.php: Mute for relevant Player(s) has been turned off", 7);		
 		try {
 			$try_play = $sonos->Play();
-			LOGGING("T2S has been passed to Sonos Application", 5);	
-			LOGGING("In case the announcement wasn't played please check any Messages appearing in the Sonos App during processing the request.", 5);	
+			LOGGING("Sonos: play_t2s.php: T2S has been passed to Sonos Application", 5);	
+			LOGGING("Sonos: play_t2s.php: In case the announcement wasn't played please check any Messages appearing in the Sonos App during processing the request.", 5);	
 		} catch (Exception $e) {
-			LOGGING("The requested T2S message ".trim($messageid).".mp3 could not be played!", 3);
+			LOGGING("Sonos: play_t2s.php: The requested T2S message ".trim($messageid).".mp3 could not be played!", 3);
 			$notification = array (	"PACKAGE" => $lbpplugindir,
 									"NAME" => "Sonos",
 									"MESSAGE" => "The requested T2S message could not be played!",
@@ -402,27 +402,27 @@ function play_tts($filename) {
 				$i++;
 			} 
 			unlink ($filenamebatch);
-			LOGGING("T2S batch files has been removed from Queue", 7);	
+			LOGGING("Sonos: play_t2s.php: T2S batch files has been removed from Queue", 7);	
 		} else {
 			// If single T2S has been be played
 			$sonos->RemoveFromQueue($message_pos);
-			LOGGING("T2S has been removed from Queue", 7);	
+			LOGGING("Sonos: play_t2s.php: T2S has been removed from Queue", 7);	
 			if(isset($_GET['playgong'])) {		
 				$sonos->RemoveFromQueue($message_pos);
-				LOGGING("Jingle has been removed from Queue", 7);	
+				LOGGING("Sonos: play_t2s.php: Jingle has been removed from Queue", 7);	
 			}	
 		}	
 		// if Playlist has more than 998 entries
 		if ($save_plist > 998) {
 			$sonos->ClearQueue();
-			LOGGING("Queue has been cleared", 7);		
+			LOGGING("Sonos: play_t2s.php: Queue has been cleared", 7);		
 			LoadPlaylist("temp_t2s");
-			LOGGING("Temporary saved playlist 'temp_t2s' has been loaded back into Queue", 7);		
+			LOGGING("Sonos: play_t2s.php: Temporary saved playlist 'temp_t2s' has been loaded back into Queue", 7);		
 			DelPlaylist();
-			LOGGING("Temporary playlist 'temp_t2s' has been finally deleted", 7);		
+			LOGGING("Sonos: play_t2s.php: Temporary playlist 'temp_t2s' has been finally deleted", 7);		
 		// if Playlist has less than or equal 998 entries
 		}
-		LOGGING("T2S play process has been successful finished", 6);
+		LOGGING("Sonos: play_t2s.php: T2S play process has been successful finished", 6);
 		return $actual;
 		
 		
@@ -441,7 +441,7 @@ function sendmessage() {
 			
 			$time_start = microtime(true);
 			if ((empty($config['TTS']['t2s_engine'])) or (empty($config['TTS']['messageLang'])))  {
-				LOGGING("There is no T2S engine/language selected in Plugin config. Please select before using T2S functionality.", 3);
+				LOGGING("Sonos: play_t2s.php: There is no T2S engine/language selected in Plugin config. Please select before using T2S functionality.", 3);
 				exit();
 			}
 			if ((!isset($_GET['text'])) && (!isset($_GET['messageid'])) && (!isset($_GET['sonos'])) &&
@@ -449,13 +449,13 @@ function sendmessage() {
 				(!isset($_GET['witz'])) && (!isset($_GET['pollen'])) && (!isset($_GET['warning'])) &&
 				(!isset($_GET['bauernregel'])) && (!isset($_GET['distance'])) && (!isset($_GET['clock'])) && 
 				(!isset($_GET['calendar'])) && (!isset($_GET['action'])) == 'playbatch') {
-				LOGGING("Wrong Syntax, please correct! Even 'say&text=' or 'say&messageid=' are necessary to play an anouncement. (check Wiki)", 3);	
+				LOGGING("Sonos: play_t2s.php: Wrong Syntax, please correct! Even 'say&text=' or 'say&messageid=' are necessary to play an anouncement. (check Wiki)", 3);	
 				exit;
 			}
 			// if batch has been choosed save filenames to a txt file and exit
 			if(isset($_GET['batch'])) {
 				if((isset($_GET['volume'])) or (isset($_GET['rampto'])) or (isset($_GET['playmode'])) or (isset($_GET['playgong']))) {
-					LOGGING("The parameter volume, rampto, playmode or playgong are not allowed to be used in conjunction with batch. Please remove from syntax!", 4);
+					LOGGING("Sonos: play_t2s.php: The parameter volume, rampto, playmode or playgong are not allowed to be used in conjunction with batch. Please remove from syntax!", 4);
 					exit;
 				}
 				if (isset($_GET['messageid'])) {
@@ -467,28 +467,28 @@ function sendmessage() {
 				$filenamebatch = "t2s_batch.txt";
 				$file = fopen($filenamebatch, "a+");
 				if($file == false ) {
-					LOGGING("There is no T2S batch file to be written!", 3);
+					LOGGING("Sonos: play_t2s.php: There is no T2S batch file to be written!", 3);
 					exit();
 				}
 				if (strlen($filename) == '32') {
 					fwrite($file, $config['SYSTEM']['httpinterface']."/".$filename."\r\n");
-					LOGGING("T2S '".$filename.".mp3' has been added to batch", 7);
-					LOGGING("Please ensure to call later '...action=playbatch', otherwise the messages could be played uncontrolled", 5);					
+					LOGGING("Sonos: play_t2s.php: T2S '".$filename.".mp3' has been added to batch", 7);
+					LOGGING("Sonos: play_t2s.php: Please ensure to call later '...action=playbatch', otherwise the messages could be played uncontrolled", 5);					
 				} else {
 					fwrite($file, $config['SYSTEM']['httpinterface']."/".$MP3path."/".$messageid."\r\n");
-					LOGGING("Messageid '".$messageid."' has been added to batch", 7);
-					LOGGING("Please ensure to call later '...action=playbatch', otherwise the messages could be played uncontrolled", 5);										
+					LOGGING("Sonos: play_t2s.php: Messageid '".$messageid."' has been added to batch", 7);
+					LOGGING("Sonos: play_t2s.php: Please ensure to call later '...action=playbatch', otherwise the messages could be played uncontrolled", 5);										
 				}
 				fclose($file);
 				exit;
 			}
 			#if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
 			#	$volume = $_GET['volume'];
-				#LOGGING("Volume from syntax been adopted", 7);		
+				#LOGGING("Sonos: play_t2s.php: Volume from syntax been adopted", 7);		
 			#} else 	{
 				// übernimmt Standard Lautstärke der angegebenen Zone aus config.php
 			#	$volume = $config['sonoszonen'][$master][3];
-				#LOGGING("Standard Volume from zone ".$master."  been used", 7);		
+				#LOGGING("Sonos: play_t2s.php: Standard Volume from zone ".$master."  been used", 7);		
 			#}
 			#checkaddon();
 			#checkTTSkeys();
@@ -497,7 +497,7 @@ function sendmessage() {
 			$return = getZoneStatus($master); // get current Zone Status (Single, Member or Master)
 			if($return == 'member') {
 				if(isset($_GET['sonos'])) { // check if Zone is Group Member, then abort
-					LOGGING("The specified zone is part of a group! There are no information available.", 4);
+					LOGGING("Sonos: play_t2s.php: The specified zone is part of a group! There are no information available.", 4);
 				exit;
 				}
 			}
@@ -506,11 +506,11 @@ function sendmessage() {
 			$test = $sonos->GetPositionInfo();
 			if (($return == 'master') or ($return == 'member')) {
 				$sonos->BecomeCoordinatorOfStandaloneGroup();  // in case Member or Master then remove Zone from Group
-				LOGGING("Zone ".$master." has been removed from group", 6);		
+				LOGGING("Sonos: play_t2s.php: Zone ".$master." has been removed from group", 6);		
 			}
 			if (substr($test['TrackURI'], 0, 18) == "x-sonos-htastream:") {
 				$sonos->SetQueue("x-rincon-queue:". $sonoszone[$master][1] ."#0");
-				LOGGING("Streaming/TV endet successful", 7);		
+				LOGGING("Sonos: play_t2s.php: Streaming/TV endet successful", 7);		
 			}
 			#if ((substr($test, 0, 18) !== "x-sonos-htastream:") and (!isset($_GET['sonos'])))  {
 			if (!isset($_GET['sonos']))  {
@@ -519,7 +519,7 @@ function sendmessage() {
 			}
 			// get Coordinator of (maybe) pair or single player
 			$coord = getRoomCoordinator($master);
-			LOGGING("Room Coordinator has been identified", 7);		
+			LOGGING("Sonos: play_t2s.php: Room Coordinator has been identified", 7);		
 			$sonos = new PHPSonos($coord[0]); 
 			$sonos->SetMute(false);
 			play_tts($messageid);
@@ -530,7 +530,7 @@ function sendmessage() {
 			$time_end = microtime(true);
 			$t2s_time = $time_end - $time_start;
 			#echo "Die T2S dauerte ".round($t2s_time, 2)." Sekunden.\n";
-			LOGGING("The requested single T2S tooks ".round($t2s_time, 2)." seconds to be processed.", 5);	
+			LOGGING("Sonos: play_t2s.php: The requested single T2S tooks ".round($t2s_time, 2)." seconds to be processed.", 5);	
 					
 	}
 
@@ -546,7 +546,7 @@ function sendgroupmessage() {
 			
 			$time_start = microtime(true);
 			if ((empty($config['TTS']['t2s_engine'])) or (empty($config['TTS']['messageLang'])))  {
-				LOGGING("There is no T2S engine/language selected in Plugin config. Please select before using T2S functionality.", 3);
+				LOGGING("Sonos: play_t2s.php: There is no T2S engine/language selected in Plugin config. Please select before using T2S functionality.", 3);
 				exit();
 			}
 			if ((!isset($_GET['text'])) && (!isset($_GET['messageid'])) && (!isset($_GET['sonos'])) &&
@@ -554,21 +554,21 @@ function sendgroupmessage() {
 				(!isset($_GET['witz'])) && (!isset($_GET['pollen'])) && (!isset($_GET['warning'])) &&
 				(!isset($_GET['bauernregel'])) && (!isset($_GET['distance'])) && (!isset($_GET['clock'])) && 
 				(!isset($_GET['calendar'])) && (!isset($_GET['action'])) == 'playbatch') {
-				LOGGING("Wrong Syntax, please correct! Even 'say&text=' or 'say&messageid=' are necessary to play an anouncement. (check Wiki)", 3);	
+				LOGGING("Sonos: play_t2s.php: Wrong Syntax, please correct! Even 'say&text=' or 'say&messageid=' are necessary to play an anouncement. (check Wiki)", 3);	
 				exit;
 			}
 			if(isset($_GET['batch'])) {
-				LOGGING("The parameter batch is not allowed to be used in groups. Please use single message to prepare your batch!", 4);
+				LOGGING("Sonos: play_t2s.php: The parameter batch is not allowed to be used in groups. Please use single message to prepare your batch!", 4);
 				exit;
 			}
 			if(isset($_GET['volume']) or isset($_GET['groupvolume']))  { 
 				isset($_GET['volume']) ? $groupvolume = $_GET['volume'] : $groupvolume = $_GET['groupvolume'];
 				if ((!is_numeric($groupvolume)) or ($groupvolume < 0) or ($groupvolume > 200)) {
-					LOGGING("The entered volume of ".$groupvolume." must be even numeric or between 0 and 200! Please correct", 4);	
+					LOGGING("Sonos: play_t2s.php: The entered volume of ".$groupvolume." must be even numeric or between 0 and 200! Please correct", 4);	
 				}
 			}
 			if(isset($_GET['sonos'])) {
-				LOGGING("The parameter 'sonos' couldn't be used for group T2S!", 4);
+				LOGGING("Sonos: play_t2s.php: The parameter 'sonos' couldn't be used for group T2S!", 4);
 				exit;
 			}
 			#checkaddon();
@@ -590,7 +590,7 @@ function sendgroupmessage() {
 					}
 				}
 				$member = $memberon;
-				LOGGING("All Players has been grouped to Player ".$master, 5);	
+				LOGGING("Sonos: play_t2s.php: All Players has been grouped to Player ".$master, 5);	
 			} else {
 				$member = explode(',', $member);
 				$memberon = array();
@@ -599,19 +599,19 @@ function sendgroupmessage() {
 					if ($zoneon === (bool)true)  {
 						array_push($memberon, $value);
 					} else {
-						LOGGING("Player '".$value."' could not be added to the group!!", 4);
+						LOGGING("Sonos: play_t2s.php: Player '".$value."' could not be added to the group!!", 4);
 					}
 				}
 				$member = $memberon;
 			}
 			if (in_array($master, $member)) {
-				LOGGING("The zone ".$master." could not be entered as member again. Please remove from Syntax '&member=".$master."' !", 3);
+				LOGGING("Sonos: play_t2s.php: The zone ".$master." could not be entered as member again. Please remove from Syntax '&member=".$master."' !", 3);
 				exit;
 			}
 			// prüft alle Member ob Sie Online sind und löscht ggf. Member falls nicht Online
 			#checkZonesOnline($member);
 			$coord = getRoomCoordinator($master);
-			LOGGING("Room Coordinator has been identified", 7);		
+			LOGGING("Sonos: play_t2s.php: Room Coordinator has been identified", 7);		
 			// speichern der Zonen Zustände
 			$save = saveZonesStatus(); // saves all Zones Status
 			foreach($member as $newzone) {
@@ -622,13 +622,13 @@ function sendgroupmessage() {
 			$masterrincon = $coord[1]; 
 			$sonos = new PHPSonos($coord[0]);
 			$sonos->BecomeCoordinatorOfStandaloneGroup();
-			LOGGING("Group Coordinator has been made to single zone", 7);		
+			LOGGING("Sonos: play_t2s.php: Group Coordinator has been made to single zone", 7);		
 			// grouping
 			foreach ($member as $zone) {
 				$sonos = new PHPSonos($sonoszone[$zone][0]);
 				if ($zone != $master) {
 					$sonos->SetAVTransportURI("x-rincon:" . $masterrincon); 
-					LOGGING("Member '$zone' is now connected to Master Zone", 7);		
+					LOGGING("Sonos: play_t2s.php: Member '$zone' is now connected to Master Zone", 7);		
 				}
 			}
 			#sleep($config['TTS']['sleepgroupmessage']); // warten gemäß config.php bis Gruppierung abgeschlossen ist
@@ -648,7 +648,7 @@ function sendgroupmessage() {
 			play_tts($messageid);
 			// wiederherstellen der Ursprungszustände
 			restoreGroupZone();
-			LOGGING("Restore previous settings will be called", 7);		
+			LOGGING("Sonos: play_t2s.php: Restore previous settings will be called", 7);		
 			foreach($member as $newzone) {
 				$mode = "";
 				$actual[$newzone]['CONNECT'] == 'true' ? $mode = '1' : $mode = '0';
@@ -662,7 +662,7 @@ function sendgroupmessage() {
 			$time_end = microtime(true);
 			$t2s_time = $time_end - $time_start;
 			#echo "Die T2S dauerte ".round($t2s_time, 2)." Sekunden.\n";
-			LOGGING("The requested group T2S tooks ".round($t2s_time, 2)." seconds to be processed.", 5);					
+			LOGGING("Sonos: play_t2s.php: The requested group T2S tooks ".round($t2s_time, 2)." seconds to be processed.", 5);					
 }
 
 /**
@@ -677,7 +677,7 @@ function t2s_playbatch() {
 	$textstring = true;
 	$filenamebatch = "t2s_batch.txt";
 	if (!file_exists($filenamebatch)) {
-		LOGGING("There is no T2S batch file to be played!", 4);
+		LOGGING("Sonos: play_t2s.php: There is no T2S batch file to be played!", 4);
 		exit();
 	}
 	say();
@@ -700,7 +700,7 @@ function send_tts_source($tts_stat)  {
 	$tmp_tts = "/run/shm/tmp_tts";
 	if ($tts_stat == 1)  {
 			if(!touch($tmp_tts)) {
-			LOGGING("No permission to write file", 3);
+			LOGGING("Sonos: play_t2s.php: No permission to write file", 3);
 			exit;
 		}
 		$handle = fopen ($tmp_tts, 'w');
@@ -715,7 +715,7 @@ function send_tts_source($tts_stat)  {
 	
 	// ceck if configured MS is fully configured
 	if (!isset($ms[$config['LOXONE']['Loxone']])) {
-		LOGWARN ("Your selected Miniserver from Sonos4lox Plugin config seems not to be fully configured. Please check your LoxBerry miniserver config!") ;
+		LOGWARN ("Sonos: play_t2s.php: Your selected Miniserver from Sonos4lox Plugin config seems not to be fully configured. Please check your LoxBerry miniserver config!") ;
 		exit(1);
 	}
 			
@@ -736,7 +736,7 @@ function send_tts_source($tts_stat)  {
 			#ms_send_mem($config['LOXONE']['Loxone'], $data, $value = null);
 			$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/t2s_$master/$tts_stat"); // Radio oder Playliste
 		} catch (Exception $e) {
-			LOGERR("The connection to Loxone could not be initiated, we have to abort...");	
+			LOGERR("Sonos: play_t2s.php: The connection to Loxone could not be initiated, we have to abort...");	
 			exit;
 		}
 	return;

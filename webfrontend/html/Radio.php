@@ -54,10 +54,21 @@ function radio(){
 * @return: 
 **/
 function nextradio() {
-	global $sonos, $config, $master, $debug, $min_vol, $volume, $tmp_tts, $sonoszone;
+	global $sonos, $config, $master, $debug, $min_vol, $volume, $tmp_tts, $sonoszone, $tmp_error;
 	
 	if (file_exists($tmp_tts))  {
 		LOGGING("Currently a T2S is running, we skip nextradio for now. Please try again later.",6);
+		exit;
+	}
+	if (file_exists($tmp_error)) {
+		$myfile = fopen($tmp_error, "r");
+		fseek($myfile, 0);
+		while(!feof($myfile)) {
+			$line=fgets($myfile);
+			$line=trim($line);
+			$str = preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $line);
+			LOGGING("Sonos: radio.php: Your Radio favorite '".$str."' are not valid... please correct. We terminate here.",3);
+		}
 		exit;
 	}
 	#if (isset($_GET['member']))  {
@@ -98,27 +109,15 @@ function nextradio() {
 		array_push($radio_adresse, $radiosplit[1]);
 	}
 	$senderaktuell = array_search($senderuri, $radio_name);
-	# Wenn nextradio aufgerufen wird ohne eine vorherigen Radiosender
-	if( $senderaktuell == "" && $senderuri == "" || substr($senderuri, 0, 12) == "x-file-cifs:" ) {
-		$senderaktuell = -1;
-	}
-	if ($senderaktuell == ($radioanzahl) ) {
-		$sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[0], $radio_name[0]);
-		$act = $radio_name[0];
-	}
-    if ($senderaktuell < ($radioanzahl) ) {
-		@$sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[$senderaktuell + 1], $radio_name[$senderaktuell + 1]);
+	if ($senderaktuell < ($radioanzahl) - 1 ) {
+		$sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[$senderaktuell + 1], $radio_name[$senderaktuell + 1]);
 		$act = $radio_name[$senderaktuell + 1];
 	}
     if ($senderaktuell == $radioanzahl - 1) {
 	    $sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[0], $radio_name[0]);
 		$act = $radio_name[0];
 	}
-	$info_r = "\r\n Senderuri vorher: " . $senderuri . "\r\n";
-	$info_r .= "Sender aktuell: " . $senderaktuell . "\r\n";
-	$info_r .= "Radioanzahl: " .$radioanzahl;
-	LOGGING('Next Radio Info: '.($info_r),7);
-    if ($config['VARIOUS']['announceradio'] == 1) {
+	if ($config['VARIOUS']['announceradio'] == 1) {
 		$check_stat = getZoneStatus($master);
 		say_radio_station();
 	}
@@ -192,7 +191,6 @@ function random_radio() {
 
 function say_radio_station() {
 			
-	# nach nextradio();
 	global $master, $sonoszone, $config, $min_vol, $volume, $actual, $sonos, $coord, $messageid, $filename, $MessageStorepath, $nextZoneKey, $member;
 	require_once("addon/sonos-to-speech.php");
 	
@@ -213,7 +211,7 @@ function say_radio_station() {
 	#********************************************************************
 	# Generiert und kodiert Ansage des laufenden Senders
 	if (strncmp($temp_radio['title'], $play_stat, strlen($play_stat))===0) {
-    	# Nur Titel des Senders ansagen, falls Titel mit dem Announce-Radio Text übereinstimmt
+    	# Nur Titel des Senders ansagen, falls Titel mit dem Announce-Radio Text Ã¼bereinstimmt
 	    $text = $temp_radio['title'];
 	} else {
 	    # Ansage von 'Radio' gefolgt vom Titel des Senders

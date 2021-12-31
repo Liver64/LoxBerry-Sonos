@@ -6,7 +6,7 @@ require_once "loxberry_log.php";
 
 register_shutdown_function('shutdown');
 
-$log = LBLog::newLog( [ "name" => "Cleanup", "stderr" => 1, "addtime" => 1 ] );
+$log = LBLog::newLog( [ "name" => "Cronjobs", "stderr" => 1, "addtime" => 1 ] );
 
 LOGSTART("Cleanup MP3 files");
 

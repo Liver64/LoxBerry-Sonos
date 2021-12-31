@@ -35,7 +35,7 @@ function s2s()
 		$sonos->Stop();
 		$ann_radio = $config['VARIOUS']['announceradio_always'];
 		if(!empty($temp["duration"])) {
-			# Generiert Titelinfo wenn MP3 läuft
+			# Generiert Titelinfo aus MP3
 			$artist = substr($temp["artist"], 0, 30);
 			$titel = substr($temp["title"], 0, 70);
 			$text = $this_song." ".$titel." ".$by." ".$artist ; 
@@ -53,8 +53,8 @@ function s2s()
 				$text = $this_song." ".$titel." ".$by." ".$artist ; 
 			}
 		}
-		LOGGING('Song Announcement: '.utf8_encode($text),7);
-		LOGGING('Message been generated and pushed to T2S creation',5);
+		LOGGING('Sonos: sonos-to-speech.php: Song Announcement: '.utf8_encode($text),7);
+		LOGGING('Sonos: sonos-to-speech.php: Message been generated and pushed to T2S creation',5);
 		return ($text);
 	} 
 }

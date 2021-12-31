@@ -36,7 +36,7 @@ function AddSpotify() {
 	if (isset($_GET['trackuri'])) {
 		$uri = $_GET['trackuri'];
 		if (empty($uri)) {
-			LOGGING("Please enter Spotify Track-URI!", 3);
+			LOGGING("Sonos: spotify.php: Please enter Spotify Track-URI!", 3);
 			exit;
 		}
 		$track_array = explode(',',$uri);
@@ -55,10 +55,10 @@ function AddSpotify() {
 				$service->SetSpotifyTrack($trackuri, $message_pos);
 			}
 		} catch (Exception $e) {
-			LOGGING("The entered Spotify-Track-URI: ".$trackuri." is not valid! Please check!", 3);
+			LOGGING("Sonos: spotify.php: The entered Spotify-Track-URI: ".$trackuri." is not valid! Please check!", 3);
 			exit;
 		}
-		LOGGING('The entered Spotify-Track has been loaded',6);
+		LOGGING('Sonos: spotify.php: The entered Spotify-Track has been loaded',6);
 		$sonos->SetTrack($message_pos);
 	}
 	// Spotify Playlist
@@ -69,9 +69,9 @@ function AddSpotify() {
 			$service = New SonosMusicService($sonoszone[$master][0]);
 			$service->SetSpotifyPlaylist($pl, $user);
 		} catch (Exception $e) {
-			LOGGING("The entered Spotify-Playlist-URI: ".$pl." is not valid! Please check!", 3);
+			LOGGING("Sonos: spotify.php: The entered Spotify-Playlist-URI: ".$pl." is not valid! Please check!", 3);
 			exit;
-		}LOGGING('The entered Spotify-Playlist has been loaded',6);
+		}LOGGING('Sonos: spotify.php: The entered Spotify-Playlist has been loaded',6);
 	}
 	// Spotify Album
 	if (isset($_GET['albumuri'])) {
@@ -81,14 +81,14 @@ function AddSpotify() {
 			$service = New SonosMusicService($sonoszone[$master][0]);
 			$service->SetSpotifyAlbum($pl);
 		} catch (Exception $e) {
-			LOGGING("The entered Spotify-Album-URI: ".$pl." is not valid! Please check!", 3);
+			LOGGING("Sonos: spotify.php: The entered Spotify-Album-URI: ".$pl." is not valid! Please check!", 3);
 			exit;
 		}
-		LOGGING('The entered Spotify-Album has been loaded',6);
+		LOGGING('Sonos: spotify.php: The entered Spotify-Album has been loaded',6);
 	}
 	$sonos->SetVolume($volume);
 	$sonos->SetMute(false);
-	LOGGING("Requested Spotify Music plays now.", 7);
+	LOGGING("Sonos: spotify.php: Requested Spotify Music plays now.", 7);
 	$sonos->Play();
 }
 

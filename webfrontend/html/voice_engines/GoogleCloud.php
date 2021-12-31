@@ -16,7 +16,7 @@ function t2s($textstring, $filename)
 			$voice = $config['TTS']['voice'];
 		}
 								  		
-		LOGGING("Google Cloud TTS has been successful selected", 7);	
+		LOGGING("Sonos: voice_engines\googleCloud.php: Google Cloud TTS has been successful selected", 7);	
 
 		$params = [
 			"audioConfig"=>[
@@ -55,7 +55,7 @@ function t2s($textstring, $filename)
 			# Speicherort der MP3 Datei
 			$file = $config['SYSTEM']['ttspath'] ."/". $filename . ".mp3";
 			file_put_contents($file, base64_decode($responseDecoded['audioContent']));  
-			LOGGING('The text has been passed to google engine for MP3 creation',5);
+			LOGGING('Sonos: voice_engines\googleCloud.php: The text has been passed to google engine for MP3 creation',5);
 			return ($filename); 	
 		} else {
 			# Error handling		
@@ -63,6 +63,6 @@ function t2s($textstring, $filename)
 			exit(1);
 		}
 
-		LOGGING('Something went wrong!',5);
+		LOGGING('Sonos: voice_engines\googleCloud.php: Something went wrong!',5);
 		return;
 }

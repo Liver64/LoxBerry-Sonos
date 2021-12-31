@@ -20,9 +20,9 @@ function playlist() {
 	if(isset($_GET['playlist'])) {
 		$sonos->SetQueue("x-rincon-queue:" . trim($sonoszone[$master][1]) . "#0"); 
 		$playlist = $_GET['playlist'];
-		LOGGING("Playlist '".$_GET['playlist']."' has been found.", 7);
+		LOGGING("Sonos: playlist.php: Playlist '".$_GET['playlist']."' has been found.", 7);
 	} else {
-		LOGGING("No playlist named '".$_GET['playlist']."' has been found.", 3);
+		LOGGING("Sonos: playlist.php: No playlist named '".$_GET['playlist']."' has been found.", 3);
 		exit;
 	}
 	
@@ -37,22 +37,22 @@ function playlist() {
 		if($playlist == $sonoslists[$pleinzeln]["title"]) {
 			$plfile = urldecode($sonoslists[$pleinzeln]["file"]);
 			$sonos->ClearQueue();
-			LOGGING("Queue has been cleared.", 7);
+			LOGGING("Sonos: playlist.php: Queue has been cleared.", 7);
 			$sonos->AddToQueue($plfile); //Datei hinzufügen
-			LOGGING("Playlist has been added to Queue.", 7);
+			LOGGING("Sonos: playlist.php: Playlist has been added to Queue.", 7);
 			$sonos->SetQueue("x-rincon-queue:". trim($sonoszone[$master][1]) ."#0"); 
 			if(!isset($_GET['load'])) {
 				$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
 				$sonos->SetVolume($volume);
 				$sonos->Play();
 			}
-			LOGGING("Playlist is playing.", 7);
+			LOGGING("Sonos: playlist.php: Playlist is playing.", 7);
 			$gefunden = 1;
 		}
 		$pleinzeln++;
 			if (($pleinzeln == count($sonoslists) ) && ($gefunden != 1)) {
 				$sonos->Pause()();
-				LOGGING("No playlist with the specified name found.", 3);
+				LOGGING("Sonos: playlist.php: No playlist with the specified name found.", 3);
 				exit;
 			}
 		}	
@@ -72,14 +72,14 @@ function zapzone() {
 	global $config, $volume, $tmp_tts, $sonos, $sonoszone, $master, $playzones, $count, $maxzap, $count_file, $curr_zone_file;
 	
 	if (file_exists($tmp_tts))  {
-		LOGGING("Currently a T2S is running, we skip zapzone for now. Please try again later.",6);
+		LOGGING("Sonos: playlist.php: Currently a T2S is running, we skip zapzone for now. Please try again later.",6);
 		exit;
 	}
 	$sonos = new PHPSonos($sonoszone[$master][0]);
 	$check_stat = getZoneStatus($master);
 	if ($check_stat == "member")  {
 		$sonos->BecomeCoordinatorOfStandaloneGroup();
-		LOGGING("Zone ".$master." has been ungrouped.",5);
+		LOGGING("Sonos: playlist.php: Zone ".$master." has been ungrouped.",5);
 	}
 	play_zones();
 	$playingzones = $_SESSION["playingzone"];
@@ -89,11 +89,11 @@ function zapzone() {
 	// if no zone is playing switch to nextradio
 	if (empty($playingzones) or $count > count($playingzones)) {
 		nextradio();
-		LOGGING("Function nextradio has been used",6);
+		LOGGING("Sonos: playlist.php: Function nextradio has been used",6);
 		sleep($maxzap);
 		if(file_exists($count_file))  {
 			unlink($count_file);
-			LOGGING("Function zapzone has been reseted",6);
+			LOGGING("Sonos: playlist.php: Function zapzone has been reseted",6);
 		}
 		exit;
 	}
@@ -116,19 +116,20 @@ function zapzone() {
 	if (empty($nextZoneKey)) {
 		$nextZoneKey = $key;
 	}
+	echo $nextZoneUrl;
 	#echo '<br>Zone: ['.$nextZoneKey.']';
 	saveCurrentZone($nextZoneKey);
 	if ($config['VARIOUS']['announceradio'] == 1) {
 		if ($check_stat == "single")  {
 			say_zone($nextZoneKey);
 		} else {
-			LOGGING("Song/Artist could not be announced because Master is grouped",6);
+			LOGGING("Sonos: playlist.php: Song/Artist could not be announced because Master is grouped",6);
 		}
 	}
 	unset ($playingzones[$nextZoneKey]);
 	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
 	$sonos->SetAVTransportURI("x-rincon:" . $sonoszone[$nextZoneKey][1]);
-	LOGGING("Zone ".$master." has been grouped as member to Zone ".$nextZoneKey, 7);
+	LOGGING("Sonos: playlist.php: Zone ".$master." has been grouped as member to Zone ".$nextZoneKey, 7);
 	$sonos->SetMute(false);
 	$sonos->SetVolume($volume);
 	}
@@ -147,7 +148,7 @@ function saveCurrentZone($nextZoneKey) {
 	$curr_zone_file = "/run/shm/sonos_currzone_mem.txt";
 	
     if(!touch($curr_zone_file)) {
-		LOGGING("No permission to write file", 3);
+		LOGGING("Sonos: playlist.php: No permission to write file", 3);
 		exit;
     }
 	$handle = fopen ($curr_zone_file, 'w');
@@ -170,7 +171,7 @@ function currentZone() {
 		
 	$playingzones = $_SESSION["playingzone"];
 	if(!touch($curr_zone_file)) {
-		LOGGING("Could not open file", 3);
+		LOGGING("Sonos: playlist.php: Could not open file", 3);
 		exit;
     }
 	$currentZone = file($curr_zone_file);
@@ -253,10 +254,10 @@ function SavePlaylist() {
 	try {
 		$sonos->SaveQueue("temp_t2s");
 	} catch (Exception $e) {
-		LOGGING("The temporary Playlist (PL) could not be saved because the list contains min. 1 Song (URL) which is not longer valid! Please check or remove the list!", 3);
+		LOGGING("Sonos: playlist.php: The temporary Playlist (PL) could not be saved because the list contains min. 1 Song (URL) which is not longer valid! Please check or remove the list!", 3);
 		exit;
 	}
-	LOGGING("Temporally playlist has been saved.", 6);
+	LOGGING("Sonos: playlist.php: Temporally playlist has been saved.", 6);
 }
 
 
@@ -275,7 +276,7 @@ function DelPlaylist() {
 	if(!empty($t2splaylist)) {
 		$sonos->DelSonosPlaylist($playlists[$t2splaylist]['id']);
 	}
-	LOGGING("Temporally playlist has been deleted.", 6);
+	LOGGING("Sonos: playlist.php: Temporally playlist has been deleted.", 6);
 }
 
 
@@ -290,7 +291,7 @@ function random_playlist() {
 	global $sonos, $sonoszone, $master, $min_vol, $volume, $config;
 	
 	if (isset($_GET['member'])) {
-		LOGGING("This function could not be used with groups!", 3);
+		LOGGING("Sonos: playlist.php: This function could not be used with groups!", 3);
 		exit;
 	}
 	$sonoslists = $sonos->GetSONOSPlaylists();
@@ -328,7 +329,7 @@ function random_playlist() {
 	} else {
 		$volume = $config['sonoszonen'][$master][4];
 	}
-	LOGGING("Random playlist has been added to Queue.", 6);
+	LOGGING("Sonos: playlist.php: Random playlist has been added to Queue.", 6);
 	$sonos->Play();
 }
 
@@ -352,12 +353,12 @@ function next_dynamic() {
 		checkifmaster($master);
 		$sonos = new PHPSonos($sonoszone[$master][0]);
 		$sonos->Next();
-		LOGGING("Next Song in Playlist.", 7);
+		LOGGING("Sonos: playlist.php: Next Song in Playlist.", 7);
 	} else {
 		checkifmaster($master);
 		$sonos = new PHPSonos($sonoszone[$master][0]);
 		$sonos->SetTrack("1");
-		LOGGING("Playlist starts at Song Number 1.", 7);
+		LOGGING("Sonos: playlist.php: Playlist starts at Song Number 1.", 7);
 	}
 	$sonos->Play();
 }
@@ -376,7 +377,7 @@ function say_zone($zone) {
 	
 	// if batch has been choosed abort
 	if(isset($_GET['batch'])) {
-		LOGGING("The parameter batch could not be used to announce zone!", 4);
+		LOGGING("Sonos: playlist.php: The parameter batch could not be used to announce zone!", 4);
 		exit;
 	}
 	saveZonesStatus(); // saves all Zones Status
@@ -397,13 +398,13 @@ function say_zone($zone) {
 	t2s($textstring, $filename);
 	// get Coordinator of (maybe) pair or single player
 	$coord = getRoomCoordinator($master);
-	LOGGING("Room Coordinator been identified", 7);		
+	LOGGING("Sonos: playlist.php: Room Coordinator been identified", 7);		
 	$sonos = new PHPSonos($coord[0]); 
 	$tmp_volume = $sonos->GetVolume();
 	$sonos->SetMute(false);
 	$volume = $volume + $config['TTS']['correction'];
 	play_tts($filename);
-	LOGGING("Zone Announcement has been played", 6);	
+	LOGGING("Sonos: playlist.php: Zone Announcement has been played", 6);	
 	restoreSingleZone();
 	if(isset($_GET['volume'])) {
 		$volume = $_GET['volume'];
@@ -421,85 +422,7 @@ function say_zone($zone) {
 }
 
 
-/**
-* Function: nextradio --> iterate through Radio Favorites (endless)
-*
-* @param: empty
-* @return: 
-**/
-function nextplaylist() {
-	global $sonos, $config, $master, $debug, $min_vol, $volume, $tmp_tts, $sonoszone;
-	
-	if (file_exists($tmp_tts))  {
-		LOGGING("Currently a T2S is running, we skip nextradio for now. Please try again later.",6);
-		exit;
-	}
-	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
-	$sonoslists = $sonos->GetSONOSPlaylists();
-	//print_r($sonoslists);
-	$pl_anzahl_check = count($sonoslists);
-	if($pl_anzahl_check == 0)  {
-		LOGGING("There are no Sonos Playlists maintained. Please create Playlists before using function NEXTPL or ZAPZONE!", 3);
-		exit;
-	}
-	$sonos->ClearQueue();
-	$pleinzeln = 0;
-	
-	
-	exit;
-	
-	$playstatus = $sonos->GetTransportInfo();
-	#$radioname = $sonos->GetMediaInfo();
-	if (!empty($radioname["title"])) {
-		$senderuri = $radioname["title"];
-	} else {
-		$senderuri = "";
-	}
-	$radio = $config['RADIO']['radio'];
-	ksort($radio);
-	$radioanzahl = count($config['RADIO']['radio']);
-	$radio_name = array();
-	$radio_adresse = array();
-	foreach ($radio as $key) {
-		$radiosplit = explode(',',$key);
-		array_push($radio_name, $radiosplit[0]);
-		array_push($radio_adresse, $radiosplit[1]);
-	}
-	$senderaktuell = array_search($senderuri, $radio_name);
-	# Wenn nextradio aufgerufen wird ohne eine vorherigen Radiosender
-	if( $senderaktuell == "" && $senderuri == "" || substr($senderuri, 0, 12) == "x-file-cifs:" ) {
-		$senderaktuell = -1;
-	}
-	if ($senderaktuell == ($radioanzahl) ) {
-		$sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[0], $radio_name[0]);
-		$act = $radio_name[0];
-	}
-    if ($senderaktuell < ($radioanzahl) ) {
-		@$sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[$senderaktuell + 1], $radio_name[$senderaktuell + 1]);
-		$act = $radio_name[$senderaktuell + 1];
-	}
-    if ($senderaktuell == $radioanzahl - 1) {
-	    $sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[0], $radio_name[0]);
-		$act = $radio_name[0];
-	}
-	$info_r = "\r\n Senderuri vorher: " . $senderuri . "\r\n";
-	$info_r .= "Sender aktuell: " . $senderaktuell . "\r\n";
-	$info_r .= "Radioanzahl: " .$radioanzahl;
-	LOGGING('Next Radio Info: '.($info_r),7);
-    if ($config['VARIOUS']['announceradio'] == 1) {
-		$check_stat = getZoneStatus($master);
-		if ($check_stat == "single")  {
-			say_radio_station();
-		} else {
-			LOGGING("Radio Station could not be announced because Master is grouped",6);
-		}
-	}
-	$coord = getRoomCoordinator($master);
-	$sonos = new PHPSonos($coord[0]);
-	$sonos->SetVolume($volume);
-	$sonos->Play();
-	LOGGING("Radio Station '".$act."' has been loaded successful by nextradio",6);
-}
+
 
 
 ?>

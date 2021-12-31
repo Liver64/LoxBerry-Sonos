@@ -19,9 +19,9 @@ function t2s($textstring, $filename)
 			$isvalid = array_multi_search($language, $valid_languages, $sKey = "value");
 			if (!empty($isvalid)) {
 				$language = $_GET['lang'];
-				LOGGING('T2S language has been successful entered',5);
+				LOGGING('Sonos: voice_engines\responsivevoice.php: T2S language has been successful entered',5);
 			} else {
-				LOGGING("The entered ResponsiveVoice language key is not supported. Please correct (see Wiki)!",3);
+				LOGGING("Sonos: voice_engines\responsivevoice.php: The entered ResponsiveVoice language key is not supported. Please correct (see Wiki)!",3);
 				exit;
 			}
 		} else {
@@ -39,13 +39,13 @@ function t2s($textstring, $filename)
 		# Speicherort der MP3 Datei
 		$file = $config['SYSTEM']['ttspath'] ."/". $filename . ".mp3";
 		
-		LOGGING("ResponsiveVoice has been successful selected", 7);	
+		LOGGING("Sonos: voice_engines\responsivevoice.php: ResponsiveVoice has been successful selected", 7);	
 		
 		# Übermitteln des strings an ResponsiveVoice
 		$url = 'https://code.responsivevoice.org/getvoice.php?t='.$textstring.'&tl='.$language;
 		$mp3 =  my_curl($url);
 		file_put_contents($file, $mp3);
-		LOGGING('The text has been passed to Responsive Voice for MP3 creation',5);
+		LOGGING('Sonos: voice_engines\responsivevoice.php: The text has been passed to Responsive Voice for MP3 creation',5);
 		return $filename;
 		
 						  	
@@ -90,7 +90,7 @@ function my_curl($url, $timeout=2, $error_report=FALSE)
         // PROCESS ERRORS HERE
         if ($error_report)
         {
-			LOGGING('CURL FAIL: $url TIMEOUT=$timeout, CURL_ERRNO=$err',3);
+			LOGGING('Sonos: voice_engines\responsivevoice.php: CURL FAIL: $url TIMEOUT=$timeout, CURL_ERRNO=$err',3);
             #echo "CURL FAIL: $url TIMEOUT=$timeout, CURL_ERRNO=$err";
             #var_dump($inf);
         }

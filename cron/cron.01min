@@ -8,6 +8,7 @@
 # cron script will not be uninstalled cleanly.
 
 # Will be executed as user "loxberry".
+REPLACELBPBINDIR/url.php
 
 i=0
 while [ $i -lt 6 ]; do

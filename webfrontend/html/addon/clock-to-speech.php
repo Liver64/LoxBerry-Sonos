@@ -59,8 +59,8 @@ function c2s()
 	$ttext = $greet." ".$TL['CLOCK-TO-SPEECH']['TEXT_BEFORE_HOUR_ANNOUNCEMENT']." ".$Stunden." ".$TL['CLOCK-TO-SPEECH']['TEXT_BEFORE_MINUTE_ANNOUNCEMENT']." ".$Minuten. " ".$TL['CLOCK-TO-SPEECH']['TEXT_AFTER_MINUTE_ANNOUNCEMENT']." ".$Nachsatz;
 	$text = ($ttext);
 	
-	LOGGING('Time Announcement: '.$ttext,7);
-	LOGGING('Message been generated and pushed to T2S creation',6);
+	LOGGING('Sonos: clock-to-speech.php: Time Announcement: '.$ttext,7);
+	LOGGING('Sonos: clock-to-speech.php: Message been generated and pushed to T2S creation',6);
 	return ($text);
 }	
 ?>

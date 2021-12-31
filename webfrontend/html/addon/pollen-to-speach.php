@@ -204,8 +204,8 @@ curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
 $text = preg_replace("/[^a-z0-9!. ]/i", "", $text);
 $url = $text;
 #echo $url;
-LOGGING('Pollen level announcement: '.($url),5);
-LOGGING('Message been generated and pushed to T2S creation',7);
+LOGGING('Sonos: pollen-to-speech.php: Pollen level announcement: '.($url),5);
+LOGGING('Sonos: pollen-to-speech.php: Message been generated and pushed to T2S creation',7);
 return $url;
 
 curl_setopt($curl, CURLOPT_URL, $url);

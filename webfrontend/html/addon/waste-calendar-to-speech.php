@@ -13,19 +13,19 @@ function muellkalender() {
 	$TL = LOAD_T2S_TEXT();
 	
 	if (!file_exists("$home/webfrontend/html/plugins/caldav4lox/caldav.php")) {
-		LOGGING('The required Caldav-4-Lox Plugin is already not installed. Please install Plugin!',3);
+		LOGGING('Sonos: waste-calendar-to-speech.php: The required Caldav-4-Lox Plugin is already not installed. Please install Plugin!',3);
 		exit;
 	}
 	
 	if(substr($home,0,4) !== "/opt") {
-		LOGGING('The system you are using is not a loxberry. This application runs only on LoxBerry!',3);
+		LOGGING('Sonos: waste-calendar-to-speech.php: The system you are using is not a loxberry. This application runs only on LoxBerry!',3);
 		exit;
 	}
 	// URL from Config
 	$url = $config['VARIOUS']['CALDavMuell'];
 	$checkdebug = strpos($url,"&debug");
 	if ($checkdebug != false) {
-		LOGGING('Please remove &debug from your syntax entry in Sonos4lox configuration!',3);
+		LOGGING('Sonos: waste-calendar-to-speech.php: Please remove &debug from your syntax entry in Sonos4lox configuration!',3);
 		exit;
 	}
 	$callurl = (trim($config['VARIOUS']['CALDavMuell'].'&debug'));
@@ -45,7 +45,7 @@ function muellkalender() {
 	$checklength = strlen($url).'<br>';
 	$events = strpos($url, "events");
 	if ($events + 7 == $checklength){
-		LOGGING('Please remove &events= from your syntax entry in Sonos4lox configuration or enter add the events you are looking for!',3);
+		LOGGING('Sonos: waste-calendar-to-speech.php: Please remove &events= from your syntax entry in Sonos4lox configuration or enter add the events you are looking for!',3);
 		exit;
 	}
 	
@@ -137,7 +137,7 @@ function muellkalender() {
 		} elseif ((empty($muellheute)) or (empty($muellmorgen)))  {
 			$text = $TL['WASTE-CALENDAR-TO-SPEECH']['NO_WASTE_FOUND_ONLY_LOGGING'];
 			#echo $text;
-			LOGGING('Waste calendar: '.$text,6);
+			LOGGING('Sonos: waste-calendar-to-speech.php: Waste calendar: '.$text,6);
 			exit;
 		}
 	}
@@ -146,8 +146,8 @@ function muellkalender() {
 	}
 	#echo urlencode($speak);
 	#echo '<br><br>';
-	LOGGING('Waste calendar Announcement: '.$speak,7);
-	LOGGING('Message been generated and pushed to T2S creation',5);
+	LOGGING('Sonos: waste-calendar-to-speech.php: Waste calendar Announcement: '.$speak,7);
+	LOGGING('Sonos: waste-calendar-to-speech.php: Message been generated and pushed to T2S creation',5);
 	return $speak;
 }
 
@@ -165,18 +165,18 @@ function calendar() {
 	$TL = LOAD_T2S_TEXT();
 	
 	if (!file_exists("$home/webfrontend/html/plugins/caldav4lox/caldav.php")) {
-		LOGGING('The required Caldav-4-Lox Plugin is already not installed. Please install Plugin!',3);
+		LOGGING('Sonos: waste-calendar-to-speech.php: The required Caldav-4-Lox Plugin is already not installed. Please install Plugin!',3);
 		exit;
 	}
 	if(substr($home,0,4) !== "/opt") {
-		LOGGING('The system you are using is not a loxberry. This application runs only on LoxBerry!',3);
+		LOGGING('Sonos: waste-calendar-to-speech.php: The system you are using is not a loxberry. This application runs only on LoxBerry!',3);
 		exit;
 	}
 	$url = $config['VARIOUS']['CALDav2'];
 	$checklength = strlen($url).'<br>';
 	$checkdebug = @substr($url,$checklength - 5,$checklength);
 	if ($checkdebug == "debug") {
-		LOGGING('Please remove &debug from your syntax in Sonos4lox Calendar URL!',3);
+		LOGGING('Sonos: waste-calendar-to-speech.php: Please remove &debug from your syntax in Sonos4lox Calendar URL!',3);
 		exit;
 	}
 	echo '<PRE><br>';
@@ -200,8 +200,8 @@ function calendar() {
 	print_r($calendar);
 	
 	if (empty($calendar))  {
-		LOGGING('No actual appointments according to your "fwday" parameter received or something went wrong!',4);
-		LOGGING('in addition please check/maintain events to be announced in your calendar URL!',4);
+		LOGGING('Sonos: waste-calendar-to-speech.php: No actual appointments according to your "fwday" parameter received or something went wrong!',4);
+		LOGGING('Sonos: waste-calendar-to-speech.php: in addition please check/maintain events to be announced in your calendar URL!',4);
 		exit(1);
 	}
 	#$findMich1 = "&events=";
@@ -235,8 +235,8 @@ function calendar() {
 		}
 	echo ($speak);
 	#echo '<br><br>';
-	LOGGING('Calendar Announcement: '.$speak,7);
-	LOGGING('Message been generated and pushed to T2S creation',5);
+	LOGGING('Sonos: waste-calendar-to-speech.php: Calendar Announcement: '.$speak,7);
+	LOGGING('Sonos: waste-calendar-to-speech.php: Message been generated and pushed to T2S creation',5);
 	return $speak;
 	}
 }

@@ -2,6 +2,12 @@
 // http://php.net/manual/de/function.set-error-handler.php#118630
 
 /**
+* Used for logging all php notices,warings and etc in a file when error reporting
+* is set and display_errors is off
+* @uses used in prod env for logging all type of error of php code in a file for further debugging
+* and code performance
+* @author Aditya Mehrotra<aditycse@gmail.com>
+
 * Custom error handler
 * @param integer $code
 * @param string $description

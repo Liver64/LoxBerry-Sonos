@@ -15,25 +15,25 @@ function calendar() {
 	$TL = LOAD_T2S_TEXT();
 	
 	if (!file_exists("$home/webfrontend/html/plugins/caldav4lox/caldav.php")) {
-		LOGGING('The required Caldav-4-Lox Plugin is already not installed. Please install Plugin!',3);
+		LOGGING('Sonos: calendar-to-speech.php: The required Caldav-4-Lox Plugin is already not installed. Please install Plugin!',3);
 		exit;
 	}
 	if(substr($home,0,4) !== "/opt") {
-		LOGGING('The system you are using is not a loxberry. This application runs only on LoxBerry!',3);
+		LOGGING('Sonos: calendar-to-speech.php: The system you are using is not a loxberry. This application runs only on LoxBerry!',3);
 		exit;
 	}
 	$url = $config['VARIOUS']['CALDav2'];
 	$checklength = strlen($url).'<br>';
 	$checkdebug = @substr($url,$checklength - 5,$checklength);
 	if ($checkdebug == "debug") {
-		LOGGING('Please remove &debug from your syntax in Sonos4lox Calendar URL!',3);
+		LOGGING('Sonos: calendar-to-speech.php: Please remove &debug from your syntax in Sonos4lox Calendar URL!',3);
 		exit;
 	}
 	$callurlcal = trim($config['VARIOUS']['CALDav2'].'&debug');
 	print_r($calendar = json_decode(file_get_contents("$callurlcal"), TRUE));
 	if (empty($calendar))  {
-		LOGGING('No actual appointments according to your "fwday" parameter received or something went wrong!',4);
-		#LOGGING('in addition please check/maintain events to be announced in your calendar URL!',4);
+		LOGGING('Sonos: calendar-to-speech.php: No actual appointments according to your "fwday" parameter received or something went wrong!',4);
+		#LOGGING('Sonos: calendar-to-speech.php: in addition please check/maintain events to be announced in your calendar URL!',4);
 		exit(1);
 	}
 	$findMich1 = "&events=";
@@ -65,8 +65,8 @@ function calendar() {
 		}
 	echo ($speak);
 	#echo '<br><br>';
-	LOGGING('Calendar Announcement: '.$speak,7);
-	LOGGING('Message been generated and pushed to T2S creation',5);
+	LOGGING('Sonos: calendar-to-speech.php: Calendar Announcement: '.$speak,7);
+	LOGGING('Sonos: calendar-to-speech.php: Message been generated and pushed to T2S creation',5);
 	return $speak;
 	}
 }

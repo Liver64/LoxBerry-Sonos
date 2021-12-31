@@ -30,7 +30,7 @@ function restoreSingleZone() {
 			if (($actual[$master]['TransportInfo'] == 1)) {
 				$sonos->Play();	
 			}
-			LOGGING("Single Zone ".$master." has been restored.", 6);
+			LOGGING("Sonos: restore_t2s.php: Single Zone ".$master." has been restored.", 6);
 		break;
 		
 		// Zone was Member of a group
@@ -39,7 +39,7 @@ function restoreSingleZone() {
 			$sonos->SetAVTransportURI($actual[$master]['PositionInfo']["TrackURI"]); 
 			$sonos->SetVolume($actual[$master]['Volume']);
 			$sonos->SetMute($actual[$master]['Mute']);
-			LOGGING("Zone ".$master." has been added back to group.", 6);
+			LOGGING("Sonos: restore_t2s.php: Zone ".$master." has been added back to group.", 6);
 		break;
 		
 		// Zone was Master of a group
@@ -90,9 +90,9 @@ function restoreSingleZone() {
 		try {
 			$sonos = new PHPSonos($sonoszone[$newMaster][0]);
 			$sonos->DelegateGroupCoordinationTo($sonoszone[$master][1], 1);
-			LOGGING("Zone ".$master." has been added back to group.", 6);
+			LOGGING("Sonos: restore_t2s.php: Zone ".$master." has been added back to group.", 6);
 		} catch (Exception $e) {
-			LOGGING("Assignment to new GroupCoordinator " . $master . " failed.",5);	
+			LOGGING("Sonos: restore_t2s.php: Assignment to new GroupCoordinator " . $master . " failed.",5);	
 		}
 		}
 	break;
@@ -100,6 +100,7 @@ function restoreSingleZone() {
 	# setze 0 für virtuellen Texteingang (T2S Ende)
 	$tts_stat = 0;
 	send_tts_source($tts_stat);
+	return;
 	#}
 }
 
@@ -158,7 +159,7 @@ function restoreGroupZone() {
 			} else {
 				$sonos->Play();
 			}
-			LOGGING("Single Zone ".$player." has been restored.", 6);
+			LOGGING("Sonos: restore_t2s.php: Single Zone ".$player." has been restored.", 6);
 		break;
 			
 		case 'member';
@@ -169,7 +170,7 @@ function restoreGroupZone() {
 			$sonos->SetAVTransportURI($tmp_checkmember);
 			$sonos->SetVolume($actual[$player]['Volume']);
 			$sonos->SetMute($actual[$player]['Mute']);
-			LOGGING("Member Zone ".$player." has been added back to group.", 6);
+			LOGGING("Sonos: restore_t2s.php: Member Zone ".$player." has been added back to group.", 6);
 		break;
 			
 			
@@ -204,7 +205,7 @@ function restoreGroupZone() {
 				$sonos->SetAVTransportURI($actual[$groupmem]['PositionInfo']["TrackURI"]);
 				$sonos->SetVolume($actual[$groupmem]['Volume']);
 				$sonos->SetMute($actual[$groupmem]['Mute']);
-				#LOGGING("Member Zone ".$player." has been added back to group.", 6);
+				#LOGGING("Sonos: restore_t2s.php: Member Zone ".$player." has been added back to group.", 6);
 			}
 			# Start restore Master settings
 			#echo "TEST MASTER<br>";
@@ -216,13 +217,14 @@ function restoreGroupZone() {
 			} else {
 				$sonos->Play();
 			}
-			LOGGING("Master Zone ".$player." has been added back to group.", 6);
+			LOGGING("Sonos: restore_t2s.php: Master Zone ".$player." has been added back to group.", 6);
 		break;			
 		}
 	}
 	# setze 0 für virtuellen Texteingang (T2S Ende)
 	$tts_stat = 0;
 	send_tts_source($tts_stat);
+	return;
 }	
 
 /**
@@ -262,7 +264,7 @@ function read_txt_file_to_array() {
 	
 	$filename = "t2s_batch.txt";
     if (!file_exists($filename)) {
-		LOGGING("There is no T2S batch file to be played!", 4);
+		LOGGING("Sonos: restore_t2s.php: There is no T2S batch file to be played!", 4);
         exit();
 	}
 	$t2s_batch = file("t2s_batch.txt");
@@ -331,7 +333,7 @@ function RestoreShuffle($actual, $player) {
 		$sonos->SetTrack($actual[$player]['PositionInfo']['Track']);
 		$sonos->Seek($actual[$player]['PositionInfo']['RelTime'],"NONE");	
 	}
-	LOGGING("Previous playmode has been restored.", 6);
+	LOGGING("Sonos: restore_t2s.php: Previous playmode has been restored.", 6);
 }
 	
 ?>

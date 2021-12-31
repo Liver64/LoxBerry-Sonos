@@ -1085,8 +1085,9 @@
             initial_lang_voice_load();
 
             // Function to control saving, main_form is submitted    
-            $("form#main_form").submit(function() {
-                var selectlang = document.getElementById("t2slang").value;
+            $("form#main_form").submit(function(e) {
+			console.log("submit");
+	            var selectlang = document.getElementById("t2slang").value;
                 if (document.main_form.tts_polly.checked == true) {
                     var selectvoice = document.getElementById("voice").value;
                     if (selectlang == '') {
@@ -1095,7 +1096,7 @@
                             scrollTop: $("#infotext").offset().top
                         }, 2000);
                         $("#t2slang").focus();
-                        return false;
+                        e.preventDefault();
                     }
                     if (selectvoice == '') {
                         alert('<TMPL_VAR T2S.VALIDATE_VOICE>');
@@ -1103,7 +1104,7 @@
                             scrollTop: $("#infotext").offset().top
                         }, 2000);
                         $("#voice").focus();
-                        return false;
+                        e.preventDefault();
                     }
                 } else if (document.main_form.tts_mac_osx.checked == true) {
                     if (selectlang == '') {
@@ -1112,7 +1113,7 @@
                             scrollTop: $("#infotext").offset().top
                         }, 2000);
                         $("#t2slang").focus();
-                        return false;
+                        e.preventDefault();
                     }
                 } else if (document.main_form.tts_voicerss.checked == true) {
                     if (selectlang == '') {
@@ -1121,7 +1122,7 @@
                             scrollTop: $("#infotext").offset().top
                         }, 2000);
                         $("#t2slang").focus();
-                        return false;
+                        e.preventDefault();
                     }
                 } else if (document.main_form.tts_pico.checked == true) {
                     if (selectlang == '') {
@@ -1130,7 +1131,7 @@
                             scrollTop: $("#infotext").offset().top
                         }, 2000);
                         $("#t2slang").focus();
-                        return false;
+                        e.preventDefault();
                     }
                 } else if (document.main_form.tts_respvoice.checked == true) {
                     if (selectlang == '') {
@@ -1139,7 +1140,7 @@
                             scrollTop: $("#infotext").offset().top
                         }, 2000);
                         $("#t2slang").focus();
-                        return false;
+                        e.preventDefault();
                     }
                 } else if (document.main_form.tts_google.checked == true) {
                     if (selectlang == '') {
@@ -1148,25 +1149,22 @@
                             scrollTop: $("#infotext").offset().top
                         }, 2000);
                         $("#t2slang").focus();
-                        return false;
+                        e.preventDefault();
                     }
-                } else {
-                    return true;
-                }
+                } 
                 $("#langiso").textinput("refresh");
-
-
-
+				
+				
                 // validate jingle file selection
                 var selectjingle = document.getElementById("file_gong").value;
                 var selectt2s = $("input[name=t2s_engine]:checked").val();
                 if ((selectjingle == '') && (selectt2s != '')) {
                     alert('<TMPL_VAR T2S.VALIDATE_JINGLE>');
                     $('html, body').animate({
-                        scrollTop: $("#infotext").offset().top
+                        scrollTop: $("#file_gong").offset().top
                     }, 2000);
                     $("#file_gong").focus();
-                    return false;
+					e.preventDefault();
                 }
 
             });

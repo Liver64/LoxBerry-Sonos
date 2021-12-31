@@ -23,7 +23,7 @@ function turn_off_alarms() {
 		$alarm[$i]['Enabled'] = 0, $alarm[$i]['RoomUUID'], $alarm[$i]['ProgramURI'], $alarm[$i]['ProgramMetaData'], 
 		$alarm[$i]['PlayMode'], $alarm[$i]['Volume'], $alarm[$i]['IncludeLinkedZones']);
 	}
-	LOGGING("All Sonos alarms has been turned off.", 6);
+	LOGGING("Sonos: alarm.php: All Sonos alarms has been turned off.", 6);
 }
 
 
@@ -44,7 +44,7 @@ function restore_alarms() {
 		$alarm[$i]['Enabled'] = 1, $alarm[$i]['RoomUUID'], $alarm[$i]['ProgramURI'], $alarm[$i]['ProgramMetaData'], 
 		$alarm[$i]['PlayMode'], $alarm[$i]['Volume'], $alarm[$i]['IncludeLinkedZones']);
 	}
-	LOGGING("All Sonos alarms has been turned on.", 6);
+	LOGGING("Sonos: alarm.php: All Sonos alarms has been turned on.", 6);
 		
 }
 
@@ -67,9 +67,9 @@ function sleeptimer() {
 			$timer = '00:'.$_GET['timer'].':00';
 			$timer = $sonos->Sleeptimer($timer);
 		}
-		LOGGING("Sleeptimer has been switched on. Time to sleep is: ".$timer, 6);
+		LOGGING("Sonos: alarm.php: Sleeptimer has been switched on. Time to sleep is: ".$timer, 6);
 	} else {
-		LOGGING('The entered time is not correct, please correct', 4);
+		LOGGING('Sonos: alarm.php: The entered time is not correct, please correct', 4);
 	}
 }
 
@@ -91,13 +91,13 @@ function turn_off_alarm() {
 	foreach ($alarmarr as $alarmid)  {
 		$arrid = recursive_array_search($alarmid, $alarm);
 		if ($arrid === false) {
-			LOGGING("The entered Alarm-ID 'ID=".$alarmid."' seems to be not valid. Please run '...action=listalarms' in Browser and doublecheck your syntax!", 3);
+			LOGGING("Sonos: alarm.php: The entered Alarm-ID 'ID=".$alarmid."' seems to be not valid. Please run '...action=listalarms' in Browser and doublecheck your syntax!", 3);
 			continue;
 		}
 		$sonos->UpdateAlarm($alarm[$arrid]['ID'], $alarm[$arrid]['StartTime'], $alarm[$arrid]['Duration'], $alarm[$arrid]['Recurrence'], 
 		$alarm[$arrid]['Enabled'] = 0, $alarm[$arrid]['RoomUUID'], $alarm[$arrid]['ProgramURI'], $alarm[$arrid]['ProgramMetaData'], 
 		$alarm[$arrid]['PlayMode'], $alarm[$arrid]['Volume'], $alarm[$arrid]['IncludeLinkedZones']);
-		LOGGING("Sonos Alarm-ID 'ID=".$alarmid."' has been disabled.", 6);
+		LOGGING("Sonos: alarm.php: Sonos Alarm-ID 'ID=".$alarmid."' has been disabled.", 6);
 	}
 }
 
@@ -119,13 +119,13 @@ function restore_alarm() {
 	foreach ($alarmarr as $alarmid)  {
 		$arrid = recursive_array_search($alarmid, $alarm);
 		if ($arrid === false) {
-			LOGGING("The entered Alarm-ID 'ID=".$alarmid."' seems to be not valid. Please run '...action=listalarms' in Browser and doublecheck your syntax!", 3);
+			LOGGING("Sonos: alarm.php: The entered Alarm-ID 'ID=".$alarmid."' seems to be not valid. Please run '...action=listalarms' in Browser and doublecheck your syntax!", 3);
 			continue;
 		}
 		$sonos->UpdateAlarm($alarm[$arrid]['ID'], $alarm[$arrid]['StartTime'], $alarm[$arrid]['Duration'], $alarm[$arrid]['Recurrence'], 
 		$alarm[$arrid]['Enabled'] = 1, $alarm[$arrid]['RoomUUID'], $alarm[$arrid]['ProgramURI'], $alarm[$arrid]['ProgramMetaData'], 
 		$alarm[$arrid]['PlayMode'], $alarm[$arrid]['Volume'], $alarm[$arrid]['IncludeLinkedZones']);
-		LOGGING("Sonos Alarm-ID 'ID=".$alarmid."' has been enabled.", 6);
+		LOGGING("Sonos: alarm.php: Sonos Alarm-ID 'ID=".$alarmid."' has been enabled.", 6);
 	}
 }
 

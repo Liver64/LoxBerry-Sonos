@@ -29,7 +29,7 @@ function saveZonesStatus() {
 		$actual[$player]['ZoneStatus'] = getZoneStatus($player);
 		$actual[$player]['CONNECT'] = GetVolumeModeConnect($player);
 	}
-	LOGGING("All Zone settings has been saved successful",6);
+	LOGGING("Sonos: save_t2s.php: All Zone settings has been saved successful",6);
 	#print_r($actual);
 	return $actual;
 }

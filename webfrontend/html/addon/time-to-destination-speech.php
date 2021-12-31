@@ -10,11 +10,11 @@ function tt2t()
 	    	
 	$valid_traffic_models = array("pessimistic","best_guess","optimistic");
 	if (empty($_GET['to'])) {
-		LOGGING('You do not have a destination address maintained in syntax. Please enter address!',3);
+		LOGGING('Sonos: time-to-destination-speech.php: You do not have a destination address maintained in syntax. Please enter address!',3);
 		exit;
     } else {
 		$arrival = $_GET['to'];
-		LOGGING('Valid destination address has been found!',5);
+		LOGGING('Sonos: time-to-destination-speech.php: Valid destination address has been found!',5);
 	}
 	$key 		= trim($config['LOCATION']['googlekey']);
 	$street		= $config['LOCATION']['googlestreet'];
@@ -31,9 +31,9 @@ function tt2t()
 		$traffic_model 	= $_GET['model'];
 		if (in_array($traffic_model, $valid_traffic_models)) {
 			$traffic_model 	= $_GET['model'];
-			LOGGING('Valid traffic model has been entered!',5);
+			LOGGING('Sonos: time-to-destination-speech.php: Valid traffic model has been entered!',5);
 		} else {
-			LOGGING('The traffic model you have entered is invalid. Please correct!',3);
+			LOGGING('Sonos: time-to-destination-speech.php: The traffic model you have entered is invalid. Please correct!',3);
 			exit;
 		}
 	}
@@ -47,11 +47,11 @@ function tt2t()
 	if (isset($_GET['deptime']))  {
 		$deptime = strtotime($_GET['deptime']);
 		if ($deptime === false)  {
-			LOGGING('Something went wrong with your time entry, please correct! Only 24h or US/UK formats are allowed (eg. 14:30 or 2:30pm)',3);
+			LOGGING('Sonos: time-to-destination-speech.php: Something went wrong with your time entry, please correct! Only 24h or US/UK formats are allowed (eg. 14:30 or 2:30pm)',3);
 			exit(1);
 		}
 		if ($deptime < time())  {
-			LOGGING('The departure time from your syntax need to be a future time! Current time you have entered is in the past, please correct',3);
+			LOGGING('Sonos: time-to-destination-speech.php: The departure time from your syntax need to be a future time! Current time you have entered is in the past, please correct',3);
 			exit(1);
 		} else {
 			$time = $deptime;
@@ -64,10 +64,10 @@ function tt2t()
 	#print_R($jdata);
 	$data       = json_decode($jdata, true);
 	if (empty($data)) {
-		LOGGING('Data from Google Maps could not be obtainend! Please check your syntax',3);
+		LOGGING('Sonos: time-to-destination-speech.php: Data from Google Maps could not be obtainend! Please check your syntax',3);
 		exit;
 	} else {
-		LOGGING('Data from Google Maps has been successful obtainend.',6);
+		LOGGING('Sonos: time-to-destination-speech.php: Data from Google Maps has been successful obtainend.',6);
 	}
 	if (!empty($data['error_message']))  {
 		LOGGING($data['error_message'],3);
@@ -116,7 +116,7 @@ function tt2t()
         }
         $text = $textpart1 . $textpart2;
     } else {
-		LOGGING('The entered URL is not complete or invalid. Please check URL!',3);
+		LOGGING('Sonos: time-to-destination-speech.php: The entered URL is not complete or invalid. Please check URL!',3);
         exit;
     }
     $words = $text;
@@ -131,8 +131,8 @@ function tt2t()
 		$ttd .= "Dictance = " . $distance . "km / Zeit = " . $hours . " Stunden " . $minutes . " Minuten";
 
 	#echo $text;
-	LOGGING('Destination announcement: '.($ttd),7);
-	LOGGING('Message been generated and pushed to T2S creation',5);
+	LOGGING('Sonos: time-to-destination-speech.php: Destination announcement: '.($ttd),7);
+	LOGGING('Sonos: time-to-destination-speech.php: Message been generated and pushed to T2S creation',5);
 	return $words;
 }
 
