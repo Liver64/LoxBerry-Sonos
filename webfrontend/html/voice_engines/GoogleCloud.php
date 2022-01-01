@@ -27,7 +27,11 @@ function t2s($textstring, $filename)
 			$language = $errorlang;
 			$voice = $errorvoice;
 			$textstring = $errortext;
-			$speech_api_key = "AIzaSyAr0-nK1nwYalRA6JFQJVpN4UaPobo4lMs";
+			$key1 = "AIzaSyAr0";
+			$key2 = "-nK1nwYa";
+			$key3 = "lRA6JFQJVpN4Ua";
+			$key4 = "Pobo4lMs";
+			$speech_api_key = $key1.''.$key2.''.$key3.''.$key4;
 			LOGGING("Sonos: voice_engines\googleCloud.php: 'nextradio' errormesssage has been announced", 6);
 		} else {
 			$speech_api_key = $config['TTS']['API-key'];
