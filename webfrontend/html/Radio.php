@@ -20,7 +20,7 @@ function radio(){
 	} elseif (isset($_GET['playlist'])) {
 		$playlist = $_GET['playlist'];		
 	} else {
-		LOGGING("No radio stations found.", 4);
+		LOGGING("Sonos: radio.php: No radio stations found.", 4);
     }
 	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
 	$coord = $master;
@@ -44,7 +44,7 @@ function radio(){
     }
 	$rleinzeln++;
 	}   
-	LOGGING("Radio Station '".$playlist."' has been loaded successful",6);
+	LOGGING("Sonos: radio.php: Radio Station '".$playlist."' has been loaded successful",6);
 }
 
 /**
@@ -57,29 +57,29 @@ function nextradio() {
 	global $sonos, $config, $master, $debug, $min_vol, $volume, $tmp_tts, $sonoszone, $tmp_error;
 	
 	if (file_exists($tmp_tts))  {
-		LOGGING("Currently a T2S is running, we skip nextradio for now. Please try again later.",6);
+		LOGGING("Sonos: radio.php: Currently a T2S is running, we skip nextradio for now. Please try again later.",6);
 		exit;
 	}
 	if (file_exists($tmp_error)) {
-		$myfile = fopen($tmp_error, "r");
-		fseek($myfile, 0);
-		while(!feof($myfile)) {
-			$line=fgets($myfile);
-			$line=trim($line);
-			$str = preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $line);
-			LOGGING("Sonos: radio.php: Your Radio favorite '".$str."' are not valid... please correct. We terminate here.",3);
+		$err = json_decode(file_get_contents($tmp_error));
+		foreach ($err as $key => $value) {
+			LOGERR($value);
 		}
+		LOGOK("Script has been terminated by system");
+		select_error_lang();
+		$errortext = "Placeholder";
+		say_radio_station($errortext);
 		exit;
 	}
 	#if (isset($_GET['member']))  {
-	#	LOGGING("Function could not be used within Groups!!", 6);
+	#	LOGGING("Sonos: radio.php: Function could not be used within Groups!!", 6);
 	#	exit;
 	#}
 	#try {
 	#	$sonos->BecomeCoordinatorOfStandaloneGroup();
-		#LOGGING("Player ".$master." has been ungrouped!", 6);
+		#LOGGING("Sonos: radio.php: Player ".$master." has been ungrouped!", 6);
 	#} catch (Exception $e) {
-		#LOGGING("Player ".$master." is Single!", 7);
+		#LOGGING("Sonos: radio.php: Player ".$master." is Single!", 7);
 	#}
 	#$coord = getRoomCoordinator($master);
 	#$masterrincon = $coord[1]; 
@@ -88,7 +88,7 @@ function nextradio() {
 	$sonos->ClearQueue();
 	$radioanzahl_check = count($config['RADIO']);
 	if($radioanzahl_check == 0)  {
-		LOGGING("There are no Radio Stations maintained in the config. Pls update before using function NEXTRADIO or ZAPZONE!", 3);
+		LOGGING("Sonos: radio.php: There are no Radio Stations maintained in the config. Pls update before using function NEXTRADIO or ZAPZONE!", 3);
 		exit;
 	}
 	$playstatus = $sonos->GetTransportInfo();
@@ -126,7 +126,7 @@ function nextradio() {
 	$sonos->SetMute(false);
 	$sonos->SetVolume($volume);
 	$sonos->Play();
-	LOGGING("Radio Station '".$act."' has been loaded successful by nextradio",6);
+	LOGGING("Sonos: radio.php: Radio Station '".$act."' has been loaded successful by nextradio",6);
 }
 
 
@@ -141,18 +141,18 @@ function random_radio() {
 	global $sonos, $sonoszone, $master, $volume, $min_vol, $config, $tmp_tts;
 	
 	if (file_exists($tmp_tts))  {
-		LOGGING("Currently a T2S is running, we skip nextradio for now. Please try again later.",6);
+		LOGGING("Sonos: radio.php: Currently a T2S is running, we skip nextradio for now. Please try again later.",6);
 		exit;
 	}
 	#if (isset($_GET['member']))  {
-	#	LOGGING("Function could not be used within Groups!!", 6);
+	#	LOGGING("Sonos: radio.php: Function could not be used within Groups!!", 6);
 	#	exit;
 	#}
 	#try {
 	#	$sonos->BecomeCoordinatorOfStandaloneGroup();
-		#LOGGING("Player ".$master." has been ungrouped!", 6);
+		#LOGGING("Sonos: radio.php: Player ".$master." has been ungrouped!", 6);
 	#} catch (Exception $e) {
-		#LOGGING("Player ".$master." is Single!", 7);
+		#LOGGING("Sonos: radio.php: Player ".$master." is Single!", 7);
 	#}
 	$sonoslists = $sonos->Browse("R:0/0","c");
 	print_r($sonoslists);
@@ -177,7 +177,7 @@ function random_radio() {
 	$sonos->SetRadio(urldecode($sonoslists[$random]["res"]),$sonoslists[$random]["title"]);
 	$sonos->SetVolume($volume);
 	$sonos->Play();
-	LOGGING("Radio Station '".$sonoslists[$random]["title"]."' has been loaded successful by randomradio",6);
+	LOGGING("Sonos: radio.php: Radio Station '".$sonoslists[$random]["title"]."' has been loaded successful by randomradio",6);
 }
 
 
@@ -189,43 +189,57 @@ function random_radio() {
 * @return: 
 **/
 
-function say_radio_station() {
+function say_radio_station($errortext ='') {
 			
-	global $master, $sonoszone, $config, $min_vol, $volume, $actual, $sonos, $coord, $messageid, $filename, $MessageStorepath, $nextZoneKey, $member;
+	global $master, $sonoszone, $config, $min_vol, $volume, $actual, $sonos, $coord, $messageid, $filename, $MessageStorepath, $nextZoneKey, $member, $errortext, $errorvoice, $errorlang;
 	require_once("addon/sonos-to-speech.php");
 	
 	// if batch has been choosed abort
 	if(isset($_GET['batch'])) {
-		LOGGING("The parameter batch could not be used to announce the radio station!", 4);
+		LOGGING("Sonos: radio.php: The parameter batch could not be used to announce the radio station!", 4);
 		exit;
 	}
 	$sonos->Stop();
 	saveZonesStatus(); // saves all Zones Status
 	$coord = getRoomCoordinator($master);
-	LOGGING("Room Coordinator been identified", 7);		
+	LOGGING("Sonos: radio.php: Room Coordinator been identified", 7);		
 	$sonos = new PHPSonos($coord[0]); 
 	$temp_radio = $sonos->GetMediaInfo();
 	#********************** NEW get text variables **********************
 	$TL = LOAD_T2S_TEXT();
-	$play_stat = $TL['SONOS-TO-SPEECH']['ANNOUNCE_RADIO'] ; 
+	if ($TL != "") {
+		$play_stat = $TL['SONOS-TO-SPEECH']['ANNOUNCE_RADIO'] ; 
+	} else {
+		$play_stat = 'Placeholder';
+	}
+	#$play_stat = $TL['SONOS-TO-SPEECH']['ANNOUNCE_RADIO'] ; 
 	#********************************************************************
 	# Generiert und kodiert Ansage des laufenden Senders
-	if (strncmp($temp_radio['title'], $play_stat, strlen($play_stat))===0) {
+	if (strncmp($temp_radio['title'], $play_stat, strlen($play_stat))===0 or empty($indtext)) {
     	# Nur Titel des Senders ansagen, falls Titel mit dem Announce-Radio Text übereinstimmt
 	    $text = $temp_radio['title'];
 	} else {
 	    # Ansage von 'Radio' gefolgt vom Titel des Senders
 	    $text = ($play_stat.' '.$temp_radio['title']);
 	}
-	$textstring = ($text);
-	$rawtext = md5($textstring);
-	$filename = "$rawtext";
-	select_t2s_engine();
+	if ($errortext != '')  {
+		$text = $errortext;
+		$textstring = ($text);
+		$rawtext = md5($textstring);
+		$filename = "$rawtext";
+		include_once("voice_engines/GoogleCloud.php");
+	} else {
+		$textstring = ($text);
+		$rawtext = md5($textstring);
+		$filename = "$rawtext";
+		select_t2s_engine();
+		t2s($textstring, $filename);
+	}
 	t2s($textstring, $filename);
 	$sonos->SetMute(false);
 	$tmp_volume = $sonos->GetVolume();
 	$volume = $volume + $config['TTS']['correction'];
-	LOGGING("Radio Station Announcement has been announced", 6);		
+	LOGGING("Sonos: radio.php: Radio Station Announcement has been announced", 6);		
 	play_tts($filename);
 	if(isset($_GET['member'])) {
 	    // TODO should this be loaded by a helper function? or already be loaded before calling say_radio_station() 
@@ -248,6 +262,39 @@ function say_radio_station() {
 		$volume = $config['sonoszonen'][$master][4];
 	}
 	return $volume;
+}
+
+
+/**
+* Funktion : 	select_error_lang --> wählt die Sprache der error message aus.
+*
+* @param: empty
+* @return: translations form error.json file
+**/
+
+function select_error_lang() {
+	
+	global $config, $pathlanguagefile, $errortext, $errorvoice, $errorlang;
+	
+	$file = "error.json";
+	$url = $pathlanguagefile."".$file;
+	$valid_languages = File_Get_Array_From_JSON($url, $zip=false);
+	$language = $config['TTS']['messageLang'];
+	$isvalid = array_multi_search($language, $valid_languages, $sKey = "language");
+	#print_r($isvalid);
+	if (!empty($isvalid)) {
+		$errortext = $isvalid[0]['value']; // Text
+		$errorvoice = $isvalid[0]['voice']; // de-DE-Standard-A
+		$errorlang = $isvalid[0]['language']; // de-DE
+	} else {
+		# if no translation for error exit use English
+		$errortext = 'the function nextradio is not working, please check Sonos Plugin error log.';
+		$errorvoice = 'en-US-Wavenet-A';
+		$errorlang = 'en-US';
+		LOGGING("Sonos: radio.php: Translation for your Standard language is not available, EN has been selected", 6);	
+	}
+	#print_r($valid_languages);
+	
 }
 
 

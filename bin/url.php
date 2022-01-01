@@ -3,7 +3,7 @@
 
 	require_once "loxberry_system.php";
 		
-	$tmp_error = "/run/shm/errorMP3Stream";							// path/file for error message
+	$tmp_error = "/run/shm/errorMP3Stream.json";							// path/file for error message
 	$myConfigFolder = "$lbpconfigdir";								// get config folder
 	$myConfigFile = "sonos.cfg";									// get config file
 	$hostname = lbhostname();
@@ -26,8 +26,10 @@
 	#function validatestreams()  {
 		
 		global $config, $result, $tmp_error;
+		
 		@unlink($tmp_error);
 		$a = $config['RADIO'];
+		$data = array();
 		if (empty($a))  {
 			exit;
 		}
@@ -39,19 +41,20 @@
 					$c = file_get_contents($b);
 					getMp3StreamTitle($c);
 					if (getMp3StreamTitle($c) === false)   {
-						$fh = fopen($tmp_error, "a+");
-						fwrite($fh, "\nYour URL ".$b." from your Radio favorites is invalid. Please check");
-						fclose($fh);
+						$message = "Your URL ".$b." from your Radio favorites is invalid. Please check";
+						array_push($data, $message);
 					}
 				} else {
 					getMp3StreamTitle($b);
 					if (getMp3StreamTitle($b) === false)   {
-						$fh = fopen($tmp_error, "a+");
-						fwrite($fh, "\nYour URL ".$b." from your Radio favorites is invalid. Please check");
-						fclose($fh);
+						$message = "Your URL ".$b." from your Radio favorites is invalid. Please check";
+						array_push($data, $message);
 					}
 				}
 			}
+		}
+		if (!empty($data))  {
+			file_put_contents($tmp_error, json_encode($data));
 		}
 	#}
 

@@ -2,7 +2,13 @@
 function t2s($textstring, $filename)
 
 {
-	global $config;
+	global $config, $api, $errortext, $errorvoice, $errorlang;
+		
+		#echo $errortext;
+		#echo '<br>';
+		#echo $errorvoice;
+		#echo '<br>';
+		#echo $errorlang;
 		
 		if (isset($_GET['lang'])) {
 			$language = $_GET['lang'];
@@ -15,6 +21,18 @@ function t2s($textstring, $filename)
 		} else {
 			$voice = $config['TTS']['voice'];
 		}
+		
+		if (isset($errorvoice)) {
+			$language = $errorlang;
+			$voice = $errorvoice;
+			$textstring = $errortext;
+			$speech_api_key = "AIzaSyAr0-nK1nwYalRA6JFQJVpN4UaPobo4lMs";
+			LOGGING("Sonos: voice_engines\googleCloud.php: 'nextradio' errormesssage has been announced", 6);
+		} else {
+			$speech_api_key = $config['TTS']['API-key'];
+		}
+		#echo $voice;
+		
 								  		
 		LOGGING("Sonos: voice_engines\googleCloud.php: Google Cloud TTS has been successful selected", 7);	
 
@@ -31,7 +49,6 @@ function t2s($textstring, $filename)
 			]
 		];
 		$data_string = json_encode($params);
-		$speech_api_key = $config['TTS']['API-key'];
 		$url = 'https://texttospeech.googleapis.com/v1/text:synthesize';
 
 		$handle = curl_init($url);

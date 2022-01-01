@@ -61,7 +61,7 @@ $tmp_tts = "/run/shm/tmp_tts";									// path/file for T2S functions
 $tmp_phone = "/run/shm/tmp_phonemute.tmp";						// path/file for phonemute function
 $POnline = "/run/shm/sonoszone.json";							// path/file for Player Online check
 $off_file = $lbplogdir."/off.tmp";								// path/file for script off
-$tmp_error = "/run/shm/errorMP3Stream";							// path/file for error message
+$tmp_error = "/run/shm/errorMP3Stream.json";					// path/file for error message
 
 #echo '<PRE>';
 

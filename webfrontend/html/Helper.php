@@ -712,8 +712,9 @@ function load_t2s_text(){
 	if (file_exists($templatepath.'/lang/'.$t2s_langfile)) {
 		$TL = parse_ini_file($templatepath.'/lang/'.$t2s_langfile, true);
 	} else {
-		LOGGING("Sonos: helper.php: For selected T2S language no translation file still exist! Please go to LoxBerry Plugin translation and create a file for selected language ".substr($config['TTS']['messageLang'],0,2),3);
-		exit;
+		LOGGING("Sonos: helper.php: For selected T2S language no translation file still exist! Please go to LoxBerry Plugin translation and create a file for selected language ".substr($config['TTS']['messageLang'],0,2),4);
+		$TL = "";
+		#exit;
 	}
 	return $TL;
 }
