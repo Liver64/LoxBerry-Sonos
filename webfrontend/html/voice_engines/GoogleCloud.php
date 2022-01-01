@@ -18,6 +18,7 @@ function t2s($textstring, $filename)
 		
 		if (isset($_GET['voice'])) {
 			$voice = $_GET['voice'];
+			$language = substr($voice, 5); 
 		} else {
 			$voice = $config['TTS']['voice'];
 		}
