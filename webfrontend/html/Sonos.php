@@ -32,6 +32,7 @@ include("Restore_T2S.php");
 include("Save_T2S.php");
 include("Speaker.php");
 include('system/logging.php');
+include('system/openssl_file.class.php');
 
 register_shutdown_function('shutdown');
 
@@ -56,6 +57,7 @@ $searchfor = '[plugindata]';									// search for already existing Samba share
 $MP3path = "mp3";												// path to preinstalled numeric MP3 files
 $sleeptimegong = "3";											// waiting time before playing t2s
 $maxzap = '60';													// waiting time before zapzone been initiated again
+$sPassword = 'loxberry';
 $lbport = lbwebserverport();									// get loxberry port
 $tmp_tts = "/run/shm/tmp_tts";									// path/file for T2S functions
 $tmp_phone = "/run/shm/tmp_phonemute.tmp";						// path/file for phonemute function
@@ -1168,7 +1170,16 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$sonos->SetVolume($volume);
 				$sonos->Play();
 			}
-
+		break;
+			
+		case 'encrypt':
+			$sFilename = 'system/service';
+			OpenSSLFile::encrypt($sFilename, $sPassword);
+		break;
+		
+		case 'decrypt':
+			#$sFilename = 'system/service.dat';
+			#OpenSSLFile::decrypt($sFilename, $sPassword);
 		break;
 					
 		case 'getbass':
