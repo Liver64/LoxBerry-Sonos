@@ -58,6 +58,8 @@ function restore_alarms() {
 **/
 function sleeptimer() {
 	
+	global $sonoszone, $master;
+	
 	if(isset($_GET['timer']) && is_numeric($_GET['timer']) && $_GET['timer'] > 0 && $_GET['timer'] < 60) {
 		$timer = $_GET['timer'];
 		if($_GET['timer'] < 10) {
