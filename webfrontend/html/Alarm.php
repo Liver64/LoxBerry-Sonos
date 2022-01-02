@@ -60,18 +60,21 @@ function sleeptimer() {
 	
 	global $sonoszone, $master;
 	
-	if(isset($_GET['timer']) && is_numeric($_GET['timer']) && $_GET['timer'] > 0 && $_GET['timer'] < 60) {
+	if(isset($_GET['timer']) && is_numeric($_GET['timer']) && $_GET['timer'] > 0 && $_GET['timer'] < 120) {
 		$timer = $_GET['timer'];
+		$sonos = new PHPSonos($sonoszone[$master][0]);
 		if($_GET['timer'] < 10) {
 			$timer = '00:0'.$_GET['timer'].':00';
+		} else if ($_GET['timer'] > 60) {
+			$hours = date('G:i', mktime(0, $timer)); // 1:37
+			$timer = '0'.$hours.':00';
 		} else {
-			$sonos = new PHPSonos($sonoszone[$master][0]);
 			$timer = '00:'.$_GET['timer'].':00';
-			$timer = $sonos->Sleeptimer($timer);
 		}
+		$sonos->Sleeptimer($timer);
 		LOGGING("Sonos: alarm.php: Sleeptimer has been switched on. Time to sleep is: ".$timer, 6);
 	} else {
-		LOGGING('Sonos: alarm.php: The entered time is not correct, please correct', 4);
+		LOGGING('Sonos: alarm.php: The entered time is not correct, please correct (some minutes between 0 and 120 are allowed)', 4);
 	}
 }
 
