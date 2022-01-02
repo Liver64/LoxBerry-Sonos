@@ -102,7 +102,7 @@ final class OpenSSLFile
         $sCiphertextRaw = substr($sCiphertext, $iIVLen + self::HMAC_LEN);
         $sDecryptedText = openssl_decrypt($sCiphertextRaw, self::CIPHER, $sKey, OPENSSL_RAW_DATA, $IV);
         $sCalcMAC = hash_hmac(self::HMAC_HASH, $sCiphertextRaw, $sKey, $binary=true);
-		
+
 		return $sDecryptedText;
     }
 

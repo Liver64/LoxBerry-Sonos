@@ -32,7 +32,7 @@ include("Restore_T2S.php");
 include("Save_T2S.php");
 include("Speaker.php");
 include('system/logging.php');
-include('system/openssl_file.class.php');
+include('system/bin/openssl_file.class.php');
 
 register_shutdown_function('shutdown');
 
@@ -225,6 +225,7 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 	$min_sec = $config['TTS']['waiting'];													// min. in seconds before same mp3 been played again (Statubsaustein)
 	create_symlinks();
 	#volume_group();
+	
 	
 		
 #-- End Preparation ---------------------------------------------------------------------
@@ -1173,8 +1174,8 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 			
 		case 'encrypt':
-			$sFilename = 'system/service';
-			OpenSSLFile::encrypt($sFilename, $sPassword);
+			#$sFilename = 'system/service';
+			#OpenSSLFile::encrypt($sFilename, $sPassword);
 		break;
 		
 		case 'decrypt':
@@ -1492,6 +1493,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 exit;
 
 # Funktionen für Skripte ------------------------------------------------------
+
 
   
 
