@@ -4,8 +4,12 @@
 
 <TMPL_IF SETTINGS>
     <!-- form 'FORM' START -->
+	
     <form method="post" data-ajax="false" accept-charset="utf-8" name="main_form" id="main_form" action="./index.cgi?form">
         <input type="hidden" name="saveformdata1" value="1">
+		<input type="hidden" name="regionOptions" id="regionOptions" value="<TMPL_VAR TTS.regionms>">
+		<!--<input type="hidden" name="subscriptionKey" id="subscriptionKey" value="<TMPL_VAR TTS.API-key>">-->
+		
         <div class="form-group">
             <font COLOR="blue">
                 <TMPL_VAR SAVE>
@@ -30,25 +34,25 @@
                     <td valign="middle" style="height: 41px; width: 50%;">
                         <table width="100%" cellpadding="2" cellspacing="0" border="1px" border="1" id="tblzonen">
                             <tr>
-                                <th style="width: 35px; height: 45px;">
+                                <th style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 35px">
                                     <img class='ico_delete' src='/plugins/<TMPL_VAR PLUGINDIR>/images/recycle-bin.png' border='0' width='24' height='24'>
                                 </th>
-                                <th align="left" style="height: 45px; width: 196px">
+                                <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 196px">
                                     <TMPL_VAR ZONES.SONOS_ROOM>
                                 </th>
-                                <th align="left" style="height: 45px; width: 147px;">
+                                <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 147px">
                                     <TMPL_VAR ZONES.SONOS_MODEL>
                                 </th>
-                                <th align="left" style="height: 45px; width: 147px;">
+                                <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 147px">
                                     <TMPL_VAR ZONES.SONOS_IP>
                                 </th>
-                                <th align="left" style="height: 45px; width: 98px;">
+                                <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 98px">
                                     <TMPL_VAR ZONES.SONOS_T2S-VOL>
                                 </th>
-                                <th align="left" style="height: 45px; width: 98px;">
+                                <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 98px">
                                     <TMPL_VAR ZONES.SONOS_SONOS-VOL>
                                 </th>
-                                <th align="left" style="height: 45px; width: 98px;">
+                                <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 98px">
                                     <TMPL_VAR ZONES.SONOS_MAX-VOL>
                                 </th>
                             </tr>
@@ -75,10 +79,10 @@
                 </tr>
 
                 <tr>
-                    <td style="width: 25%; height: 45px;">
+                    <td style="width: 20%; height: 45px;">
                         <label id="ltts_instanz"><TMPL_VAR T2S.TTS_INSTANZ></label>
                     </td>
-                    <td style="width: 50%; height: 45px;">
+                    <td style="width: 55%; height: 45px;">
                         <fieldset id="engine-selector" data-role="controlgroup" data-type="horizontal">
                             <input type="radio" name="t2s_engine" id="tts_voicerss" value="1001">
                             <TMPL_VAR SELECTEDINSTANZ2>
@@ -102,11 +106,17 @@
 
                                                 <input type="radio" name="t2s_engine" id="tts_google_cloud" value="8001">
                                                 <TMPL_VAR SELECTEDINSTANZ8>
-                                                    <label for="tts_google_cloud">Google (CloudTTS)</label>
+                                                    <label for="tts_google_cloud">Google Cloud</label>
+													
+													<input type="radio" name="t2s_engine" id="tts_azure" value="9001">
+													<TMPL_VAR SELECTEDINSTANZ9>
+														<label for="tts_azure">MS Azure</label>
 
-                                                    <input type="radio" name="t2s_engine" id="tts_google" value="7001">
-                                                    <TMPL_VAR SELECTEDINSTANZ7>
-                                                        <label for="tts_google">Google (Translate)</label>
+														<input type="radio" name="t2s_engine" id="tts_google" value="7001">
+														<TMPL_VAR SELECTEDINSTANZ7>
+															<label for="tts_google">Google</label>
+														
+															
 
                         </fieldset>
 
@@ -118,6 +128,15 @@
                             <font size="-1" align="middle">
                                 <a id="linkgoogleapi" href="https://www.youtube.com/watch?v=1n8xlVNWEZ0" target="_blank">
                                     <TMPL_VAR T2S.GOOGLE_CLOUD_API_LINK>
+                                </a>
+                            </font>
+                        </div>
+						
+						
+						<div class="ttsconfig azureinfo 9001">
+                             <font size="-1" align="middle">
+                                <a id="linkazureapi" href="/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/bin/Azure_Account.pdf" target="_blank">
+                                    <TMPL_VAR T2S.AZURE_API_LINK>
                                 </a>
                             </font>
                         </div>
@@ -140,20 +159,23 @@
                     <td style="height: 13px; width: 24px;"></td>
                 </tr>
 
-                <tr class="ttsconfig colapi 1001 4001 8001">
+                <tr class="ttsconfig colapi 1001 4001 8001 9001">
                     <td style="height: 48px; width: 25%">
                         <label id="lapikey"><TMPL_VAR T2S.LABEL_API_KEY></label>
                     </td>
                     <td style="width: 50%; height: 48px">
-                        <input id="apikey" name="apikey" type="text" class="textfield" value="<TMPL_VAR TTS.api-key>" data-validation-error-msg="<TMPL_VAR ERRORS.ERR_APIKEY>" data-validation-rule="^(([A-Za-z0-9\!\#\$\%\&\'\*\+\-\,\/\:\;\=\?\@\[\]\\\]]){20}|([A-Za-z0-9\!\#\$\%\&\'\*\+\-\,\/\:\;\=\?\@\[\]\\\]]){32})$|([A-Za-z0-9\!\#\$\%\&\'\*\+\-\,\/\:\;\=\?\@\[\]\\\]]){39})$">
-                    </td>
+                        <input id="apikey" name="apikey" type="text" class="textfield" value="<TMPL_VAR TTS.api-key>" 
+						data-validation-error-msg="<TMPL_VAR ERRORS.ERR_APIKEY>" 
+						data-validation-rule="^([A-Z0-9]){20}$|^([A-Za-z0-9\!\#\$\%\&\'\*\+\-\,\/\:\;\=\?\@\[\]\\\]]){32}$|^([A-Za-z0-9\!\#\$\%\&\'\*\+\-\,\/\:\;\=\?\@\[\]\\\]]){39}$">
+					</td>
                     <td style="height: 48px; width: 201px;" class="auto-style4" valign="top">
-                        <div class="ttsconfig btnpopulategooglevoices 8001">
-                            <a onClick="populateGoogleCloudVoices()" data-role="button" data-inline="true" data-mini="true" href="#">
-                                <TMPL_VAR T2S.BUTTON_GOOGLE_VOICES>
+                        <div class="ttsconfig btnpopulategooglevoices 8001 9001">
+                            <a onClick="checkProvider()" data-role="button" data-inline="true" data-mini="true" href="#">
+                                <TMPL_VAR T2S.BUTTON_VOICES>
                             </a>
                         </div>
                     </td>
+					
                     <td style="height: 48px; width: 24px;"></td>
                 </tr>
                 <tr class="ttsconfig colsec 4001">
@@ -161,12 +183,15 @@
                         <label id="lseckey"><TMPL_VAR T2S.LABEL_SECRET_KEY></label>
                     </td>
                     <td style="width: 50%; height: 48px;">
-                        <input id="seckey" name="seckey" type="text" class="textfield" value="<TMPL_VAR TTS.secret-key>" data-validation-error-msg="<TMPL_VAR ERRORS.ERR_SECRETKEY>" data-validation-rule="^([A-Za-z0-9\!\#\$\%\&\'\*\+\-\,\/\:\;\=\?\@\[\]\\\]]){40}$">
+                        <input id="seckey" name="seckey" type="text" class="textfield" value="<TMPL_VAR TTS.secret-key>" 
+						data-validation-error-msg="<TMPL_VAR ERRORS.ERR_SECRETKEY>" 
+						data-validation-rule="^([A-Za-z0-9\!\#\$\%\&\'\*\+\-\,\/\:\;\=\?\@\[\]\\\]]){40}$">
 
                         <td style="width: 201px; height: 48px;">
                         </td>
                         <td style="width: 24px; height: 48px;"></td>
                 </tr>
+				<p id="errorinfo"></p>
                 <tr class="ttsconfig ttsbaseconfig collang">
                     <td style="height: 60px; width: 25%;">
                         <label id="llang"><TMPL_VAR T2S.TTS_LANGUAGE></label>
@@ -177,7 +202,9 @@
                                 <div data-role="collapsible">
                                     <td style="height: 36px; width: 294px; text-align: left;">
                                         <fieldset style="width: 286px">
-                                            <select id="t2slang" name="t2slang" data-mini="true" style="width: 258px;" data-validation-error-msg="<TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN>" data-validation-rule="^([A-Za-z0-9]){4,10}$">
+                                            <select id="t2slang" name="t2slang" data-mini="true" style="width: 258px;" 
+											data-validation-error-msg="<TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN>" 
+											data-validation-rule="^([A-Za-z0-9]){4,10}$">
 								</select>
                                         </fieldset>
                                     </td>
@@ -186,7 +213,10 @@
                                     <div id="msg"></div>
                                     <td style="height: 36px; width: 294px;" class="ttsconfig field-voice 4001 8001" style="display:none">
                                         <fieldset style="width: 187px">
-                                            <select onclick="setCorrectLang()" id="voice" name="voice" data-mini="true" style="width: 206px;" data-validation-error-msg="<TMPL_VAR T2S.SELECT_VOICE_DROPDOWN>" data-validation-rule="^([A-Za-z0-9]){4,10}$">
+                                            <!--<select onclick="setCorrectLang()" id="voice" name="voice" data-mini="true" style="width: 206px;" data-validation-error-msg="<TMPL_VAR T2S.SELECT_VOICE_DROPDOWN>" data-validation-rule="^([A-Za-z0-9]){4,10}$">-->
+											<select id="voice" name="voice" data-mini="true" style="width: 206px;" 
+											data-validation-error-msg="<TMPL_VAR T2S.SELECT_VOICE_DROPDOWN>" 
+											data-validation-rule="^([A-Za-z0-9]){4,10}$">
 								</select>
                                         </fieldset>
                                         <td style="height: 36px; width: 294px; text-align: right;">
@@ -227,7 +257,9 @@
                                                 <label id="lfile_gong"><TMPL_VAR T2S.LABEL_MP3_FILE></label>
                                             </td>
                                             <td style="height: 30px">
-                                                <select id='file_gong' name='file_gong' data-mini='true' data-validation-error-msg="<TMPL_VAR T2S.SELECT_JINGLE_DROPDOWN>" data-validation-rule="^([A-Za-z0-9]){4,10}$" style="width: 244px">
+                                                <select id='file_gong' name='file_gong' data-mini='true' 
+												data-validation-error-msg="<TMPL_VAR T2S.SELECT_JINGLE_DROPDOWN>" 
+												data-validation-rule="^([A-Za-z0-9]){4,10}$" style="width: 244px">
 								<option selected='true' value='' disabled><TMPL_VAR T2S.SELECT_JINGLE_DROPDOWN></option>
 								<TMPL_VAR MP3_LIST>
 							</select>
@@ -323,7 +355,9 @@
                                                 <TMPL_VAR T2S.LABEL_UDP_PORT>
                                             </td>
                                             <td class="field_udp" style="width: 27px">
-                                                <input id="udpport" name="udpport" type="text" value="<TMPL_VAR LOXONE.LoxPort>" align="left" style="width: 71px; " data-validation-error-msg="<TMPL_VAR ERRORS.ERR_UDPPORT>" data-validation-rule="special:port">
+                                                <input id="udpport" name="udpport" type="text" value="<TMPL_VAR LOXONE.LoxPort>" align="left" style="width: 71px; " 
+												data-validation-error-msg="<TMPL_VAR ERRORS.ERR_UDPPORT>" 
+												data-validation-rule="special:port">
                                             </td>
                                         </tr>
                                     </table>
@@ -454,13 +488,13 @@
                             <p></p>
                             <table width="100%" cellpadding="2" cellspacing="0" border="1px" border="1" id="tblBasic2">
                                 <tr class="radiodet">
-                                    <th style="width: 35px">
+                                    <th style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 25px; width: 35px">
                                         <img class='ico_delete' src='/plugins/<TMPL_VAR PLUGINDIR>/images/recycle-bin.png' border='0' width='24' height='24'>
                                     </th>
-                                    <th align="left" style="height: 25px">
+                                    <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 25px; width: 280px">
                                         <TMPL_VAR RADIO.RADIO_STATION_NAME>
                                     </th>
-                                    <th align="left" style="height: 25px; width: 888px;">
+                                    <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 888px">
                                         <TMPL_VAR RADIO.RADIO_STATION_URL>
                                     </th>
                                 </tr class="radiodet">
@@ -701,7 +735,12 @@
     </form>
     <!--</form>-->
 
-
+	<!-- Speech SDK reference sdk. -->
+	
+	<!--<script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>-->
+	<script src="/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/bin/Microsoft/microsoft.cognitiveservices.speech.sdk.bundle.js"></script>
+	
+	
     <script>
         //***************** Functions to be executed during loading the page **********************
 
@@ -713,7 +752,8 @@
             weatherlayout();
             donation();
         });
-
+		
+		//var errorvoice = 'true';
 
         function t2slayout() {
             if (document.main_form.t2s_det.checked == true) {
@@ -775,7 +815,7 @@
             console.log("prepareTTSConfigFields");
             const selectedEngine = $('#engine-selector input:checked');
             if (selectedEngine) {
-                $('.ttsconfig').not('.' + selectedEngine.val()).not('.ttsbaseconfig').fadeOut(600);
+                var test = $('.ttsconfig').not('.' + selectedEngine.val()).not('.ttsbaseconfig').fadeOut(600);
                 $('.' + selectedEngine.val() + ', .ttsbaseconfig').fadeIn(600);
             } else {
                 $('.ttsconfig').fadeOut(600);
@@ -787,7 +827,11 @@
                 validate_enable('#apikey');
                 validate_chk_object(['#apikey']);
             }
-
+			if (document.main_form.tts_azure.checked == true) {
+                $('#voice').addClass('ui-disabled');
+                validate_enable('#apikey');
+                validate_chk_object(['#apikey']);
+            }
             if (document.main_form.tts_polly.checked == true) {
                 $('#voice').removeClass('ui-disabled');
                 $('#voice').selectmenu('refresh', true);
@@ -797,7 +841,9 @@
             }
             if (document.main_form.tts_google_cloud.checked == true) {
                 $('#voice').addClass('ui-disabled');
-                $('#t2slang').addClass('ui-disabled');
+				validate_enable('#apikey');
+                validate_chk_object(['#apikey']);
+                //$('#t2slang').addClass('ui-disabled');
             }
             populateLanguageAndVoiceFields();
         }
@@ -891,16 +937,29 @@
 
         // Sets correct language if voice gets selected before language
         function setCorrectLang() {
+			console.log('setCorrectLang');
             if (document.main_form.tts_google_cloud.checked == true) {
                 var selectedlanguage = $("#t2slang").val();
                 if ($("#voice").find("option:selected").attr('data-lang') != selectedlanguage) {
                     $('#t2slang option[value="' + $("#voice").find("option:selected").attr('data-lang') + '"]').attr("selected", "selected");
-                    $('#t2slang').selectmenu('refresh', true);
-                }
+					$('#t2slang').selectmenu('refresh', true);
+				}
             }
         }
 
+
+
+		
+
         function populateGoogleCloudVoices() {
+			console.log("populateGoogleCloudVoices");
+			//if ($('#apikey').val().length === 0 || $('#apikey').val() === "subscription")  {
+			//	alert('<TMPL_VAR T2S.NO_API_PROVIDED>');
+			//	$('#t2slang').empty();
+            //    $('#voice').empty();
+			//	errorvoice = 'false';
+			//	return;
+			//};
             if ($('#apikey').val()) {
                 const url = "https://texttospeech.googleapis.com/v1/voices?key=" + $('#apikey').val();
                 var getCountryNames = new Intl.DisplayNames([navigator.language || navigator.userLanguage], {
@@ -909,18 +968,25 @@
                 $('#t2slang').empty();
                 $('#voice').empty();
                 fetch(url).then(function(response) {
+				console.log(response);
                     if (response.status != 200) {
-                        alert('<TMPL_VAR T2S.PROBLEMS_WITH_API_KEY>');
-                        return;
+						if (($('#apikey').val().length == 39))  {
+							console.log('Error Code: ' + response.status);
+							//errorvoice = 'false';
+							alert('<TMPL_VAR T2S.VOICE_ERROR1>: ' + response.status + '. <TMPL_VAR T2S.VOICE_ERROR2>: ' + $('#apikey').val() + ' <TMPL_VAR T2S.VOICE_ERROR3>');
+							return;
+						}
                     }
                     return response.json();
                 }).then(function(data) {
                     if (!data) {
-                        return;
+	                    return;
                     }
-                    const langs = new Map();
+					const langs = new Map();
                     const voices = new Map();
-                    const savedLanguageCode = '<TMPL_VAR CODE>';
+					console.log(data.voices); // 65 = {languageCodes: Array(1), name: 'de-DE-Wavenet-D'
+					console.log(langs); // 18 = {"de-DE" => "Deutschland"}
+                    const savedLanguageCode = '<TMPL_VAR CODE>'.substring(0,5);
                     data.voices.forEach(element => {
                         if (element.languageCodes.length > 0 && element.languageCodes[0].length == 5) {
                             lanIsoCode = element.languageCodes[0];
@@ -933,23 +999,22 @@
                     langs.forEach(function(langname, langcode) {
                         $('#t2slang').append('<option value="' + langcode + '">' + langname + '</option>');
                     });
-                    if (savedLanguageCode) {
-                        console.log("Selecting Langugage Code");
-                        $('#t2slang').val(savedLanguageCode);
+					if (savedLanguageCode) {
+                          $('#t2slang').val(savedLanguageCode); //z.B. de-DE
                     } else {
+						defaultvoice = 'de-DE';
                         $('#t2slang').prop('selectedIndex', 0);
                     }
                     voices.forEach(function(locale, voicename) {
                         $('#voice').append('<option value="' + voicename + '" data-lang="' + locale + '">' + voicename + '</option>');
                     });
+					//errorvoice = 'true';
                     populateVoice();
                     $('#voice').removeClass('ui-disabled');
                     $('#t2slang').removeClass('ui-disabled');
                     $('#t2slang').selectmenu('refresh', true);
                     $('#voice').selectmenu('refresh', true);
                 });
-            } else {
-                alert('<TMPL_VAR T2S.NO_API_PROVIDED>');
             }
         }
 
@@ -996,7 +1061,8 @@
             document.location.href = url;
 
         }
-
+		
+		
         //************************ Prepare screen during initial load*** *****************************
         function initial_lang_voice_load() {
             console.log("initial_lang_voice_load");
@@ -1027,7 +1093,82 @@
             });
 
         }
+		
+					
+		function checkProvider() {
+			if (document.main_form.tts_google_cloud.checked == true) {
+				populateGoogleCloudVoices();
+			}
+			if (document.main_form.tts_azure.checked == true) {
+				populateAzureVoices();
+			}
+		}
+		
+//************************ Prepare MS Azure ********************************
+	  
+		// status fields and start button in UI
+ 		//var	subscriptionKey = document.getElementById("subscriptionKey");
+		var	regionOptions = document.getElementById("regionOptions");
+		
+		function populateAzureVoices()   {
+			console.log("populateAzureVoices");
+			//if ($('#apikey').val().length === 0 || $('#apikey').val() === "subscription")  {
+			//	alert('<TMPL_VAR T2S.NO_API_PROVIDED>');
+			//	$('#t2slang').empty();
+            //   $('#voice').empty();
+			//	errorvoice = 'false';
+			//	return;
+			//};
+			if ($('#apikey').val()) {
+				$('#t2slang').empty();
+				$('#voice').empty();
+				var request = new XMLHttpRequest();
+				request.open('GET',
+						'https://' + regionOptions.value + ".tts.speech." +
+						(regionOptions.value.startsWith("china") ? "azure.cn" : "microsoft.com") +
+								"/cognitiveservices/voices/list", true);
+				request.setRequestHeader("Ocp-Apim-Subscription-Key", $('#apikey').val());
+				}
 
+			  request.onload = function() {
+			  if (request.status >= 200 && request.status < 400) {
+				const response = this.response;
+				var str = "<TMPL_VAR TTS.messageLang>";
+				var defvoice = str.substring(6);
+				const defaultVoice = defvoice;
+				const defaultV = "KatjaNeural";
+				let selectId;
+				const data = JSON.parse(response);
+				console.log(data);
+				data.forEach((voice, index) => {
+					$('#t2slang').append("<option value=\"" + voice.ShortName + "\">" + voice.LocaleName + " - " + voice.DisplayName + "</option>");
+					if (voice.Name.indexOf(defaultV) > 0) {
+						selectId = index;
+					}
+				});
+				if (! selectId)  {
+					$('#t2slang').prop('selectedIndex', 0);
+					$('#t2slang').selectmenu('refresh', true);
+				} else {
+					$('#t2slang').prop('selectedIndex', selectId);
+					$('#t2slang').selectmenu('refresh', true);
+				}
+				//errorvoice = 'true';
+			} else {
+				if (($('#apikey').val().length == 32))  {
+					console.log('Error Code: ' + this.status);
+					//errorvoice = 'false';
+					alert('<TMPL_VAR T2S.VOICE_ERROR1>: ' + this.status + '. <TMPL_VAR T2S.VOICE_ERROR2>: ' + $('#apikey').val() + ' <TMPL_VAR T2S.VOICE_ERROR3>');
+					return;
+				}
+			}
+			};
+			request.send()
+		//}	
+		};
+
+//************************ finished MS Azure ********************************	 
+		
         function populateLanguageAndVoiceFields() {
             console.log("populateLanguageAndVoiceFields");
             // load JSON files into dropdwon field language
@@ -1057,6 +1198,9 @@
                 case '8001':
                     populateGoogleCloudVoices();
                     break;
+				case '9001':
+                    populateAzureVoices();
+                    break;
                 default:
                     $('#t2slang').append('<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>');
                     $('#t2slang').prop('selectedIndex', 0);
@@ -1077,7 +1221,7 @@
 
         // function to populate dropdown from JSON files based on selected T2S Provider
         $(document).ready(function() {
-            console.log("documentreadyfunction");
+			console.log("documentreadyfunction");
             $('#engine-selector input').change(prepareTTSConfigFields);
             $('#t2slang').change(populateVoice);
 
@@ -1087,13 +1231,14 @@
             // Function to control saving, main_form is submitted    
             $("form#main_form").submit(function(e) {
 			console.log("submit");
+			//if (errorvoice === 'true')  {
 	            var selectlang = document.getElementById("t2slang").value;
                 if (document.main_form.tts_polly.checked == true) {
                     var selectvoice = document.getElementById("voice").value;
                     if (selectlang == '') {
                         alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
                         $('html, body').animate({
-                            scrollTop: $("#infotext").offset().top
+                            scrollTop: $("#t2slang").offset().top
                         }, 2000);
                         $("#t2slang").focus();
                         e.preventDefault();
@@ -1101,7 +1246,7 @@
                     if (selectvoice == '') {
                         alert('<TMPL_VAR T2S.VALIDATE_VOICE>');
                         $('html, body').animate({
-                            scrollTop: $("#infotext").offset().top
+                            scrollTop: $("#voice").offset().top
                         }, 2000);
                         $("#voice").focus();
                         e.preventDefault();
@@ -1110,7 +1255,7 @@
                     if (selectlang == '') {
                         alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
                         $('html, body').animate({
-                            scrollTop: $("#infotext").offset().top
+                            scrollTop: $("#t2slang").offset().top
                         }, 2000);
                         $("#t2slang").focus();
                         e.preventDefault();
@@ -1119,7 +1264,7 @@
                     if (selectlang == '') {
                         alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
                         $('html, body').animate({
-                            scrollTop: $("#infotext").offset().top
+                            scrollTop: $("#t2slang").offset().top
                         }, 2000);
                         $("#t2slang").focus();
                         e.preventDefault();
@@ -1128,7 +1273,7 @@
                     if (selectlang == '') {
                         alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
                         $('html, body').animate({
-                            scrollTop: $("#infotext").offset().top
+                            scrollTop: $("#t2slang").offset().top
                         }, 2000);
                         $("#t2slang").focus();
                         e.preventDefault();
@@ -1137,7 +1282,7 @@
                     if (selectlang == '') {
                         alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
                         $('html, body').animate({
-                            scrollTop: $("#infotext").offset().top
+                            scrollTop: $("#t2slang").offset().top
                         }, 2000);
                         $("#t2slang").focus();
                         e.preventDefault();
@@ -1146,7 +1291,16 @@
                     if (selectlang == '') {
                         alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
                         $('html, body').animate({
-                            scrollTop: $("#infotext").offset().top
+                            scrollTop: $("#t2slang").offset().top
+                        }, 2000);
+                        $("#t2slang").focus();
+                        e.preventDefault();
+                    }
+				} else if (document.main_form.tts_azure.checked == true) {
+                    if (selectlang == '') {
+                        alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
+                        $('html, body').animate({
+                            scrollTop: $("#voice").offset().top
                         }, 2000);
                         $("#t2slang").focus();
                         e.preventDefault();
@@ -1166,7 +1320,6 @@
                     $("#file_gong").focus();
 					e.preventDefault();
                 }
-
             });
 
 
@@ -1476,7 +1629,9 @@
                                             <label id="lrmpvol"><TMPL_VAR T2S_DETAILS.LABEL_RAMPTO_VOLUME></label>
                                         </td>
                                         <td style="text-align: right;">
-                                            <input id="rmpvol" name="rmpvol" type="text" data-validation="number" class="textfield" value="<TMPL_VAR TTS.volrampto>" data-validation-allowing="special:number-min-max-value:1:100" data-validation-error-msg="* Rampto Volume: Bitte nur Zahlen von 1 bis 100 eingeben.">
+                                            <input id="rmpvol" name="rmpvol" type="text" data-validation="number" class="textfield" value="<TMPL_VAR TTS.volrampto>" 
+											data-validation-allowing="special:number-min-max-value:1:100" 
+											data-validation-error-msg="<TMPL_VAR T2S_DETAILS.ERROR_RAMPTO>">
                                         </td>
                                     </tr>
                                 </table>

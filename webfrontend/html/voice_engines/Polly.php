@@ -7,7 +7,7 @@ function t2s($textstring, $filename)
 	set_include_path(__DIR__ . '/polly_tts');
 	
 	global $config, $messageid, $voice, $accesskey, $secretkey, $MessageStorepath, $pathlanguagefile;
-		include 'polly_tts/polly.php';
+		require_once 'polly_tts/polly.php';
 		
 		$voicefile = "polly_voices.json";
 		$urlvoice = $pathlanguagefile."".$voicefile;

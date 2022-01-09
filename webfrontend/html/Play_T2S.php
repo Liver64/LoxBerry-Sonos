@@ -162,7 +162,6 @@ function create_tts() {
 	// encrypt MP3 file as MD5 Hash
 	$filename  = md5($textstring);
 	#echo 'textstring: '.$textstring.'<br>';
-	#echo 'filename: '.$filename.'<br>';
 	// calls the various T2S engines depending on config)
 	if ($textstring != '') {
 		if ($config['TTS']['t2s_engine'] == 1001) {
@@ -186,47 +185,53 @@ function create_tts() {
 		if ($config['TTS']['t2s_engine'] == 8001) {
 			include_once("voice_engines/GoogleCloud.php");	
 		}
-		//echo filesize($config['SYSTEM']['ttspath']."/".$filename.".mp3");
+		if ($config['TTS']['t2s_engine'] == 9001) {
+			include_once("voice_engines/MS_Azure.php");	
+		}
+		#echo filesize($config['SYSTEM']['ttspath']."/".$filename.".mp3");
 	
 	if(file_exists($config['SYSTEM']['ttspath']."/".$filename.".mp3") && empty($_GET['nocache'])) {
 		LOGGING("Sonos: play_t2s.php: MP3 grabbed from cache: '$textstring' ", 6);
 	} else {
+		
 		t2s($textstring, $filename);
-		if (($config['TTS']['t2s_engine'] == 6001) or ($config['TTS']['t2s_engine'] == 7001) or ($config['TTS']['t2s_engine'] == 4001))    {
+		if (($config['TTS']['t2s_engine'] == 6001) or ($config['TTS']['t2s_engine'] == 7001) or ($config['TTS']['t2s_engine'] == 4001) or ($config['TTS']['t2s_engine'] == 8001))    {
 			// ** generiere MP3 ID3 Tags **
 			require_once("system/bin/getid3/getid3.php");
 			#$getID3 = new getID3;
 			#write_MP3_IDTag($textstring);
 		}
+		
 		// check if filename is < 1 Byte
 		if (filesize($config['SYSTEM']['ttspath']."/".$filename.".mp3") < 1)  {
 			$heute = date("Y-m-d"); 
 			$time = date("His"); 
 			if ($config['SYSTEM']['checkt2s'] === "1")  {
 				rename($config['SYSTEM']['ttspath']."/".$filename.".mp3", $config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");
-				LOGGING("Sonos: play_t2s.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3", 3);	
-				LOGGING("Sonos: play_t2s.php: Please check...", 3);
-				LOGGING("Sonos: play_t2s.php: ...your internet connection", 3);	
-				LOGGING("Sonos: play_t2s.php: ...your storage device", 3);	
-				LOGGING("Sonos: play_t2s.php: ...your T2S Engine settings", 3);	
-				LOGGING("Sonos: play_t2s.php: Please try your requested URL in a browser or change temporally the T2S provider.", 3);	
-				LOGGING("Sonos: play_t2s.php: If no success at all please add a thread in Loxone Forum", 5);	
-				#LOGGING("Sonos: play_t2s.php: Hoere was", 5);	
+				LOGERR("Sonos: play_t2s.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");	
+				LOGERR("Sonos: play_t2s.php: Please check...");
+				LOGERR("Sonos: play_t2s.php: ...your internet connection");	
+				LOGERR("Sonos: play_t2s.php: ...your storage device");	
+				LOGERR("Sonos: play_t2s.php: ...your T2S Engine settings");	
+				LOGERR("Sonos: play_t2s.php: Please try your requested URL in a browser or change temporally the T2S provider.");	
+				LOGINF("Sonos: play_t2s.php: If no success at all please add a thread in Loxone Forum");	
+				#LOGOK("Sonos: play_t2s.php: Hoere was");	
 				$filename = "t2s_not_available";
 				copy($config['SYSTEM']['mp3path']."/t2s_not_available.mp3", $config['SYSTEM']['ttspath']."/t2s_not_available.mp3");
 			} else {
 				rename($config['SYSTEM']['ttspath']."/".$filename.".mp3", $config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");
-				LOGGING("Sonos: play_t2s.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3", 3);	
-				LOGGING("Sonos: play_t2s.php: Please check...", 3);
-				LOGGING("Sonos: play_t2s.php: ...your internet connection", 3);	
-				LOGGING("Sonos: play_t2s.php: ...your storage device", 3);	
-				LOGGING("Sonos: play_t2s.php: ...your T2S Engine settings", 3);	
-				LOGGING("Sonos: play_t2s.php: Please try your requested URL in a browser or change temporally the T2S provider.", 3);	
-				LOGGING("Sonos: play_t2s.php: If no success at all please add a thread in Loxone Forum", 5);	
-				#LOGGING("Sonos: play_t2s.php: Hoere nix", 5);	
+				LOGERR("Sonos: play_t2s.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");	
+				LOGERR("Sonos: play_t2s.php: Please check...");
+				LOGERR("Sonos: play_t2s.php: ...your internet connection");	
+				LOGERR("Sonos: play_t2s.php: ...your storage device");	
+				LOGERR("Sonos: play_t2s.php: ...your T2S Engine settings");	
+				LOGERR("Sonos: play_t2s.php: Please try your requested URL in a browser or change temporally the T2S provider.");	
+				LOGINF("Sonos: play_t2s.php: If no success at all please add a thread in Loxone Forum");	
+				#LOGERR("Sonos: play_t2s.php: Hoere nix");	
 				exit;
 			}
 		}
+		
 		echo $textstring;
 		
 	}
@@ -331,25 +336,25 @@ function play_tts($filename) {
 						#echo $config['SYSTEM']['checkt2s'];
 						if ($config['SYSTEM']['checkt2s'] === "1")  {
 							rename($config['SYSTEM']['ttspath']."/".$filename.".mp3", $config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");
-							LOGGING("Sonos: play_t2s.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3", 3);	
-							LOGGING("Sonos: play_t2s.php: Please check...", 3);
-							LOGGING("Sonos: play_t2s.php: ...your internet connection", 3);	
-							LOGGING("Sonos: play_t2s.php: ...your storage device", 3);	
-							LOGGING("Sonos: play_t2s.php: ...your T2S Engine settings", 3);	
-							LOGGING("Sonos: play_t2s.php: Please try your requested URL in a browser or change temporally the T2S provider.", 3);	
-							LOGGING("Sonos: play_t2s.php: If no success at all please add a thread in Loxone Forum", 5);	
-							LOGGING("Sonos: play_t2s.php: Exception message has been announced!", 5);	
+							LOGERR("Sonos: play_t2s.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");	
+							LOGERR("Sonos: play_t2s.php: Please check...");
+							LOGERR("Sonos: play_t2s.php: ...your internet connection");	
+							LOGERR("Sonos: play_t2s.php: ...your storage device");	
+							LOGERR("Sonos: play_t2s.php: ...your T2S Engine settings");	
+							LOGERR("Sonos: play_t2s.php: Please try your requested URL in a browser or change temporally the T2S provider.");	
+							LOGINF("Sonos: play_t2s.php: If no success at all please add a thread in Loxone Forum");	
+							LOGOK("Sonos: play_t2s.php: Exception message has been announced!");	
 							$filename = "t2s_not_available";
 							copy($config['SYSTEM']['mp3path']."/t2s_not_available.mp3", $config['SYSTEM']['ttspath']."/t2s_not_available.mp3");
 						} else {
 							rename($config['SYSTEM']['ttspath']."/".$filename.".mp3", $config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");
-							LOGGING("Sonos: play_t2s.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3", 3);	
-							LOGGING("Sonos: play_t2s.php: Please check...", 3);
-							LOGGING("Sonos: play_t2s.php: ...your internet connection", 3);	
-							LOGGING("Sonos: play_t2s.php: ...your storage device", 3);	
-							LOGGING("Sonos: play_t2s.php: ...your T2S Engine settings", 3);	
-							LOGGING("Sonos: play_t2s.php: Please try your requested URL in a browser or change temporally the T2S provider.", 3);	
-							LOGGING("Sonos: play_t2s.php: If no success at all please add a thread in Loxone Forum", 5);	
+							LOGERR("Sonos: play_t2s.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");	
+							LOGERR("Sonos: play_t2s.php: Please check...");
+							LOGERR("Sonos: play_t2s.php: ...your internet connection");	
+							LOGERR("Sonos: play_t2s.php: ...your storage device");	
+							LOGERR("Sonos: play_t2s.php: ...your T2S Engine settings");	
+							LOGERR("Sonos: play_t2s.php: Please try your requested URL in a browser or change temporally the T2S provider.");	
+							LOGINF("Sonos: play_t2s.php: If no success at all please add a thread in Loxone Forum");	
 							exit;
 						}						
 					}

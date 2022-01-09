@@ -280,6 +280,8 @@ function select_error_lang() {
 	$url = $pathlanguagefile."".$file;
 	$valid_languages = File_Get_Array_From_JSON($url, $zip=false);
 	$language = $config['TTS']['messageLang'];
+	$language = substr($language, 0, 5);
+	echo $language;
 	$isvalid = array_multi_search($language, $valid_languages, $sKey = "language");
 	#print_r($isvalid);
 	if (!empty($isvalid)) {

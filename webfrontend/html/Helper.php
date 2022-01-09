@@ -532,6 +532,11 @@ function checkTTSkeys() {
 			LOGGING("Sonos: helper.php: GoogleCloudTTS is currently not available. Please install!", 4);
 		}
 	}
+	if ($config['TTS']['t2s_engine'] == 9001) {
+		if (!file_exists("voice_engines/MS_Azure.php")) {
+			LOGGING("Sonos: helper.php: MS_Azure is currently not available. Please install!", 4);
+		}
+	}
 	if ($config['TTS']['t2s_engine'] == 3001) {
 		if (!file_exists("voice_engines/MAC_OSX.php")) {
 			LOGGING("Sonos: helper.php: MAC OSX is currently not available. Please install!", 4);
@@ -690,6 +695,9 @@ function select_t2s_engine()  {
 	}
 	if ($config['TTS']['t2s_engine'] == 4001) {
 		include_once("voice_engines/Polly.php");
+	}
+	if ($config['TTS']['t2s_engine'] == 9001) {
+		include_once("voice_engines/MS_Azure.php");
 	}
 	if ($config['TTS']['t2s_engine'] == 8001) {
 		include_once("voice_engines/GoogleCloud.php");

@@ -303,16 +303,17 @@
  3.9.8		[Improvement] IP-Adresse der einzelnen Player ist in der Config änderbar
  3.9.9		[Improvement] IKEA Frame hinzugefügt
  4.0.0		[Improvement] Neuer ONE SL hinzugefügt
-			[Improvement] GoogleCloudT TS hinzugefügt
+			[Improvement] GoogleCloud TTS hinzugefügt
  4.0.1		[Improvement] Neue BEAM hinzugefügt
  4.0.2		[Improvement] Fehlerbehandlung optimiert falls T2S fehlerhaft zurück kam. Option (über Config --> Feineinstellungen alternativ einen Text ansagen zu lassen)
  4.0.3		[Bugfix] fixed T2S by 'nextradio'
 			[Improvement] added additional checks during POSTUPGRADE
 			[Improvement] added cronjob to validate Radio favorites URL
 			[Improvement] optimzed error handling
-			[Improvement] New function 'action=sayradio' to announce actual playing Radio Station
+			[Improvement] New function 'action=sayradio' to announce actual playing Radio Station (No Artist etc.)
 			[Improvement] New function 'checkradiourl' to check if Radio favorites URL are still valid
 			[Bugfix] fixed Sleeptimer back to work
+			[Improvement] Microsoft Azure TTS hinzugefügt
 			
  
 

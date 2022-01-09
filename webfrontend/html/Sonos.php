@@ -3,7 +3,7 @@
 ##############################################################################################################################
 #
 # Version: 	4.0.3
-# Datum: 	29.12.2021
+# Datum: 	07.01.2022
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
@@ -1182,7 +1182,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			#$sFilename = 'system/service.dat';
 			#OpenSSLFile::decrypt($sFilename, $sPassword);
 		break;
-					
+		
 		case 'getbass':
 			echo '</PRE>';
 			print_r($sonos->GetBass());

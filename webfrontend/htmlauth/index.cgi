@@ -82,6 +82,7 @@ my $log 						= LoxBerry::Log->new ( name => 'Sonos UI', filename => $lbplogdir 
 my $plugintempplayerfile	 	= "tmp_player.json";
 my $scanzonesfile	 			= "network.php";
 my $udp_file	 				= "ms_inbound.php";
+my $azureregion					= "westeurope"; # Change here if you have a Azure API key for diff. region
 my $helplink 					= "http://www.loxwiki.eu/display/LOXBERRY/Sonos4Loxone";
 my $pcfg 						= new Config::Simple($lbpconfigdir . "/" . $pluginconfigfile);
 my %Config 						= $pcfg->vars() if ( $pcfg );
@@ -105,6 +106,11 @@ if ($pcfg->param("TTS.rampto") eq '')  {
 if (!defined $pcfg->param("TTS.correction"))  {
 	$pcfg->param("TTS.correction", "8");
 }
+# add new parameter for Azure TTS"
+if (!defined $pcfg->param("TTS.regionms"))  {
+	$pcfg->param("TTS.regionms", $azureregion);
+	$pcfg->save() or &error;
+}
 # add new parameter for Volume phonemute
 if (!defined $pcfg->param("TTS.phonemute"))  {
 	$pcfg->param("TTS.phonemute", "8");
@@ -125,6 +131,7 @@ if (!defined $pcfg->param("VARIOUS.phonestop"))  {
 if ($pcfg->param("SYSTEM.checkt2s") eq '')  {
 	$pcfg->param("SYSTEM.checkt2s", "false");
 }
+	
 
 ##########################################################################
 # Read Settings
@@ -580,6 +587,7 @@ sub save
 	$pcfg->param("TTS.API-key", "$R::apikey");
 	$pcfg->param("TTS.secret-key", "$R::seckey");
 	$pcfg->param("TTS.voice", "$R::voice");
+	$pcfg->param("TTS.regionms", $azureregion);
 	#$pcfg->param("TTS.correction", "$R::correction");
 	$pcfg->param("MP3.file_gong", "$R::file_gong");
 	#$pcfg->param("MP3.volumedown", "$R::volume");

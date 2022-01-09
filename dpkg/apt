@@ -9,3 +9,5 @@ curl
 libcurl4
 php-soap
 php-cli
+libssl-dev 
+libasound2 wget
