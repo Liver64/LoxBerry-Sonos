@@ -314,6 +314,7 @@
 			[Improvement] New function 'checkradiourl' to check if Radio favorites URL are still valid
 			[Bugfix] fixed Sleeptimer back to work
 			[Improvement] Microsoft Azure TTS hinzugefügt
+			[Improvement] Neue SYNMFONISK (S33) hinzugefügt
 			
  
 

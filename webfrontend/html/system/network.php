@@ -258,6 +258,7 @@ $plugindata = LBSystem::plugindata();
 			"S19"   =>  "ARC",
 			"S20"   =>  "SYMFONISK LAMP",
 			"S21"   =>  "SYMFONISK WALL",
+			"S33"   =>  "SYMFONISK",
 			"S22"   =>  "ONE SL",
 			"S38"   =>  "ONE SL",
 			"S23"   =>  "PORT",
