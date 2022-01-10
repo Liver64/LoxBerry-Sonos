@@ -987,6 +987,10 @@
 							console.log('Error Code: ' + response.status);
 							$("#info").attr("style", "color:red");
 							$("#info").text('<TMPL_VAR T2S.VOICE_ERROR1>: ' + response.status + '. <TMPL_VAR T2S.VOICE_ERROR2>: ' + $('#apikey').val() + ' <TMPL_VAR T2S.VOICE_ERROR3>');
+							$('#t2slang').empty();
+							$('#voice').empty();
+							$('#t2slang').selectmenu('refresh', true);
+							$('#voice').selectmenu('refresh', true);
 							return;
 						}
                     }
@@ -1166,6 +1170,10 @@
 					console.log('Error Code: ' + this.status);
 					$("#info").attr("style", "color:red");
 					$("#info").text('<TMPL_VAR T2S.VOICE_ERROR1>: ' + this.status + '. <TMPL_VAR T2S.VOICE_ERROR2>: ' + $('#apikey').val() + ' <TMPL_VAR T2S.VOICE_ERROR3>');
+					$('#t2slang').empty();
+					$('#voice').empty();
+					$('#t2slang').selectmenu('refresh', true);
+                    $('#voice').selectmenu('refresh', true);
 					return;
 				}
 			}
@@ -1237,12 +1245,14 @@
             // Function to control saving, main_form is submitted    
             $("form#main_form").submit(function(e) {
 			console.log("submit");
-			//if (errorvoice === 'true')  {
-	            var selectlang = document.getElementById("t2slang").value;
+	            //var selectlang = document.getElementById("t2slang").value;
+				var selectlang = $('#t2slang').val();
+				var selectvoice = $('#voice').val();
+				//console.log("selectlang: " + selectlang);
+				//console.log("selectvoice: " + selectvoice);
 				$("#info").empty();
                 if (document.main_form.tts_polly.checked == true) {
-                    var selectvoice = document.getElementById("voice").value;
-                    if (selectlang == '') {
+                     if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
 						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
@@ -1252,7 +1262,7 @@
                         $("#t2slang").focus();
                         e.preventDefault();
                     }
-                    if (selectvoice == '') {
+                    if (selectvoice == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
 						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
@@ -1263,7 +1273,7 @@
                         e.preventDefault();
                     }
                 } else if (document.main_form.tts_mac_osx.checked == true) {
-                    if (selectlang == '') {
+                    if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
 						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
@@ -1274,7 +1284,7 @@
                         e.preventDefault();
                     }
                 } else if (document.main_form.tts_voicerss.checked == true) {
-                    if (selectlang == '') {
+                    if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
 						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
@@ -1284,8 +1294,29 @@
                         $("#t2slang").focus();
                         e.preventDefault();
                     }
+				} else if (document.main_form.tts_google_cloud.checked == true) {
+                    if (selectlang == null) {
+                        //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
+						$("#info").attr("style", "color:red");
+						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
+                        $('html, body').animate({
+                            scrollTop: $("#info").offset().top
+                        }, 2000);
+                        $("#t2slang").focus();
+                        e.preventDefault();
+                    }
+					if (selectvoice == null) {
+                        //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
+						$("#info").attr("style", "color:red");
+						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
+                        $('html, body').animate({
+                            scrollTop: $("#info").offset().top
+                        }, 2000);
+                        $("#voice").focus();
+                        e.preventDefault();
+                    }
                 } else if (document.main_form.tts_pico.checked == true) {
-                    if (selectlang == '') {
+                    if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
 						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
@@ -1296,7 +1327,7 @@
                         e.preventDefault();
                     }
                 } else if (document.main_form.tts_respvoice.checked == true) {
-                    if (selectlang == '') {
+                    if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
 						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
@@ -1307,7 +1338,7 @@
                         e.preventDefault();
                     }
                 } else if (document.main_form.tts_google.checked == true) {
-                    if (selectlang == '') {
+                    if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
 						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
@@ -1318,7 +1349,7 @@
                         e.preventDefault();
                     }
 				} else if (document.main_form.tts_azure.checked == true) {
-                    if (selectlang == '') {
+                    if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
 						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
