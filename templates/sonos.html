@@ -69,7 +69,7 @@
                 <tr>
                     <td style="width: 201px; height: 20px;" valign="top">
                     </td>
-                    <td style="width: 201px; height: 20px;" valign="top">
+                    <td id="info" name="info" style="width: 201px; height: 20px;" valign="top">
                         <font color=#FF0000>
                             <marquee>
                                 <TMPL_VAR INFO>
@@ -333,9 +333,9 @@
                                 <td style="width: 25%">
                                     <fieldset>
                                         <select onchange="selection()" id="sendlox" name="sendlox" data-role="flipswitch" style="width: 104px">
-								<option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
-								<option value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
-							</select>
+										<option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
+										<option value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
+										</select>
                                     </fieldset>
                                     <script>
                                         $('#sendlox').val('<TMPL_VAR LOXONE.LoxDaten>')
@@ -411,6 +411,27 @@
                                     </td>
                             </tr>
                         </table>
+						
+						<!--<tr>
+							<td class="label_template" style="height: 60px; width: 25%;">
+								<label id="ltemplate"><TMPL_VAR T2S.LABEL_EXT_SYSTEM></label>
+							</td>
+							<td class="template" style="width: 25%">
+								<table border=0 width="100%">
+									<fieldset>
+										<select  id="sendext" name="sendext" data-role="flipswitch" style="width: 104px">
+										<option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
+										<option value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
+										</select>
+									</fieldset>
+									<script>
+										$('#sendext').val('<TMPL_VAR LOXONE.ExtDaten>')
+									</script>
+								</table>
+							</td>
+						</tr>-->
+						
+						
                         </td>
                         <td class="empty_template" style="height: 30px; width: 201px;">
                         </td>
@@ -488,7 +509,7 @@
                             <p></p>
                             <table width="100%" cellpadding="2" cellspacing="0" border="1px" border="1" id="tblBasic2">
                                 <tr class="radiodet">
-                                    <th style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 25px; width: 35px">
+                                    <th style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 25px; width: 15px">
                                         <img class='ico_delete' src='/plugins/<TMPL_VAR PLUGINDIR>/images/recycle-bin.png' border='0' width='24' height='24'>
                                     </th>
                                     <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 25px; width: 280px">
@@ -753,8 +774,6 @@
             donation();
         });
 		
-		//var errorvoice = 'true';
-
         function t2slayout() {
             if (document.main_form.t2s_det.checked == true) {
                 $(".t2sdet").fadeIn(800);
@@ -953,27 +972,21 @@
 
         function populateGoogleCloudVoices() {
 			console.log("populateGoogleCloudVoices");
-			//if ($('#apikey').val().length === 0 || $('#apikey').val() === "subscription")  {
-			//	alert('<TMPL_VAR T2S.NO_API_PROVIDED>');
-			//	$('#t2slang').empty();
-            //    $('#voice').empty();
-			//	errorvoice = 'false';
-			//	return;
-			//};
-            if ($('#apikey').val()) {
+			if ($('#apikey').val()) {
                 const url = "https://texttospeech.googleapis.com/v1/voices?key=" + $('#apikey').val();
                 var getCountryNames = new Intl.DisplayNames([navigator.language || navigator.userLanguage], {
                     type: 'region'
                 });
                 $('#t2slang').empty();
                 $('#voice').empty();
+				$("#info").empty()
                 fetch(url).then(function(response) {
 				console.log(response);
                     if (response.status != 200) {
 						if (($('#apikey').val().length == 39))  {
 							console.log('Error Code: ' + response.status);
-							//errorvoice = 'false';
-							alert('<TMPL_VAR T2S.VOICE_ERROR1>: ' + response.status + '. <TMPL_VAR T2S.VOICE_ERROR2>: ' + $('#apikey').val() + ' <TMPL_VAR T2S.VOICE_ERROR3>');
+							$("#info").attr("style", "color:red");
+							$("#info").text('<TMPL_VAR T2S.VOICE_ERROR1>: ' + response.status + '. <TMPL_VAR T2S.VOICE_ERROR2>: ' + $('#apikey').val() + ' <TMPL_VAR T2S.VOICE_ERROR3>');
 							return;
 						}
                     }
@@ -1112,16 +1125,10 @@
 		
 		function populateAzureVoices()   {
 			console.log("populateAzureVoices");
-			//if ($('#apikey').val().length === 0 || $('#apikey').val() === "subscription")  {
-			//	alert('<TMPL_VAR T2S.NO_API_PROVIDED>');
-			//	$('#t2slang').empty();
-            //   $('#voice').empty();
-			//	errorvoice = 'false';
-			//	return;
-			//};
 			if ($('#apikey').val()) {
 				$('#t2slang').empty();
 				$('#voice').empty();
+				$("#info").empty();
 				var request = new XMLHttpRequest();
 				request.open('GET',
 						'https://' + regionOptions.value + ".tts.speech." +
@@ -1157,14 +1164,13 @@
 			} else {
 				if (($('#apikey').val().length == 32))  {
 					console.log('Error Code: ' + this.status);
-					//errorvoice = 'false';
-					alert('<TMPL_VAR T2S.VOICE_ERROR1>: ' + this.status + '. <TMPL_VAR T2S.VOICE_ERROR2>: ' + $('#apikey').val() + ' <TMPL_VAR T2S.VOICE_ERROR3>');
+					$("#info").attr("style", "color:red");
+					$("#info").text('<TMPL_VAR T2S.VOICE_ERROR1>: ' + this.status + '. <TMPL_VAR T2S.VOICE_ERROR2>: ' + $('#apikey').val() + ' <TMPL_VAR T2S.VOICE_ERROR3>');
 					return;
 				}
 			}
 			};
 			request.send()
-		//}	
 		};
 
 //************************ finished MS Azure ********************************	 
