@@ -10,3 +10,4 @@
 # Will be executed as user "loxberry".
 
 REPLACELBPBINDIR/cleanup_sonos.php
+rm /run/shm/s4lox_date

@@ -54,22 +54,27 @@ function radio(){
 * @return: 
 **/
 function nextradio() {
-	global $sonos, $config, $master, $debug, $min_vol, $volume, $tmp_tts, $sonoszone, $tmp_error;
+	global $sonos, $config, $master, $debug, $min_vol, $volume, $tmp_tts, $sonoszone, $tmp_error, $stst;
 	
 	if (file_exists($tmp_tts))  {
 		LOGGING("Sonos: radio.php: Currently a T2S is running, we skip nextradio for now. Please try again later.",6);
 		exit;
 	}
+	$textan = "0";
 	if (file_exists($tmp_error)) {
 		$err = json_decode(file_get_contents($tmp_error));
 		foreach ($err as $key => $value) {
-			LOGERR($value);
+			LOGWARN("Sonos: radio.php: ".$value);
 		}
-		LOGOK("Script has been terminated by system");
-		select_error_lang();
-		$errortext = "Placeholder";
-		say_radio_station($errortext);
-		exit;
+		check_date_once();
+		if ($stst == "true") {
+			select_error_lang();
+			$errortext = "Placeholder";
+			say_radio_station($errortext);
+			$textan = "1";
+			LOGINF("Sonos: radio.php: Anouncement of broken Radio URL has been announced once.");
+		}
+		#exit;
 	}
 	#if (isset($_GET['member']))  {
 	#	LOGGING("Sonos: radio.php: Function could not be used within Groups!!", 6);
@@ -117,7 +122,7 @@ function nextradio() {
 	    $sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[0], $radio_name[0]);
 		$act = $radio_name[0];
 	}
-	if ($config['VARIOUS']['announceradio'] == 1) {
+	if ($config['VARIOUS']['announceradio'] == 1 and $textan == "0") {
 		$check_stat = getZoneStatus($master);
 		say_radio_station();
 	}
@@ -281,9 +286,8 @@ function select_error_lang() {
 	$valid_languages = File_Get_Array_From_JSON($url, $zip=false);
 	$language = $config['TTS']['messageLang'];
 	$language = substr($language, 0, 5);
-	echo $language;
+	#echo $language;
 	$isvalid = array_multi_search($language, $valid_languages, $sKey = "language");
-	#print_r($isvalid);
 	if (!empty($isvalid)) {
 		$errortext = $isvalid[0]['value']; // Text
 		$errorvoice = $isvalid[0]['voice']; // de-DE-Standard-A
@@ -297,7 +301,32 @@ function select_error_lang() {
 	}
 	#print_r($valid_languages);
 	
+
 }
+
+/**
+* Funktion : 	check_date_once --> check for execution once a day (cronjob daily deletes file)
+*
+* @param: empty
+* @return: true or false
+**/
+
+function check_date_once() {
+	
+	global $check_date, $stst, $tmp_error;
+	
+	if (file_exists($check_date) and file_exists($tmp_error)) {
+		$stst = "false";
+		return $stst;
+	} else {
+		$now = date("d.m.Y");
+		file_put_contents($check_date, $now);
+		$stst = "true";
+		return $stst;
+	};
+}
+	
+
 
 
 ?>

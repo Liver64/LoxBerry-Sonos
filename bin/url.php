@@ -41,13 +41,13 @@
 					$c = file_get_contents($b);
 					getMp3StreamTitle($c);
 					if (getMp3StreamTitle($c) === false)   {
-						$message = "Your URL ".$b." from your Radio favorites is invalid. Please check";
+						$message = "Your URL ".$b." from your Radio favorites seems to be invalid. Please check";
 						array_push($data, $message);
 					}
 				} else {
 					getMp3StreamTitle($b);
 					if (getMp3StreamTitle($b) === false)   {
-						$message = "Your URL ".$b." from your Radio favorites is invalid. Please check";
+						$message = "Your URL ".$b." from your Radio favorites seems to be invalid. Please check";
 						array_push($data, $message);
 					}
 				}
