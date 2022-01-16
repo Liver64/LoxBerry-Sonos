@@ -31,7 +31,7 @@ function AddApple() {
 	if (isset($_GET['trackuri'])) {  
 		$uri = $_GET['trackuri'];
 		if (empty($uri)) {
-			LOGGING("Sonos: apple.php: Please enter Apple Track-URI!", 3);
+			LOGGING("apple.php: Please enter Apple Track-URI!", 3);
 			exit;
 		}
 		$track_array = explode(',',$uri);
@@ -49,10 +49,10 @@ function AddApple() {
 				$service->SetAppleTrack($trackuri, $message_pos);
 			}
 		} catch (Exception $e) {
-			LOGGING("Sonos: apple.php: The entered Apple-Track-ID's: ".$uri." are not valid! Please check!", 3);
+			LOGGING("apple.php: The entered Apple-Track-ID's: ".$uri." are not valid! Please check!", 3);
 			exit;
 		}
-		LOGGING('Sonos: apple.php: The entered Apple-Track has been loaded',6);
+		LOGGING('apple.php: The entered Apple-Track has been loaded',6);
 		$sonos->SetTrack($message_pos);
 	}
 	// Apple Playlist
@@ -63,10 +63,10 @@ function AddApple() {
 			$service = New SonosMusicService($sonoszone[$master][0]);
 			$service->SetApplePlaylist($pl);
 		} catch (Exception $e) {
-			LOGGING("Sonos: apple.php: The entered Apple-Playlist-ID: ".$pl." is not valid! Please check!", 3);
+			LOGGING("apple.php: The entered Apple-Playlist-ID: ".$pl." is not valid! Please check!", 3);
 			exit;
 		}
-		LOGGING('Sonos: apple.php: The entered Apple-Playlist has been loaded',6);
+		LOGGING('apple.php: The entered Apple-Playlist has been loaded',6);
 	}
 	// Apple Album
 	if (isset($_GET['albumuri'])) {
@@ -76,14 +76,14 @@ function AddApple() {
 			$service = New SonosMusicService($sonoszone[$master][0]);
 			$service->SetAppleAlbum($pl);
 		} catch (Exception $e) {
-			LOGGING("Sonos: apple.php: The entered Apple-Album-ID ".$pl." is not valid! Please check!", 3);
+			LOGGING("apple.php: The entered Apple-Album-ID ".$pl." is not valid! Please check!", 3);
 			exit;
 		}
-		LOGGING('Sonos: apple.php: The entered Apple-Album has been loaded',6);
+		LOGGING('apple.php: The entered Apple-Album has been loaded',6);
 	}
 	$sonos->SetVolume($volume);
 	$sonos->SetMute(false);
-	LOGGING("Sonos: apple.php: Requested Apple Music plays now.", 7);
+	LOGGING("apple.php: Requested Apple Music plays now.", 7);
 	$sonos->Play();
 }
 

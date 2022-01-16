@@ -88,12 +88,12 @@ if ($getsonos = strrpos($check_info, "getsonosinfo") != false)  {
 }
 
 LOGSTART("PHP started");
-LOGGING("Sonos: sonos.php: called syntax: ".$myIP."".urldecode($syntax),5);
+LOGGING("sonos.php: called syntax: ".$myIP."".urldecode($syntax),5);
 
 # Prüfung ob Script ausgeschaltet ist
 $script_on = $_GET['action'];
 if (file_exists($off_file) and $script_on != "on")  {
-	LOGGING("Sonos: sonos.php: Script is off",5);
+	LOGGING("sonos.php: Script is off",5);
 	exit;
 }
 
@@ -123,7 +123,7 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 	# check if NULL or 0 has been entered (Loxone Status)
 	if (isset($_GET['text']))  {
 		if (($_GET['text'] === "null") or ($_GET['text'] === "0"))  {
-			LOGGING("Sonos: sonos.php: NULL or 0 or Text from Loxone Status has been entered, therefor T2S been skipped", 6);	
+			LOGGING("sonos.php: NULL or 0 or Text from Loxone Status has been entered, therefor T2S been skipped", 6);	
 			exit(0);
 		}
 	}
@@ -133,25 +133,25 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 	
 	// Parsen der Konfigurationsdatei sonos.cfg
 	if (!file_exists($myFolder.'/sonos.cfg')) {
-		LOGGING('Sonos: sonos.php: The file sonos.cfg could not be opened, please try again!', 4);
+		LOGGING('sonos.php: The file sonos.cfg could not be opened, please try again!', 4);
 	} else {
 		$tmpsonos = parse_ini_file($myFolder.'/sonos.cfg', TRUE);
 		if ($tmpsonos === false)  {
 			LOGERR('Sonos: sonos.php: The file sonos.cfg could not be parsed, the file may be disruppted. Please check/save your Plugin Config or check file "sonos.cfg" manually!');
 			exit(1);
 		}
-		LOGGING("Sonos: sonos.php: Sonos config has been loaded",7);
+		LOGGING("sonos.php: Sonos config has been loaded",7);
 	}
 	// Parsen der Sonos Zonen Konfigurationsdatei player.cfg
 	if (!file_exists($myFolder.'/player.cfg')) {
-		LOGGING('Sonos: sonos.php: The file player.cfg could not be opened, please try again!', 4);
+		LOGGING('sonos.php: The file player.cfg could not be opened, please try again!', 4);
 	} else {
 		$tmpplayer = parse_ini_file($myFolder.'/player.cfg', true);
 		if ($tmpplayer === false)  {
 			LOGERR('Sonos: sonos.php: The file player.cfg could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file "player.cfg" manually!');
 			exit(1);
 		}
-		LOGGING("Sonos: sonos.php: Player config has been loaded",7);
+		LOGGING("sonos.php: Player config has been loaded",7);
 	}
 	$player = ($tmpplayer['SONOSZONEN']);
 	foreach ($player as $zonen => $key) {
@@ -176,7 +176,7 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 		if (!file_exists($POnline)) {
 			// prüft den Onlinestatus jeder Zone
 			$zonesonline = array();
-			LOGGING("Sonos: sonos.php: Backup Online check for Players will be executed",7);
+			LOGGING("sonos.php: Backup Online check for Players will be executed",7);
 			foreach($sonoszonen as $zonen => $ip) {
 				$port = 1400;
 				$timeout = 3;
@@ -186,24 +186,24 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 					array_push($zonesonline, $zonen);
 					fclose($handle);
 				} else {
-					LOGGING("Sonos: sonos.php: Zone $zonen seems to be Offline, please check your power/network settings",4);
+					LOGGING("sonos.php: Zone $zonen seems to be Offline, please check your power/network settings",4);
 				}
 			}
 			$zoon = implode(", ", $zonesonline);
-			LOGGING("Sonos: sonos.php: Zone(s) $zoon are Online",7);
+			LOGGING("sonos.php: Zone(s) $zoon are Online",7);
 			File_Put_Array_As_JSON($POnline, $sonoszone, $zip=false);
 		} else {
 			$sonoszone = File_Get_Array_From_JSON($POnline, $zip=false);
 		}
 	} else {
-		LOGGING("Sonos: sonos.php: You have not turned on Function to check if all your Players are powered on/online. PLease turn on function 'checkonline' in Plugin Config in order to secure your requests!", 4);
+		LOGGING("sonos.php: You have not turned on Function to check if all your Players are powered on/online. PLease turn on function 'checkonline' in Plugin Config in order to secure your requests!", 4);
 		$sonoszone = $sonoszonen;
 	}
 	if (!array_key_exists($_GET['zone'], $sonoszone))  {
-		LOGGING("Sonos: sonos.php: Requested ...zone=".$_GET['zone']." seems to be Offline. Check your Power/Onlinestatus.",4);
+		LOGGING("sonos.php: Requested ...zone=".$_GET['zone']." seems to be Offline. Check your Power/Onlinestatus.",4);
 		exit;
 	}
-	LOGGING("Sonos: sonos.php: All variables has been collected",7);
+	LOGGING("sonos.php: All variables has been collected",7);
 	
 	#$sonoszone = $sonoszonen;
 	#print_r($sonoszonen);
@@ -247,9 +247,9 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 		// prüft auf Max. Lautstärke und korrigiert diese ggf.
 		if($volume >= $config['sonoszonen'][$master][5]) {
 			$volume = $config['sonoszonen'][$master][5];
-			LOGGING("Sonos: sonos.php: Individual Volume for Player ".$master." has been reduced to: ".$volume, 7);
+			LOGGING("sonos.php: Individual Volume for Player ".$master." has been reduced to: ".$volume, 7);
 		} else {
-			LOGGING("Sonos: sonos.php: Individual Volume for Player ".$master." has been set to: ".$volume, 7);
+			LOGGING("sonos.php: Individual Volume for Player ".$master." has been set to: ".$volume, 7);
 		}
 	# current volume should be used
 	} elseif (isset($_GET['keepvolume']))  {
@@ -259,7 +259,7 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 		# if current volume is less then treshold then take standard from config
 		if ($tm_volume >= $min_vol)  {
 			$volume = $tm_volume;
-			LOGGING("Sonos: sonos.php: Volume for Player ".$master." has been set to current volume", 7);
+			LOGGING("sonos.php: Volume for Player ".$master." has been set to current volume", 7);
 		} else {
 			if (isset($_GET['text']) or isset($_GET['messageid']) or
 				(isset($_GET['sonos'])) or (isset($_GET['weather'])) or 
@@ -268,10 +268,10 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 				(isset($_GET['distance'])) or (isset($_GET['clock'])) or 
 				(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch") or (isset($_GET['radio'])))	{
 				$volume = $config['sonoszonen'][$master][3];
-				LOGGING("Sonos: sonos.php: T2S Volume for Player ".$master." is less then ".$min_vol." and has been set exceptional to Standard volume ".$config['sonoszonen'][$master][3], 7);
+				LOGGING("sonos.php: T2S Volume for Player ".$master." is less then ".$min_vol." and has been set exceptional to Standard volume ".$config['sonoszonen'][$master][3], 7);
 			} else {
 				$volume = $config['sonoszonen'][$master][4];
-				LOGGING("Sonos: sonos.php: Volume for Player ".$master." is less then ".$min_vol." and has been set exceptional to Standard volume ".$config['sonoszonen'][$master][4], 7);
+				LOGGING("sonos.php: Volume for Player ".$master." is less then ".$min_vol." and has been set exceptional to Standard volume ".$config['sonoszonen'][$master][4], 7);
 			}
 		}
 	}
@@ -291,10 +291,10 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 		(isset($_GET['distance'])) or (isset($_GET['clock'])) or 
 		(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch") or (isset($_GET['radio'])))	{
 		$volume = $config['sonoszonen'][$master][3];
-		LOGGING("Sonos: sonos.php: Standard T2S Volume for Player ".$master." has been set to: ".$volume, 7);
+		LOGGING("sonos.php: Standard T2S Volume for Player ".$master." has been set to: ".$volume, 7);
 	} else {
 		$volume = $config['sonoszonen'][$master][4];
-		LOGGING("Sonos: sonos.php: Standard Volume for Player ".$master." has been set to: ".$volume, 7);
+		LOGGING("sonos.php: Standard Volume for Player ".$master." has been set to: ".$volume, 7);
 	}
 }
 
@@ -307,7 +307,7 @@ if(isset($_GET['playmode'])) {
 		$sonos->SetQueue("x-rincon-queue:".$sonoszone[$master][1]."#0");
 		$sonos->SetPlayMode($playmode);
 	}  else {
-		LOGGING('Sonos: sonos.php: incorrect PlayMode selected. Please correct!', 4);
+		LOGGING('sonos.php: incorrect PlayMode selected. Please correct!', 4);
 	}
 }    
 
@@ -348,7 +348,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			if(!empty($posinfo['TrackURI'])) {
 				if(empty($config['TTS']['volrampto'])) {
 					$config['TTS']['volrampto'] = "25";
-					LOGGING("Sonos: sonos.php: Rampto Volume in config has not been set. Default of 25% Volume has been taken, please update Plugin Config (T2S Optionen).", 4);
+					LOGGING("sonos.php: Rampto Volume in config has not been set. Default of 25% Volume has been taken, please update Plugin Config (T2S Optionen).", 4);
 				}
 				if($sonos->GetVolume() <= $config['TTS']['volrampto']) {
 					$sonos->RampToVolume($config['TTS']['rampto'], $volume);
@@ -361,7 +361,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 					$sonos->Play();
 				}
 			} else {
-				LOGGING("Sonos: sonos.php: No tracks in Queue to be played.", 4);
+				LOGGING("sonos.php: No tracks in Queue to be played.", 4);
 			}
 		break;
 		
@@ -370,7 +370,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			checkifmaster($master);
 			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 			$sonos->Pause();
-			LOGGING("Sonos: sonos.php: Pause been executed.", 7);
+			LOGGING("sonos.php: Pause been executed.", 7);
 		break;
 		
 				
@@ -387,7 +387,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 				$sonos->SetTrack("1");
 			}
-			LOGGING("Sonos: sonos.php: Next been executed.", 7);
+			LOGGING("sonos.php: Next been executed.", 7);
 		break;
 		
 		
@@ -404,7 +404,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 				$sonos->SetTrack("$playlistgesammt");
 			}
-			LOGGING("Sonos: sonos.php: Previous been executed.", 7);
+			LOGGING("sonos.php: Previous been executed.", 7);
 		break; 
 		
 			
@@ -412,7 +412,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			checkifmaster($master);
 			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 			$sonos->Rewind();
-			LOGGING("Sonos: sonos.php: Rewind been executed.", 7);
+			LOGGING("sonos.php: Rewind been executed.", 7);
 		break;
 		
 		
@@ -423,10 +423,10 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			else if($_GET['mute'] == 'true') {
 				$sonos->SetMute(true);
 			} else {
-				LOGGING('Sonos: sonos.php: Wrong Mute Parameter selected. Please correct', 3);
+				LOGGING('sonos.php: Wrong Mute Parameter selected. Please correct', 3);
 				exit;
 			}       
-			LOGGING("Sonos: sonos.php: Mute/Unmute been executed.", 7);
+			LOGGING("sonos.php: Mute/Unmute been executed.", 7);
 		break;
 		
 		
@@ -444,7 +444,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			checkifmaster($master);
 			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 			$sonos->Stop();
-			LOGGING("Sonos: sonos.php: Stop been executed.", 7);
+			LOGGING("sonos.php: Stop been executed.", 7);
 		break; 
 		
 			
@@ -460,7 +460,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 					}
 				}
 			}
-			LOGGING("Sonos: sonos.php: Stop/Pause all been executed.", 7);
+			LOGGING("sonos.php: Stop/Pause all been executed.", 7);
 		break; 
 		
 
@@ -478,7 +478,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$sonos->Stop();
 			}
 			$sonos->SetVolume($save_vol_stop);
-			LOGGING("Sonos: sonos.php: Softstop been executed.", 7);
+			LOGGING("sonos.php: Softstop been executed.", 7);
 		break; 
 		
 		
@@ -503,7 +503,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				}
 			}
 		}
-		LOGGING("Sonos: sonos.php: Softstopall been executed.", 7);
+		LOGGING("sonos.php: Softstopall been executed.", 7);
 		break; 
 		
 		  
@@ -515,7 +515,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			} else {
 				$sonos->Play();
 			}
-			LOGGING("Sonos: sonos.php: Toggle been executed.", 7);
+			LOGGING("sonos.php: Toggle been executed.", 7);
 		break; 
 		
 					
@@ -524,9 +524,9 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			if (in_array($playmode, $valid_playmodes)) {
 				$sonos->SetPlayMode($playmode);
 			} else {
-				LOGGING('Sonos: sonos.php: Wrong PlayMode Parameter selected. Please correct', 4);
+				LOGGING('sonos.php: Wrong PlayMode Parameter selected. Please correct', 4);
 			}   
-			LOGGING("Sonos: sonos.php: Playmode been executed.", 7);
+			LOGGING("sonos.php: Playmode been executed.", 7);
 		break; 
 		
 	  
@@ -534,11 +534,11 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			if((is_numeric($_GET['crossfade'])) && ($_GET['crossfade'] == 0) || ($_GET['crossfade'] == 1)) { 
 				$crossfade = $_GET['crossfade'];
 			} else {
-				LOGGING("Sonos: sonos.php: Wrong Crossfade entered -> 0 = off / 1 = on", 4);
+				LOGGING("sonos.php: Wrong Crossfade entered -> 0 = off / 1 = on", 4);
 				exit;
 			}
 				$sonos->SetCrossfadeMode($crossfade);
-				LOGGING("Sonos: sonos.php: Crossfade been executed.", 7);
+				LOGGING("sonos.php: Crossfade been executed.", 7);
 		break; 
 		
 		  
@@ -547,7 +547,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				checkifmaster($master);
 				$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 				$sonos->RemoveFromQueue($_GET['remove']);
-				LOGGING("Sonos: sonos.php: Remove Song been executed.", 7);
+				LOGGING("sonos.php: Remove Song been executed.", 7);
 			} 
 		break; 
 		
@@ -561,7 +561,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$sonos->SetQueue("x-rincon-queue:" . trim($sonoszone[$master][1]) . "#0");
 				if(empty($config['TTS']['volrampto'])) {
 					$config['TTS']['volrampto'] = "25";
-					LOGGING("Sonos: sonos.php: Rampto Volume in config has not been set. Default of 25% Volume has been taken, please update Plugin Config (T2S Optionen).", 4);
+					LOGGING("sonos.php: Rampto Volume in config has not been set. Default of 25% Volume has been taken, please update Plugin Config (T2S Optionen).", 4);
 				}
 				if($sonos->GetVolume() <= $config['TTS']['volrampto'])	{
 					$sonos->RampToVolume($config['TTS']['rampto'], $volume);
@@ -570,9 +570,9 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 					$sonos->Play();
 				}
 			} else {
-				LOGGING("Sonos: sonos.php: No tracks in Playlist to play.", 5);
+				LOGGING("sonos.php: No tracks in Playlist to play.", 5);
 			}
-			LOGGING("Sonos: sonos.php: Playqueue been executed.", 7);
+			LOGGING("sonos.php: Playqueue been executed.", 7);
 		break;
 		
 		
@@ -581,7 +581,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			checkifmaster($master);
 			$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
 			$sonos->ClearQueue();
-			LOGGING("Sonos: sonos.php: Queue has been cleared",7);
+			LOGGING("sonos.php: Queue has been cleared",7);
 		break;
 		
 		  
@@ -589,7 +589,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			if(isset($volume)) {
 				$sonos->SetVolume($volume);
 			} else {
-				LOGGING('Sonos: sonos.php: Wrong range of values for volume been entered, only 0-100 is permitted', 4);
+				LOGGING('sonos.php: Wrong range of values for volume been entered, only 0-100 is permitted', 4);
 				exit;
 			}
 		break; 
@@ -618,23 +618,23 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$loud = $_GET['loudness'];
 				$sonos->SetLoudness($loud);
 			} else {
-				LOGGING('Sonos: sonos.php: Wrong Loudness Mode selected', 5);
+				LOGGING('sonos.php: Wrong Loudness Mode selected', 5);
 			}    
-			LOGGING("Sonos: sonos.php: Loudness been executed.", 7);
+			LOGGING("sonos.php: Loudness been executed.", 7);
 		break;
 		
 		
 		case 'settreble':
 			$Treble = $_GET['treble'];
 			$sonos->SetTreble($Treble);
-			LOGGING("Sonos: sonos.php: Treble been executed.", 7);
+			LOGGING("sonos.php: Treble been executed.", 7);
 		break;
 		
 		
 		case 'setbass':
 			$Bass = $_GET['bass'];
 			$sonos->SetBass($Bass);
-			LOGGING("Sonos: sonos.php: Bass been executed.", 7);
+			LOGGING("sonos.php: Bass been executed.", 7);
 		break;	
 		
 		
@@ -758,7 +758,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 
 		case 'sendgroupmessage':
 			#global $sonos, $coord, $text, $min_sec, $member, $master, $zone, $messageid, $logging, $words, $voice, $accesskey, $secretkey, $rampsleep, $config, $save_status, $mute, $membermaster, $groupvol, $checkgroup;
-			LOGGING("Sonos: sonos.php: function 'action=sendgroupmessage...' has been depreciated. Please change your syntax to 'action=say...'", 6); 
+			LOGGING("sonos.php: function 'action=sendgroupmessage...' has been depreciated. Please change your syntax to 'action=say...'", 6); 
 			$oldtext="old";
 			$newtext="new";
 			$filenst="/run/shm/t2s_stat.tmp";
@@ -768,24 +768,24 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 
 			if (file_exists($filenst)) {
 				$last=time()-filemtime($filenst);
-				$myfile = fopen($filenst, "r") or LOGGING('Sonos: sonos.php: Unable to open file!', 4);
+				$myfile = fopen($filenst, "r") or LOGGING('sonos.php: Unable to open file!', 4);
 				$oldtext=fread($myfile,8192);
 				fclose($myfile);
 			}	
 			if ((($oldtext==$newtext) AND( $last > $min_sec)) OR ($oldtext!=$newtext))  {
 				sendgroupmessage();
-				$myfile = fopen($filenst, "w") or LOGGING('Sonos: sonos.php: Unable to open file!', 4);
+				$myfile = fopen($filenst, "w") or LOGGING('sonos.php: Unable to open file!', 4);
 				fwrite($myfile,$newtext);
 				fclose($myfile);
 			} else {
-				LOGGING("Sonos: sonos.php: Same text has been announced within the last ".$min_sec." seconds. We skip this anouncement", 5); 
+				LOGGING("sonos.php: Same text has been announced within the last ".$min_sec." seconds. We skip this anouncement", 5); 
 			}
 		break;
 			
 			
 		case 'sendmessage':
 			#global $text, $coord, $master, $min_sec, $messageid, $logging, $words, $voice, $config, $actual, $player, $volume, $coord, $time_start;
-			LOGGING("Sonos: sonos.php: function 'action=sendmessage...' has been depreciated. Please change your syntax to 'action=say...'", 6); 
+			LOGGING("sonos.php: function 'action=sendmessage...' has been depreciated. Please change your syntax to 'action=say...'", 6); 
 			$oldtext="old";
 			$newtext="new";
 			$filenst="/run/shm/t2s_stat.tmp";
@@ -795,17 +795,17 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 
 			if (file_exists($filenst)) {
 				$last=time()-filemtime($filenst);
-				$myfile = fopen($filenst, "r") or LOGGING('Sonos: sonos.php: Unable to open file!', 4);
+				$myfile = fopen($filenst, "r") or LOGGING('sonos.php: Unable to open file!', 4);
 				$oldtext=fread($myfile,8192);
 				fclose($myfile);
 			}	
 			if ((($oldtext==$newtext) AND( $last > $min_sec)) OR ($oldtext!=$newtext))  {
 				sendmessage();
-				$myfile = fopen($filenst, "w") or LOGGING('Sonos: sonos.php: Unable to open file!', 4);
+				$myfile = fopen($filenst, "w") or LOGGING('sonos.php: Unable to open file!', 4);
 				fwrite($myfile,$newtext);
 				fclose($myfile);
 			} else {
-				LOGGING("Sonos: sonos.php: Same text has been announced within the last ".$min_sec." seconds. We skip this anouncement", 5); 
+				LOGGING("sonos.php: Same text has been announced within the last ".$min_sec." seconds. We skip this anouncement", 5); 
 			}
 		break;
 		
@@ -820,17 +820,17 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 
 			if (file_exists($filenst)) {
 				$last=time()-filemtime($filenst);
-				$myfile = fopen($filenst, "r") or LOGGING('Sonos: sonos.php: Unable to open file!', 4);
+				$myfile = fopen($filenst, "r") or LOGGING('sonos.php: Unable to open file!', 4);
 				$oldtext=fread($myfile,8192);
 				fclose($myfile);
 			}	
 			if ((($oldtext==$newtext) AND( $last > $min_sec)) OR ($oldtext!=$newtext))  {
 				say();
-				$myfile = fopen($filenst, "w") or LOGGING('Sonos: sonos.php: Unable to open file!', 4);
+				$myfile = fopen($filenst, "w") or LOGGING('sonos.php: Unable to open file!', 4);
 				fwrite($myfile,$newtext);
 				fclose($myfile);
 			} else {
-				LOGGING("Sonos: sonos.php: Same text has been announced within the last ".$min_sec." seconds. We skip this anouncement", 5); 
+				LOGGING("sonos.php: Same text has been announced within the last ".$min_sec." seconds. We skip this anouncement", 5); 
 			}
 		break;
 		
@@ -875,7 +875,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				print_r($sonos->GetZoneGroupAttributes());
 				echo '<br><br>';
 				echo '</PRE>';
-			LOGGING("Sonos: sonos.php: Checksonos been executed.", 7);
+			LOGGING("sonos.php: Checksonos been executed.", 7);
 		break;
 		
 			
@@ -974,7 +974,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'becomegroupcoordinator':
 			echo '<PRE>';
 			$sonos->BecomeCoordinatorOfStandaloneGroup();
-			LOGGING("Sonos: sonos.php: Zone ".$master." is playing in single mode", 7);
+			LOGGING("sonos.php: Zone ".$master." is playing in single mode", 7);
 			echo '</PRE>';
 		break;
 		
@@ -989,7 +989,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$mute = $_GET['mute'];
 				$sonos->SetGroupMute($mute);
 			} else {
-				LOGGING("Sonos: sonos.php: Der Mute Mode ist unbekannt", 4);
+				LOGGING("sonos.php: Der Mute Mode ist unbekannt", 4);
 			}
 		break;
 		
@@ -1120,7 +1120,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$state = $_GET['state'];
 				$sonos->SetLEDState($state);
 			} else {
-				LOGGING('Sonos: sonos.php: Please correct input. Only On or off is allowed', 4);
+				LOGGING('sonos.php: Please correct input. Only On or off is allowed', 4);
 				echo '</PRE>';
 			}
 		break;
@@ -1164,7 +1164,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$sonos = new PHPSonos($coord[0]);
 			$temp = $sonos->GetPositionInfo();
 			if(!empty($temp["duration"])) {
-				LOGGING('Sonos: sonos.php: No radio is playing!',4);
+				LOGGING('sonos.php: No radio is playing!',4);
 				exit;
 			} else {
 				say_radio_station();
@@ -1408,7 +1408,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		case 'resetbasic':
 			$sonos->ResetBasicEQ();
-			LOGGING("Sonos: sonos.php: EQ Settings for Player ".$master." has been reset.", 7);
+			LOGGING("sonos.php: EQ Settings for Player ".$master." has been reset.", 7);
 		break;
 		
 		
@@ -1418,13 +1418,13 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$mode = $_GET['mode'];
 				if ($mode == 'on')  {
 					$sonos->SetNightmode('1');
-					LOGGING("Sonos: sonos.php: Nightmode for Player ".$master." has been turned on.", 7);
+					LOGGING("sonos.php: Nightmode for Player ".$master." has been turned on.", 7);
 				} else {
 					$sonos->SetNightmode('0');
-					LOGGING("Sonos: sonos.php: Nightmode for Player ".$master." has been turned off.", 7);
+					LOGGING("sonos.php: Nightmode for Player ".$master." has been turned off.", 7);
 				}
 			} else {
-				LOGGING("Sonos: sonos.php: Player ".$master." is not in TV mode.", 4);
+				LOGGING("sonos.php: Player ".$master." is not in TV mode.", 4);
 			}
 		break;
 
@@ -1435,13 +1435,13 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$mode = $_GET['mode'];
 				if ($mode == 'on')  {
 					$sonos->SetSpeech('1');
-					LOGGING("Sonos: sonos.php: Speech enhancement for Player ".$master." has been turned on.", 7);
+					LOGGING("sonos.php: Speech enhancement for Player ".$master." has been turned on.", 7);
 				} else {
 					$sonos->SetSpeech('0');
-					LOGGING("Sonos: sonos.php: Speech enhancement for Player ".$master." has been turned off.", 7);
+					LOGGING("sonos.php: Speech enhancement for Player ".$master." has been turned off.", 7);
 				}
 			} else {
-				LOGGING("Sonos: sonos.php: Player ".$master." is not in TV mode.", 4);
+				LOGGING("sonos.php: Player ".$master." is not in TV mode.", 4);
 			}
 		break;
 
@@ -1449,17 +1449,32 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'ttsp':
 			$text = ($_GET['text']);
 			isset($_GET['greet']) ? $greet = 1 : $greet = 0;
+			#$r = 'http://192.168.50.95/plugins/text2speech/index.php?text=Guten%20Morgen%20lieber%20Oliver';
+			#echo $r;
 			$jsonstr = t2s_post_request($text, $greet);  // 
 			$json = json_decode($jsonstr, True);
-			#print_r($jsonstr);
-			#sleep(2);
-			echo $json['full-httpinterface'];
-			$sonos->AddToQueue($json['full-httpinterface']);
+			#print_r($json);
+			# open Plugin Logfile to add logging received
+			$file = fopen($lbplogdir."/sonos.log","a",1);
+			# if error from Text-to-speech been received
+			if ($json['success'] == "2" or $json['success'] == "3")   {
+				fwrite($file, date("H:i:s")." <ERROR> Interface: Text-to-speech ".$json['warning']."\n");
+			}
+			# loop through Logging array and write entries to Log File
+			foreach($json['logging'] as $key => $value) {
+				foreach($value as $log => $text) {
+					fwrite($file, date("H:i:s")." <".$log."> Interface: Text-to-speech ".$text."\n");
+				}
+			}
+			# close file
+			fclose($file);
+			# goahead with plugin actions
+			$sonos->AddToQueue($json['fullhttpinterface']);
 			$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
 			$sonos->SetTrack(1);
 			$sonos->SetVolume($volume);
 			$sonos->Play();
-			usleep($json['duration-ms'] * 1000);
+			usleep($json['durationms'] * 1000);
 			$sonos->ClearQueue();
 		break;
 		
@@ -1485,10 +1500,10 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		  
 		default:
-		   LOGGING("Sonos: sonos.php: This command is not known. Pls use syntax as: 'http://<IP or HOSTENAME of LoxBerry>/plugins/sonos4lox/index.php/?zone=sonosplayer&action=function&value=option'", 3);
+		   LOGGING("sonos.php: This command is not known. Pls use syntax as: 'http://<IP or HOSTENAME of LoxBerry>/plugins/sonos4lox/index.php/?zone=sonosplayer&action=function&value=option'", 3);
 		} 
 	} else 	{
-	LOGGING("Sonos: sonos.php: The Zone ".$master." is not available or offline. Please check and if necessary add zone to Config", 4);
+	LOGGING("sonos.php: The Zone ".$master." is not available or offline. Please check and if necessary add zone to Config", 4);
 	
 }
 exit;
@@ -1594,7 +1609,7 @@ function SetBalance()  {
 	global $sonos, $master;
 	
 	if (isset($_GET['member']))  {
-		LOGGING('Sonos: sonos.php: For groups the function could not be used, please correct!', 3);
+		LOGGING('sonos.php: For groups the function could not be used, please correct!', 3);
 		exit;
 	}
 	if ((isset($_GET['balance'])) && (isset($_GET['value']))) {
@@ -1603,17 +1618,17 @@ function SetBalance()  {
 			$valid_directions = array('LF' => 'left speaker','RF' => 'right speaker', 'lf' => 'left speaker', 'rf' => 'right speaker');
 			if (array_key_exists($balance_dir, $valid_directions)) {
 				$sonos->SetBalance($balance_dir, $_GET['value']);
-				LOGGING('Sonos: sonos.php: Balance for '.$valid_directions[$balance_dir].' of Player '.$master.' has been set to '.$_GET['value'].'.', 5);
+				LOGGING('sonos.php: Balance for '.$valid_directions[$balance_dir].' of Player '.$master.' has been set to '.$_GET['value'].'.', 5);
 			} else {
-				LOGGING('Sonos: sonos.php: Entered balance direction for Player '.$master.' is not valid. Only "LF/lf" or "RF/rf" are allowed, please correct!', 3);
+				LOGGING('sonos.php: Entered balance direction for Player '.$master.' is not valid. Only "LF/lf" or "RF/rf" are allowed, please correct!', 3);
 				exit;
 			}
 		} else {
-			LOGGING('Sonos: sonos.php: Entered balance '.$_GET['value'].' for Player '.$master.' is even not numeric or not between 1 and 100, please correct!', 3);
+			LOGGING('sonos.php: Entered balance '.$_GET['value'].' for Player '.$master.' is even not numeric or not between 1 and 100, please correct!', 3);
 			exit;
 		}
 	} else {
-		LOGGING('Sonos: sonos.php: No valid entry for Balance has been entered or syntax is incomplete, please correct!', 3);
+		LOGGING('sonos.php: No valid entry for Balance has been entered or syntax is incomplete, please correct!', 3);
 		exit;
 	}
 }
@@ -1665,7 +1680,7 @@ function t2s_post_request($text, $greet) {
 	if($result === false)  {
 		LOGGIN("Der POST Request war nicht erfolgreich!", 7);
 	} else {
-		LOGGING("Sonos: sonos.php: Der POST Request war erfolgreich!", 7);
+		LOGGING("sonos.php: Der POST Request war erfolgreich!", 7);
 	}
 	// close cURL
 	curl_close($ch);
@@ -1678,7 +1693,7 @@ function getsonosinfo() {
 	
 	$lastExeLog = "/run/shm/LastExeSonosInfo.log";
     if(!touch($lastExeLog)) {
-		LOGGING("Sonos: sonos.php: No permission to write file", 3);
+		LOGGING("sonos.php: No permission to write file", 3);
 		exit;
     }
 	// check if file already exist
@@ -1687,13 +1702,13 @@ function getsonosinfo() {
 		// echo time() - $lastRun;
 		if (time() - $lastRun >= 86400) {
 			 // it's been more than a day
-			LOGGING("Sonos: sonos.php: Function 'getsonosinfo' has been replaced by Cron Job scheduled every 10 seconds. Please remove ALL 'getsonosinfo' tasks from your Miniserver config.", 4);
+			LOGGING("sonos.php: Function 'getsonosinfo' has been replaced by Cron Job scheduled every 10 seconds. Please remove ALL 'getsonosinfo' tasks from your Miniserver config.", 4);
 			notify( LBPPLUGINDIR, "Sonos", "Function 'getsonosinfo' has been replaced by Cron Job scheduled every 10 seconds. Please remove ALL 'getsonosinfo' tasks from your Miniserver config.", "warning");
 			// update LastExeSonosInfo with current time
 			file_put_contents($lastExeLog, time());
 		}
 	} else {
-		LOGGING("Sonos: sonos.php: Function 'getsonosinfo' has been replaced by Cron Job scheduled every 10 seconds. Please remove ALL 'getsonosinfo' tasks from your Miniserver config.", 4);
+		LOGGING("sonos.php: Function 'getsonosinfo' has been replaced by Cron Job scheduled every 10 seconds. Please remove ALL 'getsonosinfo' tasks from your Miniserver config.", 4);
 		notify( LBPPLUGINDIR, "Sonos", "Function 'getsonosinfo' has been replaced by Cron Job scheduled every 10 seconds. Please remove ALL 'getsonosinfo' tasks from your Miniserver config.", "warning");			
 		file_put_contents($lastExeLog, time());
 	}
@@ -1723,7 +1738,7 @@ function volume_group()  {
 				}
 			}
 			$member = $memberon;
-			LOGGING("Sonos: sonos.php: All Players has been grouped to Player ".$master, 5);	
+			LOGGING("sonos.php: All Players has been grouped to Player ".$master, 5);	
 		} else {
 			$member = explode(',', $member);
 			$memberon = array();
@@ -1732,13 +1747,13 @@ function volume_group()  {
 				if ($zoneon === (bool)true)  {
 					array_push($memberon, $value);
 				} else {
-					LOGGING("Sonos: sonos.php: Player '".$value."' could not be added to the group!!", 4);
+					LOGGING("sonos.php: Player '".$value."' could not be added to the group!!", 4);
 				}
 			}
 			$member = $memberon;
 		}
 		if (in_array($master, $member)) {
-			LOGGING("Sonos: sonos.php: The zone ".$master." could not be entered as member again. Please remove from Syntax '&member=".$master."' !", 3);
+			LOGGING("sonos.php: The zone ".$master." could not be entered as member again. Please remove from Syntax '&member=".$master."' !", 3);
 			exit;
 		}
 		//print_r($member);
@@ -1750,21 +1765,21 @@ function volume_group()  {
 				if(isset($_GET['volume'])) {
 					# Volume from Syntax/URL
 					$volume = $_GET['volume'];
-					LOGGING("Sonos: sonos.php: Individual Volume for Group Member ".$zone2." has been set to: ".$volume, 7);
+					LOGGING("sonos.php: Individual Volume for Group Member ".$zone2." has been set to: ".$volume, 7);
 				} elseif (isset($_GET['groupvolume'])) {
 					# Groupvolume from Syntax/URL
 					$newvolume = $sonos->GetVolume();
 					$volume = $newvolume + ($newvolume * ($groupvolume / 100));  // multiplizieren
 					// prüfen ob errechnete Volume > 100 ist, falls ja max. auf 100 setzen
 					$volume > 100 ? $volume = 100 : $volume;
-					LOGGING("Sonos: sonos.php: Group Volume for Member ".$zone2." has been set to: ".$volume, 7);
+					LOGGING("sonos.php: Group Volume for Member ".$zone2." has been set to: ".$volume, 7);
 				} elseif (isset($_GET['keepvolume'])) {
 					# current volume from Syntax/URL
 					$tmg_volume = $sonos->GetVolume();
 					# if current volume is less then treshold then take standard from config
 					if ($tmg_volume >= $min_vol)  {
 						$volume = $tmg_volume;
-						LOGGING("Sonos: sonos.php: Volume for Member ".$zone2." has been set to current volume", 7);
+						LOGGING("sonos.php: Volume for Member ".$zone2." has been set to current volume", 7);
 					} else {
 						if (isset($_GET['text']) or isset($_GET['messageid']) or
 							(isset($_GET['sonos'])) or (isset($_GET['weather'])) or 
@@ -1773,10 +1788,10 @@ function volume_group()  {
 							(isset($_GET['distance'])) or (isset($_GET['clock'])) or 
 							(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch") or (isset($_GET['radio'])))	{
 							$volume = $config['sonoszonen'][$zone2][3];
-							LOGGING("Sonos: sonos.php: T2S Volume for Member ".$zone2." is less then ".$min_vol." and has been set exceptional to Standard volume ".$config['sonoszonen'][$zone2][3], 7);
+							LOGGING("sonos.php: T2S Volume for Member ".$zone2." is less then ".$min_vol." and has been set exceptional to Standard volume ".$config['sonoszonen'][$zone2][3], 7);
 						} else {
 							$volume = $config['sonoszonen'][$zone2][4];
-							LOGGING("Sonos: sonos.php: Volume for Member ".$zone2." is less then ".$min_vol." and has been set exceptional to Standard volume ".$config['sonoszonen'][$zone2][4], 7);
+							LOGGING("sonos.php: Volume for Member ".$zone2." is less then ".$min_vol." and has been set exceptional to Standard volume ".$config['sonoszonen'][$zone2][4], 7);
 						}
 					}
 				}
@@ -1794,7 +1809,7 @@ function volume_group()  {
 					# Sonos Standard Volume
 					$volume = $config['sonoszonen'][$zone2][4];
 				}
-				LOGGING("Sonos: sonos.php: Standard Volume for Group Member ".$zone2." has been set to: ".$volume, 7);
+				LOGGING("sonos.php: Standard Volume for Group Member ".$zone2." has been set to: ".$volume, 7);
 			}
 			#print_r($sonos);
 			$sonos->SetMute(false);
@@ -1812,7 +1827,7 @@ function phonemute()  {
 	if ($config['VARIOUS']['phonestop'] == "1") {
 		$tts_stat = "1";
 		if(!touch($tmp_phone)) {
-			LOGGING("Sonos: sonos.php: No permission to write file", 3);
+			LOGGING("sonos.php: No permission to write file", 3);
 			exit;
 		}
 		$handle = fopen ($tmp_phone, 'w');
@@ -1828,12 +1843,12 @@ function phonemute()  {
 			$sonos = new PHPSonos($sonoszone[$master][0]);
 			$actual[$master]['Volume'] = $sonos->GetVolume();
 			file_put_contents($lastVol, serialize($actual));
-			LOGGING("Sonos: sonos.php: Volume for a Single Player has been saved", 7);
+			LOGGING("sonos.php: Volume for a Single Player has been saved", 7);
 			while ($sonos->GetVolume() > $min_vol)  {
 				$sonos->SetVolume($sonos->GetVolume() - $config['MP3']['volumeup']);
 				usleep(400000);
 			}
-			LOGGING("Sonos: sonos.php: Phonemute for Single Player has been executed", 6);
+			LOGGING("sonos.php: Phonemute for Single Player has been executed", 6);
 			exit(1);
 		break;
 		
@@ -1850,8 +1865,8 @@ function phonemute()  {
 				}
 			}
 			file_put_contents($lastVol, serialize($actual));	
-			LOGGING("Sonos: sonos.php: Volume for a Group of Players has been saved", 7);
-			LOGGING("Sonos: sonos.php: Phonemute for Group has been executed", 6);
+			LOGGING("sonos.php: Volume for a Group of Players has been saved", 7);
+			LOGGING("sonos.php: Phonemute for Group has been executed", 6);
 			exit(1);
 		break;
 	}
@@ -1865,7 +1880,7 @@ function phoneunmute()  {
 	$lastVol = "/run/shm/PhoneMute.log";
 	$array = unserialize(@file_get_contents($lastVol));
 	if ($array == false)  {
-		LOGGING("Sonos: sonos.php: No file exist to recover. Please execute phonemute first!", 4);
+		LOGGING("sonos.php: No file exist to recover. Please execute phonemute first!", 4);
 		exit;
     } else {
 		//print_r($array);
@@ -1878,11 +1893,11 @@ function phoneunmute()  {
 				usleep(400000);
 			}
 		}
-		LOGGING("Sonos: sonos.php: Volume has been restored", 7);
+		LOGGING("sonos.php: Volume has been restored", 7);
 	}
 	@unlink($tmp_phone);
 	@unlink($lastVol);
-	LOGGING("Sonos: sonos.php: Phoneunmute has been executed", 6);
+	LOGGING("sonos.php: Phoneunmute has been executed", 6);
 }
 
 
@@ -1890,7 +1905,7 @@ function scriptoff()  {
 	global $sonos, $config, $lbplogdir, $lbpconfigdir, $off_file, $lbhomedir, $lbpplugindir;
 	
 	if(!touch($off_file)) {
-		LOGGING("Sonos: sonos.php: No permission to write file", 3);
+		LOGGING("sonos.php: No permission to write file", 3);
 		exit;
 	}
 	$handle = fopen ($off_file, 'w');
@@ -1902,7 +1917,7 @@ function scriptoff()  {
 	@unlink ("$lbhomedir/system/cron/cron.15min/$lbpplugindir");
 	@unlink ("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
 	@unlink ("$lbhomedir/system/cron/cron.hourly/$lbpplugindir");
-	LOGGING("Sonos: sonos.php: Onlinecheck, UDP, HTTP und Sonos4lox has been turned OFF", 5);
+	LOGGING("sonos.php: Onlinecheck, UDP, HTTP und Sonos4lox has been turned OFF", 5);
 }
 
 
@@ -1911,7 +1926,7 @@ function scripton()  {
 	global $sonos, $config, $lbplogdir, $lbpbindir, $lbhomedir, $lbpconfigdir, $off_file, $lbhomedir, $lbpplugindir;
 	
 	if (file_exists($off_file) === false)  {
-		LOGGING("Sonos: sonos.php: Onlinecheck, UDP, HTTP und Sonos4lox has not been turned off previously", 5);
+		LOGGING("sonos.php: Onlinecheck, UDP, HTTP und Sonos4lox has not been turned off previously", 5);
 		exit;
 	} 
 	
@@ -1922,16 +1937,16 @@ function scripton()  {
 	//echo $tmp_cron;
 	if ($tmp_cron == 60)  {
 		symlink($lbpbindir."/cronjob.sh", $lbhomedir."/system/cron/cron.hourly/".$lbpplugindir);
-		LOGGING("Sonos: sonos.php: Onlinecheck hourly, UDP, HTTP und Sonos4lox has been turned ON", 5);
+		LOGGING("sonos.php: Onlinecheck hourly, UDP, HTTP und Sonos4lox has been turned ON", 5);
 		//ECHO "HOURLY";
 	}
 	if (($tmp_cron >= 10) and ($tmp_cron < 60))  {
-		LOGGING("Sonos: sonos.php: Onlinecheck each ".$tmp_cron." minute(s), UDP, HTTP und Sonos4lox has been turned ON", 5);
+		LOGGING("sonos.php: Onlinecheck each ".$tmp_cron." minute(s), UDP, HTTP und Sonos4lox has been turned ON", 5);
 		//ECHO "GRÖßER 10";
 		symlink($lbpbindir."/cronjob.sh", $lbhomedir."/system/cron/cron.".$tmp_cron."min/".$lbpplugindir);
 	}
 	if ($tmp_cron < 10)  {
-		LOGGING("Sonos: sonos.php: Onlinecheck each 0".$tmp_cron." minute(s), UDP, HTTP und Sonos4lox has been turned ON", 5);
+		LOGGING("sonos.php: Onlinecheck each 0".$tmp_cron." minute(s), UDP, HTTP und Sonos4lox has been turned ON", 5);
 		//ECHO "KLEINER 10";
 		symlink($lbpbindir."/cronjob.sh", $lbhomedir."/system/cron/cron.0".$tmp_cron."min/".$lbpplugindir);
 	}		
@@ -1949,10 +1964,10 @@ function shutdown()
 	if ($tts_stat == 1)  {
 		$tts_stat = 0;
 		send_tts_source($tts_stat);
-		#LOGGING("Sonos: sonos.php: Something went wrong with T2S. Fallback scenario set virtual textinbound to 0", 4);
+		#LOGGING("sonos.php: Something went wrong with T2S. Fallback scenario set virtual textinbound to 0", 4);
 	}
 	if ($getsonos = strrpos($check_info, "getsonosinfo") === false)  {
-		$log->LOGEND("PHP finished");
+		LOGEND("PHP finished");
 	}
 	@unlink($tmp_tts);
 	#LOGEND("PHP finished");

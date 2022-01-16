@@ -28,7 +28,7 @@ function t2s($textstring, $filename)
 	$voices[] = array('voice' => 'Satu','lang' => 'fi_FI');
 	$voices[] = array('voice' => 'Yuna','lang' => 'ko_KR');
 
-		LOGGING("Sonos: voice_engines\mac_osx.php: MAC_OSX has been successful selected", 7);	
+		LOGGING("voice_engines\mac_osx.php: MAC_OSX has been successful selected", 7);	
 		
 		$lamePath = "/usr/local/bin/";
 		$textstring = urldecode($textstring);
@@ -39,14 +39,14 @@ function t2s($textstring, $filename)
 					if (!empty($valid_voice)) {
 						$voice = $valid_voice[0]['voice'];
 						shell_exec("say -v $voice $textstring -o $config['SYSTEM']['ttspath'] ."/". $filename.aiff; ".$lamePath."lame $config['SYSTEM']['ttspath'] ."/". $filename.aiff 2>&1");
-						LOGGING('Sonos: voice_engines\mac_osx.php: T2S language/voice has been successful entered',5);
+						LOGGING('voice_engines\mac_osx.php: T2S language/voice has been successful entered',5);
 					} else {
-						LOGGING("Sonos: voice_engines\mac_osx.php: The entered OSX Voice is not supported. Please correct (see Wiki)!!",3);
+						LOGGING("voice_engines\mac_osx.php: The entered OSX Voice is not supported. Please correct (see Wiki)!!",3);
 						exit;
 					}
 			} else {
 				shell_exec("say $textstring -o $messageStorePath$filename.aiff; ".$lamePath."lame $mpath$filename.aiff 2>&1");
-				LOGGING('Sonos: voice_engines\mac_osx.php: The text has been passed to OSX engine for MP3 creation',5);
+				LOGGING('voice_engines\mac_osx.php: The text has been passed to OSX engine for MP3 creation',5);
 			}
 		}
 	return $filename;

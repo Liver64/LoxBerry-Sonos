@@ -123,16 +123,16 @@ function checkZonesOnline($member) {
 	$memberzones = $member;
 	foreach($memberzones as $zonen) {
 		if(!array_key_exists($zonen, $sonoszonen)) {
-			LOGGING("Sonos: helper.php: The entered member zone does not exist, please correct your syntax!!", 3);
+			LOGGING("helper.php: The entered member zone does not exist, please correct your syntax!!", 3);
 			exit;
 		}
 	}
 	foreach($memberzones as $zonen) {
 		$connection = @fsockopen($sonoszonen[$zonen][0], 1400, $errno, $errstr, 2);
 		if(!$connection === false) {
-			LOGGING("Sonos: helper.php: The zone ".$zonen." is OFFLINE!!", 4);
+			LOGGING("helper.php: The zone ".$zonen." is OFFLINE!!", 4);
 		} else {
-			LOGGING("Sonos: helper.php: Zone ".$zonen." is ONLINE!!", 6);
+			LOGGING("helper.php: Zone ".$zonen." is ONLINE!!", 6);
 			$member[] = $zonen;
 		}
 	}
@@ -153,7 +153,7 @@ function checkZoneOnline($member) {
 	global $sonoszonen, $zonen, $debug, $config;
 	
 	if(!array_key_exists($member, $sonoszonen)) {
-		LOGGING("Sonos: helper.php: The entered member zone does not exist, please correct your syntax!!", 3);
+		LOGGING("helper.php: The entered member zone does not exist, please correct your syntax!!", 3);
 		exit;
 	}
 	$connection = @fsockopen($sonoszonen[$member][0], 1400, $errno, $errstr, 2);
@@ -314,8 +314,8 @@ function File_Put_Array_As_JSON($FileName, $ar, $zip=false) {
 
 function File_Get_Array_From_JSON($FileName, $zip=false) {
 	// liest eine JSON Datei und erstellt eine Array
-    if (! is_file($FileName)) 	{ LOGGING("Sonos: helper.php: The file $FileName does not exist.", 3); exit; }
-		if (! is_readable($FileName))	{ LOGGING("Sonos: helper.php: The file $FileName could not be loaded.", 3); exit;}
+    if (! is_file($FileName)) 	{ LOGGING("helper.php: The file $FileName does not exist.", 3); exit; }
+		if (! is_readable($FileName))	{ LOGGING("helper.php: The file $FileName could not be loaded.", 3); exit;}
             if (! $zip) {
 				return json_decode(file_get_contents($FileName), true);
             } else {
@@ -348,7 +348,7 @@ function URL_Encode($string) {
  function _assertNumeric($number) {
 	// prüft ob eine Eingabe numerisch ist
     if(!is_numeric($number)) {
-        LOGGING("Sonos: helper.php: The input is not numeric. Please try again", 4);
+        LOGGING("helper.php: The input is not numeric. Please try again", 4);
 		exit;
     }
     return $number;
@@ -398,7 +398,7 @@ global $sonoszone, $master, $config;
 		if ($zone != $master) {
 			#echo $zone.'<br>';
 			$sonos->SetAVTransportURI("x-rincon:" . trim($sonoszone[$master][1])); 
-			LOGGING("Sonos: helper.php: Zone: ".$zone." has been added to master: ".$master,6);
+			LOGGING("helper.php: Zone: ".$zone." has been added to master: ".$master,6);
 		}
 	}
 }	
@@ -468,40 +468,40 @@ function chmod_r($Path="") {
 		# ruft die weather-to-speech Funktion auf
 		if(substr($home,0,4) == "/opt") {	
 			if(!file_exists('addon/weather-to-speech.php')) {
-				LOGGING("Sonos: helper.php: The weather-to-speech Addon is currently not installed!", 4);
+				LOGGING("helper.php: The weather-to-speech Addon is currently not installed!", 4);
 				exit;
 			} else {
 				if(!file_exists("$home/config/plugins/wu4lox/wu4lox.cfg")) {
-					LOGGING("Sonos: helper.php: Bitte zuerst das Wunderground Plugin installieren!", 4);
+					LOGGING("helper.php: Bitte zuerst das Wunderground Plugin installieren!", 4);
 					exit;
 				}
 			}
 		} else {
 			if(!file_exists('addon/weather-to-speech_nolb.php')) {
-				LOGGING("Sonos: helper.php: The weather-to-speech Addon is currently not installed!", 4);
+				LOGGING("helper.php: The weather-to-speech Addon is currently not installed!", 4);
 				exit;
 			}
 		}
 	} elseif (isset($_GET['clock'])) {
 		# ruft die clock-to-speech Funktion auf
 		if(!file_exists('addon/clock-to-speech.php')) {
-			LOGGING("Sonos: helper.php: The clock-to-speech addon is currently not installed!", 4);
+			LOGGING("helper.php: The clock-to-speech addon is currently not installed!", 4);
 			exit;
 		}
 	} elseif (isset($_GET['sonos'])) {
 		# ruft die sonos-to-speech Funktion auf
 		if(!file_exists('addon/sonos-to-speech.php')) {
-			LOGGING("Sonos: helper.php: The sonos-to-speech addon Is currently not installed!", 4);
+			LOGGING("helper.php: The sonos-to-speech addon Is currently not installed!", 4);
 			exit;
 		}
 	} elseif (isset($_GET['abfall'])) {
 		# ruft die waste-calendar-to-speech Funktion auf
 		if(!file_exists('addon/waste-calendar-to-speech.php')) {
-				LOGGING("Sonos: helper.php: The waste-calendar-to-speech Addon is currently not installed!", 4);
+				LOGGING("helper.php: The waste-calendar-to-speech Addon is currently not installed!", 4);
 				exit;
 			} else {
 				if(!file_exists("$home/config/plugins/caldav4lox/caldav4lox.conf")) {
-					LOGGING("Sonos: helper.php: Bitte zuerst das CALDAV4Lox Plugin installieren!", 4);
+					LOGGING("helper.php: Bitte zuerst das CALDAV4Lox Plugin installieren!", 4);
 					exit;
 				}
 			}
@@ -520,44 +520,44 @@ function checkTTSkeys() {
 	
 	if ($config['TTS']['t2s_engine'] == 1001) {
 		if (!file_exists("voice_engines/VoiceRSS.php")) {
-			LOGGING("Sonos: helper.php: VoiceRSS is currently not available. Please install!", 4);
+			LOGGING("helper.php: VoiceRSS is currently not available. Please install!", 4);
 		} else {
 			if(strlen($config['TTS']['API-key']) !== 32) {
-				LOGGING("Sonos: helper.php: The specified VoiceRSS API key is invalid. Please correct!", 4);
+				LOGGING("helper.php: The specified VoiceRSS API key is invalid. Please correct!", 4);
 			}
 		}
 	}
 	if ($config['TTS']['t2s_engine'] == 8001) {
 		if (!file_exists("voice_engines/GoogleCloud.php")) {
-			LOGGING("Sonos: helper.php: GoogleCloudTTS is currently not available. Please install!", 4);
+			LOGGING("helper.php: GoogleCloudTTS is currently not available. Please install!", 4);
 		}
 	}
 	if ($config['TTS']['t2s_engine'] == 9001) {
 		if (!file_exists("voice_engines/MS_Azure.php")) {
-			LOGGING("Sonos: helper.php: MS_Azure is currently not available. Please install!", 4);
+			LOGGING("helper.php: MS_Azure is currently not available. Please install!", 4);
 		}
 	}
 	if ($config['TTS']['t2s_engine'] == 3001) {
 		if (!file_exists("voice_engines/MAC_OSX.php")) {
-			LOGGING("Sonos: helper.php: MAC OSX is currently not available. Please install!", 4);
+			LOGGING("helper.php: MAC OSX is currently not available. Please install!", 4);
 		}
 	}
 	if ($config['TTS']['t2s_engine'] == 6001) {
 		if (!file_exists("voice_engines/ResponsiveVoice.php")) {
-			LOGGING("Sonos: helper.php: ResponsiveVoice is currently not available. Please install!", 4);
+			LOGGING("helper.php: ResponsiveVoice is currently not available. Please install!", 4);
 		}
 	}
 	if ($config['TTS']['t2s_engine'] == 5001) {
 		if (!file_exists("voice_engines/Pico_tts.php")) {
-			LOGGING("Sonos: helper.php: Pico2Wave is currently not available. Please install!", 4);
+			LOGGING("helper.php: Pico2Wave is currently not available. Please install!", 4);
 		}
 	}
 	if ($config['TTS']['t2s_engine'] == 4001) {
 		if (!file_exists("voice_engines/Polly.php")) {
-			LOGGING("Sonos: helper.php: Amazon Polly is currently not available. Please install!", 4);
+			LOGGING("helper.php: Amazon Polly is currently not available. Please install!", 4);
 		} else {
 			if((strlen($config['TTS']['API-key']) !== 20) or (strlen($config['TTS']['secret-key']) !== 40)) {
-				LOGGING("Sonos: helper.php: The specified AWS Polly API key is invalid. Please correct!!", 4);
+				LOGGING("helper.php: The specified AWS Polly API key is invalid. Please correct!!", 4);
 			}
 		}
 	}
@@ -720,7 +720,7 @@ function load_t2s_text(){
 	if (file_exists($templatepath.'/lang/'.$t2s_langfile)) {
 		$TL = parse_ini_file($templatepath.'/lang/'.$t2s_langfile, true);
 	} else {
-		LOGGING("Sonos: helper.php: For selected T2S language no translation file still exist! Please go to LoxBerry Plugin translation and create a file for selected language ".substr($config['TTS']['messageLang'],0,2),4);
+		LOGGING("helper.php: For selected T2S language no translation file still exist! Please go to LoxBerry Plugin translation and create a file for selected language ".substr($config['TTS']['messageLang'],0,2),4);
 		$TL = "";
 		#exit;
 	}
@@ -841,17 +841,17 @@ function check_rampto() {
 	
 	if(empty($config['TTS']['volrampto'])) {
 		$ramptovol = "25";
-		LOGGING("Sonos: helper.php: Rampto Volume in config has not been set. Default Volume '".$sonoszonen[$master][4]."' from Zone '".$master."' has been taken, please update Plugin Config (T2S Optionen).", 4);
+		LOGGING("helper.php: Rampto Volume in config has not been set. Default Volume '".$sonoszonen[$master][4]."' from Zone '".$master."' has been taken, please update Plugin Config (T2S Optionen).", 4);
 	} else {
 		$ramptovol = $config['TTS']['volrampto'];
-		#LOGGING("Sonos: helper.php: Rampto Volume from config has been set.", 7);
+		#LOGGING("helper.php: Rampto Volume from config has been set.", 7);
 	}
 	if(empty($config['TTS']['rampto'])) {
 		$rampto = "ALARM_RAMP_TYPE";
-		LOGGING("Sonos: helper.php: Rampto Parameter (sleep, alarm, auto) in config has not been set. Default of 'auto' has been taken, please update Plugin Config (T2S Optionen).", 4);
+		LOGGING("helper.php: Rampto Parameter (sleep, alarm, auto) in config has not been set. Default of 'auto' has been taken, please update Plugin Config (T2S Optionen).", 4);
 	} else {
 		$rampto = $config['TTS']['rampto'];	
-		#LOGGING("Sonos: helper.php: Rampto Parameter from config has been set.", 7);
+		#LOGGING("helper.php: Rampto Parameter from config has been set.", 7);
 	}
 	if($sonos->GetVolume() <= $ramptovol)	{
 		$ramptovol = $volume;
@@ -879,27 +879,27 @@ function create_symlinks()  {
 	if (!is_dir($symmp3folder)) {
 		$copy = true;
 	}
-	LOGGING("Sonos: helper.php: check if folder/symlinks exists, if not create", 5);
+	LOGGING("helper.php: check if folder/symlinks exists, if not create", 5);
 	if (!is_dir($symttsfolder)) {
 		mkdir($symttsfolder, 0755);
-		LOGGING("Sonos: helper.php: Folder: '".$symttsfolder."' has been created", 7);
+		LOGGING("helper.php: Folder: '".$symttsfolder."' has been created", 7);
 	}
 	if (!is_dir($symmp3folder)) {
 		mkdir($symmp3folder, 0755);
-		LOGGING("Sonos: helper.php: Folder: '".$symmp3folder."' has been created", 7);
+		LOGGING("helper.php: Folder: '".$symmp3folder."' has been created", 7);
 	}
 	if (!is_link($myFolder."/interfacedownload")) {
 		symlink($symttsfolder, $myFolder."/interfacedownload");
-		LOGGING("Sonos: helper.php: Symlink: '".$myFolder.'/interfacedownload'."' has been created", 7);
+		LOGGING("helper.php: Symlink: '".$myFolder.'/interfacedownload'."' has been created", 7);
 	}
 	if (!is_link($lbphtmldir."/interfacedownload")) {
 		symlink($symttsfolder, $lbphtmldir."/interfacedownload");
-		LOGGING("Sonos: helper.php: Symlink: '".$lbphtmldir.'/interfacedownload'."' has been created", 7);
+		LOGGING("helper.php: Symlink: '".$lbphtmldir.'/interfacedownload'."' has been created", 7);
 	}
 	if ($copy === true) {
-		#LOGGING("Sonos: helper.php: Copy existing mp3 files from $myFolder/$mp3folder to $symcurr_path/$mp3folder", 6);
+		#LOGGING("helper.php: Copy existing mp3 files from $myFolder/$mp3folder to $symcurr_path/$mp3folder", 6);
 		xcopy($myFolder."/".$mp3folder, $symcurr_path."/".$mp3folder);
-		LOGGING("Sonos: helper.php: All files has been copied from: '".$myFolder."/".$mp3folder."' to: '".$symcurr_path."/".$mp3folder."'", 5);
+		LOGGING("helper.php: All files has been copied from: '".$myFolder."/".$mp3folder."' to: '".$symcurr_path."/".$mp3folder."'", 5);
 	}
 	
 }

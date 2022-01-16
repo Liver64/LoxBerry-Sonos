@@ -12,30 +12,30 @@ function w2s()
 				
 		// Einlesen der Daten vom Weather4Lox Plugin
 		if (!file_exists("$home/data/plugins/weather4lox/current.dat")) {
-			LOGGING('Sonos: weather-to-speech.php: Data from Weather4Lox could not be obtainend. Please check if Plugin is active!',3);
-			LOGGING('Sonos: weather-to-speech.php: The file current.dat could not been opened. Please check Weather4Lox Plugin!',3);
+			LOGGING('weather-to-speech.php: Data from Weather4Lox could not be obtainend. Please check if Plugin is active!',3);
+			LOGGING('weather-to-speech.php: The file current.dat could not been opened. Please check Weather4Lox Plugin!',3);
 			exit;
 		} else {
 			$current = file_get_contents("$home/data/plugins/weather4lox/current.dat");
 			$current = explode('|',$current);
 		}
 		if (!file_exists("$home/data/plugins/weather4lox/dailyforecast.dat")) {
-			LOGGING('Sonos: weather-to-speech.php: Data from Weather4Lox could not be obtainend. Please check if Plugin is active!',3);
-			LOGGING('Sonos: weather-to-speech.php: The file dailyforecast.dat could not been opened. Please check Weather4Lox Plugin!',3);
+			LOGGING('weather-to-speech.php: Data from Weather4Lox could not be obtainend. Please check if Plugin is active!',3);
+			LOGGING('weather-to-speech.php: The file dailyforecast.dat could not been opened. Please check Weather4Lox Plugin!',3);
 			exit;
 		} else {
 			$dailyforecast = file_get_contents("$home/data/plugins/weather4lox/dailyforecast.dat");
 			$dailyforecast = explode('|',$dailyforecast);
 		}
 		if (!file_exists("$home/data/plugins/weather4lox/hourlyforecast.dat")) {
-			LOGGING('Sonos: weather-to-speech.php: Data from Weather4Lox could not be obtainend. Please check if Plugin is active!',3);
-			LOGGING('Sonos: weather-to-speech.php: The file hourlyforecast.dat could not been opened. Please check Weather4Lox Plugin!',3);
+			LOGGING('weather-to-speech.php: Data from Weather4Lox could not be obtainend. Please check if Plugin is active!',3);
+			LOGGING('weather-to-speech.php: The file hourlyforecast.dat could not been opened. Please check Weather4Lox Plugin!',3);
 			exit;
 		} else {
 			$hourlyforecast = file_get_contents("$home/data/plugins/weather4lox/hourlyforecast.dat");
 			$hourlyforecast = explode('|',$hourlyforecast);
 		}
-		LOGGING('Sonos: weather-to-speech.php: Data from Weather4Lox has been successful retrieved.',7);
+		LOGGING('weather-to-speech.php: Data from Weather4Lox has been successful retrieved.',7);
 		#print_r($current);
 		#print_r($dailyforecast);
 		#print_r($hourlyforecast);
@@ -193,13 +193,13 @@ function w2s()
 				break;
 			default:
 				$text="";
-				LOGGING('Sonos: weather-to-speech.php: Request could not be processed, please try again!',5);
+				LOGGING('weather-to-speech.php: Request could not be processed, please try again!',5);
 				break;
 		}
 		$textcode = ($text);
 		#echo $textcode;
-		LOGGING('Sonos: weather-to-speech.php: Weather announcement: '.($text),5);
-		LOGGING('Sonos: weather-to-speech.php: Message been generated and pushed to T2S creation',7);
+		LOGGING('weather-to-speech.php: Weather announcement: '.($text),5);
+		LOGGING('weather-to-speech.php: Message been generated and pushed to T2S creation',7);
 		return $textcode;
 	}
 ?>

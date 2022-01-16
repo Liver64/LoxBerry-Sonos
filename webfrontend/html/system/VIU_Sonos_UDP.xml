@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<VirtualInUdp Title="Sonos4lox" Comment="by Sonos4lox" Address="" Port="8750">
+	<VirtualInUdpCmd Title="Sonos: Volume wohnzimmer" Comment="" Address="" Check="vol_wohnzimmer@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="100"/>
+	<VirtualInUdpCmd Title="Sonos: Playstate wohnzimmer" Comment="" Address="" Check="stat_wohnzimmer@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>
+	<VirtualInUdpCmd Title="Sonos: Groupstate wohnzimmer" Comment="" Address="" Check="grp_wohnzimmer@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>
+	<VirtualInUdpCmd Title="Sonos: Volume kids" Comment="" Address="" Check="vol_kids@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="100"/>
+	<VirtualInUdpCmd Title="Sonos: Playstate kids" Comment="" Address="" Check="stat_kids@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>
+	<VirtualInUdpCmd Title="Sonos: Groupstate kids" Comment="" Address="" Check="grp_kids@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>
+	<VirtualInUdpCmd Title="Sonos: Volume schlafen" Comment="" Address="" Check="vol_schlafen@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="100"/>
+	<VirtualInUdpCmd Title="Sonos: Playstate schlafen" Comment="" Address="" Check="stat_schlafen@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>
+	<VirtualInUdpCmd Title="Sonos: Groupstate schlafen" Comment="" Address="" Check="grp_schlafen@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>
+	<VirtualInUdpCmd Title="Sonos: Volume max" Comment="" Address="" Check="vol_max@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="100"/>
+	<VirtualInUdpCmd Title="Sonos: Playstate max" Comment="" Address="" Check="stat_max@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>
+	<VirtualInUdpCmd Title="Sonos: Groupstate max" Comment="" Address="" Check="grp_max@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>
+	<VirtualInUdpCmd Title="Sonos: Volume terrasse" Comment="" Address="" Check="vol_terrasse@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="100"/>
+	<VirtualInUdpCmd Title="Sonos: Playstate terrasse" Comment="" Address="" Check="stat_terrasse@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>
+	<VirtualInUdpCmd Title="Sonos: Groupstate terrasse" Comment="" Address="" Check="grp_terrasse@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>
+	<VirtualInUdpCmd Title="Sonos: Volume wintergarten" Comment="" Address="" Check="vol_wintergarten@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="100"/>
+	<VirtualInUdpCmd Title="Sonos: Playstate wintergarten" Comment="" Address="" Check="stat_wintergarten@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>
+	<VirtualInUdpCmd Title="Sonos: Groupstate wintergarten" Comment="" Address="" Check="grp_wintergarten@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>
+</VirtualInUdp>

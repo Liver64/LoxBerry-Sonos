@@ -20,7 +20,7 @@ function radio(){
 	} elseif (isset($_GET['playlist'])) {
 		$playlist = $_GET['playlist'];		
 	} else {
-		LOGGING("Sonos: radio.php: No radio stations found.", 4);
+		LOGGING("radio.php: No radio stations found.", 4);
     }
 	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
 	$coord = $master;
@@ -44,7 +44,7 @@ function radio(){
     }
 	$rleinzeln++;
 	}   
-	LOGGING("Sonos: radio.php: Radio Station '".$playlist."' has been loaded successful",6);
+	LOGGING("radio.php: Radio Station '".$playlist."' has been loaded successful",6);
 }
 
 /**
@@ -57,7 +57,7 @@ function nextradio() {
 	global $sonos, $config, $master, $debug, $min_vol, $volume, $tmp_tts, $sonoszone, $tmp_error, $stst;
 	
 	if (file_exists($tmp_tts))  {
-		LOGGING("Sonos: radio.php: Currently a T2S is running, we skip nextradio for now. Please try again later.",6);
+		LOGGING("radio.php: Currently a T2S is running, we skip nextradio for now. Please try again later.",6);
 		exit;
 	}
 	$textan = "0";
@@ -77,14 +77,14 @@ function nextradio() {
 		#exit;
 	}
 	#if (isset($_GET['member']))  {
-	#	LOGGING("Sonos: radio.php: Function could not be used within Groups!!", 6);
+	#	LOGGING("radio.php: Function could not be used within Groups!!", 6);
 	#	exit;
 	#}
 	#try {
 	#	$sonos->BecomeCoordinatorOfStandaloneGroup();
-		#LOGGING("Sonos: radio.php: Player ".$master." has been ungrouped!", 6);
+		#LOGGING("radio.php: Player ".$master." has been ungrouped!", 6);
 	#} catch (Exception $e) {
-		#LOGGING("Sonos: radio.php: Player ".$master." is Single!", 7);
+		#LOGGING("radio.php: Player ".$master." is Single!", 7);
 	#}
 	#$coord = getRoomCoordinator($master);
 	#$masterrincon = $coord[1]; 
@@ -93,7 +93,7 @@ function nextradio() {
 	$sonos->ClearQueue();
 	$radioanzahl_check = count($config['RADIO']);
 	if($radioanzahl_check == 0)  {
-		LOGGING("Sonos: radio.php: There are no Radio Stations maintained in the config. Pls update before using function NEXTRADIO or ZAPZONE!", 3);
+		LOGGING("radio.php: There are no Radio Stations maintained in the config. Pls update before using function NEXTRADIO or ZAPZONE!", 3);
 		exit;
 	}
 	$playstatus = $sonos->GetTransportInfo();
@@ -131,7 +131,7 @@ function nextradio() {
 	$sonos->SetMute(false);
 	$sonos->SetVolume($volume);
 	$sonos->Play();
-	LOGGING("Sonos: radio.php: Radio Station '".$act."' has been loaded successful by nextradio",6);
+	LOGGING("radio.php: Radio Station '".$act."' has been loaded successful by nextradio",6);
 }
 
 
@@ -146,18 +146,18 @@ function random_radio() {
 	global $sonos, $sonoszone, $master, $volume, $min_vol, $config, $tmp_tts;
 	
 	if (file_exists($tmp_tts))  {
-		LOGGING("Sonos: radio.php: Currently a T2S is running, we skip nextradio for now. Please try again later.",6);
+		LOGGING("radio.php: Currently a T2S is running, we skip nextradio for now. Please try again later.",6);
 		exit;
 	}
 	#if (isset($_GET['member']))  {
-	#	LOGGING("Sonos: radio.php: Function could not be used within Groups!!", 6);
+	#	LOGGING("radio.php: Function could not be used within Groups!!", 6);
 	#	exit;
 	#}
 	#try {
 	#	$sonos->BecomeCoordinatorOfStandaloneGroup();
-		#LOGGING("Sonos: radio.php: Player ".$master." has been ungrouped!", 6);
+		#LOGGING("radio.php: Player ".$master." has been ungrouped!", 6);
 	#} catch (Exception $e) {
-		#LOGGING("Sonos: radio.php: Player ".$master." is Single!", 7);
+		#LOGGING("radio.php: Player ".$master." is Single!", 7);
 	#}
 	$sonoslists = $sonos->Browse("R:0/0","c");
 	print_r($sonoslists);
@@ -182,7 +182,7 @@ function random_radio() {
 	$sonos->SetRadio(urldecode($sonoslists[$random]["res"]),$sonoslists[$random]["title"]);
 	$sonos->SetVolume($volume);
 	$sonos->Play();
-	LOGGING("Sonos: radio.php: Radio Station '".$sonoslists[$random]["title"]."' has been loaded successful by randomradio",6);
+	LOGGING("radio.php: Radio Station '".$sonoslists[$random]["title"]."' has been loaded successful by randomradio",6);
 }
 
 
@@ -201,13 +201,13 @@ function say_radio_station($errortext ='') {
 	
 	// if batch has been choosed abort
 	if(isset($_GET['batch'])) {
-		LOGGING("Sonos: radio.php: The parameter batch could not be used to announce the radio station!", 4);
+		LOGGING("radio.php: The parameter batch could not be used to announce the radio station!", 4);
 		exit;
 	}
 	$sonos->Stop();
 	saveZonesStatus(); // saves all Zones Status
 	$coord = getRoomCoordinator($master);
-	LOGGING("Sonos: radio.php: Room Coordinator been identified", 7);		
+	LOGGING("radio.php: Room Coordinator been identified", 7);		
 	$sonos = new PHPSonos($coord[0]); 
 	$temp_radio = $sonos->GetMediaInfo();
 	#********************** NEW get text variables **********************
@@ -244,7 +244,7 @@ function say_radio_station($errortext ='') {
 	$sonos->SetMute(false);
 	$tmp_volume = $sonos->GetVolume();
 	$volume = $volume + $config['TTS']['correction'];
-	LOGGING("Sonos: radio.php: Radio Station Announcement has been announced", 6);		
+	LOGGING("radio.php: Radio Station Announcement has been announced", 6);		
 	play_tts($filename);
 	if(isset($_GET['member'])) {
 	    // TODO should this be loaded by a helper function? or already be loaded before calling say_radio_station() 
@@ -297,7 +297,7 @@ function select_error_lang() {
 		$errortext = 'the function nextradio is not working, please check Sonos Plugin error log.';
 		$errorvoice = 'en-US-Wavenet-A';
 		$errorlang = 'en-US';
-		LOGGING("Sonos: radio.php: Translation for your Standard language is not available, EN has been selected", 6);	
+		LOGGING("radio.php: Translation for your Standard language is not available, EN has been selected", 6);	
 	}
 	#print_r($valid_languages);
 	

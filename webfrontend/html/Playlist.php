@@ -20,9 +20,9 @@ function playlist() {
 	if(isset($_GET['playlist'])) {
 		$sonos->SetQueue("x-rincon-queue:" . trim($sonoszone[$master][1]) . "#0"); 
 		$playlist = $_GET['playlist'];
-		LOGGING("Sonos: playlist.php: Playlist '".$_GET['playlist']."' has been found.", 7);
+		LOGGING("playlist.php: Playlist '".$_GET['playlist']."' has been found.", 7);
 	} else {
-		LOGGING("Sonos: playlist.php: No playlist named '".$_GET['playlist']."' has been found.", 3);
+		LOGGING("playlist.php: No playlist named '".$_GET['playlist']."' has been found.", 3);
 		exit;
 	}
 	
@@ -37,22 +37,22 @@ function playlist() {
 		if($playlist == $sonoslists[$pleinzeln]["title"]) {
 			$plfile = urldecode($sonoslists[$pleinzeln]["file"]);
 			$sonos->ClearQueue();
-			LOGGING("Sonos: playlist.php: Queue has been cleared.", 7);
+			LOGGING("playlist.php: Queue has been cleared.", 7);
 			$sonos->AddToQueue($plfile); //Datei hinzufügen
-			LOGGING("Sonos: playlist.php: Playlist has been added to Queue.", 7);
+			LOGGING("playlist.php: Playlist has been added to Queue.", 7);
 			$sonos->SetQueue("x-rincon-queue:". trim($sonoszone[$master][1]) ."#0"); 
 			if(!isset($_GET['load'])) {
 				$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
 				$sonos->SetVolume($volume);
 				$sonos->Play();
 			}
-			LOGGING("Sonos: playlist.php: Playlist is playing.", 7);
+			LOGGING("playlist.php: Playlist is playing.", 7);
 			$gefunden = 1;
 		}
 		$pleinzeln++;
 			if (($pleinzeln == count($sonoslists) ) && ($gefunden != 1)) {
 				$sonos->Pause()();
-				LOGGING("Sonos: playlist.php: No playlist with the specified name found.", 3);
+				LOGGING("playlist.php: No playlist with the specified name found.", 3);
 				exit;
 			}
 		}	
@@ -72,14 +72,14 @@ function zapzone() {
 	global $config, $volume, $tmp_tts, $sonos, $sonoszone, $master, $playzones, $count, $maxzap, $count_file, $curr_zone_file;
 	
 	if (file_exists($tmp_tts))  {
-		LOGGING("Sonos: playlist.php: Currently a T2S is running, we skip zapzone for now. Please try again later.",6);
+		LOGGING("playlist.php: Currently a T2S is running, we skip zapzone for now. Please try again later.",6);
 		exit;
 	}
 	$sonos = new PHPSonos($sonoszone[$master][0]);
 	$check_stat = getZoneStatus($master);
 	if ($check_stat == "member")  {
 		$sonos->BecomeCoordinatorOfStandaloneGroup();
-		LOGGING("Sonos: playlist.php: Zone ".$master." has been ungrouped.",5);
+		LOGGING("playlist.php: Zone ".$master." has been ungrouped.",5);
 	}
 	play_zones();
 	$playingzones = $_SESSION["playingzone"];
@@ -89,11 +89,11 @@ function zapzone() {
 	// if no zone is playing switch to nextradio
 	if (empty($playingzones) or $count > count($playingzones)) {
 		nextradio();
-		LOGGING("Sonos: playlist.php: Function nextradio has been used",6);
+		LOGGING("playlist.php: Function nextradio has been used",6);
 		sleep($maxzap);
 		if(file_exists($count_file))  {
 			unlink($count_file);
-			LOGGING("Sonos: playlist.php: Function zapzone has been reseted",6);
+			LOGGING("playlist.php: Function zapzone has been reseted",6);
 		}
 		exit;
 	}
@@ -123,13 +123,13 @@ function zapzone() {
 		if ($check_stat == "single")  {
 			say_zone($nextZoneKey);
 		} else {
-			LOGGING("Sonos: playlist.php: Song/Artist could not be announced because Master is grouped",6);
+			LOGGING("playlist.php: Song/Artist could not be announced because Master is grouped",6);
 		}
 	}
 	unset ($playingzones[$nextZoneKey]);
 	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
 	$sonos->SetAVTransportURI("x-rincon:" . $sonoszone[$nextZoneKey][1]);
-	LOGGING("Sonos: playlist.php: Zone ".$master." has been grouped as member to Zone ".$nextZoneKey, 7);
+	LOGGING("playlist.php: Zone ".$master." has been grouped as member to Zone ".$nextZoneKey, 7);
 	$sonos->SetMute(false);
 	$sonos->SetVolume($volume);
 	}
@@ -148,7 +148,7 @@ function saveCurrentZone($nextZoneKey) {
 	$curr_zone_file = "/run/shm/sonos_currzone_mem.txt";
 	
     if(!touch($curr_zone_file)) {
-		LOGGING("Sonos: playlist.php: No permission to write file", 3);
+		LOGGING("playlist.php: No permission to write file", 3);
 		exit;
     }
 	$handle = fopen ($curr_zone_file, 'w');
@@ -171,7 +171,7 @@ function currentZone() {
 		
 	$playingzones = $_SESSION["playingzone"];
 	if(!touch($curr_zone_file)) {
-		LOGGING("Sonos: playlist.php: Could not open file", 3);
+		LOGGING("playlist.php: Could not open file", 3);
 		exit;
     }
 	$currentZone = file($curr_zone_file);
@@ -254,10 +254,10 @@ function SavePlaylist() {
 	try {
 		$sonos->SaveQueue("temp_t2s");
 	} catch (Exception $e) {
-		LOGGING("Sonos: playlist.php: The temporary Playlist (PL) could not be saved because the list contains min. 1 Song (URL) which is not longer valid! Please check or remove the list!", 3);
+		LOGGING("playlist.php: The temporary Playlist (PL) could not be saved because the list contains min. 1 Song (URL) which is not longer valid! Please check or remove the list!", 3);
 		exit;
 	}
-	LOGGING("Sonos: playlist.php: Temporally playlist has been saved.", 6);
+	LOGGING("playlist.php: Temporally playlist has been saved.", 6);
 }
 
 
@@ -276,7 +276,7 @@ function DelPlaylist() {
 	if(!empty($t2splaylist)) {
 		$sonos->DelSonosPlaylist($playlists[$t2splaylist]['id']);
 	}
-	LOGGING("Sonos: playlist.php: Temporally playlist has been deleted.", 6);
+	LOGGING("playlist.php: Temporally playlist has been deleted.", 6);
 }
 
 
@@ -291,7 +291,7 @@ function random_playlist() {
 	global $sonos, $sonoszone, $master, $min_vol, $volume, $config;
 	
 	if (isset($_GET['member'])) {
-		LOGGING("Sonos: playlist.php: This function could not be used with groups!", 3);
+		LOGGING("playlist.php: This function could not be used with groups!", 3);
 		exit;
 	}
 	$sonoslists = $sonos->GetSONOSPlaylists();
@@ -329,7 +329,7 @@ function random_playlist() {
 	} else {
 		$volume = $config['sonoszonen'][$master][4];
 	}
-	LOGGING("Sonos: playlist.php: Random playlist has been added to Queue.", 6);
+	LOGGING("playlist.php: Random playlist has been added to Queue.", 6);
 	$sonos->Play();
 }
 
@@ -353,12 +353,12 @@ function next_dynamic() {
 		checkifmaster($master);
 		$sonos = new PHPSonos($sonoszone[$master][0]);
 		$sonos->Next();
-		LOGGING("Sonos: playlist.php: Next Song in Playlist.", 7);
+		LOGGING("playlist.php: Next Song in Playlist.", 7);
 	} else {
 		checkifmaster($master);
 		$sonos = new PHPSonos($sonoszone[$master][0]);
 		$sonos->SetTrack("1");
-		LOGGING("Sonos: playlist.php: Playlist starts at Song Number 1.", 7);
+		LOGGING("playlist.php: Playlist starts at Song Number 1.", 7);
 	}
 	$sonos->Play();
 }
@@ -377,7 +377,7 @@ function say_zone($zone) {
 	
 	// if batch has been choosed abort
 	if(isset($_GET['batch'])) {
-		LOGGING("Sonos: playlist.php: The parameter batch could not be used to announce zone!", 4);
+		LOGGING("playlist.php: The parameter batch could not be used to announce zone!", 4);
 		exit;
 	}
 	saveZonesStatus(); // saves all Zones Status
@@ -398,13 +398,13 @@ function say_zone($zone) {
 	t2s($textstring, $filename);
 	// get Coordinator of (maybe) pair or single player
 	$coord = getRoomCoordinator($master);
-	LOGGING("Sonos: playlist.php: Room Coordinator been identified", 7);		
+	LOGGING("playlist.php: Room Coordinator been identified", 7);		
 	$sonos = new PHPSonos($coord[0]); 
 	$tmp_volume = $sonos->GetVolume();
 	$sonos->SetMute(false);
 	$volume = $volume + $config['TTS']['correction'];
 	play_tts($filename);
-	LOGGING("Sonos: playlist.php: Zone Announcement has been played", 6);	
+	LOGGING("playlist.php: Zone Announcement has been played", 6);	
 	restoreSingleZone();
 	if(isset($_GET['volume'])) {
 		$volume = $_GET['volume'];

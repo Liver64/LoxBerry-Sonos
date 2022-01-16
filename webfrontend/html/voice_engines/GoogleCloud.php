@@ -29,14 +29,14 @@ function t2s($textstring, $filename)
 			$voice = $errorvoice;
 			$textstring = $errortext;
 			$speech_api_key = OpenSSLFile::decrypt($sFilename, $sPassword);
-			LOGGING("Sonos: voice_engines\googleCloud.php: 'nextradio' errormesssage has been announced", 6);
+			LOGGING("voice_engines\googleCloud.php: 'nextradio' errormesssage has been announced", 6);
 		} else {
 			$speech_api_key = $config['TTS']['API-key'];
 		}
 		#echo $voice;
 		
 								  		
-		LOGGING("Sonos: voice_engines\googleCloud.php: Google Cloud TTS has been successful selected", 7);	
+		LOGGING("voice_engines\googleCloud.php: Google Cloud TTS has been successful selected", 7);	
 
 		$params = [
 			"audioConfig"=>[
@@ -74,15 +74,15 @@ function t2s($textstring, $filename)
 			# Speicherort der MP3 Datei
 			$file = $config['SYSTEM']['ttspath'] ."/". $filename . ".mp3";
 			file_put_contents($file, base64_decode($responseDecoded['audioContent']));  
-			LOGGING('Sonos: voice_engines\googleCloud.php: The text has been passed to googleCloud engine for MP3 creation',5);
+			LOGGING('voice_engines\googleCloud.php: The text has been passed to googleCloud engine for MP3 creation',5);
 			return ($filename); 	
 		} else {
 			# Error handling		
-			LOGGING('Sonos: voice_engines\googleCloud.php: '.$responseDecoded['error']['message'],3);
+			LOGGING('voice_engines\googleCloud.php: '.$responseDecoded['error']['message'],3);
 			exit(1);
 		}
 
-		LOGGING('Sonos: voice_engines\googleCloud.php: Something went wrong!',5);
+		LOGGING('voice_engines\googleCloud.php: Something went wrong!',5);
 		return;
 }
 

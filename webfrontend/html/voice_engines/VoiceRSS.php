@@ -21,9 +21,9 @@ function t2s($textstring, $filename)
 				$isvalid = array_multi_search($language, $valid_languages, $sKey = "value");
 				if (!empty($isvalid)) {
 					$language = $_GET['lang'];
-					LOGGING('Sonos: voice_engines\voicerss.php: T2S language has been successful entered',5);
+					LOGGING('voice_engines\voicerss.php: T2S language has been successful entered',5);
 				} else {
-					LOGGING("Sonos: voice_engines\voicerss.php: The entered VoiceRSS language key is not supported. Please correct (see Wiki)!",3);
+					LOGGING("voice_engines\voicerss.php: The entered VoiceRSS language key is not supported. Please correct (see Wiki)!",3);
 					exit;
 				}
 			} else {
@@ -44,13 +44,13 @@ function t2s($textstring, $filename)
 		# Speicherort der MP3 Datei
 		$file = $config['SYSTEM']['ttspath'] ."/". $filename . ".mp3";
 		
-		LOGGING("Sonos: voice_engines\voicerss.php: VoiceRSS has been successful selected", 7);
+		LOGGING("voice_engines\voicerss.php: VoiceRSS has been successful selected", 7);
 					
 		# Übermitteln des strings an VoiceRSS.org
 		ini_set('user_agent', 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36');
 		$mp3 = file_get_contents('http://api.voicerss.org/?' . $inlay);
 		file_put_contents($file, $mp3);
-		LOGGING('Sonos: voice_engines\voicerss.php: The text has been passed to VoiceRSS engine for MP3 creation',5);
+		LOGGING('voice_engines\voicerss.php: The text has been passed to VoiceRSS engine for MP3 creation',5);
 		return $filename;
 				  	
 }

@@ -53,8 +53,8 @@ function s2s()
 				$text = $this_song." ".$titel." ".$by." ".$artist ; 
 			}
 		}
-		LOGGING('Sonos: sonos-to-speech.php: Song Announcement: '.utf8_encode($text),7);
-		LOGGING('Sonos: sonos-to-speech.php: Message been generated and pushed to T2S creation',5);
+		LOGGING('sonos-to-speech.php: Song Announcement: '.utf8_encode($text),7);
+		LOGGING('sonos-to-speech.php: Message been generated and pushed to T2S creation',5);
 		return ($text);
 	} 
 }

@@ -27,14 +27,14 @@ function AddTrack() {
 	if (isset($_GET['file'])) {  
 		$uri = $_GET['file'];
 		if (empty($uri)) {
-			LOGGING("Sonos: local_track.php: Please enter file name!", 3);
+			LOGGING("local_track.php: Please enter file name!", 3);
 			exit;
 		}
 		// check if audio format is supported
 		$length = strripos($uri,'.');
 		$format = trim(substr($uri, $length +1 , $length + 5));
 		$check_audio = AudioFormat(strtoupper($format));
-		$check_audio === false ? LOGGING("Sonos: local_track.php: The entered audio format: '.".$format."' is not supported by Sonos. Please correct!", 3) : '';
+		$check_audio === false ? LOGGING("local_track.php: The entered audio format: '.".$format."' is not supported by Sonos. Please correct!", 3) : '';
 		// check diff. usage of syntax (WIN or LINUX)
 		$tmp = substr($uri, 0 ,2);
 		if ($tmp == "\\\\") {
@@ -58,19 +58,19 @@ function AddTrack() {
 			$service = New SonosMusicService($sonoszone[$master][0]);
 			$service->SetLocalTrack($track, $file);
 		} catch (Exception $e) {
-			LOGGING("Sonos: local_track.php: The entered file: ".$uri." is not valid or could not be accessed! Please check!", 3);
+			LOGGING("local_track.php: The entered file: ".$uri." is not valid or could not be accessed! Please check!", 3);
 			exit;
 		}
-		LOGGING('Sonos: local_track.php: The entered Local-Track has been loaded',6);
+		LOGGING('local_track.php: The entered Local-Track has been loaded',6);
 		$sonos->SetTrack($message_pos);
 	}
 	$sonos->SetVolume($volume);
 	$sonos->SetMute(false);
 	try {
-		LOGGING("Sonos: local_track.php: Requested local track plays now.", 7);
+		LOGGING("local_track.php: Requested local track plays now.", 7);
 		$sonos->Play();
 	} catch (Exception $e) {
-		LOGGING("Sonos: local_track.php: The audio file could not be played! Please check folder permission or if file exists", 3);	
+		LOGGING("local_track.php: The audio file could not be played! Please check folder permission or if file exists", 3);	
 		exit;
 	}
 }

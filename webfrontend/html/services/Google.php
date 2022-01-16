@@ -18,7 +18,7 @@
 function AddGoogle() {
 	global $sonoszone, $master, $sonos, $volume;
 	
-	LOGGING("Sonos: google.php: Google is currently not supported!", 3);
+	LOGGING("google.php: Google is currently not supported!", 3);
 	exit;
 	
 	$sonos = new PHPSonos($sonoszone[$master][0]);
@@ -31,7 +31,7 @@ function AddGoogle() {
 	if (isset($_GET['trackuri'])) {
 		$uri = $_GET['trackuri'];
 		if (empty($uri)) {
-			LOGGING("Sonos: google.php: Please enter Google Track-URI!", 3);
+			LOGGING("google.php: Please enter Google Track-URI!", 3);
 			exit;
 		}
 		$track_array = explode(',',$uri);
@@ -50,10 +50,10 @@ function AddGoogle() {
 				$service->SetGoogleTrack($trackuri, $message_pos);
 			}
 		} catch (Exception $e) {
-			LOGGING("Sonos: google.php: The entered Google-Track-URI: ".$trackuri." is not valid! Please check!", 3);
+			LOGGING("google.php: The entered Google-Track-URI: ".$trackuri." is not valid! Please check!", 3);
 			exit;
 		}
-		LOGGING('Sonos: google.php: The entered Google-Track has been loaded',6);
+		LOGGING('google.php: The entered Google-Track has been loaded',6);
 		$sonos->SetTrack($message_pos);
 	}
 	// Google Playlist -> NOT REALLY WORKING
@@ -65,10 +65,10 @@ function AddGoogle() {
 			#$service->SetGooglePlaylist($pl, $reg);
 			$service->SetGooglePlaylist($pl);
 		} catch (Exception $e) {
-			LOGGING("Sonos: google.php: The entered Google-Playlist-URI: ".$pl." is not valid or is a User Playlist! Please check!", 3);
+			LOGGING("google.php: The entered Google-Playlist-URI: ".$pl." is not valid or is a User Playlist! Please check!", 3);
 			exit;
 		}
-		LOGGING('Sonos: google.php: The entered Google-Playlist has been loaded',6);
+		LOGGING('google.php: The entered Google-Playlist has been loaded',6);
 	}
 	// Google Album -> NOT WORKING
 	if (isset($_GET['albumuri'])) {
@@ -78,14 +78,14 @@ function AddGoogle() {
 			$service = New SonosMusicService($sonoszone[$master][0]);
 			$service->SetGoogleAlbum($pl, $reg);
 		} catch (Exception $e) {
-			LOGGING("Sonos: google.php: The entered Google-Album-URI: ".$pl." is not valid! Please check!", 3);
+			LOGGING("google.php: The entered Google-Album-URI: ".$pl." is not valid! Please check!", 3);
 			exit;
 		}
-		LOGGING('Sonos: google.php: The entered Google-Album has been loaded',6);
+		LOGGING('google.php: The entered Google-Album has been loaded',6);
 	}
 	$sonos->SetVolume($volume);
 	$sonos->SetMute(false);
-	LOGGING("Sonos: google.php: Requested Google Music plays now.", 7);
+	LOGGING("google.php: Requested Google Music plays now.", 7);
 	$sonos->Play();
 }
 

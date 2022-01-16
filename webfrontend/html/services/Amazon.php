@@ -33,16 +33,16 @@ function AddAmazon() {
 	
 	// Amazon Track
 	if (isset($_GET['trackuri'])) { 
-		LOGGING("Sonos: amazon.php: Amazon Track-URI is currently not supported!",3);	
+		LOGGING("amazon.php: Amazon Track-URI is currently not supported!",3);	
 		exit;
 		$uri = $_GET['trackuri'];
 		if (empty($uri)) {
-			LOGGING("Sonos: amazon.php: Please enter Amazon Track-URI!", 3);
+			LOGGING("amazon.php: Please enter Amazon Track-URI!", 3);
 			exit;
 		}
 		$track_array = explode(',',$uri);
 		if (count($track_array) > 2) {
-			LOGGING("Sonos: amazon.php: Please enter just one Amazon Track-URI!", 3);
+			LOGGING("amazon.php: Please enter just one Amazon Track-URI!", 3);
 			exit;
 		}
 		$curr_track = $curr_track_tmp['Track'];
@@ -61,10 +61,10 @@ function AddAmazon() {
 				$service->SetAmazonTrack($track_array[0], $track_array[1]);
 			}
 		} catch (Exception $e) {
-			LOGGING("Sonos: amazon.php: The entered Amazon-Track-ID's: ".$uri." are not valid! Please check!", 3);
+			LOGGING("amazon.php: The entered Amazon-Track-ID's: ".$uri." are not valid! Please check!", 3);
 			exit;
 		}
-		LOGGING('Sonos: amazon.php: The entered Amazon-Track has been loaded',6);
+		LOGGING('amazon.php: The entered Amazon-Track has been loaded',6);
 		$sonos->SetTrack($message_pos);
 	}
 	// Amazon Playlist
@@ -75,10 +75,10 @@ function AddAmazon() {
 			$service = New SonosMusicService($sonoszone[$master][0]);
 			$service->SetAmazonPlaylist($pl);
 		} catch (Exception $e) {
-			LOGGING("Sonos: amazon.php: The entered Amazon-Playlist-ID: ".$pl." is not valid! Please check!",3);
+			LOGGING("amazon.php: The entered Amazon-Playlist-ID: ".$pl." is not valid! Please check!",3);
 			exit;
 		}
-		LOGGING('Sonos: amazon.php: The entered Amazon-Playlist has been loaded',6);
+		LOGGING('amazon.php: The entered Amazon-Playlist has been loaded',6);
 	}
 	// Amazon Album
 	if (isset($_GET['albumuri'])) {
@@ -88,14 +88,14 @@ function AddAmazon() {
 			$service = New SonosMusicService($sonoszone[$master][0]);
 			$service->SetAmazonAlbum($pl);
 		} catch (Exception $e) {
-			LOGGING("Sonos: amazon.php: The entered Amazon-Album-ID ".$pl." is not valid! Please check!", 3);
+			LOGGING("amazon.php: The entered Amazon-Album-ID ".$pl." is not valid! Please check!", 3);
 			exit;
 		}
-		LOGGING('Sonos: amazon.php: The entered Amazon-Album has been loaded',6);
+		LOGGING('amazon.php: The entered Amazon-Album has been loaded',6);
 	}
 	$sonos->SetVolume($volume);
 	$sonos->SetMute(false);
-	LOGGING("Sonos: amazon.php: Requested Amazon Music plays now.", 7);
+	LOGGING("amazon.php: Requested Amazon Music plays now.", 7);
 	$sonos->Play();
 }
 

@@ -12,7 +12,7 @@ $region = $config['LOCATION']['region'];
 $town = htmlentities($town);
 
 if (empty($town) or empty($region)) {
-	LOGGING('Sonos: weather-warning-to-speech.php: Es ist keine Stadt bzw. Gemeinde oder Bundesland in der Konfiguration gepflegt. Bitte erst eingeben!',3);
+	LOGGING('weather-warning-to-speech.php: Es ist keine Stadt bzw. Gemeinde oder Bundesland in der Konfiguration gepflegt. Bitte erst eingeben!',3);
 	exit;
 }
 
@@ -34,16 +34,16 @@ $stadtgemeinde = str_replace('km/h', 'Kilometer pro Stunde', $stadtgemeinde);
 $stadtgemeinde = str_replace('&deg;C', 'Grad', $stadtgemeinde);
 
 if (empty($stadtgemeinde)) {
-	LOGGING('Sonos: weather-warning-to-speech.php: Es konnten keine Daten vom Deutschen Wetterdienst bezogen werden',3);
+	LOGGING('weather-warning-to-speech.php: Es konnten keine Daten vom Deutschen Wetterdienst bezogen werden',3);
 	exit;
 } else {
-	LOGGING('Sonos: weather-warning-to-speech.php: Daten vom Deutschen Wetterdienst wurden erfolgreich bezogen.',6);
+	LOGGING('weather-warning-to-speech.php: Daten vom Deutschen Wetterdienst wurden erfolgreich bezogen.',6);
 }	
 #print_r(substr($stadtgemeinde,0 , 12));
 
 // Falls kein Wetterhinweis oder Warnung vorliegt abbrechen
 if (substr($stadtgemeinde,0 , 12) == 'er und Klima') {
-	LOGGING('Sonos: weather-warning-to-speech.php: Es liegen derzeit keine Wetter Hinweise oder Warnungen fuer ihre Stadt bzw. Gemeinde vor.',5);
+	LOGGING('weather-warning-to-speech.php: Es liegen derzeit keine Wetter Hinweise oder Warnungen fuer ihre Stadt bzw. Gemeinde vor.',5);
 	exit;
 }
 
@@ -78,8 +78,8 @@ $text = str_replace(" m ", " Metern ", $text);
 
 $url = $text;
 #echo $url;
-LOGGING('Sonos: weather-warning-to-speech.php: Wetter Warnung Ansage: '.($url),7);
-LOGGING('Sonos: weather-warning-to-speech.php: Message been generated and pushed to T2S creation',5);
+LOGGING('weather-warning-to-speech.php: Wetter Warnung Ansage: '.($url),7);
+LOGGING('weather-warning-to-speech.php: Message been generated and pushed to T2S creation',5);
 #return $url;
 
 curl_setopt($curl, CURLOPT_URL, $url);
@@ -103,7 +103,7 @@ $region = $config['LOCATION']['region'];
 $town = htmlentities($town);
 
 if (empty($town) or empty($region)) {
-	LOGGING('Sonos: weather-warning-to-speech.php: Prüfung ob eine aktuelle Warnung vorliegt wurde ausgeführt',7);
+	LOGGING('weather-warning-to-speech.php: Prüfung ob eine aktuelle Warnung vorliegt wurde ausgeführt',7);
 	exit;
 }
 
@@ -125,16 +125,16 @@ $stadtgemeinde = str_replace('km/h', 'Kilometer pro Stunde', $stadtgemeinde);
 $stadtgemeinde = str_replace('&deg;C', 'Grad', $stadtgemeinde);
 
 if (empty($stadtgemeinde)) {
-	LOGGING('Sonos: weather-warning-to-speech.php: Es konnten keine Daten vom Deutschen Wetterdienst bezogen werden',3);
+	LOGGING('weather-warning-to-speech.php: Es konnten keine Daten vom Deutschen Wetterdienst bezogen werden',3);
 	return false;
 } else {
-	LOGGING('Sonos: weather-warning-to-speech.php: Daten vom Deutschen Wetterdienst wurden erfolgreich bezogen.',6);
+	LOGGING('weather-warning-to-speech.php: Daten vom Deutschen Wetterdienst wurden erfolgreich bezogen.',6);
 }	
 #print_r(substr($stadtgemeinde,0 , 12));
 
 // Falls kein Wetterhinweis oder Warnung vorliegt abbrechen
 if (substr($stadtgemeinde,0 , 12) == 'er und Klima') {
-	LOGGING('Sonos: weather-warning-to-speech.php: Es liegen derzeit keine Wetter Hinweise oder Warnungen fuer ihre Stadt bzw. Gemeinde vor.',5);
+	LOGGING('weather-warning-to-speech.php: Es liegen derzeit keine Wetter Hinweise oder Warnungen fuer ihre Stadt bzw. Gemeinde vor.',5);
 	return false;
 }
 }

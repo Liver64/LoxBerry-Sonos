@@ -18,9 +18,9 @@ function t2s($textstring, $filename)
 				if (!empty($valid_voice)) {
 					$language = $valid_voice[0]['language'];
 					$voice = $valid_voice[0]['name'];
-					LOGGING('Sonos: voice_engines\polly.php: T2S language/voice has been successful entered',5);
+					LOGGING('voice_engines\polly.php: T2S language/voice has been successful entered',5);
 				} else {
-					LOGGING("Sonos: voice_engines\polly.php: The entered Polly voice is not supported. Please correct (see Wiki)!",3);
+					LOGGING("voice_engines\polly.php: The entered Polly voice is not supported. Please correct (see Wiki)!",3);
 					exit;
 				}
 		} else {
@@ -39,12 +39,12 @@ function t2s($textstring, $filename)
 		# Speicherort der MP3 Datei
 		$file = $config['SYSTEM']['ttspath'] ."/". $filename . ".mp3";
 		
-		LOGGING("Sonos: voice_engines\polly.php: AWS Polly has been successful selected", 7);	
+		LOGGING("voice_engines\polly.php: AWS Polly has been successful selected", 7);	
 			
 		#-- Aufruf der POLLY Class zum generieren der t2s --
 		$a = new POLLY_TTS();
 		$a->save_mp3($textstring, $config['SYSTEM']['ttspath']."/".$filename.".mp3", $language, $voice);
-		LOGGING('Sonos: voice_engines\polly.php: The text has been passed to Polly engine for MP3 creation',5);
+		LOGGING('voice_engines\polly.php: The text has been passed to Polly engine for MP3 creation',5);
 		return $filename;
 }
 
