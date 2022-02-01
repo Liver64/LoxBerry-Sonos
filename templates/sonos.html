@@ -40,6 +40,9 @@
                                 <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 196px">
                                     <TMPL_VAR ZONES.SONOS_ROOM>
                                 </th>
+								<th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 35px">
+                                    <TMPL_VAR ZONES.SONOS_MAIN>
+                                </th>
                                 <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 147px">
                                     <TMPL_VAR ZONES.SONOS_MODEL>
                                 </th>
@@ -65,8 +68,8 @@
                         </a>
                         <br>
                 </tr>
-
-                <tr>
+				
+				<tr>
                     <td style="width: 201px; height: 20px;" valign="top">
                     </td>
                     <td id="info" name="info" style="width: 201px; height: 20px;" valign="top">
@@ -772,7 +775,29 @@
             radlayout();
             weatherlayout();
             donation();
+			//checkboxes();
+			
         });
+		
+		function checkboxes() {
+			console.log('checkboxes');
+			// get count of players for iteration
+			var iteration = document.getElementById('countplayers').value;
+            iteration = parseInt(iteration)
+            iteration += 1;
+			// loop through players
+			for (i = 1; i < iteration; ++i) {
+				//var te = document.getElementById('mainchk' + i).value;
+				if (document.getElementById('mainchk' + i).value == "on") {
+					document.getElementById('mainchk' + i).checked = true;
+					console.log(document.getElementById('mainchk' + i));
+					$('input:checkbox').checkboxradio('refresh');
+				} else {
+					document.getElementById('mainchk' + i).checked = false;
+					$('input:checkbox').checkboxradio('refresh');
+				}
+			}
+		}
 		
         function t2slayout() {
             if (document.main_form.t2s_det.checked == true) {
@@ -1241,7 +1266,9 @@
 
             // Load saved languages/voice into fields
             initial_lang_voice_load();
-
+			checkboxes();
+			
+			
             // Function to control saving, main_form is submitted    
             $("form#main_form").submit(function(e) {
 			console.log("submit");
@@ -1258,7 +1285,7 @@
 						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
                         $('html, body').animate({
                             scrollTop: $("#info").offset().top
-                        }, 2000);
+                        }, 1000);
                         $("#t2slang").focus();
                         e.preventDefault();
                     }
@@ -1268,7 +1295,7 @@
 						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
                         $('html, body').animate({
                             scrollTop: $("#info").offset().top
-                        }, 2000);
+                        }, 1000);
                         $("#voice").focus();
                         e.preventDefault();
                     }
@@ -1279,7 +1306,7 @@
 						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
                         $('html, body').animate({
                             scrollTop: $("#info").offset().top
-                        }, 2000);
+                        }, 1000);
                         $("#t2slang").focus();
                         e.preventDefault();
                     }
@@ -1290,7 +1317,7 @@
 						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
                         $('html, body').animate({
                             scrollTop: $("#info").offset().top
-                        }, 2000);
+                        }, 1000);
                         $("#t2slang").focus();
                         e.preventDefault();
                     }
@@ -1301,7 +1328,7 @@
 						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
                         $('html, body').animate({
                             scrollTop: $("#info").offset().top
-                        }, 2000);
+                        }, 1000);
                         $("#t2slang").focus();
                         e.preventDefault();
                     }
@@ -1311,7 +1338,7 @@
 						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
                         $('html, body').animate({
                             scrollTop: $("#info").offset().top
-                        }, 2000);
+                        }, 1000);
                         $("#voice").focus();
                         e.preventDefault();
                     }
@@ -1322,7 +1349,7 @@
 						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
                         $('html, body').animate({
                             scrollTop: $("#info").offset().top
-                        }, 2000);
+                        }, 1000);
                         $("#t2slang").focus();
                         e.preventDefault();
                     }
@@ -1333,7 +1360,7 @@
 						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
                         $('html, body').animate({
                             scrollTop: $("#info").offset().top
-                        }, 2000);
+                        }, 1000);
                         $("#t2slang").focus();
                         e.preventDefault();
                     }
@@ -1344,7 +1371,7 @@
 						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
                         $('html, body').animate({
                             scrollTop: $("#info").offset().top
-                        }, 2000);
+                        }, 1000);
                         $("#t2slang").focus();
                         e.preventDefault();
                     }
@@ -1352,15 +1379,46 @@
                     if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
-						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
+						$("#info").html('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
                         $('html, body').animate({
                             scrollTop: $("#info").offset().top
-                        }, 2000);
+                        }, 1000);
                         $("#t2slang").focus();
                         e.preventDefault();
                     }
                 } 
                 $("#langiso").textinput("refresh");
+				
+				
+				// Save checkbox values
+				var iteration = document.getElementById('countplayers').value;
+				iteration = parseInt(iteration)
+				iteration += 1;
+				// loop through players
+				for (i = 1; i < iteration; ++i) {
+					if (document.getElementById('mainchk' + i).checked == true) {
+						document.getElementById('mainchk' + i).value = "on";
+						$('input:checkbox').checkboxradio('refresh');
+					}
+				}
+				
+				// validate if at least one checkbox is checked
+				var checkBoxes = document.getElementsByClassName('chk-checked');
+				var isChecked = false;
+				$("#info").empty();
+				for (var i = 0; i < checkBoxes.length; i++) {
+					if ( checkBoxes[i].checked ) {
+						isChecked = true;
+					};
+				};
+				if (!isChecked) {
+					$("#info").attr("style", "color:red");
+					$("#info").text('<TMPL_VAR ERRORS.ERR_CHECKBOX>');
+					$('html, body').animate({
+                        scrollTop: $("#mainchk1").offset().top
+                    }, 1000);
+					return false;
+				} 
 				
 				
                 // validate jingle file selection
@@ -1373,7 +1431,7 @@
                     //alert('<TMPL_VAR T2S.VALIDATE_JINGLE>');
                     $('html, body').animate({
                         scrollTop: $("#info").offset().top
-                    }, 2000);
+                    }, 1000);
                     $("#file_gong").focus();
 					e.preventDefault();
                 }

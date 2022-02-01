@@ -1,6 +1,6 @@
 #!/usr/bin/env php
 <?php
-
+	
 	require_once "loxberry_system.php";
 	require_once "loxberry_log.php";
 
@@ -13,14 +13,14 @@
 	
 	// Parsen der Konfigurationsdatei
 	if (!file_exists($myConfigFolder.'/sonos.cfg')) {
-		echo "<OK> The file sonos.cfg could not be opened, please try again!";
-		echo "<br>";
+		echo "<OK> The file sonos.cfg could not be opened, please try again!".PHP_EOL;
+		#echo "<br>";
 		exit(1);
 	} else {
 		$config = parse_ini_file($myConfigFolder.'/sonos.cfg', TRUE);
 		if ($config === false)  {
-			echo "<ERROR> The file sonos.cfg could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file 'sonos.cfg' manually!";
-			echo "<br>";
+			echo "<ERROR> The file sonos.cfg could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file 'sonos.cfg' manually!".PHP_EOL;
+			#echo "<br>";
 			exit(1);
 		}
 
@@ -28,10 +28,11 @@
 
 	
 		@unlink($tmp_error);
-		$a = $config['RADIO'];
-		if (empty($a))  {
-			echo "<INFO> Nothing to do :-)";
+		if (!isset($config['RADIO']) or empty($config['RADIO']))  {
+			echo "<INFO> Nothing to do :-)".PHP_EOL;
 			exit;
+		} else {
+			$a = $config['RADIO'];
 		}
 		$e = "0";
 		foreach ($a as $v1) {
@@ -43,27 +44,31 @@
 					getMp3StreamTitle($c);
 					if (getMp3StreamTitle($c) === false)   {
 						$fh = fopen($tmp_error, "w");
-						fwrite($fh, "Your URL ".$b." from your Radio favorites is invalid. Please checkPlease check your entries\n");
+						fwrite($fh, "Your URL ".$b." from your Radio favorites is invalid. Please checkPlease check your entries!".PHP_EOL);
 						fclose($fh);
 						$e = "1";
-						echo "<ERROR> Your URL ".$b." from your Radio favorites is invalid :-( Please check your entries\n";
+						echo "<ERROR> Your URL ".$b." from your Radio favorites is invalid :-( Please check your entries!".PHP_EOL;
 						notify( LBPPLUGINDIR, "POSTUPGRADE", "Your URL ".$b." from your Radio favorites is invalid :-( Please check your Radio favorites", "error");
 					}
 				} else {
 					getMp3StreamTitle($b);
 					if (getMp3StreamTitle($b) === false)   {
 						$fh = fopen($tmp_error, "w");
-						fwrite($fh, "Your URL ".$b." from your Radio favorites is invalid. Please check\n");
+						fwrite($fh, "Your URL ".$b." from your Radio favorites is invalid. Please check".PHP_EOL);
 						fclose($fh);
 						$e = "1";
-						echo "<ERROR> Your URL ".$b." from your Radio favorites is invalid :-( Please check your entries\n";
+						echo "<ERROR> Your URL ".$b." from your Radio favorites is invalid :-( Please check your entries!".PHP_EOL;
 						notify( LBPPLUGINDIR, "POSTUPGRADE", "Your URL ".$b." from your Radio favorites is invalid :-( Please check your Radio favorites", "error");
 					}
 				}
 			}
 		}
 		if ($e == "0")  {
-			echo "<OK> All Radio favorites are valid";
+			echo "<OK> All Radio favorites are valid".PHP_EOL;
+			echo "<INFO> End of Radio favorites validation.";
+		} else {
+			echo "<WARNING> Your Radio favorites require to be updated!".PHP_EOL;
+			echo "<INFO> End of Radio favorites validation.";
 		}
 
 	function getMp3StreamTitle($url)  {
@@ -83,7 +88,7 @@
 
         $default = stream_context_set_default($opts);
 
-        $stream = fopen($url, 'r');
+        $stream = @fopen($url, 'r');
 
         if($stream && ($meta_data = stream_get_meta_data($stream)) && isset($meta_data['wrapper_data'])){
             foreach ($meta_data['wrapper_data'] as $header){

@@ -9,6 +9,8 @@
 
 header('Content-Type: text/html; charset=utf-8');
 
+#echo "<PRE>";
+
 require_once "PHPSonos.php";
 require_once "loxberry_system.php";
 require_once "loxberry_log.php";
@@ -27,8 +29,6 @@ $POnline = "/run/shm/sonoszone.json";
 $home = $lbhomedir;
 $folder = $lbpplugindir;
 $myIP = $_SERVER["SERVER_ADDR"];
-
-#echo "<PRE>"; 
 
 error_reporting(E_ALL);
 ini_set("display_errors", "off");
@@ -83,11 +83,18 @@ $plugindata = LBSystem::plugindata();
         socket_recvfrom($sock, $tmp, 2048, null, $name, $port);
         $response .= $tmp;
     }
+	#print_r($response);
     $devices = [];
     foreach (explode("\r\n\r\n", $response) as $reply) {
-        if (!$reply) {
+		if (!$reply) {
             continue;
         }
+
+		# Only attempt to parse responses from Sonos speakers
+        if (strpos($reply, $search) === false) {
+            continue;
+        }
+
         $data = [];
         foreach (explode("\r\n", $reply) as $line) {
             if (!$pos = strpos($line, ":")) {
@@ -114,13 +121,14 @@ $plugindata = LBSystem::plugindata();
         $unique[] = $device["usn"];
     }
 	$devices = $return;
+	#print_r($devices);
 	#unset($devices);				// für BROADCAST testzwecke
     if (empty($devices)) {
-		LOGWARN('System has not detected any Sonos devices by scanning MULTICAST in your network!');
+		LOGWARN('system/network.php: System has not detected any Sonos devices by scanning MULTICAST in your network!');
 		// if no multicast addresses were detected run for broadcast addresses
 		broadcast_scan($devices);
 	} else {
-		LOGINF('IP-adresses from Sonos devices has been successful detected by MULTICAST!');
+		LOGINF('system/network.php: IP-adresses from Sonos devices has been successful detected by MULTICAST!');
 	}
 	# exclude RF of Stereo Pair
 	$devicecheck = [];
@@ -130,14 +138,14 @@ $plugindata = LBSystem::plugindata();
 		if (!empty($zone_details['CurrentZonePlayerUUIDsInGroup']))  {
 			array_push($devicecheck, $newzoneip);
 		} else {
-			LOGGING("IP-address '". $newzoneip. "' seems to be a part of a Stereopair/Surround setup and has not been added.",6);
+			LOGGING("system/network.php: IP-address '". $newzoneip. "' seems to be a part of a Stereopair/Surround setup and has not been added.",6);
 		}
 	}
 	//print_r($devicecheck);
 	$devices = $devicecheck;	
 	getSonosDevices($devices);
 	$devicelist = implode(", ", $devices);
-	LOGGING("Following Sonos IP-addresses has been detected: ". $devicelist,5);
+	LOGGING("system/network.php: Following Sonos IP-addresses has been detected: ". $devicelist,5);
 	
 	parse_cfg_file(); // $sonosnet
 	#print_r($sonosnet);
@@ -145,16 +153,16 @@ $plugindata = LBSystem::plugindata();
 		$finalzones = $sonosfinal;
 		$count_player = count($finalzones);
 		foreach ($finalzones as $found_zones => $key)  {
-			LOGINF("New Sonos Player: '".$key[2]."' called: '".$found_zones."' using IP: '".$key[0]."' and Rincon-ID: '".$key[1]."' will be added to your Plugin.");
+			LOGINF("system/network.php: New Sonos Player: '".$key[2]."' called: '".$found_zones."' using IP: '".$key[0]."' and Rincon-ID: '".$key[1]."' will be added to your Plugin.");
 		}
 	} else {
 		// computes the difference of arrays with additional index check
 		$finalzones = @array_diff_assoc($sonosfinal, $sonosnet);
 		if (empty($finalzones))  {
-			LOGINF("No new Sonos Player has been detected.");
+			LOGINF("system/network.php: No new Sonos Player has been detected.");
 		} else {
 			foreach ($finalzones as $found_zones => $key)  {
-				LOGOK("New Sonos Player: '".$key[2]."' called: '".$found_zones."' using IP: '".$key[0]."' and Rincon-ID: '".$key[1]."' will be added to your Plugin.");
+				LOGOK("system/network.php: New Sonos Player: '".$key[2]."' called: '".$found_zones."' using IP: '".$key[0]."' and Rincon-ID: '".$key[1]."' will be added to your Plugin.");
 			}
 		}
 	}
@@ -162,11 +170,12 @@ $plugindata = LBSystem::plugindata();
 	#print_r($finalzones);
 	
 	// convert array to JSON
-	$post_json = array2json($finalzones);
+	#$post_json = array2json($finalzones);
+	$post_json = json_encode($finalzones);
 	
 	if (!empty($finalzones)) {
-		LOGINF("New Players has been detected and data converted to JSON");
-		LOGOK("JSON data has been successfully passed to application");
+		LOGINF("system/network.php: New Players has been detected and data converted to JSON");
+		LOGOK("system/network.php: JSON data has been successfully passed to application");
 	} 
 	echo $post_json;
 		
@@ -176,12 +185,13 @@ $plugindata = LBSystem::plugindata();
 	
 
 /**
-* Funktion: 	getSonosDevices --> Ermittelt die gesammte Sonos Topology
+* Funktion: 	getSonosDevices --> Ermittelt die Sonos Topology
 *
-* @param:     output von getSonosDevicesIP.php
-* @return:    Array<Key => Array<Node>>  
+* @param:     discovered devices
+* @return:    Array  
 **/
  function getSonosDevices($devices){
+	 
 	global $sonosfinal, $sodevices;
 	
 	$sodevices = $devices[0];
@@ -189,31 +199,38 @@ $plugindata = LBSystem::plugindata();
 	#$soplayernew = getRoomCoordinatorSetup($sodevices);
 	$zonen = array();
 	foreach ($devices as $zoneip) {
-		$url = "http://" . $zoneip . ":1400/xml/device_description.xml";
-		$xml = simpleXML_load_file($url);
-		$model = $xml->device->modelNumber;
-		$roomraw = $xml->device->roomName;
-		$device = $xml->device->displayName;
-		$rinconid = $xml->device->UDN;
+		$info = json_decode(file_get_contents('http://' . $zoneip . ':1400/info'), true);
+		$model = $info['device']['model'];
+		$roomraw = $info['device']['name'];
+		$device = $info['device']['modelDisplayName'];		
+		$rinconid = $info['device']['id'];	
 		# Ersetzen der Umlaute
 		$search = array('Ä','ä','Ö','ö','Ü','ü','ß');
 		$replace = array('Ae','ae','Oe','oe','Ue','ue','ss');
 		# kleinschreibung
 		$room = strtolower(str_replace($search,$replace,$roomraw));
+		$groupId = $info['groupId'];
+		$householdId = $info['householdId'];
+		$deviceId = $info['device']['serialNumber'];
 		if(isSpeaker($model) == true) {
 			$zonen = 	[$room, 
 						$zoneip,
-						(string)substr($rinconid, 5, 20)."1400",
+						(string)$rinconid,
 						(string)strtoupper($device),
 						'',
-						'', 						
-						''
+						'', 
+						'',
+						'',
+						(string)$model,
+						(string)$groupId,
+						(string)$householdId,
+						(string)$deviceId						
 						];
 			$raum = array_shift($zonen);
 			
 		} else {
-			LOGGING("Sorry, the Sonos model '".$model."' for room '".$room."' has been found, but this model is currently not supported by the Plugin!",6);
-			LOGGING("Please send a mail to olewald64gmail.com in order to get model checked/added to the Plugin, Thanks in advance.",6);
+			LOGGING("system/network.php: Sorry, the Sonos model '".$model."' for room '".$room."' has been found, but this model is currently not supported by the Plugin!",3);
+			LOGGING("system/network.php: Please send a mail to 'olewald64gmail.com' or place a post in Loxone Forum in order to get model added to the Plugin, Thanks in advance.",3);
 			continue;
 		}
 		$sonosplayerfinal[$raum] = $zonen;
@@ -225,7 +242,7 @@ $plugindata = LBSystem::plugindata();
 	$sonosfinal = $sonosplayerfinal;
 	#$rooms = implode(", ", array_keys($sonosfinal));
 	#$countroom = count(array_keys($sonosfinal));
-	#LOGGING("Following ".$countroom." rooms has been detected: ".$rooms,5);
+	#LOGGING("system/network.php: Following ".$countroom." rooms has been detected: ".$rooms,5);
 	return $sonosfinal;	
 	#return $sonosplayerfinal;
  }
@@ -288,12 +305,12 @@ function parse_cfg_file() {
 	foreach ($player as $zonen => $key) {
 		$sonosnet[$zonen] = explode(',', $key[0]);
 	}
-	LOGOK("Existing configuration file 'player.cfg' has been loaded successfully.");
+	LOGOK("system/network.php: Existing configuration file 'player.cfg' has been loaded successfully.");
 	return $sonosnet;
 	}
 
 
-/**
+/**        NOT IN USE ANYMORE
 * Funktion : 	array2json --> konvertiert array in JSON Format
 * http://www.bin-co.com/php/scripts/array2json/
 * 
@@ -377,7 +394,7 @@ function getRoomCoordinatorSetup($devices){
 		}
 		ksort($coordinators);
 		#print_r($coordinators);
-		LOGDEB("All player details has been collected (room, IP, Rincon-ID and Model).");
+		LOGDEB("system/network.php: All player details has been collected (room, IP, Rincon-ID and Model).");
 		return $coordinators;
 }
 
@@ -503,10 +520,10 @@ function broadcast_scan($devices) {
     }
 	$devices = $return;
     if (empty($devices)) {
-		LOGWARN('System has not detected any Sonos devices by scanning BROADCAST in your network!');
+		LOGWARN('system/network.php: System has not detected any Sonos devices by scanning BROADCAST in your network!');
 		exit;
 	} else {
-		LOGINF('IP-adresses from Sonos devices has been successful detected by BROADCAST.');
+		LOGINF('system/network.php: IP-adresses from Sonos devices has been successful detected by BROADCAST.');
 	}
 	return $devices;
 }

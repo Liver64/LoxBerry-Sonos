@@ -29,13 +29,12 @@ function say() {
 * @return: 	MP3 File
 **/		
 
-function create_tts() {
-	global $sonos, $config, $filename, $MessageStorepath, $player, $messageid, $textstring, $home, $time_start, $tmp_batch, $MP3path, $filenameplay, $textstring, $volume, $tts_stat;
+function create_tts($text ='') {
+	global $sonos, $config, $filename, $MessageStorepath, $errortext, $player, $messageid, $textstring, $home, $time_start, $tmp_batch, $MP3path, $filenameplay, $textstring, $volume, $tts_stat;
 	
 	# setze 1 für virtuellen Texteingang (T2S Start)
 	$tts_stat = 1;
 	send_tts_source($tts_stat);
-	
 	if (isset($_GET['greet']))  {
 		$Stunden = intval(strftime("%H"));
 		$TL = LOAD_T2S_TEXT();
@@ -77,8 +76,13 @@ function create_tts() {
 	}
 						
 	$rampsleep = $config['TTS']['rampto'];
-	
-	isset($_GET['text']) ? $text = $_GET['text'] : $text = '';
+	if (isset($_GET['text']))   {
+		$text = $_GET['text'];
+	} elseif ($text <> '') {
+		$text;
+	} else {
+		$text = '';
+	}	
 	if(isset($_GET['weather'])) {
 		// calls the weather-to-speech Function
 		if(isset($_GET['lang']) and $_GET['lang'] == "nb-NO" or @$_GET['voice'] == "Liv") {
@@ -163,29 +167,33 @@ function create_tts() {
 	$filename  = md5($textstring);
 	#echo 'textstring: '.$textstring.'<br>';
 	// calls the various T2S engines depending on config)
+	#echo "Errortext: ".$errortext;
 	if ($textstring != '') {
-		if ($config['TTS']['t2s_engine'] == 1001) {
+		if (!empty($errortext)) {
+			include_once("voice_engines/GoogleCloud.php");
+		}
+		if ($config['TTS']['t2s_engine'] == 1001 and empty($errortext)) {
 			include_once("voice_engines/VoiceRSS.php");
 		}
-		if ($config['TTS']['t2s_engine'] == 3001) {
+		if ($config['TTS']['t2s_engine'] == 3001 and empty($errortext)) {
 			include_once("voice_engines/MAC_OSX.php");	
 		}
-		if ($config['TTS']['t2s_engine'] == 6001) {
+		if ($config['TTS']['t2s_engine'] == 6001 and empty($errortext)) {
 			include_once("voice_engines/ResponsiveVoice.php");
 		}
-		if ($config['TTS']['t2s_engine'] == 7001) {
+		if ($config['TTS']['t2s_engine'] == 7001 and empty($errortext)) {
 			include_once("voice_engines/Google.php");	
 		}
-		if ($config['TTS']['t2s_engine'] == 5001) {
+		if ($config['TTS']['t2s_engine'] == 5001 and empty($errortext)) {
 			include_once("voice_engines/Pico_tts.php");	
 		}
-		if ($config['TTS']['t2s_engine'] == 4001) {
+		if ($config['TTS']['t2s_engine'] == 4001 and empty($errortext)) {
 			include_once("voice_engines/Polly.php");	
 		}
-		if ($config['TTS']['t2s_engine'] == 8001) {
+		if ($config['TTS']['t2s_engine'] == 8001 and empty($errortext)) {
 			include_once("voice_engines/GoogleCloud.php");	
 		}
-		if ($config['TTS']['t2s_engine'] == 9001) {
+		if ($config['TTS']['t2s_engine'] == 9001 and empty($errortext)) {
 			include_once("voice_engines/MS_Azure.php");	
 		}
 		#echo filesize($config['SYSTEM']['ttspath']."/".$filename.".mp3");
@@ -248,7 +256,7 @@ function create_tts() {
 **/		
 
 function play_tts($filename) {
-	global $volume, $config, $messageid, $sonos, $text, $lbphtmldir, $messageid, $sleeptimegong, $sonoszone, $sonoszonen, $master, $coord, $actual, $textstring, $player, $time_start, $t2s_batch, $filename, $textstring, $home, $MP3path, $lbpplugindir, $logpath, $try_play, $MessageStorepath, $filename, $tts_stat;
+	global $volume, $config, $messageid, $sonos, $text, $errortext, $lbphtmldir, $messageid, $sleeptimegong, $sonoszone, $sonoszonen, $master, $coord, $actual, $textstring, $player, $time_start, $t2s_batch, $filename, $textstring, $home, $MP3path, $lbpplugindir, $logpath, $try_play, $MessageStorepath, $filename, $tts_stat;
 		
 		$coord = getRoomCoordinator($master);
 		$sonos = new PHPSonos($coord[0]);
@@ -394,8 +402,9 @@ function play_tts($filename) {
 			notify_ext($notification);
 		}
 		$abort = false;
+		$sleeptimegong = "3";
 		sleep($sleeptimegong); // wait according to config
-		while ($sonos->GetTransportInfo()==1) {
+		while ($sonos->GetTransportInfo() == 1) {
 			usleep(200000); // check every 200ms
 		}
 		// If batch T2S has been be played
@@ -417,6 +426,7 @@ function play_tts($filename) {
 				LOGGING("play_t2s.php: Jingle has been removed from Queue", 7);	
 			}	
 		}	
+		
 		// if Playlist has more than 998 entries
 		if ($save_plist > 998) {
 			$sonos->ClearQueue();
@@ -427,8 +437,10 @@ function play_tts($filename) {
 			LOGGING("play_t2s.php: Temporary playlist 'temp_t2s' has been finally deleted", 7);		
 		// if Playlist has less than or equal 998 entries
 		}
+		#exit;
 		LOGGING("play_t2s.php: T2S play process has been successful finished", 6);
 		return $actual;
+		
 		
 		
 }
@@ -441,15 +453,15 @@ function play_tts($filename) {
 * @return: 
 **/
 
-function sendmessage() {
-			global $text, $master, $messageid, $logging, $textstring, $voice, $config, $actual, $player, $volume, $source, $sonos, $coord, $time_start, $filename, $sonoszone, $tmp_batch, $mode, $MP3path, $tts_stat;
+function sendmessage($errortext= '') {
+			global $text, $master, $messageid, $errortext, $logging, $textstring, $voice, $config, $actual, $player, $volume, $source, $sonos, $coord, $time_start, $filename, $sonoszone, $tmp_batch, $mode, $MP3path, $tts_stat;
 			
 			$time_start = microtime(true);
 			if ((empty($config['TTS']['t2s_engine'])) or (empty($config['TTS']['messageLang'])))  {
 				LOGGING("play_t2s.php: There is no T2S engine/language selected in Plugin config. Please select before using T2S functionality.", 3);
 				exit();
 			}
-			if ((!isset($_GET['text'])) && (!isset($_GET['messageid'])) && (!isset($_GET['sonos'])) &&
+			if ((!isset($_GET['text'])) && (!isset($_GET['messageid'])) && (!isset($errortext)) && (!isset($_GET['sonos'])) &&
 				(!isset($_GET['text'])) && (!isset($_GET['weather'])) && (!isset($_GET['abfall'])) &&
 				(!isset($_GET['witz'])) && (!isset($_GET['pollen'])) && (!isset($_GET['warning'])) &&
 				(!isset($_GET['bauernregel'])) && (!isset($_GET['distance'])) && (!isset($_GET['clock'])) && 
@@ -457,6 +469,7 @@ function sendmessage() {
 				LOGGING("play_t2s.php: Wrong Syntax, please correct! Even 'say&text=' or 'say&messageid=' are necessary to play an anouncement. (check Wiki)", 3);	
 				exit;
 			}
+			
 			// if batch has been choosed save filenames to a txt file and exit
 			if(isset($_GET['batch'])) {
 				if((isset($_GET['volume'])) or (isset($_GET['rampto'])) or (isset($_GET['playmode'])) or (isset($_GET['playgong']))) {
@@ -506,7 +519,7 @@ function sendmessage() {
 				exit;
 				}
 			}
-			create_tts();
+			create_tts($errortext);
 			// stop 1st before Song Name been played
 			$test = $sonos->GetPositionInfo();
 			if (($return == 'master') or ($return == 'member')) {
@@ -536,7 +549,7 @@ function sendmessage() {
 			$t2s_time = $time_end - $time_start;
 			#echo "Die T2S dauerte ".round($t2s_time, 2)." Sekunden.\n";
 			LOGGING("play_t2s.php: The requested single T2S tooks ".round($t2s_time, 2)." seconds to be processed.", 5);	
-					
+			#return;		
 	}
 
 /**
@@ -547,7 +560,7 @@ function sendmessage() {
 **/
 			
 function sendgroupmessage() {			
-			global $coord, $sonos, $text, $sonoszone, $member, $master, $zone, $messageid, $logging, $textstring, $voice, $config, $mute, $volume, $membermaster, $getgroup, $checkgroup, $time_start, $mode, $modeback, $actual;
+			global $coord, $sonos, $text, $sonoszone, $errortext, $member, $master, $zone, $messageid, $logging, $textstring, $voice, $config, $mute, $volume, $membermaster, $getgroup, $checkgroup, $time_start, $mode, $modeback, $actual;
 			
 			$time_start = microtime(true);
 			if ((empty($config['TTS']['t2s_engine'])) or (empty($config['TTS']['messageLang'])))  {
@@ -667,7 +680,8 @@ function sendgroupmessage() {
 			$time_end = microtime(true);
 			$t2s_time = $time_end - $time_start;
 			#echo "Die T2S dauerte ".round($t2s_time, 2)." Sekunden.\n";
-			LOGGING("play_t2s.php: The requested group T2S tooks ".round($t2s_time, 2)." seconds to be processed.", 5);					
+			LOGGING("play_t2s.php: The requested group T2S tooks ".round($t2s_time, 2)." seconds to be processed.", 5);	
+			#return;			
 }
 
 /**
@@ -717,7 +731,7 @@ function send_tts_source($tts_stat)  {
 	if(!is_enabled($config['LOXONE']['LoxDaten'])) {
 		return;
 	}
-	
+	#print_r($ms);
 	// ceck if configured MS is fully configured
 	if (!isset($ms[$config['LOXONE']['Loxone']])) {
 		LOGWARN ("Sonos: play_t2s.php: Your selected Miniserver from Sonos4lox Plugin config seems not to be fully configured. Please check your LoxBerry miniserver config!") ;

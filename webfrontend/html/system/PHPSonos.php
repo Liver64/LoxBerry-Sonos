@@ -2115,14 +2115,16 @@ SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#GetPositionInfo"
  */
  
    #public function SetRadio($radio, $name, $id="R:0/0/0", $parentID="R:0/0")
-   public function SetRadio($radio, $name, $id="R:0/0/43", $parentID="R:0/0")
+   public function SetRadio($radio, $name, $id="R:0/0/43", $parentID="R:0/0", $MetaData="")
    { 
    $MetaData="&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;".$id."&quot; parentID=&quot;".$parentID."&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;".$name."&lt;/dc:title&gt;&lt;upnp:class&gt;object.item.audioItem.audioBroadcast&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;SA_RINCON65031_&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;";
-              
+         
     $this->SetAVTransportURI($radio,$MetaData);
 
    }
    
+   
+  
    
 
 
@@ -2196,7 +2198,7 @@ SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#RemoveAllTracksFromQueue
  * @return String
  */
  
-   public function AddToQueue($file)
+   public function AddToQueue($file, $metadata='')
    {
    
 $content='POST /MediaRenderer/AVTransport/Control HTTP/1.1
@@ -2206,7 +2208,50 @@ CONTENT-LENGTH: '.(438+strlen(htmlspecialchars($file))).'
 CONTENT-TYPE: text/xml; charset="utf-8"
 SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
 
-<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID><EnqueuedURI>'.htmlspecialchars($file).'</EnqueuedURI><EnqueuedURIMetaData></EnqueuedURIMetaData><DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>1</EnqueueAsNext></u:AddURIToQueue></s:Body></s:Envelope>';
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body>
+<u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID><EnqueuedURI>'.($file).'</EnqueuedURI>
+<EnqueuedURIMetaData>'.htmlspecialchars($metadata).'</EnqueuedURIMetaData>
+<DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued>
+<EnqueueAsNext>1</EnqueueAsNext></u:AddURIToQueue></s:Body></s:Envelope>)';
+
+      $this->sendPacket($content);
+   }
+
+
+
+   
+   /**
+ * Adds URI to Queue (not the Playlist!!)
+ *
+ * @param string $file     Uri or Filename
+ *
+ * @return String
+ */
+ 
+   public function AddToQueueNew($file)
+   {
+   
+$content='POST /MediaRenderer/AVTransport/Control HTTP/1.1
+CONNECTION: close
+HOST: '.$this->address.':1400
+CONTENT-LENGTH: '.(438+strlen(htmlspecialchars($file))).'
+CONTENT-TYPE: text/xml; charset="utf-8"
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
+
+<?xml version="1.0" encoding="utf-8"?>
+<s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+   <s:Body>
+      <u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1">
+         <InstanceID>0</InstanceID>
+         <EnqueuedURI>'.($file).'>
+         <EnqueuedURIMetaData />
+         <DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued>
+         <EnqueueAsNext>1</EnqueueAsNext>
+      </u:AddURIToQueue>
+   </s:Body>
+</s:Envelope';
+
+
 
       $this->sendPacket($content);
    }
@@ -2515,6 +2560,159 @@ return $liste;
 
 	
 /**
+ * Universal function to browse ContentDirectory to play Sonos Favorites
+ *
+ * @param string $value    ObjectID 
+ * @param string $meta     BrowseFlag
+ * @param string $filter   Filter
+ * @param string $sindex   SearchIndex
+ * @param string $rcount   ResultCount
+ * @param string $sc       SortCriteria
+ *
+ * @return Array
+ */
+ 
+     public function BrowseFav($value,$meta="BrowseDirectChildren",$filter="",$sindex="0",$rcount="1000",$sc="")
+    {
+
+       switch($meta){
+       case 'BrowseDirectChildren':
+       case 'c':
+       case 'child':
+         $meta="BrowseDirectChildren";
+       break;
+       case 'BrowseMetadata':
+       case 'm':
+       case 'meta':
+             $meta = "BrowseMetadata";
+       break;
+       default:
+       return false;
+      }
+        $header='POST /MediaServer/ContentDirectory/Control HTTP/1.1
+SOAPACTION: "urn:schemas-upnp-org:service:ContentDirectory:1#Browse"
+CONTENT-TYPE: text/xml; charset="utf-8"
+HOST: '.$this->address.':1400';
+$xml='<?xml version="1.0" encoding="utf-8"?>
+<s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+<s:Body>
+<u:Browse xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1">
+<ObjectID>'.htmlspecialchars($value).'</ObjectID><BrowseFlag>'.$meta.'</BrowseFlag><Filter>'.$filter.'</Filter><StartingIndex>'.$sindex.'</StartingIndex>
+<RequestedCount>'.$rcount.'</RequestedCount><SortCriteria>'.$sc.'</SortCriteria></u:Browse>
+</s:Body>
+</s:Envelope>';
+$content=$header . '
+Content-Length: '. strlen($xml) .'
+
+'. $xml;
+
+    $returnContent = $this->sendPacket($content);
+
+    $xmlParser = xml_parser_create();
+        $returnContent = substr($returnContent, stripos($returnContent, '&lt;'));
+        $returnContent = substr($returnContent, 0, strrpos($returnContent, '&gt;') + 4);
+        $returnContent = str_replace(array("&lt;", "&gt;", "&quot;", "&amp;", "%3a", "%2f", "%25"), array("<", ">", "\"", "&", ":", "/", "%"), $returnContent);
+				
+        $xml = new SimpleXMLElement($returnContent);
+        $liste = array();
+		for($i=0,$size=count($xml);$i<$size;$i++)
+        {
+            //Wenn Container vorhanden, dann ist es ein Browse Element
+            //Wenn Item vorhanden, dann ist es ein Song.
+            if(isset($xml->container[$i])){
+                  $aktrow = $xml->container[$i];
+                  $attr = $xml->container[$i]->attributes();
+                  $liste[$i]['typ'] = "container";
+             }else if(isset($xml->item[$i])){
+               //Item vorhanden also nur noch Musik
+                  $aktrow = $xml->item[$i];
+                  $attr = $xml->item[$i]->attributes();
+                  $liste[$i]['typ'] = "item";
+            }else{
+               //Fehler aufgetreten
+               return;
+            }
+			      $id = $attr['id'];
+                  $parentid = $attr['parentID'];
+                  $albumart = $aktrow->xpath("upnp:albumArtURI");
+                  $titel = $aktrow->xpath("dc:title");
+                  $interpret[0] = $aktrow->xpath("r:description");
+                  $album = $aktrow->xpath("upnp:album");
+				  $upnpclass = $aktrow->xpath("upnp:class");
+                  if(isset($aktrow->res)){
+                     $res = (string)$aktrow->res;
+                     $liste[$i]['res'] = ($res);
+					 #$liste[$i]['res'] = urlencode($res);
+
+                   }else{
+                      $liste[$i]['res'] = "leer";
+                   }
+                      $resattr = $aktrow->res->attributes();
+                     if(isset($resattr['protocolInfo'])){
+                         $liste[$i]['protocolInfo']=(string)$resattr['protocolInfo'];
+                      }else{
+                         $liste[$i]['protocolInfo']="leer";
+                      }
+				   if(isset($upnpclass[0])){
+						$liste[$i]['UpnpClass'] = (string)$upnpclass[0];
+                  }else{
+						$liste[$i]['UpnpClass'] ="leer";
+                  } 
+					  
+                  if(isset($albumart[0])){
+                   $liste[$i]['albumArtURI']="http://" . $this->address . ":1400".(string)$albumart[0];
+                  }else{
+                   $liste[$i]['albumArtURI'] ="leer";
+                  }
+                  $liste[$i]['title']=(string)$titel[0];
+                  if(isset($interpret[0])){
+                      $liste[$i]['artist']=(string)$interpret[0][0];
+                  }else{
+                     $liste[$i]['artist']="leer";
+                  }
+					# Prepare type of favorit
+				  if($liste[$i]['typ'] == "item") {
+					  $s = substr($liste[$i]['res'],0, 17); 
+					  $r = substr($liste[$i]['artist'],0, 5);
+					  # Prepare Radio
+					  if ($s == "x-sonosapi-stream" or $s == "x-sonosapi-radio:")  {
+					     $liste[$i]['typ'] = "Radio";
+					 # Prepare Album
+					  } else if ($r == "Album") {
+						 $liste[$i]['typ'] = "Album";
+					  } else {
+						 $liste[$i]['typ'] = "Single";
+					  }
+                  } else {
+                     $liste[$i]['typ'] = "item";
+                  }
+                  if(isset($id) && !empty($id)){
+                      $liste[$i]['id']=((string)$id);
+					  #$liste[$i]['id']=urlencode((string)$id);
+                  }else{
+                      $liste[$i]['id']="leer";
+                  }
+                  if(isset($parentid) && !empty($parentid)){
+                      $liste[$i]['parentid']=((string)$parentid);
+					  #$liste[$i]['parentid']=urlencode((string)$parentid);
+                  }else{
+                      $liste[$i]['parentid']="leer";
+                  }
+                    if(isset($album[0])){
+                   $liste[$i]['album']=(string)$album[0];
+                  }else{
+                   $liste[$i]['album']="leer";
+                  }
+				  
+
+        }
+return $liste;
+    }
+
+
+	
+/**
  * Universal function to browse ContentDirectory
  *
  * @param string $value    ObjectID 
@@ -2631,155 +2829,6 @@ Content-Length: '. strlen($xml) .'
                   }else{
                    $liste[$i]['album']="leer";
                   }
-				  
-
-        }
-return $liste;
-    }
-
-
-	
-/**
- * Universal function to browse ContentDirectory
- *
- * @param string $value    ObjectID 
- * @param string $meta     BrowseFlag
- * @param string $filter   Filter
- * @param string $sindex   SearchIndex
- * @param string $rcount   ResultCount
- * @param string $sc       SortCriteria
- *
- * @return Array
- */
- 
-     public function GetSonosFavorites($value,$meta="BrowseDirectChildren",$filter="",$sindex="0",$rcount="1000",$sc="")
-    {
-
-       switch($meta){
-       case 'BrowseDirectChildren':
-       case 'c':
-       case 'child':
-         $meta="BrowseDirectChildren";
-       break;
-       case 'BrowseMetadata':
-       case 'm':
-       case 'meta':
-             $meta = "BrowseMetadata";
-       break;
-       default:
-       return false;
-      }
-        $header='POST /MediaServer/ContentDirectory/Control HTTP/1.1
-SOAPACTION: "urn:schemas-upnp-org:service:ContentDirectory:1#Browse"
-CONTENT-TYPE: text/xml; charset="utf-8"
-HOST: '.$this->address.':1400';
-$xml='<?xml version="1.0" encoding="utf-8"?>
-<s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
-xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
-<s:Body>
-<u:Browse xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1"><ObjectID>'.htmlspecialchars($value).'</ObjectID><BrowseFlag>'.$meta.'</BrowseFlag><Filter>'.$filter.'</Filter><StartingIndex>'.$sindex.'</StartingIndex><RequestedCount>'.$rcount.'</RequestedCount><SortCriteria>'.$sc.'</SortCriteria></u:Browse>
-</s:Body>
-</s:Envelope>';
-$content=$header . '
-Content-Length: '. strlen($xml) .'
-
-'. $xml;
-
-    $returnContent = $this->sendPacket($content);
-	
-	
-    $xmlParser = xml_parser_create();
-        $returnContent = substr($returnContent, stripos($returnContent, '&lt;'));
-        $returnContent = substr($returnContent, 0, strrpos($returnContent, '&gt;') + 4);
-        $returnContent = str_replace(array("&lt;", "&gt;", "&quot;", "&amp;", "%3a", "%2f", "%25"), array("<", ">", "\"", "&", ":", "/", "%"), $returnContent);
-
-        $xml = new SimpleXMLElement($returnContent);
-			
-		$liste = array();
-		for($i=0,$size=count($xml);$i<$size;$i++)
-        {
-						
-            //Wenn Container vorhanden, dann ist es ein Browse Element
-            //Wenn Item vorhanden, dann ist es ein Song.
-            if(isset($xml->container[$i]))  {
-                  $aktrow = $xml->container[$i];
-                  $attr = $xml->container[$i]->attributes();
-                  $liste[$i]['typ'] = "container";
-             } else if(isset($xml->item[$i]))  {
-               //Item vorhanden also nur noch Musik
-                  $aktrow = $xml->item[$i];
-                  $attr = $xml->item[$i]->attributes();
-                  $liste[$i]['typ'] = "item";
-            } else {
-               //Fehler aufgetreten
-			   return;
-            }
-			print_r($returnContent);	
-						
-			
-			
-
-			
-			      $id = $attr['id'];
-                  $parentid = $attr['parentID'];
-                  $albumart = $aktrow->xpath("upnp:albumArtURI");
-                  $titel = $aktrow->xpath("dc:title");
-                  $interpret[0] = $aktrow->xpath("r:description");
-				  $album = $aktrow->xpath("upnp:album");
-				  if(isset($aktrow->res)){
-                     $res = (string)$aktrow->res;
-                     #$liste[$i]['res'] = urlencode($res);
-					 $liste[$i]['res'] = ($res);
-
-                   }else{
-                      $liste[$i]['res'] = "leer";
-                   }
-                   $resattr = $aktrow->res->attributes();
-                   if(isset($resattr['duration'])){
-                       $liste[$i]['duration']=(string)$resattr['duration'];
-                   } else {
-                       $liste[$i]['duration']="leer";
-                   }
-				   if(isset($resattr['protocolInfo'])){
-                       $liste[$i]['TypeOfAudio']=(string)$resattr['protocolInfo'];
-                   } else {
-                       $liste[$i]['TypeOfAudio']="leer";
-                   }
-				   if(isset($resattr['//DIDL-Lite'])){
-                       $liste[$i]['DIDL-Lite']=(string)$resattr['//DIDL-Lite'];
-                   } else {
-                       $liste[$i]['DIDL-Lite']="leer";
-                   }
-				   if(isset($albumart[0])){
-                   #$liste[$i]['albumArtURI']="http://" . $this->address . ":1400".(string)$albumart[0];
-				   $liste[$i]['albumArtURI']= (string)$albumart[0];
-                  }else{
-                   $liste[$i]['albumArtURI'] ="leer";
-                  }
-                  $liste[$i]['title']=(string)$titel[0];
-                  if(isset($interpret[0])){
-                      $liste[$i]['artist']=(string)$interpret[0][0];
-                  }else{
-                     $liste[$i]['artist']="leer";
-                  }
-                  if(isset($id) && !empty($id)){
-                      #$liste[$i]['id']=urlencode((string)$id);
-					  $liste[$i]['id']=(string)$id;
-                  }else{
-                      $liste[$i]['id']="leer";
-                  }
-                  if(isset($parentid) && !empty($parentid)){
-                      #$liste[$i]['parentid']=urlencode((string)$parentid);
-					  $liste[$i]['parentid']=(string)$parentid;
-                  }else{
-                      $liste[$i]['parentid']="leer";
-                  }
-                    if(isset($album[0])){
-                   $liste[$i]['album']=(string)$album[0];
-                  }else{
-                   $liste[$i]['album']="leer";
-                  }
-				  
 				  
 
         }

@@ -222,7 +222,7 @@ global $mem_sendall, $mem_sendall_sec;
 	
 	function send_vit()  {
 		
-		global $config, $my_ms, $sonoszone, $sonoszonen, $sonos; 
+		global $config, $my_ms, $sonoszone, $sonoszonen, $sonos, $valuesplit, $split, $station; 
 		
 		# send TEXT data
 		#$lox_ip		 = $my_ms['IPAddress'];
@@ -248,60 +248,101 @@ global $mem_sendall, $mem_sendall_sec;
 			}
 			if ($gettransportinfo == 1) {
 				// Radio wird gerade gespielt
-				if(isset($tempradio["title"]) && (empty($temp["duration"])) && (substr($temp["TrackURI"], 0, 18) != "x-sonos-htastream:")) {	
+				$haystack = $tempradio["CurrentURI"];
+				$needle = "sid=254";		// sid=254 für alle Radiosender
+				$needleSonos = "sid=303";		// sid=303 für Sonos Radiosender
+				$contain = mb_strpos($haystack, $needle) !== false;
+				$containSonos = mb_strpos($haystack, $needleSonos) !== false;
+				if ($contain === true)   {
 					$stream_content = $temp["streamContent"];
-					if (empty($stream_content))  {
-						$value = @substr($tempradio["title"], 0, 40); 
-						$valuesplit[0] = $value; 							
-						$valuesplit[1] = $value;
-					} else {
-						$value = $stream_content;
-						$valuesplit[0] = $stream_content; 
-						$valuesplit[1] = $stream_content;
-					}
+					#if (empty($stream_content))  {
+						$value = @substr($temp["streamContent"], 0, 40); 
+						$split = explode(' - ', $value);
+						if ($split[0] == "")   {
+							$valuesplit[0] = ' ';
+							$valuesplit[1] = ' ';
+							$value = ' ';
+							$station = $tempradio["title"];
+						} else {
+							$valuesplit[0] = $split[0]; 
+							$valuesplit[1] = $split[1];
+							$value;
+							$station = $tempradio["title"];
+						}
+					#}
 					$source = 1;
 				} 
 				// TV läuft
-				if((empty($temp["duration"])) && (substr($temp["TrackURI"], 0, 18) == "x-sonos-htastream:")) {	
-					$value = "TV läuft";
-					$valuesplit[0] = "TV läuft";
-					$valuesplit[1] = "TV läuft";
+				if (substr($temp["TrackURI"], 0, 17) == "x-sonos-htastream" && $containSonos === false && $contain === false) {	
+					$value = "TV";
+					$valuesplit[0] = "TV";
+					$valuesplit[1] = "TV";
+					$station = ' ';
 					$source = 3;
-				// Playliste wird gerade gespielt
 				} 
-				if((!empty($temp["duration"])) && (substr($temp["TrackURI"], 0, 18) != "x-sonos-htastream:")) {	
+				// Playliste wird gerade gespielt
+				if (substr($temp["TrackURI"], 0, 17) != "x-sonos-htastream" && $containSonos === false && $contain === false) {	
 					$artist = substr($temp["artist"], 0, 30);
-					$title = substr($temp["title"], 0, 50); 
-					$value = $artist." - ".$title; 	// kombinierte Titel- und Interpretinfo
-					$valuesplit[0] = $title; 		// Nur Titelinfo
-					$valuesplit[1] = $artist;		// Nur Interpreteninfo
+					$title = substr($temp["title"], 0, 50);
+					if ($artist <> "")  { 
+						$value = $artist." - ".$title; 	// kombinierte Titel- und Interpretinfo
+						$valuesplit[0] = $title; 		// Nur Titelinfo
+						$valuesplit[1] = $artist;		// Nur Interpreteninfo
+					} else {
+						$value = $tempradio["title"];
+						$split = explode(' - ', $value);
+						$valuesplit[0] = $split[0]; 	// Nur Titelinfo
+						$valuesplit[1] = $split[1];		// Nur Interpreteninfo
+					}
+					$station = ' ';
 					$source = 2;
+				}
+				// Sonos Radio wird gerade gespielt
+				if ($containSonos === true)  {	
+					$artist = substr($temp["artist"], 0, 30);
+					$title = substr($temp["title"], 0, 50);
+					if ($artist <> "")  { 
+						$value = $artist." - ".$title; 	// kombinierte Titel- und Interpretinfo
+						$valuesplit[0] = $title; 		// Nur Titelinfo
+						$valuesplit[1] = $artist;		// Nur Interpreteninfo
+						$station = "Sonos Radio - ".$tempradio["title"];
+						$source = 1;
+					}
 				}
 				// Übergabe der Titelinformation an Loxone (virtueller Texteingang)
 				$sonos = new PHPSonos($sonoszone[$zone][0]);
-				#$valueurl = rawurlencode($value);
-				#$valuesplit[0] = rawurlencode($valuesplit[0]);
-				#$valuesplit[1] = rawurlencode($valuesplit[1]);
 				$valueurl = ($value);
-				#$valuesplit[0] = ($valuesplit[0]);
-				#$valuesplit[1] = ($valuesplit[1]);
 				try {
 					$data['titint_'.$zone] = $valueurl;
 					$data['tit_'.$zone] = $valuesplit[0];
 					$data['int_'.$zone] = $valuesplit[1];
+					$data['radio_'.$zone] = $station;
 					$data['source_'.$zone] = $source;
 				} catch (Exception $e) {
 					LOGERR("The connection to Loxone could not be initiated!");	
 					exit;
 				}
 			ms_send_mem($config['LOXONE']['Loxone'], $data, $value = null);
+			} else {
+				$valuesplit[0] = ' ';
+				$valuesplit[1] = ' ';
+				$valueurl = ' ';
+				$station = ' ';
+				$source = ' ';
+				$data['titint_'.$zone] = $valueurl;
+				$data['tit_'.$zone] = $valuesplit[0];
+				$data['int_'.$zone] = $valuesplit[1];
+				$data['radio_'.$zone] = $station;
+				$data['source_'.$zone] = $source;
+				ms_send_mem($config['LOXONE']['Loxone'], $data, $value = null);
 			}
 		}
 		#ms_send_mem($config['LOXONE']['Loxone'], $data, $value = null);
 		#print_r($data);
 		#LOGINF ("Push");
 	}
-
+	
+	
  function shutdown()  {
 	global $log;
 	#$log->LOGEND("");

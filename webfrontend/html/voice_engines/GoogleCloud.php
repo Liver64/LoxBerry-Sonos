@@ -33,7 +33,7 @@ function t2s($textstring, $filename)
 		} else {
 			$speech_api_key = $config['TTS']['API-key'];
 		}
-		#echo $voice;
+		#echo $config['TTS']['voice'];
 		
 								  		
 		LOGGING("voice_engines\googleCloud.php: Google Cloud TTS has been successful selected", 7);	
@@ -69,7 +69,6 @@ function t2s($textstring, $filename)
 		$responseDecoded = json_decode($response, true);  
 		curl_close($handle);
 		#print_r($responseDecoded);
-		
 		if (array_key_exists('audioContent', $responseDecoded)) {
 			# Speicherort der MP3 Datei
 			$file = $config['SYSTEM']['ttspath'] ."/". $filename . ".mp3";

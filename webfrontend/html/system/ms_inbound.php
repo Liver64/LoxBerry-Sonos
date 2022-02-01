@@ -62,7 +62,6 @@ if (count($tmpplayer['SONOSZONEN']) < 1)  {
 	exit(1);
 }
 
-echo $tmpconfig['LOXONE']['LoxPort'];
 if (empty($tmpconfig['LOXONE']['LoxPort']))  {
 	LOGERR('Sonos: ms_inbound.php: The Loxone UDP port is missing in your config, please check/complete your Plugin Config and save your config before downloading your Template!');
 	exit(1);
@@ -84,7 +83,7 @@ if (file_exists($xmldoc)) {
 
 // Vorbereitung der XML Datei
 $text = '<?xml version="1.0" encoding="utf-8"?>';
-$text .= "\n" . '<VirtualInUdp Title="Sonos4lox" Comment="by Sonos4lox" Address="" Port="'.$tmpconfig['LOXONE']['LoxPort'].'">' . "\r\n";
+$text .= "\n" . '<VirtualInUdp Title="Sonos4lox" Comment="by Sonos4lox" Address="'.$myIP.'" Port="'.$tmpconfig['LOXONE']['LoxPort'].'">' . "\r\n";
 foreach ($tmpplayer['SONOSZONEN'] as $zone => $key)  {
 	$text .= '	<VirtualInUdpCmd Title="Sonos: Volume '.$zone.'" Comment="" Address="" Check="vol_'.$zone.'@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="100"/>' . "\r\n";
 	$text .= '	<VirtualInUdpCmd Title="Sonos: Playstate '.$zone.'" Comment="" Address="" Check="stat_'.$zone.'@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>' . "\r\n";

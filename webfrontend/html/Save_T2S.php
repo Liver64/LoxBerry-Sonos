@@ -14,10 +14,10 @@
 echo '<PRE>';	
 function saveZonesStatus() {
 	global $sonoszone, $config, $sonos, $player, $actual, $time_start;
-	
+
 	// save each Zone Status
 	foreach ($sonoszone as $player => $value) {
-		$sonos = new PHPSonos($config['sonoszonen'][$player][0]); 
+		$sonos = new PHPSonos($sonoszone[$player][0]); 
 		$actual[$player]['Mute'] = $sonos->GetMute($player);
 		$actual[$player]['Volume'] = $sonos->GetVolume($player);
 		$actual[$player]['MediaInfo'] = $sonos->GetMediaInfo($player);
@@ -30,7 +30,6 @@ function saveZonesStatus() {
 		$actual[$player]['CONNECT'] = GetVolumeModeConnect($player);
 	}
 	LOGGING("save_t2s.php: All Zone settings has been saved successful",6);
-	#print_r($actual);
 	return $actual;
 }
 ?>

@@ -21,8 +21,8 @@
  },
  {
    "value": "funktionen nextradio fungerar inte, kontrollera felloggen för Sonos Plugin",
-   "voice": "sv-SV-Wavenet-A",
-   "language": "sv-SV"
+   "voice": "sv-SE-Wavenet-A",
+   "language": "sv-SE"
  },
  {
    "value": "a função nextradio não está funcionando, verifique o log de erros do plug-in Sonos",
@@ -30,9 +30,19 @@
    "language": "pt-PT"
  },
  {
-   "value": "функция nextradio не работает, проверьте журнал ошибок плагина Sonos",
+   "value": "uncția nextradio nu funcționează, vă rugăm să verificați jurnalul de erori Sonos Plugin",
    "voice": "ro-RO-Wavenet-A",
    "language": "ro-RO"
+ },
+ {
+   "value": "La fonction nextradio ne fonctionne pas, veuillez vérifier le journal des erreurs du plugin Sonos.",
+   "voice": "fr-FR-Wavenet-A",
+   "language": "fr-FR"
+ },
+ {
+   "value": "функция nextradio не работает, пожалуйста, проверьте журнал ошибок Sonos Plugin",
+   "voice": "ru-RU-Wavenet-A",
+   "language": "ru-RU"
  },
  {
    "value": "la funzione nextradio non funziona, controllare il registro degli errori del plug-in Sonos",

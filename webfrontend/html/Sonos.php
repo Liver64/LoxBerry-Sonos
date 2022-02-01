@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	4.0.3
-# Datum: 	07.01.2022
+# Version: 	4.1.0
+# Datum: 	01.02.2022
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
@@ -16,7 +16,7 @@
 # cURL for voice engines
 
 
-ini_set('max_execution_time', 60); 							// Max. Skriptlaufzeit auf 120 Sekunden
+ini_set('max_execution_time', 60); 							// Max. Skriptlaufzeit auf 60 Sekunden
 
 include("system/PHPSonos.php");
 include("system/Tracks.php");
@@ -32,6 +32,7 @@ include("Restore_T2S.php");
 include("Save_T2S.php");
 include("Speaker.php");
 include('system/logging.php');
+#include('battery.php');
 include('system/bin/openssl_file.class.php');
 
 register_shutdown_function('shutdown');
@@ -65,6 +66,7 @@ $POnline = "/run/shm/sonoszone.json";							// path/file for Player Online check
 $off_file = $lbplogdir."/off.tmp";								// path/file for script off
 $tmp_error = "/run/shm/errorMP3Stream.json";					// path/file for error message
 $check_date = "/run/shm/s4lox_date";							// store date execution
+$configfile	= "/run/shm/s4lox_config.json";						// configuration file
 
 #echo '<PRE>';
 
@@ -128,6 +130,7 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 		}
 	}
 }
+
 	
 #-- Start Preparation ------------------------------------------------------------------
 	
@@ -153,14 +156,17 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 		}
 		LOGGING("sonos.php: Player config has been loaded",7);
 	}
+
 	$player = ($tmpplayer['SONOSZONEN']);
 	foreach ($player as $zonen => $key) {
 		$sonosnet[$zonen] = explode(',', $key[0]);
 	} 
 	$sonoszonen['sonoszonen'] = $sonosnet;
+	
 	// finale config für das Script
 	$config = array_merge($sonoszonen, $tmpsonos);
-	
+	#file_put_contents($configfile, json_encode($config));
+
 	// Übernahme und Deklaration von Variablen aus der Konfiguration
 	$sonoszonen = $config['sonoszonen'];
 	
@@ -173,13 +179,13 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 	}
 	$zonesoff = "";
 	if ($checkonline === true)  {
-		if (!file_exists($POnline)) {
+		#if (!file_exists($POnline)) {
 			// prüft den Onlinestatus jeder Zone
 			$zonesonline = array();
 			LOGGING("sonos.php: Backup Online check for Players will be executed",7);
 			foreach($sonoszonen as $zonen => $ip) {
 				$port = 1400;
-				$timeout = 3;
+				$timeout = 1;
 				$handle = @stream_socket_client("$ip[0]:$port", $errno, $errstr, $timeout);
 				if($handle) {
 					$sonoszone[$zonen] = $ip;
@@ -191,10 +197,10 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 			}
 			$zoon = implode(", ", $zonesonline);
 			LOGGING("sonos.php: Zone(s) $zoon are Online",7);
-			File_Put_Array_As_JSON($POnline, $sonoszone, $zip=false);
-		} else {
-			$sonoszone = File_Get_Array_From_JSON($POnline, $zip=false);
-		}
+			#File_Put_Array_As_JSON($POnline, $sonoszone, $zip=false);
+		#} else {
+			#$sonoszone = File_Get_Array_From_JSON($POnline, $zip=false);
+		#}
 	} else {
 		LOGGING("sonos.php: You have not turned on Function to check if all your Players are powered on/online. PLease turn on function 'checkonline' in Plugin Config in order to secure your requests!", 4);
 		$sonoszone = $sonoszonen;
@@ -209,7 +215,8 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 	#print_r($sonoszonen);
 	#print_r($config);
 	#exit;
-		
+	#print_r($sonoszone);
+	
 	# check if LBPort already exist in config (sonos.cfg), if not force user to save config
 	$checklb = explode(':', $config['SYSTEM']['httpinterface']);
 	$checklbport = explode('/', $checklb[2]);
@@ -704,6 +711,11 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			radio();
 		break;
 		
+		case 'radiopl':
+			radio();
+			#$test = $sonos->GetCurrentPlaylist();
+			#print_r($test);
+		break;
 		
 		case 'groupradioplaylist': 
 			AddMemberTo();
@@ -843,6 +855,14 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'ungroup':
 			ungroup_all();
 		break;
+		
+		case 'pl':
+			$tes = $sonos->BrowseFav("FV:2","c");
+			echo "OLLI";
+			print_r($tes);
+			#exit;
+			#getMeta();
+		break;
 	
 
 	
@@ -938,13 +958,24 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 			
 		
-		case 'getuser':
+		case 'playfavorite':
+			playFav();
+		break;	
+		
+		case 'testplay':
+		$sonos->SetRadio('x-rincon-mp3radio://http://stream.antenne1.de/a1stg/livestream2.mp3', "keine Ahnung");
+		break;
+
+		case 'getfavorites':
 			echo '<PRE>';
-			echo get_current_user();
+			getFav();
 			echo '</PRE>';
 		break;	
 		
-		  
+		case 'playallfavorites':
+			addFavList();
+		break;	
+		
 		case 'masterplayer':
 			Global $zone, $master;	
 			foreach ($sonoszone as $player => $ip) {
@@ -999,7 +1030,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$sonos->SnapshotGroupVolume();
 			$GetGroupVolume = $sonos->GetGroupVolume();
 		break;
-		
 		
 		case 'setgroupvolume':
 			$sonos = new PHPSonos($sonoszone[$master][0]);
@@ -1366,7 +1396,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		
 		case 'browse':
-		$t = createMetaDataXml('x-sonos-http:track%3a295580498.mp3?sid=160&amp;flags=8224&amp;sn=3');
+		$t = $sonos->BrowseFav("FV:2","c");
 		print_r($t);
 		break;
 		
@@ -1388,6 +1418,11 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		case 'on':
 			scripton();
+		break;
+		
+		case 'updateplayer':
+			$output = shell_exec('php system/updateplayer.php');
+			LOGGING("sonos.php: Player configuration has been updated :-)", 7);
 		break;
 		
 		case 'queue':

@@ -316,7 +316,10 @@
 			[Improvement] Microsoft Azure TTS hinzugefügt
  4.0.4		[Bugfix] Fehlermeldung bei 'nextradio' von Error auf Warnung geändert
 			[Bugfix] Fehleransage bei 'nextradio' einmal täglich
-			
- 
+ 4.1.0		[Improvement] Neue Funktion 'playfavorite' um einen bestimmten Sonos Favoriten abzuspielen
+			[Improvement] Neue Funktion 'getfavorites' um eine Liste der Sonos Favoriten zu erhalten (NUR PC) 
+			[Improvement] Neue Funktion 'playallfavorites' um alle Sonos Favoriten mit Ausnahme von Radio Sendern und Alben abzuspielen
+			[Bugfix] Scannen nach Playern korrigiert
+
 
  

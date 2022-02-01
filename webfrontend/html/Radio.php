@@ -98,6 +98,7 @@ function nextradio() {
 	}
 	$playstatus = $sonos->GetTransportInfo();
 	$radioname = $sonos->GetMediaInfo();
+	print_r($radioname);
 	if (!empty($radioname["title"])) {
 		$senderuri = $radioname["title"];
 	} else {
@@ -284,6 +285,7 @@ function select_error_lang() {
 	$file = "error.json";
 	$url = $pathlanguagefile."".$file;
 	$valid_languages = File_Get_Array_From_JSON($url, $zip=false);
+	print_r($valid_languages);
 	$language = $config['TTS']['messageLang'];
 	$language = substr($language, 0, 5);
 	#echo $language;

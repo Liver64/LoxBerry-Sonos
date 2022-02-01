@@ -54,7 +54,7 @@
     }
 }
 
-	
+
 /**
 * Function : get_file_content --> übermittelt die Titel/Interpret Info an Loxone
 * http://stackoverflow.com/questions/697472/php-file-get-contents-returns-failed-to-open-stream-http-request-failed
@@ -999,6 +999,56 @@ function write_MP3_IDTag($income_text) {
 	}
 	return ($TagData);
 }	
+
+
+// source: Laravel Framework
+// https://github.com/laravel/framework/blob/8.x/src/Illuminate/Support/Str.php
+
+/**
+# Some simple Tests
+$needle = "containerert1653";
+$haystack = "x-rincon-cpcontainer:100d206cuser-fav-containerert1653";
+$resultc = starts_with($haystack, $needle);
+var_dump($resultc);
+$results = contains($haystack, $needle);
+var_dump($results);
+$resulte = ends_with($haystack, $needle);
+var_dump($resulte);
+**/
+
+/**
+/* Funktion : starts_with --> check if string starts with
+/*
+/* @param: $haystack = string, $needle = search string                             
+/* @return: bool(true) or bool(false)
+**/
+
+function starts_with($haystack, $needle) {
+    return (string)$needle !== '' && strncmp($haystack, $needle, strlen($needle)) === 0;
+}
+
+/**
+/* Funktion : contains --> check if string contain
+/*
+/* @param: $haystack = string, $needle = search string                             
+/* @return: bool(true) or bool(false)
+**/
+
+function contains($haystack, $needle) {
+    return $needle !== '' && mb_strpos($haystack, $needle) !== false;
+}
+
+/**
+/* Funktion : ends_with --> check if string ends with
+/*
+/* @param: $haystack = string, $needle = search string                             
+/* @return: bool(true) or bool(false)
+**/
+
+function ends_with($haystack, $needle) {
+    return $needle !== '' && substr($haystack, -strlen($needle)) === (string)$needle;
+}
+
  
  
 ?>
