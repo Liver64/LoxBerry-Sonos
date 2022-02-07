@@ -139,7 +139,8 @@ if ($pcfg->param("SYSTEM.checkt2s") eq '')  {
 
 # read language
 my $lblang = lblanguage();
-my %SL = LoxBerry::System::readlanguage($template, $languagefile);
+our %SL = LoxBerry::System::readlanguage($template, $languagefile);
+#my %SL = LoxBerry::System::readlanguage($template, $languagefile);
 
 # Read Plugin Version
 my $sversion = LoxBerry::System::pluginversion();
@@ -315,6 +316,7 @@ sub form
 	$template		->param("VOICE" 		=> $pcfg->param("TTS.voice"));
 	$template		->param("CODE" 			=> $pcfg->param("TTS.messageLang"));
 	$template		->param("DATADIR" 		=> $pcfg->param("SYSTEM.path"));
+	$template		->param("LOX_ON" 		=> $pcfg->param("LOXONE.LoxDaten"));
 		
 	# Load saved values for "select"
 	my $t2s_engine		  = $pcfg->param("TTS.t2s_engine");
