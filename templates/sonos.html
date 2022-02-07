@@ -391,10 +391,43 @@
                         <table border=0 width="100%">
                             <tr>
                                 <td class="empty_template" style="width: 25%">
-                                    <a download="VIU_Sonos_UDP.xml" title="UDP Inputs" data-role="button" data-inline="true" data-mini="true" href="/plugins/<TMPL_VAR PLUGINDIR>/system/VIU_Sonos_UDP.xml">
-                                        <TMPL_VAR T2S.BUTTON_TEMPLATE>
-                                    </a>
-                                    <td style="width: 23px; text-align: center;">
+								    <!--<a download="VIU_Sonos_UDP.xml" onclick='checkLoxInSaved()' title="UDP Inputs" data-role="button" data-inline="true" data-mini="true" href="/plugins/<TMPL_VAR PLUGINDIR>/system/VIU_Sonos_UDP.xml">
+										<TMPL_VAR T2S.BUTTON_TEMPLATE>
+                                    </a>-->
+                                    
+									  <input type="button" id="btn" data-mini="true" value="VIU_Sonos_UDP.xml" />
+									  <script>
+											function download(filename) {
+												  var element = document.createElement('a');
+												  element.setAttribute('href','/plugins/<TMPL_VAR PLUGINDIR>/system/VIU_Sonos_UDP.xml');
+												  element.setAttribute('download', filename);
+												  document.body.appendChild(element);
+												  element.click();
+											}
+											document.getElementById("btn")
+												  .addEventListener("click", function () {
+														$.post("/plugins/<TMPL_VAR PLUGINDIR>/system/ms_inbound.php");
+														var url = '/plugins/<TMPL_VAR PLUGINDIR>/system/VIU_Sonos_UDP.xml'; 
+														var http = new XMLHttpRequest(); 
+														http.open('HEAD', url, false); 
+														http.send(); 
+														if ('<TMPL_VAR LOX_ON>' == 'false' && http.status !== 200)  {
+															$("#info").attr("style", "color:red");
+															$("#info").text('<TMPL_VAR ERRORS.ERR_XM_TEMP>');
+															$('html, body').animate({
+																scrollTop: $("#zone1").offset().top
+																}, 500);
+																$("#zone1").focus();
+														} else {
+															var filename = "VIU_Sonos_UDP.xml";
+															download(filename);
+														}
+												  }, false);
+									  </script>
+																	
+									
+									
+									<td style="width: 23px; text-align: center;">
                                         &nbsp;</td>
                                     <td>
                                         <table border=0 style="width: 99%">
@@ -1136,7 +1169,22 @@
 
         }
 		
-					
+		
+		function checkLoxInSaved(e)  {
+			if ('<TMPL_VAR LOX_ON>' == 'false')  {
+				$("#info").attr("style", "color:red");
+				$("#info").text('Please save your Config first!');
+				$('html, body').animate({
+                    scrollTop: $("#zone1").offset().top
+                    }, 500);
+                    $("#zone1").focus();
+                    //e.preventDefault();
+				throw new Error();
+			}
+		}
+
+
+		
 		function checkProvider() {
 			if (document.main_form.tts_google_cloud.checked == true) {
 				populateGoogleCloudVoices();
