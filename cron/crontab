@@ -1,3 +1,0 @@
-# m h dom mon dow user  command
-
-3 */2 * * *	loxberry /usr/bin/php REPLACELBPBINDIR/battery.php > /dev/null 2>&1
