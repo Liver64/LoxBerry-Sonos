@@ -165,7 +165,7 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 	
 	// finale config für das Script
 	$config = array_merge($sonoszonen, $tmpsonos);
-	#file_put_contents($configfile, json_encode($config));
+	file_put_contents($configfile, json_encode($config));
 
 	// Übernahme und Deklaration von Variablen aus der Konfiguration
 	$sonoszonen = $config['sonoszonen'];
@@ -1418,6 +1418,13 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		case 'on':
 			scripton();
+		break;
+		
+		case 'batt':
+		echo 'php '.$lbphtmldir.'/battery.php';
+			$out = shell_exec('php '.$lbpbindir.'/battery.php');
+			echo "<br>";
+			print_r($out);
 		break;
 		
 		case 'updateplayer':

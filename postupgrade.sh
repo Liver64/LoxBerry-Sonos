@@ -73,4 +73,7 @@ echo "<INFO> Start validation of Radio favorites"
 echo "<INFO> Start update Player Configuration"
 /usr/bin/php -q REPLACELBPHTMLDIR/system/updateplayer.php
 
+echo "<INFO> Inform User to update Config"
+/usr/bin/php -q REPLACELBPBINDIR/notify.php
+
 exit 0

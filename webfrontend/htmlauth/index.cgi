@@ -23,11 +23,11 @@ use LoxBerry::System;
 use LoxBerry::Web;
 use LoxBerry::Log;
 use LoxBerry::Storage;
+use LoxBerry::IO;
 
 use CGI::Carp qw(fatalsToBrowser);
 use CGI qw/:standard/;
 use CGI;
-#use Config::Simple '-strict';
 use LWP::Simple;
 use LWP::UserAgent;
 use File::HomeDir;
@@ -37,6 +37,7 @@ use utf8;
 use warnings;
 use strict;
 #use Data::Dumper;
+#use Config::Simple '-strict';
 #no strict "refs"; # we need it for template system
 
 ##########################################################################
@@ -65,6 +66,7 @@ our $miniserver;
 our $template;
 our $content;
 our %navbar;
+our $mqttcred;
 
 my $helptemplatefilename		= "help/help.html";
 my $languagefile 				= "sonos.ini";
@@ -72,7 +74,7 @@ my $maintemplatefilename	 	= "sonos.html";
 my $pluginconfigfile 			= "sonos.cfg";
 my $pluginplayerfile 			= "player.cfg";
 my $pluginlogfile				= "sonos.log";
-my $XML_file					= "VIU_Sonos_UDP.xml";
+# my $XML_file					= "VIU_Sonos_UDP.xml";
 my $lbip 						= LoxBerry::System::get_localip();
 my $lbport						= lbwebserverport();
 my $ttsfolder					= "tts";
@@ -139,7 +141,8 @@ if ($pcfg->param("SYSTEM.checkt2s") eq '')  {
 
 # read language
 my $lblang = lblanguage();
-my %SL = LoxBerry::System::readlanguage($template, $languagefile);
+our %SL = LoxBerry::System::readlanguage($template, $languagefile);
+#my %SL = LoxBerry::System::readlanguage($template, $languagefile);
 
 # Read Plugin Version
 my $sversion = LoxBerry::System::pluginversion();
@@ -150,6 +153,9 @@ my $lbversion = LoxBerry::System::lbversion();
 # read all POST-Parameter in namespace "R".
 my $cgi = CGI->new;
 $cgi->import_names('R');
+
+# Get MQTT Credentials
+$mqttcred = LoxBerry::IO::mqtt_connectiondetails();
 
 LOGSTART "Sonos UI started";
 
@@ -176,6 +182,7 @@ if($log->loglevel() eq "7") {
 	$LoxBerry::Web::DEBUG 		= 1;
 	$LoxBerry::Storage::DEBUG	= 1;
 	$LoxBerry::Log::DEBUG		= 1;
+	$LoxBerry::IO::DEBUG		= 1;
 }
 
 
@@ -315,11 +322,12 @@ sub form
 	$template		->param("VOICE" 		=> $pcfg->param("TTS.voice"));
 	$template		->param("CODE" 			=> $pcfg->param("TTS.messageLang"));
 	$template		->param("DATADIR" 		=> $pcfg->param("SYSTEM.path"));
+	$template		->param("LOX_ON" 		=> $pcfg->param("LOXONE.LoxDaten"));
 		
 	# Load saved values for "select"
 	my $t2s_engine		  = $pcfg->param("TTS.t2s_engine");
 	my $rmpvol	 	  	  = $pcfg->param("TTS.volrampto");
-	my $storepath = $pcfg->param("SYSTEM.path"),
+	my $storepath 		  = $pcfg->param("SYSTEM.path"),
 	
 	# *******************************************************************************************************************
 	# Radiosender einlesen
@@ -414,6 +422,15 @@ sub form
 	closedir(DIR);
 	$template->param("MP3_LIST", $mp3_list);
 	LOGDEB "List of MP3 files has been successful loaded";
+	
+	# check if MQTT is installed and valid credentials received
+	if ($mqttcred)   {
+		$template->param("MQTT" => "true");
+		LOGDEB "MQTT Gateway is installed and valid credentials received.";
+	} else {
+		$template->param("MQTT" => "false");
+		LOGDEB "MQTT Gateway is not installed or wrong credentials received.";
+	}
 	
 	LOGOK "Sonos Plugin has been successfully loaded.";
 	
@@ -531,18 +548,7 @@ sub save_details
 	    unlink ("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
 		LOGOK "Cron job hourly created";
 	  }
-	#} 
-	#else
-	#{
-	#  unlink ("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
-	#  unlink ("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
-	#  unlink ("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
-	#  unlink ("$lbhomedir/system/cron/cron.15min/$lbpplugindir");
-	#  unlink ("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
-	#  unlink ("$lbhomedir/system/cron/cron.hourly/$lbpplugindir");
-	#  LOGOK "Cron job removed";
-	#}
-	
+		
 	LOGOK "Detail settings has been saved successful";
 	&print_save;
 	exit;
@@ -572,9 +578,9 @@ sub save
 			
 	# turn on/off MS inbound function 
 	if ($LoxDaten eq "true") {
-		LOGOK "Coummunication to Miniserver is switched on";
+		LOGDEB "Coummunication to Miniserver is switched on";
 	} else {
-		LOGOK "Coummunication to Miniserver is switched off.";
+		LOGDEB "Coummunication to Miniserver is switched off.";
 	}
 		
 	# OK - now installing...
@@ -584,26 +590,18 @@ sub save
 	$pcfg->param("LOXONE.LoxDaten", "$R::sendlox");
 	$pcfg->param("LOXONE.LoxPort", "$R::udpport");
 	$pcfg->param("TTS.t2s_engine", "$R::t2s_engine");
-	#$pcfg->param("TTS.rampto", "$R::rampto");
-	#$pcfg->param("TTS.volrampto", "$R::rmpvol");
 	$pcfg->param("TTS.messageLang", "$R::t2slang");
 	$pcfg->param("TTS.API-key", "$R::apikey");
 	$pcfg->param("TTS.secret-key", "$R::seckey");
 	$pcfg->param("TTS.voice", "$R::voice");
 	$pcfg->param("TTS.regionms", $azureregion);
-	#$pcfg->param("TTS.correction", "$R::correction");
-	$pcfg->param("MP3.file_gong", "$R::file_gong");
-	#$pcfg->param("MP3.volumedown", "$R::volume");
-	#$pcfg->param("MP3.volumeup", "$R::volume");
 	$pcfg->param("MP3.MP3store", "$R::mp3store");
 	$pcfg->param("MP3.cachesize", "$R::cachesize");
 	$pcfg->param("LOCATION.region", "$R::region");
 	$pcfg->param("LOCATION.googlekey", "$R::googlekey");
 	$pcfg->param("LOCATION.googletown", "$R::googletown");
 	$pcfg->param("LOCATION.googlestreet", "$R::googlestreet");
-	#$pcfg->param("VARIOUS.announceradio", "$R::announceradio");
 	$pcfg->param("SYSTEM.checkt2s", "$R::checkt2s");
-	#$pcfg->param("SYSTEM.checkonline", "true");
 	$pcfg->param("VARIOUS.donate", "$R::donate");
 	$pcfg->param("LOCATION.town", "\"$R::town\"");
 	$pcfg->param("VARIOUS.CALDavMuell", "\"$R::wastecal\"");
@@ -667,7 +665,6 @@ sub save
 		if ( param("chkplayers$i") ) { # if player should be deleted
 			$playercfg->delete( "SONOSZONEN." . param("zone$i") . "[]" );
 		} else { # save
-			#$playercfg->param( "SONOSZONEN." . param("zone$i") . "[]", param("ip$i") . "," . param("rincon$i") . "," . param("model$i") . "," . param("t2svol$i") . "," . param("sonosvol$i") . "," . param("maxvol$i") );
 			$playercfg->param( "SONOSZONEN." . param("zone$i") . "[]", param("ip$i") . "," . param("rincon$i") . "," . param("model$i") . "," . param("t2svol$i") . "," . param("sonosvol$i") . "," . param("maxvol$i") . "," . param("mainchk$i"). "," . param("models$i") . "," . param("groupId$i") . "," . param("householdId$i"). "," . param("deviceId$i"));
 		}
 	}
@@ -675,7 +672,7 @@ sub save
 	$playercfg->save() or &error; 
 	LOGDEB "Sonos Zones has been saved.";
 	
-	# call to prepare XML Template
+	# call to prepare XML Template during saving
 	if ($R::sendlox eq "true") {
 		&prep_XML;
 	}
@@ -752,12 +749,12 @@ sub scan
 	# executes PHP script and saves XML Template local
 	my $udp_temp = qx(/usr/bin/php $lbphtmldir/system/$udp_file);
 	
-	if (!-r $lbphtmldir . "/system/" . $XML_file) 
-	{
-		LOGWARN "File '".$XML_file."' has not been generated and could not be downloaded. Please check log file";
-		return();
-	}
-	LOGOK "XML Template file '".$XML_file."' has been generated and saved";
+	#if (!-r $lbphtmldir . "/system/" . $XML_file) 
+	#{
+	#	LOGWARN "File '".$XML_file."' has not been generated and could not be downloaded. Please check log file";
+	#	return();
+	#}
+	LOGOK "XML Template files generation has been called";
 	return();
 }
  

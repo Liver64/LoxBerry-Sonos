@@ -918,6 +918,7 @@ function create_symlinks()  {
 function xcopy($source, $dest, $permissions = 0755)
 {
     // Check for symlinks
+	echo $source;
     if (is_link($source)) {
         return symlink(readlink($source), $dest);
     }

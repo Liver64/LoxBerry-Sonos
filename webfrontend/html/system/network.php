@@ -84,14 +84,16 @@ $plugindata = LBSystem::plugindata();
         $response .= $tmp;
     }
 	#print_r($response);
+	#$search = "urn:schemas-upnp-org:device:ZonePlayer:1";
+
     $devices = [];
     foreach (explode("\r\n\r\n", $response) as $reply) {
 		if (!$reply) {
             continue;
         }
-
+		#var_dump(strpos($reply, $search));
 		# Only attempt to parse responses from Sonos speakers
-        if (strpos($reply, $search) === false) {
+        if (@strpos($reply, $search) === false) {
             continue;
         }
 

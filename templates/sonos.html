@@ -329,11 +329,12 @@
                     <td style="height: 60px; width: 25%;">
                         <!--<a id="lsendlox" <TMPL_VAR T2S.DATA_TRANSFER_MINISERVER_LINK> target="_blank"><TMPL_VAR T2S.DATA_TRANSFER_MINISERVER></a>-->
                         <label id="lsendlox"><TMPL_VAR T2S.DATA_TRANSFER_MINISERVER></label>
+						
                     </td>
-                    <td width="50%" style="height: 60px">
+                    <td width="5%" style="height: 60px">
                         <table border=0 width="100%">
                             <tr>
-                                <td style="width: 25%">
+                                <td style="width: 6%">
                                     <fieldset>
                                         <select onchange="selection()" id="sendlox" name="sendlox" data-role="flipswitch" style="width: 104px">
 										<option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
@@ -347,17 +348,27 @@
                                 <td style="width: 23px; text-align: center;">
                                     &nbsp;</td>
                                 <td>
-                                    <table border=0 style="width: 91%">
+                                    <table border=0 style="width: 95%">
                                         <tr>
-                                            <td class="field_ms" align="right" style="width: 245px">
+                                            <td class="field_ms" align="left" style="width: 330px">
                                                 <!--<select id="miniserver" name="miniserver" data-mini="true" data-native-menu="false" style="width: 142px"><TMPL_VAR MSSELECTLIST>
-							</select>-->
+												</select>-->
                                                 <TMPL_VAR MS>
+											<td class="field_ms" align="left" style="width: 230px">
+												<script>
+													if ('<TMPL_VAR MQTT>' == 'true')   {
+														document.write('<p id="mqtt" name="mqtt" style="color:green"><TMPL_VAR T2S.DATA_TRANSFER_MQTT_ON></p>');
+													} else {
+														document.write('<p id="mqtt" name="mqtt" style="color:red"><TMPL_VAR T2S.DATA_TRANSFER_MQTT_OFF></p>');
+													}
+												</script>
+												</td>
                                             </td>
-                                            <td class="field_lab_udp" align="right" style="width: 184px">
+											
+                                            <td class="field_lab_udp" align="right" style="width: 84px">
                                                 <TMPL_VAR T2S.LABEL_UDP_PORT>
                                             </td>
-                                            <td class="field_udp" style="width: 27px">
+                                            <td class="field_udp" style="width: 20px">
                                                 <input id="udpport" name="udpport" type="text" value="<TMPL_VAR LOXONE.LoxPort>" align="left" style="width: 71px; " 
 												data-validation-error-msg="<TMPL_VAR ERRORS.ERR_UDPPORT>" 
 												data-validation-rule="special:port">
@@ -381,7 +392,7 @@
 
                     </td>
                 </tr>
-
+				
                 <tr>
                     <td class="label_template" style="height: 60px; width: 25%;">
                         <label id="ltemplate"><TMPL_VAR T2S.LABEL_TEMPLATE></label>
@@ -391,29 +402,121 @@
                         <table border=0 width="100%">
                             <tr>
                                 <td class="empty_template" style="width: 25%">
-                                    <a download="VIU_Sonos_UDP.xml" title="UDP Inputs" data-role="button" data-inline="true" data-mini="true" href="/plugins/<TMPL_VAR PLUGINDIR>/system/VIU_Sonos_UDP.xml">
-                                        <TMPL_VAR T2S.BUTTON_TEMPLATE>
-                                    </a>
-                                    <td style="width: 23px; text-align: center;">
-                                        &nbsp;</td>
-                                    <td>
-                                        <table border=0 style="width: 99%">
-                                            <tr>
-
-                                                <td class="empty_template" style="width: 50%; height: 60px;">
-
-                                                    <font size="-1">
-                                                        <TMPL_VAR T2S.HELP_TEMPLATE>
-                                                            <a id="lwiki" target="_blank">
-                                                                <TMPL_VAR T2S.HELP_TEMPLATE_END>
-                                                            </a>
-                                                    </font>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
+								    <!--<a download="VIU_Sonos_UDP.xml" onclick='checkLoxInSaved()' title="UDP Inputs" data-role="button" data-inline="true" data-mini="true" href="/plugins/<TMPL_VAR PLUGINDIR>/system/VIU_Sonos_UDP.xml">
+										<TMPL_VAR T2S.BUTTON_TEMPLATE>
+                                    </a>-->
+                                    
+									  <input type="button" id="btn" data-mini="true" value="VI_UDP_Sonos.xml" />
+									  <script>
+											function download(filename) {
+												  var element = document.createElement('a');
+												  element.setAttribute('href','/plugins/<TMPL_VAR PLUGINDIR>/system/VI_UDP_Sonos.xml');
+												  element.setAttribute('download', filename);
+												  document.body.appendChild(element);
+												  element.click();
+											}
+											document.getElementById("btn")
+												  .addEventListener("click", function (e) {
+														$.post("/plugins/<TMPL_VAR PLUGINDIR>/system/ms_inbound.php");
+														var url = '/plugins/<TMPL_VAR PLUGINDIR>/system/VI_UDP_Sonos.xml'; 
+														var http = new XMLHttpRequest(); 
+														http.open('HEAD', url, false); 
+														http.send(); 
+														//console.log("http status: " + http.status);
+														if (http.status !== 200)  {
+															$("#info").attr("style", "color:red");
+															$("#info").text('<TMPL_VAR ERRORS.ERR_XM_TEMP>');
+															$('html, body').animate({
+																scrollTop: $("#zone1").offset().top
+																}, 500);
+																$("#zone1").focus();
+																e.preventDefault();
+														} else {
+															var filename = "VI_UDP_Sonos.xml";
+															download(filename);
+														}
+												  }, false);
+									  </script>
+																	
+									
+									
+									<td class="empty_template" style="width: 25%">
+                                        <input type="button" id="btn1" data-mini="true" value="VI_MQTT_HTTP_Sonos.xml" />
+										<script>
+											function download(filename) {
+												  var element = document.createElement('a');
+												  element.setAttribute('href','/plugins/<TMPL_VAR PLUGINDIR>/system/VI_MQTT_HTTP_Sonos.xml');
+												  element.setAttribute('download', filename);
+												  document.body.appendChild(element);
+												  element.click();
+											}
+											document.getElementById("btn1")
+												  .addEventListener("click", function (e) {
+														$.post("/plugins/<TMPL_VAR PLUGINDIR>/system/ms_inbound.php");
+														var url = '/plugins/<TMPL_VAR PLUGINDIR>/system/VI_MQTT_HTTP_Sonos.xml'; 
+														var http = new XMLHttpRequest(); 
+														http.open('HEAD', url, false); 
+														http.send(); 
+														//console.log("http status: " + http.status);
+														if (http.status !== 200)  {
+															$("#info").attr("style", "color:red");
+															$("#info").text('<TMPL_VAR ERRORS.ERR_XM_TEMP>');
+															$('html, body').animate({
+																scrollTop: $("#zone1").offset().top
+																}, 500);
+																$("#zone1").focus();
+																e.preventDefault();
+														} else {
+															var filename = "VI_MQTT_HTTP_Sonos.xml";
+															download(filename);
+														}
+												  }, false);
+									  </script>
+									</td>
+                                    <td class="empty_template" style="width: 25%">
+									<input type="button" id="btn2" data-mini="true" value="VI_MQTT_UDP_Sonos.xml" />
+									<script>
+											function download(filename) {
+												  var element = document.createElement('a');
+												  element.setAttribute('href','/plugins/<TMPL_VAR PLUGINDIR>/system/VI_MQTT_UDP_Sonos.xml');
+												  element.setAttribute('download', filename);
+												  document.body.appendChild(element);
+												  element.click();
+											}
+											document.getElementById("btn2")
+												  .addEventListener("click", function (e) {
+														$.post("/plugins/<TMPL_VAR PLUGINDIR>/system/ms_inbound.php");
+														var url = '/plugins/<TMPL_VAR PLUGINDIR>/system/VI_MQTT_UDP_Sonos.xml'; 
+														var http = new XMLHttpRequest(); 
+														http.open('HEAD', url, false); 
+														http.send(); 
+														//console.log("http status: " + http.status);
+														if (http.status !== 200)  {
+															$("#info").attr("style", "color:red");
+															$("#info").text('<TMPL_VAR ERRORS.ERR_XM_TEMP>');
+															$('html, body').animate({
+																scrollTop: $("#zone1").offset().top
+																}, 500);
+																$("#zone1").focus();
+																e.preventDefault();
+														} else {
+															var filename = "VI_MQTT_UDP_Sonos.xml";
+															download(filename);
+														}
+												  }, false);
+									  </script>
+									</td>
+                                </td>
                             </tr>
                         </table>
+						<td class="empty_template" style="width: 50%; height: 60px;">
+                            <font size="-1">
+                                <TMPL_VAR T2S.HELP_TEMPLATE>
+								<a id="lwiki" target="_blank">
+									<TMPL_VAR T2S.HELP_TEMPLATE_END>
+								</a>
+                            </font>
+                        </td>
 						
 						<!--<tr>
 							<td class="label_template" style="height: 60px; width: 25%;">
@@ -757,6 +860,8 @@
         </div>
         <!-- Ende Donation -->
     </form>
+	
+
     <!--</form>-->
 
 	<!-- Speech SDK reference sdk. -->
@@ -797,9 +902,14 @@
 					$('input:checkbox').checkboxradio('refresh');
 				}
 			}
+			return;
 		}
 		
-        function t2slayout() {
+		
+		
+		
+		
+		function t2slayout() {
             if (document.main_form.t2s_det.checked == true) {
                 $(".t2sdet").fadeIn(800);
             } else {
@@ -1136,7 +1246,22 @@
 
         }
 		
-					
+		
+		function checkLoxInSaved(e)  {
+			if ('<TMPL_VAR LOX_ON>' == 'false')  {
+				$("#info").attr("style", "color:red");
+				$("#info").text('Please save your Config first!');
+				$('html, body').animate({
+                    scrollTop: $("#zone1").offset().top
+                    }, 500);
+                    $("#zone1").focus();
+                    //e.preventDefault();
+				throw new Error();
+			}
+		}
+
+
+		
 		function checkProvider() {
 			if (document.main_form.tts_google_cloud.checked == true) {
 				populateGoogleCloudVoices();
@@ -1267,7 +1392,7 @@
             // Load saved languages/voice into fields
             initial_lang_voice_load();
 			checkboxes();
-			
+
 			
             // Function to control saving, main_form is submitted    
             $("form#main_form").submit(function(e) {

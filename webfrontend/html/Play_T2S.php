@@ -268,10 +268,10 @@ function play_tts($filename) {
 			// Set path if T2S
 			LOGGING("play_t2s.php: Path for T2S been adopted", 7);	
 		}
-		// if Playbar is in Modus TV switch to Playlist 1st
+		// if BEAM etc. is in Modus TV switch to Playlist 1st
 		if (substr($actual[$master]['PositionInfo']["TrackURI"], 0, 18) == "x-sonos-htastream:")  {  
 			$sonos->SetQueue("x-rincon-queue:".$coord[1]."#0");
-			LOGGING("play_t2s.php: Playbar was playing", 7);		
+			LOGGING("play_t2s.php: TV was playing", 7);		
 		}
 		// Playlist is playing
 		$save_plist = count($sonos->GetCurrentPlaylist());
@@ -560,7 +560,7 @@ function sendmessage($errortext= '') {
 **/
 			
 function sendgroupmessage() {			
-			global $coord, $sonos, $text, $sonoszone, $errortext, $member, $master, $zone, $messageid, $logging, $textstring, $voice, $config, $mute, $volume, $membermaster, $getgroup, $checkgroup, $time_start, $mode, $modeback, $actual;
+			global $coord, $sonos, $text, $sonoszone, $errortext, $member, $master, $zone, $messageid, $logging, $textstring, $voice, $config, $mute, $volume, $membermaster, $getgroup, $checkgroup, $time_start, $mode, $modeback, $actual, $errortext;
 			
 			$time_start = microtime(true);
 			if ((empty($config['TTS']['t2s_engine'])) or (empty($config['TTS']['messageLang'])))  {
@@ -593,7 +593,7 @@ function sendgroupmessage() {
 			#checkTTSkeys();
 			$master = $_GET['zone'];
 			$member = $_GET['member'];
-			create_tts();
+			create_tts($errortext);
 			// if parameter 'all' has been entered all zones were grouped
 			if($member === 'all') {
 				#$member = array();
@@ -665,8 +665,8 @@ function sendgroupmessage() {
 			volume_group();
 			play_tts($messageid);
 			// wiederherstellen der Ursprungszustände
-			restoreGroupZone();
-			LOGGING("play_t2s.php: Restore previous settings will be called", 7);		
+			LOGGING("play_t2s.php: Restore previous settings will be called", 7);	
+			restoreGroupZone();		
 			foreach($member as $newzone) {
 				$mode = "";
 				$actual[$newzone]['CONNECT'] == 'true' ? $mode = '1' : $mode = '0';
@@ -714,13 +714,16 @@ function t2s_playbatch() {
 function send_tts_source($tts_stat)  {
 	
 	require_once('system/io-modul.php');
-	global $config, $tmp_tts, $sonoszone, $master, $ms, $tts_stat, $config; 
+	require_once "phpMQTT/phpMQTT.php";
+	require_once "loxberry_io.php";
+	
+	global $config, $tmp_tts, $sonoszone, $sonoszonen, $master, $ms, $tts_stat; 
 	
 	$tmp_tts = "/run/shm/tmp_tts";
 	if ($tts_stat == 1)  {
 			if(!touch($tmp_tts)) {
 			LOGGING("play_t2s.php: No permission to write file", 3);
-			exit;
+			return;
 		}
 		$handle = fopen ($tmp_tts, 'w');
 		fwrite ($handle, $tts_stat);
@@ -731,14 +734,25 @@ function send_tts_source($tts_stat)  {
 	if(!is_enabled($config['LOXONE']['LoxDaten'])) {
 		return;
 	}
-	#print_r($ms);
+	
+	$creds = mqtt_connectiondetails();
+ 
+	// MQTT requires a unique client id
+	$client_id = uniqid(gethostname()."_client");
+
+	$mqtt = new Bluerhinos\phpMQTT($creds['brokerhost'],  $creds['brokerport'], $client_id);
+	if( $mqtt->connect(true, NULL, $creds['brokeruser'], $creds['brokerpass'] ) ) {
+		$mqttstat = "1";
+	} else {
+		$mqttstat = "0";
+	}
+	
 	// ceck if configured MS is fully configured
 	if (!isset($ms[$config['LOXONE']['Loxone']])) {
-		LOGWARN ("Sonos: play_t2s.php: Your selected Miniserver from Sonos4lox Plugin config seems not to be fully configured. Please check your LoxBerry miniserver config!") ;
-		exit(1);
+		LOGERR ("Sonos: play_t2s.php: Your selected Miniserver from Sonos4lox Plugin config seems not to be fully configured. Please check your LoxBerry Miniserver config!") ;
+		return;
 	}
-			
-	if($config['LOXONE']['LoxDaten'] == 1) {
+	
 		// obtain selected Miniserver from Plugin config
 		$my_ms = $ms[$config['LOXONE']['Loxone']];
 		# send TEXT data
@@ -747,19 +761,31 @@ function send_tts_source($tts_stat)  {
 		$loxuser 	 	= $my_ms['Admin'];
 		$loxpassword 	= $my_ms['Pass'];
 		$loxip = $lox_ip.':'.$lox_port;
-		try {
-			$data['t2s_'.$master] = $tts_stat;
-			#$check_exist = http_send($config['LOXONE']['Loxone'], $data, $value = null);
-			#var_dump($check_exist);
-			#exit;
-			#ms_send_mem($config['LOXONE']['Loxone'], $data, $value = null);
-			$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/t2s_$master/$tts_stat"); // Radio oder Playliste
-		} catch (Exception $e) {
-			LOGERR("Sonos: play_t2s.php: The connection to Loxone could not be initiated, we have to abort...");	
-			exit;
+		
+		$t2s_zones = array();
+		if (isset($_GET['member']))   {
+			$mem = $_GET['member'];
+			$t2s_zones = explode(",", $mem);
+			array_push($t2s_zones, $master);
+		} else {
+			array_push($t2s_zones, $master);
 		}
+		foreach ($t2s_zones as $value)    {
+			try {
+				$data['t2s_'.$value] = $tts_stat;
+				if ($mqttstat == "1")   {
+					$err = $mqtt->publish('Sonos4lox/t2s/'.$value, $data['t2s_'.$value], 0, 1);
+				}			
+				$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/t2s_$value/$tts_stat"); // Radio oder Playliste
+				LOGDEB("Sonos: play_t2s.php: T2S notification: '".$tts_stat."' has been send to: ".$value);	
+			} catch (Exception $e) {
+				LOGWARN("Sonos: play_t2s.php: Sending T2S notification for Zone '".$value."' failed, we skip here...");	
+				#exit;
+			}
+		}
+		$mqtt->close();
 	return;
-	}
+
 }
 
 ?>

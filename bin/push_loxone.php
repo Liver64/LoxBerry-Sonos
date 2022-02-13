@@ -4,6 +4,7 @@
 require_once "loxberry_system.php";
 require_once "loxberry_log.php";
 require_once "loxberry_io.php";
+require_once "phpMQTT/phpMQTT.php";
 
 require_once("$lbphtmldir/system/PHPSonos.php");
 require_once("$lbphtmldir/system/error.php");
@@ -11,11 +12,34 @@ require_once("$lbphtmldir/system/logging.php");
 require_once("$lbphtmldir/Helper.php");
 require_once("$lbphtmldir/Grouping.php");
 require_once("$lbphtmldir/system/io-modul.php");
-#require_once("$lbphtmldir/system/io-modul-http.php");
+
+
+#echo '<PRE>';
+#echo "<br>";
 
 register_shutdown_function('shutdown');
 
+# check if T2S is currently running, if yes we skip
+$tmp_tts = "/run/shm/tmp_tts";
+if (is_file($tmp_tts))   {
+	exit;
+}
+
 $ms = LBSystem::get_miniservers();
+// Get the MQTT Gateway connection details from LoxBerry
+$creds = mqtt_connectiondetails();
+ 
+// MQTT requires a unique client id
+$client_id = uniqid(gethostname()."_client");
+
+$mqtt = new Bluerhinos\phpMQTT($creds['brokerhost'],  $creds['brokerport'], $client_id);
+if( $mqtt->connect(true, NULL, $creds['brokeruser'], $creds['brokerpass'] ) ) {
+	$mqttstat = "1";
+} else {
+	$mqttstat = "0";
+}
+
+
 #$log = LBLog::newLog( [ "name" => "Push Data", "addtime" => 1, "filename" => "$lbplogdir/sonos.log", "append" => 1 ] );
 
 #LOGSTART("push data");
@@ -28,8 +52,6 @@ $stat = $htmldir."/".$tmp_play;
 
 $mem_sendall = 0;
 $mem_sendall_sec = 3600;
-
-#echo '<PRE>';
 
 global $mem_sendall, $mem_sendall_sec;
 
@@ -79,7 +101,7 @@ global $mem_sendall, $mem_sendall_sec;
 		$zonesonline = array();
 		foreach($sonoszonen as $zonen => $ip) {
 			$port = 1400;
-			$timeout = 3;
+			$timeout = 2;
 			$handle = @stream_socket_client("$ip[0]:$port", $errno, $errstr, $timeout);
 			if($handle) {
 				$sonoszone[$zonen] = $ip;
@@ -153,7 +175,7 @@ global $mem_sendall, $mem_sendall_sec;
 	
 	function send_udp()  {	
 	
-	global $config, $my_ms, $sonoszone, $sonoszonen, $sonos, $mem_sendall_sec, $mem_sendall, $response; 
+	global $config, $mqtt, $mqttstat, $my_ms, $sonoszone, $sonoszonen, $sonos, $mem_sendall_sec, $mem_sendall, $response; 
 	
 		// LoxBerry **********************
 		# send UDP data
@@ -195,7 +217,12 @@ global $mem_sendall, $mem_sendall_sec;
 				$tmp_array["vol_$zone"] = $temp_volume;
 				$tmp_array["stat_$zone"] = $gettransportinfo;
 				$tmp_array["grp_$zone"] = $zone_stat;
+				if ($mqttstat == "1")   {
+					$mqtt->publish('Sonos4lox/vol/'.$zone, $tmp_array["vol_$zone"], 0, 1);
+					$mqtt->publish('Sonos4lox/stat/'.$zone, $tmp_array["stat_$zone"], 0, 1);
+					$mqtt->publish('Sonos4lox/grp/'.$zone, $tmp_array["grp_$zone"], 0, 1);
 				}
+			}
 		} else {
 			LOGERR("Can't create UDP socket to $server_ip");
 			exit(1);
@@ -222,8 +249,7 @@ global $mem_sendall, $mem_sendall_sec;
 	
 	function send_vit()  {
 		
-		global $config, $my_ms, $sonoszone, $sonoszonen, $sonos, $valuesplit, $split, $station; 
-		
+		global $config, $mqtt, $mqttstat, $my_ms, $sonoszone, $sonoszonen, $sonos, $valuesplit, $split, $station; 
 		# send TEXT data
 		#$lox_ip		 = $my_ms['IPAddress'];
 		#$lox_port 	 = $my_ms['Port'];
@@ -256,20 +282,24 @@ global $mem_sendall, $mem_sendall_sec;
 				if ($contain === true)   {
 					$stream_content = $temp["streamContent"];
 					#if (empty($stream_content))  {
-						$value = @substr($temp["streamContent"], 0, 40); 
-						$split = explode(' - ', $value);
-						if ($split[0] == "")   {
-							$valuesplit[0] = ' ';
-							$valuesplit[1] = ' ';
-							$value = ' ';
-							$station = $tempradio["title"];
-						} else {
-							$valuesplit[0] = $split[0]; 
-							$valuesplit[1] = $split[1];
-							$value;
-							$station = $tempradio["title"];
-						}
+						#$value = @substr($temp["streamContent"], 0, 40); 
+						#$split = explode(' - ', $value);
+						#if ($split[0] == "")   {
+						#	$valuesplit[0] = ' ';
+						#	$valuesplit[1] = ' ';
+						#	$value = ' ';
+						#	$station = $tempradio["title"];
+						#} else {
+						#	$valuesplit[0] = $split[0]; 
+						#	$valuesplit[1] = $split[1];
+						#	$value;
+						#	$station = $tempradio["title"];
+						#}
 					#}
+					$valuesplit[0] = ' ';
+					$valuesplit[1] = ' ';
+					$value = ' ';
+					$station = $tempradio["title"];
 					$source = 1;
 				} 
 				// TV läuft
@@ -318,33 +348,50 @@ global $mem_sendall, $mem_sendall_sec;
 					$data['int_'.$zone] = $valuesplit[1];
 					$data['radio_'.$zone] = $station;
 					$data['source_'.$zone] = $source;
+					if ($mqttstat == "1")   {
+						$mqtt->publish('Sonos4lox/titint/'.$zone, $data['titint_'.$zone], 0, 1);
+						$mqtt->publish('Sonos4lox/tit/'.$zone, $data['tit_'.$zone], 0, 1);
+						$mqtt->publish('Sonos4lox/int/'.$zone, $data['int_'.$zone], 0, 1);
+						$mqtt->publish('Sonos4lox/radio/'.$zone, $data['radio_'.$zone], 0, 1);
+						$mqtt->publish('Sonos4lox/source/'.$zone, $data['source_'.$zone], 0, 1);
+					}
 				} catch (Exception $e) {
 					LOGERR("The connection to Loxone could not be initiated!");	
 					exit;
 				}
-			ms_send_mem($config['LOXONE']['Loxone'], $data, $value = null);
+			#ms_send_mem($config['LOXONE']['Loxone'], $data, $value = null);
+			#print_r($data);
 			} else {
 				$valuesplit[0] = ' ';
 				$valuesplit[1] = ' ';
 				$valueurl = ' ';
 				$station = ' ';
-				$source = ' ';
+				$source = 0;
 				$data['titint_'.$zone] = $valueurl;
 				$data['tit_'.$zone] = $valuesplit[0];
 				$data['int_'.$zone] = $valuesplit[1];
 				$data['radio_'.$zone] = $station;
 				$data['source_'.$zone] = $source;
-				ms_send_mem($config['LOXONE']['Loxone'], $data, $value = null);
+				if ($mqttstat == "1")   {
+					$mqtt->publish('Sonos4lox/titint/'.$zone, $data['titint_'.$zone], 0, 1);
+					$mqtt->publish('Sonos4lox/tit/'.$zone, $data['tit_'.$zone], 0, 1);
+					$mqtt->publish('Sonos4lox/int/'.$zone, $data['int_'.$zone], 0, 1);
+					$mqtt->publish('Sonos4lox/radio/'.$zone, $data['radio_'.$zone], 0, 1);
+					$mqtt->publish('Sonos4lox/source/'.$zone, 0, 0, 1);
+				}
 			}
 		}
-		#ms_send_mem($config['LOXONE']['Loxone'], $data, $value = null);
+		ms_send_mem($config['LOXONE']['Loxone'], $data, $value = null);
+		$mqtt->close();
 		#print_r($data);
 		#LOGINF ("Push");
 	}
 	
 	
+ 	
  function shutdown()  {
 	global $log;
+	
 	#$log->LOGEND("");
 }
 
