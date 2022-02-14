@@ -406,25 +406,16 @@
 										<TMPL_VAR T2S.BUTTON_TEMPLATE>
                                     </a>-->
                                     
-<<<<<<< HEAD
 									  <input type="button" id="btn" data-mini="true" value="VI_UDP_Sonos.xml" />
 									  <script>
 											function download(filename) {
 												  var element = document.createElement('a');
 												  element.setAttribute('href','/plugins/<TMPL_VAR PLUGINDIR>/system/VI_UDP_Sonos.xml');
-=======
-									  <input type="button" id="btn" data-mini="true" value="VIU_Sonos_UDP.xml" />
-									  <script>
-											function download(filename) {
-												  var element = document.createElement('a');
-												  element.setAttribute('href','/plugins/<TMPL_VAR PLUGINDIR>/system/VIU_Sonos_UDP.xml');
->>>>>>> 49bfe5ac6aed539b192998e48c465389358cbc36
 												  element.setAttribute('download', filename);
 												  document.body.appendChild(element);
 												  element.click();
 											}
 											document.getElementById("btn")
-<<<<<<< HEAD
 												  .addEventListener("click", function (e) {
 														$.post("/plugins/<TMPL_VAR PLUGINDIR>/system/ms_inbound.php");
 														var url = '/plugins/<TMPL_VAR PLUGINDIR>/system/VI_UDP_Sonos.xml'; 
@@ -433,29 +424,15 @@
 														http.send(); 
 														//console.log("http status: " + http.status);
 														if (http.status !== 200)  {
-=======
-												  .addEventListener("click", function () {
-														$.post("/plugins/<TMPL_VAR PLUGINDIR>/system/ms_inbound.php");
-														var url = '/plugins/<TMPL_VAR PLUGINDIR>/system/VIU_Sonos_UDP.xml'; 
-														var http = new XMLHttpRequest(); 
-														http.open('HEAD', url, false); 
-														http.send(); 
-														if ('<TMPL_VAR LOX_ON>' == 'false' && http.status !== 200)  {
->>>>>>> 49bfe5ac6aed539b192998e48c465389358cbc36
 															$("#info").attr("style", "color:red");
 															$("#info").text('<TMPL_VAR ERRORS.ERR_XM_TEMP>');
 															$('html, body').animate({
 																scrollTop: $("#zone1").offset().top
 																}, 500);
 																$("#zone1").focus();
-<<<<<<< HEAD
 																e.preventDefault();
 														} else {
 															var filename = "VI_UDP_Sonos.xml";
-=======
-														} else {
-															var filename = "VIU_Sonos_UDP.xml";
->>>>>>> 49bfe5ac6aed539b192998e48c465389358cbc36
 															download(filename);
 														}
 												  }, false);
@@ -463,7 +440,6 @@
 																	
 									
 									
-<<<<<<< HEAD
 									<td class="empty_template" style="width: 25%">
                                         <input type="button" id="btn1" data-mini="true" value="VI_MQTT_HTTP_Sonos.xml" />
 										<script>
@@ -531,26 +507,6 @@
 									  </script>
 									</td>
                                 </td>
-=======
-									<td style="width: 23px; text-align: center;">
-                                        &nbsp;</td>
-                                    <td>
-                                        <table border=0 style="width: 99%">
-                                            <tr>
-
-                                                <td class="empty_template" style="width: 50%; height: 60px;">
-
-                                                    <font size="-1">
-                                                        <TMPL_VAR T2S.HELP_TEMPLATE>
-                                                            <a id="lwiki" target="_blank">
-                                                                <TMPL_VAR T2S.HELP_TEMPLATE_END>
-                                                            </a>
-                                                    </font>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
->>>>>>> 49bfe5ac6aed539b192998e48c465389358cbc36
                             </tr>
                         </table>
 						<td class="empty_template" style="width: 50%; height: 60px;">
