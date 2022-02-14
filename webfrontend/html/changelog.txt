@@ -318,8 +318,15 @@
 			[Bugfix] Fehleransage bei 'nextradio' einmal täglich
  4.1.0		[Improvement] Neue Funktion 'playfavorite' um einen bestimmten Sonos Favoriten abzuspielen
 			[Improvement] Neue Funktion 'getfavorites' um eine Liste der Sonos Favoriten zu erhalten (NUR PC) 
-			[Improvement] Neue Funktion 'playallfavorites' um alle Sonos Favoriten mit Ausnahme von Radio Sendern und Alben abzuspielen
 			[Bugfix] Scannen nach Playern korrigiert
+			[Improvement] Kommunikation Sonos --> Plugin optimiert
+			[Improvement] MQTT Kommunikation Sonos --> Loxone hinzugefügt
+			[Improvement] neuen virtuellen Texteingang 'radio_$zone' hinzugeügt
+			[Improvement] Installationsroutine optimiert
+			[Improvement] Technischer Update der Player
+			[Improvement] Für ROAM und MOVE Besitzer wird ein regelmäßiger Battercheck ausgeführt und per T2S informiert falls Batteriestatus <30% ist
+			[BUGFIX] Während T2S Ansage werden Zonen Daten nicht mehr geändert (gilt für alle an der T2S teilnehmenden Player)
+			
 
 
  

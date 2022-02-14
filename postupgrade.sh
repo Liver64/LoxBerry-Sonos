@@ -68,12 +68,12 @@ rm -r /tmp/$1\_upgrade
 rm -r $5/data/plugins/$3/tts/mp3/update
 
 echo "<INFO> Start validation of Radio favorites"
-/usr/bin/php -q REPLACELBPBINDIR/checkradiourl.php
+REPLACELBPBINDIR/checkradiourl.php
 
 echo "<INFO> Start update Player Configuration"
 /usr/bin/php -q REPLACELBPHTMLDIR/system/updateplayer.php
 
-echo "<INFO> Inform User to update Config"
-/usr/bin/php -q REPLACELBPBINDIR/notify.php
+echo "<INFO> Create Notify to update Config"
+REPLACELBPBINDIR/notify.php
 
 exit 0
