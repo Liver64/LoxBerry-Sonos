@@ -48,7 +48,7 @@
  			[Feature] Auswahlmöglichkeit des Miniservers für die Schnittstelle zu Loxone in der Config einstellbar
 			[Bugfix] Datenübertragung bei Standardbefehlen optimiert
 			[Bugfix] Gruppenmanagement optmiert
-			[Feature] Möglichkeit der gleichzeitigen Gruppierung bei der Auswahl von Radio bzw. Playlisten
+			[Feature] Möglichkeit der gleichzeitigen Gruppierung bei der Auswahl von Radio bzw. Playlisten 
  2.0.4		[Bugfix] Broadcast IP beim Scannen hinzugefügt
 			[Bugfix] Sortierfunktion der Zonen korrigiert	
  2.0.5		[Feature] Möglichkeit zum Abspielen von T2S im batch modus (siehe Wiki)

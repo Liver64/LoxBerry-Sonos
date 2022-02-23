@@ -124,6 +124,15 @@ function addFavList()
 }
 
 
+
+
+/**
+* Function: zap --> checks each zone in network and if playing add current zone as member - NEW zapzone
+*
+* @param: empty
+* @return: 
+**/
+
 function zap()
 {
 	global $sonos, $config, $tmp_tts, $sonoszonen, $maxzap, $volume, $sonoszone, $master;
@@ -196,7 +205,7 @@ function zap()
 				}
 			}
 		}
-		print_r($runarray);
+		#print_r($runarray);
 		$co =  count($runarray);
 		if ($co == 0)  {
 			LOGGING("queue.php: Currently no zone is running",7);
