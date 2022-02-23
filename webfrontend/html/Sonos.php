@@ -1411,7 +1411,8 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		
 		case 'test':
-			$sonos->FavTest();
+			$e = checkZonePairingAllowed("MOVE");
+			print_r($e);
 		break;
 		
 		case 'balance':

@@ -139,6 +139,9 @@ function CreateStereoPair() {
 		"SYMFONISK WALL"   	=>  "SYMFONISK WALL",
 		"ONE"    			=>  "ONE",
 		"SYMFONISK"			=>  "SYMFONISK",
+		"ROAM"				=>  "ROAM",
+		"MOVE"				=>  "MOVE",
+		"FIVE"				=>  "FIVE",
         ];
     return in_array($model, array_keys($models));
 }
