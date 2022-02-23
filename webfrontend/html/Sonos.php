@@ -460,6 +460,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				checkifmaster($zone);
 				$sonos = new PHPSonos($sonoszone[$zone][0]);
 				$state = $sonos->GetTransportInfo();
+				echo $state."<br>";
 				if ($state == '1') {
 					$return = getZoneStatus($zone); // get current Zone Status (Single, Member or Master)
 					if($return <> 'member') {
@@ -1227,7 +1228,12 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		
 		case 'zapzone':
-			zapzone();
+			#zapzone();
+			zap();
+		break;
+		
+		case 'zapzone1':
+			zap();
 		break;
 		
 		case 'getsonosinfo':
@@ -1346,7 +1352,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'volmode':
 			$uuid = $sonoszone[$master][1];
 			$test = $sonos->GetVolumeMode($uuid);
-			var_dump($test);
+			#var_dump($test);
 		break;
 		
 		

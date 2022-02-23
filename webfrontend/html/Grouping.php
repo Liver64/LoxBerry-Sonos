@@ -378,7 +378,7 @@ function checkifmaster($master) {
 	if (substr($posinfo["TrackURI"], 0, 9) == "x-rincon:") {
 		$GroupMaster = trim(substr($posinfo["TrackURI"], 9, 30));
 		$master = recursive_array_search($GroupMaster,$sonoszone);
-		#echo $master;
+		echo $master;
 		return $master;
 	}      
 }
@@ -437,7 +437,7 @@ function addmember() {
 	$member = $_GET['member'];
 	$member = explode(',', $member);
 	if (in_array($master, $member)) {
-		LOGGING("grouping.php: The zone ".$master." could not be entered as member again. Please remove from Syntax '&member=".$master."' !", 3);
+		LOGGING("grouping.php: The zone ".$master." could not be entered as member again. Please remove from Syntax '&member=".$master."' !", 4);
 	}
 	$memberon = array();
 	foreach ($member as $value) {
@@ -471,7 +471,7 @@ function removemember() {
 	$member = $_GET['member'];
 	$member = explode(',', $member);
 	if (in_array($master, $member)) {
-		LOGGING("grouping.php: The zone ".$master." could not be entered as member again. Please remove from Syntax '&member=".$master."' !", 3);
+		LOGGING("grouping.php: The zone ".$master." could not be entered as member again. Please remove from Syntax '&member=".$master."' !", 4);
 	}
 	$memberon = array();
 	foreach ($member as $value) {

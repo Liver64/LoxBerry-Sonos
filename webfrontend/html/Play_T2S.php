@@ -30,7 +30,7 @@ function say() {
 **/		
 
 function create_tts($text ='') {
-	global $sonos, $config, $filename, $MessageStorepath, $errortext, $player, $messageid, $textstring, $home, $time_start, $tmp_batch, $MP3path, $filenameplay, $textstring, $volume, $tts_stat;
+	global $sonos, $config, $dist, $filename, $MessageStorepath, $errortext, $player, $messageid, $textstring, $home, $time_start, $tmp_batch, $MP3path, $filenameplay, $textstring, $volume, $tts_stat;
 	
 	# setze 1 für virtuellen Texteingang (T2S Start)
 	$tts_stat = 1;
@@ -256,7 +256,7 @@ function create_tts($text ='') {
 **/		
 
 function play_tts($filename) {
-	global $volume, $config, $messageid, $sonos, $text, $errortext, $lbphtmldir, $messageid, $sleeptimegong, $sonoszone, $sonoszonen, $master, $coord, $actual, $textstring, $player, $time_start, $t2s_batch, $filename, $textstring, $home, $MP3path, $lbpplugindir, $logpath, $try_play, $MessageStorepath, $filename, $tts_stat;
+	global $volume, $config, $dist, $messageid, $sonos, $text, $errortext, $lbphtmldir, $messageid, $sleeptimegong, $sonoszone, $sonoszonen, $master, $coord, $actual, $textstring, $player, $time_start, $t2s_batch, $filename, $textstring, $home, $MP3path, $lbpplugindir, $logpath, $try_play, $MessageStorepath, $filename, $tts_stat;
 		
 		$coord = getRoomCoordinator($master);
 		$sonos = new PHPSonos($coord[0]);
@@ -454,7 +454,7 @@ function play_tts($filename) {
 **/
 
 function sendmessage($errortext= '') {
-			global $text, $master, $messageid, $errortext, $logging, $textstring, $voice, $config, $actual, $player, $volume, $source, $sonos, $coord, $time_start, $filename, $sonoszone, $tmp_batch, $mode, $MP3path, $tts_stat;
+			global $text, $dist, $master, $messageid, $errortext, $logging, $textstring, $voice, $config, $actual, $player, $volume, $source, $sonos, $coord, $time_start, $filename, $sonoszone, $tmp_batch, $mode, $MP3path, $tts_stat;
 			
 			$time_start = microtime(true);
 			if ((empty($config['TTS']['t2s_engine'])) or (empty($config['TTS']['messageLang'])))  {

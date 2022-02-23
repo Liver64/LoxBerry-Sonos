@@ -1,61 +1,61 @@
 [
 {
-   "value": "The battery level of zone {$zone} is about {$batlevel} percent. Next check in about 2hours",
+   "value": "The battery level of zone {$zone} is about {$batlevel} percent. Next check in about 1hour",
    "voice": "en-GB-Wavenet-A",
    "language": "en-GB"
  },
  {
-   "value": "The battery level of zone {$zone} is about {$batlevel} percent. Next check in about 2hours",
+   "value": "The battery level of zone {$zone} is about {$batlevel} percent. Next check in about 1hour",
    "voice": "en-US-Wavenet-A",
    "language": "en-US"
  },
  {
-   "value": "Le niveau de la batterie de la zone {$zone} est d'environ {$batlevel} pour cent. Prochain contrôle dans environ 2 heures",
+   "value": "Le niveau de la batterie de la zone {$zone} est d'environ {$batlevel} pour cent. Prochain contrôle dans environ 1 heures",
    "voice": "fr-FR-Wavenet-A",
    "language": "fr-FR"
  },
  {
-   "value": "Der Ladezustand der Zone {$zone} beträgt nur noch {$batlevel} Prozent. Nächste Prüfung in 2 Stunden",
+   "value": "Der Ladezustand der Zone {$zone} beträgt nur noch {$batlevel} Prozent. Nächste Prüfung in 1 Stunde",
    "voice": "de-DE-Wavenet-A",
    "language": "de-DE"
  },
  {
-   "value": "Batterinivån i zon {$zone} är ungefär {$batlevel} procent. Nästa kontroll sker om cirka 2 timmar",
+   "value": "Batterinivån i zon {$zone} är ungefär {$batlevel} procent. Nästa kontroll sker om cirka 1 timmar",
    "voice": "sv-SE-Wavenet-A",
    "language": "sv-SE"
  },
  {
-   "value": "O nível da bateria da cozinha da {$zone} é de cerca de {$batlevel} por cento. Próxima verificação em cerca de 2 horas",
+   "value": "O nível da bateria da cozinha da {$zone} é de cerca de {$batlevel} por cento. Próxima verificação em cerca de 1 hora",
    "voice": "pt-PT-Wavenet-A",
    "language": "pt-PT"
  },
  {
-   "value": "Nivelul bateriei din {$zone} bucătăriei este de aproximativ {$batlevel} la sută. Următoarea verificare în aproximativ 2 ore",
+   "value": "Nivelul bateriei din {$zone} bucătăriei este de aproximativ {$batlevel} la sută. Următoarea verificare în aproximativ 1 ore",
    "voice": "ro-RO-Wavenet-A",
    "language": "ro-RO"
  },
  {
-   "value": "Il livello della batteria della {$zone} cucina è circa il {$batlevel} per cento. Prossimo controllo tra circa 2 ore",
+   "value": "Il livello della batteria della {$zone} cucina è circa il {$batlevel} per cento. Prossimo controllo tra circa 1 ore",
    "voice": "it-IT-Wavenet-A",
    "language": "it-IT"
  },
  {
-   "value": "Уровень заряда батареи на кухне {$zone} составляет около {$batlevel} процентов. Следующая проверка примерно через 2 часа",
+   "value": "Уровень заряда батареи на кухне {$zone} составляет около {$batlevel} процентов. Следующая проверка примерно через 1 часа",
    "voice": "ru-RU-Wavenet-A",
    "language": "ru-RU"
  },
  {
-   "value": "Het batterijniveau van de {$zone} is ongeveer {$batlevel} procent. Volgende controle in ongeveer 2 uur",
+   "value": "Het batterijniveau van de {$zone} is ongeveer {$batlevel} procent. Volgende controle in ongeveer 1 uur",
    "voice": "nl-NL-Wavenet-A",
    "language": "nl-NL"
  },
  {
-   "value": "El nivel de batería de la cocina {$zone} es de alrededor del {$batlevel} por ciento. La próxima comprobación será en unas 2 horas",
+   "value": "El nivel de batería de la cocina {$zone} es de alrededor del {$batlevel} por ciento. La próxima comprobación será en unas 1 hora",
    "voice": "es-ES-Wavenet-A",
    "language": "es-ES"
  },
  {
-   "value": "Poziom naładowania baterii w kuchni {$zone} wynosi około {$batlevel} procent. Następne sprawdzenie za około 2 godziny.",
+   "value": "Poziom naładowania baterii w kuchni {$zone} wynosi około {$batlevel} procent. Następne sprawdzenie za około 1 godziny.",
    "voice": "pl-PL-Wavenet-A",
    "language": "pl-PL"
  }

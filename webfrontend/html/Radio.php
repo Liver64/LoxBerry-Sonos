@@ -98,7 +98,7 @@ function nextradio() {
 	}
 	$playstatus = $sonos->GetTransportInfo();
 	$radioname = $sonos->GetMediaInfo();
-	print_r($radioname);
+	#print_r($radioname);
 	if (!empty($radioname["title"])) {
 		$senderuri = $radioname["title"];
 	} else {

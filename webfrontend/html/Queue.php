@@ -71,6 +71,9 @@ function getFav()
 	$re1 = array_multi_search($single, $tes);
 	$re2 = array_multi_search($radio, $tes);
 	$re = array_merge($re1, $re2);
+	echo "Only MP3 files and Radio Stations are supported. No Albums etc. Fuzzy Logic search is possible by Title or Radio Station";
+	echo "<br>";
+	echo "<br>";
 	print_r($re);
 	LOGOK("queue.php: Your list of Sonos favorites has been successful loaded. Type Album are excluded");
 }
@@ -118,6 +121,98 @@ function addFavList()
 		}
 	}
 	LOGOK("queue.php: Your favorites list has been successful loaded and is currently playing!");
+}
+
+
+function zap()
+{
+	global $sonos, $config, $tmp_tts, $sonoszonen, $maxzap, $volume, $sonoszone, $master;
+	
+	$fname = "/run/shm/zap_zone.json";			// file containig running zones
+	$zname = "/run/shm/zap_zone_time";			// temp file for nextradio
+	
+	# get volume
+	$statmast = $sonos->GetTransportInfo();	
+	if ($statmast == "1")   {
+		$volume = $sonos->GetVolume();
+		LOGGING("queue.php: Volume for ".$master." has been updated from current Volume.",7);
+	} else {
+		$volume = $config['sonoszonen'][$master][4];
+		#LOGGING("queue.php: Standard Volume for ".$master." has been adopted from config.",7);
+	}
+	# check if TTS is currently running
+	if (file_exists($tmp_tts))  {
+		LOGGING("queue.php: Currently a T2S is running, we skip zapzone for now. Please try again later.", 4);
+		exit;
+	}
+	# become single zone 1st
+	$check_stat = getZoneStatus($master);
+	if ($check_stat == "member")  {
+		$sonos->BecomeCoordinatorOfStandaloneGroup();
+		LOGGING("queue.php: Zone ".$master." has been ungrouped.",5);
+	}
+	# start zapzone
+	if (file_exists($fname) === true)  {
+		$file = json_decode(file_get_contents($fname), true);
+		$c = count($file);
+		if ($c == 0)  {
+			$sonos->BecomeCoordinatorOfStandaloneGroup();
+			@unlink($fname);
+			file_put_contents($zname, "1");
+			LOGGING("queue.php: Function nextradio has been called ",7);
+			nextradio();
+			exit;
+		}
+		$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
+		$sonos->SetAVTransportURI("x-rincon:" . $file[2]);
+		LOGGING("queue.php: Zone ".$master." has been added as member to Zone ".$file[0],7);
+		#sleep(1);
+		array_shift($file);
+		array_shift($file);
+		array_shift($file);
+		$jencode = json_encode($file);
+		file_put_contents($fname, $jencode);
+	} else {
+		# as long zapzone is running switch to nextradio
+		if (file_exists($zname) === true)    {
+			nextradio();
+			LOGGING("queue.php: Function nextradio has been called ",7);
+			sleep($maxzap);
+			if(file_exists($zname))  {
+				unlink($zname);
+				LOGGING("queue.php: Function zapzone has been reseted",6);
+			}
+			exit;
+		}
+		# prepare list of currently playing zones
+		$runarray = array();
+		foreach ($sonoszone as $zone => $player) {
+			$sonos = new PHPSonos($sonoszone[$zone][0]);
+			$state = $sonos->GetTransportInfo();													// only playing zones
+			if ($state == '1' and $sonoszone[$zone][1] != $sonoszone[$master][1])   {				// except masterzone
+				$u = getZoneStatus($zone);
+				if ($u <> "member")    {
+					array_push($runarray, $zone, $sonoszone[$zone][0], $sonoszone[$zone][1]); 		// add IP-address to array
+				}
+			}
+		}
+		print_r($runarray);
+		$co =  count($runarray);
+		if ($co == 0)  {
+			LOGGING("queue.php: Currently no zone is running",7);
+			exit;
+		}
+		# join 1st zone of array
+		$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
+		$sonos->SetAVTransportURI("x-rincon:" . $runarray[2]);
+		LOGGING("queue.php: Zone ".$master." has been added as member to Zone ".$runarray[0],7);
+		#sleep(1);
+		array_shift($runarray);										// remove 1st Zone Name and re-index array
+		array_shift($runarray);										// remove 1st Zone Rincon-ID and re-index array
+		array_shift($runarray);										// remove 1st Zone IP and re-index array
+		$jencode = json_encode($runarray);							// save file
+		file_put_contents($fname, $jencode);
+	}
 }
 
 

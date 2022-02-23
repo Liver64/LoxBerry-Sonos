@@ -326,6 +326,7 @@
 			[Improvement] Technischer Update der Player
 			[Improvement] Für ROAM und MOVE Besitzer wird ein regelmäßiger Battercheck ausgeführt und per T2S informiert falls Batteriestatus <30% ist
 			[BUGFIX] Während T2S Ansage werden Zonen Daten nicht mehr geändert (gilt für alle an der T2S teilnehmenden Player)
+			[Improvement] funktion 'zapzone' komplett überarbeitet
 			
 
 
