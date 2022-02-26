@@ -30,9 +30,9 @@ $configfile	= "/run/shm/s4lox_config.json";						// configuration file
 		$L = LBSystem::readlanguage("sonos.ini");
 		# Create an informational notification for the group "Sonos" (part of postupgradscript.sh)
 		notify(LBPPLUGINDIR, "Sonos", $L['ERRORS.NOTE_UPGRADE']);
-		echo "<OK> Notify to update Config has been created";
+		echo "<OK> Notify to update Config has been created".PHP_EOL;
 	} else {
-		echo "<OK> Player already marked, nothing to do";
+		echo "<OK> Player already marked, nothing to do".PHP_EOL;
 	}
 
 
