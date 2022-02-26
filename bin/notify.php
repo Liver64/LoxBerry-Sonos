@@ -7,6 +7,6 @@ require_once "loxberry_log.php";
 $L = LBSystem::readlanguage("sonos.ini");
 
 # Create an informational notification for the group "Sonos" (part of postupgradscript.sh)
-notify(LBPPLUGINDIR, "Sonos", $L['T2S_NOTIFICATION.NOTE_UPGRADE']);
+notify(LBPPLUGINDIR, "Sonos", $L['ERRORS.NOTE_UPGRADE']);
 
 ?>
