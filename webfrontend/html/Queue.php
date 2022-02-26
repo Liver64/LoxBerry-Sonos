@@ -160,7 +160,7 @@ function zap()
 		$sonos->BecomeCoordinatorOfStandaloneGroup();
 		LOGGING("queue.php: Zone ".$master." has been ungrouped.",5);
 	}
-	# start zapzone
+	# START ZAPZONE
 	if (file_exists($fname) === true)  {
 		$file = json_decode(file_get_contents($fname), true);
 		$c = count($file);
@@ -192,6 +192,9 @@ function zap()
 				LOGGING("queue.php: Function zapzone has been reseted",6);
 			}
 			exit;
+		} else {
+			nextradio();
+			LOGGING("queue.php: Function nextradio has been called ",7);
 		}
 		# prepare list of currently playing zones
 		$runarray = array();
