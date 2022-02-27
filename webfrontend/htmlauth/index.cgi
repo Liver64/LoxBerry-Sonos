@@ -621,7 +621,7 @@ sub save
 	}
 	
 	# delete temporally Error files (nextradio / checkradiourl)
-	unlink("/dev/shm/s4lox_config.json");
+	unlink("/dev/shm/errorMP3Stream.json");
 	unlink("/dev/shm/s4lox_date");
 	LOGDEB "Temp. error files has been deleted";
 	
