@@ -620,6 +620,11 @@ sub save
 		$copy = 1;
 	}
 	
+	# delete temporally Error files (nextradio / checkradiourl)
+	unlink("/dev/shm/s4lox_config.json");
+	unlink("/dev/shm/s4lox_date");
+	LOGDEB "Temp. error files has been deleted";
+	
 	#if (!-d "$R::STORAGEPATH/$ttsfolder $lbphtmldir/interfacedownload")  {
 		LOGINF "Creating folders and symlinks";
 		system ("mkdir -p $R::STORAGEPATH/$ttsfolder/$mp3folder");
