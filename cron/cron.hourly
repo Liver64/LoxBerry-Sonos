@@ -10,3 +10,4 @@
 # Will be executed as user "loxberry".
 
 REPLACELBPHTMLDIR/system/battery.php
+rm /run/shm/errorMP3Stream.json
