@@ -141,14 +141,15 @@ function zap()
 	$zname = "/run/shm/zap_zone_time";			// temp file for nextradio
 	
 	# get volume
-	$statmast = $sonos->GetTransportInfo();	
-	if ($statmast == "1")   {
-		$volume = $sonos->GetVolume();
-		LOGGING("queue.php: Volume for ".$master." has been updated from current Volume.",7);
-	} else {
-		$volume = $config['sonoszonen'][$master][4];
-		#LOGGING("queue.php: Standard Volume for ".$master." has been adopted from config.",7);
-	}
+	#$statmast = $sonos->GetTransportInfo();	
+	#if ($statmast == "1")   {
+	#	$volume = $sonos->GetVolume();
+	#	LOGGING("queue.php: Volume for ".$master." has been updated from current Volume.",7);
+	#} else {
+	#	$volume;# = $config['sonoszonen'][$master][4];
+	#	LOGGING("queue.php: Standard Volume for ".$master." has been adopted from config.",7);
+	#}
+	
 	# check if TTS is currently running
 	if (file_exists($tmp_tts))  {
 		LOGGING("queue.php: Currently a T2S is running, we skip zapzone for now. Please try again later.", 4);
@@ -225,6 +226,7 @@ function zap()
 		$jencode = json_encode($runarray);							// save file
 		file_put_contents($fname, $jencode);
 	}
+	#$sonos->SetVolume($volume);
 }
 
 
