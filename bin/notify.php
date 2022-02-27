@@ -8,19 +8,21 @@ $myFolder = "$lbpconfigdir";									// get config folder
 $myConfigFile = "player.cfg";									// get config file
 $configfile	= "/run/shm/s4lox_config.json";						// configuration file
 
+#echo "<PRE>";
 # load Sonos Configuration
 	if (@!$data = file_get_contents($configfile)) {
 		$config = parseConfigFile();
 	} else {
 		$config = json_decode(file_get_contents($configfile), TRUE);
 	}
+	#print_r($config);
 	$sonoszonen = ($config['sonoszonen']);
 	$sonoszone = $sonoszonen;	
 	
 	$mainpl = array();
 	# check if MOVE or ROAM there
-	foreach ($sonoszonen as $zone => $player) {
-		$src = $sonoszonen[$zone][6];
+	foreach ($sonoszone as $zone => $player) {
+		$src = $sonoszone[$zone][6];
 		if ($src == "on")   {
 			array_push($mainpl, $src);
 		}
