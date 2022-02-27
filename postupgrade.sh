@@ -73,7 +73,7 @@ REPLACELBPBINDIR/checkradiourl.php
 echo "<INFO> Start update Player Configuration"
 /usr/bin/php -q REPLACELBPHTMLDIR/system/updateplayer.php
 
-echo "<INFO> Create Notify to update Config"
+echo "<INFO> Check T2S Announcement Configuration"
 REPLACELBPBINDIR/notify.php
 
 exit 0
