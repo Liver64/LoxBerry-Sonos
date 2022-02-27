@@ -56,6 +56,11 @@ function radio(){
 function nextradio() {
 	global $sonos, $config, $master, $debug, $min_vol, $volume, $tmp_tts, $sonoszone, $tmp_error, $stst;
 	
+	$radioanzahl_check = count($config['RADIO']);
+	if($radioanzahl_check == 0)  {
+		LOGGING("radio.php: There are no Radio Stations maintained in the config. Pls update before using function NEXTRADIO or ZAPZONE!", 3);
+		exit;
+	}
 	if (file_exists($tmp_tts))  {
 		LOGGING("radio.php: Currently a T2S is running, we skip nextradio for now. Please try again later.",6);
 		exit;
@@ -72,31 +77,13 @@ function nextradio() {
 			$errortext = "Placeholder";
 			say_radio_station($errortext);
 			$textan = "1";
-			LOGINF("Sonos: radio.php: Anouncement of broken Radio URL has been announced once.");
+			LOGINF("Sonos: radio.php: Info of broken Radio URL has been announced once.");
 		}
 		#exit;
 	}
-	#if (isset($_GET['member']))  {
-	#	LOGGING("radio.php: Function could not be used within Groups!!", 6);
-	#	exit;
-	#}
-	#try {
-	#	$sonos->BecomeCoordinatorOfStandaloneGroup();
-		#LOGGING("radio.php: Player ".$master." has been ungrouped!", 6);
-	#} catch (Exception $e) {
-		#LOGGING("radio.php: Player ".$master." is Single!", 7);
-	#}
-	#$coord = getRoomCoordinator($master);
-	#$masterrincon = $coord[1]; 
-	#$sonos = new PHPSonos($coord[0]);
 	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
 	$sonos->ClearQueue();
-	$radioanzahl_check = count($config['RADIO']);
-	if($radioanzahl_check == 0)  {
-		LOGGING("radio.php: There are no Radio Stations maintained in the config. Pls update before using function NEXTRADIO or ZAPZONE!", 3);
-		exit;
-	}
-	$playstatus = $sonos->GetTransportInfo();
+		$playstatus = $sonos->GetTransportInfo();
 	$radioname = $sonos->GetMediaInfo();
 	#print_r($radioname);
 	if (!empty($radioname["title"])) {
@@ -285,7 +272,7 @@ function select_error_lang() {
 	$file = "error.json";
 	$url = $pathlanguagefile."".$file;
 	$valid_languages = File_Get_Array_From_JSON($url, $zip=false);
-	print_r($valid_languages);
+	#print_r($valid_languages);
 	$language = $config['TTS']['messageLang'];
 	$language = substr($language, 0, 5);
 	#echo $language;

@@ -14,6 +14,7 @@ require_once("$lbphtmldir/Save_T2S.php");
 require_once("$lbphtmldir/Speaker.php");
 require_once("$lbphtmldir/voice_engines/GoogleCloud.php");
 require_once("$lbphtmldir/system/bin/openssl_file.class.php");
+require_once("$lbpbindir/binlog.php");
 
 $myFolder = "$lbpconfigdir";									// get config folder
 $myConfigFile = "player.cfg";									// get config file
@@ -31,8 +32,8 @@ $ms = LBSystem::get_miniservers();
 
 #echo "<PRE>";
 
-# only between 9am till 21pm
-if ($Stunden >=9 && $Stunden <21)   {
+# only between 8am till 21pm
+if ($Stunden >=8 && $Stunden <21)   {
 	
 	global $master, $main, $zone, $ms, $batlevel, $configfile, $config;
 	
@@ -85,7 +86,7 @@ if ($Stunden >=9 && $Stunden <21)   {
 		# only check MOVE or ROAM devices
 		if ($src == "S27" or $src == "S17")   {
 			$port = 1400;
-			$timeout = 1;
+			$timeout = 3;
 			$handle = @stream_socket_client("$ip:$port", $errno, $errstr, $timeout);
 			# if Online check battery status
 			if($handle) {
@@ -98,7 +99,9 @@ if ($Stunden >=9 && $Stunden <21)   {
 				$PowerSource = $xml->LocalBatteryStatus->Data[3];
 				# check only if MOVE or ROAM is not charging and battery level is less then 30%
 				if ($PowerSource == "BATTERY" and $batlevel <= 30)  {
+				#if ($batlevel > 30)  {
 					#LOGWARN('bin/battery.php The battery level of "'.$zone.'" is about '.$batlevel.'%. Please charge your device!');
+					binlog("Battery check", "system/battery.php: The battery level of '".$zone."' is about ".$batlevel."%. Please charge your device!");
 					foreach ($mainpl as $main)   {
 						$master = $main;
 						$volume = $config['sonoszonen'][$master][3] + ($config['sonoszonen'][$master][3] * $config['TTS']['correction'] / 100);
@@ -112,7 +115,7 @@ if ($Stunden >=9 && $Stunden <21)   {
 				}
 				fclose($handle);
 			} else {
-				#LOGWARN("bin/battery.php Zone '".$zone."' seems to be Offline, please check your power/network settings");
+				#binlog("Battery check", "bin/battery.php Zone '".$zone."' seems to be Offline, please check your power/network settings");
 			}
 		}
 	}
@@ -177,7 +180,7 @@ function parseConfigFile()    {
 	} else {
 		$tmpsonos = parse_ini_file($myFolder.'/sonos.cfg', TRUE);
 		if ($tmpsonos === false)  {
-			#LOGERR('bin/battery.php The file sonos.cfg could not be parsed, the file may be disruppted. Please check/save your Plugin Config or check file "sonos.cfg" manually!');
+			binlog("Battery check", 'bin/battery.php The file sonos.cfg could not be parsed, the file may be disruppted. Please check/save your Plugin Config or check file "sonos.cfg" manually!');
 			exit(1);
 		}
 		#LOGDEB("bin/battery.php Sonos config has been loaded");
@@ -188,7 +191,7 @@ function parseConfigFile()    {
 	} else {
 		$tmpplayer = parse_ini_file($myFolder.'/player.cfg', true);
 		if ($tmpplayer === false)  {
-			#LOGERR('bin/battery.php The file player.cfg could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file "player.cfg" manually!');
+			binlog("Battery check", 'bin/battery.php The file player.cfg could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file "player.cfg" manually!');
 			exit(1);
 		}
 		#LOGDEB("bin/battery.php Player config has been loaded");
