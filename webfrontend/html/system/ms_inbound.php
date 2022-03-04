@@ -11,7 +11,7 @@
 require_once "PHPSonos.php";
 require_once "loxberry_system.php";
 require_once "loxberry_log.php";
-require_once "loxberry_loxonetemplatebuilder.php";
+require_once "bin/loxberry_loxonetemplatebuilder.php";
 
 register_shutdown_function('shutdown');
 

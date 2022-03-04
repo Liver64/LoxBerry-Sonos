@@ -597,6 +597,7 @@ sub save
 	$pcfg->param("TTS.regionms", $azureregion);
 	$pcfg->param("MP3.MP3store", "$R::mp3store");
 	$pcfg->param("MP3.cachesize", "$R::cachesize");
+	$pcfg->param("MP3.file_gong", "$R::file_gong");
 	$pcfg->param("LOCATION.region", "$R::region");
 	$pcfg->param("LOCATION.googlekey", "$R::googlekey");
 	$pcfg->param("LOCATION.googletown", "$R::googletown");
@@ -619,11 +620,6 @@ sub save
 	if (!-e "$R::STORAGEPATH/$ttsfolder/$mp3folder") {
 		$copy = 1;
 	}
-	
-	# delete temporally Error files (nextradio / checkradiourl)
-	unlink("/dev/shm/errorMP3Stream.json");
-	unlink("/dev/shm/s4lox_date");
-	LOGDEB "Temp. error files has been deleted";
 	
 	#if (!-d "$R::STORAGEPATH/$ttsfolder $lbphtmldir/interfacedownload")  {
 		LOGINF "Creating folders and symlinks";

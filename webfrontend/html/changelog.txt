@@ -327,6 +327,12 @@
 			[Improvement] Für ROAM und MOVE Besitzer wird ein regelmäßiger Battercheck ausgeführt und per T2S informiert falls Batteriestatus <30% ist
 			[BUGFIX] Während T2S Ansage werden Zonen Daten nicht mehr geändert (gilt für alle an der T2S teilnehmenden Player)
 			[Improvement] funktion 'zapzone' komplett überarbeitet
+ 4.1.1		[BUGFIX] keepvolume korrigiert
+			[IMPROVEMENT] Daemon zwecks 'updateplayer' hinzugefügt
+			[BUGFIX] Jingle Auswahl in der Config gefixed
+			[BUGFIX] Temporärer Fix zur XML Vorlagenerstellung hinzugefügt
+			[IMPROVEMENT] Backup der Plugin files in data/backup --> wird nach einer Woche automatisch gelöscht
+			[BUGFIX] 'push_loxone' gefixed (Reduzierung Loxberry Performance wenn Data transfer zu Loxone aktiviert)
 			
 
 

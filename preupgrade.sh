@@ -32,7 +32,7 @@ PTEMPDIR=$1   # First argument is temp folder during install
 PSHNAME=$2    # Second argument is Plugin-Name for scipts etc.
 PDIR=$3       # Third argument is Plugin installation folder
 PVERSION=$4   # Forth argument is Plugin version
-#LBHOMEDIR=$5 # Comes from /etc/environment now. Fifth argument is
+LBHOMEDIR=$5  # Comes from /etc/environment now. Fifth argument is
               # Base folder of LoxBerry
 
 # Combine them with /etc/environment
@@ -44,6 +44,52 @@ PLOG=$LBPLOG/$PDIR # Note! This is stored on a Ramdisk now!
 PCONFIG=$LBPCONFIG/$PDIR
 PSBIN=$LBPSBIN/$PDIR
 PBIN=$LBPBIN/$PDIR
+
+
+DIR=$LBPDATA/$PDIR/backup
+
+if [ -d "$DIR" ]; then
+  echo "<INFO> Delete previous Plugin Backup folder"
+  rm -r $LBPDATA/$PDIR/backup
+else
+  echo "<INFO> No Backup folder exist"
+fi
+
+echo "<INFO> Creating Plugin Backup folders"
+mkdir -p $LBPDATA/$PDIR/backup
+mkdir -p $LBPDATA/$PDIR/backup/bin
+mkdir -p $LBPDATA/$PDIR/backup/templates
+mkdir -p $LBPDATA/$PDIR/backup/webfrontend
+mkdir -p $LBPDATA/$PDIR/backup/webfrontend/html
+mkdir -p $LBPDATA/$PDIR/backup/webfrontend/htmlauth
+mkdir -p $LBPDATA/$PDIR/backup/config
+mkdir -p $LBPDATA/$PDIR/backup/cron
+mkdir -p $LBPDATA/$PDIR/backup/daemon
+
+echo "<INFO> Copy existing CONFIG files to Backup folder"
+cp -p -v -r $5/config/plugins/$3/ $LBPDATA/$PDIR/backup/config
+
+echo "<INFO> Copy existing BIN files to Backup folder"
+cp -p -v -r $5/bin/plugins/$3/ $LBPDATA/$PDIR/backup/bin
+cp -p -v -r /opt/loxberry/bin/plugins/sonos4lox/ /opt/loxberry/data/plugins/sonos4lox/backup/bin
+
+echo "<INFO> Copy existing TEMPLATE files to Backup folder"
+cp -p -v -r $5/templates/plugins/$3/ $LBPDATA/$PDIR/backup/templates
+
+echo "<INFO> Copy existing HMTL files to Backup folder"
+cp -p -v -r $5/webfrontend/html/plugins/$3/ $LBPDATA/$PDIR/backup/webfrontend/html
+
+echo "<INFO> Copy existing HTMLAUTH files to Backup folder"
+cp -p -v -r $5/webfrontend/htmlauth/plugins/$3/ $LBPDATA/$PDIR/backup/webfrontend/htmlauth
+
+echo "<INFO> Copy existing CRON files to Backup folder"
+cp -p -v -r $5/system/cron/cron.01min/Sonos $LBPDATA/$PDIR/backup/cron/Sonos.cron01min
+cp -p -v -r $5/system/cron/cron.hourly/Sonos $LBPDATA/$PDIR/backup/cron/Sonos.cron.hourly
+cp -p -v -r $5/system/cron/cron.daily/Sonos $LBPDATA/$PDIR/backup/cron/Sonos.cron.daily
+cp -p -v -r $5/system/cron/cron.weekly/Sonos $LBPDATA/$PDIR/backup/cron/Sonos.cron.weekly
+
+echo "<INFO> Copy existing DAEMON file to Backup folder"
+cp -p -v -r $5/system/daemons/plugins/Sonos $LBPDATA/$PDIR/backup/daemon
 
 echo "<INFO> Creating temporary folders for upgrading"
 mkdir -p /tmp/$1\_upgrade
@@ -63,6 +109,8 @@ cp -p -v -r $5/data/plugins/$3/ /tmp/$1\_upgrade/data
 
 echo "<INFO> Backing up existing Text files"
 cp -v $5/templates/plugins/$3/lang/t2s-text_*.* /tmp/$1\_upgrade/templates
+
+
 
 # Exit with Status 0
 exit 0

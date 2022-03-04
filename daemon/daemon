@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# updateplayer
+/usr/bin/php -q REPLACELBPHTMLDIR/system/updateplayer.php &
+
+exit 0

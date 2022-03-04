@@ -4,7 +4,7 @@
 require_once "loxberry_system.php";
 require_once "loxberry_log.php";
 require_once "loxberry_io.php";
-require_once "phpMQTT/phpMQTT.php";
+require_once "phpmqtt/phpMQTT.php";
 
 require_once("$lbphtmldir/system/PHPSonos.php");
 require_once("$lbphtmldir/system/error.php");
@@ -22,20 +22,6 @@ include("$lbpbindir/binlog.php");
 $tmp_tts = "/run/shm/tmp_tts";
 if (is_file($tmp_tts))   {
 	exit;
-}
-
-$ms = LBSystem::get_miniservers();
-// Get the MQTT Gateway connection details from LoxBerry
-$creds = mqtt_connectiondetails();
- 
-// MQTT requires a unique client id
-$client_id = uniqid(gethostname()."_client");
-
-$mqtt = new Bluerhinos\phpMQTT($creds['brokerhost'],  $creds['brokerport'], $client_id);
-if( $mqtt->connect(true, NULL, $creds['brokeruser'], $creds['brokerpass'] ) ) {
-	$mqttstat = "1";
-} else {
-	$mqttstat = "0";
 }
 
 $myFolder = "$lbpconfigdir";
@@ -59,6 +45,22 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 	// check if Data transmission is switched off
 	if(!is_enabled($tmpsonos['LOXONE']['LoxDaten'])) {
 		exit;
+	}
+	
+	# get MS
+	$ms = LBSystem::get_miniservers();
+	
+	// Get the MQTT Gateway connection details from LoxBerry
+	$creds = mqtt_connectiondetails();
+	 
+	// MQTT requires a unique client id
+	$client_id = uniqid(gethostname()."_client");
+
+	$mqtt = new Bluerhinos\phpMQTT($creds['brokerhost'],  $creds['brokerport'], $client_id);
+	if( $mqtt->connect(true, NULL, $creds['brokeruser'], $creds['brokerpass'] ) ) {
+		$mqttstat = "1";
+	} else {
+		$mqttstat = "0";
 	}
 	
 	// Parsen der Sonos Zonen Konfigurationsdatei player.cfg
