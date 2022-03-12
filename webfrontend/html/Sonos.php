@@ -67,6 +67,7 @@ $off_file = $lbplogdir."/off.tmp";								// path/file for script off
 $tmp_error = "/run/shm/errorMP3Stream.json";					// path/file for error message
 $check_date = "/run/shm/s4lox_date";							// store date execution
 $configfile	= "/run/shm/s4lox_config.json";						// configuration file
+$maxvolfile	= "/run/shm/max_volume.json";						// max Volume restriction
 
 #echo '<PRE>';
 
@@ -963,8 +964,28 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			playFav();
 		break;	
 		
-		case 'testplay':
-		$sonos->SetRadio('x-rincon-mp3radio://http://stream.antenne1.de/a1stg/livestream2.mp3', "keine Ahnung");
+		case 'setmaxvolume':
+			# Sets in combination with cronjob the volume per zone to max.
+			if (is_enabled($config['VARIOUS']['volmax']))   {
+				if (isset($_GET['volume']))  {
+					$maxvol = $_GET['volume'];
+					$zonesf['volume'] = $maxvol;
+					$zonesf['zones'][] = $sonoszonen[$master][0];
+					if (isset($_GET['member']))  {
+						$mem = explode(",", $_GET['member']);
+						foreach ($mem as $mem3)    {
+							array_push($zonesf['zones'], $sonoszonen[$mem3][0]);
+						}
+					}
+					#print_r($zonesf);
+					file_put_contents($maxvolfile, json_encode($zonesf));
+				}
+				if (isset($_GET['reset']))  {
+					@unlink($maxvolfile);
+				}
+			} else {
+				LOGGING("Function to set max. Volume is turned off! Please turn on in Sonos Plugin Config", 3);
+			}
 		break;
 
 		case 'getfavorites':

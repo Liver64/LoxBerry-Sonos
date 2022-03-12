@@ -1895,16 +1895,44 @@
                     <td style="width: 27%">
                         <TMPL_VAR T2S_DETAILS.LABEL_PHONESTOP>
                     </td>
-                    <td style="width: 800px">
-                        <fieldset style="width: 788px">
-                            <select id="phonestop" name="phonestop" data-role="flipswitch">
-							<option value="0"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
-							<option value="1"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
-						</select>
-                            <script>
-                                $('#phonestop').val('<TMPL_VAR VARIOUS.phonestop>')
-                            </script>
-                        </fieldset>
+                    <td style="height: 60px; width: 800px;">
+                        <table border=0 width="100%">
+                            <tr>
+                                <td style="width: 10%">
+									<fieldset style="width: 30%">
+										<select id="phonestop" name="phonestop" data-role="flipswitch">
+											<option value="0"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
+											<option value="1"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
+										</select>
+										<script>
+											$('#phonestop').val('<TMPL_VAR VARIOUS.phonestop>')
+										</script>
+									</fieldset>
+								</td>
+                                <td style="width: 23px; text-align: center;">
+                                    &nbsp;</td>
+                                <td>
+                                    <table class="volmax" border=0 style="width: 91%">
+                                        <tr>
+                                            <td style="width: 50%; height: 60px;">
+                                                <label align="right" id="lcron"><TMPL_VAR T2S_DETAILS.LABEL_MAX_VOLUME>&nbsp;&nbsp;&nbsp;</label>
+                                            </td>
+                                            <td style="width: 10%">
+												<fieldset style="width: 30%">
+													<select id="volmax" name="volmax" data-role="flipswitch">
+														<option value="0"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
+														<option value="1"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
+													</select>
+													<script>
+														$('#volmax').val('<TMPL_VAR VARIOUS.volmax>')
+													</script>
+												</fieldset>
+											</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
                     </td>
                 </tr>
 

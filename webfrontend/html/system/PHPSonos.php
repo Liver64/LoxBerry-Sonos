@@ -2608,6 +2608,7 @@ Content-Length: '. strlen($xml) .'
 '. $xml;
 
     $returnContent = $this->sendPacket($content);
+	$returnContentMeta = $returnContent;
 
     $xmlParser = xml_parser_create();
         $returnContent = substr($returnContent, stripos($returnContent, '&lt;'));
@@ -2704,6 +2705,8 @@ Content-Length: '. strlen($xml) .'
                   }else{
                    $liste[$i]['album']="leer";
                   }
+				  $liste[$i]['TrackMetaData'] = substr($returnContentMeta, strpos($returnContentMeta, "DIDL-Lite") - 4, strripos($returnContentMeta, "DIDL-Lite") + 13);
+				  #$liste[$i]['TrackMetaData'] = substr($returnContentMeta, strpos($returnContentMeta, "/DIDL-Lite&gt") - 4, strripos($returnContentMeta, "/DIDL-Lite/") + 5);
 				  
 
         }
@@ -2759,7 +2762,7 @@ Content-Length: '. strlen($xml) .'
 '. $xml;
 
     $returnContent = $this->sendPacket($content);
-    $xmlParser = xml_parser_create();
+	$xmlParser = xml_parser_create();
         $returnContent = substr($returnContent, stripos($returnContent, '&lt;'));
         $returnContent = substr($returnContent, 0, strrpos($returnContent, '&gt;') + 4);
         $returnContent = str_replace(array("&lt;", "&gt;", "&quot;", "&amp;", "%3a", "%2f", "%25"), array("<", ">", "\"", "&", ":", "/", "%"), $returnContent);
@@ -2829,7 +2832,7 @@ Content-Length: '. strlen($xml) .'
                   }else{
                    $liste[$i]['album']="leer";
                   }
-				  
+				  				  
 
         }
 return $liste;

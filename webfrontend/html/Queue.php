@@ -95,25 +95,25 @@ function addFavList()
 	$single = "Single";
 	$tes = $sonos->BrowseFav("FV:2","c");
 	$re = array_multi_search($single, $tes);
-	#print_r($re);
-	$sonos->Stop();
-	$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
-	$sonos->ClearQueue();
-	$sonos->SetGroupMute(false);
-	$sonos->SetPlayMode('NORMAL');
-	$sonos->SetVolume($volume);
+	print_r($tes);
+	#$sonos->Stop();
+	#$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
+	#$sonos->ClearQueue();
+	#$sonos->SetGroupMute(false);
+	#$sonos->SetPlayMode('NORMAL');
+	#$sonos->SetVolume($volume);
 	foreach($re as $file)  {
 		try {
-			$artist = @substr($re[0]['artist'], 4, 40);
-			print_r($file['res']);
+			#$artist = @substr($re[0]['artist'], 4, 40);
+			#print_r($file['res']);
 			echo "<br>";
-			$data  =' ';
+			#$data  =' ';
 			#$sonos->AddFavoritesToQueue($file['res']);
 			#$sonos->SetRadio($re[0]['res'], $re[0]['title'].' - '.$artist, $id="R:0/0/0", $parentID="R:0/0");
 			#$sonos->SetRadio($file['res'], $file['title'], $id="R:0/0/0", $parentID="R:0/0");
 			#continue;
-			$sonos->AddToQueue($file['res']);
-			$sonos->Play();
+			#$sonos->AddToQueue($file['res']);
+			#$sonos->Play();
 		} catch (Exception $e) {
 			LOGERR("queue.php: Your favorite '".$file['res']."' seems not to be valid! Please check!");
 			continue;

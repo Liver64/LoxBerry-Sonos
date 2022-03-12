@@ -714,7 +714,8 @@ function t2s_playbatch() {
 function send_tts_source($tts_stat)  {
 	
 	require_once('system/io-modul.php');
-	require_once "phpMQTT/phpMQTT.php";
+	#require_once "phpMQTT/phpMQTT.php";
+	require_once "system/bin/phpmqtt/phpMQTT.php";
 	require_once "loxberry_io.php";
 	
 	global $config, $tmp_tts, $sonoszone, $sonoszonen, $master, $ms, $tts_stat; 

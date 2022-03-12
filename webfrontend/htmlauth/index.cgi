@@ -133,6 +133,10 @@ if (!defined $pcfg->param("VARIOUS.phonestop"))  {
 if ($pcfg->param("SYSTEM.checkt2s") eq '')  {
 	$pcfg->param("SYSTEM.checkt2s", "false");
 }
+# maxVolume
+if (!defined $pcfg->param("VARIOUS.volmax"))  {
+	$pcfg->param("VARIOUS.volmax", "0");
+}
 	
 
 ##########################################################################
@@ -470,6 +474,7 @@ sub save_details
 	$pcfg->param("VARIOUS.announceradio_always", "$R::announceradio_always");
 	$pcfg->param("TTS.phonemute", "$R::phonemute");
 	$pcfg->param("VARIOUS.phonestop", "$R::phonestop");
+	$pcfg->param("VARIOUS.volmax", "$R::volmax");
 	$pcfg->param("LOCATION.town", "\"$R::town\"");
 	$pcfg->param("VARIOUS.CALDavMuell", "\"$R::wastecal\"");
 	$pcfg->param("VARIOUS.CALDav2", "\"$R::cal\"");
