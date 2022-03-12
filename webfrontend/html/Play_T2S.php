@@ -713,10 +713,14 @@ function t2s_playbatch() {
 
 function send_tts_source($tts_stat)  {
 	
-	require_once('system/io-modul.php');
-	#require_once "phpMQTT/phpMQTT.php";
-	require_once "system/bin/phpmqtt/phpMQTT.php";
+	global $lbphtmldir, $lbpbindir;
+	
+	require_once "loxberry_system.php";
 	require_once "loxberry_io.php";
+	require_once "$lbphtmldir/system/io-modul.php";
+	#require_once "phpMQTT/phpMQTT.php";
+	require_once "$lbpbindir/phpmqtt/phpMQTT.php";
+	
 	
 	global $config, $tmp_tts, $sonoszone, $sonoszonen, $master, $ms, $tts_stat; 
 	
@@ -774,6 +778,7 @@ function send_tts_source($tts_stat)  {
 		foreach ($t2s_zones as $value)    {
 			try {
 				$data['t2s_'.$value] = $tts_stat;
+				#echo $data['t2s_'.$value];
 				if ($mqttstat == "1")   {
 					$err = $mqtt->publish('Sonos4lox/t2s/'.$value, $data['t2s_'.$value], 0, 1);
 				}			

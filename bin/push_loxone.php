@@ -4,7 +4,7 @@
 require_once "loxberry_system.php";
 require_once "loxberry_log.php";
 require_once "loxberry_io.php";
-require_once "phpmqtt/phpMQTT.php";
+require_once "$lbpbindir/phpmqtt/phpMQTT.php";
 
 require_once("$lbphtmldir/system/PHPSonos.php");
 require_once("$lbphtmldir/system/error.php");
