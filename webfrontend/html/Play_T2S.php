@@ -721,15 +721,14 @@ function send_tts_source($tts_stat)  {
 	#require_once "phpMQTT/phpMQTT.php";
 	require_once "$lbpbindir/phpmqtt/phpMQTT.php";
 	
-	
 	global $config, $tmp_tts, $sonoszone, $sonoszonen, $master, $ms, $tts_stat; 
 	
 	$tmp_tts = "/run/shm/tmp_tts";
 	if ($tts_stat == 1)  {
 			if(!touch($tmp_tts)) {
-			LOGGING("play_t2s.php: No permission to write file", 3);
-			return;
-		}
+				LOGGING("play_t2s.php: No permission to write file", 3);
+				return;
+			}
 		$handle = fopen ($tmp_tts, 'w');
 		fwrite ($handle, $tts_stat);
 		fclose ($handle); 
@@ -778,7 +777,6 @@ function send_tts_source($tts_stat)  {
 		foreach ($t2s_zones as $value)    {
 			try {
 				$data['t2s_'.$value] = $tts_stat;
-				#echo $data['t2s_'.$value];
 				if ($mqttstat == "1")   {
 					$err = $mqtt->publish('Sonos4lox/t2s/'.$value, $data['t2s_'.$value], 0, 1);
 				}			
@@ -786,7 +784,7 @@ function send_tts_source($tts_stat)  {
 				LOGDEB("Sonos: play_t2s.php: T2S notification: '".$tts_stat."' has been send to: ".$value);	
 			} catch (Exception $e) {
 				LOGWARN("Sonos: play_t2s.php: Sending T2S notification for Zone '".$value."' failed, we skip here...");	
-				#exit;
+				return;
 			}
 		}
 		$mqtt->close();
