@@ -334,6 +334,6 @@
 			[IMPROVEMENT] Backup der Plugin files in data/backup --> wird nach einer Woche automatisch gelöscht
 			[BUGFIX] 'push_loxone' gefixed (Reduzierung Loxberry Performance wenn Data transfer zu Loxone aktiviert)
  4.1.2		[BUGFIX] Daemon optimiert um das Löschen von Playern zu verhindern falls die Player Offline sein sollten, Notify hinzugefügt			
-
+ 4.1.3		[IMPROVEMENT] Neuer ROAM SL hinzugefügt
 
  
