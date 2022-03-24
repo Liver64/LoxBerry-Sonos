@@ -715,8 +715,8 @@ function send_tts_source($tts_stat)  {
 	
 	global $lbphtmldir, $lbpbindir;
 	
-	require_once "loxberry_system.php";
-	require_once "loxberry_io.php";
+	#require_once "loxberry_system.php";
+	#require_once "loxberry_io.php";
 	require_once "$lbphtmldir/system/io-modul.php";
 	#require_once "phpMQTT/phpMQTT.php";
 	require_once "$lbpbindir/phpmqtt/phpMQTT.php";
