@@ -1,7 +1,8 @@
 <?php
 header('Content-Type: text/html; charset=utf-8');
 
-require_once "loxberry_system.php";
+include "loxberry_system.php";
+include "loxberry_io.php";
 require_once "loxberry_log.php";
 include "system/error.php";
 
