@@ -148,7 +148,7 @@ function random_radio() {
 		#LOGGING("radio.php: Player ".$master." is Single!", 7);
 	#}
 	$sonoslists = $sonos->Browse("R:0/0","c");
-	print_r($sonoslists);
+	#print_r($sonoslists);
 	if(!isset($_GET['except'])) {
 		$countpl = count($sonoslists);
 		$random = mt_rand(0, $countpl - 1);

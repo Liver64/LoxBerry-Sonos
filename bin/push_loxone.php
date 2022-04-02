@@ -19,7 +19,7 @@ include("$lbpbindir/binlog.php");
 #echo "<br>";
 
 # check if T2S is currently running, if yes we skip
-$tmp_tts = "/run/shm/tmp_tts";
+$tmp_tts = "/run/shm/s4lox_tmp_tts";
 if (is_file($tmp_tts))   {
 	exit;
 }

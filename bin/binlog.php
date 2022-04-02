@@ -8,7 +8,7 @@ require_once("$lbphtmldir/system/logging.php");
 function binlog($topic, $logmessage)   {
 	global $lbplogdir;
 	
-	$check_date_once = "/run/shm/bin_err";	
+	$check_date_once = "/run/shm/s4lox_bin_err";	
 	
 	if (is_file($check_date_once))   {
 		exit;

@@ -17,6 +17,7 @@ function restoreSingleZone() {
 	
 	#if (!$_GET['member']) {
 	$restore = $actual;
+	#print_r($restore);
 	switch ($restore) {
 		// Zone was playing in Single Mode
 		case $actual[$master]['ZoneStatus'] == 'single':
@@ -24,11 +25,11 @@ function restoreSingleZone() {
 			restore_details($master);
 			$sonos->SetVolume($actual[$master]['Volume']);
 			$sonos->SetMute($actual[$master]['Mute']);
-			if (!empty($actual[$master]['PositionInfo']["duration"]))  {
-				RestoreShuffle($actual, $master);
-			}
 			if (($actual[$master]['TransportInfo'] == 1)) {
 				$sonos->Play();	
+			}
+			if (empty($actual[$master]['MediaInfo']["CurrentURIMetaData"]))  {
+				RestoreShuffle($actual, $master);
 			}
 			LOGGING("restore_t2s.php: Single Zone ".$master." has been restored.", 6);
 		break;
@@ -135,7 +136,7 @@ function restoreGroupZone() {
 			if (empty($actual[$player]['Grouping'])) {
 			# Playlist
 			if ((substr($actual[$player]['PositionInfo']["TrackURI"], 0, 18) !== "x-sonos-htastream:") &&
-				($actual[$player]['PositionInfo']["TrackDuration"] != '')) {			
+				(empty($actual[$master]['MediaInfo']["CurrentURIMetaData"]))) {		
 				RestoreShuffle($actual, $player);
 				} 
 				# TV Playbar
@@ -147,9 +148,10 @@ function restoreGroupZone() {
 					$sonos->SetAVTransportURI($actual[$player]['PositionInfo']["TrackURI"]); 
 				} 
 				# Radio Station
-				elseif (($actual[$player]['PositionInfo']["TrackDuration"] == '') or ($actual[$player]['MediaInfo']["title"] <> '')) {
-					@$radioname = $actual[$player]['MediaInfo']["title"];
-					$sonos->SetRadio($actual[$player]['PositionInfo']["TrackURI"], $radioname);
+				elseif (!empty($actual[$master]['MediaInfo']["CurrentURIMetaData"])) {
+					#@$radioname = $actual[$player]['MediaInfo']["title"];
+					#$sonos->SetRadio($actual[$player]['PositionInfo']["TrackURI"], $radioname);
+					$sonos->SetAVTransportURI($actual[$zone]['MediaInfo']["CurrentURI"], ($actual[$zone]['MediaInfo']["CurrentURIMetaData"])); 
 				}
 			}
 			$sonos->SetVolume($actual[$player]['Volume']);
@@ -180,22 +182,23 @@ function restoreGroupZone() {
 			$sonos = new PHPSonos($sonoszone[$player][0]);
 			# Playlist
 			if ((substr($actual[$player]['PositionInfo']["TrackURI"], 0, 18) !== "x-sonos-htastream:") &&
-				($actual[$player]['PositionInfo']["TrackDuration"] != '')) {			
+				(empty($actual[$master]['MediaInfo']["CurrentURIMetaData"]))) {			
 				RestoreShuffle($actual, $player);
 				} 
 				# TV Playbar
-				elseif (substr($actual[$player]['PositionInfo']["TrackURI"], 0, 18) == "x-sonos-htastream:") {
+				elseif (substr($actual[$player]['PositionInfo']["TrackURI"], 0, 18) == "x-sonos-htastream:")   {
 					$sonos->SetAVTransportURI($actual[$player]['PositionInfo']["TrackURI"]); 
 				} 
 				# LineIn
-				elseif (substr($actual[$player]['PositionInfo']["TrackURI"], 0, 15) == "x-rincon-stream") {
+				elseif (substr($actual[$player]['PositionInfo']["TrackURI"], 0, 15) == "x-rincon-stream")   {
 					$sonos->SetAVTransportURI($actual[$player]['PositionInfo']["TrackURI"]); 
 				} 
 				# Radio Station
-				elseif (($actual[$player]['PositionInfo']["TrackDuration"] == '') && ($actual[$player]['MediaInfo']["title"] <> '')){
-					@$radionam = @$actual[$player]['MediaInfo']["title"];
-					$sonos->SetRadio($actual[$player]['PositionInfo']['TrackURI'],"$radionam");
-				}
+				elseif (!empty($actual[$master]['MediaInfo']["CurrentURIMetaData"]))    {
+					#@$radionam = @$actual[$player]['MediaInfo']["title"];
+					#$sonos->SetRadio($actual[$player]['PositionInfo']['TrackURI'],"$radionam");
+					$sonos->SetAVTransportURI($actual[$zone]['MediaInfo']["CurrentURI"], ($actual[$zone]['MediaInfo']["CurrentURIMetaData"])); 
+			}
 			# Restore Zone Members
 			#echo "TEST MEMBER<br>";
 			$tmp_group = $actual[$player]['Grouping'];
@@ -268,7 +271,7 @@ function read_txt_file_to_array() {
         exit();
 	}
 	$t2s_batch = file("t2s_batch.txt");
-	unlink($filename);
+	@unlink($filename);
 	#print_r($t2s_batch);
 	return $t2s_batch;
 }
@@ -283,15 +286,15 @@ function read_txt_file_to_array() {
 function restore_details($zone) {
 	global $sonoszone, $sonos, $master, $actual, $j, $browselist, $senderName;
 	
-	# Playlist
-	if ((substr($actual[$zone]['PositionInfo']["TrackURI"], 0, 18) !== "x-sonos-htastream:") && ($actual[$zone]['PositionInfo']["TrackDuration"] != '')) {			
+	# Playlist/Track
+	if ((substr($actual[$zone]['PositionInfo']["TrackURI"], 0, 17) !== "x-sonos-htastream") && (empty($actual[$master]['MediaInfo']["CurrentURIMetaData"])))   {			
 		$sonos->SetTrack($actual[$zone]['PositionInfo']['Track']);
 		$sonos->Seek($actual[$zone]['PositionInfo']['RelTime'],"NONE");
-		
-		#$mode = $actual[$zone]['TransportSettings'];
-		#playmode_detection($zone, $mode);
+		if (empty($actual[$master]['MediaInfo']["CurrentURIMetaData"]))  {
+			RestoreShuffle($actual, $master);
+		}
 	} 
-	# TV Playbar
+	# TV
 	elseif (substr($actual[$zone]['PositionInfo']["TrackURI"], 0, 18) == "x-sonos-htastream:") {
 		$sonos->SetAVTransportURI($actual[$zone]['PositionInfo']["TrackURI"]); 
 	} 
@@ -300,10 +303,12 @@ function restore_details($zone) {
 		$sonos->SetAVTransportURI($actual[$zone]['PositionInfo']["TrackURI"]); 
 	} 
 	# Radio Station
-	elseif (($actual[$zone]['PositionInfo']["TrackDuration"] == '') or ($actual[$zone]['MediaInfo']["title"] <> '')) {
-		@$radioname1 = $actual[$zone]['MediaInfo']["title"];
-		$sonos->SetRadio(urldecode($actual[$zone]['PositionInfo']["TrackURI"]), "$radioname1");
+	elseif (!empty($actual[$master]['MediaInfo']["CurrentURIMetaData"])) {
+		$sonos->SetAVTransportURI($actual[$zone]['MediaInfo']["CurrentURI"], ($actual[$zone]['MediaInfo']["CurrentURIMetaData"])); 
+	} else {
+		LOGGING("restore_t2s.php: Something went wrong :-(", 4);
 	}
+	return;
 }
 
 

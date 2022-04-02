@@ -28,7 +28,22 @@ function saveZonesStatus() {
 		$actual[$player]['Grouping'] = getGroup($player);
 		$actual[$player]['ZoneStatus'] = getZoneStatus($player);
 		$actual[$player]['CONNECT'] = GetVolumeModeConnect($player);
+		$posinfo = $sonos->GetPositionInfo($player);
+		$media = $sonos->GetMediaInfo($player);
+		$zonestatus = getZoneStatus($player);
+		if ($zonestatus != "member")    {
+			if (substr($posinfo["TrackURI"], 0, 18) == "x-sonos-htastream:")  {
+				$actual[$player]['Type'] = "TV";
+			} elseif (!empty($media["CurrentURIMetaData"]))  {
+				$actual[$player]['Type'] = "Radio";
+			} elseif (substr($posinfo["TrackURI"], 0, 15) == "x-rincon-stream")   {
+				$actual[$player]['Type'] = "LineIn";
+			} else {
+				$actual[$player]['Type'] = "Track";
+			}
+		}
 	}
+	#print_r($actual);
 	LOGGING("save_t2s.php: All Zone settings has been saved successful",6);
 	return $actual;
 }

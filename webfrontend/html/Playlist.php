@@ -62,11 +62,12 @@ function playlist() {
 }
 
 /**
+/**
 * Function: zapzone --> checks each zone in network and if playing add current zone as member
 *
 * @param: empty
 * @return: 
-**/
+
 
 function zapzone() {
 	global $config, $volume, $tmp_tts, $sonos, $sonoszone, $master, $playzones, $count, $maxzap, $count_file, $curr_zone_file;
@@ -135,12 +136,12 @@ function zapzone() {
 	}
 
 
-/**
+
 * Sub-Function for zapzone: saveCurrentZone --> saves current playing zone to file
 *
 * @param: Zone
 * @return: 
-**/
+
 
 function saveCurrentZone($nextZoneKey) {
 	global $curr_zone_file;
@@ -157,12 +158,12 @@ function saveCurrentZone($nextZoneKey) {
 } 
 
 
-/**
+
 * Sub-Function for zapzone: currentZone --> open file and read last playing zone
 *
 * @param: 
 * @return: last playing zone 
-**/      
+     
 
 function currentZone() {
 	global $config, $master, $curr_zone_file;
@@ -184,12 +185,12 @@ function currentZone() {
 }
 
 
-/**
+
 * Sub-Function for zapzone: play_zones --> scans through Sonos Network and create array of currently playing zones
 *
 * @param: 
 * @return: array of zones 
-**/
+
 
 function play_zones() {
 	global $sonoszone, $master, $sonos, $playingzones;
@@ -214,12 +215,12 @@ function play_zones() {
 }
 
 
-/**
+
 * Sub-Function for zapzone: countzones --> increment counter by each click
 *
 * @param: 
 * @return: amount if clicks
-**/
+
 
 function countzones() {
 	

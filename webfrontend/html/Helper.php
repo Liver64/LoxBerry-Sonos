@@ -1050,6 +1050,30 @@ function ends_with($haystack, $needle) {
     return $needle !== '' && substr($haystack, -strlen($needle)) === (string)$needle;
 }
 
+
+/**
+/* Funktion : DeleteTmpFavFilesh --> deletes the Favorite ONE-click Temp files
+/*
+/* @param: empty                             
+/* @return: 
+**/
+
+function DeleteTmpFavFiles() {
+	
+	global $queuetracktmp, $radiofav, $queuetmp, $radiofavtmp, $queueradiotmp, $favtmp, $pltmp, $tuneinradiotmp, $queuepltmp;
+    
+	@unlink($queuetracktmp);
+	@unlink($radiofav);
+	@unlink($queuetmp);
+	@unlink($radiofavtmp);
+	@unlink($queueradiotmp);
+	@unlink($favtmp);
+	@unlink($pltmp);
+	@unlink($tuneinradiotmp);
+	@unlink($queuepltmp);
+	LOGGING("helper.php: All Radio/Tracks/Playlist Temp Files has been deleted.", 7);
+}
+
  
  
 ?>

@@ -723,7 +723,7 @@ function send_tts_source($tts_stat)  {
 	
 	global $config, $tmp_tts, $sonoszone, $sonoszonen, $master, $ms, $tts_stat; 
 	
-	$tmp_tts = "/run/shm/tmp_tts";
+	$tmp_tts = "/run/shm/s4lox_tmp_tts";
 	if ($tts_stat == 1)  {
 			if(!touch($tmp_tts)) {
 				LOGGING("play_t2s.php: No permission to write file", 3);

@@ -10,7 +10,7 @@ require_once("$lbphtmldir/Helper.php");
 register_shutdown_function('shutdown');
 
 $myFolder = "$lbpconfigdir";								// get config folder
-$FileName = "/run/shm/sonoszone.json";
+$FileName = "/run/shm/s4lox_sonoszone.json";
 
 	$params = [	"name" => "Sonos PHP",
 				"filename" => "$lbplogdir/sonos.log",

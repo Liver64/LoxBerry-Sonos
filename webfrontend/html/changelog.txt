@@ -333,7 +333,23 @@
 			[BUGFIX] Temporärer Fix zur XML Vorlagenerstellung hinzugefügt
 			[IMPROVEMENT] Backup der Plugin files in data/backup --> wird nach einer Woche automatisch gelöscht
 			[BUGFIX] 'push_loxone' gefixed (Reduzierung Loxberry Performance wenn Data transfer zu Loxone aktiviert)
- 4.1.2		[BUGFIX] Daemon optimiert um das Löschen von Playern zu verhindern falls die Player Offline sein sollten, Notify hinzugefügt			
+ 4.1.2		[BUGFIX] Daemon optimiert um das Löschen von Playern zu verhindern falls die Player Offline sein sollten	
  4.1.3		[IMPROVEMENT] Neuer ROAM SL hinzugefügt
+ 4.1.4		[IMPROVEMENT] MS Azure hat 13 neue deutsche Stimmen
+			[BUGFIX] Voice selection bei MS Azure gefixt
+			[BUGFIX] Funktion 'nextradio' wurde gefixt bzw. weiter optimiert
+			[IMPROVEMENT] Restore bei TTS optimiert
+			[BUGFIX] Bei dem Befehl 'play' wurde das Umschalten auf Nicht TV-Modus hinzugefügt
+			[BUGFIX] Befehl 'next' wurde für die Nutzung der ONE-click Funktionen optimiert
+			[IMPROVEMENT] Neue Funktion 'setmaxvolume' zur Begrenzung der maximalen Volume in Verbindung mit Cronjob hinzugefügt (siehe Wiki)
+			[IMPROVEMENT] Funktion 'playfavorite' wurde für "fuzzy logic" search optimiert
+			[IMPROVEMENT] Für die neuen ONE-click Funktionen werden folgende Streaming Dienste unterstützt: Apple, Amazon, Deezer, Napster, Sonos Radio, Soundcloud, Mixcloud, TuneIn, Sonos Playlisten
+			[IMPROVEMENT] für jeden Streaming Service jeweils Tracks/Playlisten/Alben/Radio Stations/Radio Shows
+			[IMPROVEMENT] Neue ONE-click Funktion 'playallfavorites' um deine Sonos Favoriten (nur Tracks und Radio Sender) abzuspielen (siehe Wiki)
+			[IMPROVEMENT] Neue ONE-click Funktion 'playtrackfavorites' um deine Sonos Favoriten (nur Tracks) abzuspielen (siehe Wiki)
+			[IMPROVEMENT] Neue ONE-click Funktion 'playradiofavorites' um deine Sonos Favoriten (nur Radio Sender) abzuspielen (siehe Wiki)
+			[IMPROVEMENT] Neue ONE-click Funktion 'playsonosplaylist' um deine Sonos Playlisten abzuspielen (siehe Wiki)
+			[IMPROVEMENT] Neue ONE-click Funktion 'playtuneinfavorites' um deine TuneIn Meine Radiosender abzuspielen (siehe Wiki)
+			[IMPROVEMENT] Neue ONE-click Funktion 'playplfavorites' um deine Sonos Favoriten (nur Playlisten/Alben) abzuspielen (siehe Wiki)
 
  

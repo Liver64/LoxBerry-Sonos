@@ -61,7 +61,6 @@ if ($Stunden >=8 && $Stunden <21)   {
 	#$log = LBLog::newLog( [ "name" => "Cronjobs", "stderr" => 1, "addtime" => 1 ] );
 
 	#LOGSTART("Check Battery state");
-	
 	$mainpl = array();
 	$errortext = '';
 	foreach ($sonoszonen as $zone => $player) {

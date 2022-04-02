@@ -1857,6 +1857,34 @@ SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#GetTransportInfo"
       }
       
    }
+   
+   
+/**
+ * Create Sonos Favorite based on playing item
+ *
+ * @return empty
+ */   
+ 
+   public function CreateObject($MetaData="")
+   {
+	
+$content ='POST /MediaServer/ContentDirectory/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: '.$this->address.':1400
+USER-AGENT: Linux UPnP/1.0 Sonos/67.1-27100 (WDCR:Microsoft Windows NT 10.0.22000 64-bit)
+CONTENT-LENGTH: '.(297+strlen(($MetaData))).'
+CONTENT-TYPE: text/xml; charset="utf-8"
+SOAPACTION: "urn:schemas-upnp-org:service:ContentDirectory:1#CreateObject"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:CreateObject xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1"><ContainerID>FV:2</ContainerID><Elements>'.($MetaData).'</Elements></u:CreateObject></s:Body></s:Envelope>';
+   
+   $this->sendPacket($content);
+   
+   }
+   
+   
+   
 
 /**
  * Gets Media Info
@@ -1883,7 +1911,9 @@ SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#GetMediaInfo"
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:GetMediaInfo xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID></u:GetMediaInfo></s:Body></s:Envelope>';
 
       $returnContent = $this->XMLsendPacket($content);
-	  #print_r($returnContent);
+	  $returnContentMeta = $returnContent;
+	  #print_r(htmlspecialchars($returnContent));
+	  #echo "<br>";
 
       $xmlParser = xml_parser_create("UTF-8");
       xml_parser_set_option($xmlParser, XML_OPTION_TARGET_ENCODING, "ISO-8859-1");
@@ -1902,7 +1932,14 @@ SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#GetMediaInfo"
       }
 
       if (isset($vals[$index["CURRENTURIMETADATA"][0]]["value"])) {
-         $mediaInfo["CurrentURIMetaData"] = $vals[$index["CURRENTURIMETADATA"][0]]["value"];
+		 $Info = $vals[$index["CURRENTURIMETADATA"][0]]["value"];
+		 if (substr(substr($returnContentMeta, strpos($returnContentMeta, "DIDL-Lite") - 4, ((strripos($returnContentMeta, "DIDL-Lite")) - (strpos($returnContentMeta, "DIDL-Lite") - 4))  + 13), 0 ,3) == "ope")  {
+			$mediaInfo["CurrentURIMetaData"] = ""; 
+		 } else {
+			$mediaInfo["CurrentURIMetaData"] = (substr($returnContentMeta, strpos($returnContentMeta, "DIDL-Lite") - 4, ((strripos($returnContentMeta, "DIDL-Lite")) - (strpos($returnContentMeta, "DIDL-Lite") - 4))  + 13));
+	     }
+
+		
          
       // print_r($index);
       // print_r($vals);
@@ -1910,16 +1947,48 @@ SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#GetMediaInfo"
 
                   $xmlParser = xml_parser_create("UTF-8");
                   xml_parser_set_option($xmlParser, XML_OPTION_TARGET_ENCODING, "ISO-8859-1");
-                  xml_parse_into_struct($xmlParser, $mediaInfo["CurrentURIMetaData"], $vals, $index);
+                  xml_parse_into_struct($xmlParser, $Info, $vals, $index);
                   xml_parser_free($xmlParser);
 
-    // print_r($index);
+
+    
+	// print_r($index);
     // print_r($vals);
 
                   if (isset($index["DC:TITLE"]) and isset($vals[$index["DC:TITLE"][0]]["value"])) {
                      $mediaInfo["title"] = $vals[$index["DC:TITLE"][0]]["value"];
                   } else {
                      $mediaInfo["title"] = "";
+				  }
+				  if (isset($index["R:DESCRIPTION"]) and isset($vals[$index["R:DESCRIPTION"][0]]["value"])) {
+                     $mediaInfo["artist"] = $vals[$index["R:DESCRIPTION"][0]]["value"];
+                  } else {
+                     $mediaInfo["artist"] = ""; 
+                  }
+				  if (isset($index["ITEM"]) and isset($vals[$index["ITEM"][0]]['attributes']['ID'])) {
+				  	 $mediaInfo["id"] = $vals[$index["ITEM"][0]]['attributes']['ID'];
+                  } else {
+                     $mediaInfo["id"] = "";
+                  }
+				  if (isset($index["ITEM"]) and isset($vals[$index["ITEM"][0]]['attributes']['PARENTID'])) {
+				  	 $mediaInfo["parentid"] = $vals[$index["ITEM"][0]]['attributes']['PARENTID'];
+                  } else {
+                     $mediaInfo["parentid"] = "";
+                  }
+				  if (isset($index["UPNP:CLASS"]) and isset($vals[$index["UPNP:CLASS"][0]]['value'])) {
+				  	 $mediaInfo["UpnpClass"] = $vals[$index["UPNP:CLASS"][0]]['value'];
+                  } else {
+                     $mediaInfo["UpnpClass"] = "";
+                  }
+				  if (isset($index["UPNP:ALBUMARTURI"]) and isset($vals[$index["UPNP:ALBUMARTURI"][0]]['value'])) {
+				  	 $mediaInfo["albumArtURI"] = $vals[$index["UPNP:ALBUMARTURI"][0]]['value'];
+                  } else {
+                     $mediaInfo["albumArtURI"] = "";
+                  }
+				  if (isset($index["DESC"]) and isset($vals[$index["DESC"][0]]['value'])) {
+				  	 $mediaInfo["token"] = $vals[$index["DESC"][0]]['value'];
+                  } else {
+                     $mediaInfo["token"] = "";
                   }
 
       } else {
@@ -1967,22 +2036,26 @@ SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#GetPositionInfo"
 
       $returnContent = $this->sendPacket($content);
 	  $returnContentMeta = $returnContent;
-   
+	     
       $position = substr($returnContent, stripos($returnContent, "NOT_IMPLEMENTED") - 7, 7);
 
       $returnContent = substr($returnContent, stripos($returnContent, '&lt;'));
       $returnContent = substr($returnContent, 0, strrpos($returnContent, '&gt;') + 4);
       $returnContent = str_replace(array("&lt;", "&gt;", "&quot;", "&amp;", "%3a", "%2f", "%25"), array("<", ">", "\"", "&", ":", "/", "%"), $returnContent);
-            
+	  
+      #echo(htmlspecialchars($returnContent));      
       $xmlParser = xml_parser_create("UTF-8");
       xml_parser_set_option($xmlParser, XML_OPTION_TARGET_ENCODING, "UTF-8");
       xml_parse_into_struct($xmlParser, $returnContent, $vals, $index);
       xml_parser_free($xmlParser);
-   
+		
       $positionInfo = Array ();
       
       $positionInfo["position"] = $position;
       $positionInfo["RelTime"] = $position;
+	  
+	  #print_r($vals);
+	  #print_r($index);
    
       if (isset($index["RES"]) and isset($vals[$index["RES"][0]]["attributes"]["DURATION"])) {
          $positionInfo["duration"] = $vals[$index["RES"][0]]["attributes"]["DURATION"];
@@ -1991,7 +2064,7 @@ SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#GetPositionInfo"
          $positionInfo["duration"] = "";
             $positionInfo["TrackDuration"] = "";
       }
-#print_r($index);
+
       if (isset($index["RES"]) and isset($vals[$index["RES"][0]]["value"])) {
          $positionInfo["URI"] = $vals[$index["RES"][0]]["value"];
          $positionInfo["TrackURI"] = $vals[$index["RES"][0]]["value"];
@@ -2075,7 +2148,8 @@ SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#GetPositionInfo"
          xml_parse_into_struct($xmlParser, $returnContent, $vals, $index);
          xml_parser_free($xmlParser);
      }
-    
+		#print_r($vals);
+	    #print_r($index);
          if (isset($index["TRACKURI"][0]) and isset($vals[($index["TRACKURI"][0])]["value"])) {
          $positionInfo["trackURI"] = $vals[($index["TRACKURI"][0])]["value"];
          $positionInfo["TrackURI"] = $vals[($index["TRACKURI"][0])]["value"];
@@ -2090,16 +2164,21 @@ SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#GetPositionInfo"
          xml_parser_set_option($xmlParser, XML_OPTION_TARGET_ENCODING, "ISO-8859-1");
          xml_parse_into_struct($xmlParser, $returnContent, $vals, $index);
          xml_parser_free($xmlParser);
-
+ 
+		 #print_r($vals);
+		
          if (isset($index["TRACK"][0]) and isset($vals[($index["TRACK"][0])]["value"])) {
          $positionInfo["Track"] = $vals[($index["TRACK"][0])]["value"];
 
          } else {
             $positionInfo["Track"] = "";
          }
-		 #$positionInfo["TrackMetaData"] = htmlentities(substr($returnContentMeta, strpos($returnContentMeta, "DIDL-Lite") - 4, strripos($returnContentMeta, "DIDL-Lite") + 5));
-		 $positionInfo["TrackMetaData"] = substr($returnContentMeta, strpos($returnContentMeta, "DIDL-Lite") - 4, strripos($returnContentMeta, "DIDL-Lite") + 5);
-   
+		 if (isset($index["TRACKMETADATA"][0]) and isset($vals[($index["TRACKMETADATA"][0])]["value"])) {
+         $positionInfo["TrackMetaData"] = htmlspecialchars($vals[($index["TRACKMETADATA"][0])]["value"]);
+
+         } else {
+            $positionInfo["TRACKMETADATA"] = "";
+         }
       return $positionInfo;
    }
 
@@ -2286,7 +2365,33 @@ SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
       $this->sendPacket($content);
    }
    
+
+
+      public function AddFavoritesToQueueMeta($file, $meta)
+   {
    
+$content='POST /MediaRenderer/AVTransport/Control HTTP/1.1
+CONNECTION: close
+ACCEPT-ENCODING: gzip
+HOST: '.$this->address.':1400
+USER-AGENT: Linux UPnP/1.0 Sonos/67.1-26143 (WDCR:Microsoft Windows NT 10.0.22000 64-bit)
+CONTENT-LENGTH: '.(430+strlen(($file))+strlen(($meta))).'
+CONTENT-TYPE: text/xml; charset="utf-8"
+SOAPACTION: "urn:schemas-upnp-org:service:AVTransport:1#AddURIToQueue"
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body><u:AddURIToQueue xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>
+<EnqueuedURI>'.$file.'</EnqueuedURI>
+<EnqueuedURIMetaData>'.$meta.'</EnqueuedURIMetaData>
+<DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued>
+<EnqueueAsNext>0</EnqueueAsNext></u:AddURIToQueue>
+</s:Body>
+</s:Envelope>';
+#echo $meta;
+#echo strlen(($file))+strlen(($meta));
+
+      $this->sendPacket($content);
+   }   
     
  
 /**
@@ -2572,20 +2677,22 @@ return $liste;
  * @return Array
  */
  
-     public function BrowseFav($value,$meta="BrowseDirectChildren",$filter="",$sindex="0",$rcount="1000",$sc="")
+     public function BrowseFavorites($value,$meta="BrowseDirectChildren",$filter="",$sindex="0",$rcount="1000",$sc="")
     {
 
        switch($meta){
        case 'BrowseDirectChildren':
        case 'c':
        case 'child':
-         $meta="BrowseDirectChildren";
+			$meta="BrowseDirectChildren";
        break;
+	   
        case 'BrowseMetadata':
        case 'm':
        case 'meta':
-             $meta = "BrowseMetadata";
+			$meta = "BrowseMetadata";
        break;
+	   
        default:
        return false;
       }
@@ -2610,12 +2717,11 @@ Content-Length: '. strlen($xml) .'
     $returnContent = $this->sendPacket($content);
 	$returnContentMeta = $returnContent;
 
-    $xmlParser = xml_parser_create();
-        $returnContent = substr($returnContent, stripos($returnContent, '&lt;'));
+	    $returnContent = substr($returnContent, stripos($returnContent, '&lt;'));
         $returnContent = substr($returnContent, 0, strrpos($returnContent, '&gt;') + 4);
         $returnContent = str_replace(array("&lt;", "&gt;", "&quot;", "&amp;", "%3a", "%2f", "%25"), array("<", ">", "\"", "&", ":", "/", "%"), $returnContent);
-				
-        $xml = new SimpleXMLElement($returnContent);
+		
+		$xml = new SimpleXMLElement($returnContent);
         $liste = array();
 		for($i=0,$size=count($xml);$i<$size;$i++)
         {
@@ -2624,45 +2730,59 @@ Content-Length: '. strlen($xml) .'
             if(isset($xml->container[$i])){
                   $aktrow = $xml->container[$i];
                   $attr = $xml->container[$i]->attributes();
-                  $liste[$i]['typ'] = "container";
+				  $liste[$i]['typ'] = "container";
              }else if(isset($xml->item[$i])){
                //Item vorhanden also nur noch Musik
                   $aktrow = $xml->item[$i];
                   $attr = $xml->item[$i]->attributes();
-                  $liste[$i]['typ'] = "item";
+				  $result = $xml->item[$i]->xpath('r:resMD');
+				  $liste[$i]['typ'] = "item";
             }else{
                //Fehler aufgetreten
                return;
-            }
-			      $id = $attr['id'];
-                  $parentid = $attr['parentID'];
+            }	
+			#print_r($result);
+				
+				$t = explode("=", htmlspecialchars($result[0][0]));
+				
+				$split = explode("&lt;upnp:class&gt;", htmlspecialchars($result[0][0]));
+				$tmpupnpclass = explode("&lt;/upnp:class&gt;", $split[1]);
+				$tmpid = explode(" ", $t[5]);
+				$tmpparentid = explode(" ", $t[6]);
+				$tmptoken = explode('&gt;', $t[9]);
+				$token = explode('&lt;', $tmptoken[1]);
+				
+				  #$id1 = $attr['id'];
+                  #$parentid1 = $attr['parentID'];
+				  $id = $tmpid[0];
+                  $parentid = $tmpparentid[0];
                   $albumart = $aktrow->xpath("upnp:albumArtURI");
                   $titel = $aktrow->xpath("dc:title");
                   $interpret[0] = $aktrow->xpath("r:description");
                   $album = $aktrow->xpath("upnp:album");
-				  $upnpclass = $aktrow->xpath("upnp:class");
+				  $upnpclass = $tmpupnpclass[0];
                   if(isset($aktrow->res)){
                      $res = (string)$aktrow->res;
-                     $liste[$i]['res'] = ($res);
-					 #$liste[$i]['res'] = urlencode($res);
+                     $liste[$i]['resorg'] = ($res);
+					 $liste[$i]['res'] = urlencode($res);
 
                    }else{
                       $liste[$i]['res'] = "leer";
                    }
                       $resattr = $aktrow->res->attributes();
-                     if(isset($resattr['protocolInfo'])){
+					  if(isset($resattr['protocolInfo'])){
                          $liste[$i]['protocolInfo']=(string)$resattr['protocolInfo'];
                       }else{
                          $liste[$i]['protocolInfo']="leer";
                       }
 				   if(isset($upnpclass[0])){
-						$liste[$i]['UpnpClass'] = (string)$upnpclass[0];
+						$liste[$i]['UpnpClass'] = (string)$upnpclass;
                   }else{
 						$liste[$i]['UpnpClass'] ="leer";
                   } 
 					  
                   if(isset($albumart[0])){
-                   $liste[$i]['albumArtURI']="http://" . $this->address . ":1400".(string)$albumart[0];
+                   $liste[$i]['albumArtURI']=(string)$albumart[0];
                   }else{
                    $liste[$i]['albumArtURI'] ="leer";
                   }
@@ -2674,42 +2794,60 @@ Content-Length: '. strlen($xml) .'
                   }
 					# Prepare type of favorit
 				  if($liste[$i]['typ'] == "item") {
-					  $s = substr($liste[$i]['res'],0, 17); 
+					  $s = substr($liste[$i]['resorg'],0, 17); 
 					  $r = substr($liste[$i]['artist'],0, 5);
 					  # Prepare Radio
 					  if ($s == "x-sonosapi-stream" or $s == "x-sonosapi-radio:")  {
 					     $liste[$i]['typ'] = "Radio";
 					 # Prepare Album
-					  } else if ($r == "Album") {
-						 $liste[$i]['typ'] = "Album";
+					  } else if ($s == "file:///jffs/sett" or $s == "x-rincon-cpcontai") {
+						 $liste[$i]['typ'] = "Playlist";
 					  } else {
-						 $liste[$i]['typ'] = "Single";
+						 $liste[$i]['typ'] = "Track";
 					  }
                   } else {
-                     $liste[$i]['typ'] = "item";
+                     $liste[$i]['typ'] = "Playlist";
                   }
                   if(isset($id) && !empty($id)){
                       $liste[$i]['id']=((string)$id);
-					  #$liste[$i]['id']=urlencode((string)$id);
+					  #$liste[$i]['id']=urlencode($id);
                   }else{
-                      $liste[$i]['id']="leer";
+                     #$liste[$i]['id']=((string)$id1);
                   }
                   if(isset($parentid) && !empty($parentid)){
                       $liste[$i]['parentid']=((string)$parentid);
 					  #$liste[$i]['parentid']=urlencode((string)$parentid);
                   }else{
-                      $liste[$i]['parentid']="leer";
+                      #$liste[$i]['parentid']="leer";
+					  #$liste[$i]['parentid']=((string)$parentid1);
                   }
-                    if(isset($album[0])){
-                   $liste[$i]['album']=(string)$album[0];
+				  if(isset($token[0])){
+                   $liste[$i]['token']=(string)$token[0];
                   }else{
-                   $liste[$i]['album']="leer";
+                   $liste[$i]['token'] ="leer";
                   }
-				  $liste[$i]['TrackMetaData'] = substr($returnContentMeta, strpos($returnContentMeta, "DIDL-Lite") - 4, strripos($returnContentMeta, "DIDL-Lite") + 13);
-				  #$liste[$i]['TrackMetaData'] = substr($returnContentMeta, strpos($returnContentMeta, "/DIDL-Lite&gt") - 4, strripos($returnContentMeta, "/DIDL-Lite/") + 5);
+                  #  if(isset($album[0])){
+                  # $liste[$i]['album']=(string)$album[0];
+                  #}else{
+                   #$liste[$i]['album']="leer";
+                  #}
+				  #$temp = substr($returnContentMeta, strpos($returnContentMeta, "DIDL-Lite") - 4, strripos($returnContentMeta, "DIDL-Lite") + 13);
+				  #$result = $xml->item[$i]->xpath('r:resMD');
+				  #print_r($result[0]);
+				   #$liste[$i]['TrackMetaData'] = htmlspecialchars($result[0][0]);
+				  #$liste[$i]['TrackMetaData'] = substr($returnContentMeta, strpos($returnContentMeta, "DIDL-Lite") - 4, strripos($returnContentMeta, "DIDL-Lite") + 13);
+
 				  
 
         }
+		#$returnContentMeta = str_replace(array("&lt;", "&gt;", "&quot;", "%3a", "%2f", "%25"), array("<", ">", "\"", ":", "/", "%"), $returnContentMeta);
+		#$returnContentMeta = substr($returnContentMeta, strpos($returnContentMeta, "DIDL-Lite") - 4, strripos($returnContentMeta, "DIDL-Lite") + 13);
+		#$xmlmeta = new SimpleXMLElement($returnContentMeta);
+		#$result = $xmlmeta->item->xpath('r:resMD');
+		#print_r(htmlspecialchars($returnContentMeta));
+		#echo "<br>";
+		
+		#print_r($liste);
 return $liste;
     }
 
@@ -2762,7 +2900,7 @@ Content-Length: '. strlen($xml) .'
 '. $xml;
 
     $returnContent = $this->sendPacket($content);
-	$xmlParser = xml_parser_create();
+    $xmlParser = xml_parser_create();
         $returnContent = substr($returnContent, stripos($returnContent, '&lt;'));
         $returnContent = substr($returnContent, 0, strrpos($returnContent, '&gt;') + 4);
         $returnContent = str_replace(array("&lt;", "&gt;", "&quot;", "&amp;", "%3a", "%2f", "%25"), array("<", ">", "\"", "&", ":", "/", "%"), $returnContent);
@@ -2796,9 +2934,11 @@ Content-Length: '. strlen($xml) .'
                   if(isset($aktrow->res)){
                      $res = (string)$aktrow->res;
                      $liste[$i]['res'] = urlencode($res);
+					 $liste[$i]['resorg'] = ($res);
 
                    }else{
                       $liste[$i]['res'] = "leer";
+					  $liste[$i]['resorg'] = "leer";
                    }
                       $resattr = $aktrow->res->attributes();
                      # if(isset($resattr['duration'])){
@@ -2807,7 +2947,7 @@ Content-Length: '. strlen($xml) .'
                       #   $liste[$i]['duration']="leer";
                       #}
                   if(isset($albumart[0])){
-                   $liste[$i]['albumArtURI']="http://" . $this->address . ":1400".(string)$albumart[0];
+                   $liste[$i]['albumArtURI']=(string)($albumart[0]);
                   }else{
                    $liste[$i]['albumArtURI'] ="leer";
                   }
@@ -2818,12 +2958,14 @@ Content-Length: '. strlen($xml) .'
                      $liste[$i]['artist']="leer";
                   }
                   if(isset($id) && !empty($id)){
-                      $liste[$i]['id']=urlencode((string)$id);
+                      #$liste[$i]['id']=urlencode((string)$id);
+					  $liste[$i]['id']=((string)$id);
                   }else{
                       $liste[$i]['id']="leer";
                   }
                   if(isset($parentid) && !empty($parentid)){
-                      $liste[$i]['parentid']=urlencode((string)$parentid);
+                      #$liste[$i]['parentid']=urlencode((string)$parentid
+					  $liste[$i]['parentid']=((string)$parentid);
                   }else{
                       $liste[$i]['parentid']="leer";
                   }
@@ -2832,7 +2974,7 @@ Content-Length: '. strlen($xml) .'
                   }else{
                    $liste[$i]['album']="leer";
                   }
-				  				  
+				  
 
         }
 return $liste;

@@ -72,7 +72,7 @@
 				$res = "1";
 				fwrite($h, $zone."[]=".$line."\n");
 			}
-		fclose($h);
+			fclose($h);
 		} else {
 			$h = fopen($myConfigFolder.'/player_template.cfg', 'a');
 			if (!isset($sonoszonen[$zone][6]))   {
@@ -89,8 +89,9 @@
 				fwrite($h, $zone."[]=".$line."\n");
 				echo "<OK> Player '".$zone."' seems to be offline, but config is OK :-)".PHP_EOL;
 			}
+			fclose($h);
 		}
-		fclose($h);
+		
 	}
 	if (!copy($myConfigFolder.'/player_template.cfg', $myConfigFolder.'/player.cfg')) {
 		echo "<ERROR> failed to copy player_template.cfg...".PHP_EOL;

@@ -4,7 +4,7 @@
 	require_once "loxberry_system.php";
 	require_once "loxberry_log.php";
 
-	$tmp_error = "/run/shm/errorMP3Stream";							// path/file for error message
+	$tmp_error = "/run/shm/s4lox_errorMP3Stream";							// path/file for error message
 	$myConfigFolder = "$lbpconfigdir";								// get config folder
 	$myConfigFile = "sonos.cfg";									// get config file
 	$hostname = lbhostname();

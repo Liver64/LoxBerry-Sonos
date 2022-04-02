@@ -216,8 +216,10 @@
                                     <div id="msg"></div>
                                     <td style="height: 36px; width: 294px;" class="ttsconfig field-voice 4001 8001" style="display:none">
                                         <fieldset style="width: 187px">
-                                            <!--<select onclick="setCorrectLang()" id="voice" name="voice" data-mini="true" style="width: 206px;" data-validation-error-msg="<TMPL_VAR T2S.SELECT_VOICE_DROPDOWN>" data-validation-rule="^([A-Za-z0-9]){4,10}$">-->
-											<select id="voice" name="voice" data-mini="true" style="width: 206px;" 
+                                            <!--<select onclick="setCorrectLang()" id="voice" name="voice" data-mini="true" style="width: 206px;" 
+											data-validation-error-msg="<TMPL_VAR T2S.SELECT_VOICE_DROPDOWN>" 
+											data-validation-rule="^([A-Za-z0-9]){4,10}$">-->
+											<select id="voice" name="voice" data-mini="true" style="width: 206px;"
 											data-validation-error-msg="<TMPL_VAR T2S.SELECT_VOICE_DROPDOWN>" 
 											data-validation-rule="^([A-Za-z0-9]){4,10}$">
 								</select>
@@ -1295,15 +1297,14 @@
 			  if (request.status >= 200 && request.status < 400) {
 				const response = this.response;
 				var str = "<TMPL_VAR TTS.messageLang>";
+				//console.log(str.substring(6));
 				var defvoice = str.substring(6);
-				const defaultVoice = defvoice;
-				const defaultV = "KatjaNeural";
 				let selectId;
 				const data = JSON.parse(response);
 				console.log(data);
 				data.forEach((voice, index) => {
-					$('#t2slang').append("<option value=\"" + voice.ShortName + "\">" + voice.LocaleName + " - " + voice.DisplayName + "</option>");
-					if (voice.Name.indexOf(defaultV) > 0) {
+					$('#t2slang').append("<option value=\"" + voice.ShortName + "\">" + voice.LocaleName + " - " + voice.DisplayName + " - " + voice.Gender + "</option>");
+					if (voice.Name.indexOf(defvoice) > 0) {
 						selectId = index;
 					}
 				});
@@ -1400,8 +1401,8 @@
 	            //var selectlang = document.getElementById("t2slang").value;
 				var selectlang = $('#t2slang').val();
 				var selectvoice = $('#voice').val();
-				//console.log("selectlang: " + selectlang);
-				//console.log("selectvoice: " + selectvoice);
+				console.log("selectlang: " + selectlang);
+				console.log("selectvoice: " + selectvoice);
 				$("#info").empty();
                 if (document.main_form.tts_polly.checked == true) {
                      if (selectlang == null) {

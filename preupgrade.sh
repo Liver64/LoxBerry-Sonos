@@ -71,7 +71,6 @@ cp -p -v -r $5/config/plugins/$3/ $LBPDATA/$PDIR/backup/config
 
 echo "<INFO> Copy existing BIN files to Backup folder"
 cp -p -v -r $5/bin/plugins/$3/ $LBPDATA/$PDIR/backup/bin
-cp -p -v -r /opt/loxberry/bin/plugins/sonos4lox/ /opt/loxberry/data/plugins/sonos4lox/backup/bin
 
 echo "<INFO> Copy existing TEMPLATE files to Backup folder"
 cp -p -v -r $5/templates/plugins/$3/ $LBPDATA/$PDIR/backup/templates
