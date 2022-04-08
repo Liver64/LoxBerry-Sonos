@@ -389,7 +389,7 @@ sub form
 	LOGDEB "$countplayers Sonos players has been loaded.";
 	
 	if ( $countplayers < 1 ) {
-		$rowssonosplayer .= "<tr><td colspan=6>" . $SL{'ZONES.SONOS_EMPTY_ZONES'} . "</td></tr>\n";
+		$rowssonosplayer .= "<tr><td colspan=8>" . $SL{'ZONES.SONOS_EMPTY_ZONES'} . "</td></tr>\n";
 	}
 	$rowssonosplayer .= "<input type='hidden' id='countplayers' name='countplayers' value='$countplayers'>\n";
 	$template->param("ROWSSONOSPLAYER", $rowssonosplayer);

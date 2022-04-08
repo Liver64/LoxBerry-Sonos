@@ -1071,6 +1071,44 @@ function DeleteTmpFavFiles() {
 	@unlink($pltmp);
 	@unlink($tuneinradiotmp);
 	@unlink($queuepltmp);
+	@unlink($sonospltmp);
+	LOGGING("helper.php: All Radio/Tracks/Playlist Temp Files has been deleted.", 7);
+}
+
+
+/**
+/* Funktion : AddDetailsToMetadata --> add Service and sid of service to array
+/*
+/* @param: empty                             
+/* @return: 
+**/
+
+function AddDetailsToMetadata() {
+	
+	global $sonos, $services;
+    
+	$browse = $sonos->BrowseFavorites("FV:2","c");
+	foreach ($browse as $key => $value)  {
+		# identify sid based on CurrentURI
+		$sid = substr(substr($value['resorg'], strpos($value['resorg'], "sid=") + 4), 0, strpos(substr($value['resorg'], strpos($value['resorg'], "sid=") + 4), "&"));
+		if ($sid == "")   {
+			# identify local track/Album and add sid
+			if (substr($value['resorg'], 0, 11) == "x-file-cifs" or substr($value['resorg'], 0, 17) == "x-rincon-playlist")   {
+				$sid = "999";
+			# identify Sonos Playlist and add sid
+			} elseif (substr($value['resorg'], 0, 4) == "file")   {
+				$sid = "998";
+			# if sid could not be obtained set default	
+			} else {
+				$sid = "000";
+			}
+		}
+		isService($sid);
+		$browse[$key]['Service'] = $services[$sid];
+		$browse[$key]['sid'] = $sid;
+	}
+	#print_r($browse);
+	return $browse;
 	LOGGING("helper.php: All Radio/Tracks/Playlist Temp Files has been deleted.", 7);
 }
 

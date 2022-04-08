@@ -6,59 +6,97 @@
 **/
 
 /**
-/* Funktion : playlist --> lädt eine Playliste in eine Zone/Gruppe
+/* Funktion : playlist --> lädt eine Sonos Playliste in eine Zone/Gruppe
 /*
 /* @param: Playliste                             
 /* @return: nichts
 **/
 
 function playlist() {
-	Global $debug, $sonos, $master, $sonoszone, $config, $volume;
 	
+	global $debug, $sonos, $master, $sonoszone, $config, $volume, $sonospltmp;
+	
+	if (file_exists($sonospltmp))  {
+		# load previously saved Sonos Playlist
+		$value = json_decode(file_get_contents($sonospltmp), TRUE);
+		$countqueue = count($sonos->GetCurrentPlaylist());
+		$currtrack = $sonos->GetPositioninfo();
+		if ($currtrack['Track'] < $countqueue)    {
+			@$sonos->Next();
+			LOGINF ("playlist.php: Function 'next' has been executed");
+			return true;
+		} else {
+			@unlink($sonospltmp);
+			if(isset($_GET['member'])) {
+				removemember();
+				LOGINF ("playlist.php: Member has been removed");
+			}
+			LOGINF ("playlist.php: File has been deleted");
+			LOGOK ("playlist.php: ** Loop ended, we start from beginning **");
+		}
+	} 
+	# initial load
 	$master = $_GET['zone'];
+	$check_stat = getZoneStatus($master);
+	if ($check_stat == "member")  {
+		$sonos->BecomeCoordinatorOfStandaloneGroup();
+		LOGGING("playlist.php: Zone ".$master." has been ungrouped.",5);
+	}
 	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
-	if(isset($_GET['playlist'])) {
-		$sonos->SetQueue("x-rincon-queue:" . trim($sonoszone[$master][1]) . "#0"); 
-		$playlist = $_GET['playlist'];
-		LOGGING("playlist.php: Playlist '".$_GET['playlist']."' has been found.", 7);
+	if(isset($_GET['playlist']))   {
+		$epl = $_GET['playlist'];
+		$playlist = mb_strtolower($_GET['playlist']);	
 	} else {
-		LOGGING("playlist.php: No playlist named '".$_GET['playlist']."' has been found.", 3);
+		LOGERR("playlist.php: You have maybe a typo! Correct syntax is: &action=playlist&playlist=<PLAYLIST>");
+		exit;
+	}
+	$sonoslists = $sonos->GetSONOSPlaylists();
+	foreach ($sonoslists as $val => $item)  {
+		$sonoslists[$val]['titlelow'] = mb_strtolower($sonoslists[$val]['title']);
+	}
+	#print_r($sonoslists);
+	$fav = $playlist;
+	$found = array();
+	foreach ($sonoslists as $key)    {
+		$favoritecheck = contains($key['titlelow'], $fav);
+		if ($favoritecheck === true)   {
+			$playlist = $key['titlelow'];
+			array_push($found, array_multi_search($playlist, $sonoslists, "titlelow"));
+		}
+	}
+	$playlist = urldecode($playlist);
+	if (count($found) > 1)  {
+		LOGERR ("playlist.php: Your entered Playlist '".$_GET['playlist']."' has more then 1 hit! Please specify more detailed.");
+		exit;
+	} elseif (count($found) == 0)  {
+		LOGERR ("playlist.php: Your entered Playlist '".$_GET['playlist']."' could not be found.");
+		exit;
+	} else {
+		LOGGING("playlist.php: Playlist '".$found[0][0]["title"]."' has been found.", 5);
+	}
+	$sonos->SetQueue("x-rincon-queue:" . trim($sonoszone[$master][1]) . "#0");
+	$sonos->ClearQueue();	
+	$countpl = count($found);
+	if ($countpl > 0)   {
+		$plfile = urldecode($found[0][0]["file"]);
+		$sonos->AddToQueue($plfile);
+		$currpl = file_put_contents($sonospltmp, json_encode($plfile));
+		if(!isset($_GET['load'])) {
+			$sonos->SetMute(false);
+			$sonos->Stop();
+			$sonos->SetVolume($volume);
+			$sonos->Play();
+		}
+		LOGGING("playlist.php: Playlist '".$found[0][0]["title"]."' has been loaded successful",6);
+	} else {
+		LOGGING("playlist.php: Playlist '".$found[0][0]["title"]."' could not be loaded. Please check your input.",3);
+		if(isset($_GET['member'])) {
+			removemember();
+			LOGINF ("playlist.php: Member has been removed");
+		}
 		exit;
 	}
 	
-	# Sonos Playlist ermitteln und mit übergebene vergleichen	
-	$sonoslists=$sonos->GetSONOSPlaylists();
-	print_r($sonoslists);
-	$pleinzeln = 0;
-	$gefunden = 0;
-	
-	#volume_group();
-	while ($pleinzeln < count($sonoslists) ) {
-		if($playlist == $sonoslists[$pleinzeln]["title"]) {
-			$plfile = urldecode($sonoslists[$pleinzeln]["file"]);
-			$sonos->ClearQueue();
-			LOGGING("playlist.php: Queue has been cleared.", 7);
-			$sonos->AddToQueue($plfile); //Datei hinzufügen
-			LOGGING("playlist.php: Playlist has been added to Queue.", 7);
-			$sonos->SetQueue("x-rincon-queue:". trim($sonoszone[$master][1]) ."#0"); 
-			if(!isset($_GET['load'])) {
-				$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
-				$sonos->SetVolume($volume);
-				$sonos->Play();
-			}
-			LOGGING("playlist.php: Playlist is playing.", 7);
-			$gefunden = 1;
-		}
-		$pleinzeln++;
-			if (($pleinzeln == count($sonoslists) ) && ($gefunden != 1)) {
-				$sonos->Pause()();
-				LOGGING("playlist.php: No playlist with the specified name found.", 3);
-				exit;
-			}
-		}	
-		#$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
-		#$sonos->SetVolume($volume);
-		#$sonos->Play();		
 }
 
 /**

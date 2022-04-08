@@ -5,7 +5,7 @@ require_once "loxberry_system.php";
 require_once("$lbphtmldir/system/PHPSonos.php");
 
 # check if file exist
-$maxvolfile	= "/run/shm/s4lox_max_volume.json";";	
+$maxvolfile	= "/run/shm/s4lox_max_volume.json";	
 
 if (!is_file($maxvolfile))   {
 	exit;

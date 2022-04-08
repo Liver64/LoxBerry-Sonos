@@ -9,4 +9,4 @@
 
 # Will be executed as user "loxberry".
 
-php /opt/loxberry/bin/plugins/sonos4lox/check_on_state.php
+php REPLACELBPBINDIR/check_on_state.php

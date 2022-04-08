@@ -47,8 +47,8 @@
 						fwrite($fh, "Your URL ".$b." from your Radio favorites is invalid. Please checkPlease check your entries!".PHP_EOL);
 						fclose($fh);
 						$e = "1";
-						echo "<ERROR> Your URL ".$b." from your Radio favorites is invalid :-( Please check your entries!".PHP_EOL;
-						notify( LBPPLUGINDIR, "POSTUPGRADE", "Your URL ".$b." from your Radio favorites is invalid :-( Please check your Radio favorites", "error");
+						echo "<WARNING> Your URL ".$b." from your Radio favorites is invalid :-( Please check your entries!".PHP_EOL;
+						#notify( LBPPLUGINDIR, "POSTUPGRADE", "Your URL ".$b." from your Radio favorites is invalid :-( Please check your Radio favorites");
 					}
 				} else {
 					getMp3StreamTitle($b);
@@ -57,8 +57,8 @@
 						fwrite($fh, "Your URL ".$b." from your Radio favorites is invalid. Please check".PHP_EOL);
 						fclose($fh);
 						$e = "1";
-						echo "<ERROR> Your URL ".$b." from your Radio favorites is invalid :-( Please check your entries!".PHP_EOL;
-						notify( LBPPLUGINDIR, "POSTUPGRADE", "Your URL ".$b." from your Radio favorites is invalid :-( Please check your Radio favorites", "error");
+						echo "<WARNING> Your URL ".$b." from your Radio favorites is invalid :-( Please check your entries!".PHP_EOL;
+						#notify( LBPPLUGINDIR, "POSTUPGRADE", "Your URL ".$b." from your Radio favorites is invalid :-( Please check your Radio favorites");
 					}
 				}
 			}
@@ -80,9 +80,9 @@
 
         $opts = array(
             'http' => array(
-                'method' => 'GET',
-                'header' => 'Icy-MetaData: 1',
-                'user_agent' => $ua
+            'method' => 'GET',
+            'header' => 'Icy-MetaData: 1',
+            'user_agent' => $ua
             )
         );
 

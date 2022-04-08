@@ -37,14 +37,13 @@ if ($Stunden >=8 && $Stunden <21)   {
 	
 	global $master, $main, $zone, $ms, $batlevel, $configfile, $config;
 	
-	# load Sonos Configuration
-	if (@!$data = file_get_contents($configfile)) {
-		$config = parseConfigFile();
-	} else {
-		$config = json_decode(file_get_contents($configfile), TRUE);
-	}
+	# load Player Configuration
+	$config = parseConfigFile();
+
 	$sonoszonen = ($config['sonoszonen']);
-	$sonoszone = $sonoszonen;	
+	$sonoszone = $sonoszonen;
+	#print_r($config);	
+
 	$battzone = array();
 	# check if MOVE or ROAM there
 	foreach ($sonoszonen as $zone => $player) {
@@ -57,10 +56,11 @@ if ($Stunden >=8 && $Stunden <21)   {
 		# No ROAM or MOVE
 		exit;
 	}
-	# Start logging	
-	#$log = LBLog::newLog( [ "name" => "Cronjobs", "stderr" => 1, "addtime" => 1 ] );
+	# Start Logging
+	#$log = LBLog::newLog( [ "name" => "Cronjobs", "filename" => "$lbplogdir/battery.log", "stderr" => 1, "addtime" => 1 ] );
 
 	#LOGSTART("Check Battery state");
+
 	$mainpl = array();
 	$errortext = '';
 	foreach ($sonoszonen as $zone => $player) {
@@ -78,6 +78,7 @@ if ($Stunden >=8 && $Stunden <21)   {
 		#LOGOK("bin/battery.php Battery check has been performed");
 		exit(1);
 	}
+
 	#print_r($mainpl);
 	foreach ($sonoszonen as $zone => $player) {
 		$src = $sonoszonen[$zone][7];
@@ -89,7 +90,7 @@ if ($Stunden >=8 && $Stunden <21)   {
 			$handle = @stream_socket_client("$ip:$port", $errno, $errstr, $timeout);
 			# if Online check battery status
 			if($handle) {
-				# request battery status
+				# get battery status
 				$url = "http://".$ip.":1400/status/batterystatus";
 				$xml = simpleXML_load_file($url);
 				$batlevel = $xml->LocalBatteryStatus->Data[1];
@@ -109,17 +110,18 @@ if ($Stunden >=8 && $Stunden <21)   {
 						#LOGINF('bin/battery.php Voice Notification has been announced on '.$main);
 						sleep(4);
 					}
-				} else {
+				#} else {
 					#LOGOK('bin/battery.php The battery level of "'.$zone.'" is about '.$batlevel.'%. Next check in about 2hours');
 				}
 				fclose($handle);
 			} else {
-				#binlog("Battery check", "bin/battery.php Zone '".$zone."' seems to be Offline, please check your power/network settings");
+				binlog("Battery check", "bin/battery.php Zone '".$zone."' seems to be Offline, please check your power/network settings");
 			}
 		}
 	}
+
 	#print_r($mainpl);
-	LOGOK("bin/battery.php Battery check has been performed");
+	#LOGOK("bin/battery.php Battery check has been performed");
 }
 
 
@@ -136,17 +138,15 @@ function select_lang() {
 	
 	$file = "battery.json";
 	$url = $pathlanguagefile."/".$file;
-	$valid_languages = (file_get_contents($url));
-	$valid_languages = json_decode($valid_languages, true);
-	$language = $config['TTS']['messageLang'];
-	$language = substr($language, 0, 5);
+	$valid_languages = json_decode(file_get_contents($url), true);
+	$language = substr($config['TTS']['messageLang'], 0, 5);
 	$isvalid = array_multi_search($language, $valid_languages, $sKey = "language");
 	if (!empty($isvalid)) {
 		$errortext = $isvalid[0]['value']; // Text
 		$errorvoice = $isvalid[0]['voice']; // de-DE-Standard-A
 		$errorlang = $isvalid[0]['language']; // de-DE
 	} else {
-		# if no translation for error exit use English
+		# if no translation for error in local language available, then exit and use use English (Google Cloud)
 		$errortext = "The battery level of zone {$zone} is about {$batlevel} percent. Next check in about 1hour";
 		$errorvoice = 'en-GB-Wavenet-A';
 		$errorlang = 'en-GB';
@@ -175,7 +175,7 @@ function parseConfigFile()    {
 	
 	// Parsen der Konfigurationsdatei sonos.cfg
 	if (!file_exists($myFolder.'/sonos.cfg')) {
-		LOGWARN('bin/battery.php The file sonos.cfg could not be opened, please try again!');
+		#LOGWARN('bin/battery.php The file sonos.cfg could not be opened, please try again!');
 	} else {
 		$tmpsonos = parse_ini_file($myFolder.'/sonos.cfg', TRUE);
 		if ($tmpsonos === false)  {

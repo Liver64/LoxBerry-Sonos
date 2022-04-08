@@ -13,3 +13,4 @@ REPLACELBPBINDIR/cleanup_sonos.php
 rm /run/shm/s4lox_date
 rm /run/shm/s4lox_bin_err
 rm /run/shm/s4lox_fav*
+rm /run/shm/s4lox_LastExeSonosInfo.log

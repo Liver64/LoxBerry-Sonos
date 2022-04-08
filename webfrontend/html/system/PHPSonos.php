@@ -2794,15 +2794,15 @@ Content-Length: '. strlen($xml) .'
                   }
 					# Prepare type of favorit
 				  if($liste[$i]['typ'] == "item") {
-					  $s = substr($liste[$i]['resorg'],0, 17); 
-					  $r = substr($liste[$i]['artist'],0, 5);
+					  $identpl = substr($liste[$i]['resorg'],0, 17); 
 					  # Prepare Radio
-					  if ($s == "x-sonosapi-stream" or $s == "x-sonosapi-radio:")  {
+					  if ($identpl == "x-sonosapi-stream" or $identpl == "x-sonosapi-radio:")  {
 					     $liste[$i]['typ'] = "Radio";
 					 # Prepare Album
-					  } else if ($s == "file:///jffs/sett" or $s == "x-rincon-cpcontai") {
+					  } else if ($identpl == "file:///jffs/sett" or $identpl == "x-rincon-cpcontai" or $identpl == "x-rincon-playlist") {
 						 $liste[$i]['typ'] = "Playlist";
 					  } else {
+					 # Prepare Track
 						 $liste[$i]['typ'] = "Track";
 					  }
                   } else {

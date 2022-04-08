@@ -2,18 +2,14 @@
 
 ##############################################################################################################################
 #
-# Version: 	4.1.4
-# Datum: 	23.03.2022
+# Version: 	4.1.5
+# Datum: 	04.2022
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
 
 
 // ToDo
-
-# Sub Bass on/off
-# Surround on/off
-# cURL for voice engines
 
 
 ini_set('max_execution_time', 60); 							// Max. Skriptlaufzeit auf 60 Sekunden
@@ -61,6 +57,8 @@ $maxzap = '60';													// waiting time before zapzone been initiated again
 $sPassword = 'loxberry';
 $lbport = lbwebserverport();									// get loxberry port
 // Temp Files in RAM vor ceratin functions
+$lastVol = "/run/shm/s4lox_PhoneMute.log";						// File for phonemute/phoneunmute function
+$lastExeLog = "/run/shm/s4lox_LastExeSonosInfo.log";			// File if old function getsonosinfo been called
 $tmp_tts = "/run/shm/s4lox_tmp_tts";							// path/file for T2S functions
 $tmp_phone = "/run/shm/s4lox_tmp_phonemute.tmp";				// path/file for phonemute function
 $POnline = "/run/shm/s4lox_sonoszone.json";						// path/file for Player Online check
@@ -72,6 +70,7 @@ $maxvolfile	= "/run/shm/s4lox_max_volume.json";					// max Volume restriction
 $fname = "/run/shm/s4lox_zap_zone.json";						// queue.php: file containig running zones
 $zname = "/run/shm/s4lox_zap_zone_time";						// queue.php: temp file for nextradio
 $pltmp = "/run/shm/s4lox_play_pl_".$_GET['zone'].".json";		// queue.php: temp file for playlisten
+$filenst = "/run/shm/s4lox_t2s_stat.tmp";						// Temp Statusfile für messages
 # Files for ONE-click functions
 if (isset($_GET['zone']))  {
 	$radiofav = "/run/shm/s4lox_fav_all_radio_".$_GET['zone'].".json";				// Radio Stations in PlayAllFavorites
@@ -82,6 +81,7 @@ if (isset($_GET['zone']))  {
 	$queueradiotmp = "/run/shm/s4lox_fav_radio_tmp_".$_GET['zone'].".json";			// Radio Stations in PlayRadioFavorites
 	$queuepltmp = "/run/shm/s4lox_fav_pl_tmp_".$_GET['zone'].".json";				// Playlists from Sonos Favorites
 	$tuneinradiotmp = "/run/shm/s4lox_tunein_radio_tmp_".$_GET['zone'].".json";		// Favorit Radio Stations in TuneIn
+	$sonospltmp = "/run/shm/s4lox_sonos_pl_tmp_".$_GET['zone'].".json";				// Temp file for Sonos Playlist
 	$debugfile = $lbpdatadir."/s4lox_debug.json";									// Debug file of Browse
 }
 
@@ -152,7 +152,7 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 		and ($_GET['action'] != "playradiofavorites") and ($_GET['action'] != "playsonosplaylist") and ($_GET['action'] != "say")
 		and ($_GET['action'] != "play") and ($_GET['action'] != "stop") and ($_GET['action'] != "toggle") and ($_GET['action'] != "playplfavorites")
 		and ($_GET['action'] != "next") and ($_GET['action'] != "previous") and ($_GET['action'] != "volume")
-		and (@$_GET['volume']) and ($_GET['action'] != "sendmessage") and ($_GET['action'] != "sendgroupmessage"))  
+		and (@$_GET['volume']) and ($_GET['action'] != "sendmessage") and ($_GET['action'] != "sonosplaylist") and ($_GET['action'] != "sendgroupmessage"))  
 		{
 		DeleteTmpFavFiles();
 		LOGGING("sonos.php: Exception to delete TempFiles has been called", 7);
@@ -192,8 +192,10 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 	
 	// finale config für das Script
 	$config = array_merge($sonoszonen, $tmpsonos);
-	file_put_contents($configfile, json_encode($config));
-
+	if (file_exists($configfile)) {
+		@unlink($configfile);
+		file_put_contents($configfile, json_encode($config));
+	}
 	// Übernahme und Deklaration von Variablen aus der Konfiguration
 	$sonoszonen = $config['sonoszonen'];
 	
@@ -463,6 +465,16 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			} else {
 				LOGGING('sonos.php: Wrong Mute Parameter selected. Please correct', 3);
 				exit;
+			}       
+			LOGGING("sonos.php: Mute/Unmute been executed.", 7);
+		break;
+		
+		case 'togglemute';
+			$mute = $sonos->GetMute();
+			if($mute === true) {
+				$sonos->SetMute(false);
+			} else {
+				$sonos->SetMute(true);
 			}       
 			LOGGING("sonos.php: Mute/Unmute been executed.", 7);
 		break;
@@ -805,7 +817,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			LOGGING("sonos.php: function 'action=sendgroupmessage...' has been depreciated. Please change your syntax to 'action=say...'", 6); 
 			$oldtext="old";
 			$newtext="new";
-			$filenst="/run/shm/t2s_stat.tmp";
 			$last=time();
 
 			if (isset($_GET["text"])) $newtext=$_GET["text"];
@@ -815,6 +826,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$myfile = fopen($filenst, "r") or LOGGING('sonos.php: Unable to open file!', 4);
 				$oldtext=fread($myfile,8192);
 				fclose($myfile);
+				unlink($filenst);
 			}	
 			if ((($oldtext==$newtext) AND( $last > $min_sec)) OR ($oldtext!=$newtext))  {
 				sendgroupmessage();
@@ -832,7 +844,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			LOGGING("sonos.php: function 'action=sendmessage...' has been depreciated. Please change your syntax to 'action=say...'", 6); 
 			$oldtext="old";
 			$newtext="new";
-			$filenst="/run/shm/t2s_stat.tmp";
 			$last=time();
 
 			if (isset($_GET["text"])) $newtext=$_GET["text"];
@@ -842,6 +853,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$myfile = fopen($filenst, "r") or LOGGING('sonos.php: Unable to open file!', 4);
 				$oldtext=fread($myfile,8192);
 				fclose($myfile);
+				unlink($filenst);
 			}	
 			if ((($oldtext==$newtext) AND( $last > $min_sec)) OR ($oldtext!=$newtext))  {
 				sendmessage();
@@ -857,7 +869,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'say':
 			$oldtext="old";
 			$newtext="new";
-			$filenst="/run/shm/t2s_stat.tmp";
 			$last=time();
 
 			if (isset($_GET["text"])) $newtext=$_GET["text"];
@@ -867,6 +878,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$myfile = fopen($filenst, "r") or LOGGING('sonos.php: Unable to open file!', 4);
 				$oldtext=fread($myfile,8192);
 				fclose($myfile);
+				unlink($filenst);
 			}	
 			if ((($oldtext==$newtext) AND( $last > $min_sec)) OR ($oldtext!=$newtext))  {
 				say();
@@ -1015,24 +1027,16 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 
 		case 'browse':
 			echo '<PRE>';
-			$test = $sonos->BrowseFavorites("FV:2","c");				// browse Sonos favorites
+			#$test = $sonos->BrowseFavorites("FV:2","c");				// browse Sonos favorites
+			$test = AddDetailsToMetadata();								// browse Sonos favorites + Service and sid
 			#$test = $sonos->Browse("R:0/0","c");						// browse TuneIn/Meine Radiosender
-			#$test = $sonos->BrowseFavorites("R:0/1","c");				// 
+			#$test = $sonos->Browse("R:0/1","c");						// 
 			#$test = $sonos->BrowseFavorites("Q:0","c");				// browse current Queue
 			#$test = $sonos->BrowseFavorites("S:","c");					// browse local Playlists
 			#$test = $sonos->BrowseFavorites("SQ:","c");				// browse Sonos Playlists
-			#$test = "x-rincon-cpcontainer:100e206cuser:batmanadventurespodcast:uploads?sid=181&flags=8300&sn=4";
+			#$test = "";
 			print_r($test);
 			echo "<br>";
-			#print_r(urldecode($test));
-			echo "<br>";
-			#print_r(urlencode($test));
-			echo "<br>";
-			#print_r(utf8_decode($test));
-			echo "<br>";
-			#print_r(utf8_encode($test));
-			echo "<br>";
-			echo '</PRE>';
 		break;		
 		
 		case 'playfavorite':
@@ -1042,7 +1046,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'playallfavorites':
 					
 			if (count($sonos->BrowseFavorites("FV:2","c")) < 1)    {
-				LOGGING("sonos.php: No Sonos Favorites are maintained.", 3);
+				LOGGING("sonos.php: No Sonos Favorites are maintained.", 4);
 				exit;
 			}
 			# 1st click/execution
@@ -1062,17 +1066,17 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 
 		case 'playtrackfavorites':
 			
-			$browse = $sonos->BrowseFavorites("FV:2","c");
+			$browse = AddDetailsToMetadata();
 			$browseTracks = count($browse);
 		
 			if ($browseTracks < 1)    {
-				LOGGING("sonos.php: No Sonos Favorites are maintained.", 3);
+				LOGGING("sonos.php: No Sonos Favorites are maintained.", 4);
 				exit;
 			}
 			$filter = "Track";
 			$tracks = array_multi_search($filter, $browse);
 			if (count($tracks) < 1)    {
-				LOGGING("sonos.php: No Sonos Track Favorites are maintained.", 3);
+				LOGGING("sonos.php: No Sonos Track Favorites are maintained.", 4);
 				exit;
 			}
 			# 1st click/execution
@@ -1091,17 +1095,17 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 
 		case 'playradiofavorites':
 			
-			$browse = $sonos->BrowseFavorites("FV:2","c");
+			$browse = AddDetailsToMetadata();
 			$browseRadio = count($browse);
 		
 			if ($browseRadio < 1)    {
-				LOGGING("sonos.php: No Sonos Favorites are maintained.", 3);
+				LOGGING("sonos.php: No Sonos Favorites are maintained.", 4);
 				exit;
 			}
 			$filter = "Radio";
 			$radios = array_multi_search($filter, $browse);
 			if (count($radios) < 1)    {
-				LOGGING("sonos.php: No Sonos Radio Station Favorites are maintained.", 3);
+				LOGGING("sonos.php: No Sonos Radio Station Favorites are maintained.", 4);
 				exit;
 			}
 			# 1st click/execution
@@ -1127,9 +1131,15 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$browseRadio = count($browse);
 			
 			if ($browseRadio < 1)    {
-				LOGGING("sonos.php: No Sonos Playlists are maintained.", 3);
+				LOGGING("sonos.php: No Sonos Playlists are maintained.", 4);
 				exit;
 			}
+			# add Service and sid
+			foreach ($browse as $key => $value)  {
+				$browse[$key]['Service'] = "Sonos Playlist";
+				$browse[$key]['sid'] = "998";
+			}
+			
 			# 1st click/execution
 			if (!file_exists($pltmp))  {
 				$sonos->BecomeCoordinatorOfStandaloneGroup();
@@ -1152,8 +1162,13 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$browseRadio = count($browse);
 		
 			if ($browseRadio < 1)    {
-				LOGGING("sonos.php: No TuneIn Radio Favorites are maintained.", 3);
+				LOGGING("sonos.php: No TuneIn Radio Favorites in 'My Radiostations' are maintained.", 4);
 				exit;
+			}
+			# add Service and sid
+			foreach ($browse as $key => $value)  {
+				$browse[$key]['Service'] = "TuneIn";
+				$browse[$key]['sid'] = "254";
 			}
 			# 1st click/execution
 			if (!file_exists($tuneinradiotmp))  {
@@ -1174,18 +1189,18 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		case 'playplfavorites':
 			
-			$browse = $sonos->BrowseFavorites("FV:2","c");
+			$browse = AddDetailsToMetadata();
 			$browseRadio = count($browse);
 			#print_r($browse);
 		
 			if ($browseRadio < 1)    {
-				LOGGING("sonos.php: No Sonos Favorites are maintained.", 3);
+				LOGGING("sonos.php: No Sonos Favorites are maintained.", 4);
 				exit;
 			}
 			$filter = "Playlist";
 			$radios = array_multi_search($filter, $browse);
 			if (count($radios) < 1)    {
-				LOGGING("sonos.php: No Sonos Playlist Favorites are maintained.", 3);
+				LOGGING("sonos.php: No Sonos Playlist Favorites are maintained.", 4);
 				exit;
 			}
 			#print_r($radios);
@@ -1208,7 +1223,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		
 		case 'savesonos':
-			$favorites 	= $sonos->BrowseFavorites("FV:2","c");
+			$favorites 	= AddDetailsToMetadata();
 			$tunein 	= $sonos->Browse("R:0/0","c");
 			$sonospl	= $sonos->Browse("SQ:","c");
 			$debugdata  = array_merge($favorites, $tunein, $sonospl);
@@ -1238,6 +1253,10 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'radiourl':
 			$GetPositionInfo = $sonos->GetPositionInfo();
 			echo "Die Radio URL lautet: " . $GetPositionInfo["URI"];
+		break;
+		
+		case 'add':
+			AddDetailsToMetadata();
 		break;
 		
 		
@@ -1470,17 +1489,9 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			zap();
 		break;
 		
-		case 'zapzone1':
-			zap();
-		break;
-		
+
 		case 'getsonosinfo':
 			
-		break;
-		
-		
-		case 'delsonosplaylist':
-			$sonos->DelSonosPlaylist('SQ:96');
 		break;
 		
 				
@@ -1503,11 +1514,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$to = $_GET['to'];
 			$newzone = $sonoszone[$to][1];
 			$sonos->DelegateGroupCoordinationTo($newzone, 1);
-		break;
-		
-		
-		case 'favoriten':
-			GetSonosFavorites();
 		break;
 		
 		
@@ -1639,11 +1645,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			random_radio();
 		break;
 		
-		case 'browse':
-		$t = $sonos->BrowseFavorites("FV:2","c");
-		print_r($t);
-		break;
-		
 		case 'files':
 			mp3_files();
 		break;
@@ -1665,9 +1666,9 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			scripton();
 		break;
 		
-		case 'batt':
-		echo 'php '.$lbphtmldir.'/battery.php';
-			$out = shell_exec('php '.$lbpbindir.'/battery.php');
+		case 'battery':
+			echo 'php '.$lbphtmldir.'/system/battery.php';
+			$out = shell_exec('php '.$lbphtmldir.'/system/battery.php');
 			echo "<br>";
 			print_r($out);
 		break;
@@ -1675,22 +1676,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'updateplayer':
 			$output = shell_exec('php system/updateplayer.php');
 			LOGGING("sonos.php: Player configuration has been updated :-)", 7);
-		break;
-		
-		case 'queue':
-			#file("http://192.168.50.95/plugins/sonos4lox/index.php/?zone=kueche&action=sendmessage&text=Hallo Olli&volume=20");
-			#file("http://192.168.50.95/plugins/sonos4lox/index.php/?zone=kueche&action=sendmessage&clock");
-			$ch = curl_init();
-
-			// set URL and other appropriate options
-			curl_setopt($ch, CURLOPT_URL, "http://192.168.50.95/plugins/sonos4lox/index.php/?zone=kueche&action=sendmessage&text=Hallo Olli&volume=20");
-			curl_setopt($ch, CURLOPT_HEADER, 0);
-
-			// grab URL and pass it to the browser
-			curl_exec($ch);
-
-			// close cURL resource, and free up system resources
-			curl_close($ch);
 		break;
 		
 		case 'resetbasic':
@@ -1852,36 +1837,6 @@ function SnapshotGroupVolume() {
  }
 
 
-/** NICHT LIVE - EXPERIMENTAL**
-*
-* Funktion : 	GetSonosFavorites --> lädt die Sonos Favoriten in die Queue (kein Radio)
-*
-* @param: empty
-* @return: Favoriten in der Queue
-**/
-
-function GetSonosFavorites() {
-	global $sonoszone, $master;
-	
-	$sonos = new PHPSonos($sonoszone[$master][0]); 
-	$sonos->ClearQueue();
-	$favoriteslist = $sonos->GetSonosFavorites("FV:2","BrowseDirectChildren"); 
-	print_r($favoriteslist);
-	$posinfo = $sonos->GetPositionInfo();
-	foreach ($favoriteslist as $favorite) {
-		$scope = $favorite['res'];
-		if ((substr($scope,0,11) != "x-sonosapi-") and (substr($scope,0,11) != "x-rincon-cp")) {
-			$finalstring = urldecode($scope);
-			$track = $favorite['res'];
-			$title = $favorite['title'];
-			$artist = $favorite['artist'];
-			$posinfo = $sonos->GetPositionInfo();
-			$metadata = $posinfo['TrackMetaData'].'<br>';
-			$sonos->AddFavoritesToQueue($finalstring, $metadata);
-		}	
-	}
-	$currlist = $sonos->GetCurrentPlaylist();
-}
 
 
 /**
@@ -1978,7 +1933,8 @@ function t2s_post_request($text, $greet) {
 
 function getsonosinfo() {
 	
-	$lastExeLog = "/run/shm/LastExeSonosInfo.log";
+	global $lastExeLog;
+	
     if(!touch($lastExeLog)) {
 		LOGGING("sonos.php: No permission to write file", 3);
 		exit;
@@ -2108,7 +2064,7 @@ function volume_group()  {
 
 
 function phonemute()  {
-	global $sonoszone, $sonos, $min_vol, $config, $master, $tmp_phone, $tts_stat;
+	global $sonoszone, $sonos, $min_vol, $lastVol, $config, $master, $tmp_phone, $tts_stat;
 	
 	# if Phonestop is true avoid T2S during phone call
 	if ($config['VARIOUS']['phonestop'] == "1") {
@@ -2124,7 +2080,6 @@ function phonemute()  {
 	
 	$state = getZoneStatus($master);
 	//echo $min_vol;
-	$lastVol = "/run/shm/PhoneMute.log";
 	switch ($state)  {
 		case 'single':
 			$sonos = new PHPSonos($sonoszone[$master][0]);
@@ -2162,9 +2117,8 @@ function phonemute()  {
 
 
 function phoneunmute()  {
-	global $sonoszone, $sonos, $min_vol, $config, $master, $tmp_phone, $tmp_tts;
+	global $sonoszone, $sonos, $min_vol, $lastVol, $config, $master, $tmp_phone, $tmp_tts;
 	
-	$lastVol = "/run/shm/PhoneMute.log";
 	$array = unserialize(@file_get_contents($lastVol));
 	if ($array == false)  {
 		LOGGING("sonos.php: No file exist to recover. Please execute phonemute first!", 4);
@@ -2217,8 +2171,8 @@ function scripton()  {
 		exit;
 	} 
 	
-	$memudpfile = "/run/shm/msudp_mem_".$config['LOXONE']['Loxone']."_".$config['LOXONE']['LoxPort'].".json";
-	$memhttpfile = "/run/shm/mshttp_mem_".$config['LOXONE']['Loxone'].".json";
+	$memudpfile = "/run/shm/s4lox_msudp_mem_".$config['LOXONE']['Loxone']."_".$config['LOXONE']['LoxPort'].".json";
+	$memhttpfile = "/run/shm/s4lox_mshttp_mem_".$config['LOXONE']['Loxone'].".json";
 	$handle = fopen ($off_file, 'r');
 	$tmp_cron = fgets($handle);
 	//echo $tmp_cron;
@@ -2243,21 +2197,20 @@ function scripton()  {
 	fclose($handle);
 }
 
+
+
 function shutdown()
 {
 	global $log, $tts_stat, $check_info, $tmp_tts;
 	# FALLBACK --> setze 0 für virtuellen Texteingang (T2S End) falls etwas schief lief
-	// echo $tts_stat.'<br>';
 	if ($tts_stat == 1)  {
 		$tts_stat = 0;
 		send_tts_source($tts_stat);
-		#LOGGING("sonos.php: Something went wrong with T2S. Fallback scenario set virtual textinbound to 0", 4);
 	}
 	if ($getsonos = strrpos($check_info, "getsonosinfo") === false)  {
 		LOGEND("PHP finished");
 	}
 	@unlink($tmp_tts);
-	#LOGEND("PHP finished");
 }
 
 

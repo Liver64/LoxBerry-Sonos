@@ -17,7 +17,6 @@ function restoreSingleZone() {
 	
 	#if (!$_GET['member']) {
 	$restore = $actual;
-	#print_r($restore);
 	switch ($restore) {
 		// Zone was playing in Single Mode
 		case $actual[$master]['ZoneStatus'] == 'single':
@@ -27,9 +26,6 @@ function restoreSingleZone() {
 			$sonos->SetMute($actual[$master]['Mute']);
 			if (($actual[$master]['TransportInfo'] == 1)) {
 				$sonos->Play();	
-			}
-			if (empty($actual[$master]['MediaInfo']["CurrentURIMetaData"]))  {
-				RestoreShuffle($actual, $master);
 			}
 			LOGGING("restore_t2s.php: Single Zone ".$master." has been restored.", 6);
 		break;
@@ -116,6 +112,7 @@ function restoreSingleZone() {
 function restoreGroupZone() {
 	global $sonoszone, $logpath, $master, $sonos, $config, $member, $player, $actual, $coord, $time_start, $tts_stat;
 	
+	#print_r($actual);
 	foreach ($member as $zone) {
 		$sonos = new PHPSonos($sonoszone[$zone][0]);
 		$sonos->BecomeCoordinatorOfStandaloneGroup();
@@ -136,8 +133,10 @@ function restoreGroupZone() {
 			if (empty($actual[$player]['Grouping'])) {
 			# Playlist
 			if ((substr($actual[$player]['PositionInfo']["TrackURI"], 0, 18) !== "x-sonos-htastream:") &&
-				(empty($actual[$master]['MediaInfo']["CurrentURIMetaData"]))) {		
-				RestoreShuffle($actual, $player);
+				(empty($actual[$master]['MediaInfo']["CurrentURIMetaData"]))) {	
+				if ($actual[$zone]['PositionInfo']['Track'] != "0")    {				
+					RestoreShuffle($actual, $player);
+				}
 				} 
 				# TV Playbar
 				elseif (substr($actual[$player]['PositionInfo']["TrackURI"], 0, 18) == "x-sonos-htastream:") {
@@ -151,7 +150,7 @@ function restoreGroupZone() {
 				elseif (!empty($actual[$master]['MediaInfo']["CurrentURIMetaData"])) {
 					#@$radioname = $actual[$player]['MediaInfo']["title"];
 					#$sonos->SetRadio($actual[$player]['PositionInfo']["TrackURI"], $radioname);
-					$sonos->SetAVTransportURI($actual[$zone]['MediaInfo']["CurrentURI"], ($actual[$zone]['MediaInfo']["CurrentURIMetaData"])); 
+					$sonos->SetAVTransportURI($actual[$player]['MediaInfo']["CurrentURI"], ($actual[$player]['MediaInfo']["CurrentURIMetaData"])); 
 				}
 			}
 			$sonos->SetVolume($actual[$player]['Volume']);
@@ -183,7 +182,9 @@ function restoreGroupZone() {
 			# Playlist
 			if ((substr($actual[$player]['PositionInfo']["TrackURI"], 0, 18) !== "x-sonos-htastream:") &&
 				(empty($actual[$master]['MediaInfo']["CurrentURIMetaData"]))) {			
-				RestoreShuffle($actual, $player);
+					if ($actual[$master]['PositionInfo']['Track'] != "0")    {
+						RestoreShuffle($actual, $player);
+					}
 				} 
 				# TV Playbar
 				elseif (substr($actual[$player]['PositionInfo']["TrackURI"], 0, 18) == "x-sonos-htastream:")   {
@@ -197,7 +198,7 @@ function restoreGroupZone() {
 				elseif (!empty($actual[$master]['MediaInfo']["CurrentURIMetaData"]))    {
 					#@$radionam = @$actual[$player]['MediaInfo']["title"];
 					#$sonos->SetRadio($actual[$player]['PositionInfo']['TrackURI'],"$radionam");
-					$sonos->SetAVTransportURI($actual[$zone]['MediaInfo']["CurrentURI"], ($actual[$zone]['MediaInfo']["CurrentURIMetaData"])); 
+					$sonos->SetAVTransportURI($actual[$player]['MediaInfo']["CurrentURI"], ($actual[$player]['MediaInfo']["CurrentURIMetaData"])); 
 			}
 			# Restore Zone Members
 			#echo "TEST MEMBER<br>";
@@ -288,10 +289,12 @@ function restore_details($zone) {
 	
 	# Playlist/Track
 	if ((substr($actual[$zone]['PositionInfo']["TrackURI"], 0, 17) !== "x-sonos-htastream") && (empty($actual[$master]['MediaInfo']["CurrentURIMetaData"])))   {			
-		$sonos->SetTrack($actual[$zone]['PositionInfo']['Track']);
-		$sonos->Seek($actual[$zone]['PositionInfo']['RelTime'],"NONE");
-		if (empty($actual[$master]['MediaInfo']["CurrentURIMetaData"]))  {
-			RestoreShuffle($actual, $master);
+		if ($actual[$zone]['PositionInfo']['Track'] != "0")    {
+			$sonos->SetTrack($actual[$zone]['PositionInfo']['Track']);
+			$sonos->Seek($actual[$zone]['PositionInfo']['RelTime'],"NONE");
+			if (empty($actual[$zone]['MediaInfo']["CurrentURIMetaData"]))  {
+				RestoreShuffle($actual, $zone);
+			}
 		}
 	} 
 	# TV
@@ -331,12 +334,17 @@ function RestoreShuffle($actual, $player) {
 	if ($mode['shuffle'] == 1)  { 
 		$trackNoSearch = recursive_array_search($titel, $pl);
 		$track = (string)$pl[$trackNoSearch]['listid'];
-		$sonos->SetTrack($track);
-		$sonos->Seek($actual[$player]['PositionInfo']['RelTime'],"NONE");	
+		if ($actual[$player]['PositionInfo']['Track'] != "0")    {
+			$sonos->SetTrack($track);
+			$sonos->Seek($actual[$player]['PositionInfo']['RelTime'],"NONE");	
+		}
 	// falls SHUFFLE aus
 	} else {
-		$sonos->SetTrack($actual[$player]['PositionInfo']['Track']);
-		$sonos->Seek($actual[$player]['PositionInfo']['RelTime'],"NONE");	
+		# nur wenn die Queue NICHT leer war
+		if ($actual[$player]['PositionInfo']['Track'] != "0")    {
+			$sonos->SetTrack($actual[$player]['PositionInfo']['Track']);
+			$sonos->Seek($actual[$player]['PositionInfo']['RelTime'],"NONE");	
+		}
 	}
 	LOGGING("restore_t2s.php: Previous playmode has been restored.", 6);
 }

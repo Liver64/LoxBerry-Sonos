@@ -351,5 +351,15 @@
 			[IMPROVEMENT] Neue ONE-click Funktion 'playsonosplaylist' um deine Sonos Playlisten abzuspielen (siehe Wiki)
 			[IMPROVEMENT] Neue ONE-click Funktion 'playtuneinfavorites' um deine TuneIn Meine Radiosender abzuspielen (siehe Wiki)
 			[IMPROVEMENT] Neue ONE-click Funktion 'playplfavorites' um deine Sonos Favoriten (nur Playlisten/Alben) abzuspielen (siehe Wiki)
-
+ 4.1.5		[BUGFIX] Restore bei TTS gefixt (falls die Queue leer war)
+			[BUGFIX] Restore bei Gruppen TTS gefixt (wenn Radio läuft)
+			[BUGFIX] Funktion 'setmaxvolume' gefixt
+			[BUGFIX] Speichern der Plugin Konfiguration (JSON Datei) gefixt
+			[BUGFIX] Batterycheck (ROAM and MOVE) gefixt
+			[BUGFIX] Errorhandling bei Streaming Services gefixt
+			[IMPROVEMENT] Streaming Service "YouTube Music" and "TIDAL" werden unterstützt
+			[IMPROVEMENT] Lokale Musikbibliothek bei den Sonos Favoriten wird unterstützt
+			[IMPROVEMENT] Funktion 'sonosplaylist' zu einer ONE-click Funktion erweitert
+			[IMPROVEMENT] Neue Funktion 'togglemute' zum Mute switchen (Mute On, Mute off)
+			
  

@@ -6,7 +6,7 @@
 **/
 
 /**
-/* Funktion : radio --> lädt einen Radiosender in eine Zone/Gruppe
+/* Funktion : radio --> lädt einen Radiosender aus den TuneIn "Meine Radiosender" in eine Zone/Gruppe
 /*
 /* @param: Sender                             
 /* @return: nichts
@@ -22,29 +22,67 @@ function radio(){
 	} else {
 		LOGGING("radio.php: No radio stations found.", 4);
     }
+	$orgpl = $playlist;
+	# initial load of favorite
+	if(isset($_GET['playlist']) or isset($_GET['radio']))   {
+		$playlist = mb_strtolower($playlist);	
+	} else {
+		LOGERR("radio.php: You have maybe a typo! Correct syntax is: &action=radioplaylist&playlist=<PLAYLIST> or <RADIO>");
+		exit;
+	}
+	$check_stat = getZoneStatus($master);
+	if ($check_stat == "member")  {
+		$sonos->BecomeCoordinatorOfStandaloneGroup();
+		LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
+	}
 	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
 	$coord = $master;
 	$roomcord = getRoomCoordinator($coord);
 	$sonosroom = new PHPSonos($roomcord[0]); //Sonos IP Adresse
 	$sonosroom->SetQueue("x-rincon-queue:".$roomcord[1]."#0");
-	$sonosroom->SetMute(false);
-	$sonosroom->Stop();
-    # Sonos Radio Playlist ermitteln und mit übergebene vergleichen   
     $radiolists = $sonos->Browse("R:0/0","c");
-	$radioplaylist = urldecode($playlist);
-	$rleinzeln = 0;
-    while ($rleinzeln < count($radiolists)) {
-	if ($radioplaylist == $radiolists[$rleinzeln]["title"]) {
-		$sonos->SetRadio(urldecode($radiolists[$rleinzeln]["res"]),$radiolists[$rleinzeln]["title"]);
-		#$sonos->SetRadio(urldecode($radiolists[$rleinzeln]["res"]));
-		if(!isset($_GET['load'])) {
-			$sonos->SetVolume($volume);
-			$sonos->Play();
+	foreach ($radiolists as $val => $item)  {
+		$radiolists[$val]['titlelow'] = mb_strtolower($radiolists[$val]['title']);
+	}
+	#print_r($radiolists);
+	$fav = $playlist;
+	$found = array();
+	foreach ($radiolists as $key)    {
+		$favoritecheck = contains($key['titlelow'], $fav);
+		if ($favoritecheck === true)   {
+			$playlist = $key['titlelow'];
+			array_push($found, array_multi_search($playlist, $radiolists, "titlelow"));
 		}
-    }
-	$rleinzeln++;
-	}   
-	LOGGING("radio.php: Radio Station '".$playlist."' has been loaded successful",6);
+	}
+	$playlist = urldecode($playlist);
+	if (count($found) > 1)  {
+		LOGERR ("radio.php: Your entered Radio Station '".$fav."' has more then 1 hit! Please specify more detailed.");
+		exit;
+	} elseif (count($found) == 0)  {
+		LOGERR ("radio.php: Your entered Radio Station '".$orgpl."' could not be found.");
+		exit;
+	} else {
+		LOGGING("radio.php: Radio Station '".$found[0][0]["title"]."' has been found.", 5);
+	}
+	#print_r($found);
+	$countradio = count($found);
+	if ($countradio > 0)   {
+		$sonos->SetRadio(urldecode($found[0][0]["res"]),$found[0][0]["title"]);
+		if(!isset($_GET['load'])) {
+			$sonosroom->SetMute(false);
+			$sonosroom->Stop();
+			$sonosroom->SetVolume($volume);
+			$sonosroom->Play();
+		}
+		LOGGING("radio.php: Radio Station '".$found[0][0]["title"]."' has been loaded successful",6);
+	} else {
+		LOGGING("radio.php: Radio Station '".$found[0][0]["title"]."' could not be loaded. Please check your input.",3);
+		if(isset($_GET['member'])) {
+			removemember();
+			LOGINF ("radio.php: Member has been removed");
+		}
+		exit;
+	}
 }
 
 /**
