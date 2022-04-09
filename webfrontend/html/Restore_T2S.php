@@ -127,6 +127,7 @@ function restoreGroupZone() {
 		$restore = $actual[$player]['ZoneStatus'];
 		$sonos = new PHPSonos($sonoszone[$player][0]);
 		switch($restore) {
+			
 		case 'single';  
 			#echo 'Die Zone '.$player.' ist single<br>';
 			// Zone was playing as Single Zone
@@ -134,8 +135,8 @@ function restoreGroupZone() {
 			# Playlist
 			if ((substr($actual[$player]['PositionInfo']["TrackURI"], 0, 18) !== "x-sonos-htastream:") &&
 				(empty($actual[$master]['MediaInfo']["CurrentURIMetaData"]))) {	
-				if ($actual[$zone]['PositionInfo']['Track'] != "0")    {				
-					RestoreShuffle($actual, $player);
+				if ($actual[$player]['PositionInfo']['Track'] != "0")    {				
+					RestoreShuffle($player);
 				}
 				} 
 				# TV Playbar
@@ -181,9 +182,11 @@ function restoreGroupZone() {
 			$sonos = new PHPSonos($sonoszone[$player][0]);
 			# Playlist
 			if ((substr($actual[$player]['PositionInfo']["TrackURI"], 0, 18) !== "x-sonos-htastream:") &&
-				(empty($actual[$master]['MediaInfo']["CurrentURIMetaData"]))) {			
+				(empty($actual[$player]['MediaInfo']["CurrentURIMetaData"]))) {	
+				#(empty($actual[$master]['MediaInfo']["CurrentURIMetaData"]))) {					
 					if ($actual[$master]['PositionInfo']['Track'] != "0")    {
-						RestoreShuffle($actual, $player);
+						#RestoreShuffle($actual, $player);
+						RestoreShuffle($master);
 					}
 				} 
 				# TV Playbar
@@ -293,7 +296,7 @@ function restore_details($zone) {
 			$sonos->SetTrack($actual[$zone]['PositionInfo']['Track']);
 			$sonos->Seek($actual[$zone]['PositionInfo']['RelTime'],"NONE");
 			if (empty($actual[$zone]['MediaInfo']["CurrentURIMetaData"]))  {
-				RestoreShuffle($actual, $zone);
+				RestoreShuffle($zone);
 			}
 		}
 	} 
@@ -322,8 +325,9 @@ function restore_details($zone) {
 * @return: static
 **/
 
-function RestoreShuffle($actual, $player) {
-	global $sonoszonen;
+function RestoreShuffle($player) {
+	
+	global $sonoszonen, $actual;
 	
 	$sonos = new PHPSonos($sonoszonen[$player][0]);
 	$mode = $actual[$player]['TransportSettings'];

@@ -113,7 +113,7 @@ function PlayFavorite()
 		$countqueue = count($sonos->GetCurrentPlaylist());
 		$currtrack = $sonos->GetPositioninfo();
 		if ($currtrack['Track'] != $countqueue)    {
-			@$sonos->Next();
+			$sonos->Next();
 			LOGINF ("queue.php: Function 'next' has been executed");
 			return true;
 		} else {
@@ -221,12 +221,12 @@ function PlayAllFavorites()
 		try {
 			if (!file_exists($radiofavtmp))  {
 				# as long as we tracks iterate through
-				@$sonos->Next();
+				$sonos->Next();
 				LOGINF ("queue.php: Favorite Tracks are running");
 				LOGINF ("queue.php: Function 'next' has been executed");
 			} else {
 				# create Failure in case Radio Playlist is loaded to catch exception
-				@$sonos->Rewind();
+				$sonos->Rewind();
 				LOGDEB ("queue.php: Fake Function has been executed in order to create temp error");
 			}
 		} catch (Exception $e) {
@@ -246,7 +246,7 @@ function PlayAllFavorites()
 			$mediainfo = $sonos->GetMediaInfo();
 			if ($mediainfo['CurrentURI'] != "")  {
 				try {
-					@$sonos->Play();
+					$sonos->Play();
 					# remove 1st element of array
 					array_shift($value);
 					LOGINF ("queue.php: Current playing Radio Favorite has been removed from array.");
@@ -281,11 +281,11 @@ function PlayAllFavorites()
 	#echo "Count: ".count($sonos->GetCurrentPlaylist());
 	try {
 		if (count($sonos->GetCurrentPlaylist()) > 0 )  {
-			@$sonos->Next();
+			$sonos->Next();
 			LOGINF ("queue.php: Function 'next' has been executed");
 		} else {
 			# create Failure in case Radio Playlist is already loaded in order to catch exception
-			@$sonos->Rewind();
+			$sonos->Rewind();
 			LOGINF ("queue.php: Error produced in order to catch exception!");
 		}
 	} catch (Exception $e) {
@@ -328,7 +328,7 @@ function PlayAllFavorites()
 			# remove loaded favorite from array
 			array_shift($track);
 			if (count($sonos->GetCurrentPlaylist()) > 0 )  {
-				@$sonos->Play();
+				$sonos->Play();
 				LOGDEB ("queue.php: First Favorite Track is playing");
 				LOGINF ("queue.php: Currently playing favorite has been removed from array");
 			} else {
@@ -355,7 +355,7 @@ function PlayAllFavorites()
 			$value = $radio[0];
 			metadata($value);
 			LOGOK ("queue.php: First Favorite Radio has been loaded");
-			@$sonos->Play();
+			$sonos->Play();
 			array_shift($radio);
 			LOGDEB ("queue.php: First Favorite Radio is playing");
 			LOGINF ("queue.php: Currently playing favorite has been removed from array");
@@ -382,7 +382,7 @@ function PlayTrackFavorites()
 		$countqueue = count($sonos->GetCurrentPlaylist());
 		$currtrack = $sonos->GetPositioninfo();
 		if ($currtrack['Track'] < $countqueue)    {
-			@$sonos->Next();
+			$sonos->Next();
 			LOGINF ("queue.php: Function 'next' has been executed");
 			return true;
 		} else {
@@ -428,7 +428,7 @@ function PlayTrackFavorites()
 		# Set variable for ClearQueue
 		$shift = true;
 		if (count($sonos->GetCurrentPlaylist()) > 0 )  {
-			@$sonos->Play();
+			$sonos->Play();
 			LOGDEB ("queue.php: First Favorite Track is playing");
 			LOGINF ("queue.php: Currently playing Track favorite has been removed from array");
 		} else {
@@ -485,7 +485,7 @@ function PlayRadioFavorites()
 		$mediainfo = $sonos->GetMediaInfo();
 		if ($mediainfo['CurrentURI'] != "")  {
 			try {
-				@$sonos->Play();
+				$sonos->Play();
 				# remove 1st element of array
 				array_shift($value);
 				LOGINF ("queue.php: Current playing Radio Favorite has been removed from array.");
@@ -555,7 +555,7 @@ function PlaySonosPlaylist()
 		$mediainfo = $sonos->GetMediaInfo();
 		if ($mediainfo['CurrentURI'] != "")  {
 			try {
-				@$sonos->Play();
+				$sonos->Play();
 				# remove 1st element of array
 				array_shift($value);
 				LOGINF ("queue.php: Current playing Sonos Playlist has been removed from array.");
@@ -621,7 +621,7 @@ function PlayTuneInPlaylist()
 		$mediainfo = $sonos->GetMediaInfo();
 		if ($mediainfo['CurrentURI'] != "")  {
 			try {
-				@$sonos->Play();
+				$sonos->Play();
 				# remove 1st element of array
 				array_shift($value);
 				LOGINF ("queue.php: Current playing TuneIn Station has been removed from array.");
@@ -682,7 +682,7 @@ function PlayPlaylistFavorites()
 			LOGINF ("queue.php: Favorite Playlist could not be loaded and has been removed");
 			LOGOK ("queue.php: Next Favorite Playlist will be loaded");
 			$sonos->ClearQueue();
-			@metadata($value[0]);
+			metadata($value[0]);
 		}
 		$sonos->SetGroupMute(false);
 		$sonos->SetVolume($volume);
@@ -691,7 +691,7 @@ function PlayPlaylistFavorites()
 		$mediainfo = $sonos->GetMediaInfo();
 		if ($mediainfo['CurrentURI'] != "")  {
 			try {
-				@$sonos->Play();
+				$sonos->Play();
 				# remove 1st element of array
 				array_shift($value);
 				LOGINF ("queue.php: Current playing Playlist has been removed from array.");
