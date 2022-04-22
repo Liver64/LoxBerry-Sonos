@@ -582,32 +582,31 @@ function checkTTSkeys() {
 **/
 
 function playmode_detection($zone, $settings)  {
-	
 	global $master, $sonoszonen;
 	
 	$sonos = new PHPSonos($sonoszonen[$zone][0]);
 	#print_r($settings);
-	if ($settings == 0) {
+	if (($settings['repeat'] != 1) AND ($settings['repeat one'] != 1) AND ($settings['shuffle'] != 1)) {
 		$sonos->SetPlayMode('NORMAL');
 		$mode = 'NORMAL';
 		
-	} elseif ($settings == 1) {
+	} elseif (($settings['repeat'] == 1) AND ($settings['repeat one'] != 1) AND ($settings['shuffle'] != 1)) {
 		$sonos->SetPlayMode('REPEAT_ALL');
 		$mode = 'REPEAT_ALL';
 	
-	} elseif ($settings == 3) {
+	} elseif (($settings['repeat'] != 1) AND ($settings['repeat one'] != 1) AND ($settings['shuffle'] == 1)) {
 		$sonos->SetPlayMode('SHUFFLE_NOREPEAT');
 		$mode = 'SHUFFLE_NOREPEAT';
 	
-	} elseif ($settings == 5) {
+	} elseif (($settings['repeat'] != 1) AND ($settings['repeat one'] == 1) AND ($settings['shuffle'] == 1)) {
 		$sonos->SetPlayMode('SHUFFLE_REPEAT_ONE');
 		$mode = 'SHUFFLE_REPEAT_ONE';
 	
-	} elseif ($settings == 4) {
+	} elseif (($settings['repeat'] == 1) AND ($settings['repeat one'] != 1) AND ($settings['shuffle'] == 1)) {
 		$sonos->SetPlayMode('SHUFFLE');
 		$mode = 'SHUFFLE';
 	
-	} elseif ($settings == 2) {
+	} elseif (($settings['repeat'] != 1) AND ($settings['repeat one'] == 1) AND ($settings['shuffle'] != 1)) {
 		$sonos->SetPlayMode('REPEAT_ONE');
 		$mode = 'REPEAT_ONE';
 	}
