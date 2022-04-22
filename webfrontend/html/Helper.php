@@ -121,6 +121,7 @@ function checkZonesOnline($member) {
 	global $sonoszonen, $zonen, $debug, $config;
 	
 	$memberzones = $member;
+
 	foreach($memberzones as $zonen) {
 		if(!array_key_exists($zonen, $sonoszonen)) {
 			LOGGING("helper.php: The entered member zone does not exist, please correct your syntax!!", 3);
@@ -149,14 +150,18 @@ function checkZonesOnline($member) {
 /* @return: true or nothing
 **/
 
-function checkZoneOnline($member) {
-	global $sonoszonen, $zonen, $debug, $config;
+function checkZoneOnline($MemberTest) {
 	
-	if(!array_key_exists($member, $sonoszonen)) {
-		LOGGING("helper.php: The entered member zone does not exist, please correct your syntax!!", 3);
-		exit;
+	global $sonoszonen, $debug, $config;
+
+	if ($MemberTest == 'all')   {
+		return false;
 	}
-	$connection = @fsockopen($sonoszonen[$member][0], 1400, $errno, $errstr, 2);
+	if(!array_key_exists($MemberTest, $sonoszonen)) {
+		LOGGING("helper.php: The entered member zone '".$MemberTest."' does not exist, please correct your syntax!!", 4);
+		#return false;
+	}
+	$connection = @fsockopen($sonoszonen[$MemberTest][0], 1400, $errno, $errstr, 2);
 	if(!$connection === false) {
 		$zoneon = true;
 		return($zoneon);
@@ -381,27 +386,31 @@ global $sonoszone, $master, $config;
 	if(isset($_GET['member'])) {
 		$member = $_GET['member'];
 		if($member === 'all') {
-		$member = array();
-		foreach ($sonoszone as $zone => $ip) {
-			// exclude master Zone
-			if ($zone != $master) {
-				array_push($member, $zone);
+			$member = array();
+			foreach ($sonoszone as $zone => $ip) {
+				// exclude master Zone
+				if ($zone != $master) {
+					array_push($member, $zone);
+				}
 			}
+		} else {
+			$member = explode(',', $member);
 		}
-	} else {
-		$member = explode(',', $member);
-	}
-	
-	#print_r($member);
-	foreach ($member as $zone) {
-		$sonos = new PHPSonos($sonoszone[$zone][0]);
-		if ($zone != $master) {
-			#echo $zone.'<br>';
-			$sonos->SetAVTransportURI("x-rincon:" . trim($sonoszone[$master][1])); 
-			LOGGING("helper.php: Zone: ".$zone." has been added to master: ".$master,6);
+		foreach ($member as $zone) {
+			$sonos = new PHPSonos($sonoszone[$zone][0]);
+			$sonos->BecomeCoordinatorOfStandaloneGroup();
+			if ($zone != $master) {
+				#echo $zone.'<br>';
+				try {
+					$sonos->SetAVTransportURI("x-rincon:" . trim($sonoszone[$master][1])); 
+					LOGGING("helper.php: Zone: ".$zone." has been added to master: ".$master,6);
+				} catch (Exception $e) {
+					LOGGING("helper.php: Zone: ".$zone." could not be added to master: ".$master,4);
+				}
+			}
+			sleep(2);
 		}
-	}
-}	
+	}	
 }
 
 
@@ -573,31 +582,32 @@ function checkTTSkeys() {
 **/
 
 function playmode_detection($zone, $settings)  {
+	
 	global $master, $sonoszonen;
 	
 	$sonos = new PHPSonos($sonoszonen[$zone][0]);
 	#print_r($settings);
-	if (($settings['repeat'] != 1) AND ($settings['repeat one'] != 1) AND ($settings['shuffle'] != 1)) {
+	if ($settings == 0) {
 		$sonos->SetPlayMode('NORMAL');
 		$mode = 'NORMAL';
 		
-	} elseif (($settings['repeat'] == 1) AND ($settings['repeat one'] != 1) AND ($settings['shuffle'] != 1)) {
+	} elseif ($settings == 1) {
 		$sonos->SetPlayMode('REPEAT_ALL');
 		$mode = 'REPEAT_ALL';
 	
-	} elseif (($settings['repeat'] != 1) AND ($settings['repeat one'] != 1) AND ($settings['shuffle'] == 1)) {
+	} elseif ($settings == 3) {
 		$sonos->SetPlayMode('SHUFFLE_NOREPEAT');
 		$mode = 'SHUFFLE_NOREPEAT';
 	
-	} elseif (($settings['repeat'] != 1) AND ($settings['repeat one'] == 1) AND ($settings['shuffle'] == 1)) {
+	} elseif ($settings == 5) {
 		$sonos->SetPlayMode('SHUFFLE_REPEAT_ONE');
 		$mode = 'SHUFFLE_REPEAT_ONE';
 	
-	} elseif (($settings['repeat'] == 1) AND ($settings['repeat one'] != 1) AND ($settings['shuffle'] == 1)) {
+	} elseif ($settings == 4) {
 		$sonos->SetPlayMode('SHUFFLE');
 		$mode = 'SHUFFLE';
 	
-	} elseif (($settings['repeat'] != 1) AND ($settings['repeat one'] == 1) AND ($settings['shuffle'] != 1)) {
+	} elseif ($settings == 2) {
 		$sonos->SetPlayMode('REPEAT_ONE');
 		$mode = 'REPEAT_ONE';
 	}
@@ -1062,19 +1072,41 @@ function DeleteTmpFavFiles() {
 	
 	global $queuetracktmp, $radiofav, $queuetmp, $radiofavtmp, $queueradiotmp, $favtmp, $pltmp, $tuneinradiotmp, $queuepltmp;
     
-	@unlink($queuetracktmp);
-	@unlink($radiofav);
-	@unlink($queuetmp);
-	@unlink($radiofavtmp);
-	@unlink($queueradiotmp);
-	@unlink($favtmp);
-	@unlink($pltmp);
-	@unlink($tuneinradiotmp);
-	@unlink($queuepltmp);
-	@unlink($sonospltmp);
+	#@unlink($queuetracktmp);
+	#@unlink($radiofav);
+	#@unlink($queuetmp);
+	#@unlink($radiofavtmp);
+	#@unlink($queueradiotmp);
+	#@unlink($favtmp);
+	#@unlink($pltmp);
+	#@unlink($tuneinradiotmp);
+	#@unlink($queuepltmp);
+	#@unlink($sonospltmp);
+	@array_map('unlink', glob("/run/shm/s4lox_fav*.json"));
+	@array_map('unlink', glob("/run/shm/s4lox_pl*.json"));
 	LOGGING("helper.php: All Radio/Tracks/Playlist Temp Files has been deleted.", 7);
 }
 
+
+/**
+/* Funktion : NextTrack --> skip to next track and play (in case it was stopped)
+/*
+/* @param: empty                             
+/* @return: 
+**/
+
+function NextTrack() {
+	
+	global $sonos;
+	
+	$sonos->Next();
+	sleep(1);
+	LOGINF ("queue.php: Function 'next' has been executed");
+	$currun = $sonos->GetTransportInfo();
+	if ($currun != (int)"1")   {
+		$sonos->Play();
+	}
+}
 
 /**
 /* Funktion : AddDetailsToMetadata --> add Service and sid of service to array
@@ -1087,7 +1119,8 @@ function AddDetailsToMetadata() {
 	
 	global $sonos, $services;
     
-	$browse = $sonos->BrowseFavorites("FV:2","c");
+	$browse = $sonos->GetFavorites();
+	
 	foreach ($browse as $key => $value)  {
 		# identify sid based on CurrentURI
 		$sid = substr(substr($value['resorg'], strpos($value['resorg'], "sid=") + 4), 0, strpos(substr($value['resorg'], strpos($value['resorg'], "sid=") + 4), "&"));

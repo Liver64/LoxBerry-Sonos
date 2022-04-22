@@ -63,13 +63,14 @@ $tmp_tts = "/run/shm/s4lox_tmp_tts";							// path/file for T2S functions
 $tmp_phone = "/run/shm/s4lox_tmp_phonemute.tmp";				// path/file for phonemute function
 $POnline = "/run/shm/s4lox_sonoszone.json";						// path/file for Player Online check
 $off_file = $lbplogdir."/s4lox_off.tmp";						// path/file for script off
+$alarm_off_file = $lbplogdir."/s4lox_alarm_off.json";			// path/file for Alarms turned off
 $tmp_error = "/run/shm/s4lox_errorMP3Stream.json";				// path/file for error message
 $check_date = "/run/shm/s4lox_date";							// store date execution
 $configfile	= "/run/shm/s4lox_config.json";						// configuration file
 $maxvolfile	= "/run/shm/s4lox_max_volume.json";					// max Volume restriction
 $fname = "/run/shm/s4lox_zap_zone.json";						// queue.php: file containig running zones
 $zname = "/run/shm/s4lox_zap_zone_time";						// queue.php: temp file for nextradio
-$pltmp = "/run/shm/s4lox_play_pl_".$_GET['zone'].".json";		// queue.php: temp file for playlisten
+$pltmp = "/run/shm/s4lox_pl_play_tmp_".$_GET['zone'].".json";	// queue.php: temp file for playlisten
 $filenst = "/run/shm/s4lox_t2s_stat.tmp";						// Temp Statusfile für messages
 # Files for ONE-click functions
 if (isset($_GET['zone']))  {
@@ -79,9 +80,9 @@ if (isset($_GET['zone']))  {
 	$radiofavtmp = "/run/shm/s4lox_fav_all_radio_tmp_".$_GET['zone'].".json";		// Temp file to detect Radio Stations in PlayAllFavorites
 	$queuetracktmp = "/run/shm/s4lox_fav_track_tmp_".$_GET['zone'].".json";			// Temp file if function is running in PlayTrack Favorites
 	$queueradiotmp = "/run/shm/s4lox_fav_radio_tmp_".$_GET['zone'].".json";			// Radio Stations in PlayRadioFavorites
-	$queuepltmp = "/run/shm/s4lox_fav_pl_tmp_".$_GET['zone'].".json";				// Playlists from Sonos Favorites
-	$tuneinradiotmp = "/run/shm/s4lox_tunein_radio_tmp_".$_GET['zone'].".json";		// Favorit Radio Stations in TuneIn
-	$sonospltmp = "/run/shm/s4lox_sonos_pl_tmp_".$_GET['zone'].".json";				// Temp file for Sonos Playlist
+	$queuepltmp = "/run/shm/s4lox_fav_pl_tmp_".$_GET['zone'].".json";				// Temp file Playlists from Sonos Favorites
+	$tuneinradiotmp = "/run/shm/s4lox_fav_tunein_radio_".$_GET['zone'].".json";		// Temp file for Favorit Radio Stations in TuneIn
+	$sonospltmp = "/run/shm/s4lox_pl_sonos_tmp_".$_GET['zone'].".json";				// Temp file for Sonos Playlist
 	$debugfile = $lbpdatadir."/s4lox_debug.json";									// Debug file of Browse
 }
 
@@ -418,8 +419,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			#if (($titelaktuel < $playlistgesammt) or (substr($titelgesammt["TrackURI"], 0, 9) == "x-rincon:")) {
 				checkifmaster($master);
 				$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
-				@$sonos->Next();
-				LOGGING("sonos.php: Next been executed.", 7);
+				@NextTrack();
 			#} else {
 			#	checkifmaster($master);
 			#	$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
@@ -1969,7 +1969,6 @@ function volume_group()  {
 	if (isset($_GET['member']))  {
 		$member = $_GET['member'];
 		if($member === 'all') {
-			#$member = array();
 			$memberon = array();
 			foreach ($sonoszone as $zone => $ip) {
 				$zoneon = checkZoneOnline($zone);

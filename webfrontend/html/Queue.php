@@ -113,8 +113,7 @@ function PlayFavorite()
 		$countqueue = count($sonos->GetCurrentPlaylist());
 		$currtrack = $sonos->GetPositioninfo();
 		if ($currtrack['Track'] != $countqueue)    {
-			$sonos->Next();
-			LOGINF ("queue.php: Function 'next' has been executed");
+			NextTrack();
 			return true;
 		} else {
 			@unlink($favtmp);
@@ -221,9 +220,8 @@ function PlayAllFavorites()
 		try {
 			if (!file_exists($radiofavtmp))  {
 				# as long as we tracks iterate through
-				$sonos->Next();
+				NextTrack();
 				LOGINF ("queue.php: Favorite Tracks are running");
-				LOGINF ("queue.php: Function 'next' has been executed");
 			} else {
 				# create Failure in case Radio Playlist is loaded to catch exception
 				$sonos->Rewind();
@@ -281,8 +279,7 @@ function PlayAllFavorites()
 	#echo "Count: ".count($sonos->GetCurrentPlaylist());
 	try {
 		if (count($sonos->GetCurrentPlaylist()) > 0 )  {
-			$sonos->Next();
-			LOGINF ("queue.php: Function 'next' has been executed");
+			NextTrack();
 		} else {
 			# create Failure in case Radio Playlist is already loaded in order to catch exception
 			$sonos->Rewind();
@@ -382,8 +379,7 @@ function PlayTrackFavorites()
 		$countqueue = count($sonos->GetCurrentPlaylist());
 		$currtrack = $sonos->GetPositioninfo();
 		if ($currtrack['Track'] < $countqueue)    {
-			$sonos->Next();
-			LOGINF ("queue.php: Function 'next' has been executed");
+			NextTrack();
 			return true;
 		} else {
 			@unlink($queuetracktmp);

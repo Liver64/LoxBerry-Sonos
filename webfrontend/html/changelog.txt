@@ -361,5 +361,7 @@
 			[IMPROVEMENT] Lokale Musikbibliothek bei den Sonos Favoriten wird unterstützt
 			[IMPROVEMENT] Funktion 'sonosplaylist' zu einer ONE-click Funktion erweitert
 			[IMPROVEMENT] Neue Funktion 'togglemute' zum Mute switchen (Mute On, Mute off)
+ 4.1.6		[BUGFIX] Fixed Group Volume bei sonosplaylist unter Verwendung von member=all
+			[BUGFIX] Fixed Sonos Favorites/Playlist handling
 			
  

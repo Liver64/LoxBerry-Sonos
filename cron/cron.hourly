@@ -9,5 +9,10 @@
 
 # Will be executed as user "loxberry".
 
+chmod 0755 REPLACELBPHTMLDIR/system/battery.php
 REPLACELBPHTMLDIR/system/battery.php
-rm /run/shm/s4lox_errorMP3Stream.json
+
+f [ -e /run/shm/s4lox_errorMP3Stream.json ]
+then
+    rm /run/shm/s4lox_errorMP3Stream.json
+fi
