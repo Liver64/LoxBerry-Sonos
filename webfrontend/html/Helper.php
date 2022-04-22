@@ -1119,7 +1119,7 @@ function AddDetailsToMetadata() {
 	
 	global $sonos, $services;
     
-	$browse = $sonos->GetFavorites();
+	$browse = $sonos->BrowseFavorites("FV:2","c");
 	
 	foreach ($browse as $key => $value)  {
 		# identify sid based on CurrentURI
