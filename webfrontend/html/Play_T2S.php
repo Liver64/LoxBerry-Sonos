@@ -205,7 +205,7 @@ function create_tts($text ='') {
 		t2s($textstring, $filename);
 		if (($config['TTS']['t2s_engine'] == 6001) or ($config['TTS']['t2s_engine'] == 7001) or ($config['TTS']['t2s_engine'] == 4001) or ($config['TTS']['t2s_engine'] == 8001))    {
 			// ** generiere MP3 ID3 Tags **
-			require_once("system/bin/getid3/getid3.php");
+			#require_once("system/bin/getid3/getid3.php");
 			#$getID3 = new getID3;
 			#write_MP3_IDTag($textstring);
 		}
@@ -216,26 +216,26 @@ function create_tts($text ='') {
 			$time = date("His"); 
 			if ($config['SYSTEM']['checkt2s'] === "1")  {
 				rename($config['SYSTEM']['ttspath']."/".$filename.".mp3", $config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");
-				LOGERR("Sonos: play_t2s.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");	
-				LOGERR("Sonos: play_t2s.php: Please check...");
-				LOGERR("Sonos: play_t2s.php: ...your internet connection");	
-				LOGERR("Sonos: play_t2s.php: ...your storage device");	
-				LOGERR("Sonos: play_t2s.php: ...your T2S Engine settings");	
-				LOGERR("Sonos: play_t2s.php: Please try your requested URL in a browser or change temporally the T2S provider.");	
-				LOGINF("Sonos: play_t2s.php: If no success at all please add a thread in Loxone Forum");	
-				#LOGOK("Sonos: play_t2s.php: Hoere was");	
+				LOGERR("play_t2s.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");	
+				LOGERR("play_t2s.php: Please check...");
+				LOGERR("play_t2s.php: ...your internet connection");	
+				LOGERR("play_t2s.php: ...your storage device");	
+				LOGERR("play_t2s.php: ...your T2S Engine settings");	
+				LOGERR("play_t2s.php: Please try your requested URL in a browser or change temporally the T2S provider.");	
+				LOGINF("play_t2s.php: If no success at all please add a thread in Loxone Forum");	
+				#LOGOK("play_t2s.php: Hoere was");	
 				$filename = "t2s_not_available";
 				copy($config['SYSTEM']['mp3path']."/t2s_not_available.mp3", $config['SYSTEM']['ttspath']."/t2s_not_available.mp3");
 			} else {
 				rename($config['SYSTEM']['ttspath']."/".$filename.".mp3", $config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");
-				LOGERR("Sonos: play_t2s.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");	
-				LOGERR("Sonos: play_t2s.php: Please check...");
-				LOGERR("Sonos: play_t2s.php: ...your internet connection");	
-				LOGERR("Sonos: play_t2s.php: ...your storage device");	
-				LOGERR("Sonos: play_t2s.php: ...your T2S Engine settings");	
-				LOGERR("Sonos: play_t2s.php: Please try your requested URL in a browser or change temporally the T2S provider.");	
-				LOGINF("Sonos: play_t2s.php: If no success at all please add a thread in Loxone Forum");	
-				#LOGERR("Sonos: play_t2s.php: Hoere nix");	
+				LOGERR("play_t2s.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");	
+				LOGERR("play_t2s.php: Please check...");
+				LOGERR("play_t2s.php: ...your internet connection");	
+				LOGERR("play_t2s.php: ...your storage device");	
+				LOGERR("play_t2s.php: ...your T2S Engine settings");	
+				LOGERR("play_t2s.php: Please try your requested URL in a browser or change temporally the T2S provider.");	
+				LOGINF("play_t2s.php: If no success at all please add a thread in Loxone Forum");	
+				#LOGERR("play_t2s.php: Hoere nix");	
 				exit;
 			}
 		}
@@ -259,7 +259,7 @@ function play_tts($filename) {
 	global $volume, $config, $dist, $messageid, $sonos, $text, $errortext, $lbphtmldir, $messageid, $sleeptimegong, $sonoszone, $sonoszonen, $master, $coord, $actual, $textstring, $player, $time_start, $t2s_batch, $filename, $textstring, $home, $MP3path, $lbpplugindir, $logpath, $try_play, $MessageStorepath, $filename, $tts_stat;
 		
 		$coord = getRoomCoordinator($master);
-		$sonos = new PHPSonos($coord[0]);
+		$sonos = new SonosAccess($coord[0]);
 		if (isset($_GET['messageid'])) {
 			// Set path if messageid
 			LOGGING("play_t2s.php: Path for messageid's been adopted", 7);
@@ -344,25 +344,25 @@ function play_tts($filename) {
 						#echo $config['SYSTEM']['checkt2s'];
 						if ($config['SYSTEM']['checkt2s'] === "1")  {
 							rename($config['SYSTEM']['ttspath']."/".$filename.".mp3", $config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");
-							LOGERR("Sonos: play_t2s.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");	
-							LOGERR("Sonos: play_t2s.php: Please check...");
-							LOGERR("Sonos: play_t2s.php: ...your internet connection");	
-							LOGERR("Sonos: play_t2s.php: ...your storage device");	
-							LOGERR("Sonos: play_t2s.php: ...your T2S Engine settings");	
-							LOGERR("Sonos: play_t2s.php: Please try your requested URL in a browser or change temporally the T2S provider.");	
-							LOGINF("Sonos: play_t2s.php: If no success at all please add a thread in Loxone Forum");	
-							LOGOK("Sonos: play_t2s.php: Exception message has been announced!");	
+							LOGERR("play_t2s.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");	
+							LOGERR("play_t2s.php: Please check...");
+							LOGERR("play_t2s.php: ...your internet connection");	
+							LOGERR("play_t2s.php: ...your storage device");	
+							LOGERR("play_t2s.php: ...your T2S Engine settings");	
+							LOGERR("play_t2s.php: Please try your requested URL in a browser or change temporally the T2S provider.");	
+							LOGINF("play_t2s.php: If no success at all please add a thread in Loxone Forum");	
+							LOGOK("play_t2s.php: Exception message has been announced!");	
 							$filename = "t2s_not_available";
 							copy($config['SYSTEM']['mp3path']."/t2s_not_available.mp3", $config['SYSTEM']['ttspath']."/t2s_not_available.mp3");
 						} else {
 							rename($config['SYSTEM']['ttspath']."/".$filename.".mp3", $config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");
-							LOGERR("Sonos: play_t2s.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");	
-							LOGERR("Sonos: play_t2s.php: Please check...");
-							LOGERR("Sonos: play_t2s.php: ...your internet connection");	
-							LOGERR("Sonos: play_t2s.php: ...your storage device");	
-							LOGERR("Sonos: play_t2s.php: ...your T2S Engine settings");	
-							LOGERR("Sonos: play_t2s.php: Please try your requested URL in a browser or change temporally the T2S provider.");	
-							LOGINF("Sonos: play_t2s.php: If no success at all please add a thread in Loxone Forum");	
+							LOGERR("play_t2s.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");	
+							LOGERR("play_t2s.php: Please check...");
+							LOGERR("play_t2s.php: ...your internet connection");	
+							LOGERR("play_t2s.php: ...your storage device");	
+							LOGERR("play_t2s.php: ...your T2S Engine settings");	
+							LOGERR("play_t2s.php: Please try your requested URL in a browser or change temporally the T2S provider.");	
+							LOGINF("play_t2s.php: If no success at all please add a thread in Loxone Forum");	
 							exit;
 						}						
 					}
@@ -538,7 +538,7 @@ function sendmessage($errortext= '') {
 			// get Coordinator of (maybe) pair or single player
 			$coord = getRoomCoordinator($master);
 			LOGGING("play_t2s.php: Room Coordinator has been identified", 7);		
-			$sonos = new PHPSonos($coord[0]); 
+			$sonos = new SonosAccess($coord[0]); 
 			$sonos->SetMute(false);
 			play_tts($messageid);
 			restoreSingleZone();
@@ -638,19 +638,19 @@ function sendgroupmessage() {
 			}
 			// create Group for Announcement
 			$masterrincon = $coord[1]; 
-			$sonos = new PHPSonos($coord[0]);
+			$sonos = new SonosAccess($coord[0]);
 			$sonos->BecomeCoordinatorOfStandaloneGroup();
 			LOGGING("play_t2s.php: Group Coordinator has been made to single zone", 7);		
 			// grouping
 			foreach ($member as $zone) {
-				$sonos = new PHPSonos($sonoszone[$zone][0]);
+				$sonos = new SonosAccess($sonoszone[$zone][0]);
 				if ($zone != $master) {
 					$sonos->SetAVTransportURI("x-rincon:" . $masterrincon); 
 					LOGGING("play_t2s.php: Member '$zone' is now connected to Master Zone", 7);		
 				}
 			}
 			#sleep($config['TTS']['sleepgroupmessage']); // warten gemäß config.php bis Gruppierung abgeschlossen ist
-			$sonos = new PHPSonos($coord[0]);
+			$sonos = new SonosAccess($coord[0]);
 			$sonos->SetPlayMode('NORMAL'); 
 			$sonos->SetQueue("x-rincon-queue:". $coord[1] ."#0");
 			if (!isset($_GET['sonos']))  {
@@ -665,7 +665,7 @@ function sendgroupmessage() {
 			volume_group();
 			play_tts($messageid);
 			// wiederherstellen der Ursprungszustände
-			LOGGING("play_t2s.php: Restore previous settings will be called", 7);	
+			LOGGING("play_t2s.php: *** Restore previous settings will be called ***", 6);	
 			restoreGroupZone();		
 			foreach($member as $newzone) {
 				$mode = "";
@@ -737,13 +737,13 @@ function send_tts_source($tts_stat)  {
 		return;
 	}
 	
-	$creds = mqtt_connectiondetails();
- 
-	// MQTT requires a unique client id
-	$client_id = uniqid(gethostname()."_client");
-
-	$mqtt = new Bluerhinos\phpMQTT($creds['brokerhost'],  $creds['brokerport'], $client_id);
-	if( $mqtt->connect(true, NULL, $creds['brokeruser'], $creds['brokerpass'] ) ) {
+	if(is_enabled($config['LOXONE']['LoxDatenMQTT'])) {
+		// Get the MQTT Gateway connection details from LoxBerry
+		$creds = mqtt_connectiondetails();
+		// MQTT requires a unique client id
+		$client_id = uniqid(gethostname()."_client");
+		$mqtt = new Bluerhinos\phpMQTT($creds['brokerhost'],  $creds['brokerport'], $client_id);
+		$mqtt->connect(true, NULL, $creds['brokeruser'], $creds['brokerpass']);
 		$mqttstat = "1";
 	} else {
 		$mqttstat = "0";
@@ -751,7 +751,7 @@ function send_tts_source($tts_stat)  {
 	
 	// ceck if configured MS is fully configured
 	if (!isset($ms[$config['LOXONE']['Loxone']])) {
-		LOGERR ("Sonos: play_t2s.php: Your selected Miniserver from Sonos4lox Plugin config seems not to be fully configured. Please check your LoxBerry Miniserver config!") ;
+		LOGERR ("play_t2s.php: Your selected Miniserver from Sonos4lox Plugin config seems not to be fully configured. Please check your LoxBerry Miniserver config!") ;
 		return;
 	}
 	
@@ -777,15 +777,19 @@ function send_tts_source($tts_stat)  {
 				$data['t2s_'.$value] = $tts_stat;
 				if ($mqttstat == "1")   {
 					$err = $mqtt->publish('Sonos4lox/t2s/'.$value, $data['t2s_'.$value], 0, 1);
-				}			
-				$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/t2s_$value/$tts_stat"); // Radio oder Playliste
-				LOGDEB("Sonos: play_t2s.php: T2S notification: '".$tts_stat."' has been send to: ".$value);	
+				} else {			
+					$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/t2s_$value/$tts_stat"); // Radio oder Playliste
+				}
+				#LOGDEB("play_t2s.php: T2S notification: '".$tts_stat."' has been send to: ".$value);	
 			} catch (Exception $e) {
-				LOGWARN("Sonos: play_t2s.php: Sending T2S notification for Zone '".$value."' failed, we skip here...");	
+				LOGWARN("play_t2s.php: Sending T2S notification for Zone '".$value."' failed, we skip here...");	
 				return;
 			}
 		}
-		$mqtt->close();
+		if ($mqttstat == "1")   {
+			$mqtt->close();
+		}
+
 	return;
 
 }

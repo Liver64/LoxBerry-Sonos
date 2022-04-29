@@ -11,7 +11,7 @@ header('Content-Type: text/html; charset=utf-8');
 
 #echo "<PRE>";
 
-require_once "PHPSonos.php";
+require_once "sonosAccess.php";
 require_once "loxberry_system.php";
 require_once "loxberry_log.php";
 require_once "logging.php";
@@ -40,7 +40,7 @@ set_error_handler("handleError");
 // Test error handler
 #print_r($arra); // undefined variable
 
-$params = [	"name" => "Sonos PHP",
+$params = [	"name" => "Sonos",
 			"filename" => "$lbplogdir/sonos.log",
 			"append" => 1,
 			"addtime" => 1,
@@ -135,7 +135,7 @@ $plugindata = LBSystem::plugindata();
 	# exclude RF of Stereo Pair
 	$devicecheck = [];
 	foreach ($devices as $newzoneip) {
-		$sonos = new PHPSonos($newzoneip);
+		$sonos = new SonosAccess($newzoneip);
 		$zone_details = $sonos->GetZoneGroupAttributes();
 		if (!empty($zone_details['CurrentZonePlayerUUIDsInGroup']))  {
 			array_push($devicecheck, $newzoneip);
@@ -195,6 +195,10 @@ $plugindata = LBSystem::plugindata();
  function getSonosDevices($devices){
 	 
 	global $sonosfinal, $sodevices;
+	
+	# http://<IP>:1400/xml/device_description.xml
+	# http://<IP>:1400/info
+	
 	
 	$sodevices = $devices[0];
 	#$soplayer = getRoomCoordinator($sodevices);

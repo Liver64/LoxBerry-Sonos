@@ -22,7 +22,7 @@ function AddNapster() {
 	// playlist geht = 207466845, 249764303
 	// album geht = 287008560, 285904254
 		
-	$sonos = new PHPSonos($sonoszone[$master][0]);
+	$sonos = new SonosAccess($sonoszone[$master][0]);
 	$rincon = $sonoszone[$master][1];
 	$curr_track_tmp = $sonos->GetPositionInfo();
 	// check if Radio/Line IN/TV is playing, then switch to PL

@@ -31,14 +31,14 @@ function radio(){
 		exit;
 	}
 	$check_stat = getZoneStatus($master);
-	if ($check_stat == "member")  {
-		$sonos->BecomeCoordinatorOfStandaloneGroup();
-		LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
-	}
-	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
+	#if ($check_stat == "member")  {
+	$sonos->BecomeCoordinatorOfStandaloneGroup();
+	LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
+	#}
+	$sonos = new SonosAccess($config['sonoszonen'][$master][0]);
 	$coord = $master;
 	$roomcord = getRoomCoordinator($coord);
-	$sonosroom = new PHPSonos($roomcord[0]); //Sonos IP Adresse
+	$sonosroom = new SonosAccess($roomcord[0]); //Sonos IP Adresse
 	$sonosroom->SetQueue("x-rincon-queue:".$roomcord[1]."#0");
     $radiolists = $sonos->Browse("R:0/0","c");
 	foreach ($radiolists as $val => $item)  {
@@ -83,7 +83,14 @@ function radio(){
 		}
 		exit;
 	}
+	if(isset($_GET['member']))   {
+		AddMemberTo();
+		volume_group();
+		LOGGING("radio.php: Group Radio has been called.", 7);
+	}
 }
+
+
 
 /**
 * Function: nextradio --> iterate through Radio Favorites (endless)
@@ -119,7 +126,7 @@ function nextradio() {
 		}
 		#exit;
 	}
-	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
+	$sonos = new SonosAccess($config['sonoszonen'][$master][0]);
 	$sonos->ClearQueue();
 		$playstatus = $sonos->GetTransportInfo();
 	$radioname = $sonos->GetMediaInfo();
@@ -153,7 +160,7 @@ function nextradio() {
 		say_radio_station();
 	}
 	$coord = getRoomCoordinator($master);
-	$sonos = new PHPSonos($coord[0]);
+	$sonos = new SonosAccess($coord[0]);
 	$sonos->SetMute(false);
 	$sonos->SetVolume($volume);
 	$sonos->Play();
@@ -234,7 +241,7 @@ function say_radio_station($errortext ='') {
 	saveZonesStatus(); // saves all Zones Status
 	$coord = getRoomCoordinator($master);
 	LOGGING("radio.php: Room Coordinator been identified", 7);		
-	$sonos = new PHPSonos($coord[0]); 
+	$sonos = new SonosAccess($coord[0]); 
 	$temp_radio = $sonos->GetMediaInfo();
 	#********************** NEW get text variables **********************
 	$TL = LOAD_T2S_TEXT();

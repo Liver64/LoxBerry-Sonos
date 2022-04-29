@@ -1,5 +1,9 @@
 <style type="text/css">
 
+.ui-slider-track .ui-btn-active {
+    background-color: green !important;
+}
+
 </style>
 
 <TMPL_IF SETTINGS>
@@ -9,7 +13,7 @@
         <input type="hidden" name="saveformdata1" value="1">
 		<input type="hidden" name="regionOptions" id="regionOptions" value="<TMPL_VAR TTS.regionms>">
 		<!--<input type="hidden" name="subscriptionKey" id="subscriptionKey" value="<TMPL_VAR TTS.API-key>">-->
-		
+				
         <div class="form-group">
             <font COLOR="blue">
                 <TMPL_VAR SAVE>
@@ -352,22 +356,27 @@
                                 <td>
                                     <table border=0 style="width: 95%">
                                         <tr>
-                                            <td class="field_ms" align="left" style="width: 330px">
+                                            <td class="field_ms" align="left" style="width: 70%">
                                                 <!--<select id="miniserver" name="miniserver" data-mini="true" data-native-menu="false" style="width: 142px"><TMPL_VAR MSSELECTLIST>
 												</select>-->
                                                 <TMPL_VAR MS>
-											<td class="field_ms" align="left" style="width: 230px">
-												<script>
-													if ('<TMPL_VAR MQTT>' == 'true')   {
-														document.write('<p id="mqtt" name="mqtt" style="color:green"><TMPL_VAR T2S.DATA_TRANSFER_MQTT_ON></p>');
-													} else {
-														document.write('<p id="mqtt" name="mqtt" style="color:red"><TMPL_VAR T2S.DATA_TRANSFER_MQTT_OFF></p>');
-													}
-												</script>
+												<td class="field_ms" style="width: 104px;">
+													<fieldset>
+														<div id="add">
+												
+														</div>
+													</fieldset>
+													<script>
+														if ('<TMPL_VAR MQTT>' == 'true')   {
+															document.getElementById("add").innerHTML += '<select id="sendloxMQTT" name="sendloxMQTT" data-role="flipswitch"><option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON_MS></option><option value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF_MS></option></select>';
+															$('#sendloxMQTT').val('<TMPL_VAR LOXONE.LoxDatenMQTT>');
+														} 
+														//$("#sendloxMQTT").val("false").flipswitch("refresh");
+													</script>
 												</td>
                                             </td>
 											
-                                            <td class="field_lab_udp" align="right" style="width: 84px">
+                                            <td class="field_lab_udp" align="right" style="width: 30%">
                                                 <TMPL_VAR T2S.LABEL_UDP_PORT>
                                             </td>
                                             <td class="field_udp" style="width: 20px">

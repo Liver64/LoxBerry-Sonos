@@ -13,10 +13,11 @@
 * @return: disabled alarms
 **/
 function turn_off_alarms() {
-	global $sonoszone, $master, $psubfolder, $home;
+	global $sonoszone, $master, $psubfolder, $home, $alarm_off_file;
 	
-	$sonos = new PHPSonos($sonoszone[$master][0]);
+	$sonos = new SonosAccess($sonoszone[$master][0]);
 	$alarm = $sonos->ListAlarms();
+	file_put_contents($alarm_off_file, json_encode($alarm));
 	$quan = count($alarm);
 	for ($i=0; $i<$quan; $i++) {
 		$sonos->UpdateAlarm($alarm[$i]['ID'], $alarm[$i]['StartTime'], $alarm[$i]['Duration'], $alarm[$i]['Recurrence'], 
@@ -34,17 +35,23 @@ function turn_off_alarms() {
 * @return: disabled alarms
 **/
 function restore_alarms() {
-	global $sonos, $sonoszone, $psubfolder, $home, $master;
+	global $sonos, $sonoszone, $psubfolder, $home, $master, $alarm_off_file;
 	
-	$sonos = new PHPSonos($sonoszone[$master][0]);
-	$alarm = $sonos->ListAlarms();
+	$sonos = new SonosAccess($sonoszone[$master][0]);
+	if (file_get_contents($alarm_off_file) === false)   {
+		LOGGING("alarm.php: Sonos alarms could not be restored, can't open file!", 6);
+		exit;
+	} else {
+		$alarm = json_decode(file_get_contents($alarm_off_file), TRUE);
+	}
 	$quan = count($alarm);
 	for ($i=0; $i<$quan; $i++) {
 		$sonos->UpdateAlarm($alarm[$i]['ID'], $alarm[$i]['StartTime'], $alarm[$i]['Duration'], $alarm[$i]['Recurrence'], 
-		$alarm[$i]['Enabled'] = 1, $alarm[$i]['RoomUUID'], $alarm[$i]['ProgramURI'], $alarm[$i]['ProgramMetaData'], 
+		$alarm[$i]['Enabled'], $alarm[$i]['RoomUUID'], $alarm[$i]['ProgramURI'], $alarm[$i]['ProgramMetaData'], 
 		$alarm[$i]['PlayMode'], $alarm[$i]['Volume'], $alarm[$i]['IncludeLinkedZones']);
 	}
-	LOGGING("alarm.php: All Sonos alarms has been turned on.", 6);
+	@unlink($alarm_off_file);
+	LOGGING("alarm.php: Previous saved Sonos alarms has been restored.", 6);
 		
 }
 
@@ -60,21 +67,31 @@ function sleeptimer() {
 	
 	global $sonoszone, $master;
 	
-	if(isset($_GET['timer']) && is_numeric($_GET['timer']) && $_GET['timer'] > 0 && $_GET['timer'] < 120) {
+	if(isset($_GET['timer']) && is_numeric($_GET['timer']) && $_GET['timer'] > 0 && $_GET['timer'] <= 120) {
 		$timer = $_GET['timer'];
-		$sonos = new PHPSonos($sonoszone[$master][0]);
 		if($_GET['timer'] < 10) {
-			$timer = '00:0'.$_GET['timer'].':00';
+			$hours = "00";
+			$minutes = "0".$_GET['timer'];
+			$seconds = "00";
 		} else if ($_GET['timer'] > 60) {
-			$hours = date('G:i', mktime(0, $timer)); // 1:37
-			$timer = '0'.$hours.':00';
+			$hours = "0".intval($timer / 60);
+			$minutes = intval($timer % 60);
+			if ($minutes < 10)  {
+				$minutes = "0".$minutes;
+			} else {
+				$minutes;
+			}
+			$seconds = "00";
 		} else {
-			$timer = '00:'.$_GET['timer'].':00';
+			$hours = "00";
+			$minutes = $_GET['timer'];
+			$seconds = "00";
 		}
-		$sonos->Sleeptimer($timer);
-		LOGGING("alarm.php: Sleeptimer has been switched on. Time to sleep is: ".$timer, 6);
+		$sonos = new SonosAccess($sonoszone[$master][0]);
+		$sonos->SetSleeptimer($hours, $minutes, $seconds);
+		LOGGING("alarm.php: Sleeptimer has been switched on. Time to sleep for Zone '".$master."' is '".$timer."' Minutes.", 6);
 	} else {
-		LOGGING('alarm.php: The entered time is not correct, please correct (some minutes between 0 and 120 are allowed)', 4);
+		LOGGING('alarm.php: The entered time is not correct, please correct (minutes between 0 and 120 are allowed)', 4);
 	}
 }
 
@@ -86,10 +103,10 @@ function sleeptimer() {
 * @return: disable alarm
 **/
 function turn_off_alarm() {
-	global $master, $sonoszone, $psubfolder, $home;
+	global $master, $sonoszone, $psubfolder, $home, $alarm_off_file;
 	
 	$alarmid = $_GET['id'];
-	$sonos = new PHPSonos($sonoszone[$master][0]);
+	$sonos = new SonosAccess($sonoszone[$master][0]);
 	$alarm = $sonos->ListAlarms();
 	$alarmi = str_replace(' ','',$alarmid); 
 	$alarmarr = explode(',', $alarmi);
@@ -104,6 +121,8 @@ function turn_off_alarm() {
 		$alarm[$arrid]['PlayMode'], $alarm[$arrid]['Volume'], $alarm[$arrid]['IncludeLinkedZones']);
 		LOGGING("alarm.php: Sonos Alarm-ID 'ID=".$alarmid."' has been disabled.", 6);
 	}
+	#file_put_contents($alarm_off_file, "0");
+	#LOGGING("alarm.php: Sonos alarm has been turned off.", 6);
 }
 
 
@@ -114,10 +133,10 @@ function turn_off_alarm() {
 * @return: enable alarm
 **/
 function restore_alarm() {
-	global $sonoszone, $psubfolder, $home, $master;
+	global $sonoszone, $psubfolder, $home, $master, $alarm_off_file;
 	
 	$alarmid = $_GET['id'];
-	$sonos = new PHPSonos($sonoszone[$master][0]);
+	$sonos = new SonosAccess($sonoszone[$master][0]);
 	$alarm = $sonos->ListAlarms();
 	$alarmi = str_replace(' ','',$alarmid); 
 	$alarmarr = explode(',', $alarmi);

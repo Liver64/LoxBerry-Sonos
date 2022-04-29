@@ -6,6 +6,12 @@
 	$myConfigFolder = "$lbpconfigdir";								// get config folder
 	$myBinFolder = "$lbpbindir";									// get bin folder
 	$myConfigFile = "player.cfg";									// get config file
+	$off_file = $lbplogdir."/s4lox_off.tmp";					// path/file for Script turned off
+
+	# check if script/Sonos Plugin is off
+	if (file_exists($off_file)) {
+		exit;
+	}
 	
 	global $config, $result, $tmp_error;
 	

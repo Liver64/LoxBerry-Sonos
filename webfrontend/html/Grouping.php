@@ -22,7 +22,7 @@ function CreateStereoPair() {
 	$rinconlf = $sonoszone[$lf][1];
 	$rinconrf = $sonoszone[$rf][1];
 	$ChannelMapSet = (string)$rinconlf.':LF,LF;'.$rinconrf.':RF,RF';
-	$sonos = new PHPSonos($sonoszone[$lf][0]);
+	$sonos = new SonosAccess($sonoszone[$lf][0]);
 	$temp = $sonos->CreateStereoPair($ChannelMapSet);
 	LOGGING('grouping.php: A Stereo Pair called '.$lf.' has been created',6);
 }
@@ -236,7 +236,7 @@ function getRoomCoordinator_OLD($room){
 	if($room == "") {
 		$room = $_GET['zone'];
 	}
-	$sonos = new PHPSonos($sonoszone[$room][0]);
+	$sonos = new SonosAccess($sonoszone[$room][0]);
 	$group = $sonos->GetZoneGroupAttributes();
 	
 	$tmp_name = $group["CurrentZoneGroupName"];
@@ -298,7 +298,7 @@ function getGroups() {
 	if(empty($room)) {
 		$room = $_GET['zone'];
 	}
-	$sonos = new PHPSonos($sonoszone[$room][0]);
+	$sonos = new SonosAccess($sonoszone[$room][0]);
 	$group = $sonos->GetZoneGroupAttributes();
 	$tmp_name = $group["CurrentZoneGroupName"];
 	$group = explode(',', $group["CurrentZonePlayerUUIDsInGroup"]);
@@ -355,7 +355,7 @@ function checkDeltaArray() {
 			echo 'Delta member to group<br>';
 			print_r ($delta);
 		}
-		$sonos = new PHPSonos($sonoszone[$master][0]);
+		$sonos = new SonosAccess($sonoszone[$master][0]);
 		$newMaster = $delta[0];
 		print_r($newMaster);
 		return $newMaster;
@@ -376,7 +376,7 @@ function checkDeltaArray() {
 function checkifmaster($master) {
 	global $sonoszone, $config, $master;
 	
-	$sonos = new PHPSonos($sonoszone[$master][0]);
+	$sonos = new SonosAccess($sonoszone[$master][0]);
 	$posinfo = $sonos->GetPositionInfo();
 	if (substr($posinfo["TrackURI"], 0, 9) == "x-rincon:") {
 		$GroupMaster = trim(substr($posinfo["TrackURI"], 9, 30));
@@ -400,7 +400,7 @@ function group_all() {
 	# Alle Zonen gruppieren
 	foreach ($sonoszone as $zone => $ip) {
 		if($zone != $_GET['zone']) {
-			$sonos = new PHPSonos($sonoszone[$zone][0]);
+			$sonos = new SonosAccess($sonoszone[$zone][0]);
 			$sonos->SetAVTransportURI("x-rincon:" . $config['sonoszonen'][$master][1]); 
 		}
 	}
@@ -420,7 +420,7 @@ function ungroup_all() {
 		
 		# Alle Zonen Gruppierungen aufheben
 		foreach($sonoszone as $zone => $ip) {
-			$sonos = new PHPSonos($sonoszone[$zone][0]);
+			$sonos = new SonosAccess($sonoszone[$zone][0]);
 			$sonos->SetQueue("x-rincon-queue:" . $config['sonoszonen'][$zone][1] . "#0");
 		}
 	LOGGING('grouping.php: All Sonos Player has been ungrouped',6);
@@ -454,7 +454,7 @@ function addmember() {
 	foreach ($memberon as $value) {
 		$zoneon = checkZoneOnline($value);
 		$masterrincon = $config['sonoszonen'][$master][1];
-		$sonos = new PHPSonos($sonoszone[$value][0]);
+		$sonos = new SonosAccess($sonoszone[$value][0]);
 		$sonos->SetAVTransportURI("x-rincon:" . $masterrincon);
 		LOGGING("grouping.php: Player '".$value."' has been added to Group '".$master."'",6);
 	}
@@ -481,14 +481,14 @@ function removemember() {
 		$zoneon = checkZoneOnline($value);
 		if ($zoneon === (bool)true)  {
 			array_push($memberon, $value);
-		} else {
-			LOGGING("grouping.php: Player '".$value."' wasn't part of the Group!!", 4);
+		#} else {
+			#LOGGING("grouping.php: Player '".$value."' wasn't part of the Group!!", 4);
 		}
 	}
 	foreach ($memberon as $value) {
 		$zoneon = checkZoneOnline($value);
 		$masterrincon = $config['sonoszonen'][$master][1];
-		$sonos = new PHPSonos($sonoszone[$value][0]);
+		$sonos = new SonosAccess($sonoszone[$value][0]);
 		$sonos->BecomeCoordinatorOfStandaloneGroup();
 		LOGGING("grouping.php: Player '".$value."' has been removed from Group '".$master."'",6);
 	}

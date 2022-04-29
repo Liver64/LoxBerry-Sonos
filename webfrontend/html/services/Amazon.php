@@ -25,7 +25,7 @@ function AddAmazon() {
 	
 	
 	
-	$sonos = new PHPSonos($sonoszone[$master][0]);
+	$sonos = new SonosAccess($sonoszone[$master][0]);
 	$rincon = $sonoszone[$master][1];
 	$curr_track_tmp = $sonos->GetPositionInfo();
 	// check if Radio/Line IN/TV is playing, then switch to PL

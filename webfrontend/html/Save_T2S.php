@@ -17,7 +17,7 @@ function saveZonesStatus() {
 
 	// save each Zone Status
 	foreach ($sonoszone as $player => $value) {
-		$sonos = new PHPSonos($sonoszone[$player][0]); 
+		$sonos = new SonosAccess($sonoszone[$player][0]); 
 		$actual[$player]['Mute'] = $sonos->GetMute($player);
 		$actual[$player]['Volume'] = $sonos->GetVolume($player);
 		$actual[$player]['MediaInfo'] = $sonos->GetMediaInfo($player);
@@ -34,10 +34,12 @@ function saveZonesStatus() {
 		if ($zonestatus != "member")    {
 			if (substr($posinfo["TrackURI"], 0, 18) == "x-sonos-htastream:")  {
 				$actual[$player]['Type'] = "TV";
-			} elseif (!empty($media["CurrentURIMetaData"]))  {
+			} elseif (substr($actual[$player]['MediaInfo']["UpnpClass"] ,0 ,36) == "object.item.audioItem.audioBroadcast")  {
 				$actual[$player]['Type'] = "Radio";
 			} elseif (substr($posinfo["TrackURI"], 0, 15) == "x-rincon-stream")   {
 				$actual[$player]['Type'] = "LineIn";
+			} elseif (empty($posinfo["CurrentURIMetaData"]))   {
+				$actual[$player]['Type'] = "";
 			} else {
 				$actual[$player]['Type'] = "Track";
 			}

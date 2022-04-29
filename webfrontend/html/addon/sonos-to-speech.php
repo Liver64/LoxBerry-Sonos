@@ -29,7 +29,7 @@ function s2s()
 	}
 	# Prüft ob Playliste oder Radio läuft
 		$master = $_GET['zone'];
-		$sonos = new PHPSonos($sonoszone[$master][0]);
+		$sonos = new SonosAccess($sonoszone[$master][0]);
 		$temp = $sonos->GetPositionInfo();
 		$temp_radio = $sonos->GetMediaInfo();
 		$sonos->Stop();

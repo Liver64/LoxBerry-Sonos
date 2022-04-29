@@ -8,7 +8,7 @@
 /* @return: 
 **/	
 
-require_once "PHPSonos.php";
+require_once "sonosAccess.php";
 require_once "loxberry_system.php";
 require_once "loxberry_log.php";
 require_once "bin/loxberry_loxonetemplatebuilder.php";
@@ -38,37 +38,37 @@ if (!file_exists($myFolder.'/sonos.cfg')) {
 } else {
 	$tmpconfig = parse_ini_file(LBPCONFIGDIR.'/sonos.cfg', true);
 	if ($tmpconfig === false)  {
-		LOGERR('Sonos: ms_inbound.php: The file sonos.cfg could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file "sonos.cfg" manually!');
+		LOGERR('ms_inbound.php: The file sonos.cfg could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file "sonos.cfg" manually!');
 		exit(1);
 	}
 }
 
 if (!file_exists($myFolder.'/player.cfg')) {
-	LOGERR('Sonos: ms_inbound.php: The file player.cfg  could not be opened, please check/complete your Plugin Config!');
+	LOGERR('ms_inbound.php: The file player.cfg  could not be opened, please check/complete your Plugin Config!');
 	exit(1);
 } else {
 	$tmpplayer = parse_ini_file($myFolder.'/player.cfg', true);
 	if ($tmpplayer === false)  {
-		LOGERR('Sonos: ms_inbound.php: The file player.cfg could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file "player.cfg" manually!');
+		LOGERR('ms_inbound.php: The file player.cfg could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file "player.cfg" manually!');
 		exit(1);
 	}
 }
 
 if ($tmpconfig['LOXONE']['LoxDaten'] != 1)   {
-	LOGWARN('Sonos: ms_inbound.php: The Communication to Loxone is switched off, please turn on 1st, save config and try again in order to use the template in Loxone!');
+	LOGWARN('ms_inbound.php: The Communication to Loxone is switched off, please turn on 1st, save config and try again in order to use the template in Loxone!');
 	exit(1);
 }
 if (count($tmpplayer['SONOSZONEN']) < 1)  {
-	LOGERR('Sonos: ms_inbound.php: There are no Sonos Players already fully configured, please check/complete your Plugin Config and save your config before downloading your Template!');
+	LOGERR('ms_inbound.php: There are no Sonos Players already fully configured, please check/complete your Plugin Config and save your config before downloading your Template!');
 	exit(1);
 }
 
 if (empty($tmpconfig['LOXONE']['LoxPort']))  {
-	LOGERR('Sonos: ms_inbound.php: The Loxone UDP port is missing in your config, please check/complete your Plugin Config and save your config before downloading your Template!');
+	LOGERR('ms_inbound.php: The Loxone UDP port is missing in your config, please check/complete your Plugin Config and save your config before downloading your Template!');
 	exit(1);
 }
 if (empty($tmpconfig['LOXONE']['Loxone']))  {
-	LOGWARN('Sonos: ms_inbound.php: You have not selected appropriate Miniserver for inbound communication, please check/complete your Plugin Config and save your config before downloading your Template!');
+	LOGWARN('ms_inbound.php: You have not selected appropriate Miniserver for inbound communication, please check/complete your Plugin Config and save your config before downloading your Template!');
 	exit(1);
 }
 LOGOK("Sonos: ms_inbound.php: All Information has been collected successful");
@@ -83,7 +83,7 @@ if (file_exists($xmldoc)) {
 	unlink ($lbphtmldir."/system/".$xmldoc);
 	unlink ($lbphtmldir."/system/".$xmlfilename);
 	unlink ($lbphtmldir."/system/".$xmlUDPfilename);
-	LOGOK("All files has been deleted");
+	LOGOK("ms_inbound.php: All files has been deleted");
 	
 }
 LOGOK("Sonos: ms_inbound.php: All Players and commands has been collected. Start writing files");
@@ -135,7 +135,7 @@ foreach ($tmpplayer['SONOSZONEN'] as $zone => $key)  {
 $text .= '</VirtualInUdp>';
 file_put_contents($lbphtmldir."/system/".$xmldoc, $text);
 
-LOGOK("Sonos: ms_inbound.php: virtual inputs successfull executed, files temporally saved");
+LOGOK("ms_inbound.php: virtual inputs successfull executed, files temporally saved");
 #return;
 
 

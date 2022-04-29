@@ -397,7 +397,7 @@ global $sonoszone, $master, $config;
 			$member = explode(',', $member);
 		}
 		foreach ($member as $zone) {
-			$sonos = new PHPSonos($sonoszone[$zone][0]);
+			$sonos = new SonosAccess($sonoszone[$zone][0]);
 			$sonos->BecomeCoordinatorOfStandaloneGroup();
 			if ($zone != $master) {
 				#echo $zone.'<br>';
@@ -417,7 +417,7 @@ global $sonoszone, $master, $config;
 // check if current zone is streaming
 function isStreaming() {
 	
-        $sonos = new PHPSonos($sonoszone[$master][0]);
+        $sonos = new SonosAccess($sonoszone[$master][0]);
 		$media = $sonos->GetMediaInfo();
         $uri = $media["CurrentURI"];
         # Standard streams
@@ -581,36 +581,35 @@ function checkTTSkeys() {
 * @return: sting playmode
 **/
 
-function playmode_detection($zone, $settings)  {
+function playmode_detection($zone, $mode)  {
+	
 	global $master, $sonoszonen;
 	
-	$sonos = new PHPSonos($sonoszonen[$zone][0]);
-	#print_r($settings);
-	if (($settings['repeat'] != 1) AND ($settings['repeat one'] != 1) AND ($settings['shuffle'] != 1)) {
-		$sonos->SetPlayMode('NORMAL');
+	$sonos = new SonosAccess($sonoszonen[$zone][0]);
+	if ($mode == 0) {
+		$sonos->SetPlayMode('0');
 		$mode = 'NORMAL';
 		
-	} elseif (($settings['repeat'] == 1) AND ($settings['repeat one'] != 1) AND ($settings['shuffle'] != 1)) {
-		$sonos->SetPlayMode('REPEAT_ALL');
+	} elseif ($mode == 1) {
+		$sonos->SetPlayMode('1');
 		$mode = 'REPEAT_ALL';
 	
-	} elseif (($settings['repeat'] != 1) AND ($settings['repeat one'] != 1) AND ($settings['shuffle'] == 1)) {
-		$sonos->SetPlayMode('SHUFFLE_NOREPEAT');
+	} elseif ($mode == 3) {
+		$sonos->SetPlayMode('3');
 		$mode = 'SHUFFLE_NOREPEAT';
 	
-	} elseif (($settings['repeat'] != 1) AND ($settings['repeat one'] == 1) AND ($settings['shuffle'] == 1)) {
-		$sonos->SetPlayMode('SHUFFLE_REPEAT_ONE');
+	} elseif ($mode == 5) {
+		$sonos->SetPlayMode('5');
 		$mode = 'SHUFFLE_REPEAT_ONE';
 	
-	} elseif (($settings['repeat'] == 1) AND ($settings['repeat one'] != 1) AND ($settings['shuffle'] == 1)) {
-		$sonos->SetPlayMode('SHUFFLE');
+	} elseif ($mode == 4) {
+		$sonos->SetPlayMode('4');
 		$mode = 'SHUFFLE';
 	
-	} elseif (($settings['repeat'] != 1) AND ($settings['repeat one'] == 1) AND ($settings['shuffle'] != 1)) {
-		$sonos->SetPlayMode('REPEAT_ONE');
+	} elseif ($mode == 2) {
+		$sonos->SetPlayMode('2');
 		$mode = 'REPEAT_ONE';
 	}
-	#echo $mode;
 	return $mode;
 }
 
@@ -780,8 +779,10 @@ function check_sambashare($sambaini, $searchfor, $sambashare) {
 	 
 	
 	function createMetaDataXml(string $id, string $parent = "-1", array $extra = [], string $service = null): string
-    {
-		$xmlnew = New XmlWriter();
+    {	
+		require_once("system/bin/xml/XmlWriter.php");
+		
+		$xmlnew = New XmlWriterNew();
         if ($service !== null) {
             $extra["desc"] = [
                 "_attributes"   =>  [
@@ -810,6 +811,7 @@ function check_sambashare($sambaini, $searchfor, $sambashare) {
         ]);
         # Get rid of the xml header as only the DIDL-Lite element is required
         $metadata = explode("\n", $xml)[1];
+		print_R($metadata);
         return $metadata;
     }
 
@@ -1114,11 +1116,12 @@ function NextTrack() {
 /* @return: 
 **/
 
-function AddDetailsToMetadata() {
+function AddDetailsToMetadata() 
+{
 	
 	global $sonos, $services;
     
-	$browse = $sonos->BrowseFavorites("FV:2","c");
+	$browse = $sonos->GetFavorites();
 	
 	foreach ($browse as $key => $value)  {
 		# identify sid based on CurrentURI
@@ -1135,6 +1138,7 @@ function AddDetailsToMetadata() {
 				$sid = "000";
 			}
 		}
+		
 		isService($sid);
 		$browse[$key]['Service'] = $services[$sid];
 		$browse[$key]['sid'] = $sid;
@@ -1142,6 +1146,50 @@ function AddDetailsToMetadata() {
 	#print_r($browse);
 	return $browse;
 	LOGGING("helper.php: All Radio/Tracks/Playlist Temp Files has been deleted.", 7);
+}
+
+
+
+/**
+/* Funktion : getStreamingService --> get the Streaming Service/Source already playing
+/*
+/* @param: string $player                             
+/* @return: string
+**/
+
+function getStreamingService($zone) 
+{
+		global $sonoszone, $sonos, $config, $services;
+		
+		# check ONLY playing zones
+		$run = $sonos->GetTransportInfo();
+		if ($run == "1")    {
+			$data = $sonos->GetPositionInfo();
+			$data1 = $sonos->GetMediaInfo();
+			#print_r($data);
+			#print_r($data1);
+			$sid = substr(substr($data['TrackURI'], strpos($data['TrackURI'], "sid=") + 4), 0, strpos(substr($data['TrackURI'], strpos($data['TrackURI'], "sid=") + 4), "&"));
+			if ($sid == "")   {
+				# identify local track/Album and add sid
+				if (substr($data['TrackURI'], 0, 11) == "x-file-cifs" or substr($data['TrackURI'], 0, 17) == "x-rincon-playlist")   {
+					$sid = "999";
+				# identify Sonos Playlist and add sid
+				} elseif (substr($data['TrackURI'], 0, 4) == "file")   {
+					$sid = "998";
+				# try identify Radio Stations
+				} elseif (substr($data1["UpnpClass"] ,0 ,36) == "object.item.audioItem.audioBroadcast")  {
+					$sid = substr(substr($data1['CurrentURI'], strpos($data1['CurrentURI'], "sid=") + 4), 0, strpos(substr($data1['CurrentURI'], strpos($data1['CurrentURI'], "sid=") + 4), "&"));
+				# if sid could not be obtained set default	
+				} else {
+					$sid = "000";
+				}
+			}
+			isService($sid);
+			$StrService = $services[$sid];
+			LOGGING("helper.php: Currently '".$StrService."' is playing", 6);
+			return $StrService;
+		}
+		#return $StrService;
 }
 
  

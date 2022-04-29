@@ -22,8 +22,7 @@ function playlist() {
 		$countqueue = count($sonos->GetCurrentPlaylist());
 		$currtrack = $sonos->GetPositioninfo();
 		if ($currtrack['Track'] < $countqueue)    {
-			@$sonos->Next();
-			LOGINF ("playlist.php: Function 'next' has been executed");
+			NextTrack();
 			return true;
 		} else {
 			@unlink($sonospltmp);
@@ -38,11 +37,11 @@ function playlist() {
 	# initial load
 	$master = $_GET['zone'];
 	$check_stat = getZoneStatus($master);
-	if ($check_stat == "member")  {
-		$sonos->BecomeCoordinatorOfStandaloneGroup();
-		LOGGING("playlist.php: Zone ".$master." has been ungrouped.",5);
-	}
-	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
+	#if ($check_stat == "member")  {
+	$sonos->BecomeCoordinatorOfStandaloneGroup();
+	LOGGING("playlist.php: Zone ".$master." has been ungrouped.",5);
+	#}
+	$sonos = new SonosAccess($config['sonoszonen'][$master][0]);
 	if(isset($_GET['playlist']))   {
 		$epl = $_GET['playlist'];
 		$playlist = mb_strtolower($_GET['playlist']);	
@@ -96,7 +95,11 @@ function playlist() {
 		}
 		exit;
 	}
-	
+	if(isset($_GET['member']))   {
+		AddMemberTo();
+		volume_group();
+		LOGGING("playlist.php: Group Sonosplaylist has been called.", 7);
+	}
 }
 
 /**
@@ -114,7 +117,7 @@ function zapzone() {
 		LOGGING("playlist.php: Currently a T2S is running, we skip zapzone for now. Please try again later.",6);
 		exit;
 	}
-	$sonos = new PHPSonos($sonoszone[$master][0]);
+	$sonos = new SonosAccess($sonoszone[$master][0]);
 	$check_stat = getZoneStatus($master);
 	if ($check_stat == "member")  {
 		$sonos->BecomeCoordinatorOfStandaloneGroup();
@@ -166,7 +169,7 @@ function zapzone() {
 		}
 	}
 	unset ($playingzones[$nextZoneKey]);
-	$sonos = new PHPSonos($config['sonoszonen'][$master][0]);
+	$sonos = new SonosAccess($config['sonoszonen'][$master][0]);
 	$sonos->SetAVTransportURI("x-rincon:" . $sonoszone[$nextZoneKey][1]);
 	LOGGING("playlist.php: Zone ".$master." has been grouped as member to Zone ".$nextZoneKey, 7);
 	$sonos->SetMute(false);
@@ -236,7 +239,7 @@ function play_zones() {
 	$playzone = $sonoszone;
 	unset($playzone[$master]); 
 	foreach ($playzone as $key => $val) {
-		$sonos = new PHPSonos($playzone[$key][0]);
+		$sonos = new SonosAccess($playzone[$key][0]);
 		// only zones which are not a group member
 		$zonestatus = getZoneStatus($key);
 		if ($zonestatus <> 'member') {
@@ -313,7 +316,7 @@ function DelPlaylist() {
 	$playlists = $sonos->GetSonosPlaylists();
 	$t2splaylist = recursive_array_search("temp_t2s",$playlists);
 	if(!empty($t2splaylist)) {
-		$sonos->DelSonosPlaylist($playlists[$t2splaylist]['id']);
+		$sonos->DeleteSonosPlaylist($playlists[$t2splaylist]['id']);
 	}
 	LOGGING("playlist.php: Temporally playlist has been deleted.", 6);
 }
@@ -390,12 +393,12 @@ function next_dynamic() {
 	$sonos->SetMute(false);
 	if (($titelaktuel < $playlistgesammt) or (substr($titelgesammt["TrackURI"], 0, 9) == "x-rincon:")) {
 		checkifmaster($master);
-		$sonos = new PHPSonos($sonoszone[$master][0]);
+		$sonos = new SonosAccess($sonoszone[$master][0]);
 		$sonos->Next();
 		LOGGING("playlist.php: Next Song in Playlist.", 7);
 	} else {
 		checkifmaster($master);
-		$sonos = new PHPSonos($sonoszone[$master][0]);
+		$sonos = new SonosAccess($sonoszone[$master][0]);
 		$sonos->SetTrack("1");
 		LOGGING("playlist.php: Playlist starts at Song Number 1.", 7);
 	}
@@ -422,7 +425,7 @@ function say_zone($zone) {
 	saveZonesStatus(); // saves all Zones Status
 	#$sonos->Stop();
 	sleep(1);
-	$sonos = new PHPSonos($sonoszone[$master][0]);
+	$sonos = new SonosAccess($sonoszone[$master][0]);
 	#********************** NEW get text variables **********************
 	$TL = LOAD_T2S_TEXT();
 		
@@ -438,7 +441,7 @@ function say_zone($zone) {
 	// get Coordinator of (maybe) pair or single player
 	$coord = getRoomCoordinator($master);
 	LOGGING("playlist.php: Room Coordinator been identified", 7);		
-	$sonos = new PHPSonos($coord[0]); 
+	$sonos = new SonosAccess($coord[0]); 
 	$tmp_volume = $sonos->GetVolume();
 	$sonos->SetMute(false);
 	$volume = $volume + $config['TTS']['correction'];

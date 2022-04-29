@@ -4,7 +4,7 @@
 require_once "loxberry_system.php";
 require_once "loxberry_log.php";
 require_once "loxberry_io.php";
-require_once("$lbphtmldir/system/PHPSonos.php");
+require_once("$lbphtmldir/system/sonosAccess.php");
 require_once("$lbphtmldir/system/logging.php");
 require_once("$lbphtmldir/Helper.php");
 require_once("$lbphtmldir/Play_T2S.php");
@@ -22,6 +22,12 @@ $pathlanguagefile = "$lbphtmldir/voice_engines/langfiles";		// get languagefiles
 $configfile	= "/run/shm/s4lox_config.json";						// configuration file
 $Stunden = intval(strftime("%H"));
 $sPassword = 'loxberry';
+$off_file 			= $lbplogdir."/s4lox_off.tmp";					// path/file for Script turned off
+
+# check if script/Sonos Plugin is off
+if (file_exists($off_file)) {
+	exit;
+}
 
 # Execute Cronjob manually
 # sh /etc/cron.d/Sonos
@@ -33,7 +39,7 @@ $ms = LBSystem::get_miniservers();
 #echo "<PRE>";
 
 # only between 8am till 21pm
-if ($Stunden >=8 && $Stunden <21)   {
+if ($Stunden >=8 && $Stunden <22)   {
 	
 	global $master, $main, $zone, $ms, $batlevel, $configfile, $config;
 	
@@ -53,13 +59,19 @@ if ($Stunden >=8 && $Stunden <21)   {
 		}
 	}
 	if (count($battzone) < 1)  {
-		# No ROAM or MOVE
+		# No ROAM or MOVE then exit w/o logging
 		exit;
 	}
 	# Start Logging
-	#$log = LBLog::newLog( [ "name" => "Cronjobs", "filename" => "$lbplogdir/battery.log", "stderr" => 1, "addtime" => 1 ] );
+	$params = [	"name" => "Cronjobs",
+				"filename" => "$lbplogdir/sonos.log",
+				"append" => 1,
+				"stderr" => 1,
+				"addtime" => 1,
+				];
+	$log = LBLog::newLog($params);
 
-	#LOGSTART("Check Battery state");
+	LOGSTART("Check Battery state");
 
 	$mainpl = array();
 	$errortext = '';
@@ -73,11 +85,10 @@ if ($Stunden >=8 && $Stunden <21)   {
 		}
 	}
 	# check if min. ONE player has been marked for T2S Announcement
-	if (count($mainpl) < 1)  {
-		#LOGINF('bin/battery.php No Zone for T2S Voice Notification has been marked in your Plugin Config.');
-		#LOGOK("bin/battery.php Battery check has been performed");
-		exit(1);
-	}
+	#if (count($mainpl) < 1)  {
+	#	LOGINF('system/battery.php: No Zone for T2S Voice Notification has been marked in your Plugin Config.');
+	#	exit(1);
+	#}
 
 	#print_r($mainpl);
 	foreach ($sonoszonen as $zone => $player) {
@@ -98,30 +109,31 @@ if ($Stunden >=8 && $Stunden <21)   {
 				$health = $xml->LocalBatteryStatus->Data[0];
 				$PowerSource = $xml->LocalBatteryStatus->Data[3];
 				# check only if MOVE or ROAM is not charging and battery level is less then 30%
-				if ($PowerSource == "BATTERY" and $batlevel <= 30)  {
-				#if ($batlevel > 30)  {
-					#LOGWARN('bin/battery.php The battery level of "'.$zone.'" is about '.$batlevel.'%. Please charge your device!');
-					binlog("Battery check", "system/battery.php: The battery level of '".$zone."' is about ".$batlevel."%. Please charge your device!");
+				if ($PowerSource != "SONOS_CHARGING_RING" and $batlevel <= 30)  {
+					LOGWARN('system/battery.php: The battery level of "'.$zone.'" is about '.$batlevel.'%. Please charge your device!');
+					#binlog("Battery check", "system/battery.php:: The battery level of '".$zone."' is about ".$batlevel."%. Please charge your device!");
 					foreach ($mainpl as $main)   {
 						$master = $main;
 						$volume = $config['sonoszonen'][$master][3] + ($config['sonoszonen'][$master][3] * $config['TTS']['correction'] / 100);
-						$errortext = select_lang();
-						sendmessage($errortext);
-						#LOGINF('bin/battery.php Voice Notification has been announced on '.$main);
-						sleep(4);
+						if (count($mainpl) > 0)  {
+							$errortext = select_lang();
+							sendmessage($errortext);
+							LOGDEB('system/battery.php: Voice Notification has been announced on '.$main);
+						} else {
+							LOGINF('system/battery.php: No Zone for T2S Voice Notification has been marked in your Plugin Config.');
+						}
+						sleep(2);
 					}
-				#} else {
-					#LOGOK('bin/battery.php The battery level of "'.$zone.'" is about '.$batlevel.'%. Next check in about 2hours');
 				}
 				fclose($handle);
 			} else {
-				binlog("Battery check", "bin/battery.php Zone '".$zone."' seems to be Offline, please check your power/network settings");
+				#binlog("Battery check", "bin/battery.php Zone '".$zone."' seems to be Offline, please check your power/network settings");
 			}
 		}
 	}
 
 	#print_r($mainpl);
-	#LOGOK("bin/battery.php Battery check has been performed");
+	LOGOK("system/battery.php: Battery check has been performed");
 }
 
 
@@ -150,7 +162,7 @@ function select_lang() {
 		$errortext = "The battery level of zone {$zone} is about {$batlevel} percent. Next check in about 1hour";
 		$errorvoice = 'en-GB-Wavenet-A';
 		$errorlang = 'en-GB';
-		#LOGINF("bin/battery.php Translation for your Standard language is not available, EN has been selected");	
+		LOGINF("system/battery.php: Translation for your Standard language is not available, EN has been selected");	
 	}
 	$my_variable_name = 'zone';
 	$my_value = $main; 
@@ -175,25 +187,27 @@ function parseConfigFile()    {
 	
 	// Parsen der Konfigurationsdatei sonos.cfg
 	if (!file_exists($myFolder.'/sonos.cfg')) {
-		#LOGWARN('bin/battery.php The file sonos.cfg could not be opened, please try again!');
+		LOGWARN('system/battery.php: The file sonos.cfg could not be opened, please try again!');
 	} else {
 		$tmpsonos = parse_ini_file($myFolder.'/sonos.cfg', TRUE);
 		if ($tmpsonos === false)  {
-			binlog("Battery check", 'bin/battery.php The file sonos.cfg could not be parsed, the file may be disruppted. Please check/save your Plugin Config or check file "sonos.cfg" manually!');
+			#binlog("Battery check", 'system/battery.php: The file sonos.cfg could not be parsed, the file may be disruppted. Please check/save your Plugin Config or check file "sonos.cfg" manually!');
+			LOGERR('system/battery.php: The file sonos.cfg could not be parsed, the file may be disruppted. Please check/save your Plugin Config or check file "sonos.cfg" manually!');
 			exit(1);
 		}
-		#LOGDEB("bin/battery.php Sonos config has been loaded");
+		#LOGDEB("system/battery.php: Sonos config has been loaded");
 	}
 	// Parsen der Sonos Zonen Konfigurationsdatei player.cfg
 	if (!file_exists($myFolder.'/player.cfg')) {
-		#LOGWARN('bin/battery.php: The file player.cfg could not be opened, please try again!');
+		LOGWARN('system/battery.php: The file player.cfg could not be opened, please try again!');
 	} else {
 		$tmpplayer = parse_ini_file($myFolder.'/player.cfg', true);
 		if ($tmpplayer === false)  {
-			binlog("Battery check", 'bin/battery.php The file player.cfg could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file "player.cfg" manually!');
+			#binlog("Battery check", 'system/battery.php: The file player.cfg could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file "player.cfg" manually!');
+			LOGERR('system/battery.php: The file player.cfg could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file "player.cfg" manually!');
 			exit(1);
 		}
-		#LOGDEB("bin/battery.php Player config has been loaded");
+		#LOGDEB("system/battery.php: Player config has been loaded");
 	}
 	$player = ($tmpplayer['SONOSZONEN']);
 	foreach ($player as $zonen => $key) {
@@ -211,7 +225,7 @@ function parseConfigFile()    {
 function shutdown()
 {
 	global $log;
-	#LOGEND("check finished");
+	LOGEND("Battery check finished");
 }
 
 

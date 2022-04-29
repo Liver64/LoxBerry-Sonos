@@ -10,7 +10,7 @@
 # Will be executed as user "loxberry".
 
 REPLACELBPBINDIR/cleanup_sonos.php
-# REPLACELBPBINDIR/push_alarm.php
+REPLACELBPBINDIR/push_alarm.php
 rm /run/shm/s4lox_date
 rm /run/shm/s4lox_bin_err
 rm /run/shm/s4lox_fav*

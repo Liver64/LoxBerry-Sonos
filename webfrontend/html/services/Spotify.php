@@ -21,7 +21,7 @@ function AddSpotify() {
 	// album geht = 0PNXB6AmSfM9oS0YwNkCYH, 7GcrxecamwbZqW0Vf0TEo7
 	// track geht = 4hKWUzhQWsOkgT6LnDEASe, 7vGuf3Y35N4wmASOKLUVVU, 56zQMVWGBBTVSItzddscyj, 6If6tXpbwYs5zBop1AqfwG
 	
-	$sonos = new PHPSonos($sonoszone[$master][0]);
+	$sonos = new SonosAccess($sonoszone[$master][0]);
 	$rincon = $sonoszone[$master][1];
 	$curr_track_tmp = $sonos->GetPositionInfo();
 	// check if Radio/Line IN/TV is playing, then switch to PL

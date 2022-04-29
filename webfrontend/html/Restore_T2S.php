@@ -15,12 +15,13 @@
 function restoreSingleZone() {
 	global $sonoszone, $sonos, $master, $actual, $time_start, $mode, $tts_stat;
 	
+	#print_r($actual);
 	#if (!$_GET['member']) {
 	$restore = $actual;
 	switch ($restore) {
 		// Zone was playing in Single Mode
 		case $actual[$master]['ZoneStatus'] == 'single':
-			$prevStatus = "single";
+			#$prevStatus = "single";
 			restore_details($master);
 			$sonos->SetVolume($actual[$master]['Volume']);
 			$sonos->SetMute($actual[$master]['Mute']);
@@ -32,7 +33,7 @@ function restoreSingleZone() {
 		
 		// Zone was Member of a group
 		case $actual[$master]['ZoneStatus'] == 'member':
-			$prevStatus = "member";
+			#$prevStatus = "member";
 			$sonos->SetAVTransportURI($actual[$master]['PositionInfo']["TrackURI"]); 
 			$sonos->SetVolume($actual[$master]['Volume']);
 			$sonos->SetMute($actual[$master]['Mute']);
@@ -41,56 +42,57 @@ function restoreSingleZone() {
 		
 		// Zone was Master of a group
 		case $actual[$master]['ZoneStatus'] == 'master':
-		
-		if (substr($actual[$master]['PositionInfo']["TrackURI"], 0, 15) == "x-rincon-stream") {
-			#echo "LineIn";
-			# Zone was Master of a group
-			$sonos = new PHPSonos($sonoszone[$master][0]);
-			$sonos->SetAVTransportURI($actual[$master]['PositionInfo']["TrackURI"]);
-			
-			# Restore Zone Members
-			$tmp_group = $actual[$master]['Grouping'];
-			$tmp_group1st = array_shift($tmp_group);
-			foreach ($tmp_group as $groupmem) {
-				$sonos = new PHPSonos($sonoszone[$groupmem][0]);
-				$sonos->SetAVTransportURI($actual[$groupmem]['PositionInfo']["TrackURI"]);
-				$sonos->SetVolume($actual[$groupmem]['Volume']);
-				$sonos->SetMute($actual[$groupmem]['Mute']);
-			}
-			# Start restore Master settings
-			$sonos = new PHPSonos($sonoszone[$master][0]);
-			$sonos->SetVolume($actual[$master]['Volume']);
-			$sonos->SetMute($actual[$master]['Mute']);
-		} else {
-			#echo "Normal";
-			$prevStatus = "master";
-			$oldGroup = $actual[$master]['Grouping'];
-			$exMaster = array_shift($oldGroup); // deletes previous master from array
-			foreach ($oldGroup as $newMaster) {
-				// loop threw former Members in order to get the New Coordinator
-				$sonos = new PHPSonos($sonoszone[$newMaster][0]);
-				$check = $sonos->GetPositionInfo();
-				$checkMaster = $check['TrackURI'];
-				if (empty($checkMaster)) {
-					// if TrackURI is empty add Zone to New Coordinator
-					$sonos_old = new PHPSonos($sonoszone[$master][0]);
-					$sonos_old->SetVolume($actual[$master]['Volume']);
-					$sonos_old->SetMute($actual[$master]['Mute']);
-					$sonos_old->SetAVTransportURI("x-rincon:" . $sonoszone[$newMaster][1]);
+			if ($actual[$master]['Type'] == "LineIn") {
+				#echo "LineIn";
+				# Zone was Master of a group
+				$sonos = new SonosAccess($sonoszone[$master][0]);
+				$sonos->SetAVTransportURI($actual[$master]['PositionInfo']["TrackURI"]);
+				
+				# Restore Zone Members
+				$tmp_group = $actual[$master]['Grouping'];
+				$tmp_group1st = array_shift($tmp_group);
+				foreach ($tmp_group as $groupmem) {
+					$sonos = new SonosAccess($sonoszone[$groupmem][0]);
+					$sonos->SetAVTransportURI($actual[$groupmem]['PositionInfo']["TrackURI"]);
+					$sonos->SetVolume($actual[$groupmem]['Volume']);
+					$sonos->SetMute($actual[$groupmem]['Mute']);
 				}
+				# Start restore Master settings
+				$sonos = new SonosAccess($sonoszone[$master][0]);
+				$sonos->SetVolume($actual[$master]['Volume']);
+				$sonos->SetMute($actual[$master]['Mute']);
+			} else {
+				#$prevStatus = "master";
+				$oldGroup = $actual[$master]['Grouping'];
+				$exMaster = array_shift($oldGroup); // deletes previous master from array
+				foreach ($oldGroup as $newMaster) {
+					// loop threw former Members in order to get the New Coordinator
+					$sonos = new SonosAccess($sonoszone[$newMaster][0]);
+					$check = $sonos->GetPositionInfo();
+					$checkMaster = $check['TrackURI'];
+					if (empty($checkMaster)) {
+						// if TrackURI is empty add Zone to New Coordinator
+						$sonos_old = new SonosAccess($sonoszone[$master][0]);
+						$sonos_old->SetVolume($actual[$master]['Volume']);
+						$sonos_old->SetMute($actual[$master]['Mute']);
+						$sonos_old->SetAVTransportURI("x-rincon:" . $sonoszone[$newMaster][1]);
+					}
+				}
+				# add previous master back to group and restore settings
+				$sonos = new SonosAccess($sonoszone[$exMaster][0]);
+				#restore_details($exMaster);
+				$sonos->SetAVTransportURI("x-rincon:" . $sonoszone[$newMaster][1]);
+				$sonos->SetVolume($actual[$exMaster]['Volume']);
+				$sonos->SetMute($actual[$exMaster]['Mute']);
+			try {
+				$sonos = new SonosAccess($sonoszone[$newMaster][0]);
+				$sonos->DelegateGroupCoordinationTo($sonoszone[$master][1], 1);
+				$sonos = new SonosAccess($sonoszone[$master][0]);
+				restore_details($master);
+				LOGGING("restore_t2s.php: Zone ".$master." has been added back to group.", 6);
+			} catch (Exception $e) {
+				LOGGING("restore_t2s.php: Assignment to new GroupCoordinator " . $master . " failed.",5);	
 			}
-			# add previous master back to group and restore settings
-			$sonos = new PHPSonos($sonoszone[$exMaster][0]);
-			$sonos->SetAVTransportURI("x-rincon:" . $sonoszone[$newMaster][1]);
-			$sonos->SetVolume($actual[$exMaster]['Volume']);
-			$sonos->SetMute($actual[$exMaster]['Mute']);
-		try {
-			$sonos = new PHPSonos($sonoszone[$newMaster][0]);
-			$sonos->DelegateGroupCoordinationTo($sonoszone[$master][1], 1);
-			LOGGING("restore_t2s.php: Zone ".$master." has been added back to group.", 6);
-		} catch (Exception $e) {
-			LOGGING("restore_t2s.php: Assignment to new GroupCoordinator " . $master . " failed.",5);	
-		}
 		}
 	break;
 	}
@@ -114,7 +116,7 @@ function restoreGroupZone() {
 	
 	#print_r($actual);
 	foreach ($member as $zone) {
-		$sonos = new PHPSonos($sonoszone[$zone][0]);
+		$sonos = new SonosAccess($sonoszone[$zone][0]);
 		$sonos->BecomeCoordinatorOfStandaloneGroup();
 	}
 	// add Master to array
@@ -125,34 +127,14 @@ function restoreGroupZone() {
 		#echo $player.'<br>';
 		#echo $zone.'<br>';
 		$restore = $actual[$player]['ZoneStatus'];
-		$sonos = new PHPSonos($sonoszone[$player][0]);
+		$sonos = new SonosAccess($sonoszone[$player][0]);
 		switch($restore) {
 			
 		case 'single';  
 			#echo 'Die Zone '.$player.' ist single<br>';
 			// Zone was playing as Single Zone
 			if (empty($actual[$player]['Grouping'])) {
-			# Playlist
-			if ((substr($actual[$player]['PositionInfo']["TrackURI"], 0, 18) !== "x-sonos-htastream:") &&
-				(empty($actual[$master]['MediaInfo']["CurrentURIMetaData"]))) {	
-				if ($actual[$player]['PositionInfo']['Track'] != "0")    {				
-					RestoreShuffle($player);
-				}
-				} 
-				# TV Playbar
-				elseif (substr($actual[$player]['PositionInfo']["TrackURI"], 0, 18) == "x-sonos-htastream:") {
-					$sonos->SetAVTransportURI($actual[$player]['PositionInfo']["TrackURI"]); 
-				} 
-				# LineIn
-				elseif (substr($actual[$player]['PositionInfo']["TrackURI"], 0, 15) == "x-rincon-stream") {
-					$sonos->SetAVTransportURI($actual[$player]['PositionInfo']["TrackURI"]); 
-				} 
-				# Radio Station
-				elseif (!empty($actual[$master]['MediaInfo']["CurrentURIMetaData"])) {
-					#@$radioname = $actual[$player]['MediaInfo']["title"];
-					#$sonos->SetRadio($actual[$player]['PositionInfo']["TrackURI"], $radioname);
-					$sonos->SetAVTransportURI($actual[$player]['MediaInfo']["CurrentURI"], ($actual[$player]['MediaInfo']["CurrentURIMetaData"])); 
-				}
+				restore_details($player);
 			}
 			$sonos->SetVolume($actual[$player]['Volume']);
 			$sonos->SetMute($actual[$player]['Mute']);
@@ -167,7 +149,7 @@ function restoreGroupZone() {
 		case 'member';
 			#echo 'Die Zone '.$player.' ist member<br>';
 			# Zone was Member of a group
-			$sonos = new PHPSonos($sonoszone[$player][0]);
+			$sonos = new SonosAccess($sonoszone[$player][0]);
 			$tmp_checkmember = $actual[$player]['PositionInfo']["TrackURI"];
 			$sonos->SetAVTransportURI($tmp_checkmember);
 			$sonos->SetVolume($actual[$player]['Volume']);
@@ -177,46 +159,25 @@ function restoreGroupZone() {
 			
 			
 		case 'master';
+			#echo "MASTER";
 			#echo 'Die Zone '.$player.' ist master<br>';
 			# Zone was Master of a group
-			$sonos = new PHPSonos($sonoszone[$player][0]);
-			# Playlist
-			if ((substr($actual[$player]['PositionInfo']["TrackURI"], 0, 18) !== "x-sonos-htastream:") &&
-				(empty($actual[$player]['MediaInfo']["CurrentURIMetaData"]))) {	
-				#(empty($actual[$master]['MediaInfo']["CurrentURIMetaData"]))) {					
-					if ($actual[$master]['PositionInfo']['Track'] != "0")    {
-						#RestoreShuffle($actual, $player);
-						RestoreShuffle($master);
-					}
-				} 
-				# TV Playbar
-				elseif (substr($actual[$player]['PositionInfo']["TrackURI"], 0, 18) == "x-sonos-htastream:")   {
-					$sonos->SetAVTransportURI($actual[$player]['PositionInfo']["TrackURI"]); 
-				} 
-				# LineIn
-				elseif (substr($actual[$player]['PositionInfo']["TrackURI"], 0, 15) == "x-rincon-stream")   {
-					$sonos->SetAVTransportURI($actual[$player]['PositionInfo']["TrackURI"]); 
-				} 
-				# Radio Station
-				elseif (!empty($actual[$master]['MediaInfo']["CurrentURIMetaData"]))    {
-					#@$radionam = @$actual[$player]['MediaInfo']["title"];
-					#$sonos->SetRadio($actual[$player]['PositionInfo']['TrackURI'],"$radionam");
-					$sonos->SetAVTransportURI($actual[$player]['MediaInfo']["CurrentURI"], ($actual[$player]['MediaInfo']["CurrentURIMetaData"])); 
-			}
+			$sonos = new SonosAccess($sonoszone[$player][0]);
+			restore_details($player);
+			
 			# Restore Zone Members
 			#echo "TEST MEMBER<br>";
 			$tmp_group = $actual[$player]['Grouping'];
 			$tmp_group1st = array_shift($tmp_group);
 			foreach ($tmp_group as $groupmem) {
-				$sonos = new PHPSonos($sonoszone[$groupmem][0]);
+				$sonos = new SonosAccess($sonoszone[$groupmem][0]);
 				$sonos->SetAVTransportURI($actual[$groupmem]['PositionInfo']["TrackURI"]);
 				$sonos->SetVolume($actual[$groupmem]['Volume']);
 				$sonos->SetMute($actual[$groupmem]['Mute']);
-				#LOGGING("restore_t2s.php: Member Zone ".$player." has been added back to group.", 6);
 			}
 			# Start restore Master settings
 			#echo "TEST MASTER<br>";
-			$sonos = new PHPSonos($sonoszone[$player][0]);
+			$sonos = new SonosAccess($sonoszone[$player][0]);
 			$sonos->SetVolume($actual[$player]['Volume']);
 			$sonos->SetMute($actual[$player]['Mute']);
 			if($actual[$player]['TransportInfo'] != 1) {
@@ -235,7 +196,7 @@ function restoreGroupZone() {
 }	
 
 /**
-* Function : PlayList --> load previous saved Playlist back into Queue 
+* Function : PlayList --> load previous saved Temp Playlist back into Queue 
 *
 * @param: PlayList                             
 * @return: empty
@@ -281,7 +242,7 @@ function read_txt_file_to_array() {
 }
 
 /**
-* Function : restore_details() --> restore the details of master zone
+* Function : restore_details() --> restore the details of each zone
 *
 * @param: 
 * @return: 
@@ -289,29 +250,42 @@ function read_txt_file_to_array() {
 
 function restore_details($zone) {
 	global $sonoszone, $sonos, $master, $actual, $j, $browselist, $senderName;
-	
+
+	#print_r($actual);
 	# Playlist/Track
-	if ((substr($actual[$zone]['PositionInfo']["TrackURI"], 0, 17) !== "x-sonos-htastream") && (empty($actual[$master]['MediaInfo']["CurrentURIMetaData"])))   {			
+	if ($actual[$zone]['Type'] == "Track")   {
+		#echo "TRACK for ".$zone."<br>";		
 		if ($actual[$zone]['PositionInfo']['Track'] != "0")    {
 			$sonos->SetTrack($actual[$zone]['PositionInfo']['Track']);
-			$sonos->Seek($actual[$zone]['PositionInfo']['RelTime'],"NONE");
-			if (empty($actual[$zone]['MediaInfo']["CurrentURIMetaData"]))  {
-				RestoreShuffle($zone);
-			}
+			$sonos->Seek("REL_TIME", $actual[$zone]['PositionInfo']['RelTime']);
+			RestoreShuffle($zone);
+			LOGGING("restore_t2s.php: Source 'Track' has been set for '".$zone."'", 7);
 		}
 	} 
 	# TV
-	elseif (substr($actual[$zone]['PositionInfo']["TrackURI"], 0, 18) == "x-sonos-htastream:") {
+	elseif ($actual[$zone]['Type'] == "TV") {
+		#echo "TV for ".$zone."<br>";	
 		$sonos->SetAVTransportURI($actual[$zone]['PositionInfo']["TrackURI"]); 
+		LOGGING("restore_t2s.php: Source 'TV' has been set for '".$zone."'", 7);
 	} 
 	# LineIn
-	elseif (substr($actual[$zone]['PositionInfo']["TrackURI"], 0, 15) == "x-rincon-stream") {
+	elseif ($actual[$zone]['Type'] == "LineIn") {
+		#echo "LineIn for ".$zone."<br>";	
 		$sonos->SetAVTransportURI($actual[$zone]['PositionInfo']["TrackURI"]); 
+		LOGGING("restore_t2s.php: Source 'LineIn' has been set for '".$zone."'", 7);
 	} 
 	# Radio Station
-	elseif (!empty($actual[$master]['MediaInfo']["CurrentURIMetaData"])) {
-		$sonos->SetAVTransportURI($actual[$zone]['MediaInfo']["CurrentURI"], ($actual[$zone]['MediaInfo']["CurrentURIMetaData"])); 
+	elseif ($actual[$zone]['Type'] == "Radio") {
+		#echo "Radio for ".$zone."<br>";	
+		@$sonos->SetAVTransportURI($actual[$zone]['MediaInfo']["CurrentURI"], htmlspecialchars_decode($actual[$zone]['MediaInfo']["CurrentURIMetaData"])); 
+		LOGGING("restore_t2s.php: Source 'Radio' has been set for '".$zone."'", 7);
+	}
+	# Queue empty
+	elseif (empty($actual[$zone]['Type'])) {
+		#echo "No Queue for ".$zone."<br>";	
+		LOGGING("restore_t2s.php: '".$zone."' had no Queue", 7);
 	} else {
+		#echo "Something went wrong :-(<br>";	
 		LOGGING("restore_t2s.php: Something went wrong :-(", 4);
 	}
 	return;
@@ -329,7 +303,7 @@ function RestoreShuffle($player) {
 	
 	global $sonoszonen, $actual;
 	
-	$sonos = new PHPSonos($sonoszonen[$player][0]);
+	$sonos = new SonosAccess($sonoszonen[$player][0]);
 	$mode = $actual[$player]['TransportSettings'];
 	playmode_detection($player, $mode);
 	$pl = $sonos->GetCurrentPlaylist();
@@ -340,17 +314,17 @@ function RestoreShuffle($player) {
 		$track = (string)$pl[$trackNoSearch]['listid'];
 		if ($actual[$player]['PositionInfo']['Track'] != "0")    {
 			$sonos->SetTrack($track);
-			$sonos->Seek($actual[$player]['PositionInfo']['RelTime'],"NONE");	
+			$sonos->Seek("REL_TIME", $actual[$player]['PositionInfo']['RelTime']);			
 		}
 	// falls SHUFFLE aus
 	} else {
 		# nur wenn die Queue NICHT leer war
 		if ($actual[$player]['PositionInfo']['Track'] != "0")    {
 			$sonos->SetTrack($actual[$player]['PositionInfo']['Track']);
-			$sonos->Seek($actual[$player]['PositionInfo']['RelTime'],"NONE");	
+			$sonos->Seek("REL_TIME", $actual[$player]['PositionInfo']['RelTime']);			
 		}
 	}
-	LOGGING("restore_t2s.php: Previous playmode has been restored.", 6);
+	LOGGING("restore_t2s.php: Previous playmode for '".$player."' has been restored.", 6);
 }
 	
 ?>

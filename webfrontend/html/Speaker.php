@@ -15,7 +15,7 @@
 function LineIn() {
 	global $sonoszone, $master;
 	
-	$sonos = new PHPSonos($sonoszone[$master][0]); //Sonos IP Adresse
+	$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
 	$url = "http://" . $sonoszone[$master][0] . ":1400/xml/device_description.xml";
 	$xml = simpleXML_load_file($url);
 	$model = $xml->device->modelNumber;
@@ -43,7 +43,7 @@ function LineIn() {
 function SetVolumeModeConnect($mode, $zonenew)  {
 	global $sonoszone, $sonos, $mode, $time_start;
 	
-	$sonos = new PHPSonos($sonoszone[$zonenew][0]);
+	$sonos = new SonosAccess($sonoszone[$zonenew][0]);
 	$getModel = $sonoszone[$zonenew][2];
 	$model = OnlyCONNECT($getModel);
 	if ($model === true) {
@@ -65,7 +65,7 @@ function GetVolumeModeConnect($player)  {
 	global $sonoszone, $master, $sonos, $modeback, $player;
 	
 	$modeback = "";
-	$sonos = new PHPSonos($sonoszone[$player][0]);
+	$sonos = new SonosAccess($sonoszone[$player][0]);
 	$getModel = $sonoszone[$player][2];
 	$model = OnlyCONNECT($getModel);
 	if ($model === true) {

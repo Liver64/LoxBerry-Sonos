@@ -9,4 +9,4 @@
 
 # Will be executed as user "loxberry".
 
-rm REPLACELBPDATADIR/backup
+rm -r REPLACELBPDATADIR/backup

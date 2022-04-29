@@ -137,6 +137,10 @@ if ($pcfg->param("SYSTEM.checkt2s") eq '')  {
 if (!defined $pcfg->param("VARIOUS.volmax"))  {
 	$pcfg->param("VARIOUS.volmax", "0");
 }
+# Loxdaten an MQTT
+if (!defined $pcfg->param("LOXONE.LoxDatenMQTT"))  {
+	$pcfg->param("LOXONE.LoxDatenMQTT", "false");
+}
 	
 
 ##########################################################################
@@ -433,6 +437,8 @@ sub form
 		LOGDEB "MQTT Gateway is installed and valid credentials received.";
 	} else {
 		$template->param("MQTT" => "false");
+		$pcfg->param("LOXONE.LoxDatenMQTT", "false");
+		$pcfg->save() or &error;
 		LOGDEB "MQTT Gateway is not installed or wrong credentials received.";
 	}
 	
@@ -594,6 +600,7 @@ sub save
 	$pcfg->param("LOXONE.Loxone", "$sel_ms");
 	$pcfg->param("LOXONE.LoxDaten", "$R::sendlox");
 	$pcfg->param("LOXONE.LoxPort", "$R::udpport");
+	$pcfg->param("LOXONE.LoxDatenMQTT", "$R::sendloxMQTT");
 	$pcfg->param("TTS.t2s_engine", "$R::t2s_engine");
 	$pcfg->param("TTS.messageLang", "$R::t2slang");
 	$pcfg->param("TTS.API-key", "$R::apikey");
@@ -849,6 +856,7 @@ sub inittemplate
 
 sub printtemplate
 {
+	#our $htmlhead = '<link rel="stylesheet" type="text/css" href="css/flipswitch.css" media="screen" />';
 	LoxBerry::Web::lbheader("$SL{'BASIS.MAIN_TITLE'}: v$sversion", $helplink, $helptemplate);
 	print LoxBerry::Log::get_notifications_html($lbpplugindir);
 	print $template->output();

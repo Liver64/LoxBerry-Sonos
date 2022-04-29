@@ -6,21 +6,29 @@ require_once "loxberry_log.php";
 require_once "loxberry_io.php";
 require_once "$lbpbindir/phpmqtt/phpMQTT.php";
 
-require_once("$lbphtmldir/system/PHPSonos.php");
+require_once("$lbphtmldir/system/sonosAccess.php");
 require_once("$lbphtmldir/system/error.php");
 require_once("$lbphtmldir/system/logging.php");
 require_once("$lbphtmldir/Helper.php");
+require_once("$lbphtmldir/Metadata.php");
 require_once("$lbphtmldir/Grouping.php");
 require_once("$lbphtmldir/system/io-modul.php");
 include("$lbpbindir/binlog.php");
 
 
-#echo '<PRE>';
+echo '<PRE>';
 #echo "<br>";
 
 # check if T2S is currently running, if yes we skip
 $tmp_tts = "/run/shm/s4lox_tmp_tts";
 if (is_file($tmp_tts))   {
+	exit;
+}
+
+$off_file 			= $lbplogdir."/s4lox_off.tmp";					// path/file for Script turned off
+
+# check if script/Sonos Plugin is off
+if (file_exists($off_file)) {
 	exit;
 }
 
@@ -50,19 +58,18 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 	# get MS
 	$ms = LBSystem::get_miniservers();
 	
-	// Get the MQTT Gateway connection details from LoxBerry
-	$creds = mqtt_connectiondetails();
-	 
-	// MQTT requires a unique client id
-	$client_id = uniqid(gethostname()."_client");
-
-	$mqtt = new Bluerhinos\phpMQTT($creds['brokerhost'],  $creds['brokerport'], $client_id);
-	if( $mqtt->connect(true, NULL, $creds['brokeruser'], $creds['brokerpass'] ) ) {
+	if(is_enabled($tmpsonos['LOXONE']['LoxDatenMQTT'])) {
+		// Get the MQTT Gateway connection details from LoxBerry
+		$creds = mqtt_connectiondetails();
+		// MQTT requires a unique client id
+		$client_id = uniqid(gethostname()."_client");
+		$mqtt = new Bluerhinos\phpMQTT($creds['brokerhost'],  $creds['brokerport'], $client_id);
+		$mqtt->connect(true, NULL, $creds['brokeruser'], $creds['brokerpass']);
 		$mqttstat = "1";
 	} else {
 		$mqttstat = "0";
 	}
-	
+	#echo $mqttstat;
 	// Parsen der Sonos Zonen Konfigurationsdatei player.cfg
 	if (!file_exists($myFolder.'/player.cfg')) {
 		binlog("Push data", "/bin/push_loxone.php: The file player.cfg could not be opened, please try again! We skip here.");
@@ -82,7 +89,7 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 	// Übernahme und Deklaration von Variablen aus der Konfiguration
 	$sonoszonen = $config['sonoszonen'];
 	
-// check if zones are connected	
+	// check if zones are connected	
 	if (!isset($config['SYSTEM']['checkonline']))  {
 		$checkonline = true;
 	} else if ($config['SYSTEM']['checkonline'] == "1")  {
@@ -113,7 +120,7 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 	// identify those zones which are not single/master
 	$tmp_playing = array();
 	foreach ($sonoszone as $zone => $player) {
-		$sonos = new PHPSonos($sonoszone[$zone][0]);
+		$sonos = new SonosAccess($sonoszone[$zone][0]);
 		$zoneStatus = getZoneStatus($zone);
 		if ($zoneStatus === 'single') {
 			array_push($tmp_playing, $zone);
@@ -127,7 +134,7 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 	// identify single/master zone currently playing
 	$playing = array();
 	foreach ($tmp_playing as $tmp_player)  {
-		$sonos = new PHPSonos($sonoszone[$tmp_player][0]);
+		$sonos = new SonosAccess($sonoszone[$tmp_player][0]);
 		if ($sonos->GetTransportInfo() == "1")  {
 			array_push($playing, $tmp_player);
 		}
@@ -182,7 +189,7 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 		$tmp_array = array();
 		if ($socket = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP)) {
 			foreach ($sonoszone as $zone => $player) {
-				$sonos = new PHPSonos($sonoszone[$zone][0]);
+				$sonos = new SonosAccess($sonoszone[$zone][0]);
 				$orgsource = $sonos->GetPositionInfo();
 				$temp_volume = $sonos->GetVolume();
 				$zoneStatus = getZoneStatus($zone);
@@ -199,7 +206,7 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 				if (substr($orgsource['TrackURI'] ,0 ,9) == "x-rincon:") {
 					$tmp_rincon = substr($orgsource['TrackURI'] ,9 ,24);
 					$newMaster = searchForKey($tmp_rincon, $sonoszone);
-					$sonos = new PHPSonos($sonoszone[$newMaster][0]);
+					$sonos = new SonosAccess($sonoszone[$newMaster][0]);
 					$gettransportinfo = $sonos->GetTransportInfo();
 				// Zone ist Master einer Gruppe oder Single Zone
 				} else {
@@ -218,8 +225,10 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 			LOGERR("Can't create UDP socket to $server_ip");
 			exit(1);
 		}
-		
-		$response = udp_send_mem($no_ms, $server_port, "Sonos4lox", $tmp_array);
+		#print_r($tmp_array);
+		if ($mqttstat == "0")   {
+			$response = udp_send_mem($no_ms, $server_port, "Sonos4lox", $tmp_array);
+		}
 		
 	
 	/**
@@ -234,13 +243,14 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 		global $config, $mqtt, $mqttstat, $my_ms, $sonoszone, $sonoszonen, $sonos, $valuesplit, $split, $station, $nextr; 
 
 		foreach ($sonoszone as $zone => $player) {
-			$sonos = new PHPSonos($sonoszone[$zone][0]);
+			$sonos = new SonosAccess($sonoszone[$zone][0]);
 			$temp = $sonos->GetPositionInfo();
+			$sid = getStreamingService($player[0]);
 			// Zone ist Member einer Gruppe
 			if (substr($temp['TrackURI'] ,0 ,9) == "x-rincon:") {
 				$tmp_rincon = substr($temp['TrackURI'] ,9 ,24);
 				$newMaster = searchForKey($tmp_rincon, $sonoszone);
-				$sonos = new PHPSonos($sonoszone[$newMaster][0]);
+				$sonos = new SonosAccess($sonoszone[$newMaster][0]);
 				$temp = $sonos->GetPositionInfo();
 				$tempradio = $sonos->GetMediaInfo();
 				$gettransportinfo = $sonos->GetTransportInfo();
@@ -250,29 +260,36 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 				$gettransportinfo = $sonos->GetTransportInfo();
 			}
 			if ($gettransportinfo == 1) {
-				// Normales Radio wird gerade gespielt
 				$haystack = $tempradio["CurrentURI"];
-				$needle = "sid=254";		// sid=254 für alle Radiosender
-				$needleSonos = "sid=303";		// sid=303 für Sonos Radiosender
-				$contain = mb_strpos($haystack, $needle) !== false;
-				$containSonos = mb_strpos($haystack, $needleSonos) !== false;
-				if ($contain === true or substr($tempradio['CurrentURI'] ,0 ,18) == "x-rincon-mp3radio:")   {
-					$valuesplit[0] = ' ';
-					$valuesplit[1] = ' ';
-					$value = ' ';
-					$station = $tempradio["title"];
-					$source = 1;
-				} 
-				// TV läuft
-				if (substr($temp["TrackURI"], 0, 17) == "x-sonos-htastream" && $containSonos === false && $contain === false && substr($tempradio['CurrentURI'] ,0 ,18) != "x-rincon-mp3radio:") {	
+				$needle = "sid=254";		// sid=254 für TuneIn
+				$containTuneIn = mb_strpos($haystack, $needle) !== false;
+				#$sid = getStreamingService($player[0]);
+				// Radio
+				if (substr($tempradio['UpnpClass'] ,0 ,36) == "object.item.audioItem.audioBroadcast")   {
+					$source = 1;											// Quelle Radio
+					$station = "Radio ".$tempradio["title"];				// Sender
+					# TuneIn Radio
+					if ($containTuneIn === true)  {	
+						$value = ' ';										// kombinierte Titel- und Interpretinfo
+						$valuesplit[0] = ' ';								// Nur Titelinfo
+						$valuesplit[1] = ' ';								// Nur Interpreteninfo
+					# All others
+					} else {
+						$value = $temp["title"]." - ".$temp["artist"]; 		// kombinierte Titel- und Interpretinfo
+						$valuesplit[0] = $temp["title"]; 					// Nur Titelinfo
+						$valuesplit[1] = $temp["artist"];					// Nur Interpreteninfo
+					} 
+				}
+				// TV 
+				if (substr($temp["TrackURI"], 0, 17) == "x-sonos-htastream")     {	
 					$value = "TV";
 					$valuesplit[0] = "TV";
 					$valuesplit[1] = "TV";
 					$station = ' ';
 					$source = 3;
 				} 
-				// Playliste wird gerade gespielt
-				if (substr($temp["TrackURI"], 0, 17) != "x-sonos-htastream" && $containSonos === false && $contain === false && substr($tempradio['CurrentURI'] ,0 ,18) != "x-rincon-mp3radio:") {	
+				// Playliste 
+				if (substr($temp["TrackURI"], 0, 17) != "x-sonos-htastream" && substr($tempradio['UpnpClass'] ,0 ,36) != "object.item.audioItem.audioBroadcast") {						
 					$artist = substr($temp["artist"], 0, 30);
 					$title = substr($temp["title"], 0, 50);
 					if ($artist <> "")  { 
@@ -288,20 +305,8 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 					$station = ' ';
 					$source = 2;
 				}
-				// Sonos Radio wird gerade gespielt
-				if ($containSonos === true)  {	
-					$artist = substr($temp["artist"], 0, 30);
-					$title = substr($temp["title"], 0, 50);
-					if ($artist <> "")  { 
-						$value = $artist." - ".$title; 	// kombinierte Titel- und Interpretinfo
-						$valuesplit[0] = $title; 		// Nur Titelinfo
-						$valuesplit[1] = $artist;		// Nur Interpreteninfo
-						$station = "Sonos Radio - ".$tempradio["title"];
-						$source = 1;
-					}
-				}
 				// Übergabe der Titelinformation an Loxone (virtueller Texteingang)
-				$sonos = new PHPSonos($sonoszone[$zone][0]);
+				$sonos = new SonosAccess($sonoszone[$zone][0]);
 				$valueurl = ($value);
 				try {
 					$data['titint_'.$zone] = $valueurl;
@@ -309,12 +314,17 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 					$data['int_'.$zone] = $valuesplit[1];
 					$data['radio_'.$zone] = $station;
 					$data['source_'.$zone] = $source;
+					if ($value == "TV")  {
+						$sid = "TV";
+					}
+					$data['sid_'.$zone] = $sid;
 					if ($mqttstat == "1")   {
 						$mqtt->publish('Sonos4lox/titint/'.$zone, $data['titint_'.$zone], 0, 1);
 						$mqtt->publish('Sonos4lox/tit/'.$zone, $data['tit_'.$zone], 0, 1);
 						$mqtt->publish('Sonos4lox/int/'.$zone, $data['int_'.$zone], 0, 1);
 						$mqtt->publish('Sonos4lox/radio/'.$zone, $data['radio_'.$zone], 0, 1);
 						$mqtt->publish('Sonos4lox/source/'.$zone, $data['source_'.$zone], 0, 1);
+						$mqtt->publish('Sonos4lox/sid/'.$zone, $data['sid_'.$zone], 0, 1);
 					}
 				} catch (Exception $e) {
 					LOGERR("The connection to Loxone could not be initiated!");	
@@ -325,23 +335,29 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 				$valuesplit[1] = ' ';
 				$valueurl = ' ';
 				$station = ' ';
+				$sid = ' ';
 				$source = 0;
 				$data['titint_'.$zone] = $valueurl;
 				$data['tit_'.$zone] = $valuesplit[0];
 				$data['int_'.$zone] = $valuesplit[1];
 				$data['radio_'.$zone] = $station;
 				$data['source_'.$zone] = $source;
+				$data['sid_'.$zone] = $sid;
 				if ($mqttstat == "1")   {
 					$mqtt->publish('Sonos4lox/titint/'.$zone, $data['titint_'.$zone], 0, 1);
 					$mqtt->publish('Sonos4lox/tit/'.$zone, $data['tit_'.$zone], 0, 1);
 					$mqtt->publish('Sonos4lox/int/'.$zone, $data['int_'.$zone], 0, 1);
 					$mqtt->publish('Sonos4lox/radio/'.$zone, $data['radio_'.$zone], 0, 1);
-					$mqtt->publish('Sonos4lox/source/'.$zone, 0, 0, 1);
+					$mqtt->publish('Sonos4lox/source/'.$zone, $data['source_'.$zone], 0, 1);
+					$mqtt->publish('Sonos4lox/sid/'.$zone, $data['sid_'.$zone], 0, 1);
 				}
 			}
 		}
-		ms_send_mem($config['LOXONE']['Loxone'], $data, $value = null);
-		$mqtt->close();
+		if ($mqttstat == "0")   {
+			ms_send_mem($config['LOXONE']['Loxone'], $data, $value = null);
+		} else {
+			$mqtt->close();
+		}
 		#print_r($data);
 	}
 	
