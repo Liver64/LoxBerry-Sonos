@@ -363,10 +363,10 @@
 			[IMPROVEMENT] Neue Funktion 'togglemute' zum Mute switchen (Mute On, Mute off)
  4.1.6		[BUGFIX] Fixed Group Volume bei sonosplaylist unter Verwendung von member=all
 			[BUGFIX] Fixed Sonos Favorites/Playlist handling
- 4.1.7		[IMPROVEMENT] Umstellung des Plugin Kerns von UPNP auf SOAP Kommunikation
-			[IMPROVEMENT] Neuer Service um sämtliche Sonos Alarme und deren Status (aktiv/nicht aktiv) zum MS zu pushen (Cronjob daily)
+ 5.0.0		[IMPROVEMENT] Umstellung des Plugin Kerns von UPNP auf SOAP Kommunikation
+			[IMPROVEMENT] Neuer Service um sämtliche Sonos Alarme und deren Status (aktiv/nicht aktiv) zum MS zu pushen (Cronjob daily, Werte als Minuten seid Miternacht)
 			[BUGFIX] Fixed Sonos Alarms on/off
-			[IMPROVEMENT] Neue Funktion 'surround' für BEAM, PLAYBAR, ARC, PLAYBASE Surround ein-/auszuschalten
+			[IMPROVEMENT] Neue Funktion 'surround' für BEAM, PLAYBAR, ARC, PLAYBASE um Surround ein-/auszuschalten
 			[IMPROVEMENT] Neue Funktion 'subbass' um den Bass für einen Sub ein-/auszuschalten
 			[IMPROVEMENT] Daten von Sonos an MS entweder über MQTT oder UDP senden. Muss in Plugin Config eingeschaltet werden --> default = UDP!
 			[BUGFIX] Fixed Radio Handling in Datenübertragung Sonos --> MS

@@ -264,7 +264,7 @@ function PlayAllFavorites()
 			} else {
 				# if last element loaded delete files
 				if(isset($_GET['member'])) {
-					removemember();
+					#removemember();
 					LOGINF ("queue.php: Member has been removed");
 				}
 				@unlink($radiofav);
@@ -383,7 +383,7 @@ function PlayTrackFavorites()
 		} else {
 			@unlink($queuetracktmp);
 			if(isset($_GET['member'])) {
-				removemember();
+				#removemember();
 				LOGINF ("queue.php: Member has been removed");
 			}
 			LOGINF ("queue.php: File has been deleted");
@@ -499,7 +499,7 @@ function PlayRadioFavorites()
 		} else {
 			# if last element loaded delete files
 			if(isset($_GET['member'])) {
-				removemember();
+				#removemember();
 				LOGINF ("queue.php: Member has been removed");
 			}
 			@unlink($queueradiotmp);
@@ -568,7 +568,7 @@ function PlaySonosPlaylist()
 		} else {
 			# if last element loaded delete files
 			if(isset($_GET['member'])) {
-				removemember();
+				#removemember();
 				LOGINF ("queue.php: Member has been removed");
 			}
 			@unlink($pltmp);
@@ -634,7 +634,7 @@ function PlayTuneInPlaylist()
 		} else {
 			# if last element loaded delete files
 			if(isset($_GET['member'])) {
-				removemember();
+				#removemember();
 				LOGINF ("queue.php: Member has been removed");
 			}
 			@unlink($tuneinradiotmp);
@@ -704,7 +704,7 @@ function PlayPlaylistFavorites()
 		} else {
 			# if last element loaded delete files
 			if(isset($_GET['member'])) {
-				removemember();
+				#removemember();
 				LOGINF ("queue.php: Member has been removed");
 			}
 			@unlink($queuepltmp);

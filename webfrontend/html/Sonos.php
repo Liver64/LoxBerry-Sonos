@@ -1,9 +1,9 @@
- <?php
+<?php
 
 ##############################################################################################################################
 #
-# Version: 	4.1.6
-# Datum: 	04.2022
+# Version: 	5.0.1
+# Datum: 	05.2022
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
 ##############################################################################################################################
@@ -54,7 +54,7 @@ $sambaini = $lbhomedir.'/system/samba/smb.conf';				// path to Samba file smb.co
 $searchfor = '[plugindata]';									// search for already existing Samba share
 $MP3path = "mp3";												// path to preinstalled numeric MP3 files
 $sleeptimegong = "3";											// waiting time before playing t2s
-$maxzap = '10';													// waiting time before zapzone been initiated again
+$maxzap = '60';													// waiting time before zapzone been initiated again
 $sPassword = 'loxberry';
 $lbport = lbwebserverport();									// get loxberry port
 // Temp Files in RAM vor ceratin functions
@@ -343,10 +343,11 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 
 if(isset($_GET['playmode'])) { 
 	$playmode = preg_replace("/[^a-zA-Z0-9_]+/", "", strtoupper($_GET['playmode']));
+	$sonos = new SonosAccess($sonoszonen[$master][0]);
 	if (in_array($playmode, $valid_playmodes)) {
-		$sonos = new SonosAccess($sonoszone[$master][0]);
 		$sonos->SetQueue("x-rincon-queue:".$sonoszone[$master][1]."#0");
-		$sonos->SetPlayMode($playmode);
+		SetPlaymodes($master, $playmode);
+		LOGGING('sonos.php: PlayMode "'.$playmode.'" has been set for Player "'.$master.'"', 7);
 	}  else {
 		LOGGING('sonos.php: incorrect PlayMode selected. Please correct!', 4);
 	}
@@ -574,13 +575,15 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 					
 		case 'playmode';
-			// see valid_playmodes under Configuratio section for a list of valid modes
+			// see valid_playmodes under Configuration section for a list of valid modes
 			if (in_array($playmode, $valid_playmodes)) {
-				$sonos->SetPlayMode($playmode);
+				$mode = SetPlaymodes($master, $playmode);
+				echo "playmode: ".$mode;
+				LOGGING("sonos.php: Playmode '".$playmode."' for Player '".$master."' has been executed.", 7);
 			} else {
 				LOGGING('sonos.php: Wrong PlayMode Parameter selected. Please correct', 4);
 			}   
-			LOGGING("sonos.php: Playmode been executed.", 7);
+			#LOGGING("sonos.php: Playmode been executed.", 7);
 		break; 
 		
 	  
@@ -1005,6 +1008,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 
 		case 'testing':
+			@$sonos->ClearQueue();
 			getStreamingService($master);
 		break;
 
@@ -1043,6 +1047,8 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$sonos->BecomeCoordinatorOfStandaloneGroup();
 				if(isset($_GET['member'])) {
 					addmember();
+					volume_group();
+					$sonos = new SonosAccess($sonoszonen[$master][0]);
 					LOGINF ("sonos.php: Member has been added");
 				}
 				DeleteTmpFavFiles();
@@ -1073,6 +1079,8 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$sonos->BecomeCoordinatorOfStandaloneGroup();
 				if(isset($_GET['member'])) {
 					addmember();
+					volume_group();
+					$sonos = new SonosAccess($sonoszonen[$master][0]);
 					LOGINF ("sonos.php: Member has been added");
 				}
 				DeleteTmpFavFiles();
@@ -1102,6 +1110,8 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$sonos->BecomeCoordinatorOfStandaloneGroup();
 				if(isset($_GET['member'])) {
 					addmember();
+					volume_group();
+					$sonos = new SonosAccess($sonoszonen[$master][0]);
 					LOGINF ("sonos.php: Member has been added");
 				}
 				LOGOK ("sonos.php: Your Radio Favorites has been identified");
@@ -1134,6 +1144,8 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$sonos->BecomeCoordinatorOfStandaloneGroup();
 				if(isset($_GET['member'])) {
 					addmember();
+					volume_group();
+					$sonos = new SonosAccess($sonoszonen[$master][0]);
 					LOGINF ("sonos.php: Member has been added");
 				}
 				LOGOK ("sonos.php: Your Radio Favorites has been identified");
@@ -1164,6 +1176,8 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$sonos->BecomeCoordinatorOfStandaloneGroup();
 				if(isset($_GET['member'])) {
 					addmember();
+					volume_group();
+					$sonos = new SonosAccess($sonoszonen[$master][0]);
 					LOGINF ("sonos.php: Member has been added");
 				}
 				LOGOK ("sonos.php: Your TuneIn Favorite Radio Station has been identified");
@@ -1198,6 +1212,8 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$sonos->BecomeCoordinatorOfStandaloneGroup();
 				if(isset($_GET['member'])) {
 					addmember();
+					volume_group();
+					$sonos = new SonosAccess($sonoszonen[$master][0]);
 					LOGINF ("sonos.php: Member has been added");
 				}
 				LOGOK ("sonos.php: Your Radio Favorites has been identified");
@@ -1218,6 +1234,11 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$debugdata  = array_merge($favorites, $tunein, $sonospl);
 			file_put_contents($debugfile, json_encode($debugdata));
 			LOGOK ("sonos.php: File '".$debugfile."' has been saved");
+		break;
+		
+		case 'currstatus':
+			$stat = saveZonesStatus();
+			print_r($stat);
 		break;
 
 		case 'masterplayer':
@@ -1835,6 +1856,7 @@ exit;
 **/	
 function SetGroupVolume($groupvolume) {
 	global $sonos, $sonoszone, $master;
+	
 	$sonos = new SonosAccess($sonoszone[$master][0]); 
 	$sonos->SnapshotGroupVolume();
 	#$GroupVolume = $_GET['volume'];
@@ -2257,4 +2279,3 @@ function shutdown()
 
 
 ?>
-

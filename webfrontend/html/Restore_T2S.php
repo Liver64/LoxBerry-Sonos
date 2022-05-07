@@ -27,6 +27,7 @@ function restoreSingleZone() {
 			$sonos->SetMute($actual[$master]['Mute']);
 			if (($actual[$master]['TransportInfo'] == 1)) {
 				$sonos->Play();	
+				RestoreShuffle($master);
 			}
 			LOGGING("restore_t2s.php: Single Zone ".$master." has been restored.", 6);
 		break;
@@ -64,7 +65,6 @@ function restoreSingleZone() {
 			} else {
 				#$prevStatus = "master";
 				$oldGroup = $actual[$master]['Grouping'];
-				$exMaster = array_shift($oldGroup); // deletes previous master from array
 				foreach ($oldGroup as $newMaster) {
 					// loop threw former Members in order to get the New Coordinator
 					$sonos = new SonosAccess($sonoszone[$newMaster][0]);
@@ -78,23 +78,27 @@ function restoreSingleZone() {
 						$sonos_old->SetAVTransportURI("x-rincon:" . $sonoszone[$newMaster][1]);
 					}
 				}
-				# add previous master back to group and restore settings
-				$sonos = new SonosAccess($sonoszone[$exMaster][0]);
-				#restore_details($exMaster);
-				$sonos->SetAVTransportURI("x-rincon:" . $sonoszone[$newMaster][1]);
-				$sonos->SetVolume($actual[$exMaster]['Volume']);
-				$sonos->SetMute($actual[$exMaster]['Mute']);
-			try {
-				$sonos = new SonosAccess($sonoszone[$newMaster][0]);
-				$sonos->DelegateGroupCoordinationTo($sonoszone[$master][1], 1);
+				$rinconOfNewMaster = $sonoszone[$newMaster][1];
 				$sonos = new SonosAccess($sonoszone[$master][0]);
-				restore_details($master);
-				LOGGING("restore_t2s.php: Zone ".$master." has been added back to group.", 6);
-			} catch (Exception $e) {
-				LOGGING("restore_t2s.php: Assignment to new GroupCoordinator " . $master . " failed.",5);	
+				#@$sonos->ClearQueue();
+				try {
+					$sonos->SetAVTransportURI("x-rincon:" . $rinconOfNewMaster);
+					$sonos->SetVolume($actual[$master]['Volume']);
+					$sonos->SetMute($actual[$master]['Mute']);
+					# delegate back to exMaster
+					$sonos = new SonosAccess($sonoszone[$newMaster][0]);
+					$sonos->DelegateGroupCoordinationTo($sonoszone[$master][1], 1);
+					$sonos = new SonosAccess($sonoszone[$master][0]);
+					#RestoreShuffle($master);
+					#$sonos->Play();
+					LOGGING("restore_t2s.php: Zone ".$master." has been added back to group.", 6);
+				} catch (Exception $e) {
+					LOGGING("restore_t2s.php: Assignment to new GroupCoordinator " . $newMaster . " failed.",5);	
+				}	
+
+
 			}
-		}
-	break;
+		break;
 	}
 	# setze 0 für virtuellen Texteingang (T2S Ende)
 	$tts_stat = 0;
@@ -140,8 +144,10 @@ function restoreGroupZone() {
 			$sonos->SetMute($actual[$player]['Mute']);
 			if($actual[$player]['TransportInfo'] != 1) {
 				$sonos->Stop();
+				RestoreShuffle($player);
 			} else {
 				$sonos->Play();
+				RestoreShuffle($player);
 			}
 			LOGGING("restore_t2s.php: Single Zone ".$player." has been restored.", 6);
 		break;
@@ -182,8 +188,10 @@ function restoreGroupZone() {
 			$sonos->SetMute($actual[$player]['Mute']);
 			if($actual[$player]['TransportInfo'] != 1) {
 				$sonos->Stop();
+				RestoreShuffle($player);
 			} else {
 				$sonos->Play();
+				RestoreShuffle($player);
 			}
 			LOGGING("restore_t2s.php: Master Zone ".$player." has been added back to group.", 6);
 		break;			
@@ -258,7 +266,7 @@ function restore_details($zone) {
 		if ($actual[$zone]['PositionInfo']['Track'] != "0")    {
 			$sonos->SetTrack($actual[$zone]['PositionInfo']['Track']);
 			$sonos->Seek("REL_TIME", $actual[$zone]['PositionInfo']['RelTime']);
-			RestoreShuffle($zone);
+			//RestoreShuffle($zone);
 			LOGGING("restore_t2s.php: Source 'Track' has been set for '".$zone."'", 7);
 		}
 	} 
@@ -295,7 +303,7 @@ function restore_details($zone) {
 /**
 * Function : RestoreShuffle() --> Restore previous playmode settings
 *
-* @param: array $actual array of saved status, string $player Masterplayer
+* @param: string playmode, string player
 * @return: static
 **/
 
@@ -305,26 +313,13 @@ function RestoreShuffle($player) {
 	
 	$sonos = new SonosAccess($sonoszonen[$player][0]);
 	$mode = $actual[$player]['TransportSettings'];
-	playmode_detection($player, $mode);
 	$pl = $sonos->GetCurrentPlaylist();
-	$titel = (string)$actual[$player]['PositionInfo']['title'];
-	// falls irgendein SHUFFLE ein
-	if ($mode['shuffle'] == 1)  { 
-		$trackNoSearch = recursive_array_search($titel, $pl);
-		$track = (string)$pl[$trackNoSearch]['listid'];
-		if ($actual[$player]['PositionInfo']['Track'] != "0")    {
-			$sonos->SetTrack($track);
-			$sonos->Seek("REL_TIME", $actual[$player]['PositionInfo']['RelTime']);			
-		}
-	// falls SHUFFLE aus
-	} else {
-		# nur wenn die Queue NICHT leer war
-		if ($actual[$player]['PositionInfo']['Track'] != "0")    {
-			$sonos->SetTrack($actual[$player]['PositionInfo']['Track']);
-			$sonos->Seek("REL_TIME", $actual[$player]['PositionInfo']['RelTime']);			
-		}
+	if (count($pl) > 1 and ($actual[$player]['TransportSettings'] != 0))   {
+		$modereal = playmode_detection($player, $mode);
+		LOGGING("restore_t2s.php: Previous playmode '".$modereal."' for '".$player."' has been restored.", 6);		
 	}
-	LOGGING("restore_t2s.php: Previous playmode for '".$player."' has been restored.", 6);
+	
 }
+
 	
 ?>

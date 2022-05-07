@@ -614,6 +614,48 @@ function playmode_detection($zone, $mode)  {
 }
 
 
+
+/**
+* Funktion : 	SetPlaymodes --> setzt den Playmode bei Wiederherstllung gemäß der Eingabe in der URL
+*
+* @param: Sonos Zone
+* @return: sting playmode
+**/
+
+function SetPlaymodes($zone, $mode)  {
+	
+	global $master, $sonoszonen;
+	
+	$sonos = new SonosAccess($sonoszonen[$zone][0]);
+	if ($mode == 'NORMAL') {
+		$sonos->SetPlayMode('0');
+		$mode = 0;
+
+	} elseif ($mode == 'REPEAT_ALL') {
+		$sonos->SetPlayMode('1');
+		$mode = 1;
+	
+	} elseif ($mode == 'SHUFFLE_NOREPEAT') {
+		$sonos->SetPlayMode('3');
+		$mode = 3;
+	
+	} elseif ($mode == 'SHUFFLE_REPEAT_ONE') {
+		$sonos->SetPlayMode('5');
+		$mode = 5;
+	
+	} elseif ($mode == 'SHUFFLE') {
+		$sonos->SetPlayMode('4');
+		$mode = 4;
+	
+	} elseif ($mode == 'REPEAT_ONE') {
+		$sonos->SetPlayMode('2');
+		$mode = 2;
+	}
+	return $mode;
+}
+
+
+
 /**
 * Funktion : 	allowLineIn --> filtert die gefunden Sonos Devices nach Zonen
 * 				die den LineIn Eingang unterstützen

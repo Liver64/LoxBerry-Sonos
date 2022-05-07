@@ -1,7 +1,16 @@
 <style type="text/css">
 
-.ui-slider-track .ui-btn-active {
-    background-color: green !important;
+.custom-mscom-flipswitch.ui-flipswitch.ui-bar-inherit {
+	background-color: #EEEEEE !important;
+	color:black !important;
+	text-shadow: none !important;
+}
+
+.custom-mscom-flipswitch.ui-flipswitch .ui-btn.ui-flipswitch-on {
+	background-color: #6dac20 !important;
+	color:black !important;
+	text-indent: -3.5em !important;
+	text-shadow: none !important;
 }
 
 </style>
@@ -360,20 +369,19 @@
                                                 <!--<select id="miniserver" name="miniserver" data-mini="true" data-native-menu="false" style="width: 142px"><TMPL_VAR MSSELECTLIST>
 												</select>-->
                                                 <TMPL_VAR MS>
-												<td class="field_ms" style="width: 104px;">
+											<td class="field_ms" style="width: 104px;">
 													<fieldset>
 														<div id="add">
 												
 														</div>
 													</fieldset>
-													<script>
-														if ('<TMPL_VAR MQTT>' == 'true')   {
-															document.getElementById("add").innerHTML += '<select id="sendloxMQTT" name="sendloxMQTT" data-role="flipswitch"><option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON_MS></option><option value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF_MS></option></select>';
-															$('#sendloxMQTT').val('<TMPL_VAR LOXONE.LoxDatenMQTT>');
-														} 
-														//$("#sendloxMQTT").val("false").flipswitch("refresh");
-													</script>
-												</td>
+												<script>
+												if ('<TMPL_VAR MQTT>' == 'true')   {
+													document.getElementById("add").innerHTML += '<select id="sendloxMQTT" name="sendloxMQTT" data-role="flipswitch" data-wrapper-class="custom-mscom-flipswitch"><option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON_MS></option><option value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF_MS></option></select>';
+													$('#sendloxMQTT').val('<TMPL_VAR LOXONE.LoxDatenMQTT>');
+												}
+												</script>
+											</td>
                                             </td>
 											
                                             <td class="field_lab_udp" align="right" style="width: 30%">
@@ -896,7 +904,7 @@
         });
 		
 		function checkboxes() {
-			console.log('checkboxes');
+			//console.log('checkboxes');
 			// get count of players for iteration
 			var iteration = document.getElementById('countplayers').value;
             iteration = parseInt(iteration)
@@ -906,7 +914,7 @@
 				//var te = document.getElementById('mainchk' + i).value;
 				if (document.getElementById('mainchk' + i).value == "on") {
 					document.getElementById('mainchk' + i).checked = true;
-					console.log(document.getElementById('mainchk' + i));
+					//console.log(document.getElementById('mainchk' + i));
 					$('input:checkbox').checkboxradio('refresh');
 				} else {
 					document.getElementById('mainchk' + i).checked = false;
