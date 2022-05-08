@@ -2,7 +2,7 @@
 
 ##############################################################################################################################
 #
-# Version: 	5.0.1
+# Version: 	5.0.0
 # Datum: 	05.2022
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
@@ -54,7 +54,7 @@ $sambaini = $lbhomedir.'/system/samba/smb.conf';				// path to Samba file smb.co
 $searchfor = '[plugindata]';									// search for already existing Samba share
 $MP3path = "mp3";												// path to preinstalled numeric MP3 files
 $sleeptimegong = "3";											// waiting time before playing t2s
-$maxzap = '60';													// waiting time before zapzone been initiated again
+$maxzap = '10';													// waiting time before zapzone been initiated again
 $sPassword = 'loxberry';
 $lbport = lbwebserverport();									// get loxberry port
 // Temp Files in RAM vor ceratin functions
@@ -1396,8 +1396,12 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				$search = recursive_array_search($rinc, $sonoszonen);
 				if ($search === false)    {
 					$allAlarms[$key]['Room'] = "NO ROOM";
+					$allAlarms[$key]["min_".$search."_ID_".$allAlarms[$key]['ID']] = $allAlarms[$key]['minpastmid'];
+					$allAlarms[$key]["stat_".$search."_ID_".$allAlarms[$key]['ID']] = $allAlarms[$key]['Enabled'];
 				} else {
 					$allAlarms[$key]['Room'] = $search;
+					$allAlarms[$key]["min_".$search."_ID_".$allAlarms[$key]['ID']] = $allAlarms[$key]['minpastmid'];
+					$allAlarms[$key]["stat_".$search."_ID_".$allAlarms[$key]['ID']] = $allAlarms[$key]['Enabled'];
 				}
 			}
 			print_r($allAlarms);

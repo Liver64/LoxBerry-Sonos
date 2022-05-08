@@ -22,7 +22,6 @@ class SonosAccess
 				# Loxberry specific
 				# $logfolder = "REPLACELBPLOGDIR/";
 				$logfolder = "/opt/loxberry/log/plugins/sonos4lox/";
-				require_once "loxberry_system.php";
 				# use Sonos Plugin Loglevel
  				$level = LBSystem::pluginloglevel();
 				if ($level == "0")   { 
