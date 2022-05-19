@@ -372,5 +372,7 @@
 			[BUGFIX] Fixed Radio Handling in Datenübertragung Sonos --> MS
 			[IMPROVEMENT] neuen virtuellen Texteingang 'sid_$zone' hinzugefügt (Spotify, Amazon, Deezer, etc.)
 			[IMPROVEMENT] Listalarms um die Eingangsverbinder Namen erweitert
+ 5.0.2		[IMPROVEMENT] Neue Funktion 'pluginradio' um die Radio Favoriten aus der Plugin Config direkt abzuspielen
+			[IMPROVEMENT] Diverse Performance Optimierungen
 			
  

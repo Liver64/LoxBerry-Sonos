@@ -359,6 +359,69 @@ function check_date_once() {
 		return $stst;
 	};
 }
+
+
+/**
+/* Funktion : PluginRadio --> lädt einen Radiosender aus den Plugin Radio Favoriten in eine Zone/Gruppe
+/*
+/* @param: Sender                             
+/* @return: nichts
+**/
+
+function PluginRadio()   
+{
+	global $sonos, $sonoszone, $master, $config;
+	
+	if (isset($_GET['radio'])) {
+		if (empty($_GET['radio']))    {
+			LOGGING("radio.php: No radio station been entered. Please use ...action=pluginradio&radio=<STATION>", 4);
+			exit(1);
+		}
+    }
+	$sonos = new SonosAccess($sonoszone[$master][0]);
+	$enteredRadio = mb_strtolower($_GET['radio']);
+	$radios = $config['RADIO']['radio'];
+	$valid = array();
+	# pepare array and add details
+	foreach ($radios as $val => $item)  {
+		$split = explode(',' , $item);
+		$split['lower'] = mb_strtolower($split[0]);
+		#print_r($split);
+		array_push($valid, $split);
+	}
+	$re = array();
+	# iterate through array ans search
+	foreach ($valid as $item)  {
+		$radiocheck = contains($item['lower'], $enteredRadio);
+		if ($radiocheck === true)   {
+			$favorite = $item['lower'];
+			array_push($re, array_multi_search($favorite, $valid));
+		}
+	}
+	# if more then ONE Station been found
+	if (count($re) > 1)  {
+		LOGERR ("radio.php: Your entered favorite/keyword '".$enteredRadio."' has more then 1 hit! Please specify more detailed.");
+		exit;
+	}
+	if(isset($_GET['member'])) {
+		AddMemberTo();
+		LOGINF ("radio.php: Member has been added");
+	}
+	# if no match has been found
+	if (count($re) < 1)  {
+		LOGERR ("radio.php: Your entered favorite/keyword '".$enteredRadio."' could not be found! Please specify more detailed.");
+		exit;
+	}
+	try {
+		$sonos->SetRadio('x-rincon-mp3radio://'.$re[0][0][1], $re[0][0][0]);
+		$sonos->SetGroupMute(false);
+		$sonos->Play();
+		LOGOK("radio.php: Your Radio '".$re[0][0][0]."' has been successful loaded and is playing!");
+	} catch (Exception $e) {
+		LOGERR("radio.php: Something went unexpected wrong! Please check your URL/entry and try again!");
+		exit;
+	}	
+}
 	
 
 

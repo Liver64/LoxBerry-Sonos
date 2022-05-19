@@ -5,25 +5,17 @@
 	require_once "loxberry_log.php";
 
 	$tmp_error = "/run/shm/s4lox_errorMP3Stream";							// path/file for error message
-	$myConfigFolder = "$lbpconfigdir";								// get config folder
-	$myConfigFile = "sonos.cfg";									// get config file
+	$configfile	= "s4lox_config.json";
 	$hostname = lbhostname();
 	
 	global $config, $result, $tmp_error;
 	
 	// Parsen der Konfigurationsdatei
-	if (!file_exists($myConfigFolder.'/sonos.cfg')) {
-		echo "<OK> The file sonos.cfg could not be opened, please try again!".PHP_EOL;
-		#echo "<br>";
-		exit(1);
+	if (file_exists($lbpconfigdir . "/" . $configfile))    {
+		$config = json_decode(file_get_contents($lbpconfigdir . "/" . $configfile), TRUE);
 	} else {
-		$config = parse_ini_file($myConfigFolder.'/sonos.cfg', TRUE);
-		if ($config === false)  {
-			echo "<ERROR> The file sonos.cfg could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file 'sonos.cfg' manually!".PHP_EOL;
-			#echo "<br>";
-			exit(1);
-		}
-
+		echo "<ERROR> The configuration file could not be loaded, the file may be disrupted. We have to abort :-(".PHP_EOL;
+		exit;
 	}
 
 	

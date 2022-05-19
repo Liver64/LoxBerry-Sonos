@@ -7,11 +7,11 @@ require_once "loxberry_io.php";
 require_once("$lbphtmldir/system/sonosAccess.php");
 require_once("$lbphtmldir/Helper.php");
 require_once("$lbphtmldir/system/logging.php");
-require_once "$lbpbindir/phpmqtt/phpMQTT.php";
+require_once "$lbphtmldir/bin/phpmqtt/phpMQTT.php";
 require_once("$lbphtmldir/system/io-modul.php");
-include("$lbpbindir/binlog.php");
+include("$lbphtmldir/bin/binlog.php");
 
-$myFolder = "$lbpconfigdir";
+$configfile	= "s4lox_config.json";
 echo '<PRE>';
 
 $alarm_off_file 	= $lbplogdir."/s4lox_alarm_off.tmp";			// path/file for Alarms turned off
@@ -26,13 +26,14 @@ $off_file 			= $lbplogdir."/s4lox_off.tmp";					// path/file for Script turned o
 		exit;
 	}
 
-	# Parsen der Konfigurationsdatei sonos.cfg
-	if (!file_exists($myFolder.'/sonos.cfg')) {
-		binlog("Push data", "/bin/push_alarm.php: The file sonos.cfg could not be opened, please try again! We skip here.");
-		exit(1);
+	# Laden der Konfigurationsdatei
+	if (file_exists($lbpconfigdir . "/" . $configfile))    {
+		$tmpsonos = json_decode(file_get_contents($lbpconfigdir . "/" . $configfile), TRUE);
 	} else {
-		$tmpsonos = parse_ini_file($myFolder.'/sonos.cfg', TRUE);
+		binlog("Push data", "/bin/push_alarm.php: The configuration file could not be loaded! We skip here :-(");
+		exit(1);
 	}
+	
 	# check if Data transmission is switched off
 	if(!is_enabled($tmpsonos['LOXONE']['LoxDaten'])) {
 		exit;
@@ -56,21 +57,9 @@ $off_file 			= $lbplogdir."/s4lox_off.tmp";					// path/file for Script turned o
 	} else {
 		$mqttstat = "0";
 	}
+	# create variable
+	$sonoszonen = $tmpsonos['sonoszonen'];
 
-	// ********************** Parsen der Sonos Zonen Konfigurationsdatei player.cfg *****************************************
-	if (!file_exists($myFolder.'/player.cfg')) {
-		binlog("Push data", "/bin/push_alarm.php: The file player.cfg could not be opened, please try again! We skip here.");
-		exit(1);
-	} else {
-		$tmpplayer = parse_ini_file($myFolder.'/player.cfg', true);
-	}
-	$player = ($tmpplayer['SONOSZONEN']);
-	foreach ($player as $zonen => $key) {
-		$sonosnet[$zonen] = explode(',', $key[0]);
-	} 
-	$sonoszonen = $sonosnet;
-	// ********************** End of Parsen der Sonos Zonen Konfigurationsdatei player.cfg **********************************
-	
 	# select one player by random
 	$selectOneRandom = array_rand($sonoszonen, 1);
 	

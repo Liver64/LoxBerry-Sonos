@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # updateplayer
-/usr/bin/php -q REPLACELBPHTMLDIR/system/updateplayer.php &
+/usr/bin/php -q REPLACELBPHTMLDIR/bin/updateplayer.php &
+/usr/bin/php -q REPLACELBPHTMLDIR/bin/check_on_state.php &
 
 exit 0

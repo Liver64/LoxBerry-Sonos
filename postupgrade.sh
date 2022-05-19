@@ -57,9 +57,6 @@ cp -p -v -r /tmp/$1\_upgrade/data/$3/* $5/data/plugins/$3/
 echo "<INFO> Copy back existing Text files"
 cp -v /tmp/$1\_upgrade/templates/* $5/templates/plugins/$3/lang/ 
 
-echo "<INFO> Call t2s-text update check"
-REPLACELBPBINDIR/update_text.php
-
 echo "<INFO> Update of MP3 Files in tts/mp3"
 cp -v $5/data/plugins/$3/tts/mp3/update/* $5/data/plugins/$3/tts/mp3/
 
@@ -67,13 +64,28 @@ echo "<INFO> Remove temporary/update folders"
 rm -r /tmp/$1\_upgrade
 rm -r $5/data/plugins/$3/tts/mp3/update
 
-echo "<INFO> Start validation of Radio favorites"
-REPLACELBPBINDIR/checkradiourl.php
-
 echo "<INFO> Start update Player Configuration"
-/usr/bin/php -q REPLACELBPHTMLDIR/system/updateplayer.php
+/usr/bin/php -q REPLACELBPHTMLDIR/bin/updateplayer.php
+
+CONFIGFILE="REPLACELBPCONFIGDIR/s4lox_config.json"
+if [ -f "$CONFIGFILE" ]
+then
+    echo "<INFO> JSON Config file $CONFIGFILE already exists."
+else 
+    echo "<INFO> Create Config file in JSON Format"
+	/usr/bin/php -q REPLACELBPHTMLDIR/bin/create_config.php
+fi
+
+echo "<INFO> Start validation of Radio favorites"
+/usr/bin/php -q REPLACELBPHTMLDIR/bin/checkradiourl.php
 
 echo "<INFO> Check T2S Announcement Configuration"
-REPLACELBPBINDIR/notify.php
+/usr/bin/php -q REPLACELBPHTMLDIR/bin/notify.php
+
+echo "<INFO> Start update Player Online Status"
+/usr/bin/php -q REPLACELBPHTMLDIR/bin/check_on_state.php
+
+echo "<INFO> Call t2s-text update check"
+/usr/bin/php -q REPLACELBPHTMLDIR/bin/update_text.php
 
 exit 0

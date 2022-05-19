@@ -6,27 +6,29 @@ require_once "loxberry_log.php";
 
 register_shutdown_function('shutdown');
 
+$off_file 			= $lbplogdir."/s4lox_off.tmp";					// path/file for Script turned off
+$configfile			= "s4lox_config.json";
+
+	# check if script/Sonos Plugin is off
+	if (file_exists($off_file)) {
+		exit;
+	}
+
 $log = LBLog::newLog( [ "name" => "Cronjobs", "stderr" => 1, "addtime" => 1 ] );
 
 LOGSTART("Cleanup MP3 files");
 
-$myConfigFolder = "$lbpconfigdir";								// get config folder
-$myConfigFile = "sonos.cfg";									// get config file
 $hostname = lbhostname();
+
 echo'<PRE>';
 // Parsen der Konfigurationsdatei
-if (!file_exists($myConfigFolder.'/sonos.cfg')) {
-	LOGCRIT('The file sonos.cfg could not be opened, please try again!');
-	exit;
+if (file_exists($lbpconfigdir . "/" . $configfile))    {
+	$config = json_decode(file_get_contents($lbpconfigdir . "/" . $configfile), TRUE);
 } else {
-	$config = parse_ini_file($myConfigFolder.'/sonos.cfg', TRUE);
-	if ($config === false)  {
-		LOGERR('The file sonos.cfg could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file "sonos.cfg" manually!');
-		exit(1);
-	}
-	LOGOK("Sonos config has been loaded");
+	LOGCRIT('The configuration file could not be loaded, the file may be disrupted. We have to abort :-(');
+	exit;
 }
-
+		
 $folderpeace = explode("/",$config['SYSTEM']['path']);
 if ($folderpeace[3] != "data") {
 	// wenn NICHT local dir als Speichermedium selektiert wurde
@@ -83,9 +85,11 @@ function delmp3() {
 	/* Delete to size */
 	// First get full size
 	$fullsize = 0;
-	foreach($files as $file){
+	foreach($files as $key => $file)  {
+	#foreach($files as $file){
 		if(!is_file($file)) {
 			unset($files[$key]);
+			#unset($files);
 			continue;
 		}
 		$fullsize += filesize($file);

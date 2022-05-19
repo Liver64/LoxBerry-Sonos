@@ -10,3 +10,4 @@
 # Will be executed as user "loxberry".
 
 rm -r REPLACELBPDATADIR/backup
+rm -r REPLACELBPDATADIR/s4lox_debug.json

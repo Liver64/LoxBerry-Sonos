@@ -4,8 +4,7 @@
 	require_once "loxberry_system.php";
 		
 	$tmp_error = "/run/shm/s4lox_errorMP3Stream.json";							// path/file for error message
-	$myConfigFolder = "$lbpconfigdir";								// get config folder
-	$myConfigFile = "sonos.cfg";									// get config file
+	$configfile	= "s4lox_config.json";
 	$hostname = lbhostname();
 	
 	// Parsen der Konfigurationsdatei
@@ -23,6 +22,20 @@
 			exit(1);
 		}
 	}
+	
+	
+	
+	
+	if (file_exists($lbpconfigdir . "/" . $configfile))    {
+		$config = json_decode(file_get_contents($lbpconfigdir . "/" . $configfile), TRUE);
+	} else {
+		$fh = fopen($tmp_error, "w");
+		fwrite($fh, "bin/url.php: The configuration file could not be loaded, the file may be disrupted. We have to abort :-(\n");
+		fclose($fh);
+		exit;
+	}
+	
+	
 	#function validatestreams()  {
 		
 		global $config, $result, $tmp_error;

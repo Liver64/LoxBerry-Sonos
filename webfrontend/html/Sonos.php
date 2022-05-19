@@ -11,11 +11,9 @@
 
 // ToDo
 
-
 ini_set('max_execution_time', 60); 							// Max. Skriptlaufzeit auf 60 Sekunden
 
 include("system/sonosAccess.php");
-include("system/Tracks.php");
 include("Grouping.php");
 include("Helper.php");
 include("Alarm.php");
@@ -29,7 +27,6 @@ include("Restore_T2S.php");
 include("Save_T2S.php");
 include("Speaker.php");
 include('system/logging.php');
-#include('battery.php');
 include('system/bin/openssl_file.class.php');
 
 register_shutdown_function('shutdown');
@@ -54,7 +51,7 @@ $sambaini = $lbhomedir.'/system/samba/smb.conf';				// path to Samba file smb.co
 $searchfor = '[plugindata]';									// search for already existing Samba share
 $MP3path = "mp3";												// path to preinstalled numeric MP3 files
 $sleeptimegong = "3";											// waiting time before playing t2s
-$maxzap = '10';													// waiting time before zapzone been initiated again
+$maxzap = '60';													// waiting time before zapzone been initiated again
 $sPassword = 'loxberry';
 $lbport = lbwebserverport();									// get loxberry port
 // Temp Files in RAM vor ceratin functions
@@ -62,17 +59,17 @@ $lastVol = "/run/shm/s4lox_PhoneMute.log";						// File for phonemute/phoneunmut
 $lastExeLog = "/run/shm/s4lox_LastExeSonosInfo.log";			// File if old function getsonosinfo been called
 $tmp_tts = "/run/shm/s4lox_tmp_tts";							// path/file for T2S functions
 $tmp_phone = "/run/shm/s4lox_tmp_phonemute.tmp";				// path/file for phonemute function
-$POnline = "/run/shm/s4lox_sonoszone.json";						// path/file for Player Online check
 $off_file = $lbplogdir."/s4lox_off.tmp";						// path/file for script off
 $alarm_off_file = $lbplogdir."/s4lox_alarm_off.json";			// path/file for Alarms turned off
 $tmp_error = "/run/shm/s4lox_errorMP3Stream.json";				// path/file for error message
 $check_date = "/run/shm/s4lox_date";							// store date execution
-$configfile	= "/run/shm/s4lox_config.json";						// configuration file
+$configfile	= "s4lox_config.json";								// configuration file
 $maxvolfile	= "/run/shm/s4lox_max_volume.json";					// max Volume restriction
 $fname = "/run/shm/s4lox_zap_zone.json";						// queue.php: file containig running zones
 $zname = "/run/shm/s4lox_zap_zone_time";						// queue.php: temp file for nextradio
 $pltmp = "/run/shm/s4lox_pl_play_tmp_".$_GET['zone'].".json";	// queue.php: temp file for playlisten
 $filenst = "/run/shm/s4lox_t2s_stat.tmp";						// Temp Statusfile für messages
+$folfilePlOn = "$lbpdatadir/PlayerStatus/s4lox_on_";			// Folder and file name for Player Status
 # Files for ONE-click functions
 if (isset($_GET['zone']))  {
 	$radiofav = "/run/shm/s4lox_fav_all_radio_".$_GET['zone'].".json";				// Radio Stations in PlayAllFavorites
@@ -115,6 +112,7 @@ LOGGING("sonos.php: called syntax: ".$myIP."".urldecode($syntax),5);
 $script_on = $_GET['action'];
 if (file_exists($off_file) and $script_on != "on")  {
 	LOGGING("sonos.php: Script is off",5);
+	echo "sonos.php: Script is off! Please turn on using ...action=on";
 	exit;
 }
 
@@ -149,12 +147,14 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 		}
 	}
 }
+
 	# check if any Favorite function has been executed, if not delete files
-	if (($_GET['action'] == "playallfav||ites") || ($_GET['action'] == "playtrackfav||ites") || ($_GET['action'] == "playtuneinfav||ites")
-		|| ($_GET['action'] == "playradiofav||ites") || ($_GET['action'] == "playsonosplaylist") || ($_GET['action'] == "say")
-		|| ($_GET['action'] == "play") || ($_GET['action'] == "stop") || ($_GET['action'] == "toggle") || ($_GET['action'] == "playplfav||ites")
+	if (($_GET['action'] == "playallfavorites") || ($_GET['action'] == "playtrackfavorites") || ($_GET['action'] == "playtuneinfavorites")
+		|| ($_GET['action'] == "playradiofavorites") || ($_GET['action'] == "playsonosplaylist") || ($_GET['action'] == "say") || ($_GET['action'] == "playfavorite")
+		|| ($_GET['action'] == "play") || ($_GET['action'] == "stop") || ($_GET['action'] == "toggle") || ($_GET['action'] == "playplfavorites")
 		|| ($_GET['action'] == "next") || ($_GET['action'] == "previous") || ($_GET['action'] == "volume") || ($_GET['action'] == "pause")
-		|| (@$_GET['volume']) || ($_GET['action'] == "sendmessage") || ($_GET['action'] == "sonosplaylist") || ($_GET['action'] == "sendgroupmessage"))  
+		|| (isset($_GET['volume']) === true) || ($_GET['action'] == "sendmessage") || ($_GET['action'] == "sonosplaylist") || ($_GET['action'] == "sendgroupmessage")
+		|| (isset($_GET['keepvolume']) === true) || (isset($_GET['groupvolume']) === true) || ($_GET['action'] == "volumeup") || ($_GET['action'] == "volumedown"))  
 		{
 		LOGGING("sonos.php: No Exception to delete TempFiles has been called", 7);
 	} else {
@@ -166,92 +166,40 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 	
 #-- Start Preparation ------------------------------------------------------------------
 	
-	// Parsen der Konfigurationsdatei sonos.cfg
-	if (!file_exists($myFolder.'/sonos.cfg')) {
-		LOGGING('sonos.php: The file sonos.cfg could not be opened, please try again!', 4);
+	// Laden der Konfigurationsdatei s4lox_config.json
+	if (file_exists($lbpconfigdir . "/" . $configfile))    {
+		$config = json_decode(file_get_contents($lbpconfigdir . "/" . $configfile), TRUE);
 	} else {
-		$tmpsonos = parse_ini_file($myFolder.'/sonos.cfg', TRUE);
-		if ($tmpsonos === false)  {
-			LOGERR('sonos.php: The file sonos.cfg could not be parsed, the file may be disruppted. Please check/save your Plugin Config or check file "sonos.cfg" manually!');
-			exit(1);
-		}
-		LOGGING("sonos.php: Sonos config has been loaded",7);
+		LOGGING("sonos.php: No Exception to delete TempFiles has been called", 2);
+		exit;
 	}
-	// Parsen der Sonos Zonen Konfigurationsdatei player.cfg
-	if (!file_exists($myFolder.'/player.cfg')) {
-		LOGGING('sonos.php: The file player.cfg could not be opened, please try again!', 4);
-	} else {
-		$tmpplayer = parse_ini_file($myFolder.'/player.cfg', true);
-		if ($tmpplayer === false)  {
-			LOGERR('sonos.php: The file player.cfg could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file "player.cfg" manually!');
-			exit(1);
-		}
-		LOGGING("sonos.php: Player config has been loaded",7);
-	}
-
-	$player = ($tmpplayer['SONOSZONEN']);
-	foreach ($player as $zonen => $key) {
-		$sonosnet[$zonen] = explode(',', $key[0]);
-	} 
-	$sonoszonen['sonoszonen'] = $sonosnet;
-	
-	// finale config für das Script
-	$config = array_merge($sonoszonen, $tmpsonos);
-	if (file_exists($configfile)) {
-		@unlink($configfile);
-		file_put_contents($configfile, json_encode($config));
-	}
+		
 	// Übernahme und Deklaration von Variablen aus der Konfiguration
 	$sonoszonen = $config['sonoszonen'];
 	
-	if (!isset($config['SYSTEM']['checkonline']))  {
-		$checkonline = true;
-	} else if ($config['SYSTEM']['checkonline'] == "1")  {
-		$checkonline = true;
-	} else {
-		$checkonline = false;
+	$time_start = microtime(true);
+	
+	// prüft den Onlinestatus jeder Zone
+	#exec('/usr/bin/php -f bin/check_on_state.php');
+	
+	$zonesonline = array();
+	LOGGING("sonos.php: Backup Online check for Players will be executed",7);
+	foreach($sonoszonen as $zonen => $ip) {
+		#print_r($zonen);
+		$handle = file_exists($folfilePlOn."".$zonen.".txt");
+		if($handle) {
+			$sonoszone[$zonen] = $ip;
+			array_push($zonesonline, $zonen);
+		}
 	}
-	$zonesoff = "";
-	if ($checkonline === true)  {
-		#if (!file_exists($POnline)) {
-			// prüft den Onlinestatus jeder Zone
-			$zonesonline = array();
-			LOGGING("sonos.php: Backup Online check for Players will be executed",7);
-			foreach($sonoszonen as $zonen => $ip) {
-				$port = 1400;
-				$timeout = 1;
-				$handle = @stream_socket_client("$ip[0]:$port", $errno, $errstr, $timeout);
-				if($handle) {
-					$sonoszone[$zonen] = $ip;
-					array_push($zonesonline, $zonen);
-					fclose($handle);
-				} else {
-					LOGGING("sonos.php: Zone $zonen seems to be Offline, please check your power/network settings",4);
-				}
-			}
-			$zoon = implode(", ", $zonesonline);
-			LOGGING("sonos.php: Zone(s) $zoon are Online",7);
-			#File_Put_Array_As_JSON($POnline, $sonoszone, $zip=false);
-		#} else {
-			#$sonoszone = File_Get_Array_From_JSON($POnline, $zip=false);
-		#}
-	} else {
-		LOGGING("sonos.php: You have not turned on Function to check if all your Players are powered on/online. PLease turn on function 'checkonline' in Plugin Config in order to secure your requests!", 4);
-		$sonoszone = $sonoszonen;
-	}
+				
 	if (!array_key_exists($_GET['zone'], $sonoszone))  {
 		LOGGING("sonos.php: Requested ...zone=".$_GET['zone']." seems to be Offline. Check your Power/Onlinestatus.",4);
 		exit;
 	}
 	LOGGING("sonos.php: All variables has been collected",7);
 	
-	#$sonoszone = $sonoszonen;
-	#print_r($sonoszonen);
-	#print_r($config);
-	#exit;
-	#print_r($sonoszone);
-	
-	# check if LBPort already exist in config (sonos.cfg), if not force user to save config
+	# check if LBPort already exist in config, if not force user to save config
 	$checklb = explode(':', $config['SYSTEM']['httpinterface']);
 	$checklbport = explode('/', $checklb[2]);
 	if ($checklbport[0] <> $lbport)  {
@@ -259,7 +207,7 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 		exit;
 	}
 	# select language file for text-to-speech
-	$t2s_langfile = "t2s-text_".substr($config['TTS']['messageLang'],0,2).".ini";				// language file for text-speech
+	$t2s_langfile = "t2s-text_".substr($config['TTS']['messageLang'],0,2).".ini";			// language file for text-speech
 
 	# Standardpath for saving MP3
 	$MessageStorepath = $config['SYSTEM']['ttspath'];
@@ -378,6 +326,7 @@ if(isset($_GET['rampto'])) {
 				break;
 		}
 	}
+	
 
 if(array_key_exists($_GET['zone'], $sonoszone)){ 
 
@@ -696,7 +645,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		
 		case 'addmember':
-			addmember();
+			AddMemberTo();
 		break;
 
 		
@@ -1008,8 +957,8 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 
 		case 'testing':
-			@$sonos->ClearQueue();
-			getStreamingService($master);
+			$meta = '&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;'.$rand.'cexplore%3aplaylist%3a%3app.'.$pl.'&quot; parentID=&quot;'.$rand.'explore%3atag%3aplaylists%3a%3atag.156763213&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;/dc:title&gt;&lt;upnp:class&gt;object.container.playlistContainer&lt;/upnp:class&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;'.$reg.'&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;';
+			print_R($meta);
 		break;
 
 		case 'getfavorites':
@@ -1046,7 +995,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			if (!file_exists($queuetmp))  {
 				$sonos->BecomeCoordinatorOfStandaloneGroup();
 				if(isset($_GET['member'])) {
-					addmember();
+					AddMemberTo();
 					volume_group();
 					$sonos = new SonosAccess($sonoszonen[$master][0]);
 					LOGINF ("sonos.php: Member has been added");
@@ -1076,12 +1025,12 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			}
 			# 1st click/execution
 			if (!file_exists($queuetracktmp))  {
-				$sonos->BecomeCoordinatorOfStandaloneGroup();
+				#$sonos->BecomeCoordinatorOfStandaloneGroup();
 				if(isset($_GET['member'])) {
-					addmember();
+					AddMemberTo();
 					volume_group();
 					$sonos = new SonosAccess($sonoszonen[$master][0]);
-					LOGINF ("sonos.php: Member has been added");
+					LOGINF ("sonos.php: Requested Member has been added");
 				}
 				DeleteTmpFavFiles();
 				@$sonos->ClearQueue();
@@ -1109,7 +1058,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			if (!file_exists($queueradiotmp))  {
 				$sonos->BecomeCoordinatorOfStandaloneGroup();
 				if(isset($_GET['member'])) {
-					addmember();
+					AddMemberTo();
 					volume_group();
 					$sonos = new SonosAccess($sonoszonen[$master][0]);
 					LOGINF ("sonos.php: Member has been added");
@@ -1143,7 +1092,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			if (!file_exists($pltmp))  {
 				$sonos->BecomeCoordinatorOfStandaloneGroup();
 				if(isset($_GET['member'])) {
-					addmember();
+					AddMemberTo();
 					volume_group();
 					$sonos = new SonosAccess($sonoszonen[$master][0]);
 					LOGINF ("sonos.php: Member has been added");
@@ -1175,7 +1124,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			if (!file_exists($tuneinradiotmp))  {
 				$sonos->BecomeCoordinatorOfStandaloneGroup();
 				if(isset($_GET['member'])) {
-					addmember();
+					AddMemberTo();
 					volume_group();
 					$sonos = new SonosAccess($sonoszonen[$master][0]);
 					LOGINF ("sonos.php: Member has been added");
@@ -1211,7 +1160,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			if (!file_exists($queuepltmp))  {
 				$sonos->BecomeCoordinatorOfStandaloneGroup();
 				if(isset($_GET['member'])) {
-					addmember();
+					AddMemberTo();
 					volume_group();
 					$sonos = new SonosAccess($sonoszonen[$master][0]);
 					LOGINF ("sonos.php: Member has been added");
@@ -1476,7 +1425,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 	
 		
 		case 'checkradiourl':
-			$f = $lbpbindir."/url.php";
+			$f = $lbphtnldir."/bin/url.php";
 			include($f);
 		break;
 			
@@ -1634,43 +1583,47 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		
 		case 'spotify':
-			require_once("services/Spotify.php");
+			require_once("MusicService.php");
 			AddSpotify();
 		break;	
 		
 		
 		case 'amazon':
-			require_once("services/Amazon.php");
+			require_once("MusicService.php");
 			AddAmazon();
 		break;
 		
 		
 		case 'google':
-			require_once("services/Google.php");
+			require_once("MusicService.php");
 			AddGoogle();
 		break;	
 		
 		
 		case 'apple':
-			require_once("services/Apple.php");
+			require_once("MusicService.php");
 			AddApple();
 		break;	
 		
 		
 		case 'napster':
-			require_once("services/Napster.php");
+			require_once("MusicService.php");
 			AddNapster();
 		break;	
 		
 		
 		case 'track':
-			require_once("services/Local_Track.php");
+			require_once("MusicService.php");
 			AddTrack();
 		break;	
 		
 		
 		case 'randomplaylist':
 			random_playlist();
+		break;
+		
+		case 'pluginradio':
+			PluginRadio();
 		break;
 		
 		
@@ -2040,11 +1993,8 @@ function volume_group()  {
 			$memberon = array();
 			foreach ($sonoszone as $zone => $ip) {
 				$zoneon = checkZoneOnline($zone);
-				// exclude master Zone
-				if ($zone != $master) {
-					if ($zoneon === (bool)true)  {
-						array_push($memberon, $zone);
-					}
+				if ($zoneon === (bool)true and $zone != $master)  {
+					array_push($memberon, $zone);
 				}
 			}
 			$member = $memberon;
@@ -2066,7 +2016,8 @@ function volume_group()  {
 			LOGGING("sonos.php: The zone ".$master." could not be entered as member again. Please remove from Syntax '&member=".$master."' !", 3);
 			exit;
 		}
-		//print_r($member);
+
+
 		foreach ($member as $memplayer => $zone2) {
 			$sonos = new SonosAccess($sonoszone[$zone2][0]);
 			#$sonos->SetMute(true);
@@ -2121,8 +2072,7 @@ function volume_group()  {
 				}
 				LOGGING("sonos.php: Standard Volume for Group Member ".$zone2." has been set to: ".$volume, 7);
 			}
-			#print_r($sonos);
-			$sonos->SetMute(false);
+			@$sonos->SetMute(false);
 			$sonos->SetVolume($volume);
 		}
 	}
@@ -2220,64 +2170,42 @@ function scriptoff()  {
 	$handle = fopen ($off_file, 'w');
 	fwrite ($handle, $config['VARIOUS']['cron']);
 	fclose ($handle);
-	@unlink ("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
-	@unlink ("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
-	@unlink ("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
-	@unlink ("$lbhomedir/system/cron/cron.15min/$lbpplugindir");
-	@unlink ("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
-	@unlink ("$lbhomedir/system/cron/cron.hourly/$lbpplugindir");
-	LOGGING("sonos.php: Onlinecheck, UDP, HTTP und Sonos4lox has been turned OFF", 5);
+	echo "sonos.php: Script has been turned OFF";
+	LOGGING("sonos.php: All actions for Sonos4lox has been turned OFF", 5);
 }
 
 
 
 function scripton()  {
-	global $sonos, $config, $lbplogdir, $lbpbindir, $lbhomedir, $lbpconfigdir, $off_file, $lbhomedir, $lbpplugindir;
+	global $sonos, $config, $lbplogdir, $lbphtmldir, $lbhomedir, $lbpconfigdir, $off_file, $lbhomedir, $lbpplugindir;
 	
 	if (file_exists($off_file) === false)  {
 		LOGGING("sonos.php: Onlinecheck, UDP, HTTP und Sonos4lox has not been turned off previously", 5);
 		exit;
 	} 
-	
-	$memudpfile = "/run/shm/s4lox_msudp_mem_".$config['LOXONE']['Loxone']."_".$config['LOXONE']['LoxPort'].".json";
-	$memhttpfile = "/run/shm/s4lox_mshttp_mem_".$config['LOXONE']['Loxone'].".json";
-	$handle = fopen ($off_file, 'r');
-	$tmp_cron = fgets($handle);
-	//echo $tmp_cron;
-	if ($tmp_cron == 60)  {
-		symlink($lbpbindir."/cronjob.sh", $lbhomedir."/system/cron/cron.hourly/".$lbpplugindir);
-		LOGGING("sonos.php: Onlinecheck hourly, UDP, HTTP und Sonos4lox has been turned ON", 5);
-		//ECHO "HOURLY";
-	}
-	if (($tmp_cron >= 10) and ($tmp_cron < 60))  {
-		LOGGING("sonos.php: Onlinecheck each ".$tmp_cron." minute(s), UDP, HTTP und Sonos4lox has been turned ON", 5);
-		//ECHO "GRÖßER 10";
-		symlink($lbpbindir."/cronjob.sh", $lbhomedir."/system/cron/cron.".$tmp_cron."min/".$lbpplugindir);
-	}
-	if ($tmp_cron < 10)  {
-		LOGGING("sonos.php: Onlinecheck each 0".$tmp_cron." minute(s), UDP, HTTP und Sonos4lox has been turned ON", 5);
-		//ECHO "KLEINER 10";
-		symlink($lbpbindir."/cronjob.sh", $lbhomedir."/system/cron/cron.0".$tmp_cron."min/".$lbpplugindir);
-	}		
-	@unlink($memudpfile);
-	@unlink($memhttpfile);
 	@unlink($off_file);
-	fclose($handle);
+	echo "sonos.php: Script has been turned ON";
+	LOGGING("sonos.php: All actions for Sonos4lox has been turned ON", 5);
+	exit;
 }
 
 
 
 function shutdown()
 {
-	global $log, $tts_stat, $check_info, $tmp_tts;
+	global $log, $tts_stat, $check_info, $tmp_tts, $time_start;
+	
 	# FALLBACK --> setze 0 für virtuellen Texteingang (T2S End) falls etwas schief lief
-	if ($tts_stat == 1)  {
+	#if ($tts_stat == 1)  {
 		$tts_stat = 0;
 		send_tts_source($tts_stat);
-	}
+	#}
 	if ($getsonos = strrpos($check_info, "getsonosinfo") === false)  {
 		LOGEND("PHP finished");
 	}
+	$time_end = microtime(true);
+	$t2s_time = $time_end - $time_start;
+	#echo "Der Prozess dauerte ".round($t2s_time, 5)." Sekunden.\n";
 	@unlink($tmp_tts);
 }
 

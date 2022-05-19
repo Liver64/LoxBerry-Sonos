@@ -60,7 +60,16 @@ function metadata($value)
 		break;
 		
 		case "303":		// Sonos Radio
-			$stype = "Sonos Radio Favorite";
+			$tempradio = $sonos->GetMediaInfo();
+			$haystack = $tempradio["CurrentURI"];
+			$needleTuneIn = "tunein";		// searc for TuneIn
+			$containTuneIn = mb_strpos($haystack, $needleTuneIn) !== false;
+			# determine whether it's TuneIn or Sonos Radio in case sid=303
+			if ($containTuneIn === true)  {	
+				$stype = "TuneIn Favorite";
+			} else {
+				$stype = "Sonos Radio Favorite";
+			}
 			$file = $value['resorg'];
 			CreateDIDL($value, $stype);
 		break;

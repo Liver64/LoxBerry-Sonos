@@ -4,7 +4,7 @@
 require_once "loxberry_system.php";
 require_once "loxberry_log.php";
 require_once "loxberry_io.php";
-require_once "$lbpbindir/phpmqtt/phpMQTT.php";
+require_once "$lbphtmldir/bin/phpmqtt/phpMQTT.php";
 
 require_once("$lbphtmldir/system/sonosAccess.php");
 require_once("$lbphtmldir/system/error.php");
@@ -13,52 +13,49 @@ require_once("$lbphtmldir/Helper.php");
 require_once("$lbphtmldir/Metadata.php");
 require_once("$lbphtmldir/Grouping.php");
 require_once("$lbphtmldir/system/io-modul.php");
-include("$lbpbindir/binlog.php");
+include("$lbphtmldir/bin/binlog.php");
 
+$off_file 			= $lbplogdir."/s4lox_off.tmp";					// path/file for Script turned off
+$configfile			= "s4lox_config.json";							// JSON Config file
+$tmp_tts 			= "/run/shm/s4lox_tmp_tts";						// Temp file if T2S is currently running in order to skip updating
+$tmp_play 			= "stat.txt";									// Status file to push ONE more if playing stopped
 
-echo '<PRE>';
-#echo "<br>";
+#echo '<PRE>';
 
 # check if T2S is currently running, if yes we skip
-$tmp_tts = "/run/shm/s4lox_tmp_tts";
 if (is_file($tmp_tts))   {
 	exit;
 }
-
-$off_file 			= $lbplogdir."/s4lox_off.tmp";					// path/file for Script turned off
 
 # check if script/Sonos Plugin is off
 if (file_exists($off_file)) {
 	exit;
 }
 
-$myFolder = "$lbpconfigdir";
-$htmldir = "$lbphtmldir";
-$tmp_play = "stat.txt";
-$stat = $htmldir."/".$tmp_play;
+$stat = $lbphtmldir."/".$tmp_play;
 
 $mem_sendall = 0;
 $mem_sendall_sec = 3600;
 
 global $mem_sendall, $mem_sendall_sec, $nextr;
 
-// Parsen der Konfigurationsdatei sonos.cfg
-	if (!file_exists($myFolder.'/sonos.cfg')) {
-		binlog("Push data", "/bin/push_loxone.php: The file sonos.cfg could not be opened, please try again! We skip here.");
-		exit(1);
+	# Parsen der Konfigurationsdatei sonos.cfg
+	if (file_exists($lbpconfigdir . "/" . $configfile))    {
+		$config = json_decode(file_get_contents($lbpconfigdir . "/" . $configfile), TRUE);
 	} else {
-		$tmpsonos = parse_ini_file($myFolder.'/sonos.cfg', TRUE);
+		binlog("Push data", "/bin/push_loxone.php: The configuration file could not be loaded, the file may be disrupted. We have to abort :-(");
+		exit;
 	}
-		
+	
 	// check if Data transmission is switched off
-	if(!is_enabled($tmpsonos['LOXONE']['LoxDaten'])) {
+	if(!is_enabled($config['LOXONE']['LoxDaten'])) {
 		exit;
 	}
 	
 	# get MS
 	$ms = LBSystem::get_miniservers();
 	
-	if(is_enabled($tmpsonos['LOXONE']['LoxDatenMQTT'])) {
+	if(is_enabled($config['LOXONE']['LoxDatenMQTT'])) {
 		// Get the MQTT Gateway connection details from LoxBerry
 		$creds = mqtt_connectiondetails();
 		// MQTT requires a unique client id
@@ -69,24 +66,8 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 	} else {
 		$mqttstat = "0";
 	}
-	#echo $mqttstat;
-	// Parsen der Sonos Zonen Konfigurationsdatei player.cfg
-	if (!file_exists($myFolder.'/player.cfg')) {
-		binlog("Push data", "/bin/push_loxone.php: The file player.cfg could not be opened, please try again! We skip here.");
-		exit(1);
-	} else {
-		$tmpplayer = parse_ini_file($myFolder.'/player.cfg', true);
-	}
-	$player = ($tmpplayer['SONOSZONEN']);
-	foreach ($player as $zonen => $key) {
-		$sonosnet[$zonen] = explode(',', $key[0]);
-	} 
-	$sonoszonen['sonoszonen'] = $sonosnet;
 	
-	// finale config für das Script
-	$config = array_merge($sonoszonen, $tmpsonos);
-		
-	// Übernahme und Deklaration von Variablen aus der Konfiguration
+	# Declaration of variable
 	$sonoszonen = $config['sonoszonen'];
 	
 	// check if zones are connected	
@@ -245,7 +226,17 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 		foreach ($sonoszone as $zone => $player) {
 			$sonos = new SonosAccess($sonoszone[$zone][0]);
 			$temp = $sonos->GetPositionInfo();
-			$sid = getStreamingService($player[0]);
+			$w = getZoneStatus($zone);
+			if ($w == 'master')   {
+				$sid = getStreamingService($player[0]);
+				file_put_contents("/tmp/sid.txt", $sid);
+			}
+			else if ($w == 'member')   {
+				$sid = file_get_contents("/tmp/sid.txt");
+			}
+			else if ($w == 'single')   {
+				$sid = getStreamingService($player[0]);
+			}
 			// Zone ist Member einer Gruppe
 			if (substr($temp['TrackURI'] ,0 ,9) == "x-rincon:") {
 				$tmp_rincon = substr($temp['TrackURI'] ,9 ,24);
@@ -261,8 +252,8 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 			}
 			if ($gettransportinfo == 1) {
 				$haystack = $tempradio["CurrentURI"];
-				$needle = "sid=254";		// sid=254 für TuneIn
-				$containTuneIn = mb_strpos($haystack, $needle) !== false;
+				$needleTuneIn = "tunein";		// sid=254 für TuneIn
+				$containTuneIn = mb_strpos($haystack, $needleTuneIn) !== false;
 				#$sid = getStreamingService($player[0]);
 				// Radio
 				if (substr($tempradio['UpnpClass'] ,0 ,36) == "object.item.audioItem.audioBroadcast")   {
@@ -273,6 +264,7 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 						$value = ' ';										// kombinierte Titel- und Interpretinfo
 						$valuesplit[0] = ' ';								// Nur Titelinfo
 						$valuesplit[1] = ' ';								// Nur Interpreteninfo
+						$sid = 'TuneIn';
 					# All others
 					} else {
 						$value = $temp["title"]." - ".$temp["artist"]; 		// kombinierte Titel- und Interpretinfo

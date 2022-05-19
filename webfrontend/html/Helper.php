@@ -56,6 +56,8 @@
 
 
 /**
+*  OBSOLETE
+*
 * Function : get_file_content --> übermittelt die Titel/Interpret Info an Loxone
 * http://stackoverflow.com/questions/697472/php-file-get-contents-returns-failed-to-open-stream-http-request-failed
 *
@@ -118,25 +120,30 @@ function searchForKey($id, $array) {
 **/
 
 function checkZonesOnline($member) {
-	global $sonoszonen, $zonen, $debug, $config;
+	
+	global $sonoszonen, $zonen, $debug, $config, $folfilePlOn;
 	
 	$memberzones = $member;
-
+	
 	foreach($memberzones as $zonen) {
 		if(!array_key_exists($zonen, $sonoszonen)) {
 			LOGGING("helper.php: The entered member zone does not exist, please correct your syntax!!", 3);
 			exit;
 		}
 	}
-	foreach($memberzones as $zonen) {
-		$connection = @fsockopen($sonoszonen[$zonen][0], 1400, $errno, $errstr, 2);
-		if(!$connection === false) {
-			LOGGING("helper.php: The zone ".$zonen." is OFFLINE!!", 4);
-		} else {
-			LOGGING("helper.php: Zone ".$zonen." is ONLINE!!", 6);
-			$member[] = $zonen;
+
+	$zonesonline = array();
+	LOGGING("sonos.php: Backup Online check for Players will be executed",7);
+	foreach($sonoszonen as $zonen => $ip) {
+		$handle = file_exists($folfilePlOn."".$zonen.".txt");
+		if($handle) {
+			$sonoszone[$zonen] = $ip;
+			array_push($zonesonline, $zonen);
+		#} else {
+		#	LOGGING("helper.php: Player $zonen seems to be Offline, please check your power/network settings",4);
 		}
 	}
+	$member = $zonesonline;
 	// print_r($member);
 	return($member);
 }
@@ -152,7 +159,7 @@ function checkZonesOnline($member) {
 
 function checkZoneOnline($MemberTest) {
 	
-	global $sonoszonen, $debug, $config;
+	global $sonoszonen, $debug, $config, $folfilePlOn;
 
 	if ($MemberTest == 'all')   {
 		return false;
@@ -161,8 +168,9 @@ function checkZoneOnline($MemberTest) {
 		LOGGING("helper.php: The entered member zone '".$MemberTest."' does not exist, please correct your syntax!!", 4);
 		#return false;
 	}
-	$connection = @fsockopen($sonoszonen[$MemberTest][0], 1400, $errno, $errstr, 2);
-	if(!$connection === false) {
+	#$handle = @fsockopen($sonoszonen[$MemberTest][0], 1400, $errno, $errstr, 2);
+	$handle = file_exists($folfilePlOn."".$MemberTest.".txt");
+	if(!$handle === false) {
 		$zoneon = true;
 		return($zoneon);
 	}
@@ -381,14 +389,15 @@ function URL_Encode($string) {
 * @return:  create Group
 **/
 function AddMemberTo() { 
-global $sonoszone, $master, $config;
+
+	global $sonoszone, $master, $config;
 
 	if(isset($_GET['member'])) {
 		$member = $_GET['member'];
 		if($member === 'all') {
 			$member = array();
 			foreach ($sonoszone as $zone => $ip) {
-				// exclude master Zone
+				# exclude master Zone
 				if ($zone != $master) {
 					array_push($member, $zone);
 				}
@@ -396,11 +405,20 @@ global $sonoszone, $master, $config;
 		} else {
 			$member = explode(',', $member);
 		}
+		
+		# check if member is ON and create valid array
+		$memberon = array();
+		foreach ($member as $zone) {
+			$zoneon = checkZoneOnline($zone);
+			if ($zoneon === (bool)true)   {
+				array_push($memberon, $zone);
+			}
+		}
+		$member = $memberon;
+		
 		foreach ($member as $zone) {
 			$sonos = new SonosAccess($sonoszone[$zone][0]);
-			$sonos->BecomeCoordinatorOfStandaloneGroup();
-			if ($zone != $master) {
-				#echo $zone.'<br>';
+			if ($zone != $master)    {
 				try {
 					$sonos->SetAVTransportURI("x-rincon:" . trim($sonoszone[$master][1])); 
 					LOGGING("helper.php: Zone: ".$zone." has been added to master: ".$master,6);
@@ -408,7 +426,6 @@ global $sonoszone, $master, $config;
 					LOGGING("helper.php: Zone: ".$zone." could not be added to master: ".$master,4);
 				}
 			}
-			sleep(2);
 		}
 	}	
 }
@@ -928,6 +945,7 @@ function create_symlinks()  {
 	$symcurr_path = $config['SYSTEM']['path'];
 	$symttsfolder = $config['SYSTEM']['ttspath'];
 	$symmp3folder = $config['SYSTEM']['mp3path'];
+	
 	$copy = false;
 	if (!is_dir($symmp3folder)) {
 		$copy = true;
@@ -950,11 +968,9 @@ function create_symlinks()  {
 		LOGGING("helper.php: Symlink: '".$lbphtmldir.'/interfacedownload'."' has been created", 7);
 	}
 	if ($copy === true) {
-		#LOGGING("helper.php: Copy existing mp3 files from $myFolder/$mp3folder to $symcurr_path/$mp3folder", 6);
 		xcopy($myFolder."/".$mp3folder, $symcurr_path."/".$mp3folder);
 		LOGGING("helper.php: All files has been copied from: '".$myFolder."/".$mp3folder."' to: '".$symcurr_path."/".$mp3folder."'", 5);
 	}
-	
 }
 
 

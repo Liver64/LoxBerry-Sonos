@@ -14,15 +14,14 @@ require_once("$lbphtmldir/Save_T2S.php");
 require_once("$lbphtmldir/Speaker.php");
 require_once("$lbphtmldir/voice_engines/GoogleCloud.php");
 require_once("$lbphtmldir/system/bin/openssl_file.class.php");
-require_once("$lbpbindir/binlog.php");
+require_once("$lbphtmldir/bin/binlog.php");
 
-$myFolder = "$lbpconfigdir";									// get config folder
-$myConfigFile = "player.cfg";									// get config file
-$pathlanguagefile = "$lbphtmldir/voice_engines/langfiles";		// get languagefiles
-$configfile	= "/run/shm/s4lox_config.json";						// configuration file
-$Stunden = intval(strftime("%H"));
-$sPassword = 'loxberry';
-$off_file 			= $lbplogdir."/s4lox_off.tmp";					// path/file for Script turned off
+$pathlanguagefile 	= "$lbphtmldir/voice_engines/langfiles";		// get languagefiles
+$configfile			= "s4lox_config.json";							// configuration file
+$off_file 			= "$lbplogdir/s4lox_off.tmp";					// path/file for Script turned off
+$Stunden 	= intval(strftime("%H"));
+$sPassword 	= 'loxberry';
+
 
 # check if script/Sonos Plugin is off
 if (file_exists($off_file)) {
@@ -40,15 +39,16 @@ $ms = LBSystem::get_miniservers();
 
 # only between 8am till 21pm
 if ($Stunden >=8 && $Stunden <22)   {
-	
-	global $master, $main, $zone, $ms, $batlevel, $configfile, $config;
+	global $master, $main, $lbpconfigdir, $zone, $ms, $batlevel, $configfile, $config;
 	
 	# load Player Configuration
-	$config = parseConfigFile();
-
+	if (file_exists($lbpconfigdir . "/" . $configfile))    {
+		$config = json_decode(file_get_contents($lbpconfigdir . "/" . $configfile), TRUE);
+	} else {
+		LOGCRIT('The configuration file could not be loaded, the file may be disrupted. We have to abort :-(');
+		exit;
+	}
 	$sonoszonen = ($config['sonoszonen']);
-	$sonoszone = $sonoszonen;
-	#print_r($config);	
 
 	$battzone = array();
 	# check if MOVE or ROAM there
@@ -172,55 +172,6 @@ function select_lang() {
 	$errortext = $my_msg;
 	return $errortext;
 }
-
-
-
-/**
-* Funktion : 	parseConfigFile --> backup falls die Configdatei nicht vorhanden ist
-*
-* @param: empty
-* @return: array($config)
-**/
-function parseConfigFile()    {
-	
-	global $master, $main, $zone, $ms, $batlevel, $config, $sonoszonen, $sonoszone, $myFolder;
-	
-	// Parsen der Konfigurationsdatei sonos.cfg
-	if (!file_exists($myFolder.'/sonos.cfg')) {
-		LOGWARN('system/battery.php: The file sonos.cfg could not be opened, please try again!');
-	} else {
-		$tmpsonos = parse_ini_file($myFolder.'/sonos.cfg', TRUE);
-		if ($tmpsonos === false)  {
-			#binlog("Battery check", 'system/battery.php: The file sonos.cfg could not be parsed, the file may be disruppted. Please check/save your Plugin Config or check file "sonos.cfg" manually!');
-			LOGERR('system/battery.php: The file sonos.cfg could not be parsed, the file may be disruppted. Please check/save your Plugin Config or check file "sonos.cfg" manually!');
-			exit(1);
-		}
-		#LOGDEB("system/battery.php: Sonos config has been loaded");
-	}
-	// Parsen der Sonos Zonen Konfigurationsdatei player.cfg
-	if (!file_exists($myFolder.'/player.cfg')) {
-		LOGWARN('system/battery.php: The file player.cfg could not be opened, please try again!');
-	} else {
-		$tmpplayer = parse_ini_file($myFolder.'/player.cfg', true);
-		if ($tmpplayer === false)  {
-			#binlog("Battery check", 'system/battery.php: The file player.cfg could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file "player.cfg" manually!');
-			LOGERR('system/battery.php: The file player.cfg could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file "player.cfg" manually!');
-			exit(1);
-		}
-		#LOGDEB("system/battery.php: Player config has been loaded");
-	}
-	$player = ($tmpplayer['SONOSZONEN']);
-	foreach ($player as $zonen => $key) {
-		$sonosnet[$zonen] = explode(',', $key[0]);
-	} 
-	$sonoszonen['sonoszonen'] = $sonosnet;
-	
-	// finale config für das Script
-	$config = array_merge($sonoszonen, $tmpsonos);
-	return $config;
-}
-
-
 
 function shutdown()
 {

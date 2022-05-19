@@ -428,6 +428,8 @@ function ungroup_all() {
 
 
 /**
+* OBSOLTE: (replaced by helper.php AddMemberTo()
+*
 * Funktion : 	addmember --> fügt angegebene Zone einer Gruppe hinzu
 *
 * @param: empty 
@@ -435,28 +437,44 @@ function ungroup_all() {
 **/
 
 function addmember() {
-	global $sonoszone, $config, $master;
 	
-	$member = $_GET['member'];
-	$member = explode(',', $member);
-	if (in_array($master, $member)) {
-		LOGGING("grouping.php: The zone ".$master." could not be entered as member again. Please remove from Syntax '&member=".$master."' !", 4);
-	}
-	$memberon = array();
-	foreach ($member as $value) {
-		$zoneon = checkZoneOnline($value);
-		if ($zoneon === (bool)true)  {
-			array_push($memberon, $value);
+	global $sonoszone, $master, $config;
+	
+	if(isset($_GET['member'])) {
+		$member = $_GET['member'];
+		if($member === 'all') {
+			$member = array();
+			foreach ($sonoszone as $zone => $ip) {
+				// exclude master Zone
+				if ($zone != $master) {
+					array_push($member, $zone);
+				}
+			}
 		} else {
-			LOGGING("grouping.php: Player '".$value."' could not be added to the group!!", 4);
+			$member = explode(',', $member);
 		}
-	}
-	foreach ($memberon as $value) {
-		$zoneon = checkZoneOnline($value);
-		$masterrincon = $config['sonoszonen'][$master][1];
-		$sonos = new SonosAccess($sonoszone[$value][0]);
-		$sonos->SetAVTransportURI("x-rincon:" . $masterrincon);
-		LOGGING("grouping.php: Player '".$value."' has been added to Group '".$master."'",6);
+		
+		# check if member is ON and create valid array
+		$memberon = array();
+		foreach ($member as $zone) {
+			$zoneon = checkZoneOnline($zone);
+			if ($zoneon === (bool)true)   {
+				array_push($memberon, $zone);
+			}
+		}
+		$member = $memberon;
+		
+		foreach ($member as $zone) {
+			$sonos = new SonosAccess($sonoszone[$zone][0]);
+			if ($zone != $master)   {
+				try {
+					$sonos->SetAVTransportURI("x-rincon:" . trim($sonoszone[$master][1])); 
+					LOGGING("helper.php: Zone: ".$zone." has been added to master: ".$master,6);
+				} catch (Exception $e) {
+					LOGGING("helper.php: Zone: ".$zone." could not be added to master: ".$master,4);
+				}
+			}
+		}
 	}
 }
 

@@ -713,15 +713,14 @@ function t2s_playbatch() {
 
 function send_tts_source($tts_stat)  {
 	
-	global $lbphtmldir, $lbpbindir;
+	global $config, $tmp_tts, $sonoszone, $sonoszonen, $master, $ms, $tts_stat, $lbphtmldir;
 	
 	require_once "$lbphtmldir/system/io-modul.php";
 	#require_once "phpMQTT/phpMQTT.php";
-	require_once "$lbpbindir/phpmqtt/phpMQTT.php";
-	
-	global $config, $tmp_tts, $sonoszone, $sonoszonen, $master, $ms, $tts_stat; 
-	
+	require_once "$lbphtmldir/bin/phpmqtt/phpMQTT.php";
+
 	$tmp_tts = "/run/shm/s4lox_tmp_tts";
+
 	if ($tts_stat == 1)  {
 			if(!touch($tmp_tts)) {
 				LOGGING("play_t2s.php: No permission to write file", 3);

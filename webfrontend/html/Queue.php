@@ -155,13 +155,12 @@ function PlayFavorite()
 	}
 	$sonos->BecomeCoordinatorOfStandaloneGroup();
 	if(isset($_GET['member'])) {
-		addmember();
+		AddMemberTo();
 		LOGINF ("queue.php: Member has been added");
 	}
-	#print_r($re);
 	$sonos->Stop();
 	$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
-	$sonos->SetGroupMute(false);
+	@$sonos->SetGroupMute(false);
 	$sonos->SetPlayMode('NORMAL');
 	$sonos->SetVolume($volume);
 	$sonos->ClearQueue();
@@ -194,7 +193,7 @@ function GetFavorites()
 {
 	global $sonos;
 	
-	$tes = $sonos->BrowseFavorites("FV:2","c");
+	$tes = $sonos->GetFavorites();
 	echo "Only Tracks and Radio Stations are supported, no Albums/playlists, except for fucntion 'playfavorite@favorite=TITLE'";
 	echo "Fuzzy Logic search is possible by Title/Playlist or Radio Station";
 	echo "<br>";
@@ -290,7 +289,6 @@ function PlayAllFavorites()
 		$radio = "Radio";	
 		$pl = "Playlist";
 		$tes = AddDetailsToMetadata();
-		#print_r($tes);
 		$track 		= array_multi_search($single, $tes);
 		$radio 		= array_multi_search($radio, $tes);
 		$playlist 	= array_multi_search($pl, $tes);
@@ -302,7 +300,7 @@ function PlayAllFavorites()
 		$sonos->SetQueue("x-rincon-queue:".$sonoszone[$master][1]."#0");
 		$sonos->Stop();
 		$sonos->ClearQueue();
-		$sonos->SetGroupMute(false);
+		@$sonos->SetGroupMute(false);
 		$sonos->SetPlayMode('NORMAL');
 		$sonos->SetVolume($volume);
 		LOGINF("queue.php: Settings to play your favorite has been prepared!");
@@ -400,7 +398,7 @@ function PlayTrackFavorites()
 	$sonos->SetQueue("x-rincon-queue:".$sonoszone[$master][1]."#0");
 	$sonos->Stop();
 	$sonos->ClearQueue();
-	$sonos->SetGroupMute(false);
+	@$sonos->SetGroupMute(false);
 	$sonos->SetPlayMode('NORMAL');
 	$sonos->SetVolume($volume);
 	LOGINF("queue.php: Settings to play your favorite has been prepared!");
@@ -473,7 +471,7 @@ function PlayRadioFavorites()
 			$sonos->ClearQueue();
 			$proof = @metadata($value[0]);
 		}
-		$sonos->SetGroupMute(false);
+		@$sonos->SetGroupMute(false);
 		$sonos->SetVolume($volume);
 		LOGINF("queue.php: Settings to play your favorite has been prepared!");
 		# check addionally if Radio Station has been successful loaded
@@ -543,7 +541,7 @@ function PlaySonosPlaylist()
 			$sonos->ClearQueue();
 			metadata($value[0]);
 		}
-		$sonos->SetGroupMute(false);
+		@$sonos->SetGroupMute(false);
 		$sonos->SetVolume($volume);
 		LOGINF("queue.php: Settings to play your playlist has been prepared!");
 		# check addionally if Playlist has been successful loaded
@@ -609,7 +607,7 @@ function PlayTuneInPlaylist()
 			$sonos->ClearQueue();
 			metadata($value[0]);
 		}
-		$sonos->SetGroupMute(false);
+		@$sonos->SetGroupMute(false);
 		$sonos->SetVolume($volume);
 		LOGINF("queue.php: Settings to play your TuneIn Radio Station has been prepared!");
 		# check addionally if Radio Station has been successful loaded
@@ -679,7 +677,7 @@ function PlayPlaylistFavorites()
 			$sonos->ClearQueue();
 			@metadata($value[0]);
 		}
-		$sonos->SetGroupMute(false);
+		@$sonos->SetGroupMute(false);
 		$sonos->SetVolume($volume);
 		LOGINF("queue.php: Settings to play your playlist has been prepared!");
 		# check addionally if Playlist has been successful loaded
