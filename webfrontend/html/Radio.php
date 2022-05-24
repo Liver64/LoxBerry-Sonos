@@ -13,6 +13,7 @@
 **/
 
 function radio(){
+	
 	Global $sonos, $volume, $config, $sonoszone, $master;
 			
 	if(isset($_GET['radio'])) {
@@ -31,16 +32,16 @@ function radio(){
 		exit;
 	}
 	$check_stat = getZoneStatus($master);
-	#if ($check_stat == "member")  {
-	$sonos->BecomeCoordinatorOfStandaloneGroup();
-	LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
-	#}
+	if ($check_stat != (string)"single")  {
+		$sonos->BecomeCoordinatorOfStandaloneGroup();
+		LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
+	}
 	$sonos = new SonosAccess($config['sonoszonen'][$master][0]);
 	$coord = $master;
 	$roomcord = getRoomCoordinator($coord);
 	$sonosroom = new SonosAccess($roomcord[0]); //Sonos IP Adresse
 	$sonosroom->SetQueue("x-rincon-queue:".$roomcord[1]."#0");
-    $radiolists = $sonos->Browse("R:0/0","c");
+    $radiolists = $sonos->BrowseContentDirectory("R:0/0","BrowseDirectChildren");
 	foreach ($radiolists as $val => $item)  {
 		$radiolists[$val]['titlelow'] = mb_strtolower($radiolists[$val]['title']);
 	}
@@ -77,15 +78,14 @@ function radio(){
 		LOGGING("radio.php: Radio Station '".$found[0][0]["title"]."' has been loaded successful",6);
 	} else {
 		LOGGING("radio.php: Radio Station '".$found[0][0]["title"]."' could not be loaded. Please check your input.",3);
-		if(isset($_GET['member'])) {
-			removemember();
-			LOGINF ("radio.php: Member has been removed");
-		}
+		#if(isset($_GET['member'])) {
+		#	removemember();
+		#	LOGINF ("radio.php: Member has been removed");
+		#}
 		exit;
 	}
 	if(isset($_GET['member']))   {
 		AddMemberTo();
-		volume_group();
 		LOGGING("radio.php: Group Radio has been called.", 7);
 	}
 }
@@ -156,7 +156,7 @@ function nextradio() {
 		$act = $radio_name[0];
 	}
 	if ($config['VARIOUS']['announceradio'] == 1 and $textan == "0") {
-		$check_stat = getZoneStatus($master);
+		#$check_stat = getZoneStatus($master);
 		say_radio_station();
 	}
 	$coord = getRoomCoordinator($master);
@@ -192,7 +192,7 @@ function random_radio() {
 	#} catch (Exception $e) {
 		#LOGGING("radio.php: Player ".$master." is Single!", 7);
 	#}
-	$sonoslists = $sonos->Browse("R:0/0","c");
+	$sonoslists = $sonos->BrowseContentDirectory("R:0/0","BrowseDirectChildren");
 	#print_r($sonoslists);
 	if(!isset($_GET['except'])) {
 		$countpl = count($sonoslists);
@@ -370,7 +370,7 @@ function check_date_once() {
 
 function PluginRadio()   
 {
-	global $sonos, $sonoszone, $master, $config;
+	global $sonos, $sonoszone, $master, $config, $volume;
 	
 	if (isset($_GET['radio'])) {
 		if (empty($_GET['radio']))    {
@@ -403,6 +403,11 @@ function PluginRadio()
 		LOGERR ("radio.php: Your entered favorite/keyword '".$enteredRadio."' has more then 1 hit! Please specify more detailed.");
 		exit;
 	}
+	$check_stat = getZoneStatus($master);
+	if ($check_stat != (string)"single")  {
+		$sonos->BecomeCoordinatorOfStandaloneGroup();
+		LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
+	}
 	if(isset($_GET['member'])) {
 		AddMemberTo();
 		LOGINF ("radio.php: Member has been added");
@@ -412,9 +417,11 @@ function PluginRadio()
 		LOGERR ("radio.php: Your entered favorite/keyword '".$enteredRadio."' could not be found! Please specify more detailed.");
 		exit;
 	}
+	$sonos = new SonosAccess($sonoszone[$master][0]);
 	try {
 		$sonos->SetRadio('x-rincon-mp3radio://'.$re[0][0][1], $re[0][0][0]);
 		$sonos->SetGroupMute(false);
+		$sonos->SetVolume($volume);
 		$sonos->Play();
 		LOGOK("radio.php: Your Radio '".$re[0][0][0]."' has been successful loaded and is playing!");
 	} catch (Exception $e) {

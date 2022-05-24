@@ -390,7 +390,7 @@ function URL_Encode($string) {
 **/
 function AddMemberTo() { 
 
-	global $sonoszone, $master, $config;
+	global $sonoszone, $master, $config, $sleepaddmember;
 
 	if(isset($_GET['member'])) {
 		$member = $_GET['member'];
@@ -415,7 +415,6 @@ function AddMemberTo() {
 			}
 		}
 		$member = $memberon;
-		
 		foreach ($member as $zone) {
 			$sonos = new SonosAccess($sonoszone[$zone][0]);
 			if ($zone != $master)    {
@@ -426,7 +425,10 @@ function AddMemberTo() {
 					LOGGING("helper.php: Zone: ".$zone." could not be added to master: ".$master,4);
 				}
 			}
+			usleep((int)($sleepaddmember * 1000000));
 		}
+		volume_group();
+		$sonos = new SonosAccess($sonoszone[$master][0]);
 	}	
 }
 

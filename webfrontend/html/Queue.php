@@ -20,8 +20,9 @@ function zap()
 		exit;
 	}
 	# become single zone 1st
+	$sonos = new SonosAccess($config['sonoszonen'][$master][0]);
 	$check_stat = getZoneStatus($master);
-	if ($check_stat == "member")  {
+	if ($check_stat != (string)"single")  {
 		$sonos->BecomeCoordinatorOfStandaloneGroup();
 		LOGGING("queue.php: Zone ".$master." has been ungrouped.",5);
 	}
@@ -158,6 +159,7 @@ function PlayFavorite()
 		AddMemberTo();
 		LOGINF ("queue.php: Member has been added");
 	}
+	$sonos = new SonosAccess($sonoszone[$master][0]);
 	$sonos->Stop();
 	$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
 	@$sonos->SetGroupMute(false);
@@ -382,7 +384,7 @@ function PlayTrackFavorites()
 			@unlink($queuetracktmp);
 			if(isset($_GET['member'])) {
 				#removemember();
-				LOGINF ("queue.php: Member has been removed");
+				#LOGINF ("queue.php: Member has been removed");
 			}
 			LOGINF ("queue.php: File has been deleted");
 			LOGOK ("queue.php: ** Loop ended, we start from beginning **");
@@ -421,7 +423,7 @@ function PlayTrackFavorites()
 		# Set variable for ClearQueue
 		$shift = true;
 		if (count($sonos->GetCurrentPlaylist()) > 0 )  {
-			@$sonos->Play();
+			$sonos->Play();
 			LOGDEB ("queue.php: First Favorite Track is playing");
 			LOGINF ("queue.php: Currently playing Track favorite has been removed from array");
 		} else {
@@ -438,6 +440,7 @@ function PlayTrackFavorites()
 			}
 		}
 	}
+	LOGOK("queue.php: All Track Favorites has been loaded");
 	file_put_contents($queuetracktmp, json_encode("cleared"));	
 }
 

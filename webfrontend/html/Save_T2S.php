@@ -13,6 +13,7 @@
 **/
 echo '<PRE>';	
 function saveZonesStatus() {
+	
 	global $sonoszone, $config, $sonos, $player, $actual, $time_start;
 
 	// save each Zone Status

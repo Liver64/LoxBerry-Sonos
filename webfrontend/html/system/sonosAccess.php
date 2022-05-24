@@ -12,6 +12,8 @@ class SonosAccess
     {
         $this->address = $address;
 		
+		global $lbplogdir;
+		
 		# Create Logger environment based on used platforms
 		# params for default $log_level = debug, info, error, warning
 		
@@ -20,8 +22,7 @@ class SonosAccess
 			# check whether it is a Loxberry
 			if (getenv('LBHOMEDIR') != false)   {
 				# Loxberry specific
-				# $logfolder = "REPLACELBPLOGDIR/";
-				$logfolder = "/opt/loxberry/log/plugins/sonos4lox/";
+				$logfolder = $lbplogdir;
 				# use Sonos Plugin Loglevel
  				$level = LBSystem::pluginloglevel();
 				if ($level == "0")   { 

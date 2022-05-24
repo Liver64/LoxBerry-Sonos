@@ -37,10 +37,10 @@ function playlist() {
 	# initial load
 	$master = $_GET['zone'];
 	$check_stat = getZoneStatus($master);
-	#if ($check_stat == "member")  {
-	$sonos->BecomeCoordinatorOfStandaloneGroup();
-	LOGGING("playlist.php: Zone ".$master." has been ungrouped.",5);
-	#}
+	if ($check_stat != (string)"single")  {
+		$sonos->BecomeCoordinatorOfStandaloneGroup();
+		LOGGING("playlist.php: Zone ".$master." has been ungrouped.",5);
+	}
 	$sonos = new SonosAccess($config['sonoszonen'][$master][0]);
 	if(isset($_GET['playlist']))   {
 		$epl = $_GET['playlist'];
@@ -336,8 +336,13 @@ function random_playlist() {
 		LOGGING("playlist.php: This function could not be used with groups!", 3);
 		exit;
 	}
+	$check_stat = getZoneStatus($master);
+	if ($check_stat != (string)"single")  {
+		$sonos->BecomeCoordinatorOfStandaloneGroup();
+		LOGGING("playlist.php: Zone ".$master." has been ungrouped.",5);
+	}
 	$sonoslists = $sonos->GetSONOSPlaylists();
-	print_r($sonoslists);
+	#print_r($sonoslists);
 	if(!isset($_GET['except'])) {
 		$countpl = count($sonoslists);
 		$random = mt_rand(0, $countpl - 1);

@@ -2,7 +2,7 @@
 
 ##############################################################################################################################
 #
-# Version: 	5.0.0
+# Version: 	5.1.2
 # Datum: 	05.2022
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 # 
@@ -51,6 +51,7 @@ $sambaini = $lbhomedir.'/system/samba/smb.conf';				// path to Samba file smb.co
 $searchfor = '[plugindata]';									// search for already existing Samba share
 $MP3path = "mp3";												// path to preinstalled numeric MP3 files
 $sleeptimegong = "3";											// waiting time before playing t2s
+$sleepaddmember = "2";											// waiting time in seconds during adding member to master (decimal allowed)
 $maxzap = '60';													// waiting time before zapzone been initiated again
 $sPassword = 'loxberry';
 $lbport = lbwebserverport();									// get loxberry port
@@ -121,7 +122,7 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 	(isset($_GET['abfall'])) or (isset($_GET['witz'])) or 
 	(isset($_GET['pollen'])) or (isset($_GET['warning'])) or
 	(isset($_GET['distance'])) or (isset($_GET['clock'])) or 
-	(isset($_GET['calendar'])) or (isset($_GET['radio'])) or
+	(isset($_GET['calendar'])) or 
 	(isset($_GET['playlist'])) or (isset($_GET['playlisturi'])) or
 	(isset($_GET['albumuri'])) or (isset($_GET['file']))
 	)  {
@@ -190,9 +191,11 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 		if($handle) {
 			$sonoszone[$zonen] = $ip;
 			array_push($zonesonline, $zonen);
+		} else {
+			$sonoszone = $sonoszonen;
 		}
 	}
-				
+			
 	if (!array_key_exists($_GET['zone'], $sonoszone))  {
 		LOGGING("sonos.php: Requested ...zone=".$_GET['zone']." seems to be Offline. Check your Power/Onlinestatus.",4);
 		exit;
@@ -255,7 +258,7 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 				(isset($_GET['abfall'])) or (isset($_GET['witz'])) or 
 				(isset($_GET['pollen'])) or (isset($_GET['warning'])) or
 				(isset($_GET['distance'])) or (isset($_GET['clock'])) or 
-				(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch") or (isset($_GET['radio'])))	{
+				(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch"))	{
 				$volume = $config['sonoszonen'][$master][3];
 				LOGGING("sonos.php: T2S Volume for Player ".$master." is less then ".$min_vol." and has been set exceptional to Standard volume ".$config['sonoszonen'][$master][3], 7);
 			} else {
@@ -278,12 +281,12 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 		(isset($_GET['abfall'])) or (isset($_GET['witz'])) or 
 		(isset($_GET['pollen'])) or (isset($_GET['warning'])) or
 		(isset($_GET['distance'])) or (isset($_GET['clock'])) or 
-		(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch") or (isset($_GET['radio'])))	{
+		(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch"))	{
 		$volume = $config['sonoszonen'][$master][3];
 		LOGGING("sonos.php: Standard T2S Volume for Player ".$master." has been set to: ".$volume, 7);
 	} else {
 		$volume = $config['sonoszonen'][$master][4];
-		LOGGING("sonos.php: Standard Volume for Player ".$master." has been set to: ".$volume, 7);
+		LOGGING("sonos.php: Standard Sonos Volume for Player ".$master." has been set to: ".$volume, 7);
 	}
 }
 
@@ -331,9 +334,11 @@ if(isset($_GET['rampto'])) {
 if(array_key_exists($_GET['zone'], $sonoszone)){ 
 
 	global $json;
+	
 	$master = $_GET['zone'];
 	$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
 	switch($_GET['action'])	{
+		
 		case 'play';
 			$posinfo = $sonos->GetPositionInfo();
 			if(!empty($posinfo['TrackURI'])) {
@@ -971,8 +976,8 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			echo '<PRE>';
 			#$test = $sonos->GetFavorites("FV:2","BrowseDirectChildren");				// browse Sonos favorites
 			$test = AddDetailsToMetadata();												// browse Sonos favorites + Service and sid
-			#$test = $sonos->Browse("R:0/0","BrowseDirectChildren");					// browse TuneIn/Meine Radiosender
-			#$test = $sonos->Browse("R:0/1","BrowseDirectChildren");					// 
+			#$test = $sonos->BrowseContentDirectory("R:0/0","BrowseDirectChildren");	// browse TuneIn/Meine Radiosender
+			#$test = $sonos->BrowseContentDirectory("R:0/1","BrowseDirectChildren");	// 
 			#$test = $sonos->GetFavorites("Q:0","BrowseDirectChildren");				// browse current Queue
 			#$test = $sonos->GetFavorites("S:","BrowseDirectChildren");					// browse local Playlists
 			#$test = $sonos->GetFavorites("SQ:","BrowseDirectChildren");				// browse Sonos Playlists
@@ -993,10 +998,13 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			}
 			# 1st click/execution
 			if (!file_exists($queuetmp))  {
-				$sonos->BecomeCoordinatorOfStandaloneGroup();
+				$check_stat = getZoneStatus($master);
+				if ($check_stat != (string)"single")  {
+					$sonos->BecomeCoordinatorOfStandaloneGroup();
+					LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
+				}
 				if(isset($_GET['member'])) {
 					AddMemberTo();
-					volume_group();
 					$sonos = new SonosAccess($sonoszonen[$master][0]);
 					LOGINF ("sonos.php: Member has been added");
 				}
@@ -1025,10 +1033,13 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			}
 			# 1st click/execution
 			if (!file_exists($queuetracktmp))  {
-				#$sonos->BecomeCoordinatorOfStandaloneGroup();
+				$check_stat = getZoneStatus($master);
+				if ($check_stat != (string)"single")  {
+					$sonos->BecomeCoordinatorOfStandaloneGroup();
+					LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
+				}
 				if(isset($_GET['member'])) {
 					AddMemberTo();
-					volume_group();
 					$sonos = new SonosAccess($sonoszonen[$master][0]);
 					LOGINF ("sonos.php: Requested Member has been added");
 				}
@@ -1056,10 +1067,13 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			}
 			# 1st click/execution
 			if (!file_exists($queueradiotmp))  {
-				$sonos->BecomeCoordinatorOfStandaloneGroup();
+				$check_stat = getZoneStatus($master);
+				if ($check_stat != (string)"single")  {
+					$sonos->BecomeCoordinatorOfStandaloneGroup();
+					LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
+				}
 				if(isset($_GET['member'])) {
 					AddMemberTo();
-					volume_group();
 					$sonos = new SonosAccess($sonoszonen[$master][0]);
 					LOGINF ("sonos.php: Member has been added");
 				}
@@ -1090,10 +1104,13 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			
 			# 1st click/execution
 			if (!file_exists($pltmp))  {
-				$sonos->BecomeCoordinatorOfStandaloneGroup();
+				$check_stat = getZoneStatus($master);
+				if ($check_stat != (string)"single")  {
+					$sonos->BecomeCoordinatorOfStandaloneGroup();
+					LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
+				}
 				if(isset($_GET['member'])) {
 					AddMemberTo();
-					volume_group();
 					$sonos = new SonosAccess($sonoszonen[$master][0]);
 					LOGINF ("sonos.php: Member has been added");
 				}
@@ -1122,10 +1139,13 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			}
 			# 1st click/execution
 			if (!file_exists($tuneinradiotmp))  {
-				$sonos->BecomeCoordinatorOfStandaloneGroup();
+				$check_stat = getZoneStatus($master);
+				if ($check_stat != (string)"single")  {
+					$sonos->BecomeCoordinatorOfStandaloneGroup();
+					LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
+				}
 				if(isset($_GET['member'])) {
 					AddMemberTo();
-					volume_group();
 					$sonos = new SonosAccess($sonoszonen[$master][0]);
 					LOGINF ("sonos.php: Member has been added");
 				}
@@ -1158,10 +1178,13 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			#print_r($radios);
 			# 1st click/execution
 			if (!file_exists($queuepltmp))  {
-				$sonos->BecomeCoordinatorOfStandaloneGroup();
+				$check_stat = getZoneStatus($master);
+				if ($check_stat != (string)"single")  {
+					$sonos->BecomeCoordinatorOfStandaloneGroup();
+					LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
+				}
 				if(isset($_GET['member'])) {
 					AddMemberTo();
-					volume_group();
 					$sonos = new SonosAccess($sonoszonen[$master][0]);
 					LOGINF ("sonos.php: Member has been added");
 				}
@@ -2047,7 +2070,7 @@ function volume_group()  {
 							(isset($_GET['abfall'])) or (isset($_GET['witz'])) or 
 							(isset($_GET['pollen'])) or (isset($_GET['warning'])) or
 							(isset($_GET['distance'])) or (isset($_GET['clock'])) or 
-							(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch") or (isset($_GET['radio'])))	{
+							(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch"))	{
 							$volume = $config['sonoszonen'][$zone2][3];
 							LOGGING("sonos.php: T2S Volume for Member ".$zone2." is less then ".$min_vol." and has been set exceptional to Standard volume ".$config['sonoszonen'][$zone2][3], 7);
 						} else {
@@ -2063,14 +2086,14 @@ function volume_group()  {
 					(isset($_GET['abfall'])) or (isset($_GET['witz'])) or 
 					(isset($_GET['pollen'])) or (isset($_GET['warning'])) or
 					(isset($_GET['distance'])) or (isset($_GET['clock'])) or 
-					(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch") or (isset($_GET['radio'])))	{
+					(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch"))	{
 					# T2S Standard Volume
 					$volume = $config['sonoszonen'][$zone2][3];
 				} else {
 					# Sonos Standard Volume
 					$volume = $config['sonoszonen'][$zone2][4];
 				}
-				LOGGING("sonos.php: Standard Volume for Group Member ".$zone2." has been set to: ".$volume, 7);
+				LOGGING("sonos.php: Standard Sonos Volume for Group Member ".$zone2." has been set to: ".$volume, 7);
 			}
 			@$sonos->SetMute(false);
 			$sonos->SetVolume($volume);
