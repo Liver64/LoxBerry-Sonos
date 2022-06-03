@@ -372,7 +372,12 @@
 			[BUGFIX] Fixed Radio Handling in Datenübertragung Sonos --> MS
 			[IMPROVEMENT] neuen virtuellen Texteingang 'sid_$zone' hinzugefügt (Spotify, Amazon, Deezer, etc.)
 			[IMPROVEMENT] Listalarms um die Eingangsverbinder Namen erweitert
- 5.1.0		[IMPROVEMENT] Neue Funktion 'pluginradio' um die Radio Favoriten aus der Plugin Config direkt abzuspielen
+ 5.0.2		[IMPROVEMENT] Neue Funktion 'pluginradio' um die Radio Favoriten aus der Plugin Config direkt abzuspielen
 			[IMPROVEMENT] Diverse Performance Optimierungen
-			
+ 5.1.2		[BUGFIX] 'radioplaylist' wurde gefixt
+			[BUGFIX] Lautstärkeregelung wurde gefixt
+			[BUGFIX] Gruppenfunktionen optimiert
+ 5.1.4		[BUGFIX] Loxone Templatebuilder wurde korrigiert/erweitert
+			[IMPROVEMENT] globaler Parameter 'debug' hinzugefügt um die Fehleranalyse zu vereinfachen
+			[IMPROVEMENT] UI aktualisiert
  
