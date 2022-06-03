@@ -20,7 +20,7 @@ global $sonoszonen, $config, $myIP;
 
 // Deklaration Variablen
 $myFolder = "$lbpconfigdir";
-$myIP = $_SERVER["SERVER_ADDR"];
+$myIP = LBSystem::get_localip();
 
 $params = [	"name" => "Sonos PHP",
 			"filename" => "$lbplogdir/sonos.log",
@@ -113,9 +113,9 @@ $VIudp = new VirtualInUdp( [
 ] );
 
 foreach ($tmpplayer['SONOSZONEN'] as $zone => $key)  { 
-	$linenr = $VIudp->VirtualInUdpCmd ( [ "Title" => "Sonos: Volume ".$zone."",  "Check" => "MQTT:\iSonos4lox/vol/kids=\i\\v", "Analog" => true ] );
-	$linenr = $VIudp->VirtualInUdpCmd ( [ "Title" => "Sonos: Playstate ".$zone."",  "Check" => "MQTT:\iSonos4lox/stat/kids=\i\\v", "Analog" => true ] );
-	$linenr = $VIudp->VirtualInUdpCmd ( [ "Title" => "Sonos: Groupstate ".$zone."",  "Check" => "MQTT:\iSonos4lox/grp/kids=\i\\v", "Analog" => true ] );
+	$linenr = $VIudp->VirtualInUdpCmd ( [ "Title" => "Sonos: Volume ".$zone."",  "Check" => "MQTT:\iSonos4lox/vol/".$zone."=\i\\v", "Analog" => true ] );
+	$linenr = $VIudp->VirtualInUdpCmd ( [ "Title" => "Sonos: Playstate ".$zone."",  "Check" => "MQTT:\iSonos4lox/stat/".$zone."=\i\\v", "Analog" => true ] );
+	$linenr = $VIudp->VirtualInUdpCmd ( [ "Title" => "Sonos: Groupstate ".$zone."",  "Check" => "MQTT:\iSonos4lox/grp/".$zone."=\i\\v", "Analog" => true ] );
 }
 
 $xmludp = $VIudp->output();

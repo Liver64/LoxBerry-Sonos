@@ -59,24 +59,29 @@
 			if (!isset($sonoszonen[$zone][6]))   {
 				array_push($sonoszonen[$zone], '');
 			}
+			$info = json_decode(file_get_contents('http://' . $ip . ':1400/info'), true);
+			# Preparing variables to update config
+			$model = $info['device']['model'];
 			if (!isset($sonoszonen[$zone][7]))   {
-					$info = json_decode(file_get_contents('http://' . $ip . ':1400/info'), true);
-					# Preparing variables to update config
-					$model = $info['device']['model'];
-					$groupId = $info['groupId'];
-					$modelDisplayName = $info['device']['modelDisplayName'];
-					$householdId = $info['householdId'];
-					$deviceId = $info['device']['serialNumber'];
-					array_push($sonoszonen[$zone], $model, $groupId, $householdId, $deviceId);
-					$line = implode(',',$sonoszonen[$zone]);
-					echo "<INFO> Update Zone ".$zone." by: ".$zone."[]=".$line."".PHP_EOL;
-					$res = "0";
-					fwrite($h, $zone."[]=".$line."\n");
+				$groupId = $info['groupId'];
+				$modelDisplayName = $info['device']['modelDisplayName'];
+				$householdId = $info['householdId'];
+				$deviceId = $info['device']['serialNumber'];
+				array_push($sonoszonen[$zone], $model, $groupId, $householdId, $deviceId);
+				$line = implode(',',$sonoszonen[$zone]);
+				echo "<INFO> Update Zone ".$zone." by: ".$zone."[]=".$line."".PHP_EOL;
+				$res = "0";
+				fwrite($h, $zone."[]=".$line."\n");
 			} else {
 				$line = implode(',',$sonoszonen[$zone]);
 				echo "<OK> No update for Zone ".$zone." required.".PHP_EOL;
 				$res = "1";
 				fwrite($h, $zone."[]=".$line."\n");
+			}
+			$url = 'http://'.$ip.':1400/img/icon-'.$model.'.png';
+			$img = $lbphtmldir.'/images/icon-'.$model.'.png';
+			if (!file_exists($img)) {
+				file_put_contents($img, file_get_contents($url));
 			}
 			fclose($h);
 		} else {
@@ -97,6 +102,11 @@
 			}
 			fclose($h);
 		}
+		#$url = 'http://'.$ip.':1400/img/icon-'.$model.'.png';
+		#$img = $lbphtmldir.'/images/icon-'.$model.'.png';
+		#if (!file_exists($img)) {
+		#	file_put_contents($img, file_get_contents($url));
+		#}
 		
 	}
 	if (!copy($myConfigFolder.'/player_template.cfg', $myConfigFolder.'/player.cfg')) {

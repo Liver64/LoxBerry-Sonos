@@ -194,7 +194,7 @@ $plugindata = LBSystem::plugindata();
 **/
  function getSonosDevices($devices){
 	 
-	global $sonosfinal, $sodevices;
+	global $sonosfinal, $sodevices, $lbphtmldir;
 	
 	# http://<IP>:1400/xml/device_description.xml
 	# http://<IP>:1400/info
@@ -240,6 +240,12 @@ $plugindata = LBSystem::plugindata();
 			continue;
 		}
 		$sonosplayerfinal[$raum] = $zonen;
+		# Save Player icons for UI
+		$url = 'http://'.$zoneip.':1400/img/icon-'.$model.'.png';
+		$img = $lbphtmldir.'/images/icon-'.$model.'.png';
+		if (!file_exists($img)) {
+			file_put_contents($img, file_get_contents($url));
+		}
 	}
 	#print_r($sonosplayerfinal);
 	#$match = @array_intersect_assoc($soplayernew, $sonosplayerfinal);

@@ -251,6 +251,14 @@ $navbar{2}{URL} = './index.cgi?do=details';
 $navbar{99}{Name} = "$SL{'BASIS.MENU_LOGFILES'}";
 $navbar{99}{URL} = './index.cgi?do=logfiles';
 
+# if MQTT credentials are valid and Communication turned ON insert navbar
+if ($mqttcred && $pcfg->param("LOXONE.LoxDaten") eq "true")  {
+	$navbar{3}{Name} = "$SL{'BASIS.MENU_MQTT'}";
+	$navbar{3}{URL} = 'http://'.$lbip.":".lbwebserverport().'/admin/plugins/mqttgateway/index.cgi';
+	$navbar{3}{target} = '_blank';
+	LOGDEB "MQTT is installed and could be used";
+}
+
 if ($R::saveformdata1) {
 	$template->param( FORMNO => 'form' );
 	&save;
@@ -281,7 +289,8 @@ if(!defined $R::do or $R::do eq "form") {
 	&scan;
 	$template->param("SETTINGS", "1");
 	&form;
-}
+} 
+
 $error_message = "Invalid do parameter: ".$R::do;
 &error;
 exit;
@@ -368,17 +377,24 @@ sub form
 	my $error_volume = $SL{'T2S.ERROR_VOLUME_PLAYER'};
 	my $playercfg = new Config::Simple($lbpconfigdir . "/" . $pluginplayerfile);
 	my %configzones = $playercfg->vars();	
-	
+	our $filename;
 	foreach my $key (keys %configzones) {
 		$countplayers++;
 		my $room = $key;
 		$room =~ s/^SONOSZONEN\.//g;
 		$room =~ s/\[\]$//g;
 		my @fields = $playercfg->param($key);
+		$filename = $lbphtmldir.'/images/icon-'.$fields[7].'.png';
+		
 		$rowssonosplayer .= "<tr><td style='height: 25px; width: 4%;' class='auto-style1'><INPUT type='checkbox' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
 		$rowssonosplayer .= "<td style='height: 28px; width: 16%;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$room' style='width: 100%; background-color: #e6e6e6;' /> </td>\n";
 		$rowssonosplayer .= "<td style='height: 25px; width: 4%;' class='auto-style1'><div class='chk-group'><INPUT type='checkbox' class='chk-checked' name='mainchk$countplayers' id='mainchk$countplayers' value='$fields[6]' align='center'/></div></td>\n";
 		$rowssonosplayer .= "<td style='height: 28px; width: 15%;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='$fields[2]' style='width: 100%; background-color: #e6e6e6;' /> </td>\n";
+		if (-e $filename) {
+			$rowssonosplayer .= "<td style='height: 28px; width: 2%;'><img src='/plugins/$lbpplugindir/images/icon-$fields[7].png' border='0' width='50' height='50' align='middle'/> </td>\n";
+		} else {
+			$rowssonosplayer .= "<td style='height: 28px; width: 2%;'><img src='/plugins/$lbpplugindir/images/sonos_logo_sm.png' border='0' width='50' height='50' align='middle'/> </td>\n";
+		}
 		$rowssonosplayer .= "<td style='height: 28px; width: 15%;'><input type='text' id='ip$countplayers' name='ip$countplayers' size='30' value='$fields[0]' style='width: 100%; background-color: #e6e6e6;' /> </td>\n";
 		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='$fields[3]' /> </td>\n";
 		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='$fields[4]' /> </td>\n";
@@ -388,11 +404,13 @@ sub form
 		$rowssonosplayer .= "<input type='hidden' id='householdId$countplayers' name='householdId$countplayers' value='$fields[9]'>\n";
 		$rowssonosplayer .= "<input type='hidden' id='deviceId$countplayers' name='deviceId$countplayers' value='$fields[10]'>\n";
 		$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' value='$fields[1]'>\n";
+		#$content = $filename;
+	#print_test($content);
 	}
-	LOGDEB "$countplayers Sonos players has been loaded.";
+	LOGDEB "$countplayers Sonos players has been loaded.";							
 	
 	if ( $countplayers < 1 ) {
-		$rowssonosplayer .= "<tr><td colspan=8>" . $SL{'ZONES.SONOS_EMPTY_ZONES'} . "</td></tr>\n";
+		$rowssonosplayer .= "<tr><td colspan=9>" . $SL{'ZONES.SONOS_EMPTY_ZONES'} . "</td></tr>\n";
 	}
 	$rowssonosplayer .= "<input type='hidden' id='countplayers' name='countplayers' value='$countplayers'>\n";
 	$template->param("ROWSSONOSPLAYER", $rowssonosplayer);
@@ -451,7 +469,7 @@ sub form
 	}
 	
 	printtemplate();
-	#$content = $donation;
+	#$content = $filename;
 	#print_test($content);
 	exit;
 	
@@ -731,11 +749,18 @@ sub scan
 		# create table of Sonos devices
 		foreach my $key (keys %{$config})
 		{
+			my $filename = $lbphtmldir.'/images/icon-'.$config->{$key}->[7].'.png';
+				
 			$countplayers++;
 			$rowssonosplayer .= "<tr><td style='height: 25px; width: 4%;' class='auto-style1'><INPUT type='checkbox' style='width: 20px' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
 			$rowssonosplayer .= "<td style='height: 28px; width: 16%;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$key' style='width: 100%; background-color: #e6e6e6;' /> </td>\n";
 			$rowssonosplayer .= "<td style='height: 25px; width: 4%;' class='auto-style1'><DIV class='chk-group'><INPUT type='checkbox' class='chk-checked' name='mainchk$countplayers' id='mainchk$countplayers' value='$config->{$key}->[6]' align='center'/></DIV></td>\n";
 			$rowssonosplayer .= "<td style='height: 28px; width: 15%;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='$config->{$key}->[2]' style='width: 100%; background-color: #e6e6e6;' /> </td>\n";
+			if (-e $filename) {
+				$rowssonosplayer .= "<td style='height: 28px; width: 2%;'><img src='/plugins/$lbpplugindir/images/icon-$config->{$key}->[7].png' border='0' width='50' height='50' align='middle'/> </td>\n";
+			} else {
+				$rowssonosplayer .= "<td style='height: 28px; width: 2%;'><img src='/plugins/$lbpplugindir/images/sonos_logo_sm.png' border='0' width='50' height='50' align='middle'/> </td>\n";
+			}
 			$rowssonosplayer .= "<td style='height: 28px; width: 15%;'><input type='text' id='ip$countplayers' name='ip$countplayers' size='30' value='$config->{$key}->[0]' style='width: 100%; background-color: #e6e6e6;' /> </td>\n";
 			$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='$config->{$key}->[3]'' /> </td>\n";
 			$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='$config->{$key}->[4]'' /> </td>\n";
@@ -857,7 +882,7 @@ sub inittemplate
 ##########################################################################
 
 sub printtemplate
-{
+{	
 	#our $htmlhead = '<link rel="stylesheet" type="text/css" href="css/flipswitch.css" media="screen" />';
 	LoxBerry::Web::lbheader("$SL{'BASIS.MAIN_TITLE'}: v$sversion", $helplink, $helptemplate);
 	print LoxBerry::Log::get_notifications_html($lbpplugindir);

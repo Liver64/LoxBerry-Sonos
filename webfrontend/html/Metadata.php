@@ -404,7 +404,7 @@ function CreateDebugFile()
 	$favorite 						= $value;
 	$favorite['CurrentURI'] 		= $file;
 	$favorite['CurrentURIMetaData'] = $meta;
-	file_put_contents($debugfile, json_encode($favorite));
+	file_put_contents($debugfile, json_encode($favorite, JSON_PRETTY_PRINT));
 	LOGINF ("Debug file '".$debugfile."' has been created and saved. Please pick up file and send to 'olewald64@gmail.com' so i can support you adding missing Streaming type/Streaming Service");
 }
 

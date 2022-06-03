@@ -58,9 +58,9 @@ function zap()
 				LOGGING("queue.php: Function zapzone has been reseted",6);
 			}
 			exit;
-		} else {
-			nextradio();
-			LOGGING("queue.php: Function nextradio has been called ",7);
+		#} else {
+			#nextradio();
+			#LOGGING("queue.php: Function nextradio has been called ",7);
 		}
 		# prepare list of currently playing zones
 		$runarray = array();
@@ -400,7 +400,7 @@ function PlayTrackFavorites()
 	$sonos->SetQueue("x-rincon-queue:".$sonoszone[$master][1]."#0");
 	$sonos->Stop();
 	$sonos->ClearQueue();
-	@$sonos->SetGroupMute(false);
+	#@$sonos->SetGroupMute(false);
 	$sonos->SetPlayMode('NORMAL');
 	$sonos->SetVolume($volume);
 	LOGINF("queue.php: Settings to play your favorite has been prepared!");

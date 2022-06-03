@@ -2,9 +2,11 @@
 
 ##############################################################################################################################
 #
-# Version: 	5.1.2
-# Datum: 	05.2022
+# Version: 	5.1.4
+# Datum: 	06.2022
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
+#
+# http://<IP>:1400/xml/device_description.xml
 # 
 ##############################################################################################################################
 
@@ -71,6 +73,7 @@ $zname = "/run/shm/s4lox_zap_zone_time";						// queue.php: temp file for nextra
 $pltmp = "/run/shm/s4lox_pl_play_tmp_".$_GET['zone'].".json";	// queue.php: temp file for playlisten
 $filenst = "/run/shm/s4lox_t2s_stat.tmp";						// Temp Statusfile für messages
 $folfilePlOn = "$lbpdatadir/PlayerStatus/s4lox_on_";			// Folder and file name for Player Status
+$debuggingfile = "$lbpdatadir/s4lox_debug_config.json";			// Folder and file name for Debug Config
 # Files for ONE-click functions
 if (isset($_GET['zone']))  {
 	$radiofav = "/run/shm/s4lox_fav_all_radio_".$_GET['zone'].".json";				// Radio Stations in PlayAllFavorites
@@ -82,19 +85,32 @@ if (isset($_GET['zone']))  {
 	$queuepltmp = "/run/shm/s4lox_fav_pl_tmp_".$_GET['zone'].".json";				// Temp file Playlists from Sonos Favorites
 	$tuneinradiotmp = "/run/shm/s4lox_fav_tunein_radio_".$_GET['zone'].".json";		// Temp file for Favorit Radio Stations in TuneIn
 	$sonospltmp = "/run/shm/s4lox_pl_sonos_tmp_".$_GET['zone'].".json";				// Temp file for Sonos Playlist
-	$debugfile = $lbpdatadir."/s4lox_debug.json";									// Debug file of Browse
+	$debugfile = $lbpdatadir."/s4lox_debug_meta_fav.json";									// Debug file of Browse
 }
 
-#echo '<PRE>';
+echo '<PRE>';
 
-$params = [	"name" => "Sonos PHP",
-			"filename" => "$lbplogdir/sonos.log",
-			"append" => 1,
-			"addtime" => 1,
-			];
+$heute = date("dmY"); 
+if (!isset($_GET['debug']))    {
+	$params = [	"name" => "Sonos PHP",
+				"filename" => "$lbplogdir/sonos.log",
+				"append" => 1,
+				"addtime" => 1,
+				];
+				$level = LBSystem::pluginloglevel();
+} else {
+	$params = [	"name" => "Sonos PHP",
+				"filename" => "$lbplogdir/s4lox_debug_".$heute.".log",
+				"append" => 1,
+				"addtime" => 1,
+				"loglevel" => 7,
+				];
+				$level = "7";
+	
+	#@unlink($lbplogdir."/SOAP-Log-".$heute.".log");
+}
+
 $log = LBLog::newLog($params);
-
-$level = LBSystem::pluginloglevel();
 $plugindata = LBSystem::plugindata();
 $L = LBSystem::readlanguage("sonos.ini");
 $ms = LBSystem::get_miniservers();
@@ -330,7 +346,6 @@ if(isset($_GET['rampto'])) {
 		}
 	}
 	
-
 if(array_key_exists($_GET['zone'], $sonoszone)){ 
 
 	global $json;
@@ -338,7 +353,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 	$master = $_GET['zone'];
 	$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
 	switch($_GET['action'])	{
-		
+	
 		case 'play';
 			$posinfo = $sonos->GetPositionInfo();
 			if(!empty($posinfo['TrackURI'])) {
@@ -360,7 +375,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				LOGGING("sonos.php: No tracks in Queue to be played.", 4);
 			}
 		break;
-		
 		
 		case 'pause';
 			checkifmaster($master);
@@ -1753,6 +1767,9 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			}
 		break;
 
+		case 'debuginfo';
+			debugInfo();
+		break;
 		
 		case 'test':
 			$data = "&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;".$id."&quot; parentID=&quot;".$parentid."&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;".htmlspecialchars($value['title'])."&lt;/dc:title&gt;&lt;upnp:class&gt;".$value['UpnpClass']."&lt;/upnp:class&gt;&lt;upnp:albumArtURI&gt;".$value['albumArtURI']."&lt;/upnp:albumArtURI&gt;&lt;r:description&gt;".htmlspecialchars($value['artist'])."&lt;/r:description&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;".$value['token']."&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;";
@@ -1792,7 +1809,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$sonos->ClearQueue();
 		break;
 		
-		case 'getzoneinfo':
+		case 'getzoneinfo':				
 			$GetZoneInfo = $sonos->GetzoneInfo();
 			echo '<PRE>';
 			echo "Technische Details der ausgewaehlten Zone: " . $master;
@@ -2225,6 +2242,12 @@ function shutdown()
 	#}
 	if ($getsonos = strrpos($check_info, "getsonosinfo") === false)  {
 		LOGEND("PHP finished");
+	}
+	if (isset($_GET['debug']))    {
+		debugInfo();
+	} else {
+		#@unlink($lbplogdir."/SOAP-Log-".$heute.".log");
+		#@unlink($lbplogdir."/s4lox_debug_".$heute.".log");
 	}
 	$time_end = microtime(true);
 	$t2s_time = $time_end - $time_start;

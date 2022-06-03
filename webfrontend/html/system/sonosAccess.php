@@ -24,7 +24,11 @@ class SonosAccess
 				# Loxberry specific
 				$logfolder = $lbplogdir;
 				# use Sonos Plugin Loglevel
- 				$level = LBSystem::pluginloglevel();
+				if (!isset($_GET['debug']))    {
+					$level = LBSystem::pluginloglevel();
+				} else {
+					$level = "7";
+				}
 				if ($level == "0")   { 
 					$log_level = "off";
 				} elseif ($level == "3")   { 
@@ -119,7 +123,7 @@ class SonosAccess
 	/**
 	 * Load Stream to Queue
 	 *
-	 * @param string URI			URI of Steam
+	 * @param string URI			URI of Stream
 	 * @param string $Metadata     	Metadata
 	 *
 	 */	

@@ -17,9 +17,9 @@ header('Content-Type: text/html; charset=utf-8');
 
 function LOGGING($message = "", $loglevel = 7, $raw = 0)
 {
-	global $pcfg, $L, $config, $lbplogdir, $logfile, $plugindata;
+	global $pcfg, $L, $config, $lbplogdir, $logfile, $plugindata, $level, $log;
 
-	if ($plugindata['PLUGINDB_LOGLEVEL'] >= intval($loglevel) || $loglevel == 8)  {
+	if ($level >= intval($loglevel) || $loglevel == 8)  {
 		($raw == 1)?$message="<br>".$message:$message=htmlentities($message);
 		switch ($loglevel) 	{
 		    case 0:
