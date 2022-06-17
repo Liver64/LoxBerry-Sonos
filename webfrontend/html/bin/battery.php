@@ -19,6 +19,7 @@ require_once("$lbphtmldir/bin/binlog.php");
 $pathlanguagefile 	= "$lbphtmldir/voice_engines/langfiles";		// get languagefiles
 $configfile			= "s4lox_config.json";							// configuration file
 $off_file 			= "$lbplogdir/s4lox_off.tmp";					// path/file for Script turned off
+$folfilePlOn 		= "$lbpdatadir/PlayerStatus/s4lox_on_";			// Folder and file name for Player Status
 $Stunden 	= intval(strftime("%H"));
 $sPassword 	= 'loxberry';
 
@@ -39,17 +40,26 @@ $ms = LBSystem::get_miniservers();
 
 # only between 8am till 21pm
 if ($Stunden >=8 && $Stunden <22)   {
-	global $master, $main, $lbpconfigdir, $zone, $ms, $batlevel, $configfile, $config;
+	global $master, $main, $lbpconfigdir, $zone, $ms, $batlevel, $configfile, $folfilePlOn, $sonoszone, $config;
 	
 	# load Player Configuration
 	if (file_exists($lbpconfigdir . "/" . $configfile))    {
 		$config = json_decode(file_get_contents($lbpconfigdir . "/" . $configfile), TRUE);
 	} else {
-		LOGCRIT('The configuration file could not be loaded, the file may be disrupted. We have to abort :-(');
+		LOGCRIT('system/battery.php: The configuration file could not be loaded, the file may be disrupted. We have to abort :-(');
 		exit;
 	}
 	$sonoszonen = ($config['sonoszonen']);
+	
+	# check ONLINE Status of each zone
+	foreach($sonoszonen as $zonen => $ip) {
+		$handle = is_file($folfilePlOn."".$zonen.".txt");
+		if($handle === true) {
+			$sonoszone[$zonen] = $ip;
+		}
+	}
 
+	
 	$battzone = array();
 	# check if MOVE or ROAM there
 	foreach ($sonoszonen as $zone => $player) {
@@ -72,7 +82,9 @@ if ($Stunden >=8 && $Stunden <22)   {
 	$log = LBLog::newLog($params);
 
 	LOGSTART("Check Battery state");
-
+	
+	LOGDEB("system/battery.php: Backup Online check for Players has been executed");
+	
 	$mainpl = array();
 	$errortext = '';
 	foreach ($sonoszonen as $zone => $player) {

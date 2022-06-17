@@ -2,7 +2,7 @@
 
 ##############################################################################################################################
 #
-# Version: 	5.1.4
+# Version: 	5.1.6
 # Datum: 	06.2022
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 #
@@ -63,7 +63,7 @@ $lastExeLog = "/run/shm/s4lox_LastExeSonosInfo.log";			// File if old function g
 $tmp_tts = "/run/shm/s4lox_tmp_tts";							// path/file for T2S functions
 $tmp_phone = "/run/shm/s4lox_tmp_phonemute.tmp";				// path/file for phonemute function
 $off_file = $lbplogdir."/s4lox_off.tmp";						// path/file for script off
-$alarm_off_file = $lbplogdir."/s4lox_alarm_off.json";			// path/file for Alarms turned off
+$alarm_off_file = $lbpdatadir."/s4lox_alarm_off.json";			// path/file for Alarms turned off
 $tmp_error = "/run/shm/s4lox_errorMP3Stream.json";				// path/file for error message
 $check_date = "/run/shm/s4lox_date";							// store date execution
 $configfile	= "s4lox_config.json";								// configuration file
@@ -106,6 +106,7 @@ if (!isset($_GET['debug']))    {
 				"loglevel" => 7,
 				];
 				$level = "7";
+				$time_start = microtime(true);
 	
 	#@unlink($lbplogdir."/SOAP-Log-".$heute.".log");
 }
@@ -194,9 +195,7 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 	// Übernahme und Deklaration von Variablen aus der Konfiguration
 	$sonoszonen = $config['sonoszonen'];
 	
-	$time_start = microtime(true);
-	
-	// prüft den Onlinestatus jeder Zone
+		// prüft den Onlinestatus jeder Zone
 	#exec('/usr/bin/php -f bin/check_on_state.php');
 	
 	$zonesonline = array();
@@ -207,8 +206,6 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 		if($handle) {
 			$sonoszone[$zonen] = $ip;
 			array_push($zonesonline, $zonen);
-		} else {
-			$sonoszone = $sonoszonen;
 		}
 	}
 			
@@ -2240,18 +2237,18 @@ function shutdown()
 		$tts_stat = 0;
 		send_tts_source($tts_stat);
 	#}
-	if ($getsonos = strrpos($check_info, "getsonosinfo") === false)  {
-		LOGEND("PHP finished");
-	}
 	if (isset($_GET['debug']))    {
 		debugInfo();
+		$time_end = microtime(true);
+		$process_time = $time_end - $time_start;
+		LOGGING("Processing request tooks about ".round($process_time, 3)." seconds.\n", 6);
 	} else {
 		#@unlink($lbplogdir."/SOAP-Log-".$heute.".log");
 		#@unlink($lbplogdir."/s4lox_debug_".$heute.".log");
 	}
-	$time_end = microtime(true);
-	$t2s_time = $time_end - $time_start;
-	#echo "Der Prozess dauerte ".round($t2s_time, 5)." Sekunden.\n";
+	if ($getsonos = strrpos($check_info, "getsonosinfo") === false)  {
+		LOGEND("PHP finished");
+	}
 	@unlink($tmp_tts);
 }
 
