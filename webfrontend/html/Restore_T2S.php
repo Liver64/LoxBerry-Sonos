@@ -309,9 +309,9 @@ function restore_details($zone) {
 
 function RestoreShuffle($player) {
 	
-	global $sonoszonen, $actual;
+	global $sonoszone, $actual;
 	
-	$sonos = new SonosAccess($sonoszonen[$player][0]);
+	$sonos = new SonosAccess($sonoszone[$player][0]);
 	$mode = $actual[$player]['TransportSettings'];
 	$pl = $sonos->GetCurrentPlaylist();
 	if (count($pl) > 1 and ($actual[$player]['TransportSettings'] != 0))   {

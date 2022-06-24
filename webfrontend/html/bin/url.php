@@ -8,13 +8,13 @@
 	$hostname = lbhostname();
 	
 	// Parsen der Konfigurationsdatei
-	if (!file_exists($myConfigFolder.'/sonos.cfg')) {
+	if (!file_exists($lbpconfigdir.'/sonos.cfg')) {
 		$fh = fopen($tmp_error, "w");
 		fwrite($fh, "bin/url.php: The file sonos.cfg could not be opened, please try again!\n");
 		fclose($fh);
 		exit;
 	} else {
-		$config = parse_ini_file($myConfigFolder.'/sonos.cfg', TRUE);
+		$config = parse_ini_file($lbpconfigdir.'/sonos.cfg', TRUE);
 		if ($config === false)  {
 			$fh = fopen($tmp_error, "w");
 			fwrite($fh, "bin/url.php: The file sonos.cfg could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file 'sonos.cfg' manually!\n");
@@ -22,8 +22,7 @@
 			exit(1);
 		}
 	}
-	
-	
+
 	
 	
 	if (file_exists($lbpconfigdir . "/" . $configfile))    {

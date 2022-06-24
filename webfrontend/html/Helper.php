@@ -602,9 +602,9 @@ function checkTTSkeys() {
 
 function playmode_detection($zone, $mode)  {
 	
-	global $master, $sonoszonen;
+	global $master, $sonoszone;
 	
-	$sonos = new SonosAccess($sonoszonen[$zone][0]);
+	$sonos = new SonosAccess($sonoszone[$zone][0]);
 	if ($mode == 0) {
 		$sonos->SetPlayMode('0');
 		$mode = 'NORMAL';
@@ -643,9 +643,9 @@ function playmode_detection($zone, $mode)  {
 
 function SetPlaymodes($zone, $mode)  {
 	
-	global $master, $sonoszonen;
+	global $master, $sonoszone;
 	
-	$sonos = new SonosAccess($sonoszonen[$zone][0]);
+	$sonos = new SonosAccess($sonoszone[$zone][0]);
 	if ($mode == 'NORMAL') {
 		$sonos->SetPlayMode('0');
 		$mode = 0;
@@ -909,11 +909,11 @@ function mp3_files($playgongfile) {
 **/
 
 function check_rampto() {
-	global $config, $volume, $sonos, $sonoszonen, $master;
+	global $config, $volume, $sonos, $sonoszone, $master;
 	
 	if(empty($config['TTS']['volrampto'])) {
 		$ramptovol = "25";
-		LOGGING("helper.php: Rampto Volume in config has not been set. Default Volume '".$sonoszonen[$master][4]."' from Zone '".$master."' has been taken, please update Plugin Config (T2S Optionen).", 4);
+		LOGGING("helper.php: Rampto Volume in config has not been set. Default Volume '".$sonoszone[$master][4]."' from Zone '".$master."' has been taken, please update Plugin Config (T2S Optionen).", 4);
 	} else {
 		$ramptovol = $config['TTS']['volrampto'];
 		#LOGGING("helper.php: Rampto Volume from config has been set.", 7);

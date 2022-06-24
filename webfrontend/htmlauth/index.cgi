@@ -24,6 +24,7 @@ use LoxBerry::Web;
 use LoxBerry::Log;
 use LoxBerry::Storage;
 use LoxBerry::IO;
+use LoxBerry::JSON;
 
 use CGI::Carp qw(fatalsToBrowser);
 use CGI qw/:standard/;
@@ -36,7 +37,7 @@ use JSON qw( decode_json );
 use utf8;
 use warnings;
 use strict;
-#use Data::Dumper;
+use Data::Dumper;
 #use Config::Simple '-strict';
 #no strict "refs"; # we need it for template system
 
@@ -67,6 +68,7 @@ our $template;
 our $content;
 our %navbar;
 our $mqttcred;
+our $cfgm;
 
 my $helptemplatefilename		= "help/help.html";
 my $languagefile 				= "sonos.ini";
@@ -121,13 +123,17 @@ if (!defined $pcfg->param("TTS.phonemute"))  {
 if (!defined $pcfg->param("TTS.waiting"))  {
 	$pcfg->param("TTS.waiting", "10");
 }
-# add new parameter for CronJob schedule
-if (!defined $pcfg->param("VARIOUS.cron"))  {
-	$pcfg->param("VARIOUS.cron", "1");
-}
 # add new parameter for phonestop
 if (!defined $pcfg->param("VARIOUS.phonestop"))  {
 	$pcfg->param("VARIOUS.phonestop", "0");
+}
+# Function for zapzone
+if (!defined $pcfg->param("VARIOUS.selfunction"))  {
+	$pcfg->param("VARIOUS.selfunction", "nextradio");
+}
+# Reset Time for zapzone
+if (!defined $pcfg->param("VARIOUS.cron"))  {
+	$pcfg->param("VARIOUS.cron", "1");
 }
 # checkonline
 if ($pcfg->param("SYSTEM.checkt2s") eq '')  {
@@ -165,6 +171,7 @@ $cgi->import_names('R');
 $mqttcred = LoxBerry::IO::mqtt_connectiondetails();
 
 LOGSTART "Sonos UI started";
+
 
 
 #########################################################################
@@ -237,6 +244,19 @@ if (!-r $lbpconfigdir . "/" . $pluginplayerfile)
 	LOGDEB "The Player config file has been loaded";
 }
 
+# Check if mqtt.json file exist
+if (!-r $lbhomedir.'/config/plugins/mqttgateway/mqtt.json')
+{
+	LOGDEB "MQTT config file does not exist";
+
+} else {
+	LOGDEB "The MQTT config file has been loaded";
+	my $cfgfile = $lbhomedir.'/config/plugins/mqttgateway/mqtt.json';
+	my $jsonobj = LoxBerry::JSON->new();
+	$cfgm = $jsonobj->open(filename => $cfgfile);
+}
+
+
 
 ##########################################################################
 # Main program
@@ -251,13 +271,20 @@ $navbar{2}{URL} = './index.cgi?do=details';
 $navbar{99}{Name} = "$SL{'BASIS.MENU_LOGFILES'}";
 $navbar{99}{URL} = './index.cgi?do=logfiles';
 
-# if MQTT credentials are valid and Communication turned ON insert navbar
+# if MQTT credentials are valid and Communication turned ON --> insert navbar
 if ($mqttcred && $pcfg->param("LOXONE.LoxDaten") eq "true")  {
 	$navbar{3}{Name} = "$SL{'BASIS.MENU_MQTT'}";
 	$navbar{3}{URL} = 'http://'.$lbip.":".lbwebserverport().'/admin/plugins/mqttgateway/index.cgi';
 	$navbar{3}{target} = '_blank';
 	LOGDEB "MQTT is installed and could be used";
 }
+
+if ($mqttcred && $pcfg->param("LOXONE.LoxDatenMQTT") eq "true")  {
+	$pcfg->param("LOXONE.LoxPort", $cfgm->{Main}{udpport});
+} else {
+	$pcfg->param("LOXONE.LoxPort", "$R::udpport");
+}
+
 
 if ($R::saveformdata1) {
 	$template->param( FORMNO => 'form' );
@@ -404,8 +431,6 @@ sub form
 		$rowssonosplayer .= "<input type='hidden' id='householdId$countplayers' name='householdId$countplayers' value='$fields[9]'>\n";
 		$rowssonosplayer .= "<input type='hidden' id='deviceId$countplayers' name='deviceId$countplayers' value='$fields[10]'>\n";
 		$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' value='$fields[1]'>\n";
-		#$content = $filename;
-	#print_test($content);
 	}
 	LOGDEB "$countplayers Sonos players has been loaded.";							
 	
@@ -502,6 +527,7 @@ sub save_details
 	$pcfg->param("VARIOUS.CALDavMuell", "\"$R::wastecal\"");
 	$pcfg->param("VARIOUS.CALDav2", "\"$R::cal\"");
 	$pcfg->param("VARIOUS.cron", "$R::cron");
+	$pcfg->param("VARIOUS.selfunction", "$R::func_list");
 	$pcfg->param("SYSTEM.checkt2s", "$R::checkt2s");
 	$pcfg->param("SYSTEM.checkonline", "true");
 	
@@ -511,71 +537,56 @@ sub save_details
 		my $rurl = param("radiourl$i");
 		$pcfg->param( "RADIO.radio" . "[$i]", "\"$rname\"" . "," . "\"$rurl\"" );
 	}
-	
+
 	$pcfg->save() or &error;
 	
-	#if ($R::checkonline eq "true") 
-	#{
-	#  if ($R::cron eq "1") 
-	#  {
-	#    system ("ln -s $lbphtmldir/bin/cronjob.sh $lbhomedir/system/cron/cron.01min/$lbpplugindir");
-	#    unlink ("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
-	#   unlink ("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
-	#    unlink ("$lbhomedir/system/cron/cron.15min/$lbpplugindir");
-	#    unlink ("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
-	#    unlink ("$lbhomedir/system/cron/cron.hourly/$lbpplugindir");
-	#	LOGOK "Cron job each Minute created";
-	#  }
-	#  if ($R::cron eq "5") 
-	#  {
-	#    system ("ln -s $lbphtmldir/bin/cronjob.sh $lbhomedir/system/cron/cron.05min/$lbpplugindir");
-	#    unlink ("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
-	#    unlink ("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
-	#   unlink ("$lbhomedir/system/cron/cron.15min/$lbpplugindir");
-	#    unlink ("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
-	#   unlink ("$lbhomedir/system/cron/cron.hourly/$lbpplugindir");
-	#	LOGOK "Cron job 5 Minutes created";
-	#  }
-	#  if ($R::cron eq "10") 
-	 # {
-	#    system ("ln -s $lbphtmldir/bin/cronjob.sh $lbhomedir/system/cron/cron.10min/$lbpplugindir");
-	#   unlink ("$lbhomedir/system/cron/cron.1min/$lbpplugindir");
-	#    unlink ("$lbhomedir/system/cron/cron.5min/$lbpplugindir");
-	#    unlink ("$lbhomedir/system/cron/cron.15min/$lbpplugindir");
-	#    unlink ("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
-	#   unlink ("$lbhomedir/system/cron/cron.hourly/$lbpplugindir");
-	#	LOGOK "Cron job 10 Minutes created";
-	#  }
-	#  if ($R::cron eq "15") 
-	#  {
-	#    system ("ln -s $lbphtmldir/bin/cronjob.sh $lbhomedir/system/cron/cron.15min/$lbpplugindir");
-	#    unlink ("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
-	#    unlink ("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
-	#   unlink ("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
-	#    unlink ("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
-	#    unlink ("$lbhomedir/system/cron/cron.hourly/$lbpplugindir");
-	#	LOGOK "Cron job 15 Minutes created";
-	#  }
-	#  if ($R::cron eq "30") 
-	#  {
-	#    system ("ln -s $lbphtmldir/bin/cronjob.sh $lbhomedir/system/cron/cron.30min/$lbpplugindir");
-	#    unlink ("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
-	#    unlink ("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
-	#    unlink ("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
-	#    unlink ("$lbhomedir/system/cron/cron.15min/$lbpplugindir");
-	#    unlink ("$lbhomedir/system/cron/cron.hourly/$lbpplugindir");
-	#	LOGOK "Cron job 30 Minutes created";
-	#  }
-	#  if ($R::cron eq "60") 
-	#  {
-	#    system ("ln -s $lbphtmldir/bin/cronjob.sh $lbhomedir/system/cron/cron.hourly/$lbpplugindir");
-	#    unlink ("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
-	#    unlink ("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
-	#    unlink ("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
-	#    unlink ("$lbhomedir/system/cron/cron.15min/$lbpplugindir");
-	#    unlink ("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
-	#	LOGOK "Cron job hourly created";
-	#  }
+
+	  if ($R::cron eq "1") 
+	  {
+	    system ("ln -s $lbphtmldir/bin/cronjob.sh $lbhomedir/system/cron/cron.01min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.03min/$lbpplugindir");
+		unlink ("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
+		LOGOK "Cron job each Minute created";
+	  }
+	  if ($R::cron eq "3") 
+	  {
+	    system ("ln -s $lbphtmldir/bin/cronjob.sh $lbhomedir/system/cron/cron.03min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
+		unlink ("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
+		LOGOK "Cron job 3 Minutes created";
+	  }
+	  if ($R::cron eq "5") 
+	 {
+	    system ("ln -s $lbphtmldir/bin/cronjob.sh $lbhomedir/system/cron/cron.05min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.03min/$lbpplugindir");
+		unlink ("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
+		LOGOK "Cron job 5 Minutes created";
+	  }
+	  if ($R::cron eq "10") 
+	  {
+	    system ("ln -s $lbphtmldir/bin/cronjob.sh $lbhomedir/system/cron/cron.10min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.03min/$lbpplugindir");
+		unlink ("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
+		LOGOK "Cron job 10 Minutes created";
+	  }
+	  if ($R::cron eq "30") 
+	  {
+	    system ("ln -s $lbphtmldir/bin/cronjob.sh $lbhomedir/system/cron/cron.30min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.03min/$lbpplugindir");
+		unlink ("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
+	    unlink ("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
+		LOGOK "Cron job 30 Minutes created";
+	  }
+	  
 	
 	my $file = qx(/usr/bin/php $lbphtmldir/bin/create_config.php);		
 	LOGOK "Detail settings has been saved successful";
@@ -617,8 +628,14 @@ sub save
 	# Write configuration file(s)
 	$pcfg->param("LOXONE.Loxone", "$sel_ms");
 	$pcfg->param("LOXONE.LoxDaten", "$R::sendlox");
-	$pcfg->param("LOXONE.LoxPort", "$R::udpport");
 	$pcfg->param("LOXONE.LoxDatenMQTT", "$R::sendloxMQTT");
+	if ($R::sendlox eq "true")   {
+		if ($R::sendloxMQTT eq "true")  {
+			$pcfg->param("LOXONE.LoxPort", $cfgm->{Main}{udpport});
+		} else {
+			$pcfg->param("LOXONE.LoxPort", "$R::udpport");
+		}
+	}
 	$pcfg->param("TTS.t2s_engine", "$R::t2s_engine");
 	$pcfg->param("TTS.messageLang", "$R::t2slang");
 	$pcfg->param("TTS.API-key", "$R::apikey");

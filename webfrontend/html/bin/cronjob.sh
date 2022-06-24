@@ -9,4 +9,8 @@
 
 # Will be executed as user "loxberry".
 
-/usr/bin/php /opt/loxberry/webfrontend/html/plugins/sonos4lox/bin/check_on_state.php
+rm /run/shm/s4lox_fav*
+if [ -e /run/shm/s4lox_zap_zone_time ]
+then
+    rm /run/shm/s4lox_zap_zone_time
+fi

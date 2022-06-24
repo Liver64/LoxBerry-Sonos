@@ -8,7 +8,7 @@
 	$configfile	= $lbpconfigdir."/s4lox_config.json";	
 	
 	// Parsen der Konfigurationsdatei sonos.cfg
-	if (!file_exists($lbpconfigdir.'/sonos.cfg')) {
+	if (!is_file($lbpconfigdir.'/sonos.cfg')) {
 		LOGWARN('sonos.php: The file sonos.cfg could not be opened, please try again!', 4);
 	} else {
 		$tmpsonos = parse_ini_file($lbpconfigdir.'/sonos.cfg', TRUE);
@@ -19,7 +19,7 @@
 		LOGDEB("sonos.php: Sonos config has been loaded",7);
 	}
 	// Parsen der Sonos Zonen Konfigurationsdatei player.cfg
-	if (!file_exists($lbpconfigdir.'/player.cfg')) {
+	if (!is_file($lbpconfigdir.'/player.cfg')) {
 		LOGWARN('sonos.php: The file player.cfg could not be opened, please try again!', 4);
 	} else {
 		$tmpplayer = parse_ini_file($lbpconfigdir.'/player.cfg', true);

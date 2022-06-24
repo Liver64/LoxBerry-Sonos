@@ -17,7 +17,7 @@ function turn_off_alarms() {
 	
 	$sonos = new SonosAccess($sonoszone[$master][0]);
 	$alarm = $sonos->ListAlarms();
-	file_put_contents($alarm_off_file, json_encode($alarm));
+	file_put_contents($alarm_off_file, json_encode($alarm, JSON_PRETTY_PRINT));
 	$quan = count($alarm);
 	for ($i=0; $i<$quan; $i++) {
 		$sonos->UpdateAlarm($alarm[$i]['ID'], $alarm[$i]['StartTime'], $alarm[$i]['Duration'], $alarm[$i]['Recurrence'], 
@@ -103,11 +103,22 @@ function sleeptimer() {
 * @return: disable alarm
 **/
 function turn_off_alarm() {
-	global $master, $sonoszone, $psubfolder, $home, $alarm_off_file;
+	
+	global $master, $sonoszone, $lbpdatadir, $psubfolder, $home, $single_alarm_off;
 	
 	$alarmid = $_GET['id'];
+	$single_alarm_off = $lbpdatadir."/s4lox_alarm_ID_".$alarmid."_off.json";				// path/file for specific Alarm turned off
 	$sonos = new SonosAccess($sonoszone[$master][0]);
 	$alarm = $sonos->ListAlarms();
+	foreach ($alarm as $key => $value)    {
+		$rinc = $value['RoomUUID'];
+		$search = recursive_array_search($rinc, $sonoszone);
+		if ($search === false)    {
+			$alarm[$key]['Room'] = "NO ROOM";
+		} else {
+			$alarm[$key]['Room'] = $search;
+		}
+	}
 	$alarmi = str_replace(' ','',$alarmid); 
 	$alarmarr = explode(',', $alarmi);
 	foreach ($alarmarr as $alarmid)  {
@@ -117,12 +128,13 @@ function turn_off_alarm() {
 			continue;
 		}
 		$sonos->UpdateAlarm($alarm[$arrid]['ID'], $alarm[$arrid]['StartTime'], $alarm[$arrid]['Duration'], $alarm[$arrid]['Recurrence'], 
-		$alarm[$arrid]['Enabled'] = 0, $alarm[$arrid]['RoomUUID'], $alarm[$arrid]['ProgramURI'], $alarm[$arrid]['ProgramMetaData'], 
+		$alarm[$arrid]['Enabled'] = 0, $alarm[$arrid]['RoomUUID'], ($alarm[$arrid]['ProgramURI']), ($alarm[$arrid]['ProgramMetaData']), 
 		$alarm[$arrid]['PlayMode'], $alarm[$arrid]['Volume'], $alarm[$arrid]['IncludeLinkedZones']);
-		LOGGING("alarm.php: Sonos Alarm-ID 'ID=".$alarmid."' has been disabled.", 6);
+		LOGGING("alarm.php: Sonos Alarm-ID='".$alarmid."' for Player '".$alarm[$arrid]['Room']."' has been turned off.", 6);
 	}
-	#file_put_contents($alarm_off_file, "0");
-	#LOGGING("alarm.php: Sonos alarm has been turned off.", 6);
+	#print_r($alarm);
+	file_put_contents($single_alarm_off, json_encode($alarm, JSON_PRETTY_PRINT));
+	LOGGING("alarm.php: File has been saved.", 6);
 }
 
 
@@ -133,11 +145,18 @@ function turn_off_alarm() {
 * @return: enable alarm
 **/
 function restore_alarm() {
-	global $sonoszone, $psubfolder, $home, $master, $alarm_off_file;
+	
+	global $sonoszone, $psubfolder, $lbpdatadir, $home, $master, $single_alarm_off;
 	
 	$alarmid = $_GET['id'];
+	$single_alarm_off = $lbpdatadir."/s4lox_alarm_ID_".$alarmid."_off.json";				// path/file for specific Alarm turned off
+	if (!file_exists($single_alarm_off))   {
+		LOGERR("alarm.php: File for Alarm-ID '".$alarmid."' does not exist. We have to abort :-(", 6);
+		exit(1);
+	}
+	$alarm = json_decode(file_get_contents($single_alarm_off), TRUE);
 	$sonos = new SonosAccess($sonoszone[$master][0]);
-	$alarm = $sonos->ListAlarms();
+	#$alarm = $sonos->ListAlarms();
 	$alarmi = str_replace(' ','',$alarmid); 
 	$alarmarr = explode(',', $alarmi);
 	foreach ($alarmarr as $alarmid)  {
@@ -147,10 +166,12 @@ function restore_alarm() {
 			continue;
 		}
 		$sonos->UpdateAlarm($alarm[$arrid]['ID'], $alarm[$arrid]['StartTime'], $alarm[$arrid]['Duration'], $alarm[$arrid]['Recurrence'], 
-		$alarm[$arrid]['Enabled'] = 1, $alarm[$arrid]['RoomUUID'], $alarm[$arrid]['ProgramURI'], $alarm[$arrid]['ProgramMetaData'], 
+		$alarm[$arrid]['Enabled'] = 1, $alarm[$arrid]['RoomUUID'], ($alarm[$arrid]['ProgramURI']), ($alarm[$arrid]['ProgramMetaData']), 
 		$alarm[$arrid]['PlayMode'], $alarm[$arrid]['Volume'], $alarm[$arrid]['IncludeLinkedZones']);
-		LOGGING("alarm.php: Sonos Alarm-ID 'ID=".$alarmid."' has been enabled.", 6);
+		LOGGING("alarm.php: Sonos Alarm-ID='".$alarmid."' for Player '".$alarm[$arrid]['Room']."' has been enabled.", 6);
 	}
+	#print_r($alarm);
+	@unlink($single_alarm_off);
 }
 
 

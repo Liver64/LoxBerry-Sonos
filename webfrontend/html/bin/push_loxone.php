@@ -93,8 +93,8 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 			}
 		}
 		$zoon = implode(", ", $zonesonline);
-	} else {
-		$sonoszone = $sonoszonen;
+	#} else {
+		#$sonoszone = $sonoszonen;
 	}
 	#print_r($zonesonline);
 	

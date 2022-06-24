@@ -103,9 +103,9 @@ if ($Stunden >=8 && $Stunden <22)   {
 	#}
 
 	#print_r($mainpl);
-	foreach ($sonoszonen as $zone => $player) {
-		$src = $sonoszonen[$zone][7];
-		$ip = $sonoszonen[$zone][0];
+	foreach ($sonoszone as $zone => $player) {
+		$src = $sonoszone[$zone][7];
+		$ip = $sonoszone[$zone][0];
 		# only check MOVE or ROAM devices
 		if ($src == "S27" or $src == "S17")   {
 			$port = 1400;
@@ -121,12 +121,12 @@ if ($Stunden >=8 && $Stunden <22)   {
 				$health = $xml->LocalBatteryStatus->Data[0];
 				$PowerSource = $xml->LocalBatteryStatus->Data[3];
 				# check only if MOVE or ROAM is not charging and battery level is less then 30%
-				if ($PowerSource != "SONOS_CHARGING_RING" and $batlevel <= 30)  {
+				if ($PowerSource == "BATTERY" && $batlevel <= 10)  {
 					LOGWARN('system/battery.php: The battery level of "'.$zone.'" is about '.$batlevel.'%. Please charge your device!');
 					#binlog("Battery check", "system/battery.php:: The battery level of '".$zone."' is about ".$batlevel."%. Please charge your device!");
 					foreach ($mainpl as $main)   {
 						$master = $main;
-						$volume = $config['sonoszonen'][$master][3] + ($config['sonoszonen'][$master][3] * $config['TTS']['correction'] / 100);
+						$volume = ($sonoszone[$master][3] + $sonoszone[$master][3] * $config['TTS']['correction'] / 100);
 						if (count($mainpl) > 0)  {
 							$errortext = select_lang();
 							sendmessage($errortext);

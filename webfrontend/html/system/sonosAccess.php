@@ -2540,8 +2540,10 @@ class SonosAccess
 				new SoapParam($welchetage, 'Recurrence'),
 				new SoapParam($an, 'Enabled'),
 				new SoapParam($roomid, 'RoomUUID'),
-				new SoapParam(htmlspecialchars($programm), 'ProgramURI'),
-				new SoapParam(htmlspecialchars($programmeta), 'ProgramMetaData'),
+				#new SoapParam(htmlspecialchars($programm), 'ProgramURI'),
+				#new SoapParam(htmlspecialchars($programmeta), 'ProgramMetaData'),
+				new SoapParam($programm, 'ProgramURI'),
+				new SoapParam($programmeta, 'ProgramMetaData'),
 				new SoapParam($playmode, 'PlayMode'),
 				new SoapParam($volume, 'Volume'),
 				new SoapParam($linkedzone, 'IncludeLinkedZones')

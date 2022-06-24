@@ -379,5 +379,9 @@
 			[BUGFIX] Gruppenfunktionen optimiert
  5.1.4		[BUGFIX] Loxone Templatebuilder wurde korrigiert/erweitert
 			[IMPROVEMENT] globaler Parameter 'debug' hinzugefügt um die Fehleranalyse zu vereinfachen
-			[IMPROVEMENT] UI aktualisiert
+ 5.1.6		[BUGFIX] Sonos Alarmhandling wurde korrigiert
+			[BUGFIX] Loxone Templatebuilder wurde korrigiert/erweitert
+			[BUGFIX/[IMPROVEMENT]] Funktion 'zapzone' wurde korrigiert und funktional erweitert
+			[BUGFIX] Funktionen sonosplaylist, radioplaylist und playfavorite wurden korrigiert
+			[BUGFIX] Batterycheck (ROAM and MOVE) gefixt (T2S Warnlevel <10% Batterieladezustand)
  

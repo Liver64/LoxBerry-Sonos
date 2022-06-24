@@ -261,12 +261,12 @@
                             <tr>
                                 <td width="19%">
                                     <select id="mp3store" name="mp3store" data-mini="true" data-native-menu="false" width="50%">
-						<option value="1"><TMPL_VAR T2S.1DAY_MP3_STORE></option>
-						<option value="7"><TMPL_VAR T2S.7DAY_MP3_STORE></option>
-						<option value="30"><TMPL_VAR T2S.30DAY_MP3_STORE></option>
-						<option value="365"><TMPL_VAR T2S.365DAY_MP3_STORE></option>
-						<option value="0"><TMPL_VAR T2S.ENDLESS_MP3_STORE></option>
-					</select>
+									<option value="1"><TMPL_VAR T2S.1DAY_MP3_STORE></option>
+									<option value="7"><TMPL_VAR T2S.7DAY_MP3_STORE></option>
+									<option value="30"><TMPL_VAR T2S.30DAY_MP3_STORE></option>
+									<option value="365"><TMPL_VAR T2S.365DAY_MP3_STORE></option>
+									<option value="0"><TMPL_VAR T2S.ENDLESS_MP3_STORE></option>
+								</select>
                                     <script>
                                         $('#mp3store option[value="<TMPL_VAR MP3.MP3store>"').prop('selected', 'selected');
                                     </script>
@@ -279,11 +279,11 @@
                                             </td>
                                             <td style="height: 30px">
                                                 <select id='file_gong' name='file_gong' data-mini='true' 
-												data-validation-error-msg="<TMPL_VAR T2S.SELECT_JINGLE_DROPDOWN>" 
-												data-validation-rule="^([A-Za-z0-9]){4,10}$" style="width: 244px">
-								<option selected='true' value='' disabled><TMPL_VAR T2S.SELECT_JINGLE_DROPDOWN></option>
-								<TMPL_VAR MP3_LIST>
-							</select>
+													data-validation-error-msg="<TMPL_VAR T2S.SELECT_JINGLE_DROPDOWN>" 
+													data-validation-rule="^([A-Za-z0-9]){4,10}$" style="width: 244px">
+													<option selected='true' value='' disabled><TMPL_VAR T2S.SELECT_JINGLE_DROPDOWN></option>
+													<TMPL_VAR MP3_LIST>
+												</select>
                                                 <script>
                                                     $('#file_gong').val('<TMPL_VAR MP3.file_gong>');
                                                 </script>
@@ -368,11 +368,11 @@
                                 <td>
                                     <table border=0 style="width: 95%">
                                         <tr>
-                                            <td class="field_ms" align="left" style="width: 70%">
+                                            <td class="field_ms" align="left" style="width: 60%">
                                                 <!--<select id="miniserver" name="miniserver" data-mini="true" data-native-menu="false" style="width: 142px"><TMPL_VAR MSSELECTLIST>
 												</select>-->
                                                 <TMPL_VAR MS>
-											<td class="field_ms" style="width: 104px;">
+											<td class="field_ms" style="width: 84px;">
 													<fieldset>
 														<div id="add">
 												
@@ -380,7 +380,7 @@
 													</fieldset>
 												<script>
 												if ('<TMPL_VAR MQTT>' == 'true')   {
-													document.getElementById("add").innerHTML += '<select id="sendloxMQTT" name="sendloxMQTT" data-role="flipswitch" data-wrapper-class="custom-mscom-flipswitch"><option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON_MS></option><option value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF_MS></option></select>';
+													document.getElementById("add").innerHTML += '<select onchange="selectudp()" id="sendloxMQTT" name="sendloxMQTT" data-role="flipswitch" data-wrapper-class="custom-mscom-flipswitch"><option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON_MS></option><option value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF_MS></option></select>';
 													$('#sendloxMQTT').val('<TMPL_VAR LOXONE.LoxDatenMQTT>');
 												}
 												</script>
@@ -427,106 +427,21 @@
 								    <!--<a download="VIU_Sonos_UDP.xml" onclick='checkLoxInSaved()' title="UDP Inputs" data-role="button" data-inline="true" data-mini="true" href="/plugins/<TMPL_VAR PLUGINDIR>/system/VIU_Sonos_UDP.xml">
 										<TMPL_VAR T2S.BUTTON_TEMPLATE>
                                     </a>-->
-                                    
-									  <input type="button" id="btn" data-mini="true" value="VI_UDP_Sonos.xml" />
-									  <script>
-											function download(filename) {
-												  var element = document.createElement('a');
-												  element.setAttribute('href','/plugins/<TMPL_VAR PLUGINDIR>/system/VI_UDP_Sonos.xml');
-												  element.setAttribute('download', filename);
-												  document.body.appendChild(element);
-												  element.click();
-											}
-											document.getElementById("btn")
-												  .addEventListener("click", function (e) {
-														$.post("/plugins/<TMPL_VAR PLUGINDIR>/system/ms_inbound.php");
-														var url = '/plugins/<TMPL_VAR PLUGINDIR>/system/VI_UDP_Sonos.xml'; 
-														var http = new XMLHttpRequest(); 
-														http.open('HEAD', url, false); 
-														http.send(); 
-														//console.log("http status: " + http.status);
-														if (http.status !== 200)  {
-															$("#info").attr("style", "color:red");
-															$("#info").text('<TMPL_VAR ERRORS.ERR_XM_TEMP>');
-															$('html, body').animate({
-																scrollTop: $("#zone1").offset().top
-																}, 500);
-																$("#zone1").focus();
-																e.preventDefault();
-														} else {
-															var filename = "VI_UDP_Sonos.xml";
-															download(filename);
-														}
-												  }, false);
-									  </script>
-																	
-									
+									<div class="btn">
+									  <input type="button" onclick="checkfile('VI_UDP_Sonos.xml')" id="btn1" data-mini="true" value="VI_UDP_Sonos.xml" />
+									</div>								
+									</td>
 									
 									<td class="empty_template" style="width: 25%">
-                                        <input type="button" id="btn1" data-mini="true" value="VI_MQTT_HTTP_Sonos.xml" />
-										<script>
-											function download(filename) {
-												  var element = document.createElement('a');
-												  element.setAttribute('href','/plugins/<TMPL_VAR PLUGINDIR>/system/VI_MQTT_HTTP_Sonos.xml');
-												  element.setAttribute('download', filename);
-												  document.body.appendChild(element);
-												  element.click();
-											}
-											document.getElementById("btn1")
-												  .addEventListener("click", function (e) {
-														$.post("/plugins/<TMPL_VAR PLUGINDIR>/system/ms_inbound.php");
-														var url = '/plugins/<TMPL_VAR PLUGINDIR>/system/VI_MQTT_HTTP_Sonos.xml'; 
-														var http = new XMLHttpRequest(); 
-														http.open('HEAD', url, false); 
-														http.send(); 
-														//console.log("http status: " + http.status);
-														if (http.status !== 200)  {
-															$("#info").attr("style", "color:red");
-															$("#info").text('<TMPL_VAR ERRORS.ERR_XM_TEMP>');
-															$('html, body').animate({
-																scrollTop: $("#zone1").offset().top
-																}, 500);
-																$("#zone1").focus();
-																e.preventDefault();
-														} else {
-															var filename = "VI_MQTT_HTTP_Sonos.xml";
-															download(filename);
-														}
-												  }, false);
-									  </script>
+									<div class="btnc">
+                                        <input type="button" onclick="checkfile('VI_MQTT_HTTP_Sonos.xml')" id="btn2" data-mini="true" value="VI_MQTT_HTTP_Sonos.xml" />
+									</div>
 									</td>
+									
                                     <td class="empty_template" style="width: 25%">
-									<input type="button" id="btn2" data-mini="true" value="VI_MQTT_UDP_Sonos.xml" />
-									<script>
-											function download(filename) {
-												  var element = document.createElement('a');
-												  element.setAttribute('href','/plugins/<TMPL_VAR PLUGINDIR>/system/VI_MQTT_UDP_Sonos.xml');
-												  element.setAttribute('download', filename);
-												  document.body.appendChild(element);
-												  element.click();
-											}
-											document.getElementById("btn2")
-												  .addEventListener("click", function (e) {
-														$.post("/plugins/<TMPL_VAR PLUGINDIR>/system/ms_inbound.php");
-														var url = '/plugins/<TMPL_VAR PLUGINDIR>/system/VI_MQTT_UDP_Sonos.xml'; 
-														var http = new XMLHttpRequest(); 
-														http.open('HEAD', url, false); 
-														http.send(); 
-														//console.log("http status: " + http.status);
-														if (http.status !== 200)  {
-															$("#info").attr("style", "color:red");
-															$("#info").text('<TMPL_VAR ERRORS.ERR_XM_TEMP>');
-															$('html, body').animate({
-																scrollTop: $("#zone1").offset().top
-																}, 500);
-																$("#zone1").focus();
-																e.preventDefault();
-														} else {
-															var filename = "VI_MQTT_UDP_Sonos.xml";
-															download(filename);
-														}
-												  }, false);
-									  </script>
+									<div class="btnc">
+									<input type="button" onclick="checkfile('VI_MQTT_UDP_Sonos.xml')" id="btn3" data-mini="true" value="VI_MQTT_UDP_Sonos.xml" />
+									</div>
 									</td>
                                 </td>
                             </tr>
@@ -897,6 +812,7 @@
 
         $(document).on('pageinit', function() {
             selection();
+			selectudp();
             callayout();
             destlayout();
             radlayout();
@@ -1027,16 +943,17 @@
         // make Miniserver/UDP Port mandatory in case flipswitch value is true
         function selection() {
             var cat = document.getElementById('sendlox').value;
-            if (cat == "true") {
+			var mqtt = document.getElementById('sendloxMQTT').value;
+			if (cat == "true") {
                 //$('#miniserver').removeClass('ui-disabled'); 
                 $('#udpport').removeClass('ui-disabled');
                 $('.field_ms').fadeIn(600);
-                $('.field_udp').fadeIn(600);
-                $('.field_lab_udp').fadeIn(600);
+                //$('.field_udp').fadeIn(600);
+                //$('.field_lab_udp').fadeIn(600);
                 $('.label_template').fadeIn(600);
                 $('.template').fadeIn(600);
                 $('.empty_template').fadeIn(600);
-
+				selectudp();
             } else {
                 //$('#miniserver').addClass('ui-disabled');
                 $('#udpport').addClass('ui-disabled');
@@ -1052,6 +969,40 @@
             $("#sendlox").flipswitch("refresh");
             $('#miniserver').selectmenu('refresh', true);
         }
+		
+		// make UDP Port mandatory in case flipswitch value is true
+        function selectudp() {
+            var cat = document.getElementById('sendlox').value;
+			//var udp = document.getElementById('udpport').value;
+			var mqtt = document.getElementById('sendloxMQTT').value;
+			if (cat == "true") {
+				if (mqtt == "true")   {
+					//console.log("Select-MQTT");
+					$('.field_lab_udp').fadeOut(600);
+					$('.field_udp').fadeOut(600);
+					$('.btn').fadeOut(600);
+					$('.btnc').fadeIn(600);
+				} else {
+					//console.log("Select-UDP");
+					$('.field_lab_udp').fadeIn(600);
+					$('.field_udp').fadeIn(600);
+					$('.btnc').fadeOut(600);
+					$('.btn').fadeIn(600);
+					validate_enable('#udpport');
+					validate_chk_object(['#udpport']);
+				}
+			} else {
+				$('#udpport').addClass('ui-disabled');
+                $('.field_ms').fadeOut(600);
+                $('.field_udp').fadeOut(600);
+                $('.field_lab_udp').fadeOut(600);
+                $('.label_template').fadeOut(600);
+                $('.template').fadeOut(600);
+                $('.empty_template').fadeOut(600);
+			}
+			$("#sendloxMQTT").flipswitch("refresh");
+            $("#sendlox").flipswitch("refresh");
+		}
 
         // prepare the voice list dependend on language list
         function populateVoice() {
@@ -1403,8 +1354,61 @@
             $('#langiso').val(isocode);
             $("#langiso").textinput("refresh");
         }
-
-        // function to populate dropdown from JSON files based on selected T2S Provider
+		
+		
+		// validate UDP Port
+		function validateudp() {
+            var slox = document.getElementById('sendlox').value;
+			var mqtt = document.getElementById('sendloxMQTT').value;
+            //if (slox == "true" && mqtt == "false") {
+			if (slox == "true") {
+				if (mqtt == "false") {
+					validate_enable('#udpport');
+					validate_chk_object(['#udpport']);
+				} else {
+					validate_enable('#udpport');
+                //validate_clean_objects(['#udpport']);
+				}
+            }
+			$("#sendloxMQTT").flipswitch("refresh");
+			$("#sendlox").flipswitch("refresh");
+		}
+		
+		
+		// function to download XML Files to Import in Loxone
+		function downloadFile(filename) {
+			var element = document.createElement('a');
+			element.setAttribute('href','/plugins/<TMPL_VAR PLUGINDIR>/system/'  + filename);
+			element.setAttribute('download', filename);
+			document.body.appendChild(element);
+			element.click();
+			return;
+		}
+		
+		function checkfile(filename)   {
+			$.post("/plugins/<TMPL_VAR PLUGINDIR>/system/ms_inbound.php");
+			var url = '/plugins/<TMPL_VAR PLUGINDIR>/system/'  + filename; 
+			var http = new XMLHttpRequest(); 
+			http.open('GET', url, false); 
+			http.send(); 
+			console.log("http status: " + http.status);
+			if (http.status !== 200)  {
+				$("#info").attr("style", "color:red");
+				$("#info").text('<TMPL_VAR ERRORS.ERR_XM_TEMP>');
+				$('html, body').animate({
+								scrollTop: $("#zone1").offset().top
+								}, 500);
+								$("#zone1").focus();
+								e.preventDefault();
+			} else {
+				console.log("Filename: " + filename);
+				downloadFile(filename);
+			}
+		}
+		
+		
+		
+		// function to populate dropdown from JSON files based on selected T2S Provider
         $(document).ready(function() {
 			console.log("documentreadyfunction");
             $('#engine-selector input').change(prepareTTSConfigFields);
@@ -1413,6 +1417,22 @@
             // Load saved languages/voice into fields
             initial_lang_voice_load();
 			checkboxes();
+			
+			// validate UDP Port
+			selectudp();
+            //validateudp();
+			
+
+            // validate Volume entries per player
+            var iteration = document.getElementById('countplayers').value;
+            iteration = parseInt(iteration)
+            iteration += 1;
+            for (i = 1; i < iteration; ++i) {
+                validate_enable('#t2svol' + i + '');
+                validate_enable('#sonosvol' + i + '');
+                validate_enable('#maxvol' + i + '');
+                validate_chk_object(['#t2svol' + i + '', '#sonosvol' + i + '', '#maxvol' + i + '']);
+            }
 
 			
             // Function to control saving, main_form is submitted    
@@ -1535,6 +1555,7 @@
                 } 
                 $("#langiso").textinput("refresh");
 				
+				validateudp();
 				
 				// Save checkbox values
 				var iteration = document.getElementById('countplayers').value;
@@ -1585,36 +1606,10 @@
 
 
 
-
-
-
-
-            //************************ Form validation ********************************
-
-            // validate UDP Port
-            var slox = document.getElementById('sendlox').value;
-            if (slox == "true") {
-                validate_enable('#udpport');
-                validate_chk_object(['#udpport']);
-            } else {
-                validate_enable('#udpport');
-                //validate_clean_objects(['#udpport']);
-            }
-
-
-            // validate Volume entries per player
-            var iteration = document.getElementById('countplayers').value;
-            iteration = parseInt(iteration)
-            iteration += 1;
-            for (i = 1; i < iteration; ++i) {
-                validate_enable('#t2svol' + i + '');
-                validate_enable('#sonosvol' + i + '');
-                validate_enable('#maxvol' + i + '');
-                validate_chk_object(['#t2svol' + i + '', '#sonosvol' + i + '', '#maxvol' + i + '']);
-            }
+            
             //	
 
-
+			
         });
     </script>
 </TMPL_IF>
@@ -1747,17 +1742,17 @@
                 </tr>
 
                 <tr>
-                    <td style="height: 60px; width: 25%;">
+                    <td style="height: 60px; width: 15%;">
                         <!--<a id="lcheckonline" <TMPL_VAR T2S.ONLINECHECK_LINK> target="_blank"><TMPL_VAR T2S.ONLINECHECK></a>-->
                         <label id="lcheckonline"><TMPL_VAR T2S.ONLINECHECK></label>
                     </td>
                     <td style="height: 60px; width: 800px;">
                         <table border=0 width="100%">
                             <tr>
-                                <td style="width: 25%">
+                                <td style="width: 5%">
                                     <fieldset>
                                         <!--<select onchange="cronjob()" id="checkonline" name="checkonline" data-role="flipswitch" style="width: 104px">-->
-                                        <select id="checkt2s" name="checkt2s" data-role="flipswitch" style="width: 104px">
+                                    <select id="checkt2s" name="checkt2s" data-role="flipswitch" style="width: 5%">
 										<option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
 										<option selected="selected" value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
 									</select>
@@ -1766,29 +1761,39 @@
                                         $('#checkt2s').val('<TMPL_VAR SYSTEM.checkt2s>')
                                     </script>
                                 </td>
-                                <td style="width: 23px; text-align: center;">
-                                    &nbsp;</td>
-                                <td>
-                                    <!--<table class="cronjob" border=0 style="width: 91%">
-                                        <tr>
-                                            <td style="width: 50%; height: 60px;">
-                                                <label align="right" id="lcron"><TMPL_VAR T2S_DETAILS.LABLE_CRON>&nbsp;&nbsp;&nbsp;</label>
-                                            </td>
-                                            <td style="width: 19%">
-                                                <select id="cron" name="cron" data-mini="true" data-native-menu="false" style="width: 62%">
-											<option value="1">1 Min</option>
-											<option value="5">5 Min</option>
-											<option value="10">10 Min</option>
-											<option value="15">15 Min</option>
-											<option value="30">30 Min</option>
-											<option value="60">60 Min</option>
-										</select>
-                                                <script>
-                                                    $('#cron').val('<TMPL_VAR VARIOUS.cron>');
-                                                </script>
-                                            </td>
-                                        </tr>
-                                    </table>-->
+
+								<td style="width: 40%; text-align: center;">
+                                    <label align="right" id="lfunc_list"><TMPL_VAR T2S_DETAILS.LABEL_ZAPZONE></label>
+								</td>
+                                <td style="width: 30%">
+                                    <!--<table class="cronjob" border=0 style="width: 91%">-->
+                                        	<select id="func_list" name="func_list" data-mini="true" data-native-menu="false">
+												<option selected="selected" disabled value="" >*** Select Function for ZAPZONE ***</option>
+												<option value="nextradio" >Nextradio</option>
+												<option value="trackfavorites" >Track Favorites</option>
+												<option value="playlistfavorites" >Playlist Favorites</option>
+												<option value="radiofavorites" >Radio Favorites</option>
+												<option value="tuneinfavorites" >TuneIn Radio</option>
+											</select>
+										<script>
+											$('#func_list').val('<TMPL_VAR VARIOUS.selfunction>');
+										</script>	
+                                    <!--</table>-->
+                                </td>
+									<td style="width: 20%; height: 60px;">
+                                        <label align="right" id="lcron"><TMPL_VAR T2S_DETAILS.LABEL_ZAPZONE_RESET></label>
+                                </td>
+                                <td style="width: 29%">
+                                    <select id="cron" name="cron" data-mini="true" data-native-menu="false" style="width: 29%">
+										<option value="1">1 Min</option>
+										<option value="3">3 Min</option>
+										<option value="5">5 Min</option>
+										<option value="10">10 Min</option>
+										<option value="30">30 Min</option>
+									</select>
+                                    <script>
+                                        $('#cron').val('<TMPL_VAR VARIOUS.cron>');
+                                    </script>
                                 </td>
                             </tr>
                         </table>

@@ -45,19 +45,16 @@ function radio(){
 	foreach ($radiolists as $val => $item)  {
 		$radiolists[$val]['titlelow'] = mb_strtolower($radiolists[$val]['title']);
 	}
-	#print_r($radiolists);
-	$fav = $playlist;
 	$found = array();
 	foreach ($radiolists as $key)    {
-		$favoritecheck = contains($key['titlelow'], $fav);
-		if ($favoritecheck === true)   {
+		if ($playlist === $key['titlelow'])   {
 			$playlist = $key['titlelow'];
 			array_push($found, array_multi_search($playlist, $radiolists, "titlelow"));
 		}
 	}
 	$playlist = urldecode($playlist);
 	if (count($found) > 1)  {
-		LOGERR ("radio.php: Your entered Radio Station '".$fav."' has more then 1 hit! Please specify more detailed.");
+		LOGERR ("radio.php: Your entered Radio Station '".$playlist."' has more then 1 hit! Please specify more detailed.");
 		exit;
 	} elseif (count($found) == 0)  {
 		LOGERR ("radio.php: Your entered Radio Station '".$orgpl."' could not be found.");
@@ -65,7 +62,6 @@ function radio(){
 	} else {
 		LOGGING("radio.php: Radio Station '".$found[0][0]["title"]."' has been found.", 5);
 	}
-	#print_r($found);
 	$countradio = count($found);
 	if ($countradio > 0)   {
 		$sonos->SetRadio(urldecode($found[0][0]["res"]),$found[0][0]["title"]);

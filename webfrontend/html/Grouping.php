@@ -294,12 +294,12 @@ function getGroups() {
 
  function getZoneStatus($room) {
 	 
-	global $sonoszonen, $sonos, $grouping, $debug, $config, $time_start;	
+	global $sonoszone, $sonos, $grouping, $debug, $config, $time_start;	
 	
 	if(empty($room)) {
 		$room = $_GET['zone'];
 	}
-	$sonos = new SonosAccess($sonoszonen[$room][0]);
+	$sonos = new SonosAccess($sonoszone[$room][0]);
 	$group = $sonos->GetZoneGroupAttributes();
 	$tmp_name = $group["CurrentZoneGroupName"];
 	$group = explode(',', $group["CurrentZonePlayerUUIDsInGroup"]);

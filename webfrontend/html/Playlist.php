@@ -41,7 +41,7 @@ function playlist() {
 		$sonos->BecomeCoordinatorOfStandaloneGroup();
 		LOGGING("playlist.php: Zone ".$master." has been ungrouped.",5);
 	}
-	$sonos = new SonosAccess($config['sonoszonen'][$master][0]);
+	$sonos = new SonosAccess($sonoszone[$master][0]);
 	if(isset($_GET['playlist']))   {
 		$epl = $_GET['playlist'];
 		$playlist = mb_strtolower($_GET['playlist']);	
@@ -53,12 +53,9 @@ function playlist() {
 	foreach ($sonoslists as $val => $item)  {
 		$sonoslists[$val]['titlelow'] = mb_strtolower($sonoslists[$val]['title']);
 	}
-	#print_r($sonoslists);
-	$fav = $playlist;
 	$found = array();
 	foreach ($sonoslists as $key)    {
-		$favoritecheck = contains($key['titlelow'], $fav);
-		if ($favoritecheck === true)   {
+		if ($playlist === $key['titlelow'])   {
 			$playlist = $key['titlelow'];
 			array_push($found, array_multi_search($playlist, $sonoslists, "titlelow"));
 		}
