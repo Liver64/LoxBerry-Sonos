@@ -228,7 +228,7 @@ function debugInfo()     {
 	unset($debugconfig['VARIOUS']['donate']);
 	unset($debugconfig['VARIOUS']['CALDav2']);
 	unset($debugconfig['VARIOUS']['CALDavMuell']);
-	unset($debugconfig['VARIOUS']['cron']);
+	#unset($debugconfig['VARIOUS']['cron']);
 	
 	$pluginarray = LBSystem::get_plugins();
 	foreach ($pluginarray as $key)    {
@@ -312,7 +312,7 @@ function debugInfo()     {
 	file_put_contents($debuggingfile, json_encode($debugconfig, JSON_PRETTY_PRINT));
 	copy($lbplogdir."/s4lox_debug_".$heute.".log", $lbpdatadir."/s4lox_debug_".$heute.".log");
 	copy($lbplogdir."/SOAP-Log-".$heute.".log", $lbpdatadir."/SOAP_debug_".$heute.".log");
-	echo "Please check debug Log file(s) in '$lbpdatadir' for further analysis! Your personal config data has been anonymized to get Support.";
+	echo "Please check debug Log file(s) in '$lbpdatadir' for further analysis! Your personal config data has been anonymized for Support reasons.";
 	
 }
 

@@ -380,7 +380,7 @@
 													</fieldset>
 												<script>
 												if ('<TMPL_VAR MQTT>' == 'true')   {
-													document.getElementById("add").innerHTML += '<select onchange="selectudp()" id="sendloxMQTT" name="sendloxMQTT" data-role="flipswitch" data-wrapper-class="custom-mscom-flipswitch"><option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON_MS></option><option value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF_MS></option></select>';
+													document.getElementById("add").innerHTML += '<select onchange="selection()" id="sendloxMQTT" name="sendloxMQTT" data-role="flipswitch" data-wrapper-class="custom-mscom-flipswitch"><option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON_MS></option><option value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF_MS></option></select>';
 													$('#sendloxMQTT').val('<TMPL_VAR LOXONE.LoxDatenMQTT>');
 												}
 												</script>
@@ -415,12 +415,12 @@
                     </td>
                 </tr>
 				
-                <tr>
-                    <td class="label_template" style="height: 60px; width: 25%;">
+                <tr class="empty_template">
+                    <td class="empty_template" style="height: 60px; width: 25%;">
                         <label id="ltemplate"><TMPL_VAR T2S.LABEL_TEMPLATE></label>
 
                     </td>
-                    <td class="template" width="50%" style="height: 60px">
+                    <td class="empty_template" width="50%" style="height: 60px">
                         <table border=0 width="100%">
                             <tr>
                                 <td class="empty_template" style="width: 25%">
@@ -940,50 +940,26 @@
             populateLanguageAndVoiceFields();
         }
 
-        // make Miniserver/UDP Port mandatory in case flipswitch value is true
+        // make fields visible in case flipswitch value is true/false
         function selection() {
+			console.log("Selection");
             var cat = document.getElementById('sendlox').value;
 			var mqtt = document.getElementById('sendloxMQTT').value;
 			if (cat == "true") {
-                //$('#miniserver').removeClass('ui-disabled'); 
+				console.log("Communication to Loxone turned on");
                 $('#udpport').removeClass('ui-disabled');
                 $('.field_ms').fadeIn(600);
-                //$('.field_udp').fadeIn(600);
-                //$('.field_lab_udp').fadeIn(600);
                 $('.label_template').fadeIn(600);
                 $('.template').fadeIn(600);
                 $('.empty_template').fadeIn(600);
-				selectudp();
-            } else {
-                //$('#miniserver').addClass('ui-disabled');
-                $('#udpport').addClass('ui-disabled');
-                $('.field_ms').fadeOut(600);
-                $('.field_udp').fadeOut(600);
-                $('.field_lab_udp').fadeOut(600);
-                $('.label_template').fadeOut(600);
-                $('.template').fadeOut(600);
-                $('.empty_template').fadeOut(600);
-
-
-            }
-            $("#sendlox").flipswitch("refresh");
-            $('#miniserver').selectmenu('refresh', true);
-        }
-		
-		// make UDP Port mandatory in case flipswitch value is true
-        function selectudp() {
-            var cat = document.getElementById('sendlox').value;
-			//var udp = document.getElementById('udpport').value;
-			var mqtt = document.getElementById('sendloxMQTT').value;
-			if (cat == "true") {
-				if (mqtt == "true")   {
-					//console.log("Select-MQTT");
+				if (mqtt == "true") {
+					console.log("MQTT selected");
 					$('.field_lab_udp').fadeOut(600);
 					$('.field_udp').fadeOut(600);
 					$('.btn').fadeOut(600);
 					$('.btnc').fadeIn(600);
 				} else {
-					//console.log("Select-UDP");
+					console.log("UDP selected");
 					$('.field_lab_udp').fadeIn(600);
 					$('.field_udp').fadeIn(600);
 					$('.btnc').fadeOut(600);
@@ -991,20 +967,38 @@
 					validate_enable('#udpport');
 					validate_chk_object(['#udpport']);
 				}
-			} else {
-				$('#udpport').addClass('ui-disabled');
+            } else {
+				console.log("Communication to Loxone turned off");
+                $('#udpport').addClass('ui-disabled');
                 $('.field_ms').fadeOut(600);
                 $('.field_udp').fadeOut(600);
                 $('.field_lab_udp').fadeOut(600);
                 $('.label_template').fadeOut(600);
                 $('.template').fadeOut(600);
                 $('.empty_template').fadeOut(600);
+            }
+            $("#sendlox").flipswitch("refresh");
+            $('#miniserver').selectmenu('refresh', true);
+        }
+		
+		
+		// validate UDP Port in case flipswitch value UDP is true
+        function selectudp() {
+			console.log("validateUDP");
+            var cat = document.getElementById('sendlox').value;
+			var mqtt = document.getElementById('sendloxMQTT').value;
+			if (cat == "true") {
+				if (mqtt != "true")   {
+					validate_enable('#udpport');
+					validate_chk_object(['#udpport']);
+				}
 			}
 			$("#sendloxMQTT").flipswitch("refresh");
             $("#sendlox").flipswitch("refresh");
 		}
-
-        // prepare the voice list dependend on language list
+		
+		
+		// prepare the voice list dependend on language list
         function populateVoice() {
             console.log("populating voice");
             if (document.main_form.tts_polly.checked == true) {
@@ -1356,25 +1350,6 @@
         }
 		
 		
-		// validate UDP Port
-		function validateudp() {
-            var slox = document.getElementById('sendlox').value;
-			var mqtt = document.getElementById('sendloxMQTT').value;
-            //if (slox == "true" && mqtt == "false") {
-			if (slox == "true") {
-				if (mqtt == "false") {
-					validate_enable('#udpport');
-					validate_chk_object(['#udpport']);
-				} else {
-					validate_enable('#udpport');
-                //validate_clean_objects(['#udpport']);
-				}
-            }
-			$("#sendloxMQTT").flipswitch("refresh");
-			$("#sendlox").flipswitch("refresh");
-		}
-		
-		
 		// function to download XML Files to Import in Loxone
 		function downloadFile(filename) {
 			var element = document.createElement('a');
@@ -1419,9 +1394,7 @@
 			checkboxes();
 			
 			// validate UDP Port
-			selectudp();
-            //validateudp();
-			
+			selectudp();			
 
             // validate Volume entries per player
             var iteration = document.getElementById('countplayers').value;
@@ -1437,13 +1410,13 @@
 			
             // Function to control saving, main_form is submitted    
             $("form#main_form").submit(function(e) {
-			console.log("submit");
+				console.log("submit");
 	            //var selectlang = document.getElementById("t2slang").value;
 				var selectlang = $('#t2slang').val();
 				var selectvoice = $('#voice').val();
 				console.log("selectlang: " + selectlang);
 				console.log("selectvoice: " + selectvoice);
-				$("#info").empty();
+				$("#info").trigger('create');
                 if (document.main_form.tts_polly.checked == true) {
                      if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
@@ -1453,6 +1426,7 @@
                             scrollTop: $("#info").offset().top
                         }, 1000);
                         $("#t2slang").focus();
+						return false;
                         e.preventDefault();
                     }
                     if (selectvoice == null) {
@@ -1463,6 +1437,7 @@
                             scrollTop: $("#info").offset().top
                         }, 1000);
                         $("#voice").focus();
+						return false;
                         e.preventDefault();
                     }
                 } else if (document.main_form.tts_mac_osx.checked == true) {
@@ -1474,6 +1449,7 @@
                             scrollTop: $("#info").offset().top
                         }, 1000);
                         $("#t2slang").focus();
+						return false;
                         e.preventDefault();
                     }
                 } else if (document.main_form.tts_voicerss.checked == true) {
@@ -1485,6 +1461,7 @@
                             scrollTop: $("#info").offset().top
                         }, 1000);
                         $("#t2slang").focus();
+						return false;
                         e.preventDefault();
                     }
 				} else if (document.main_form.tts_google_cloud.checked == true) {
@@ -1496,6 +1473,7 @@
                             scrollTop: $("#info").offset().top
                         }, 1000);
                         $("#t2slang").focus();
+						return false;
                         e.preventDefault();
                     }
 					if (selectvoice == null) {
@@ -1506,6 +1484,7 @@
                             scrollTop: $("#info").offset().top
                         }, 1000);
                         $("#voice").focus();
+						return false;
                         e.preventDefault();
                     }
                 } else if (document.main_form.tts_pico.checked == true) {
@@ -1517,6 +1496,7 @@
                             scrollTop: $("#info").offset().top
                         }, 1000);
                         $("#t2slang").focus();
+						return false;
                         e.preventDefault();
                     }
                 } else if (document.main_form.tts_respvoice.checked == true) {
@@ -1528,6 +1508,7 @@
                             scrollTop: $("#info").offset().top
                         }, 1000);
                         $("#t2slang").focus();
+						return false;
                         e.preventDefault();
                     }
                 } else if (document.main_form.tts_google.checked == true) {
@@ -1539,6 +1520,7 @@
                             scrollTop: $("#info").offset().top
                         }, 1000);
                         $("#t2slang").focus();
+						return false;
                         e.preventDefault();
                     }
 				} else if (document.main_form.tts_azure.checked == true) {
@@ -1550,12 +1532,24 @@
                             scrollTop: $("#info").offset().top
                         }, 1000);
                         $("#t2slang").focus();
+						return false;
                         e.preventDefault();
                     }
-                } 
+                } else {
+					$("#info").attr("style", "color:red");
+					$("#info").html('<TMPL_VAR T2S.VALIDATE_T2S>');
+                    $('html, body').animate({
+                        scrollTop: $("#info").offset().top
+                    }, 1000);
+                    $("#tts_voicerss").focus();
+					//$("#info").trigger('create');
+					console.log("No T2S");
+					return false;
+					e.preventDefault();
+				}
                 $("#langiso").textinput("refresh");
-				
-				validateudp();
+				$("#info").trigger('create');
+			
 				
 				// Save checkbox values
 				var iteration = document.getElementById('countplayers').value;
@@ -1592,14 +1586,16 @@
 				$("#info").empty();
                 var selectjingle = document.getElementById("file_gong").value;
                 var selectt2s = $("input[name=t2s_engine]:checked").val();
-                if ((selectjingle == '') && (selectt2s != '')) {
+				//console.log(selectjingle);
+				//console.log(selectt2s);
+                if ((selectjingle == '') && (selectt2s !== "")) {
 					$("#info").attr("style", "color:red");
 					$("#info").text('<TMPL_VAR T2S.VALIDATE_JINGLE>');
-                    //alert('<TMPL_VAR T2S.VALIDATE_JINGLE>');
                     $('html, body').animate({
                         scrollTop: $("#info").offset().top
                     }, 1000);
                     $("#file_gong").focus();
+					$("#info").trigger('create');
 					e.preventDefault();
                 }
             });

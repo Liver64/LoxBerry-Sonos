@@ -282,7 +282,7 @@ if ($mqttcred && $pcfg->param("LOXONE.LoxDaten") eq "true")  {
 if ($mqttcred && $pcfg->param("LOXONE.LoxDatenMQTT") eq "true")  {
 	$pcfg->param("LOXONE.LoxPort", $cfgm->{Main}{udpport});
 } else {
-	$pcfg->param("LOXONE.LoxPort", "$R::udpport");
+	#$pcfg->param("LOXONE.LoxPort", "$R::udpport");
 }
 
 
