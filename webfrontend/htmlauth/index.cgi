@@ -279,13 +279,6 @@ if ($mqttcred && $pcfg->param("LOXONE.LoxDaten") eq "true")  {
 	LOGDEB "MQTT is installed and could be used";
 }
 
-if ($mqttcred && $pcfg->param("LOXONE.LoxDatenMQTT") eq "true")  {
-	$pcfg->param("LOXONE.LoxPort", $cfgm->{Main}{udpport});
-} else {
-	#$pcfg->param("LOXONE.LoxPort", "$R::udpport");
-}
-
-
 if ($R::saveformdata1) {
 	$template->param( FORMNO => 'form' );
 	&save;
@@ -349,6 +342,12 @@ sub form
 					label => "$SL{'T2S.SAFE_DETAILS'}");
 					
 	$template->param("STORAGEPATH", $storage);
+	
+	if ($mqttcred && $pcfg->param("LOXONE.LoxDatenMQTT") eq "true")  {
+		$pcfg->param("LOXONE.LoxPort", $cfgm->{Main}{udpport});
+	#} else {
+		#$pcfg->param("LOXONE.LoxPort", "$R::udpport");
+	}
 
 	# read info file from Github and save in $info
 	my $info 		= get($urlfile);
