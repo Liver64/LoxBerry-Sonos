@@ -345,8 +345,6 @@ sub form
 	
 	if ($mqttcred && $pcfg->param("LOXONE.LoxDatenMQTT") eq "true")  {
 		$pcfg->param("LOXONE.LoxPort", $cfgm->{Main}{udpport});
-	#} else {
-		#$pcfg->param("LOXONE.LoxPort", "$R::udpport");
 	}
 
 	# read info file from Github and save in $info

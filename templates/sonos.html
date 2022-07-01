@@ -368,7 +368,7 @@
                                 <td>
                                     <table border=0 style="width: 95%">
                                         <tr>
-                                            <td class="field_ms" align="left" style="width: 60%">
+                                            <td class="field_ms" align="left" style="width: 50%">
                                                 <!--<select id="miniserver" name="miniserver" data-mini="true" data-native-menu="false" style="width: 142px"><TMPL_VAR MSSELECTLIST>
 												</select>-->
                                                 <TMPL_VAR MS>
@@ -382,6 +382,8 @@
 												if ('<TMPL_VAR MQTT>' == 'true')   {
 													document.getElementById("add").innerHTML += '<select onchange="selection()" id="sendloxMQTT" name="sendloxMQTT" data-role="flipswitch" data-wrapper-class="custom-mscom-flipswitch"><option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON_MS></option><option value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF_MS></option></select>';
 													$('#sendloxMQTT').val('<TMPL_VAR LOXONE.LoxDatenMQTT>');
+												} else {
+													document.getElementById("add").innerHTML += '<input id="sendloxMQTT" name="sendloxMQTT" type="hidden" value="false">';
 												}
 												</script>
 											</td>
@@ -424,26 +426,17 @@
                         <table border=0 width="100%">
                             <tr>
                                 <td class="empty_template" style="width: 25%">
-								    <!--<a download="VIU_Sonos_UDP.xml" onclick='checkLoxInSaved()' title="UDP Inputs" data-role="button" data-inline="true" data-mini="true" href="/plugins/<TMPL_VAR PLUGINDIR>/system/VIU_Sonos_UDP.xml">
-										<TMPL_VAR T2S.BUTTON_TEMPLATE>
-                                    </a>-->
-									<div class="btn">
-									  <input type="button" onclick="checkfile('VI_UDP_Sonos.xml')" id="btn1" data-mini="true" value="VI_UDP_Sonos.xml" />
+								    <div class="btn">
+										<input type="button" onclick="checkfile('VI_UDP_Sonos.xml')" id="btn1" data-mini="true" value="VI_UDP_Sonos.xml" />
 									</div>								
-									</td>
-									
-									<td class="empty_template" style="width: 25%">
+								</td>
+								<td class="empty_template" style="width: 25%">
 									<div class="btnc">
-                                        <input type="button" onclick="checkfile('VI_MQTT_HTTP_Sonos.xml')" id="btn2" data-mini="true" value="VI_MQTT_HTTP_Sonos.xml" />
+                                        <input type="button" onclick="checkfile('VI_MQTT_UDP_Sonos.xml')" id="btn2" data-mini="true" value="VI_MQTT_UDP_Sonos.xml" />
 									</div>
-									</td>
-									
-                                    <td class="empty_template" style="width: 25%">
-									<div class="btnc">
-									<input type="button" onclick="checkfile('VI_MQTT_UDP_Sonos.xml')" id="btn3" data-mini="true" value="VI_MQTT_UDP_Sonos.xml" />
-									</div>
-									</td>
-                                </td>
+								</td>
+                                <td class="empty_template" style="width: 25%">
+								</td>
                             </tr>
                         </table>
 						<td class="empty_template" style="width: 50%; height: 60px;">
@@ -984,7 +977,7 @@
 		
 		// validate UDP Port in case flipswitch value UDP is true
         function selectudp() {
-			console.log("validateUDP");
+			console.log("selectudp");
             var cat = document.getElementById('sendlox').value;
 			var mqtt = document.getElementById('sendloxMQTT').value;
 			if (cat == "true") {
@@ -993,7 +986,7 @@
 					validate_chk_object(['#udpport']);
 				}
 			}
-			$("#sendloxMQTT").flipswitch("refresh");
+			//$("#sendloxMQTT").flipswitch("refresh");
             $("#sendlox").flipswitch("refresh");
 		}
 		
