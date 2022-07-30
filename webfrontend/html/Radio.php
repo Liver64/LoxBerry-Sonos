@@ -143,8 +143,13 @@ function nextradio() {
 		$radiosplit = explode(',',$key);
 		array_push($radio_name, $radiosplit[0]);
 		array_push($radio_adresse, $radiosplit[1]);
-		array_push($radio_coverurl, $radiosplit[2]);
+		if (array_key_exists("2", $radiosplit)) {
+			array_push($radio_coverurl, $radiosplit[2]);
+		} else {
+			array_push($radio_coverurl, "");
+		}
 	}
+	#print_r($radio_coverurl);
 	$senderaktuell = array_search($senderuri, $radio_name);
 	if ($senderaktuell < ($radioanzahl) - 1 ) {
 		$sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[$senderaktuell + 1], $radio_name[$senderaktuell + 1], $radio_coverurl[$senderaktuell + 1]);
