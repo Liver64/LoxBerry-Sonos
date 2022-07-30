@@ -2,11 +2,12 @@
 
 ##############################################################################################################################
 #
-# Version: 	5.1.6
-# Datum: 	06.2022
+# Version: 	5.2.0
+# Datum: 	07.2022
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 #
 # http://<IP>:1400/xml/device_description.xml
+# http://<IP>:1400/support/review
 # 
 ##############################################################################################################################
 
@@ -74,6 +75,7 @@ $pltmp = "/run/shm/s4lox_pl_play_tmp_".$_GET['zone'].".json";	// queue.php: temp
 $filenst = "/run/shm/s4lox_t2s_stat.tmp";						// Temp Statusfile für messages
 $folfilePlOn = "$lbpdatadir/PlayerStatus/s4lox_on_";			// Folder and file name for Player Status
 $debuggingfile = "$lbpdatadir/s4lox_debug_config.json";			// Folder and file name for Debug Config
+$file = $lbphtmldir."/bin/check_player_dup.txt";				// File to check for duplicate player
 # Files for ONE-click functions
 if (isset($_GET['zone']))  {
 	$radiofav = "/run/shm/s4lox_fav_all_radio_".$_GET['zone'].".json";				// Radio Stations in PlayAllFavorites
@@ -194,6 +196,18 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 		
 	// Übernahme und Deklaration von Variablen aus der Konfiguration
 	$sonoszonen = $config['sonoszonen'];
+	
+	// check for player duplicates based on roomname once
+	if (is_file($lbphtmldir."/bin/check_player_dup.txt"))  {
+		$player = array();
+		foreach($sonoszonen as $checkzone)     {
+			array_push($player, $checkzone[0]);
+		}
+		$invalid_player = validate_player($player);
+		if (!is_null($invalid_player))    {
+			LOGGING("sonos.php: Minimum ONE Player has a duplicate (Roomname), this may cause problems! Please remove them from your config, rename them in Sonos App and re-scan for the Player",3);
+		}
+	}
 	
 		// prüft den Onlinestatus jeder Zone
 	#exec('/usr/bin/php -f bin/check_on_state.php');

@@ -43,7 +43,7 @@ function info()  {
 	if($PositionInfo["album"] == '')  {
 		# Kein Album - Dann Radio Stream Info
 		$album = $PositionInfo["streamContent"];
-	}   
+	}  
 	echo'
 		cover: <tab>' . $bild . '<br>   
 		title: <tab>' . $title . '<br>

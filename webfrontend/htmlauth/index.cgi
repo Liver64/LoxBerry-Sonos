@@ -382,12 +382,13 @@ sub form
 			my @fields = $pcfg->param($key);
 			$rowsradios .= "<tr><td style='height: 25px; width: 43px;' class='auto-style1'><INPUT type='checkbox' style='width: 20px' name='chkradios$countradios' id='chkradios$countradios' align='center'/></td>\n";
 			$rowsradios .= "<td style='height: 28px'><input type='text' id='radioname$countradios' name='radioname$countradios' size='20' value='$fields[0]' /> </td>\n";
-			$rowsradios .= "<td style='width: 888px; height: 28px'><input type='text' id='radiourl$countradios' name='radiourl$countradios' size='100' value='$fields[1]' style='width: 862px' /> </td></tr>\n";
+			$rowsradios .= "<td style='width: 600px; height: 28px'><input type='text' id='radiourl$countradios' name='radiourl$countradios' size='100' value='$fields[1]' style='width: 100%' /> </td>\n";
+			$rowsradios .= "<td style='width: 600px; height: 28px'><input type='text' id='coverurl$countradios' name='coverurl$countradios' size='100' value='$fields[2]' style='width: 100%' /> </td></tr>\n";
 		}
 	}
 
 	if ( $countradios < 1 ) {
-		$rowsradios .= "<tr><td colspan=3>" . $SL{'RADIO.SONOS_EMPTY_RADIO'} . "</td></tr>\n";
+		$rowsradios .= "<tr><td colspan=4>" . $SL{'RADIO.SONOS_EMPTY_RADIO'} . "</td></tr>\n";
 	}
 	LOGDEB "$countradios Radio Stations has been loaded.";
 	$rowsradios .= "<input type='hidden' id='countradios' name='countradios' value='$countradios'>\n";
@@ -690,7 +691,9 @@ sub save
 		} else { # save
 			my $rname = param("radioname$i");
 			my $rurl = param("radiourl$i");
-			$pcfg->param( "RADIO.radio" . "[$i]", "\"$rname\"" . "," . "\"$rurl\"" );
+			my $curl = param("coverurl$i");
+			#$pcfg->param( "RADIO.radio" . "[$i]", "\"$rname\"" . "," . "\"$rurl\"" );
+			$pcfg->param( "RADIO.radio" . "[$i]", "\"$rname\"" . "," . "\"$rurl\""  . "," . "\"$curl\"" );
 		}
 	}
 	

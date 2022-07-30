@@ -21,7 +21,6 @@
     <form method="post" data-ajax="false" accept-charset="utf-8" name="main_form" id="main_form" action="./index.cgi?form">
         <input type="hidden" name="saveformdata1" value="1">
 		<input type="hidden" name="regionOptions" id="regionOptions" value="<TMPL_VAR TTS.regionms>">
-		<!--<input type="hidden" name="subscriptionKey" id="subscriptionKey" value="<TMPL_VAR TTS.API-key>">-->
 				
         <div class="form-group">
             <font COLOR="blue">
@@ -232,10 +231,7 @@
                                     <div id="msg"></div>
                                     <td style="height: 36px; width: 294px;" class="ttsconfig field-voice 4001 8001" style="display:none">
                                         <fieldset style="width: 187px">
-                                            <!--<select onclick="setCorrectLang()" id="voice" name="voice" data-mini="true" style="width: 206px;" 
-											data-validation-error-msg="<TMPL_VAR T2S.SELECT_VOICE_DROPDOWN>" 
-											data-validation-rule="^([A-Za-z0-9]){4,10}$">-->
-											<select id="voice" name="voice" data-mini="true" style="width: 206px;"
+                                            <select id="voice" name="voice" data-mini="true" style="width: 206px;"
 											data-validation-error-msg="<TMPL_VAR T2S.SELECT_VOICE_DROPDOWN>" 
 											data-validation-rule="^([A-Za-z0-9]){4,10}$">
 								</select>
@@ -345,9 +341,7 @@
 
                 <tr class="ttsconfig ttsbaseconfig">
                     <td style="height: 60px; width: 25%;">
-                        <!--<a id="lsendlox" <TMPL_VAR T2S.DATA_TRANSFER_MINISERVER_LINK> target="_blank"><TMPL_VAR T2S.DATA_TRANSFER_MINISERVER></a>-->
                         <label id="lsendlox"><TMPL_VAR T2S.DATA_TRANSFER_MINISERVER></label>
-						
                     </td>
                     <td width="5%" style="height: 60px">
                         <table border=0 width="100%">
@@ -369,8 +363,6 @@
                                     <table border=0 style="width: 95%">
                                         <tr>
                                             <td class="field_ms" align="left" style="width: 50%">
-                                                <!--<select id="miniserver" name="miniserver" data-mini="true" data-native-menu="false" style="width: 142px"><TMPL_VAR MSSELECTLIST>
-												</select>-->
                                                 <TMPL_VAR MS>
 											<td class="field_ms" style="width: 84px;">
 													<fieldset>
@@ -425,12 +417,11 @@
                     <td class="empty_template" width="50%" style="height: 60px">
                         <table border=0 width="100%">
                             <tr>
-                                <td class="empty_template" style="width: 25%">
+                                <td class="empty_template" style="width: 5%">
 								    <div class="btn">
 										<input type="button" onclick="checkfile('VI_UDP_Sonos.xml')" id="btn1" data-mini="true" value="VI_UDP_Sonos.xml" />
 									</div>								
-								</td>
-								<td class="empty_template" style="width: 25%">
+								
 									<div class="btnc">
                                         <input type="button" onclick="checkfile('VI_MQTT_UDP_Sonos.xml')" id="btn2" data-mini="true" value="VI_MQTT_UDP_Sonos.xml" />
 									</div>
@@ -447,28 +438,7 @@
 								</a>
                             </font>
                         </td>
-						
-						<!--<tr>
-							<td class="label_template" style="height: 60px; width: 25%;">
-								<label id="ltemplate"><TMPL_VAR T2S.LABEL_EXT_SYSTEM></label>
-							</td>
-							<td class="template" style="width: 25%">
-								<table border=0 width="100%">
-									<fieldset>
-										<select  id="sendext" name="sendext" data-role="flipswitch" style="width: 104px">
-										<option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
-										<option value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
-										</select>
-									</fieldset>
-									<script>
-										$('#sendext').val('<TMPL_VAR LOXONE.ExtDaten>')
-									</script>
-								</table>
-							</td>
-						</tr>-->
-						
-						
-                        </td>
+					</td>
                         <td class="empty_template" style="height: 30px; width: 201px;">
                         </td>
                         <td class="empty_template" style="height: 30px; width: 24px;">
@@ -486,10 +456,7 @@
                 <tr>
                     <td colspan=3 style="height: 30px; ">
                         <hr/>
-
-                        <h3>
-                            <TMPL_VAR TEMPLATE.MAIN_LABEL_OPTIONS>
-                        </h3>
+                        <h3><TMPL_VAR TEMPLATE.MAIN_LABEL_OPTIONS></h3>
                     </td>
                 </tr>
                 <td style="height: 30px; width: 10%;">
@@ -500,10 +467,6 @@
                         <div style="display:table; padding:10px; border: 1px solid black; border-radius: 5px; background-color: #6dac20;">
                             <fieldset data-role="controlgroup">
                                 <div style="display:table-row;">
-                                    <!--<div style="display:table-cell;">-->
-                                    <!--<input name="Checkbox1" type="checkbox" onclick="t2slayout()" id="t2s_det" data-icon="check" style="width: 142px">-->
-                                    <!--<label for="t2s_det"><TMPL_VAR T2S_DETAILS.LAYOUT_CHECKBOX></label>-->
-                                    <!--</div>-->
                                     <div style="display:table-cell;">
                                         <input name="Checkbox2" type="checkbox" onclick="radlayout() " id="radio_det" data-icon="check" style="width: 142px">
                                         <label for="radio_det"><TMPL_VAR RADIO.LAYOUT_CHECKBOX></label>
@@ -553,6 +516,9 @@
                                     </th>
                                     <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 888px">
                                         <TMPL_VAR RADIO.RADIO_STATION_URL>
+                                    </th>
+									<th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 888px">
+                                        <TMPL_VAR RADIO.RADIO_STATION_COVER_URL>
                                     </th>
                                 </tr class="radiodet">
                                 <TMPL_VAR ROWSRADIO>
@@ -702,19 +668,19 @@
                                             <tr class="weatherdet">
                                                 <td width="20%" style="height: 30px">
                                                     <select id="region" name="region" data-mini="true" style="width: 102px">
-							<option value="baw"><TMPL_VAR WEATHER.REGION1></option>
-							<option value="bay"><TMPL_VAR WEATHER.REGION2></option>
-							<option value="bbb"><TMPL_VAR WEATHER.REGION3></option>
-							<option value="hes"><TMPL_VAR WEATHER.REGION4></option>
-							<option value="mvp"><TMPL_VAR WEATHER.REGION5></option>
-							<option value="nib"><TMPL_VAR WEATHER.REGION6></option>
-							<option value="nrw"><TMPL_VAR WEATHER.REGION7></option>
-							<option value="rps"><TMPL_VAR WEATHER.REGION8></option>
-							<option value="sac"><TMPL_VAR WEATHER.REGION9></option>
-							<option value="saa"><TMPL_VAR WEATHER.REGION10></option>
-							<option value="shh"><TMPL_VAR WEATHER.REGION11></option>
-							<option value="thu"><TMPL_VAR WEATHER.REGION12></option>
-						</select>
+														<option value="baw"><TMPL_VAR WEATHER.REGION1></option>
+														<option value="bay"><TMPL_VAR WEATHER.REGION2></option>
+														<option value="bbb"><TMPL_VAR WEATHER.REGION3></option>
+														<option value="hes"><TMPL_VAR WEATHER.REGION4></option>
+														<option value="mvp"><TMPL_VAR WEATHER.REGION5></option>
+														<option value="nib"><TMPL_VAR WEATHER.REGION6></option>
+														<option value="nrw"><TMPL_VAR WEATHER.REGION7></option>
+														<option value="rps"><TMPL_VAR WEATHER.REGION8></option>
+														<option value="sac"><TMPL_VAR WEATHER.REGION9></option>
+														<option value="saa"><TMPL_VAR WEATHER.REGION10></option>
+														<option value="shh"><TMPL_VAR WEATHER.REGION11></option>
+														<option value="thu"><TMPL_VAR WEATHER.REGION12></option>
+													</select>
                                                     <script>
                                                         $('#region').val('<TMPL_VAR LOCATION.region>');
                                                     </script>
@@ -749,7 +715,6 @@
             <td></td>
             <p>
                 <center>
-                    <!--<a id="btncancel" data-role="button" data-inline="true" data-mini="true" data-icon="delete" href="/admin/index.cgi"><TMPL_VAR SAVE.CANCEL_BUTTON></a>-->
                     <button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SAVE.SAVE_BUTTON></button>
                 </center>
             </p>
@@ -786,13 +751,10 @@
                         <button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true"><TMPL_VAR SAVE.SAVE_BUTTON></button>
                     </div>
                 </div>
-                <!-- <button id="remove_donate" data-mini="true"><TMPL_VAR donate_done_remove></button> -->
         </div>
         <!-- Ende Donation -->
     </form>
 	
-
-    <!--</form>-->
 
 	<!-- Speech SDK reference sdk. -->
 	
@@ -949,14 +911,14 @@
 					console.log("MQTT selected");
 					$('.field_lab_udp').fadeOut(600);
 					$('.field_udp').fadeOut(600);
-					$('.btn').fadeOut(600);
-					$('.btnc').fadeIn(600);
+					$('.btn').fadeOut(100);
+					$('.btnc').fadeIn(100);
 				} else {
 					console.log("UDP selected");
 					$('.field_lab_udp').fadeIn(600);
 					$('.field_udp').fadeIn(600);
-					$('.btnc').fadeOut(600);
-					$('.btn').fadeIn(600);
+					$('.btnc').fadeOut(100);
+					$('.btn').fadeIn(100);
 					validate_enable('#udpport');
 					validate_chk_object(['#udpport']);
 				}
@@ -1160,8 +1122,10 @@
             var cellRight = row.insertCell(1);
             cellRight.innerHTML = '<td style="height: 28px"><input type="text" id="radioname' + iteration + '" name="radioname' + iteration + '" size="20" value="" /> </td>'
             var cellRight = row.insertCell(2);
-            cellRight.innerHTML = '<td style="width: 888px; height: 28px"><input type="text" id="radiourl' + iteration + '" name="radiourl' + iteration + '" size="100" value="" style="width: 862px" /> </td></tr>'
-                // Recreate JQUERY styles
+            cellRight.innerHTML = '<td style="width: 600px; height: 28px"><input type="text" id="radiourl' + iteration + '" name="radiourl' + iteration + '" size="100" value="" style="width: 100%" /> </td>'
+			var cellRight = row.insertCell(3);
+            cellRight.innerHTML = '<td style="width: 600px; height: 28px"><input type="text" id="coverurl' + iteration + '" name="coverurl' + iteration + '" size="100" value="" style="width: 100%" /> </td></tr>'
+            // Recreate JQUERY styles
             $("#main_form").trigger('create');
 
         }

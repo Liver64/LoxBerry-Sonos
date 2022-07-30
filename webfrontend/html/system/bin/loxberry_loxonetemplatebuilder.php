@@ -62,7 +62,7 @@ class LoxoneTemplateBuilder
 			$o .= 'Title="'.@htmlspecialchars($this->Title, $encflags).'" ';
 			$o .= 'Comment="'.@htmlspecialchars($this->Comment, $encflags).'" ';
 			$o .= 'Address="'.@htmlspecialchars($this->Address, $encflags).'" ';
-			$o .= 'Port="'.@htmlspecialchars($this->Port, $encflags).'" ';
+			$o .= 'Port="'.@htmlspecialchars($this->Port, $encflags).'"';
 			$o .= '>'.$crlf;
 		} elseif ($class = "VirtualOut") {
 			$o .= '<VirtualOut ';

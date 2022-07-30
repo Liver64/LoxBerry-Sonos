@@ -41,10 +41,12 @@ function zap()
 	} else {
 		$subfunction = $config['VARIOUS']['selfunction'];
 	}
-
+	LOGGING("Subfunction: ".$config['VARIOUS']['selfunction'], 7);
+	LOGGING("Cronjob: ".$config['VARIOUS']['cron'], 7);
 	# START ZAPZONE
 	if (is_file($zapname) === true && is_file($subzapname) === false)  {
 		#echo "ZAPNAME";
+		LOGGING("ZAPNAME", 7);
 		$file = json_decode(file_get_contents($zapname), true);
 		$countzapfile = count($file);
 		# if last zone has been reached
@@ -72,6 +74,7 @@ function zap()
 	# START SUB FUNCTION
 	elseif (is_file($zapname) === false && is_file($subzapname) === true)  {
 		#echo "SUB-ZAPNAME";
+		LOGGING("SUB-ZAPNAME", 7);
 		PlayZapzoneNext();
 		LOGGING("queue.php: Sub-Function '".$subfunction."' has been called ",7);
 		exit;
@@ -80,22 +83,27 @@ function zap()
 	# START FROM SCRATCH
 	elseif (is_file($zapname) === false && is_file($subzapname) === false)  {
 		#echo "SCRATCH";
+		LOGGING("Start from SCRATCH", 7);
 		$runarray = array();
 		#print_R($sonoszone);
 		foreach ($sonoszone as $zone => $player) {
 			$sonos = new SonosAccess($sonoszone[$zone][0]);
 			$state = $sonos->GetTransportInfo();			// only playing zones
+			LOGGING("GetTransportInfo for ".$zone.": ".$state, 7);
 			$posinfo = $sonos->GetPositionInfo();	
+			LOGGING("GetPositionInfo for ".$zone.": ".$posinfo['TrackURI'], 7);
 			if ($state == '1' and $sonoszone[$zone][1] != $sonoszone[$master][1] and substr($posinfo["TrackURI"], 0, 18) != "x-sonos-htastream:")   {				// except masterzone
 				$u = getZoneStatus($zone);
 				if ($u <> "member")    {
 					array_push($runarray, $zone, $sonoszone[$zone][0], $sonoszone[$zone][1]); 		// add IP-address to array
+					LOGGING("Array including following player: ".$zone,7);
 				}
 			}
 		}
+		#LOGGING("Array of playing zones: ".print_r($runarray), 7);
 		$countzones = count($runarray);
 		if ($countzones == 0)  {
-			LOGGING("queue.php: Currently no zone is running or last Zone has been reached, we switch to Sub-Function",7);
+			LOGGING("queue.php: SCRATCH - Currently no zone is running or last Zone has been reached, we switch to Sub-Function",7);
 			@unlink($zapname);
 			file_put_contents($subzapname, "1");
 			PlayZapzoneNext();

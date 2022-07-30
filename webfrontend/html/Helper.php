@@ -1252,6 +1252,57 @@ function getStreamingService($zone)
 		#return $StrService;
 }
 
+
+
+/**
+/* Funktion : validate_player --> check duplicate room name
+/*
+/* @param: array of IP                             
+/* @return: error or nothing
+**/
+function validate_player($players)    {
+
+/**	INPUT FORMAT
+
+	Array
+(
+    [0] => max
+    [1] => wohnzimmer
+    [2] => kids
+    [3] => schlafen
+    [4] => wintergarten
+    [5] => terrasse
+)
+**/	
+	global $sonos, $lbphtmldir;
+	
+	$player = array();
+	foreach ($players as $zoneip) {
+		$info = json_decode(file_get_contents('http://' . $zoneip . ':1400/info'), true);
+		$roomraw = $info['device']['name'];
+		$search = array('Ä','ä','Ö','ö','Ü','ü','ß');
+		$replace = array('Ae','ae','Oe','oe','Ue','ue','ss');
+		$room = strtolower(str_replace($search,$replace,$roomraw));
+		array_push($player, $room);
+	}
+	# **	ONLY FOR TESTING START
+	
+	#$arr = array(0 => "wohnzimmer", 1 => "kids", 3 => "wohnzimmer", 4 => "schlafen", 5 => "kids");
+	#$unique = array_unique($arr);
+	#$duplicate_player = array_diff_assoc($arr, $unique);
+	
+	# **	ONLY FOR TESTING END	
+	$unique = array_unique($player);
+	$duplicate_player = array_diff_assoc($player, $unique);
+	if (count($duplicate_player) > 0 and is_file($lbphtmldir."/bin/check_player_dup.txt"))  {
+		foreach($duplicate_player as $playzone)   {
+			notify(LBPPLUGINDIR, "Sonos", "Player '".$playzone."' has been detected twice! Please rename min. 1 Player in your Sonos App in order to avoid problems using the Plugin. Once done please scan again for new Player in your Network.", "error");
+		}
+	}
+	unlink($lbphtmldir."/bin/check_player_dup.txt");
+	return $duplicate_player;
+}
+
  
  
 ?>

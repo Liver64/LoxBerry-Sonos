@@ -315,6 +315,7 @@ function metadata($value)
 			"272"=>"Worldwide FM",
 			"317"=>"Yogi Tunes",
 			"284"=>"YouTube Music",
+			"996"=>"Plugin Radio",
 			"998"=>"Sonos Playlist",
 			"999"=>"Local Music",
 			"000"=>"unknown",

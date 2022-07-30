@@ -384,4 +384,9 @@
 			[BUGFIX/[IMPROVEMENT]] Funktion 'zapzone' wurde korrigiert und funktional erweitert
 			[BUGFIX] Funktionen sonosplaylist, radioplaylist und playfavorite wurden korrigiert
 			[BUGFIX] Batterycheck (ROAM and MOVE) gefixt (T2S Warnlevel <10% Batterieladezustand)
+ 5.1.8		[BUGFIX] Korrektur bzgl. Endlos Loop bei Aufruf der Plugin Config
+ 5.2.0		[IMPROVEMENT] Cover URL kann für die Plugin Radio Favoriten hinterlegt werden
+			[IMPROVEMENT] Datenübertragung zu Loxone optimiert
+			[IMPROVEMENT] Prüfung auf Duplikate in der Player Benennung
+			
  

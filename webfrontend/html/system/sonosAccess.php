@@ -1844,13 +1844,16 @@ class SonosAccess
 	 *
 	 * @param string $radio            	radio url
 	 * @param string $radio_name       	Name of station (optional)
+	 * @param string $metaData      	Cover url (optional)
 	 *
 	 * @return array
 	 */
  
-    public function SetRadio($radio, $radio_name = 'IP-Symcon Radio', $metaData = "")
+    public function SetRadio($radio, $radio_name = 'Radio', $metaData = "")
     {
-        $metaData = '<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:r="urn:schemas-rinconnetworks-com:metadata-1-0/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"><item id="-1" parentID="-1" restricted="true"><dc:title>' . htmlspecialchars($radio_name) . '</dc:title><upnp:class>object.item.audioItem.audioBroadcast</upnp:class><desc id="cdudn" nameSpace="urn:schemas-rinconnetworks-com:metadata-1-0/">SA_RINCON65031_</desc></item></DIDL-Lite>';
+        #$metaData = '<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:r="urn:schemas-rinconnetworks-com:metadata-1-0/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"><item id="-1" parentID="-1" restricted="true"><dc:title>' . htmlspecialchars($radio_name) . '</dc:title><upnp:class>object.item.audioItem.audioBroadcast</upnp:class><desc id="cdudn" nameSpace="urn:schemas-rinconnetworks-com:metadata-1-0/">SA_RINCON65031_</desc></item></DIDL-Lite>';
+		// changed 19.07.2022 Cover URL for nextradio
+		$metaData = '<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:r="urn:schemas-rinconnetworks-com:metadata-1-0/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"><item id="-1" parentID="-1"><upnp:albumArtURI>' . htmlspecialchars($metaData) . '</upnp:albumArtURI><upnp:class>object.item.audioItem.audioBroadcast</upnp:class><dc:title>' . htmlspecialchars($radio_name) . '</dc:title><desc id="cdudn" nameSpace="urn:schemas-rinconnetworks-com:metadata-1-0/">SA_RINCON65031_</desc></item></DIDL-Lite>';
 
         $this->SetAVTransportURI($radio, $metaData);
     }

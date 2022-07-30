@@ -134,21 +134,24 @@ function nextradio() {
 	}
 	$radio = $config['RADIO']['radio'];
 	ksort($radio);
+	#print_r($radio);
 	$radioanzahl = count($config['RADIO']['radio']);
 	$radio_name = array();
 	$radio_adresse = array();
+	$radio_coverurl = array();
 	foreach ($radio as $key) {
 		$radiosplit = explode(',',$key);
 		array_push($radio_name, $radiosplit[0]);
 		array_push($radio_adresse, $radiosplit[1]);
+		array_push($radio_coverurl, $radiosplit[2]);
 	}
 	$senderaktuell = array_search($senderuri, $radio_name);
 	if ($senderaktuell < ($radioanzahl) - 1 ) {
-		$sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[$senderaktuell + 1], $radio_name[$senderaktuell + 1]);
+		$sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[$senderaktuell + 1], $radio_name[$senderaktuell + 1], $radio_coverurl[$senderaktuell + 1]);
 		$act = $radio_name[$senderaktuell + 1];
 	}
     if ($senderaktuell == $radioanzahl - 1) {
-	    $sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[0], $radio_name[0]);
+	    $sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[0], $radio_name[0], $radio_coverurl[0]);
 		$act = $radio_name[0];
 	}
 	if ($config['VARIOUS']['announceradio'] == 1 and $textan == "0") {
@@ -413,9 +416,10 @@ function PluginRadio()
 		LOGERR ("radio.php: Your entered favorite/keyword '".$enteredRadio."' could not be found! Please specify more detailed.");
 		exit;
 	}
+	#print_r($re);
 	$sonos = new SonosAccess($sonoszone[$master][0]);
 	try {
-		$sonos->SetRadio('x-rincon-mp3radio://'.$re[0][0][1], $re[0][0][0]);
+		$sonos->SetRadio('x-rincon-mp3radio://'.$re[0][0][1], $re[0][0][0], $re[0][0][2]);
 		$sonos->SetGroupMute(false);
 		$sonos->SetVolume($volume);
 		$sonos->Play();

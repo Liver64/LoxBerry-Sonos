@@ -7,7 +7,7 @@
 * @return: Array mit allen gefunden Zonen, IP-Adressen, Rincon-ID's und Sonos Modell
 **/
 
-header('Content-Type: text/html; charset=utf-8');
+#header('Content-Type: text/html; charset=utf-8');
 
 #echo "<PRE>";
 
@@ -16,6 +16,7 @@ require_once "loxberry_system.php";
 require_once "loxberry_log.php";
 require_once "logging.php";
 require_once "error.php";
+require_once $lbphtmldir."/Helper.php";
 
 register_shutdown_function('shutdown');
 
@@ -29,6 +30,7 @@ $POnline = "/run/shm/s4lox_sonoszone.json";
 $home = $lbhomedir;
 $folder = $lbpplugindir;
 $myIP = $_SERVER["SERVER_ADDR"];
+$file = $lbphtmldir."/bin/check_player_dup.txt";
 
 error_reporting(E_ALL);
 ini_set("display_errors", "off");
@@ -194,7 +196,7 @@ $plugindata = LBSystem::plugindata();
 **/
  function getSonosDevices($devices){
 	 
-	global $sonosfinal, $sodevices, $lbphtmldir;
+	global $sonosfinal, $sodevices, $file;
 	
 	# http://<IP>:1400/xml/device_description.xml
 	# http://<IP>:1400/info
@@ -203,7 +205,11 @@ $plugindata = LBSystem::plugindata();
 	$sodevices = $devices[0];
 	#$soplayer = getRoomCoordinator($sodevices);
 	#$soplayernew = getRoomCoordinatorSetup($sodevices);
+	file_put_contents($file, '1');
+	// check player duplicates (Roomname)
+	$invalid_player = validate_player($devices);
 	$zonen = array();
+	
 	foreach ($devices as $zoneip) {
 		$info = json_decode(file_get_contents('http://' . $zoneip . ':1400/info'), true);
 		$model = $info['device']['model'];
@@ -215,10 +221,14 @@ $plugindata = LBSystem::plugindata();
 		$replace = array('Ae','ae','Oe','oe','Ue','ue','ss');
 		# kleinschreibung
 		$room = strtolower(str_replace($search,$replace,$roomraw));
+		foreach ($invalid_player as $key => $value)    {
+			$value;
+		}
 		$groupId = $info['groupId'];
 		$householdId = $info['householdId'];
 		$deviceId = $info['device']['serialNumber'];
-		if(isSpeaker($model) == true) {
+		# only valid models and NO room duplicates
+		if(isSpeaker($model) == true and $value != $room) {
 			$zonen = 	[$room, 
 						$zoneip,
 						(string)$rinconid,
@@ -233,7 +243,6 @@ $plugindata = LBSystem::plugindata();
 						(string)$deviceId						
 						];
 			$raum = array_shift($zonen);
-			
 		} else {
 			LOGGING("system/network.php: Sorry, the Sonos model '".$model."' for room '".$room."' has been found, but this model is currently not supported by the Plugin!",3);
 			LOGGING("system/network.php: Please send a mail to 'olewald64gmail.com' or place a post in Loxone Forum in order to get model added to the Plugin, Thanks in advance.",3);

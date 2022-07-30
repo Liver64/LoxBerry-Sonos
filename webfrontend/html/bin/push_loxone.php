@@ -19,6 +19,7 @@ $off_file 			= $lbplogdir."/s4lox_off.tmp";					// path/file for Script turned o
 $configfile			= "s4lox_config.json";							// JSON Config file
 $tmp_tts 			= "/run/shm/s4lox_tmp_tts";						// Temp file if T2S is currently running in order to skip updating
 $tmp_play 			= "stat.txt";									// Status file to push ONE more if playing stopped
+$folfilePlOn 		= "$lbpdatadir/PlayerStatus/s4lox_on_";			// Folder and file name for Player Status
 
 #echo '<PRE>';
 
@@ -70,6 +71,7 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 	# Declaration of variable
 	$sonoszonen = $config['sonoszonen'];
 	
+	/**
 	// check if zones are connected	
 	if (!isset($config['SYSTEM']['checkonline']))  {
 		$checkonline = true;
@@ -97,6 +99,17 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 		#$sonoszone = $sonoszonen;
 	}
 	#print_r($zonesonline);
+	*/
+	
+	// addded 20072022
+	foreach($sonoszonen as $zonen => $ip) {
+		$handle = is_file($folfilePlOn."".$zonen.".txt");
+		#var_dump($handle);
+		if($handle === true) {
+			$sonoszone[$zonen] = $ip;
+			#array_push($zonesonline, $zonen);
+		}
+	}
 	
 	// identify those zones which are not single/master
 	$tmp_playing = array();
@@ -251,21 +264,26 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 				$gettransportinfo = $sonos->GetTransportInfo();
 			}
 			if ($gettransportinfo == 1) {
-				$haystack = $tempradio["CurrentURI"];
-				$needleTuneIn = "tunein";		// sid=254 für TuneIn
-				$containTuneIn = mb_strpos($haystack, $needleTuneIn) !== false;
-				#$sid = getStreamingService($player[0]);
 				// Radio
 				if (substr($tempradio['UpnpClass'] ,0 ,36) == "object.item.audioItem.audioBroadcast")   {
 					$source = 1;											// Quelle Radio
 					$station = "Radio ".$tempradio["title"];				// Sender
+					$haystack = $tempradio["CurrentURI"];
+					$needleTuneIn = "tunein";		// sid=254 für TuneIn
+					$containTuneIn = mb_strpos($haystack, $needleTuneIn) !== false;
 					# TuneIn Radio
 					if ($containTuneIn === true)  {	
 						$value = ' ';										// kombinierte Titel- und Interpretinfo
 						$valuesplit[0] = ' ';								// Nur Titelinfo
 						$valuesplit[1] = ' ';								// Nur Interpreteninfo
 						$sid = 'TuneIn';
-					# All others
+					# Plugin Radio Stations
+					} elseif (substr($tempradio['CurrentURI'] ,0 ,17) == "x-rincon-mp3radio")    {
+						$value = '';										// kombinierte Titel- und Interpretinfo
+						$valuesplit[0] = ' ';								// Nur Titelinfo
+						$valuesplit[1] = ' ';								// Nur Interpreteninfo
+						$sid = 'Plugin Radio Favorites';
+					# All others						
 					} else {
 						$value = $temp["title"]." - ".$temp["artist"]; 		// kombinierte Titel- und Interpretinfo
 						$valuesplit[0] = $temp["title"]; 					// Nur Titelinfo
