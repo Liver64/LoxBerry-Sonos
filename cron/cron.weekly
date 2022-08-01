@@ -12,3 +12,4 @@
 rm -r REPLACELBPDATADIR/backup
 rm -r REPLACELBPDATADIR/s4lox_debug.json
 rm -r REPLACELBPDATADIR/*debug*.*
+cat > REPLACELBPHTMLDIR/bin/check_player_dup.txt

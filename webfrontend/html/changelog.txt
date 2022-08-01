@@ -388,5 +388,7 @@
  5.2.0		[IMPROVEMENT] Cover URL kann für die Plugin Radio Favoriten hinterlegt werden
 			[IMPROVEMENT] Datenübertragung zu Loxone optimiert
 			[IMPROVEMENT] Prüfung auf Duplikate in der Player Benennung
+ 5.2.2		[BUGFIX] Funktion nextradio und pluginradio korrigiert
+			[BUGFIX] Prüfung auf doppelte Playernamen optimiert
 			
  

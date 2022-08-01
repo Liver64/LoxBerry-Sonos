@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	5.2.0
-# Datum: 	07.2022
+# Version: 	5.2.1
+# Datum: 	08.2022
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 #
 # http://<IP>:1400/xml/device_description.xml
@@ -196,15 +196,16 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 		
 	// Übernahme und Deklaration von Variablen aus der Konfiguration
 	$sonoszonen = $config['sonoszonen'];
-	
+
 	// check for player duplicates based on roomname once
-	if (is_file($lbphtmldir."/bin/check_player_dup.txt"))  {
+	if (is_file($file))  {
 		$player = array();
 		foreach($sonoszonen as $checkzone)     {
 			array_push($player, $checkzone[0]);
 		}
 		$invalid_player = validate_player($player);
-		if (!is_null($invalid_player))    {
+		#print_r($invalid_player);
+		if (count($invalid_player) > 0)    {
 			LOGGING("sonos.php: Minimum ONE Player has a duplicate (Roomname), this may cause problems! Please remove them from your config, rename them in Sonos App and re-scan for the Player",3);
 		}
 	}
