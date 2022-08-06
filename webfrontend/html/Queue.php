@@ -9,10 +9,9 @@
 
 function zap()
 {
-	global $sonos, $config, $tmp_tts, $maxzap, $volume, $sonoszone, $master, $zapname, $subzapname, $lbphtmldir, $lbhomedir, $lbpplugindir;
+	global $sonos, $config, $tmp_tts, $maxzap, $volume, $sonoszone, $master, $zapname, $lbphtmldir, $lbhomedir, $lbpplugindir;
 	
 	#$zapname = "/run/shm/s4lox_zap_zone.json";								// queue.php: file containig running zones
-	#$subzapname = "/run/shm/s4lox_zap_zone_time";							// queue.php: temp file for nextradio
 	
 	# check if TTS is currently running
 	if (file_exists($tmp_tts))  {
@@ -26,100 +25,87 @@ function zap()
 		$sonos->BecomeCoordinatorOfStandaloneGroup();
 		LOGGING("queue.php: Zone ".$master." has been ungrouped.",5);
 	}
-	# if no cron job has been configured select 1min as default
+	# set cronjob default in case nothing has been selected
 	if ($config['VARIOUS']['cron'] == "")   {
 		system ("ln -s $lbphtmldir/bin/cronjob.sh $lbhomedir/system/cron/cron.01min/$lbpplugindir");
 		@unlink ("$lbhomedir/system/cron/cron.03min/$lbpplugindir");
 		@unlink ("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
 		@unlink ("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
 		@unlink ("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
-		LOGGING("queue.php: Please configure zapzone settings in Sonos Plugin under Details/Reset after:",4);
+		LOGGING("queue.php: Please configure zapzone settings in Sonos Plugin under 'Details/Reset after:'",4);
 	}
-	
+	# set subfunction default in case nothing has been selected
 	if ($config['VARIOUS']['selfunction'] === "")   {
 		$subfunction = "nextradio";
+		LOGGING("queue.php: Please configure zapzone settings in Sonos Plugin under 'Sub-Funktion für ZAPZONE:'",4);
 	} else {
 		$subfunction = $config['VARIOUS']['selfunction'];
 	}
-	LOGGING("Subfunction: ".$config['VARIOUS']['selfunction'], 7);
-	LOGGING("Cronjob: ".$config['VARIOUS']['cron'], 7);
-	# START ZAPZONE
-	if (is_file($zapname) === true && is_file($subzapname) === false)  {
-		#echo "ZAPNAME";
-		LOGGING("ZAPNAME", 7);
-		$file = json_decode(file_get_contents($zapname), true);
-		$countzapfile = count($file);
-		# if last zone has been reached
-		if ($countzapfile == 0)  {
-			LOGGING("queue.php: Currently no zone is running or last Zone has been reached, we switch to Sub-Function",7);
-			@unlink($zapname);
-			# create file that zapping has been ended
-			file_put_contents($subzapname, "1");
-			PlayZapzoneNext();
-			LOGGING("queue.php: Sub-Function '".$subfunction."' has been called ",7);
-			exit;
-		}
-		# add master to zone and remove zone from array
-		$sonos = new SonosAccess($config['sonoszonen'][$master][0]);
-		$sonos->SetAVTransportURI("x-rincon:" . $file[2]);
-		LOGGING("queue.php: Zone ".$master." has been added as member to Zone ".$file[0],7);
-		sleep(1);
-		array_shift($file);
-		array_shift($file);
-		array_shift($file);
-		# save new array again
-		file_put_contents($zapname, json_encode($file));
-	}
-
-	# START SUB FUNCTION
-	elseif (is_file($zapname) === false && is_file($subzapname) === true)  {
-		#echo "SUB-ZAPNAME";
-		LOGGING("SUB-ZAPNAME", 7);
-		PlayZapzoneNext();
-		LOGGING("queue.php: Sub-Function '".$subfunction."' has been called ",7);
-		exit;
-	}
+	LOGGING("queue.php: selected Subfunction: ".$config['VARIOUS']['selfunction'], 7);
+	LOGGING("queue.php: Cronjob: ".$config['VARIOUS']['cron']." Min.", 7);
 	
-	# START FROM SCRATCH
-	elseif (is_file($zapname) === false && is_file($subzapname) === false)  {
-		#echo "SCRATCH";
-		LOGGING("Start from SCRATCH", 7);
+	# START ZAPZONE
+	if (is_file($zapname) === false)  {
+		LOGGING("queue.php: Start ZAPZONE", 7);
 		$runarray = array();
-		#print_R($sonoszone);
 		foreach ($sonoszone as $zone => $player) {
 			$sonos = new SonosAccess($sonoszone[$zone][0]);
-			$state = $sonos->GetTransportInfo();			// only playing zones
-			LOGGING("GetTransportInfo for ".$zone.": ".$state, 7);
+			$state = $sonos->GetTransportInfo();			// select only playing zones
 			$posinfo = $sonos->GetPositionInfo();	
-			LOGGING("GetPositionInfo for ".$zone.": ".$posinfo['TrackURI'], 7);
+			#LOGGING("GetPositionInfo for ".$zone.": ".$posinfo['TrackURI'], 7);
 			if ($state == '1' and $sonoszone[$zone][1] != $sonoszone[$master][1] and substr($posinfo["TrackURI"], 0, 18) != "x-sonos-htastream:")   {				// except masterzone
 				$u = getZoneStatus($zone);
 				if ($u <> "member")    {
 					array_push($runarray, $zone, $sonoszone[$zone][0], $sonoszone[$zone][1]); 		// add IP-address to array
-					LOGGING("Array including following player: ".$zone,7);
 				}
 			}
 		}
-		#LOGGING("Array of playing zones: ".print_r($runarray), 7);
 		$countzones = count($runarray);
 		if ($countzones == 0)  {
+			$empty = Array();
 			LOGGING("queue.php: SCRATCH - Currently no zone is running or last Zone has been reached, we switch to Sub-Function",7);
-			@unlink($zapname);
-			file_put_contents($subzapname, "1");
+			file_put_contents($zapname, json_encode($empty));
+			PlayZapzoneNext();
+			LOGGING("queue.php: Zapzone Sub-Function '".$subfunction."' has been called ",7);
+		} else {
+			# join zone to currently running zone
+			$sonos = new SonosAccess($config['sonoszonen'][$master][0]);
+			$sonos->SetAVTransportURI("x-rincon:" . $runarray[2]);
+			LOGGING("queue.php: Zone ".$master." has been added as member to Zone ".$runarray[0],7);
+			sleep(1);
+			array_shift($runarray);										// remove 1st Zone Name and re-index array
+			array_shift($runarray);										// remove 1st Zone Rincon-ID and re-index array
+			array_shift($runarray);										// remove 1st Zone IP and re-index array
+			DeleteTmpFavFiles();
+			$result = file_put_contents($zapname, json_encode($runarray));		// save file
+			if ($result === false)    {
+				LOGGING("queue.php: Writing file '".$zapname."' failed. Pls. check your Loxberry settings!", 7);
+			}
+		}
+	} else {
+		LOGGING("queue.php: Continue ZAPNAME", 7);
+		$file = json_decode(file_get_contents($zapname), true); 
+		$countzapfile = count($file);
+		if ($countzapfile == 0)  {
+			LOGGING("queue.php: Currently no zone is running or last Zone has been reached, we switch to Sub-Function",7);
 			PlayZapzoneNext();
 			LOGGING("queue.php: Sub-Function '".$subfunction."' has been called ",7);
 			exit;
+		} else {
+			# add master to zone and remove zone from array
+			$sonos = new SonosAccess($config['sonoszonen'][$master][0]);
+			$sonos->SetAVTransportURI("x-rincon:" . $file[2]);
+			LOGGING("queue.php: Zone ".$master." has been added as member to Zone ".$file[0],7);
+			sleep(1);
+			array_shift($file);
+			array_shift($file);
+			array_shift($file);
+			# save new array again
+			$result = file_put_contents($zapname, json_encode($file));
+			if ($result === false)    {
+				LOGGING("queue.php: Writing file '".$zapname."' failed. Pls. check your Loxberry settings!", 7);
+			}
 		}
-		# join 1st zone of array
-		$sonos = new SonosAccess($config['sonoszonen'][$master][0]);
-		$sonos->SetAVTransportURI("x-rincon:" . $runarray[2]);
-		LOGGING("queue.php: Zone ".$master." has been added as member to Zone ".$runarray[0],7);
-		sleep(1);
-		array_shift($runarray);										// remove 1st Zone Name and re-index array
-		array_shift($runarray);										// remove 1st Zone Rincon-ID and re-index array
-		array_shift($runarray);										// remove 1st Zone IP and re-index array
-		DeleteTmpFavFiles();
-		file_put_contents($zapname, json_encode($runarray));		// save file
 	}
 }
 
@@ -134,36 +120,37 @@ function zap()
 
 function PlayZapzoneNext() 
 {
-	global $sonos, $config, $volume, $subzapname, $queuetracktmp, $browse, $sonoszone, $re, $master, $favtmp;
-
+	global $sonos, $config, $volume, $zapname, $queuetracktmp, $browse, $sonoszone, $re, $master, $favtmp;
+	
+	$empty = array();
 	if ($config['VARIOUS']['selfunction'] == "nextradio")   {
 		nextradio();
-		file_put_contents($subzapname, "1");
+		file_put_contents($zapname, json_encode($empty));
 		return;
 		
 	} elseif ($config['VARIOUS']['selfunction'] == "trackfavorites")   {
 		PlayTrackFavorites();
-		file_put_contents($subzapname, "1");
+		file_put_contents($zapname, json_encode($empty));
 		return;
 		
 	} elseif ($config['VARIOUS']['selfunction'] == "playlistfavorites")   {
 		PlayPlaylistFavorites();
-		file_put_contents($subzapname, "1");
+		file_put_contents($zapname, json_encode($empty));
 		return;
 		
 	} elseif ($config['VARIOUS']['selfunction'] == "radiofavorites")   {
 		PlayRadioFavorites();
-		file_put_contents($subzapname, "1");
+		file_put_contents($zapname, json_encode($empty));
 		return;
 		
 	} elseif ($config['VARIOUS']['selfunction'] == "tuneinfavorites")   {
 		PlayTuneInPlaylist();
-		file_put_contents($subzapname, "1");
+		file_put_contents($zapname, json_encode($empty));
 		return;
 		
 	} else {
 		nextradio();
-		file_put_contents($subzapname, "1");
+		file_put_contents($zapname, json_encode($empty));
 		LOGGING("queue.php: Exception raised... Please configure zapzone settings in Sonos Plugin under Details/Sub-Function for ZAPZONE:",4);
 		return;
 	}

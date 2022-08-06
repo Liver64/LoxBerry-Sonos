@@ -70,7 +70,6 @@ $check_date = "/run/shm/s4lox_date";							// store date execution
 $configfile	= "s4lox_config.json";								// configuration file
 $maxvolfile	= "/run/shm/s4lox_max_volume.json";					// max Volume restriction
 $zapname = "/run/shm/s4lox_zap_zone.json";						// queue.php: file containig running zones
-$subzapname = "/run/shm/s4lox_zap_zone_time";					// queue.php: temp file for nextradio
 $pltmp = "/run/shm/s4lox_pl_play_tmp_".$_GET['zone'].".json";	// queue.php: temp file for playlisten
 $filenst = "/run/shm/s4lox_t2s_stat.tmp";						// Temp Statusfile für messages
 $folfilePlOn = "$lbpdatadir/PlayerStatus/s4lox_on_";			// Folder and file name for Player Status
