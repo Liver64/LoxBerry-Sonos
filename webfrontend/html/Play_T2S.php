@@ -383,7 +383,7 @@ function play_tts($filename) {
 		LOGGING("play_t2s.php: Playmode has been set to NORMAL", 7);		
 		$sonos->SetTrack($message_pos);
 		LOGGING("play_t2s.php: Message has been set to Position '".$message_pos."' in current Queue", 7);		
-		$sonos->SetGroupMute(false);
+		$sonos->SetMute(false);
 		$sonos->SetVolume($volume);
 		LOGGING("play_t2s.php: Mute for relevant Player(s) has been turned off", 7);		
 		try {
@@ -646,6 +646,7 @@ function sendgroupmessage() {
 				$sonos = new SonosAccess($sonoszone[$zone][0]);
 				if ($zone != $master) {
 					$sonos->SetAVTransportURI("x-rincon:" . $masterrincon); 
+					$sonos->SetMute(false);
 					LOGGING("play_t2s.php: Member '$zone' is now connected to Master Zone", 7);		
 				}
 			}

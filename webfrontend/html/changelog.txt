@@ -391,5 +391,5 @@
  5.2.2		[BUGFIX] Funktion nextradio und pluginradio korrigiert
 			[BUGFIX] Prüfung auf doppelte Playernamen optimiert
  5.2.4		[BUGFIX] Funktion zapzone gefixt
-			
+			[BUGFIX] Gruppendurchsage gefixt
  
