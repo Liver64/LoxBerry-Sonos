@@ -13,6 +13,7 @@ function zap()
 	
 	#$zapname = "/run/shm/s4lox_zap_zone.json";								// queue.php: file containig running zones
 	
+	
 	# check if TTS is currently running
 	if (file_exists($tmp_tts))  {
 		LOGGING("queue.php: Currently a T2S is running, we skip zapzone for now. Please try again later.", 4);
