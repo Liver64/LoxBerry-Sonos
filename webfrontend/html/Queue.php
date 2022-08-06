@@ -42,8 +42,8 @@ function zap()
 	} else {
 		$subfunction = $config['VARIOUS']['selfunction'];
 	}
-	LOGGING("queue.php: selected Subfunction: ".$config['VARIOUS']['selfunction'], 7);
-	LOGGING("queue.php: Cronjob: ".$config['VARIOUS']['cron']." Min.", 7);
+	#LOGGING("queue.php: selected Subfunction: ".$config['VARIOUS']['selfunction'], 7);
+	#LOGGING("queue.php: Cronjob: ".$config['VARIOUS']['cron']." Min.", 7);
 	
 	# START ZAPZONE
 	if (is_file($zapname) === false)  {
@@ -64,7 +64,7 @@ function zap()
 		$countzones = count($runarray);
 		if ($countzones == 0)  {
 			$empty = Array();
-			LOGGING("queue.php: SCRATCH - Currently no zone is running or last Zone has been reached, we switch to Sub-Function",7);
+			LOGGING("queue.php: Currently no zone is running or last Zone has been reached, we switch to Sub-Function",7);
 			file_put_contents($zapname, json_encode($empty));
 			PlayZapzoneNext();
 			LOGGING("queue.php: Zapzone Sub-Function '".$subfunction."' has been called ",7);

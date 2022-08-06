@@ -9,8 +9,12 @@
 
 # Will be executed as user "loxberry".
 
-rm /run/shm/s4lox_fav*
 if [ -e /run/shm/s4lox_zap_zone_time ]
 then
     rm /run/shm/s4lox_zap_zone_time
 fi
+if [ -e /run/shm/s4lox_zap_zone.json ]
+then
+    rm /run/shm/s4lox_zap_zone.json
+fi
+rm /run/shm/s4lox_fav*

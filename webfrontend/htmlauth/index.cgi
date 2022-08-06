@@ -533,7 +533,8 @@ sub save_details
 	for ($i = 1; $i <= $countradios; $i++) {
 		my $rname = param("radioname$i");
 		my $rurl = param("radiourl$i");
-		$pcfg->param( "RADIO.radio" . "[$i]", "\"$rname\"" . "," . "\"$rurl\"" );
+		my $curl = param("coverurl$i");
+		$pcfg->param( "RADIO.radio" . "[$i]", "\"$rname\"" . "," . "\"$rurl\""  . "," . "\"$curl\"" );
 	}
 
 	$pcfg->save() or &error;
