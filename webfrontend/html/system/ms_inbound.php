@@ -65,18 +65,6 @@ if (!file_exists($myFolder.'/player.cfg')) {
 	}
 }
 */
-# get MQTT Connection details
-if (!is_file($lbhomedir.'/config/plugins/mqttgateway/mqtt.json')) {
-	LOGERR('system/ms_inbound.php: The file mqtt.json could not be opened, please check/complete MQTT Settings!');
-	exit(1);
-} else {
-	$tmpmqtt = json_decode(file_get_contents($lbhomedir.'/config/plugins/mqttgateway/mqtt.json'), TRUE);
-	if ($tmpmqtt === false)  {
-		LOGERR('system/ms_inbound.php: The file mqtt.json could not be opened, file may be disrupted. Please check/save your MQTT Config or check file "mqtt.json" manually!');
-		exit(1);
-	}
-}
-
 
 if ($config['LOXONE']['LoxDaten'] != 1)   {
 	LOGWARN('system/ms_inbound.php: The Communication to Loxone is switched off, please turn on 1st, save config and try again in order to use the template in Loxone!');
@@ -95,6 +83,14 @@ if (empty($config['LOXONE']['Loxone']))  {
 	LOGWARN('system/ms_inbound.php: You have not selected appropriate Miniserver for inbound communication, please check/complete your Plugin Config and save your config before downloading your Template!');
 	exit(1);
 }
+
+if ($config['LOXONE']['LoxDatenMQTT'] === true)   {
+	# check MQTT Connection
+	if (!is_file($lbhomedir.'/config/plugins/mqttgateway/mqtt.json')) {
+		LOGDEB('system/ms_inbound.php: MQTT is either not installed or not activated.');
+	} 
+}
+
 LOGDEB("system/ms_inbound.php: All Information has been collected successful");
 
 # Filenames

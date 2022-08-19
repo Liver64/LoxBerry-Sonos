@@ -392,4 +392,5 @@
 			[BUGFIX] Prüfung auf doppelte Playernamen optimiert
  5.2.4		[BUGFIX] Funktion zapzone gefixt
 			[BUGFIX] Gruppendurchsage gefixt
+ 5.2.5		[BUGFIX] Template creation gefixt
  
