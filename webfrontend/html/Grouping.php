@@ -300,17 +300,25 @@ function getGroups() {
 		$room = $_GET['zone'];
 	}
 	$sonos = new SonosAccess($sonoszone[$room][0]);
-	$group = $sonos->GetZoneGroupAttributes();
+	try {
+		$group = $sonos->GetZoneGroupAttributes();
+	} catch (Exception $e) {
+		$restore = "unknown";
+		return $restore;
+	}
 	$tmp_name = $group["CurrentZoneGroupName"];
 	$group = explode(',', $group["CurrentZonePlayerUUIDsInGroup"]);
 	if(empty($tmp_name)) {
 		$restore = 'member';
 	} 
-	if(!empty($tmp_name) && count($group) > 1) {
+	elseif(!empty($tmp_name) && count($group) > 1) {
 		$restore = 'master';
 	}
-	if(!empty($tmp_name) && count($group) < 2) {
+	elseif(!empty($tmp_name) && count($group) < 2) {
 		$restore = 'single';
+	}
+	else {
+		$restore = 'unknown';
 	}
 	if($debug == 2) { 
 		echo '<br>';

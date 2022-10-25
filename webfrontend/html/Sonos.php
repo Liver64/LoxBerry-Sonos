@@ -86,12 +86,11 @@ if (isset($_GET['zone']))  {
 	$queuepltmp = "/run/shm/s4lox_fav_pl_tmp_".$_GET['zone'].".json";				// Temp file Playlists from Sonos Favorites
 	$tuneinradiotmp = "/run/shm/s4lox_fav_tunein_radio_".$_GET['zone'].".json";		// Temp file for Favorit Radio Stations in TuneIn
 	$sonospltmp = "/run/shm/s4lox_pl_sonos_tmp_".$_GET['zone'].".json";				// Temp file for Sonos Playlist
-	$debugfile = $lbpdatadir."/s4lox_debug_meta_fav.json";									// Debug file of Browse
+	$debugfile = $lbpdatadir."/s4lox_debug_meta_fav.json";							// Debug file of Browse
 }
 
-echo '<PRE>';
+#echo '<PRE>';
 
-$heute = date("dmY"); 
 if (!isset($_GET['debug']))    {
 	$params = [	"name" => "Sonos PHP",
 				"filename" => "$lbplogdir/sonos.log",
@@ -100,6 +99,11 @@ if (!isset($_GET['debug']))    {
 				];
 				$level = LBSystem::pluginloglevel();
 } else {
+	$heute = date("dmY"); 
+	$files = glob($lbplogdir.'/s4lox_debug_*');
+	foreach($files as $file) {
+		@unlink($file);
+	}
 	$params = [	"name" => "Sonos PHP",
 				"filename" => "$lbplogdir/s4lox_debug_".$heute.".log",
 				"append" => 1,
@@ -376,10 +380,12 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 					$sonos->RampToVolume($config['TTS']['rampto'], $volume);
 					checkifmaster($master);
 					$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
+					$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
 					$sonos->Play();
 				} else {
 					checkifmaster($master);
 					$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
+					$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
 					$sonos->Play();
 				}
 			} else {
@@ -1517,6 +1523,10 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			print_r($out);
 		break;
 		
+		case 'batteryinfo':
+			batteryinfo();
+		break;
+		
 		case 'updateplayer':
 			$output = shell_exec('php system/updateplayer.php');
 			LOGGING("sonos.php: Player configuration has been updated :-)", 7);
@@ -1598,8 +1608,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		
 		case 'test':
-			$data = "&lt;DIDL-Lite xmlns:dc=&quot;http://purl.org/dc/elements/1.1/&quot; xmlns:upnp=&quot;urn:schemas-upnp-org:metadata-1-0/upnp/&quot; xmlns:r=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot; xmlns=&quot;urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/&quot;&gt;&lt;item id=&quot;".$id."&quot; parentID=&quot;".$parentid."&quot; restricted=&quot;true&quot;&gt;&lt;dc:title&gt;".htmlspecialchars($value['title'])."&lt;/dc:title&gt;&lt;upnp:class&gt;".$value['UpnpClass']."&lt;/upnp:class&gt;&lt;upnp:albumArtURI&gt;".$value['albumArtURI']."&lt;/upnp:albumArtURI&gt;&lt;r:description&gt;".htmlspecialchars($value['artist'])."&lt;/r:description&gt;&lt;desc id=&quot;cdudn&quot; nameSpace=&quot;urn:schemas-rinconnetworks-com:metadata-1-0/&quot;&gt;".$value['token']."&lt;/desc&gt;&lt;/item&gt;&lt;/DIDL-Lite&gt;";
-			echo ($data);
+			vversion();
 			
 		break;
 		

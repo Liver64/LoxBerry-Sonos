@@ -193,7 +193,7 @@ function titelinfo()  {
 
 function debugInfo()     {
 	
-	global $config, $sonoszone, $master, $lbversion, $plugindata, $level, $ms, $heute, $lbpdatadir, $debuggingfile, $lbplogdir;
+	global $config, $sonos, $actual, $sonoszone, $master, $lbversion, $plugindata, $level, $ms, $heute, $lbpdatadir, $debuggingfile, $lbplogdir;
 	
 	$debugconfig = $config;
 	
@@ -233,6 +233,25 @@ function debugInfo()     {
 	$pluginarray = LBSystem::get_plugins();
 	foreach ($pluginarray as $key)    {
 		array_push($debugconfig['GENERAL']['Installed Plugins'], $key['PLUGINDB_TITLE']);
+	}
+	foreach ($debugconfig['sonoszonen'] as $zonepl => $val)    {
+		$port = 1400;
+		$timeout = 1;
+		unset($debugconfig['sonoszonen'][$zonepl][1]);
+		unset($debugconfig['sonoszonen'][$zonepl][2]);
+		unset($debugconfig['sonoszonen'][$zonepl][3]);
+		unset($debugconfig['sonoszonen'][$zonepl][4]);
+		unset($debugconfig['sonoszonen'][$zonepl][5]);
+		unset($debugconfig['sonoszonen'][$zonepl][8]);
+		unset($debugconfig['sonoszonen'][$zonepl][9]);
+		unset($debugconfig['sonoszonen'][$zonepl][10]);
+		$handle = @stream_socket_client("$val[0]:$port", $errno, $errstr, $timeout);
+		if($handle) {
+			$debugconfig['sonoszonen'][$zonepl][11] = "Online";
+		} else {
+			$debugconfig['sonoszonen'][$zonepl][11] = "Offline";
+		}
+		$debugconfig['sonoszonen'][$zonepl] = array_values($debugconfig['sonoszonen'][$zonepl]);
 	}
 	if (count($ms) > 0)    {
 		$debugconfig['LOXONE']['Miniserver'] = "available";
@@ -308,12 +327,53 @@ function debugInfo()     {
 	} else {
 		$debugconfig['TTS']['t2s_engine'] = "No TTS Provider selected";
 	}
-	#print_r($debugconfig);
-	file_put_contents($debuggingfile, json_encode($debugconfig, JSON_PRETTY_PRINT));
-	copy($lbplogdir."/s4lox_debug_".$heute.".log", $lbpdatadir."/s4lox_debug_".$heute.".log");
-	copy($lbplogdir."/SOAP-Log-".$heute.".log", $lbpdatadir."/SOAP_debug_".$heute.".log");
-	echo "Please check debug Log file(s) in '$lbpdatadir' for further analysis! Your personal config data has been anonymized for Support reasons.";
 	
+	$actual = saveZonesStatus();
+	$debugconfig['STATUS'] = $actual;
+	$actlog = file_get_contents($lbplogdir."/s4lox_debug_".$heute.".log");
+	$debugconfig['LOG'] = $actlog;
+	#print_r($actlog);
+	file_put_contents($debuggingfile, print_r($debugconfig, true));
+	echo "A full snapshot of your system/command has been executed...<br><br>";
+	echo "Please check debug file 's4lox_debug_config.json' in '$lbpdatadir' for further analysis! Your personal data has been anonymized.<br>";
+	echo "For support reasons you can use the file to post into Forum.";
+	
+}
+
+/**
+/* Funktion : batteryinfo --> zeigt Informationen bzgl. Ladestatus ROAM oder MOVE an
+/*
+/* @param: 	empty
+/* @return: 
+**/	
+		
+function batteryinfo()  {
+	
+	global $sonoszone;
+	
+	$abbr = "batt";
+	foreach ($sonoszone as $zone => $player) {
+		$src = $sonoszone[$zone][7];
+		$ip = $sonoszone[$zone][0];
+		$stype = $sonoszone[$zone][2];
+		
+		# only check MOVE or ROAM devices
+		if ($src == "S27" or $src == "S17")   {
+			LOGDEB('info.php: Mobile Player "'.$src.' - '.$stype.'" called "'.$zone.'" has been found.');
+			$port = 1400;
+			$timeout = 3;
+			$handle = @stream_socket_client("$ip:$port", $errno, $errstr, $timeout);
+			# if Online check battery status
+			if($handle) {
+				# get battery status
+				$url = "http://".$ip.":1400/status/batterystatus";
+				$xml = simpleXML_load_file($url);
+				$batlevel = $xml->LocalBatteryStatus->Data[1];
+				#echo 'The battery level of "'.$zone.'" is about '.$batlevel.'%. Please charge your device!';
+				sendInfoMS($abbr, $zone, $batlevel);
+			}
+		}
+	}
 }
 
 

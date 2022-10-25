@@ -1303,6 +1303,108 @@ function validate_player($players)    {
 	return $duplicate_player;
 }
 
+
+
+
+function vversion()    {
+	global $sonos;
+	
+	$pversion = LBSystem::pluginversion();
+	echo "Top Plugin V$pversion<br>";
+	#$url = 'https://raw.githubusercontent.com/Liver64/LoxBerry-Sonos/master/plugin.cfg';
+	$url = 'https://raw.githubusercontent.com/Liver64/LoxBerry-Sonos/master/webfrontend/html/release/release.cfg';
+	$as = is_file($url);
+	var_dump($as);
+	$file = "/opt/loxberry/data/plugins/sonos4lox/plugin.cfg";
+	file_put_contents($file, file_get_contents($url));
+	$wq = json_decode(file_get_contents($file, TRUE));
+	#print_r($wq);
+	#json_decode(file_get_contents($lbpconfigdir . "/" . $configfile), TRUE);
+	$t = json_decode($wq, true);
+	print_R($t);
+	var_dump($t);
+		exit;
+	var_dump($wq);
+	$rt = "4.1.5";
+	var_dump($rt);
+	$w = substr($rt, 0, 1);
+	echo $w;
+}
+
+
+
+
+/**
+/* Funktion :  sendInfoMS --> send info to MS
+/*
+/* @param: $abbr = Shortname for Inbound Port to be send
+/* @param: $player = Name of player to be send
+/* @param: $val = value to be send
+/*
+/* @return: error or nothing
+**/
+
+function sendInfoMS($abbr, $player, $val)    {
+
+	global $sonos, $lbphtmldir, $ms, $config, $master;
+	
+	require_once "$lbphtmldir/system/io-modul.php";
+	#require_once "phpMQTT/phpMQTT.php";
+	require_once "$lbphtmldir/bin/phpmqtt/phpMQTT.php";
+
+	// check if Data transmission is switched off
+	if(!is_enabled($config['LOXONE']['LoxDaten'])) {
+		LOGGING("helper.php: Communication to Loxone is turned off!", 6);
+		return;
+	}
+	
+	if(is_enabled($config['LOXONE']['LoxDatenMQTT'])) {
+		// Get the MQTT Gateway connection details from LoxBerry
+		$creds = mqtt_connectiondetails();
+		// MQTT requires a unique client id
+		$client_id = uniqid(gethostname()."_client");
+		$mqtt = new Bluerhinos\phpMQTT($creds['brokerhost'],  $creds['brokerport'], $client_id);
+		$mqtt->connect(true, NULL, $creds['brokeruser'], $creds['brokerpass']);
+		$mqttstat = "1";
+	} else {
+		$mqttstat = "0";
+	}
+	
+	// ceck if configured MS is fully configured
+	if (!isset($ms[$config['LOXONE']['Loxone']])) {
+		LOGERR ("helper.php: Your selected Miniserver from Sonos4lox Plugin config seems not to be fully configured. Please check your LoxBerry Miniserver config!") ;
+		return;
+	}
+	
+		// obtain selected Miniserver from Plugin config
+		$my_ms = $ms[$config['LOXONE']['Loxone']];
+		# send TEXT data
+		$lox_ip			= $my_ms['IPAddress'];
+		$lox_port 	 	= $my_ms['Port'];
+		$loxuser 	 	= $my_ms['Admin'];
+		$loxpassword 	= $my_ms['Pass'];
+		$loxip = $lox_ip.':'.$lox_port;
+		try {
+			LOGDEB("helper.php: Trying to send Info for Zone '".$player."'.");	
+			if ($mqttstat == "1")   {
+				$err = $mqtt->publish('Sonos4lox/'.$abbr.'/'.$player, $val, 0, 1);
+				LOGDEB("helper.php: Requested Info for Zone '".$player."' has been send to MQTT. Pls. check your MQTT incoming overview for: 'Sonos4lox_".$abbr."_".$player."' or UDP for: 'MQTT:\iSonos4lox/".$abbr."/".$player."=\\i\\v' and create in Loxone an Virtual Inbound.");	
+				echo "Requested Info for Zone '".$player."' has been send to MQTT. Pls. check your MQTT incoming HTTP overview for: 'Sonos4lox_".$abbr."_".$player."' or UDP for: 'MQTT:\iSonos4lox/".$abbr."/".$player."=\\i\\v' and create in Loxone an Virtual Inbound.";
+			} else {			
+				$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/$abbr_$player/$val"); // Radio oder Playliste
+				LOGDEB("helper.php: Requested Info for Zone '".$player."' has been send to UDP. Pls. check your UDP incoming overview for: '".$abbr."_$player' and create in Loxone an Virtual Inbound.");	
+				echo "Requested Info for Zone '".$player."' has been send to UDP. Pls. check your Miniserver UDP incoming monitor for: '".$abbr."_$player' and create in Loxone an Virtual Inbound.";
+			}
+		} catch (Exception $e) {
+			LOGWARN("helper.php: Sending Info for Zone '".$player."' failed, we skip here...");	
+			return false;
+		}
+		
+		if ($mqttstat == "1")   {
+			$mqtt->close();
+		}
+}
+
  
  
 ?>
