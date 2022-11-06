@@ -1296,7 +1296,7 @@ function validate_player($players)    {
 	$duplicate_player = array_diff_assoc($player, $unique);
 	if (count($duplicate_player) > 0 and is_file($lbphtmldir."/bin/check_player_dup.txt"))  {
 		foreach($duplicate_player as $playzone)   {
-			notify(LBPPLUGINDIR, "Sonos", "Player '".$playzone."' has been detected twice! Please rename min. 1 Player in your Sonos App in order to avoid problems using the Plugin. Once done please scan again for new Player in your Network.", "error");
+			notify(LBPPLUGINDIR, "Sonos", "Player '".$playzone."' has been detected twice! Maybe a pair of new devices not added to your Sonos System like 'unnamed room' or duplicate room names! Please add to your Sonos System via App or rename min. 1 Player in your Sonos App in order to avoid problems using the Plugin. Once done please scan again for new Player in your Network.", "error");
 		}
 	}
 	unlink($lbphtmldir."/bin/check_player_dup.txt");

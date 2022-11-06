@@ -394,6 +394,10 @@
 			[BUGFIX] Gruppendurchsage gefixt
 			[BUGFIX] Template creation gefixt
 			[IMPROVEMENT] Funktion &debug erweitert
-			8IMPROVEMENT] Funktion 'batteryinfo' hinzugefügt
+			[IMPROVEMENT] Funktion 'batteryinfo' hinzugefügt
+ 5.2.5		[BUGFIX] Scanning gefixet
+			[BUGFIX] Sonos Model 'S30' IKEA Table Lamp hinzugefügt
+			[BUGFIX] Load Radio-/Sonos Playlist gefixet
+			
 			
  

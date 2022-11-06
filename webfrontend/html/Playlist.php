@@ -16,13 +16,14 @@ function playlist() {
 	
 	global $debug, $sonos, $master, $sonoszone, $config, $volume, $sonospltmp;
 	
-	if (file_exists($sonospltmp))  {
+	if (file_exists($sonospltmp) and (!isset($_GET['load'])))  {
 		# load previously saved Sonos Playlist
 		$value = json_decode(file_get_contents($sonospltmp), TRUE);
 		$countqueue = count($sonos->GetCurrentPlaylist());
 		$currtrack = $sonos->GetPositioninfo();
 		if ($currtrack['Track'] < $countqueue)    {
 			NextTrack();
+			LOGINF ("playlist.php: Next track hs been called.");
 			return true;
 		} else {
 			@unlink($sonospltmp);
@@ -82,6 +83,8 @@ function playlist() {
 			$sonos->Stop();
 			$sonos->SetVolume($volume);
 			$sonos->Play();
+		} else {
+			$sonos->SetQueue("x-rincon-queue:" . trim($sonoszone[$master][1]) . "#0");
 		}
 		LOGGING("playlist.php: Playlist '".$found[0][0]["title"]."' has been loaded successful",6);
 	} else {
