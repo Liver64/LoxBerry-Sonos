@@ -196,7 +196,7 @@ $plugindata = LBSystem::plugindata();
 **/
  function getSonosDevices($devices){
 	 
-	global $sonosfinal, $sodevices, $file;
+	global $sonosfinal, $sodevices, $file, $lbphtmldir;
 	
 	# http://<IP>:1400/xml/device_description.xml
 	# http://<IP>:1400/info
@@ -229,6 +229,7 @@ $plugindata = LBSystem::plugindata();
 		$deviceId = $info['device']['serialNumber'];
 		# only valid models and NO room duplicates
 		if(isSpeaker($model) == true and $value != $room) {
+		#if(isSpeaker("S30") == true and $value != $room) {
 			$zonen = 	[$room, 
 						$zoneip,
 						(string)$rinconid,
@@ -256,10 +257,25 @@ $plugindata = LBSystem::plugindata();
 			file_put_contents($img, file_get_contents($url));
 		}
 	}
+	if (count($sonosplayerfinal) === 0)   {
+		LOGERR("system/network.php: Something went wrong... Devices has been found but could not be added to your system! We skip");
+		return false;
+	}
 	#print_r($sonosplayerfinal);
 	#$match = @array_intersect_assoc($soplayernew, $sonosplayerfinal);
 	#$sonosfinal = @array_merge_recursive($match, $sonosplayerfinal);
-	ksort($sonosplayerfinal);
+	if (isset($sonosplayerfinal) && is_array($sonosplayerfinal) && count($sonosplayerfinal) > 0) {
+		try {			
+			ksort($sonosplayerfinal);
+		} catch (Exception $e) {
+			LOGERR("system/network.php: Array of devices could not be re-indexed! We skip");
+			return false;
+		}
+	} else {
+		LOGERR("system/network.php: Something during searching for new devices went wrong! We skip");
+		return false;
+	}
+	#ksort($sonosplayerfinal);
 	$sonosfinal = $sonosplayerfinal;
 	#$rooms = implode(", ", array_keys($sonosfinal));
 	#$countroom = count(array_keys($sonosfinal));
@@ -295,6 +311,7 @@ $plugindata = LBSystem::plugindata();
 			"S17"   =>  "MOVE",
 			"S19"   =>  "ARC",
 			"S20"   =>  "SYMFONISK LAMP",
+			"S30"   =>  "TABLE LAMP",
 			"S21"   =>  "SYMFONISK WALL",
 			"S33"   =>  "SYMFONISK",
 			"S22"   =>  "ONE SL",
