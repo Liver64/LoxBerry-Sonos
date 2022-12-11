@@ -184,7 +184,10 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 			foreach ($sonoszone as $zone => $player) {
 				$sonos = new PHPSonos($sonoszone[$zone][0]);
 				$orgsource = $sonos->GetPositionInfo();
-				$temp_volume = $sonos->GetVolume();
+				$temp_volume = 0;
+				if (!$sonos->GetMute()) {
+					$temp_volume = $sonos->GetVolume();
+				}
 				$zoneStatus = getZoneStatus($zone);
 				if ($zoneStatus === 'single') {
 					$zone_stat = 1;
