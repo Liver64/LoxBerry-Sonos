@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	5.2.4
-# Datum: 	08.2022
+# Version: 	5.2.8
+# Datum: 	01.2023
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 #
 # http://<IP>:1400/xml/device_description.xml
@@ -333,7 +333,15 @@ if(isset($_GET['playmode'])) {
 	}  else {
 		LOGGING('sonos.php: incorrect PlayMode selected. Please correct!', 4);
 	}
-}    
+}   
+
+if(isset($_GET['wait'])) { 
+	delay();
+} 
+
+if(isset($_GET['timer'])) { 
+	sleeptimer();
+}
 
 if(isset($_GET['rampto'])) {
 		switch($_GET['rampto'])	{

@@ -398,6 +398,9 @@
  5.2.5		[BUGFIX] Scanning gefixet
 			[BUGFIX] Sonos Model 'S30' IKEA Table Lamp hinzugefügt
 			[BUGFIX] Load Radio-/Sonos Playlist gefixet
-			
+ 5.2.6		[BUGFIX] Scanning gefixed
+ 5.2.8		[IMPROVEMENT] Funktion 'sleeptimer' (in Minuten) kann jetzt global verwendet werden ...action=<was auch immer>&timer=30
+			[IMPROVEMENT] Funktion 'wait' (in Sekunden) kann jetzt global verwendet werden um eine Ausführung um xxx Sekunden zu verzögern ...action=<was auch immer>&wait=30
+			[IMPROVEMENT] Kompatibilität zu Loxberry Version 3.x.x hergestellt
 			
  

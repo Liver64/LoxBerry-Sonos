@@ -97,6 +97,27 @@ function sleeptimer() {
 
 
 /**
+* Function: delay --> verzögert die Ausführung des Scriptes
+*
+* @param: empty
+* @return: 
+**/
+function delay() {
+	
+	global $sonoszone, $master;
+	
+	if(isset($_GET['wait']) && is_numeric($_GET['wait']) && $_GET['wait'] > 0 && $_GET['wait'] <= 900) {
+		$timer = $_GET['wait'];
+		$sonos = new SonosAccess($sonoszone[$master][0]);
+		sleep($timer);
+		LOGGING("alarm.php: Delay for Zone '".$master."' is '".$timer."' seconds.", 6);
+	} else {
+		LOGGING('alarm.php: The entered delay is not correct, please correct (seconds between 1 and 900 are allowed)', 4);
+	}
+}
+
+
+/**
 * Function: turn_off_alarm --> disable specific Sonos alarms
 *
 * @param: empty

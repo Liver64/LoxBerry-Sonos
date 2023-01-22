@@ -61,6 +61,7 @@ my $helplink;
 my $maxzap;
 my $helptemplate;
 my $i;
+our $lbv;
 our $countplayers;
 our $rowssonosplayer;
 our $miniserver;
@@ -162,6 +163,7 @@ my $sversion = LoxBerry::System::pluginversion();
 
 # Read LoxBerry Version
 my $lbversion = LoxBerry::System::lbversion();
+#LOGDEB "Loxberry Version: " . $lbversion;
 
 # read all POST-Parameter in namespace "R".
 my $cgi = CGI->new;
@@ -245,17 +247,19 @@ if (!-r $lbpconfigdir . "/" . $pluginplayerfile)
 }
 
 # Check if mqtt.json file exist
-if (!-r $lbhomedir.'/config/plugins/mqttgateway/mqtt.json')
-{
-	LOGDEB "MQTT config file does not exist";
+#if (!-r $lbhomedir.'/config/plugins/mqttgateway/mqtt.json')
+#{
+#	LOGDEB "MQTT config file does not exist";
 
-} else {
-	LOGDEB "The MQTT config file has been loaded";
-	my $cfgfile = $lbhomedir.'/config/plugins/mqttgateway/mqtt.json';
-	my $jsonobj = LoxBerry::JSON->new();
-	$cfgm = $jsonobj->open(filename => $cfgfile);
-}
+#} else {
+#	LOGDEB "The MQTT config file has been loaded";
+#	my $cfgfile = $lbhomedir.'/config/plugins/mqttgateway/mqtt.json';
+#	my $jsonobj = LoxBerry::JSON->new();
+#	$cfgm = $jsonobj->open(filename => $cfgfile);
+#}
 
+LOGDEB "Loxberry Version: " . $lbversion;
+$lbv = substr($lbversion,0,1);
 
 
 ##########################################################################
@@ -272,11 +276,15 @@ $navbar{99}{Name} = "$SL{'BASIS.MENU_LOGFILES'}";
 $navbar{99}{URL} = './index.cgi?do=logfiles';
 
 # if MQTT credentials are valid and Communication turned ON --> insert navbar
-if ($mqttcred && $pcfg->param("LOXONE.LoxDaten") eq "true")  {
+if ($mqttcred and $pcfg->param("LOXONE.LoxDaten") eq "true")  {
 	$navbar{3}{Name} = "$SL{'BASIS.MENU_MQTT'}";
-	$navbar{3}{URL} = 'http://'.$lbip.":".lbwebserverport().'/admin/plugins/mqttgateway/index.cgi';
+	#$navbar{3}{URL} = 'http://'.$lbip.":".lbwebserverport().'/admin/plugins/mqttgateway/index.cgi';
+	if($lbv < 3)  {
+		$navbar{3}{URL} = '/admin/plugins/mqttgateway/index.cgi';
+	} else {
+		$navbar{3}{URL} = '/admin/system/mqtt.cgi';
+	}
 	$navbar{3}{target} = '_blank';
-	LOGDEB "MQTT is installed and could be used";
 }
 
 if ($R::saveformdata1) {
