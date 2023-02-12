@@ -42,6 +42,7 @@ function radio(){
 	$sonosroom = new SonosAccess($roomcord[0]); //Sonos IP Adresse
 	$sonosroom->SetQueue("x-rincon-queue:".$roomcord[1]."#0");
     $radiolists = $sonos->BrowseContentDirectory("R:0/0","BrowseDirectChildren");
+	print_r($radiolists);
 	foreach ($radiolists as $val => $item)  {
 		$radiolists[$val]['titlelow'] = mb_strtolower($radiolists[$val]['title']);
 	}

@@ -2,7 +2,7 @@
 
 ##############################################################################################################################
 #
-# Version: 	5.2.8
+# Version: 	5.3.0
 # Datum: 	01.2023
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 #
@@ -335,10 +335,12 @@ if(isset($_GET['playmode'])) {
 	}
 }   
 
+# Verzögerung für Befehl
 if(isset($_GET['wait'])) { 
 	delay();
 } 
 
+# Timer für Befehl
 if(isset($_GET['timer'])) { 
 	sleeptimer();
 }

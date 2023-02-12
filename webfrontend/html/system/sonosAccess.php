@@ -538,7 +538,7 @@ class SonosAccess
         xml_parser_set_option($xmlParser, XML_OPTION_TARGET_ENCODING, 'UTF-8');
         xml_parse_into_struct($xmlParser, $mediaInfo['CurrentURIMetaData'], $vals, $index);
         xml_parser_free($xmlParser);
-		
+
         if (isset($index['DC:TITLE']) && isset($vals[$index['DC:TITLE'][0]]['value'])) {
             $mediaInfo['title'] = $vals[$index['DC:TITLE'][0]]['value'];
         } else {
@@ -554,7 +554,7 @@ class SonosAccess
 		if (isset($index['UPNP:ALBUMARTURI']) && isset($vals[$index['UPNP:ALBUMARTURI'][0]]['value'])) {
             $mediaInfo['albumArtURI'] = $vals[$index['UPNP:ALBUMARTURI'][0]]['value'];
         } else {
-            $mediaInfo['albumArtURI'] = '';
+            $mediaInfo['albumArtURI'] = 'http://' . $this->address . ':1400/getaa?s=1&u=' . urlencode($mediaInfo['CurrentURI']);
         }
 		
 		if (isset($index['UPNP:CLASS']) && isset($vals[$index['UPNP:CLASS'][0]]['value'])) {

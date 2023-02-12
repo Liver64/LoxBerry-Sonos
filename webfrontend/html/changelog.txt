@@ -402,5 +402,6 @@
  5.2.8		[IMPROVEMENT] Funktion 'sleeptimer' (in Minuten) kann jetzt global verwendet werden ...action=<was auch immer>&timer=30
 			[IMPROVEMENT] Funktion 'wait' (in Sekunden) kann jetzt global verwendet werden um eine Ausführung um xxx Sekunden zu verzögern ...action=<was auch immer>&wait=30
 			[IMPROVEMENT] Kompatibilität zu Loxberry Version 3.x.x hergestellt
+ 5.3.0		[IMPROVEMENT] Zwei neue Ausgangsinfo hinzugefügt: Cover URL zur Visualisierung in Loxone, Mute Status
 			
  
