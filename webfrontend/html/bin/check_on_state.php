@@ -56,10 +56,16 @@ $off_file 		= $lbplogdir."/s4lox_off.tmp";					// path/file for Script turned of
 			# create tmp file for each zone are online
 			file_put_contents("$lbpdatadir/PlayerStatus/s4lox_on_".$zonen.".txt", "on");
 			echo "<INFO> Player Online file 's4lox_on_".$zonen.".txt' has been created".PHP_EOL;
+			# get Player Mini PNG
+			$url = 'http://'.$ip[0].':1400/img/icon-'.$ip[7].'.png';
+			$img = $lbphtmldir.'/images/icon-'.$ip[7].'.png';
+			if (!file_exists($img)) {
+				file_put_contents($img, file_get_contents($url));
+			}
 		} else {
 			echo "<WARNING> File for Player '".$zonen."' has not been created. Maybe the Player is off... if so, please put Online and reboot Loxberry!".PHP_EOL;
 			#LOGWARN("Sonos: bin/check_on_state.php: Zone $zonen seems to be Offline, please check your power/network settings");
-		}
+		}	
 	}
 	
 	

@@ -296,6 +296,22 @@ if ($R::saveformdata2) {
 	&save_details;
 }
 
+# check if config already saved, if not highlight header text in RED
+my $playercfg = new Config::Simple($lbpconfigdir . "/" . $pluginplayerfile);
+my $countplayer;
+	my %configzones = $playercfg->vars();	
+	our $filename;
+	foreach my $key (keys %configzones) {
+		$countplayer++;
+	}
+	if ( $countplayer < 1 ) {
+		$countplayer = 0;
+	} else {
+		$countplayer = 1;
+	}
+	$template->param("PLAYERAVAILABLE", $countplayer);
+	
+
 if(!defined $R::do or $R::do eq "form") {
 	$navbar{1}{active} = 1;
 	$template->param("SETTINGS", "1");

@@ -21,6 +21,8 @@
     <form method="post" data-ajax="false" accept-charset="utf-8" name="main_form" id="main_form" action="./index.cgi?form">
         <input type="hidden" name="saveformdata1" value="1">
 		<input type="hidden" name="regionOptions" id="regionOptions" value="<TMPL_VAR TTS.regionms>">
+		<script type="text/javascript" src="/plugins/<TMPL_VAR PLUGINDIR>/CSS/dialog.js"></script>
+		<link type="text/css" rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/CSS/pop-up.css">
 				
         <div class="form-group">
             <font COLOR="blue">
@@ -29,7 +31,12 @@
 
             <table class="formtable" border="0" width="100%" cellpadding="10">
                 <tr>
-                    <td valign="middle" style="height: 33px; width: 25%; text-align: center;">
+				
+				<TMPL_IF NAME="PLAYERAVAILABLE">
+                    <td valign="middle" style="height: 33px; width: 25%; text-align: center; color:black">
+				<TMPL_ELSE>
+					<td valign="middle" style="height: 33px; width: 25%; text-align: center; color:red">
+				</TMPL_IF>
                         <h2 class="auto-style3" style="width: 100%">
                             <TMPL_VAR ZONES.SONOS_CONFIG>
                         </h2>
@@ -425,8 +432,16 @@
 									<div class="btnc">
                                         <input type="button" onclick="checkfile('VI_MQTT_UDP_Sonos.xml')" id="btn2" data-mini="true" value="VI_MQTT_UDP_Sonos.xml" />
 									</div>
+									<td style="width: 5%">
+										<div class="btnd">
+											<input type="button" onclick="checkfile('VI_MQTT_HTTP_Sonos.xml')" id="btn3" data-mini="true" value="VI_MQTT_HTTP_Sonos.xml" />
+										</div>
+									</td>
 								</td>
                                 <td class="empty_template" style="width: 25%">
+								
+								<!--<button type="button" id="btnAlert">Alert</button>-->
+								
 								</td>
                             </tr>
                         </table>
@@ -719,9 +734,8 @@
                 </center>
             </p>
         </div>
-
-
-        <!-- Donation -->
+		
+		<!-- Donation -->
         <div data-role='collapsible' id='coll_donate' data-content-theme='true' data-collapsed='true' data-collapsed-icon='carat-d' data-expanded-icon='carat-u' data-iconpos='right'>
             <h2 class='ui-bar ui-bar-a ui-corner-all' id='head_donate'>
                 <TMPL_VAR BASIS.DONATE_HEADER>
@@ -767,7 +781,7 @@
 
         $(document).on('pageinit', function() {
             selection();
-			selectudp();
+			//selectudp();
             callayout();
             destlayout();
             radlayout();
@@ -776,6 +790,19 @@
 			//checkboxes();
 			
         });
+		
+		//function errorwindow(text, field)   {
+			/*const dialog = new Dialog();
+
+			/* alert 
+			document.getElementById('btnsubmit').addEventListener('click', (e) => {
+			//console.log(text);
+			//console.log(field);
+			dialog.alert("Test").then((res) => {  console.log(res) })
+			$("#field").focus();
+			});
+			*/
+		//}
 		
 		function checkboxes() {
 			//console.log('checkboxes');
@@ -797,6 +824,7 @@
 			}
 			return;
 		}
+		
 		
 		
 		
@@ -913,14 +941,16 @@
 					$('.field_udp').fadeOut(600);
 					$('.btn').fadeOut(100);
 					$('.btnc').fadeIn(100);
+					$('.btnd').fadeIn(100);
 				} else {
 					console.log("UDP selected");
 					$('.field_lab_udp').fadeIn(600);
 					$('.field_udp').fadeIn(600);
 					$('.btnc').fadeOut(100);
+					$('.btnd').fadeOut(100);
 					$('.btn').fadeIn(100);
-					validate_enable('#udpport');
-					validate_chk_object(['#udpport']);
+					//validate_enable('#udpport');
+					//validate_chk_object(['#udpport']);
 				}
             } else {
 				console.log("Communication to Loxone turned off");
@@ -936,20 +966,25 @@
             $('#miniserver').selectmenu('refresh', true);
         }
 		
-		
+		// - OBSOLETE -
 		// validate UDP Port in case flipswitch value UDP is true
-        function selectudp() {
-			console.log("selectudp");
-            var cat = document.getElementById('sendlox').value;
-			var mqtt = document.getElementById('sendloxMQTT').value;
-			if (cat == "true") {
-				if (mqtt != "true")   {
+		function selectudp()    {
+			console.log("validate UDP");
+			var cat1 = document.getElementById('sendlox').value;
+			var mqtt1 = document.getElementById('sendloxMQTT').value;
+			$('#udpport').removeClass('ui-disabled');
+			if (cat1 == "true") {
+				if (mqtt1 == "true") {
+					console.log("MQTT selected");
+					validate_clean_objects;
+				} else {
+					console.log("UDP selected");
 					validate_enable('#udpport');
 					validate_chk_object(['#udpport']);
 				}
 			}
 			//$("#sendloxMQTT").flipswitch("refresh");
-            $("#sendlox").flipswitch("refresh");
+			$("#sendlox").flipswitch("refresh");
 		}
 		
 		
@@ -1350,9 +1385,6 @@
             initial_lang_voice_load();
 			checkboxes();
 			
-			// validate UDP Port
-			selectudp();			
-
             // validate Volume entries per player
             var iteration = document.getElementById('countplayers').value;
             iteration = parseInt(iteration)
@@ -1367,6 +1399,7 @@
 			
             // Function to control saving, main_form is submitted    
             $("form#main_form").submit(function(e) {
+			
 				console.log("submit");
 	            //var selectlang = document.getElementById("t2slang").value;
 				var selectlang = $('#t2slang').val();
@@ -1507,11 +1540,11 @@
                 $("#langiso").textinput("refresh");
 				$("#info").trigger('create');
 			
-				
 				// Save checkbox values
 				var iteration = document.getElementById('countplayers').value;
 				iteration = parseInt(iteration)
 				iteration += 1;
+				
 				// loop through players
 				for (i = 1; i < iteration; ++i) {
 					if (document.getElementById('mainchk' + i).checked == true) {
@@ -1538,8 +1571,7 @@
 					return false;
 				} 
 				
-				
-                // validate jingle file selection
+				// validate jingle file selection
 				$("#info").empty();
                 var selectjingle = document.getElementById("file_gong").value;
                 var selectt2s = $("input[name=t2s_engine]:checked").val();
@@ -1555,6 +1587,33 @@
 					$("#info").trigger('create');
 					e.preventDefault();
                 }
+				
+				// validate UDP Port entered if UDP selected
+				console.log("validate UDP");
+				var cat = document.getElementById('sendlox').value;
+				var mqtt = document.getElementById('sendloxMQTT').value;
+				var udp = document.getElementById('udpport').value;
+				$('#udpport').removeClass('ui-disabled');
+				//console.log("MQTT = " + mqtt);
+				//console.log("UDP = " + udp);
+				//console.log("UDP Zeichen = " + udp.length)
+				if (cat == "true" && mqtt == "false") {
+					if (udp.length < 4) {
+						console.log("UDP selected and Port missing");
+						//errorwindow("Please UDP", "udpport");
+						$("#info").attr("style", "color:red");
+						$("#info").text('<TMPL_VAR ERRORS.ERR_UDP_MISSING>');
+						$('html, body').animate({
+							scrollTop: $("#info").offset().top
+						}, 1000);
+						$("#udpport").focus();
+						$("#info").trigger('create');
+						e.preventDefault();
+						
+					}
+				}
+				//$("#sendloxMQTT").flipswitch("refresh");
+				$("#sendlox").flipswitch("refresh");
             });
 
 

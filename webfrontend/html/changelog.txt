@@ -403,5 +403,7 @@
 			[IMPROVEMENT] Funktion 'wait' (in Sekunden) kann jetzt global verwendet werden um eine Ausführung um xxx Sekunden zu verzögern ...action=<was auch immer>&wait=30
 			[IMPROVEMENT] Kompatibilität zu Loxberry Version 3.x.x hergestellt
  5.3.0		[IMPROVEMENT] Zwei neue Ausgangsinfo hinzugefügt: Cover URL zur Visualisierung in Loxone, Mute Status
-			
+ 5.3.2		[BUGFIX] Template für MQTT HHTP Vorlagen ist wieder verfügbar
+			[IMPROVEMENT] Update Player Icon's als Teil von Cronjob
+			[BUGFIX] UDP Port Validierung korrigiert
  

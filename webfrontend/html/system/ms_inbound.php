@@ -118,6 +118,7 @@ foreach ($config['sonoszonen'] as $zone => $key)  {
 	$linenr = $VIhttp->VirtualInHttpCmd ( ["Title" => "Volume ".$zone."", "Check" => "Sonos4lox_vol_".$zone.""] );
 	$linenr = $VIhttp->VirtualInHttpCmd ( ["Title" => "Playstate ".$zone."", "Check" => "Sonos4lox_stat_".$zone.""] );
 	$linenr = $VIhttp->VirtualInHttpCmd ( ["Title" => "Groupstate ".$zone."", "Check" => "Sonos4lox_grp_".$zone.""] );
+	$linenr = $VIhttp->VirtualInHttpCmd ( ["Title" => "Mute ".$zone."", "Check" => "Sonos4lox_mute_".$zone.""] );
 }
 $xml = $VIhttp->output();
 // Add BOM to string
@@ -132,6 +133,7 @@ foreach ($config['sonoszonen'] as $zone1 => $key1)  {
 	$text .= '	<VirtualInUdpCmd Title="Volume '.$zone1.'" Comment="" Address="" Check="vol_'.$zone1.'@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="100"/>' . "\r\n";
 	$text .= '	<VirtualInUdpCmd Title="Playstate '.$zone1.'" Comment="" Address="" Check="stat_'.$zone1.'@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>' . "\r\n";
 	$text .= '	<VirtualInUdpCmd Title="Groupstate '.$zone1.'" Comment="" Address="" Check="grp_'.$zone1.'@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>' . "\r\n";
+	$text .= '	<VirtualInUdpCmd Title="Mute '.$zone1.'" Comment="" Address="" Check="mute_'.$zone1.'@\v" Signed="true" Analog="true" SourceValLow="0" DestValLow="0" SourceValHigh="100" DestValHigh="100" DefVal="0" MinVal="0" MaxVal="3"/>' . "\r\n";
 }
 $text .= '</VirtualInUdp>';
 file_put_contents($lbphtmldir."/system/".$xmldoc, $text);
@@ -148,6 +150,7 @@ foreach ($config['sonoszonen'] as $zone2 => $key2)  {
 	$linenr = $VIudp->VirtualInUdpCmd ( [ "Title" => "Volume ".$zone2."",  "Check" => "MQTT:\iSonos4lox/vol/".$zone2."=\i\\v", "Analog" => true ] );
 	$linenr = $VIudp->VirtualInUdpCmd ( [ "Title" => "Playstate ".$zone2."",  "Check" => "MQTT:\iSonos4lox/stat/".$zone2."=\i\\v", "Analog" => true ] );
 	$linenr = $VIudp->VirtualInUdpCmd ( [ "Title" => "Groupstate ".$zone2."",  "Check" => "MQTT:\iSonos4lox/grp/".$zone2."=\i\\v", "Analog" => true ] );
+	$linenr = $VIudp->VirtualInUdpCmd ( [ "Title" => "Mute ".$zone2."",  "Check" => "MQTT:\iSonos4lox/mute/".$zone2."=\i\\v", "Analog" => true ] );
 }
 
 $xmludp = $VIudp->output();

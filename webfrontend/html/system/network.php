@@ -207,7 +207,7 @@ $plugindata = LBSystem::plugindata();
 	#$soplayernew = getRoomCoordinatorSetup($sodevices);
 	file_put_contents($file, '1');
 	// check player duplicates (Roomname)
-	$invalid_player = validate_player($devices);
+	# $invalid_player = validate_player($devices);
 	$zonen = array();
 	
 	foreach ($devices as $zoneip) {
@@ -221,14 +221,14 @@ $plugindata = LBSystem::plugindata();
 		$replace = array('Ae','ae','Oe','oe','Ue','ue','ss');
 		# kleinschreibung
 		$room = strtolower(str_replace($search,$replace,$roomraw));
-		foreach ($invalid_player as $key => $value)    {
-			$value;
-		}
+		#foreach ($invalid_player as $key => $value)    {
+		#	$value;
+		#}
 		$groupId = $info['groupId'];
 		$householdId = $info['householdId'];
 		$deviceId = $info['device']['serialNumber'];
 		# only valid models and NO room duplicates
-		if(isSpeaker($model) == true and $value != $room) {
+		if(isSpeaker($model) == true) {
 		#if(isSpeaker("S30") == true and $value != $room) {
 			$zonen = 	[$room, 
 						$zoneip,
@@ -250,7 +250,7 @@ $plugindata = LBSystem::plugindata();
 			continue;
 		}
 		$sonosplayerfinal[$raum] = $zonen;
-		# Save Player icons for UI
+		# Get and Save Player icons for UI
 		$url = 'http://'.$zoneip.':1400/img/icon-'.$model.'.png';
 		$img = $lbphtmldir.'/images/icon-'.$model.'.png';
 		if (!file_exists($img)) {
@@ -258,7 +258,7 @@ $plugindata = LBSystem::plugindata();
 		}
 	}
 	if (count($sonosplayerfinal) === 0)   {
-		LOGERR("system/network.php: Something went wrong... Devices has been found but could not be added to your system! We skip");
+		LOGERR("system/network.php: Something went wrong... Device(s) has been found but could not be added to your system! We skip here...");
 		return false;
 	}
 	#print_r($sonosplayerfinal);
