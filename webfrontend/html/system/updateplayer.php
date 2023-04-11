@@ -2,6 +2,7 @@
 	
 	require_once "loxberry_system.php";
 	require_once "loxberry_log.php";
+	require_once $lbphtmldir."/Helper.php";
 	
 	$myConfigFolder = "$lbpconfigdir";								// get config folder
 	$myBinFolder = "$lbpbindir";									// get bin folder
@@ -60,25 +61,36 @@
 				array_push($sonoszonen[$zone], '');
 			}
 			if (!isset($sonoszonen[$zone][7]))   {
+				$info = json_decode(file_get_contents('http://' . $ip . ':1400/info'), true);
+				# Preparing variables to update config
+				$model = $info['device']['model'];
+				$groupId = $info['groupId'];
+				$modelDisplayName = $info['device']['modelDisplayName'];
+				$householdId = $info['householdId'];
+				$deviceId = $info['device']['serialNumber'];
+				array_push($sonoszonen[$zone], $model, $groupId, $householdId, $deviceId);
+				$line = implode(',',$sonoszonen[$zone]);
+				echo "<INFO> Update Zone ".$zone." by: ".$zone."[]=".$line."".PHP_EOL;
+				$res = "0";
+				fwrite($h, $zone."[]=".$line."\n");
+			} else {
+				if (!isset($sonoszonen[$zone][11]))  {
 					$info = json_decode(file_get_contents('http://' . $ip . ':1400/info'), true);
 					# Preparing variables to update config
 					$model = $info['device']['model'];
-					$groupId = $info['groupId'];
-					$modelDisplayName = $info['device']['modelDisplayName'];
-					$householdId = $info['householdId'];
-					$deviceId = $info['device']['serialNumber'];
-					array_push($sonoszonen[$zone], $model, $groupId, $householdId, $deviceId);
-					$line = implode(',',$sonoszonen[$zone]);
-					echo "<INFO> Update Zone ".$zone." by: ".$zone."[]=".$line."".PHP_EOL;
-					$res = "0";
-					fwrite($h, $zone."[]=".$line."\n");
-			} else {
+					if(isSoundbar($model) == true) {
+						array_push($sonoszonen[$zone], "SB");	
+						$line = implode(',',$sonoszonen[$zone]);
+						echo "<INFO> Updated identified Zone ".$zone." as Soundbar - SB".PHP_EOL;
+						$res = "0";
+					}
+				}
 				$line = implode(',',$sonoszonen[$zone]);
-				echo "<OK> No update for Zone ".$zone." required.".PHP_EOL;
+				#echo "<OK> No update for Zone ".$zone." required.".PHP_EOL;
 				$res = "1";
 				fwrite($h, $zone."[]=".$line."\n");
+				fclose($h);
 			}
-			fclose($h);
 		} else {
 			$h = fopen($myConfigFolder.'/player_template.cfg', 'a');
 			if (!isset($sonoszonen[$zone][6]))   {
@@ -103,7 +115,7 @@
 		echo "<ERROR> failed to copy player_template.cfg...".PHP_EOL;
 		#echo "<br>";;
 	}
-	if (!copy($myBinFolder.'/player_template.cfg', $myConfigFolder.'/player_template.cfg')) {
+	if (!copy($lbphtmldir.'/bin/player_template.cfg', $myConfigFolder.'/player_template.cfg')) {
 		echo "<ERROR> failed to copy player_template.cfg...".PHP_EOL;
 		#echo "<br>";;
 	}

@@ -80,6 +80,9 @@
                                 <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 98px">
                                     <TMPL_VAR ZONES.SONOS_MAX-VOL>
                                 </th>
+								<th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 98px">
+                                    <TMPL_VAR ZONES.SONOS_TV-VOL>
+                                </th>
                             </tr>
                             <TMPL_VAR ROWSSONOSPLAYER>
                         </table>
@@ -90,6 +93,125 @@
                         </a>
                         <br>
                 </tr>
+				
+				<tr>
+				<td style="height: 60px; width: 15%;">
+                        <label id="lt2son"><TMPL_VAR T2S.LABEL_T2SON></label>
+                    </td>
+                    <td style="height: 60px; width: 20%;">
+                        <table border=0 width="80%">
+                            <tr>
+                                <td style="width: 5%">
+									<fieldset>
+										<select id="t2son" name="t2son" data-role="flipswitch" style="width: 5%" disabled>
+											<option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
+											<option selected="selected" value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
+										</select>
+                                    </fieldset>
+                                    <script>
+                                        $('#t2son').val('<TMPL_VAR TTS.t2son>')
+                                    </script>
+                                </td>
+							<div class="tvmonitorstat">
+								<td class="tvmonitorstat" style="width: 40%; text-align: left;">
+                                    <label align="right" id="lfunc_list"><TMPL_VAR ZONES.SONOS_LABEL_TV-VOL></label>
+								</td>
+                                <td class="tvmonitorstat" style="width: 30%">
+                                    <fieldset>
+										<select onchange="validateTVMon()" id="tvmon" name="tvmon" data-role="flipswitch" style="width: 5%">
+											<option selected="selected" value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
+											<option value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
+										</select>
+                                    </fieldset>
+										<script>
+											$('#tvmon').val('<TMPL_VAR VARIOUS.tvmon>');
+										</script>	
+                                    <!--</table>-->
+								<div class="tvmonitor">
+                                </td>
+									<td class="tvmonitorstat" style="width: 20%; height: 60px;">
+                                        <label align="right" id="lstart"><TMPL_VAR ZONES.SONOS_LABEL_START></label>
+                                </td>
+                                <td class="tvmonitorstat" style="width: 40%">
+									<div id="addstart">
+										<fieldset>
+										<select id="starttime" name="starttime" data-mini="true" data-native-menu="true" style="width: 40%">
+											  <option value="0">0:00</option>
+											  <option value="1">1:00</option>
+											  <option value="2">2:00</option>
+											  <option value="3">3:00</option>
+											  <option value="4">4:00</option>
+											  <option value="5">5:00</option>
+											  <option value="6">6:00</option>
+											  <option value="7">7:00</option>
+											  <option value="8">8:00</option>
+											  <option value="9">9:00</option>
+											  <option value="10">10:00</option>
+											  <option value="11">11:00</option>
+											  <option value="12">12:00</option>
+											  <option value="13">13:00</option>
+											  <option value="14">14:00</option>
+											  <option value="15">15:00</option>
+											  <option value="16">16:00</option>
+											  <option value="17">17:00</option>
+											  <option value="18">18:00</option>
+											  <option value="19">19:00</option>
+											  <option value="20">20:00</option>
+											  <option value="21">21:00</option>
+											  <option selected="selected" value="22">22:00</option>
+											  <option value="23">23:00</option>
+										</select>
+									</fieldset>
+                                    <script>
+                                        $('#starttime').val('<TMPL_VAR VARIOUS.starttime>');
+                                    </script>
+									</div>
+                                </td>
+								</td>
+									<td class="tvmonitorstat" style="width: 20%; height: 60px;">
+                                        <label align="right" id="lend"><TMPL_VAR ZONES.SONOS_LABEL_END></label>
+                                </td>
+                                <td class="tvmonitorstat" style="width: 40%">
+								<div id="addend">
+									<fieldset>
+										<select id="endtime" name="endtime" data-mini="true" data-native-menu="true" style="width: 40%">
+											  <option value="0">0:00</option>
+											  <option value="1">1:00</option>
+											  <option value="2">2:00</option>
+											  <option value="3">3:00</option>
+											  <option value="4">4:00</option>
+											  <option value="5">5:00</option>
+											  <option value="6">6:00</option>
+											  <option value="7">7:00</option>
+											  <option value="8">8:00</option>
+											  <option value="9">9:00</option>
+											  <option value="10">10:00</option>
+											  <option value="11">11:00</option>
+											  <option value="12">12:00</option>
+											  <option value="13">13:00</option>
+											  <option value="14">14:00</option>
+											  <option value="15">15:00</option>
+											  <option value="16">16:00</option>
+											  <option value="17">17:00</option>
+											  <option value="18">18:00</option>
+											  <option value="19">19:00</option>
+											  <option value="20">20:00</option>
+											  <option value="21">21:00</option>
+											  <option selected="selected" value="22">22:00</option>
+											  <option value="23">23:00</option>
+										</select>
+									</fieldset>
+                                    <script>
+                                        $('#endtime').val('<TMPL_VAR VARIOUS.endtime>');
+                                    </script>
+									</div>
+                                </td>
+								</div>
+								</div>
+                            </tr>
+                        </table>
+                    </td>
+				</tr>
 				
 				<tr>
                     <td style="width: 201px; height: 20px;" valign="top">
@@ -787,7 +909,7 @@
             radlayout();
             weatherlayout();
             donation();
-			//checkboxes();
+
 			
         });
 		
@@ -1373,7 +1495,65 @@
 			}
 		}
 		
+		// check if Soundbar(s) are used
+		function validateSB()   {
+			var iteration = document.getElementById('countplayers').value;
+			iteration = parseInt(iteration)
+			iteration += 1;
+			for (i = 1; i < iteration; ++i) {
+				if($('#sb' + i + '').length)   {
+					var sbyes = "1";
+				}
+			}
+			if (sbyes == "1")   {
+				$('.tvmonitorstat').fadeIn(600);
+				validateTVMonVol();
+			} else {
+				$('.tvmonitorstat').fadeOut(600);
+			}
+		}
 		
+		// check if Soundbar(s) are used
+		function validateTVMon()   {
+			var tvmonitor = document.getElementById('tvmon').value;
+			console.log(tvmonitor);
+			$("#info").empty();
+			if (tvmonitor == "true")   {
+				$('#lstart').fadeIn(600);
+				$('#lend').fadeIn(600);
+				$('#addstart').fadeIn(600);
+				$('#addend').fadeIn(600);
+				$("#info").trigger('create');
+				$("#info").attr("style", "color:red");
+				$("#info").html('<TMPL_VAR TEMPLATE.TV_MONITOR_ON>');
+				console.log("TV Monitor On");
+			} else {
+				$('#lstart').fadeOut(600);
+				$('#lend').fadeOut(600);
+				$('#addstart').fadeOut(600);
+				$('#addend').fadeOut(600);
+				$("#info").trigger('create');
+				$("#info").attr("style", "color:red");
+				$("#info").html('<TMPL_VAR TEMPLATE.TV_MONITOR_OFF>');
+                console.log("TV Monitor On");
+			}
+		}
+		
+		// validate TV Volume entries per player
+		function validateTVMonVol()   {
+			console.log("Validate TV Volume");
+			if (document.getElementById('tvmon').value == "true")    {
+				var iteration = document.getElementById('countplayers').value;
+				iteration = parseInt(iteration)
+				iteration += 1;
+				for (i = 1; i < iteration; ++i) {
+					validate_enable('#tvvol' + i + '');
+					validate_chk_object(['#tvvol' + i + '']);
+				}
+			}
+		}
+		
+			
 		
 		// function to populate dropdown from JSON files based on selected T2S Provider
         $(document).ready(function() {
@@ -1381,9 +1561,11 @@
             $('#engine-selector input').change(prepareTTSConfigFields);
             $('#t2slang').change(populateVoice);
 
-            // Load saved languages/voice into fields
+            // various validations
             initial_lang_voice_load();
 			checkboxes();
+			validateSB();
+			
 			
             // validate Volume entries per player
             var iteration = document.getElementById('countplayers').value;
@@ -1395,6 +1577,7 @@
                 validate_enable('#maxvol' + i + '');
                 validate_chk_object(['#t2svol' + i + '', '#sonosvol' + i + '', '#maxvol' + i + '']);
             }
+			//validateTVMonVol();
 
 			
             // Function to control saving, main_form is submitted    
@@ -1406,6 +1589,7 @@
 				var selectvoice = $('#voice').val();
 				console.log("selectlang: " + selectlang);
 				console.log("selectvoice: " + selectvoice);
+				validateTVMonVol();
 				$("#info").trigger('create');
                 if (document.main_form.tts_polly.checked == true) {
                      if (selectlang == null) {

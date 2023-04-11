@@ -406,4 +406,7 @@
  5.3.2		[BUGFIX] Template für MQTT HHTP Vorlagen ist wieder verfügbar
 			[IMPROVEMENT] Update Player Icon's als Teil von Cronjob
 			[BUGFIX] UDP Port Validierung korrigiert
+ 5.3.3		[BUGFIX] Inbound Error korrigiert (UDP Port Validierung)
+			[BUGFIX] updateplayer beim neustart korrigiert
+			[IMPORVEMENT] Neue Funktion 'TV Monitoring' hinzugefügt (siehe Wiki)
  

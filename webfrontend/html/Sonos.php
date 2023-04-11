@@ -89,7 +89,7 @@ if (isset($_GET['zone']))  {
 	$debugfile = $lbpdatadir."/s4lox_debug_meta_fav.json";							// Debug file of Browse
 }
 
-#echo '<PRE>';
+echo '<PRE>';
 
 if (!isset($_GET['debug']))    {
 	$params = [	"name" => "Sonos PHP",
@@ -97,7 +97,7 @@ if (!isset($_GET['debug']))    {
 				"append" => 1,
 				"addtime" => 1,
 				];
-				$level = LBSystem::pluginloglevel();
+	$level = LBSystem::pluginloglevel();
 } else {
 	$heute = date("dmY"); 
 	$files = glob($lbplogdir.'/s4lox_debug_*');
@@ -110,8 +110,8 @@ if (!isset($_GET['debug']))    {
 				"addtime" => 1,
 				"loglevel" => 7,
 				];
-				$level = "7";
-				$time_start = microtime(true);
+	$level = "7";
+	$time_start = microtime(true);
 	
 	#@unlink($lbplogdir."/SOAP-Log-".$heute.".log");
 }
@@ -201,6 +201,7 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 	$sonoszonen = $config['sonoszonen'];
 
 	// check for player duplicates based on roomname once
+	/**
 	if (is_file($file))  {
 		$player = array();
 		foreach($sonoszonen as $checkzone)     {
@@ -212,8 +213,9 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 			LOGGING("sonos.php: Minimum ONE Player has a duplicate (Roomname), this may cause problems! Please remove them from your config, rename them in Sonos App and re-scan for the Player",3);
 		}
 	}
+	**/
 	
-		// prüft den Onlinestatus jeder Zone
+	// prüft den Onlinestatus jeder Zone
 	#exec('/usr/bin/php -f bin/check_on_state.php');
 	$sonoszone = array();
 	$zonesonline = array();
@@ -1560,81 +1562,70 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			LOGGING("sonos.php: EQ Settings for Player ".$master." has been reset.", 7);
 		break;
 		
-		
-		case 'nightmode':
-			$pos = $sonos->GetPositionInfo();
-			if (substr($pos["TrackURI"], 0, 18) === "x-sonos-htastream:")  {
-				$mode = $_GET['mode'];
-				if ($mode == 'on')  {
-					$sonos->SetDialogLevel('1', 'NightMode');
-					LOGGING("sonos.php: Nightmode for Player ".$master." has been turned on.", 7);
-				} else {
-					$sonos->SetDialogLevel('0', 'NightMode');
-					LOGGING("sonos.php: Nightmode for Player ".$master." has been turned off.", 7);
-				}
-			} else {
-				LOGGING("sonos.php: Player ".$master." is not in TV mode.", 4);
-			}
-		break;
-		
 		case 'surround':
-			$pos = $sonos->GetPositionInfo();
-			if (substr($pos["TrackURI"], 0, 18) === "x-sonos-htastream:")  {
-				$mode = $_GET['mode'];
-				if ($mode == 'on')  {
-					$sonos->SetDialogLevel('1', 'SurroundEnable');
-					LOGGING("sonos.php: Surround for Player ".$master." has been turned on.", 7);
-				} else {
-					$sonos->SetDialogLevel('0', 'SurroundEnable');
-					LOGGING("sonos.php: Surround for Player ".$master." has been turned off.", 7);
-				}
-			} else {
-				LOGGING("sonos.php: Player ".$master." is not in TV mode.", 4);
-			}
+			SetSurroundMode();
 		break;
 		
 		case 'subbass':
-			$pos = $sonos->GetPositionInfo();
-			if (substr($pos["TrackURI"], 0, 18) === "x-sonos-htastream:")  {
-				$mode = $_GET['mode'];
-				if ($mode == 'on')  {
-					$sonos->SetDialogLevel('1', 'SubEnable');
-					LOGGING("sonos.php: SubBass for Player ".$master." has been turned on.", 7);
-				} else {
-					$sonos->SetDialogLevel('0', 'SubEnable');
-					LOGGING("sonos.php: SubBass for Player ".$master." has been turned off.", 7);
-				}
-			} else {
-				LOGGING("sonos.php: Player ".$master." is not in TV mode.", 4);
-			}
+			SetBassMode();
 		break;
 
-		
 		case 'speech':
-			$pos = $sonos->GetPositionInfo();
-			if (substr($pos["TrackURI"], 0, 18) === "x-sonos-htastream:")  {
-				$mode = $_GET['mode'];
-				if ($mode == 'on')  {
-					$sonos->SetDialogLevel('DialogLevel');
-					LOGGING("sonos.php: Speech enhancement for Player ".$master." has been turned on.", 7);
-				} else {
-					$sonos->SetDialogLevel('DialogLevel');
-					LOGGING("sonos.php: Speech enhancement for Player ".$master." has been turned off.", 7);
-				}
-			} else {
-				LOGGING("sonos.php: Player ".$master." is not in TV mode.", 4);
-			}
+			SetSpeechMode();
 		break;
-
-		case 'debuginfo';
+		
+		case 'nightmode':
+			SetNightMode();
+		break;
+		
+		case 'getuuid':
+			GetAutoplayRoomUUID();
+		break;
+		
+		case 'setuuid':
+			SetAutoplayRoomUUID();
+		break;
+		
+		case 'getautolinkedzones':
+			GetAutoplayLinkedZones();
+		break;
+		
+		case 'setautolinkedzones':
+			SetAutoplayLinkedZones();
+		break;
+		
+		case 'getautoplayvolume':
+			GetAutoplayVolume();
+		break;
+		
+		case 'setautoplayvolume':
+			SetAutoplayVolume();
+		break;
+		
+		case 'getuseautoplayvolume':
+			GetUseAutoplayVolume();
+		break;
+		
+		case 'setuseautoplayvolume':
+			SetUseAutoplayVolume();
+		break;
+		
+		case 'getbuttonlockstate':
+			GetButtonLockState();
+		break;
+		
+		case 'setbuttonlockstate':
+			SetButtonLockState();
+		break;
+		
+		case 'debuginfo':
 			debugInfo();
 		break;
 		
-		case 'test':
-			vversion();
-			
+		case 'streammode':
+			GetHtMode();
 		break;
-		
+			
 		case 'ttsp':
 			$text = ($_GET['text']);
 			isset($_GET['greet']) ? $greet = 1 : $greet = 0;

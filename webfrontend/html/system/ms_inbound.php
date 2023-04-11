@@ -30,7 +30,7 @@ $params = [	"name" => "Sonos PHP",
 			];
 $log = LBLog::newLog($params);
 
-LOGSTART("Create XML file(s)");	
+LOGSTART("Sonos PHP");	
 
 // laden der config Dateien
 if (is_file($lbpconfigdir . "/" . $configfile))    {
@@ -75,7 +75,7 @@ if (count($config['sonoszonen']) < 1)  {
 	exit(1);
 }
 
-if (empty($config['LOXONE']['LoxPort']))  {
+if ($config['LOXONE']['LoxDatenMQTT'] != true and empty($config['LOXONE']['LoxPort']))  {
 	LOGERR('system/ms_inbound.php: The Loxone UDP port is missing in your config, please check/complete your Plugin Config and save your config before downloading your Template!');
 	exit(1);
 }
@@ -167,7 +167,7 @@ function shutdown()
 {
 	global $log;
 	#$log->LOGEND("PHP finished");
-	$log = LOGEND("");
+	#$log = LOGEND("");
 	
 }
 

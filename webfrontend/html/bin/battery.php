@@ -20,8 +20,8 @@ $pathlanguagefile 	= "$lbphtmldir/voice_engines/langfiles";		// get languagefile
 $configfile			= "s4lox_config.json";							// configuration file
 $off_file 			= "$lbplogdir/s4lox_off.tmp";					// path/file for Script turned off
 $folfilePlOn 		= "$lbpdatadir/PlayerStatus/s4lox_on_";			// Folder and file name for Player Status
-$Stunden 	= intval(strftime("%H"));
-$sPassword 	= 'loxberry';
+$Stunden 			= intval(strftime("%H"));
+$sPassword 			= 'loxberry';
 
 
 # check if script/Sonos Plugin is off
@@ -46,7 +46,7 @@ if ($Stunden >=8 && $Stunden <22)   {
 	if (file_exists($lbpconfigdir . "/" . $configfile))    {
 		$config = json_decode(file_get_contents($lbpconfigdir . "/" . $configfile), TRUE);
 	} else {
-		LOGCRIT('system/battery.php: The configuration file could not be loaded, the file may be disrupted. We have to abort :-(');
+		echo "The configuration file could not be loaded, the file may be disrupted. We have to abort :-(')".PHP_EOL;
 		exit;
 	}
 	$sonoszonen = ($config['sonoszonen']);

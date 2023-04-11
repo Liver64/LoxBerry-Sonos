@@ -159,13 +159,13 @@ function checkZonesOnline($member) {
 
 function checkZoneOnline($MemberTest) {
 	
-	global $sonoszonen, $debug, $config, $folfilePlOn;
+	global $sonoszone, $debug, $config, $folfilePlOn;
 
 	if ($MemberTest == 'all')   {
 		return false;
 	}
-	if(!array_key_exists($MemberTest, $sonoszonen)) {
-		LOGGING("helper.php: The entered member zone '".$MemberTest."' does not exist, please correct your syntax!!", 4);
+	if(!array_key_exists($MemberTest, $sonoszone)) {
+		LOGWARN("helper.php: The entered Zone '".$MemberTest."' does not exist, please correct your syntax!!");
 		#return false;
 	}
 	#$handle = @fsockopen($sonoszonen[$MemberTest][0], 1400, $errno, $errstr, 2);
@@ -1405,6 +1405,26 @@ function sendInfoMS($abbr, $player, $val)    {
 		}
 }
 
- 
+/*******
+* Funktion : 	isSoundbar --> filtert die Sonos Devices nach Zonen die Soundbars sind
+*
+* @param: 	$model --> alle gefundenen Soundbars
+* @return: 	$soundb --> true
+
+*******/
+
+ function isSoundbar($model) {
+    $soundb = [
+	"S9"    =>  "PLAYBAR",
+	"S11"   =>  "PLAYBASE",
+	"S14"   =>  "BEAM",
+	"S31"   =>  "BEAM",
+	"S15"   =>  "CONNECT",
+	"S19"   =>  "ARC",
+	"Sxx"   =>  "RAY",
+        ];
+    return in_array($model, array_keys($soundb));
+}
+
  
 ?>

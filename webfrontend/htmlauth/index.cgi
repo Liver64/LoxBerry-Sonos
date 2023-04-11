@@ -93,6 +93,16 @@ my $pcfg 						= new Config::Simple($lbpconfigdir . "/" . $pluginconfigfile);
 my %Config 						= $pcfg->vars() if ( $pcfg );
 our $error_message				= "";
 
+# currently obsolete
+our %soundbars =  (	S9    =>  "PLAYBAR",
+					S11   =>  "PLAYBASE",
+					S14   =>  "BEAM",
+					S31   =>  "BEAM",
+					S15   =>  "CONNECT",
+					S19   =>  "ARC",
+					Sxx   =>  "RAY"
+				);
+
 # Set new config options for upgrade installations
 
 # add new parameter for cachesize
@@ -147,6 +157,14 @@ if (!defined $pcfg->param("VARIOUS.volmax"))  {
 # Loxdaten an MQTT
 if (!defined $pcfg->param("LOXONE.LoxDatenMQTT"))  {
 	$pcfg->param("LOXONE.LoxDatenMQTT", "false");
+}
+# Starttime TV Monitoring
+if (!defined $pcfg->param("VARIOUS.starttime"))  {
+	$pcfg->param("VARIOUS.starttime", "7");
+}
+# Endtime TV Monitoring
+if (!defined $pcfg->param("VARIOUS.endtime"))  {
+	$pcfg->param("VARIOUS.endtime", "22");
 }
 	
 
@@ -434,7 +452,6 @@ sub form
 		$room =~ s/\[\]$//g;
 		my @fields = $playercfg->param($key);
 		$filename = $lbphtmldir.'/images/icon-'.$fields[7].'.png';
-		
 		$rowssonosplayer .= "<tr><td style='height: 25px; width: 4%;' class='auto-style1'><INPUT type='checkbox' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
 		$rowssonosplayer .= "<td style='height: 28px; width: 16%;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$room' style='width: 100%; background-color: #e6e6e6;' /> </td>\n";
 		$rowssonosplayer .= "<td style='height: 25px; width: 4%;' class='auto-style1'><div class='chk-group'><INPUT type='checkbox' class='chk-checked' name='mainchk$countplayers' id='mainchk$countplayers' value='$fields[6]' align='center'/></div></td>\n";
@@ -447,17 +464,22 @@ sub form
 		$rowssonosplayer .= "<td style='height: 28px; width: 15%;'><input type='text' id='ip$countplayers' name='ip$countplayers' size='30' value='$fields[0]' style='width: 100%; background-color: #e6e6e6;' /> </td>\n";
 		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='$fields[3]' /> </td>\n";
 		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='$fields[4]' /> </td>\n";
-		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$fields[5]' /> </td> </tr>\n";
+		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$fields[5]' /> </td>\n";
+		#if (exists($soundbars{$fields[7]}))   {
+		if (exists($fields[11]))   {
+			$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='tvvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='tvvol$countplayers' value='$fields[12]' /> </td>\n";
+			$rowssonosplayer .= "<input type='hidden' id='sb$countplayers' name='sb$countplayers' value='$fields[11]'>\n";
+		}
 		$rowssonosplayer .= "<input type='hidden' id='models$countplayers' name='models$countplayers' value='$fields[7]'>\n";
 		$rowssonosplayer .= "<input type='hidden' id='groupId$countplayers' name='groupId$countplayers' value='$fields[8]'>\n";
 		$rowssonosplayer .= "<input type='hidden' id='householdId$countplayers' name='householdId$countplayers' value='$fields[9]'>\n";
 		$rowssonosplayer .= "<input type='hidden' id='deviceId$countplayers' name='deviceId$countplayers' value='$fields[10]'>\n";
-		$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' value='$fields[1]'>\n";
+		$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' value='$fields[1]'>\n";
 	}
 	LOGDEB "$countplayers Sonos players has been loaded.";							
 	
 	if ( $countplayers < 1 ) {
-		$rowssonosplayer .= "<tr><td colspan=9>" . $SL{'ZONES.SONOS_EMPTY_ZONES'} . "</td></tr>\n";
+		$rowssonosplayer .= "<tr><td colspan=10>" . $SL{'ZONES.SONOS_EMPTY_ZONES'} . "</td></tr>\n";
 	}
 	$rowssonosplayer .= "<input type='hidden' id='countplayers' name='countplayers' value='$countplayers'>\n";
 	$template->param("ROWSSONOSPLAYER", $rowssonosplayer);
@@ -550,9 +572,7 @@ sub save_details
 	$pcfg->param("VARIOUS.CALDav2", "\"$R::cal\"");
 	$pcfg->param("VARIOUS.cron", "$R::cron");
 	$pcfg->param("VARIOUS.selfunction", "$R::func_list");
-	$pcfg->param("SYSTEM.checkt2s", "$R::checkt2s");
-	$pcfg->param("SYSTEM.checkonline", "true");
-	
+		
 	# save all radiostations
 	for ($i = 1; $i <= $countradios; $i++) {
 		my $rname = param("radioname$i");
@@ -677,6 +697,10 @@ sub save
 	$pcfg->param("LOCATION.town", "\"$R::town\"");
 	$pcfg->param("VARIOUS.CALDavMuell", "\"$R::wastecal\"");
 	$pcfg->param("VARIOUS.CALDav2", "\"$R::cal\"");
+	$pcfg->param("TTS.t2son", "$R::t2son");
+	$pcfg->param("VARIOUS.tvmon", "$R::tvmon");
+	$pcfg->param("VARIOUS.starttime", "$R::starttime");
+	$pcfg->param("VARIOUS.endtime", "$R::endtime");
 	$pcfg->param("SYSTEM.path", "$R::STORAGEPATH");
 	$pcfg->param("SYSTEM.mp3path", "$R::STORAGEPATH/$ttsfolder/$mp3folder");
 	$pcfg->param("SYSTEM.ttspath", "$R::STORAGEPATH/$ttsfolder");
@@ -738,7 +762,11 @@ sub save
 		if ( param("chkplayers$i") ) { # if player should be deleted
 			$playercfg->delete( "SONOSZONEN." . param("zone$i") . "[]" );
 		} else { # save
-			$playercfg->param( "SONOSZONEN." . param("zone$i") . "[]", param("ip$i") . "," . param("rincon$i") . "," . param("model$i") . "," . param("t2svol$i") . "," . param("sonosvol$i") . "," . param("maxvol$i") . "," . param("mainchk$i"). "," . param("models$i") . "," . param("groupId$i") . "," . param("householdId$i"). "," . param("deviceId$i"));
+			if (param("sb$i") eq "SB")   {
+				$playercfg->param( "SONOSZONEN." . param("zone$i") . "[]", param("ip$i") . "," . param("rincon$i") . "," . param("model$i") . "," . param("t2svol$i") . "," . param("sonosvol$i") . "," . param("maxvol$i") . "," . param("mainchk$i"). "," . param("models$i") . "," . param("groupId$i") . "," . param("householdId$i"). "," . param("deviceId$i"). ",SB,". param("tvvol$i"));
+			} else  {
+				$playercfg->param( "SONOSZONEN." . param("zone$i") . "[]", param("ip$i") . "," . param("rincon$i") . "," . param("model$i") . "," . param("t2svol$i") . "," . param("sonosvol$i") . "," . param("maxvol$i") . "," . param("mainchk$i"). "," . param("models$i") . "," . param("groupId$i") . "," . param("householdId$i"). "," . param("deviceId$i"));
+		}
 		}
 	}
 	
@@ -749,8 +777,10 @@ sub save
 	if ($R::sendlox eq "true") {
 		&prep_XML;
 	}
+	
 	my $file = qx(/usr/bin/php $lbphtmldir/bin/create_config.php);	
 	my $on = qx(/usr/bin/php $lbphtmldir/bin/check_on_state.php);	
+	my $tv = qx(/usr/bin/php $lbphtmldir/bin/tv_monitor_conf.php);	
 	LOGOK "Main settings has been saved successful";
 	
 	#$content = $server_endpoint;
@@ -807,6 +837,10 @@ sub scan
 			$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='$config->{$key}->[3]'' /> </td>\n";
 			$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='$config->{$key}->[4]'' /> </td>\n";
 			$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$config->{$key}->[5]'' /> </td>\n";
+			if ($config->{$key}->[11])   {
+				$rowssonosplayer .= "<input type='hidden' id='sb$countplayers' size='100' name='sb$countplayers' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' value='$config->{$key}->[11]'>\n";
+				$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='tvvol$countplayers' size='100' name='tvvol$countplayers' value='$config->{$key}->[12]'' /> </td> </tr>\n";
+			}
 			$rowssonosplayer .= "<input type='hidden' id='models$countplayers' name='models$countplayers' value='$config->{$key}->[7]'>\n";
 			$rowssonosplayer .= "<input type='hidden' id='groupId$countplayers' name='groupId$countplayers' value='$config->{$key}->[8]'>\n";
 			$rowssonosplayer .= "<input type='hidden' id='householdId$countplayers' name='householdId$countplayers' value='$config->{$key}->[9]'>\n";

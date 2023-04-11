@@ -990,7 +990,242 @@ class SonosAccess
             []
         );
     }
+	
+	
+	/**
+	 * Get Autoplay RINCON-ID from player
+	 *
+	 * @return array
+	 
+	 Array
+	(
+		[RoomUUID] => RINCON_949F3EC767F101400
+		[Source] => 
+	)
+	
+	 */
 
+    public function GetAutoplayRoomUUID()
+    {
+        return $this->processSoapCall(
+            '/DeviceProperties/Control',
+            'urn:schemas-upnp-org:service:DeviceProperties:1',
+            'GetAutoplayRoomUUID',
+            []
+        );
+    }
+	
+	
+	/**
+	 * Set Autoplay RINCON-ID from player
+	 *
+	 * @param string $uuid			Rincon-ID of Player
+	 * @param string $source		Source to be played (could be empty)
+	 */
+
+    public function SetAutoplayRoomUUID($uuid, $source = "")
+    {
+        return $this->processSoapCall(
+            '/DeviceProperties/Control',
+            'urn:schemas-upnp-org:service:DeviceProperties:1',
+            'SetAutoplayRoomUUID',
+            [
+                new SoapParam($uuid, 'RoomUUID'),
+				new SoapParam($source, 'Source')
+			]
+        );
+    }
+	
+	
+	/**
+	 * Get Autoplay linked zones from player
+	 *
+	 * @return array
+	 
+	 Array
+	(
+		[IncludeLinkedZones] => 0
+		[Source] => 
+	)
+	
+	 */
+
+    public function GetAutoplayLinkedZones()
+    {
+        return $this->processSoapCall(
+            '/DeviceProperties/Control',
+            'urn:schemas-upnp-org:service:DeviceProperties:1',
+            'GetAutoplayLinkedZones',
+            []
+        );
+    }
+	
+	
+	/**
+	 * Set Autoplay linked zones from player
+	 *
+	 * @param string $zones			true or false
+	 * @param string $source		Source to be played (could be empty)
+	 */
+
+    public function SetAutoplayLinkedZones($zones, $source = "")
+    {	
+	
+		if ($zones == 'true')   {
+			$zones = 1;
+		} else {
+			$zones = 0;
+		}
+        return $this->processSoapCall(
+            '/DeviceProperties/Control',
+            'urn:schemas-upnp-org:service:DeviceProperties:1',
+            'SetAutoplayLinkedZones',
+            [
+                new SoapParam($zones, 'IncludeLinkedZones'),
+				new SoapParam($source, 'Source')
+			]
+        );
+    }
+	
+	
+	/**
+	 * Get Autoplay Volume from player
+	 *
+	 * @return array
+	 
+	 Array
+	(
+		[CurrentVolume] => 20
+		[Source] => 
+	)
+	
+	 */
+
+    public function GetAutoplayVolume()
+    {
+        return $this->processSoapCall(
+            '/DeviceProperties/Control',
+            'urn:schemas-upnp-org:service:DeviceProperties:1',
+            'GetAutoplayVolume',
+            []
+        );
+    }
+	
+	
+	/**
+	 * Set Autoplay Volume for player
+	 *
+	 * @param string $zones			true or false
+	 * @param string $source		Source to be played (could be empty)
+	 */
+
+    public function SetAutoplayVolume($volume, $source = "")
+    {	
+        return $this->processSoapCall(
+            '/DeviceProperties/Control',
+            'urn:schemas-upnp-org:service:DeviceProperties:1',
+            'SetAutoplayVolume',
+            [
+                new SoapParam($volume, 'Volume'),
+				new SoapParam($source, 'Source')
+			]
+        );
+    }
+	
+	
+	/**
+	 * Get Used Autoplay Volume from player
+	 *
+	 * @return array
+	 
+	 Array
+	(
+		[CurrentVolume] => 20
+		[Source] => 
+	)
+	
+	 */
+
+    public function GetUseAutoplayVolume()
+    {
+        return $this->processSoapCall(
+            '/DeviceProperties/Control',
+            'urn:schemas-upnp-org:service:DeviceProperties:1',
+            'GetUseAutoplayVolume',
+            []
+        );
+    }
+	
+	
+	/**
+	 * Set used Autoplay Volume zones for player
+	 *
+	 * @param string $zones			true or false
+	 * @param string $source		Source to be played (could be empty)
+	 */
+
+    public function SetUseAutoplayVolume($zones, $source = "")
+    {	
+	
+		if ($zones == 'true')   {
+			$zones = 1;
+		} else {
+			$zones = 0;
+		}
+        return $this->processSoapCall(
+            '/DeviceProperties/Control',
+            'urn:schemas-upnp-org:service:DeviceProperties:1',
+            'SetUseAutoplayVolume',
+            [
+                new SoapParam($zones, 'UseVolume'),
+				new SoapParam($source, 'Source')
+			]
+        );
+    }
+	
+	
+	/**
+	 * Get Button locked State from player
+	 *
+	 * @return string
+	 *
+	 */
+
+    public function GetButtonLockState()
+    {
+        return $this->processSoapCall(
+            '/DeviceProperties/Control',
+            'urn:schemas-upnp-org:service:DeviceProperties:1',
+            'GetButtonLockState',
+            []
+        );
+    }
+	
+	
+	/**
+	 * Set Button Lock State for player
+	 *
+	 * @param string $zones			true or false
+	 */
+
+    public function SetButtonLockState($zones)
+    {	
+	
+		if ($zones == 'true')   {
+			$zones = "On";
+		} else {
+			$zones = "Off";
+		}
+        return $this->processSoapCall(
+            '/DeviceProperties/Control',
+            'urn:schemas-upnp-org:service:DeviceProperties:1',
+            'SetButtonLockState',
+            [
+                new SoapParam($zones, 'DesiredButtonLockState')
+			]
+        );
+    }
+	
 
 	/**
 	 * Next 

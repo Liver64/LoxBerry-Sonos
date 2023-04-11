@@ -231,6 +231,7 @@ function getRoomCoordinator_OLD($room){
 */ 
 
  function getGroup($room = "") {
+	 
 	global $sonoszone, $sonos, $grouping, $debug, $config;	
 	
 	if($room == "") {
@@ -280,8 +281,8 @@ function getGroups() {
 		#}
 		#return($groups);
 	}
-	#print_r($groups);
-	return($groups);
+	print_r($groups);
+	#return($groups);
  }
  
  

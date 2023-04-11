@@ -225,7 +225,7 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 				}
 			}
 		} else {
-			LOGERR("Can't create UDP socket to $server_ip");
+			#LOGERR("Can't create UDP socket to $server_ip");
 			exit(1);
 		}
 		#print_r($tmp_array);

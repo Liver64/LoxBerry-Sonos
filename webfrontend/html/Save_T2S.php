@@ -11,7 +11,7 @@
 * @param: 	empty
 * @return: 	array
 **/
-echo '<PRE>';	
+#echo '<PRE>';	
 function saveZonesStatus() {
 	
 	global $sonoszone, $config, $sonos, $player, $actual, $time_start;
@@ -26,7 +26,7 @@ function saveZonesStatus() {
 		$actual[$player]['TransportInfo'] = $sonos->GetTransportInfo($player);
 		$actual[$player]['TransportSettings'] = $sonos->GetTransportSettings($player);
 		$actual[$player]['Group-ID'] = $sonos->GetZoneGroupAttributes($player);
-		$actual[$player]['Grouping'] = getGroup($player);
+		#$actual[$player]['Grouping'] = getGroup($player);
 		$actual[$player]['ZoneStatus'] = getZoneStatus($player);
 		$actual[$player]['CONNECT'] = GetVolumeModeConnect($player);
 		$posinfo = $sonos->GetPositionInfo($player);
@@ -46,7 +46,7 @@ function saveZonesStatus() {
 			}
 		}
 	}
-	#print_r($actual);
+	print_r($actual);
 	LOGGING("save_t2s.php: All Zone settings has been saved successful",6);
 	return $actual;
 }

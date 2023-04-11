@@ -243,6 +243,11 @@ $plugindata = LBSystem::plugindata();
 						(string)$householdId,
 						(string)$deviceId						
 						];
+			# Added for TV Monitoring
+			if(isSoundbar($model) == true) {
+				array_push($zonen, "SB");				
+				#array_push($zonen, " ");
+			}
 			$raum = array_shift($zonen);
 		} else {
 			LOGGING("system/network.php: Sorry, the Sonos model '".$model."' for room '".$room."' has been found, but this model is currently not supported by the Plugin!",3);
