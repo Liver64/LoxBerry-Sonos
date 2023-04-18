@@ -2,9 +2,10 @@
 	
 	require_once "loxberry_system.php";
 	require_once "loxberry_log.php";
+	require_once $lbphtmldir."/Helper.php";
 	
 	$myConfigFolder = "$lbpconfigdir";								// get config folder
-	$myBinFolder = "$lbphtmldir/bin";								// get bin folder
+	$myBinFolder = "$lbpbindir";									// get bin folder
 	$myConfigFile = "player.cfg";									// get config file
 	$off_file = $lbplogdir."/s4lox_off.tmp";					// path/file for Script turned off
 
@@ -59,10 +60,10 @@
 			if (!isset($sonoszonen[$zone][6]))   {
 				array_push($sonoszonen[$zone], '');
 			}
-			$info = json_decode(file_get_contents('http://' . $ip . ':1400/info'), true);
-			# Preparing variables to update config
-			$model = $info['device']['model'];
 			if (!isset($sonoszonen[$zone][7]))   {
+				$info = json_decode(file_get_contents('http://' . $ip . ':1400/info'), true);
+				# Preparing variables to update config
+				$model = $info['device']['model'];
 				$groupId = $info['groupId'];
 				$modelDisplayName = $info['device']['modelDisplayName'];
 				$householdId = $info['householdId'];
@@ -73,17 +74,23 @@
 				$res = "0";
 				fwrite($h, $zone."[]=".$line."\n");
 			} else {
+				if (!isset($sonoszonen[$zone][11]))  {
+					$info = json_decode(file_get_contents('http://' . $ip . ':1400/info'), true);
+					# Preparing variables to update config
+					$model = $info['device']['model'];
+					if(isSoundbar($model) == true) {
+						array_push($sonoszonen[$zone], "SB");	
+						$line = implode(',',$sonoszonen[$zone]);
+						echo "<INFO> Updated identified Zone ".$zone." as Soundbar - SB".PHP_EOL;
+						$res = "0";
+					}
+				}
 				$line = implode(',',$sonoszonen[$zone]);
-				echo "<OK> No update for Zone ".$zone." required.".PHP_EOL;
+				#echo "<OK> No update for Zone ".$zone." required.".PHP_EOL;
 				$res = "1";
 				fwrite($h, $zone."[]=".$line."\n");
+				fclose($h);
 			}
-			$url = 'http://'.$ip.':1400/img/icon-'.$model.'.png';
-			$img = $lbphtmldir.'/images/icon-'.$model.'.png';
-			if (!file_exists($img)) {
-				file_put_contents($img, file_get_contents($url));
-			}
-			fclose($h);
 		} else {
 			$h = fopen($myConfigFolder.'/player_template.cfg', 'a');
 			if (!isset($sonoszonen[$zone][6]))   {
@@ -102,18 +109,13 @@
 			}
 			fclose($h);
 		}
-		#$url = 'http://'.$ip.':1400/img/icon-'.$model.'.png';
-		#$img = $lbphtmldir.'/images/icon-'.$model.'.png';
-		#if (!file_exists($img)) {
-		#	file_put_contents($img, file_get_contents($url));
-		#}
 		
 	}
 	if (!copy($myConfigFolder.'/player_template.cfg', $myConfigFolder.'/player.cfg')) {
 		echo "<ERROR> failed to copy player_template.cfg...".PHP_EOL;
 		#echo "<br>";;
 	}
-	if (!copy($myBinFolder.'/player_template.cfg', $myConfigFolder.'/player_template.cfg')) {
+	if (!copy($lbphtmldir.'/bin/player_template.cfg', $myConfigFolder.'/player_template.cfg')) {
 		echo "<ERROR> failed to copy player_template.cfg...".PHP_EOL;
 		#echo "<br>";;
 	}
