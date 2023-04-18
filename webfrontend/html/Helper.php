@@ -1415,14 +1415,13 @@ function sendInfoMS($abbr, $player, $val)    {
 
  function isSoundbar($model) {
     $soundb = [
-	"S9"    =>  "PLAYBAR",
-	"S11"   =>  "PLAYBASE",
-	"S14"   =>  "BEAM",
-	"S31"   =>  "BEAM",
-	"S15"   =>  "CONNECT",
-	"S19"   =>  "ARC",
-	"Sxx"   =>  "RAY",
-        ];
+				"S9"    =>  "PLAYBAR",
+				"S11"   =>  "PLAYBASE",
+				"S14"   =>  "BEAM",
+				"S31"   =>  "BEAM",
+				"S15"   =>  "CONNECT",
+				"S19"   =>  "ARC",
+			];
     return in_array($model, array_keys($soundb));
 }
 

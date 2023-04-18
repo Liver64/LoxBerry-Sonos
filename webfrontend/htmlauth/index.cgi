@@ -158,6 +158,10 @@ if (!defined $pcfg->param("VARIOUS.volmax"))  {
 if (!defined $pcfg->param("LOXONE.LoxDatenMQTT"))  {
 	$pcfg->param("LOXONE.LoxDatenMQTT", "false");
 }
+# text-to-speech Status
+if (!defined $pcfg->param("TTS.t2son"))  {
+	$pcfg->param("TTS.t2son", "true");
+}
 # Starttime TV Monitoring
 if (!defined $pcfg->param("VARIOUS.starttime"))  {
 	$pcfg->param("VARIOUS.starttime", "7");

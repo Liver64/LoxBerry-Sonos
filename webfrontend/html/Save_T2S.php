@@ -46,7 +46,7 @@ function saveZonesStatus() {
 			}
 		}
 	}
-	print_r($actual);
+	#print_r($actual);
 	LOGGING("save_t2s.php: All Zone settings has been saved successful",6);
 	return $actual;
 }

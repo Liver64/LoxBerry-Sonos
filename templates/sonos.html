@@ -80,9 +80,11 @@
                                 <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 98px">
                                     <TMPL_VAR ZONES.SONOS_MAX-VOL>
                                 </th>
-								<th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 98px">
-                                    <TMPL_VAR ZONES.SONOS_TV-VOL>
-                                </th>
+								<div class="tvmonitorstat">
+									<th class="tvmonitorstat" align="left" id="tvmtvol" name="tvmtvol" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 98px">
+										<TMPL_VAR ZONES.SONOS_TV-VOL>
+									</th>
+								</div>
                             </tr>
                             <TMPL_VAR ROWSSONOSPLAYER>
                         </table>
@@ -103,7 +105,7 @@
                             <tr>
                                 <td style="width: 5%">
 									<fieldset>
-										<select id="t2son" name="t2son" data-role="flipswitch" style="width: 5%" disabled>
+										<select id="t2son" name="t2son" data-role="flipswitch" style="width: 5%">
 											<option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
 											<option selected="selected" value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
 										</select>
@@ -1516,13 +1518,15 @@
 		// check if Soundbar(s) are used
 		function validateTVMon()   {
 			var tvmonitor = document.getElementById('tvmon').value;
-			console.log(tvmonitor);
+			var tvm = document.getElementById('tvmtvol').value;
+			console.log(tvm);
 			$("#info").empty();
 			if (tvmonitor == "true")   {
 				$('#lstart').fadeIn(600);
 				$('#lend').fadeIn(600);
 				$('#addstart').fadeIn(600);
 				$('#addend').fadeIn(600);
+				$('#tvmtvol').fadeIn(600);
 				$("#info").trigger('create');
 				$("#info").attr("style", "color:red");
 				$("#info").html('<TMPL_VAR TEMPLATE.TV_MONITOR_ON>');
@@ -1532,6 +1536,7 @@
 				$('#lend').fadeOut(600);
 				$('#addstart').fadeOut(600);
 				$('#addend').fadeOut(600);
+				$('#tvmtvol').fadeOut(600);
 				$("#info").trigger('create');
 				$("#info").attr("style", "color:red");
 				$("#info").html('<TMPL_VAR TEMPLATE.TV_MONITOR_OFF>');
@@ -1542,13 +1547,14 @@
 		// validate TV Volume entries per player
 		function validateTVMonVol()   {
 			console.log("Validate TV Volume");
-			if (document.getElementById('tvmon').value == "true")    {
+			if (document.getElementById('tvmon').value = "true")    {
 				var iteration = document.getElementById('countplayers').value;
 				iteration = parseInt(iteration)
 				iteration += 1;
 				for (i = 1; i < iteration; ++i) {
 					validate_enable('#tvvol' + i + '');
 					validate_chk_object(['#tvvol' + i + '']);
+					//return false;
 				}
 			}
 		}
@@ -1566,8 +1572,7 @@
 			checkboxes();
 			validateSB();
 			
-			
-            // validate Volume entries per player
+			// validate Volume entries per player
             var iteration = document.getElementById('countplayers').value;
             iteration = parseInt(iteration)
             iteration += 1;
@@ -1589,7 +1594,7 @@
 				var selectvoice = $('#voice').val();
 				console.log("selectlang: " + selectlang);
 				console.log("selectvoice: " + selectvoice);
-				validateTVMonVol();
+									
 				$("#info").trigger('create');
                 if (document.main_form.tts_polly.checked == true) {
                      if (selectlang == null) {

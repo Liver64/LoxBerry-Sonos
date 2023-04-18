@@ -14,8 +14,9 @@ include($lbphtmldir."/Speaker.php");
 include($lbphtmldir."/Helper.php");
 
 $configfile			= "s4lox_config.json";							// configuration file
-$TV_safe_file		= "TV_save";									// saved Values of all SB's
-$status_file		= "TV_on";										// If TV is running
+$TV_safe_file		= "s4lox_TV_save";								// saved Values of all SB's
+$status_file		= "s4lox_TV_on";								// TV is running
+$mask 				= 's4lox_TV*.*';								// mask for delition
 $folfilePlOn 		= "$lbpdatadir/PlayerStatus/s4lox_on_";			// Folder and file name for Player Status
 $Stunden 			= intval(strftime("%H"));
 
@@ -45,12 +46,12 @@ Tests:
 		echo "The configuration file could not be loaded, the file may be disrupted. We have to abort :-(')".PHP_EOL;
 		exit;
 	}
-	# extract only Players
+	# extract Players
 	$sonoszone = ($config['sonoszonen']);
 	
 	if ($Stunden >= $config['VARIOUS']['starttime'] && $Stunden < $config['VARIOUS']['endtime'])   { 	
 	
-		# Extract all predefined soundbars only (marked SB and Volume > 0)
+		# Extract predefined soundbars only (marked with SB and Volume > 0)
 		$soundbars = array_filter($sonoszone, fn($innerArr) => isset($innerArr[11]) && $innerArr[12] > 0);
 
 		# ... and then check for their Online Status
@@ -71,12 +72,7 @@ Tests:
 			LOGWARN("bin/tv_monitor.php: No Soundbar has been detected or the 'TV Vol' is missing or Soundbar is offline, we skip here...");
 			exit(1);
 		}
-		
-		# TEST ONLY --> remove
-		#$actual = PrepSaveZonesStati();
-		#file_put_contents("/run/shm/test.json",json_encode($actual, JSON_PRETTY_PRINT));
-		#exit;
-		
+				
 		# End Preparation
 		
 		# Start script
@@ -95,9 +91,7 @@ Tests:
 					restoreSingleZone();
 					LOGDEB("bin/tv_monitor.php: Soundbar TV Mode has been turned off and previous settings has been restored.");
 				}
-				#$sonos->SetQueue("x-rincon-queue:".trim($soundbars[$key][1])."#0");
-				@unlink("/run/shm/".$TV_safe_file."_".$key.".json");
-				@unlink("/run/shm/".$status_file."_".$key.".tmp");
+				DelFiles();
 				# TV is On and input at SPDIF
 			} elseif ($tvmodi['HTAudioIn'] > 21 or (substr($posinfo["TrackURI"], 0, 17) == "x-sonos-htastream"))  {
 				if (!file_exists("/run/shm/".$status_file."_".$key.".tmp"))   {
@@ -136,6 +130,9 @@ Tests:
 		$time_end = microtime(true);
 		$process_time = $time_end - $time_start;
 		echo "Processing request tooks about ".round($process_time, 2)." seconds.".PHP_EOL;
+	} else {
+		# action outside hours
+		DelFiles();
 	}
 
 /**
@@ -156,13 +153,29 @@ function startLog()    {
 				];
 	$level = LBSystem::pluginloglevel();
 	$log = LBLog::newLog($params);
-	LOGSTART("Sonos PHP");
+	#LOGSTART("Sonos PHP");
 	return;
 }
 
 
 /**
-/* Function : PrepSaveZonesStati --> start Preparation for saving zone status
+/* Function : DelFiles --> delete tmp files
+/*
+/* @param:  none
+/* @return: none
+**/
+
+function DelFiles()    {
+	
+	global $mask;
+	
+	@array_map('unlink', glob($mask));
+}
+
+
+
+/**
+/* Function : PrepSaveZonesStati --> start Preparation for to save zone status
 /*
 /* @param:  none
 /* @return: array saved details 
@@ -209,9 +222,7 @@ function PrepSaveZonesStati() {
 		exit(1);
 	}
 	$actual = saveZonesStati();
-	#print_r($actual);
 	return($actual);
-	
 }
 
 
@@ -411,16 +422,16 @@ function restore_details($zone) {
 	# Radio Station
 	elseif ($actual[$zone]['Type'] == "Radio") {
 		#echo "Radio for ".$zone."<br>";	
-		@$sonos->SetAVTransportURI($actual[$zone]['MediaInfo']["CurrentURI"], htmlspecialchars_decode($actual[$zone]['MediaInfo']["CurrentURIMetaData"])); 
+		$sonos->SetAVTransportURI($actual[$zone]['MediaInfo']["CurrentURI"], htmlspecialchars_decode($actual[$zone]['MediaInfo']["CurrentURIMetaData"])); 
 		LOGDEB("bin/tv_monitor.php: Source 'Radio' has been set for '".$zone."'");
 	}
 	# Queue empty
 	elseif (empty($actual[$zone]['Type'])) {
 		#echo "No Queue for ".$zone."<br>";	
-		#LOGDEB("bin/tv_monitor.php: '".$zone."' had no Queue");
+		LOGDEB("bin/tv_monitor.php: '".$zone."' had no Queue");
 	} else {
 		#echo "Something went wrong :-(<br>";	
-		#LOGDEB("bin/tv_monitor.php: Something went wrong :-(");
+		LOGDEB("bin/tv_monitor.php: Something went wrong :-(");
 	}
 	return;
 }
@@ -442,12 +453,12 @@ function RestoreShuffle($player) {
 	$pl = $sonos->GetCurrentPlaylist();
 	if (count($pl) > 1 and ($actual[$player]['TransportSettings'] != 0))   {
 		$modereal = playmode_detection($player, $mode);
-		#LOGDEB("bin/tv_monitor.php: Previous playmode '".$modereal."' for '".$player."' has been restored.");		
+		LOGDEB("bin/tv_monitor.php: Previous playmode '".$modereal."' for '".$player."' has been restored.");		
 	}
 	
 }
 
-LOGEND("Sonos PHP");
+#LOGEND("Sonos PHP");
 	
 
 

@@ -139,6 +139,7 @@ if (file_exists($off_file) and $script_on != "on")  {
 	exit;
 }
 
+
 if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or 
 	(isset($_GET['sonos'])) or (isset($_GET['weather'])) or 
 	(isset($_GET['abfall'])) or (isset($_GET['witz'])) or 
@@ -228,12 +229,21 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 			array_push($zonesonline, $zonen);
 		}
 	}
-			
+
+	# check if valid zone has been entered
 	if (!array_key_exists($_GET['zone'], $sonoszone))  {
 		LOGGING("sonos.php: Requested ...zone=".$_GET['zone']." seems to be Offline. Check your Power/Onlinestatus.",4);
 		exit;
 	}
 	LOGGING("sonos.php: All variables has been collected",7);
+	
+	# To predict any T2S if T2S has been turned off, except the T2S is marked with &urgent
+	if (($config['TTS']['t2son'] != 1) and (!isset($_GET['urgent'])))   {
+		if ((isset($_GET['text'])) or (isset($_GET['messageid'])) )   {
+			LOGGING("sonos.php: Text-to-speech blocked because T2S function has been turned off via Plugin Config!", 4);
+			exit(1);
+		}
+	}
 	
 	# check if LBPort already exist in config, if not force user to save config
 	$checklb = explode(':', $config['SYSTEM']['httpinterface']);

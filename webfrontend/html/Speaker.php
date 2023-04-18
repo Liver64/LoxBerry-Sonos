@@ -28,7 +28,6 @@ function LineIn() {
 		LOGGING("speaker.php: The specified Zone does not support Line-in to be selected!", 3);
 		exit;
 	}
-	
 }
 
 
@@ -313,7 +312,7 @@ function SetButtonLockState()  {
 * Funktion : 	GetHtMode --> erfragt den HT Status (Streaming, TV on/off)
 *
 * @param: none
-* @return: none
+* @return: value
 **/
 
 function GetHtMode()  {
@@ -321,8 +320,30 @@ function GetHtMode()  {
 	global $sonoszone, $master;
 	
 	$sonos = new SonosAccess($sonoszone[$master][0]);
+	$posinfo = $sonos->GetPositionInfo();
+	$media = $sonos->GetMediaInfo();
 	$tvmodi = $sonos->GetZoneInfo();
-	echo $tvmodi['HTAudioIn'];
+	$zonestatus = getZoneStatus($master);
+	
+	if ($sonoszone[$master][11] == "SB")  {
+		#echo $tvmodi['HTAudioIn'];
+		if ($zonestatus === 'single')   {
+			if (substr($posinfo["UpnpClass"], 0, 32) == "object.item.audioItem.musicTrack" 
+				or substr($media["UpnpClass"], 0, 36) == "object.item.audioItem.audioBroadcast")  {
+					echo "Value at HDMI/SPDIF for Soundbar in Music/Radio mode: ".$tvmodi['HTAudioIn'];
+			} elseif (substr($posinfo["TrackURI"], 0, 18) === "x-sonos-htastream:")  {
+				echo "Value at HDMI/SPDIF for Soundbar TV mode On: ".$tvmodi['HTAudioIn'];
+			} else {
+				echo "No Input detected, Queue may be empty!";
+			}
+		} elseif ($zonestatus === 'master')  {
+			echo "Value at HDMI/SPDIF for Soundbar as Master of a Group: ".$tvmodi['HTAudioIn'];
+		} elseif ($zonestatus === 'member')  {
+			echo "Value at HDMI/SPDIF for Soundbar as Member of a Group: ".$tvmodi['HTAudioIn'];
+		} else {
+			echo "No Input detected, Queue may be empty!";
+		}
+	}
 }
 
 
