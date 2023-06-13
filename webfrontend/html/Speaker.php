@@ -367,10 +367,10 @@ function SetSpeechMode($mode)  {
 			$mode;
 		}
 		if ($mode == 'on')  {
-			$sonos->SetDialogLevel('DialogLevel');
+			$sonos->SetDialogLevel('1', 'DialogLevel');
 			LOGGING("/bin/speaker.php: Speech enhancement for Player ".$master." has been turned on.", 7);
 		} else {
-			$sonos->SetDialogLevel('DialogLevel');
+			$sonos->SetDialogLevel('0', 'DialogLevel');
 			LOGGING("/bin/speaker.php: Speech enhancement for Player ".$master." has been turned off.", 7);
 		}
 	} else {

@@ -733,21 +733,30 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			checkifmaster($master);
 			$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
 			$posinfo = $sonos->GetPositionInfo();
-			$duration = $posinfo['duration'];
-			$state = $posinfo['TrackURI'];
+			#print_r($posinfo);
+			
 			// Nichts läuft
-			if ((empty($state)) and (empty($duration)))  {
+			if ((empty($posinfo['TrackURI'])) and (empty($posinfo["UpnpClass"])))  {
 				$sonos->SetVolume($volume);
 				nextradio();
+				LOGDEB("sonos.php Nextpush has been executed. Queue was empty");
 			}
-			// TV / Radio läuft
-			if ((!empty($state)) and (empty($duration)))  {
+			// Radio läuft
+			if ($posinfo["UpnpClass"] === "object.item")  {
 				$sonos->SetVolume($volume);
 				nextradio();
+				LOGDEB("sonos.php Nextpush has been executed. Radio Station was running");
+			}
+			// TV läuft
+			if (substr($posinfo["TrackURI"], 0, 18) === "x-sonos-htastream:")  {
+				$sonos->SetVolume($volume);
+				nextradio();
+				LOGDEB("sonos.php Nextpush has been executed. TV was running");
 			}
 			// Playliste läuft
-			if ((!empty($state)) and (!empty($duration)))  {
+			if ((!empty($posinfo['TrackURI'])) and (!empty($posinfo['TrackDuration'])))  {
 				$sonos->SetVolume($volume);
+				LOGDEB("sonos.php Nextpush has been executed. Playlist was running");
 				next_dynamic();
 			}
 			

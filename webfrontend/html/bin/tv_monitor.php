@@ -1,4 +1,5 @@
 #!/usr/bin/env php
+
 <?php
 
 /**
@@ -13,22 +14,18 @@ include($lbphtmldir."/Grouping.php");
 include($lbphtmldir."/Speaker.php");
 include($lbphtmldir."/Helper.php");
 
-$configfile			= "s4lox_config.json";							// configuration file
-$TV_safe_file		= "s4lox_TV_save";								// saved Values of all SB's
-$status_file		= "s4lox_TV_on";								// TV is running
-$mask 				= 's4lox_TV*.*';								// mask for delition
-$folfilePlOn 		= "$lbpdatadir/PlayerStatus/s4lox_on_";			// Folder and file name for Player Status
+$configfile			= "s4lox_config.json";								// configuration file
+$TV_safe_file		= "s4lox_TV_save";									// saved Values of all SB's
+$status_file		= "s4lox_TV_on";									// TV is running
+$mask 				= 's4lox_TV*.*';									// mask for deletion
+$folfilePlOn 		= "$lbpdatadir/PlayerStatus/s4lox_on_";				// Folder and file name for Player Status
+$statusNight 		= "$lbpdatadir/PlayerStatus/s4lox_TV_night_on_";	// Folder and file name for Night Modus
+
 $Stunden 			= intval(strftime("%H"));
 
 $time_start = microtime(true);
 
 echo "<PRE>";
-
-/*******
-
-Tests: 	
-
-*******/
 
 	# Preparation
 	
@@ -46,73 +43,108 @@ Tests:
 		echo "The configuration file could not be loaded, the file may be disrupted. We have to abort :-(')".PHP_EOL;
 		exit;
 	}
+	#print_r($config);
+	
 	# extract Players
 	$sonoszone = ($config['sonoszonen']);
-	
-	if ($Stunden >= $config['VARIOUS']['starttime'] && $Stunden < $config['VARIOUS']['endtime'])   { 	
-	
-		# Extract predefined soundbars only (marked with SB and Volume > 0)
-		$soundbars = array_filter($sonoszone, fn($innerArr) => isset($innerArr[11]) && $innerArr[12] > 0);
-
-		# ... and then check for their Online Status
-		$zonesonline = array();	
-		foreach($soundbars as $zonen => $ip) {
-			$handle = is_file($folfilePlOn."".$zonen.".txt");
-			if($handle == true) {
-				$zonesonline[$zonen] = $ip;
-			}
-		}
-		$soundbars = $zonesonline;
+	if ($Stunden >= $config['VARIOUS']['starttime'] && $Stunden <= $config['VARIOUS']['endtime'])   { 	
+		# identify Soundbars
+		$soundbars = identSB();
 		#print_r($soundbars);
-		
-		# ERROR handling if no Soundbar is Online
-		if (empty($soundbars))    {
-			echo "No Soundbar has been detected or the 'TV Vol' is missing or Soundbar is offline, we skip here...".PHP_EOL;
-			startLog();
-			LOGWARN("bin/tv_monitor.php: No Soundbar has been detected or the 'TV Vol' is missing or Soundbar is offline, we skip here...");
-			exit(1);
-		}
-				
-		# End Preparation
 		
 		# Start script
 		
 		foreach($soundbars as $key => $value)   {
-			$sonos = new SonosAccess($soundbars[$key][0]); //Sonos IP Adresse
-			$tvmodi = $sonos->GetZoneInfo();
-			$posinfo = $sonos->GetPositionInfo();
-			$master = $key;
-			if ($tvmodi['HTAudioIn'] == 0)  {				// Zeitbegrenzung einbauen
-				echo "Soundbar TV Mode has been turned off".PHP_EOL;
-				# TV has been turned off
-				if (file_exists("/run/shm/".$TV_safe_file."_".$key.".json"))   {
-					$actual = json_decode(file_get_contents("/run/shm/".$TV_safe_file."_".$key.".json"), true);
-					startLog();
-					restoreSingleZone();
-					LOGDEB("bin/tv_monitor.php: Soundbar TV Mode has been turned off and previous settings has been restored.");
-				}
-				DelFiles();
-				# TV is On and input at SPDIF
-			} elseif ($tvmodi['HTAudioIn'] > 21 or (substr($posinfo["TrackURI"], 0, 17) == "x-sonos-htastream"))  {
-				if (!file_exists("/run/shm/".$status_file."_".$key.".tmp"))   {
-					startLog();
-					$sonos->SetAVTransportURI("x-sonos-htastream:".$soundbars[$key][1].":spdif");
-					$sonos->SetVolume($soundbars[$key][12]);
-					echo "Volume has been set to: ".$soundbars[$key][12]."".PHP_EOL;
-					echo "Soundbar ON and in TV Mode".PHP_EOL;
-					file_put_contents("/run/shm/".$status_file."_".$key.".tmp", "On");
-					LOGDEB("bin/tv_monitor.php: Soundbar is ON and in TV Mode.");
+			try {
+				$sonos = new SonosAccess($soundbars[$key][0]); //Sonos IP Adresse
+				$tvmodi = $sonos->GetZoneInfo();
+				$posinfo = $sonos->GetPositionInfo();
+				$state = $sonos->GetTransportInfo();
+				$master = $key;
+				#echo $tvmodi['HTAudioIn'];
+				if ($tvmodi['HTAudioIn'] == 0)  {				// Zeitbegrenzung einbauen
+					echo "Soundbar TV Mode has been turned off".PHP_EOL;
+					# TV has been turned off
+					if (file_exists("/run/shm/".$TV_safe_file."_".$key.".json"))   {
+						$actual = json_decode(file_get_contents("/run/shm/".$TV_safe_file."_".$key.".json"), true);
+						# Turn Night Mode Off
+						$sonos->SetDialogLevel('0', 'NightMode');
+						startLog();
+						restoreSingleZone();
+						LOGDEB("bin/tv_monitor.php: Soundbar TV Mode has been turned off and previous settings has been restored.");
+					}
+					$sonos->SetDialogLevel('0', 'NightMode');
+					DelFiles($mask);
+					# TV is On and input signal at SPDIF
+				} elseif ($tvmodi['HTAudioIn'] > 21 or (substr($posinfo["TrackURI"], 0, 17) == "x-sonos-htastream"))  {
+					if (!file_exists("/run/shm/".$status_file."_".$key.".tmp"))   {
+						startLog();
+						$sonos->SetAVTransportURI("x-sonos-htastream:".$soundbars[$key][1].":spdif");
+						$sonos->SetVolume($soundbars[$key][12]);
+						try {
+							# Turn Speech/Surround Mode On and Mute Off
+							$sonos->SetDialogLevel($config['VARIOUS']['tvmonspeech'], 'DialogLevel');
+							$sonos->SetDialogLevel($config['VARIOUS']['tvmonsurr'], 'SurroundEnable');
+							@$sonos->SetMute(false);
+							if ($Stunden >= $config['VARIOUS']['fromtime'] and $config['VARIOUS']['tvmonnight'] == '1')   { 
+							#if ($Stunden >= 12  and $config['VARIOUS']['tvmonnight'] == '1')   { 
+								# Turn Night Mode On/Off						
+								$sonos->SetDialogLevel($config['VARIOUS']['tvmonnight'], 'NightMode');
+							}
+						} catch (Exception $e) {
+							echo "Speech/Surround/Night Mode could'nt been turned On for: ".$soundbars[$key][12]."".PHP_EOL;
+							LOGDEB("bin/tv_monitor.php: Speech/Surround/Night Mode could'nt been turned On for: ".$soundbars[$key][12]);
+						}
+						echo "Volume has been set to: ".$soundbars[$key][12]."".PHP_EOL;
+						echo "Soundbar ON and in TV Mode".PHP_EOL;
+						file_put_contents("/run/shm/".$status_file."_".$key.".tmp", "On");
+						LOGDEB("bin/tv_monitor.php: Soundbar is ON and in TV Mode.");
+					} else {
+						if ($Stunden >= $config['VARIOUS']['fromtime'] and $config['VARIOUS']['tvmonnight'] == '1')   { 
+						#if ($Stunden >= 12  and $config['VARIOUS']['tvmonnight'] == '1')   { 
+							if (!file_exists("/run/shm/".$statusNight."_".$key.".json"))   {
+								# Turn Night Mode On						
+								$sonos->SetDialogLevel($config['VARIOUS']['tvmonnight'], 'NightMode');
+								file_put_contents("/run/shm/".$statusNight."_".$key.".json",json_encode(1, JSON_PRETTY_PRINT));
+							}
+						}
+						echo "Soundbar ON and in TV Mode, Volume has been set previously".PHP_EOL;
+					}
+					# Music is loaded/playing
 				} else {
-					echo "Soundbar ON and in TV Mode, Volume has been set previously".PHP_EOL;
+					echo "Music is loaded".PHP_EOL;
+					if ($state == 1)   {
+						$actual = PrepSaveZonesStati();
+						file_put_contents("/run/shm/".$TV_safe_file."_".$key.".json",json_encode($actual, JSON_PRETTY_PRINT) );
+						echo "...and streaming".PHP_EOL;
+					}
 				}
-				# Music is loaded/playing
-			} else {
-				echo "Music is loaded/streaming".PHP_EOL;
-				$actual = PrepSaveZonesStati();
-				file_put_contents("/run/shm/".$TV_safe_file."_".$key.".json",json_encode($actual, JSON_PRETTY_PRINT) );
+			} catch (Exception $e) {
+				echo "No Soundbar has responded or the 'TV Vol' is missing or Soundbar is offline, we skip here...".PHP_EOL;
+				#startLog();
+				#LOGWARN("bin/tv_monitor.php: No Soundbar has been detected or the 'TV Vol' is missing or Soundbar is offline, we skip here...");
 			}
 		}
-		# identify results of TV Modus
+	# turn nightmode off
+	} elseif ($Stunden == 5)    {
+		$soundbars = identSB();
+		foreach($soundbars as $key => $value)   {
+			$sonos = new SonosAccess($soundbars[$key][0]); //Sonos IP Adresse
+			$sonos->SetAVTransportURI("x-sonos-htastream:".$soundbars[$key][1].":spdif");
+			$sonos->SetDialogLevel('0', 'NightMode');
+			$sonos->SetQueue("x-rincon-queue:".$soundbars[$key][1]."#0");
+		}
+		echo "Nightmode has been turned off.".PHP_EOL;	
+	} else {
+		# action outside hours
+		echo "Outside hours, files has been deleted.".PHP_EOL;
+		DelFiles($mask);
+	}
+	$time_end = microtime(true);
+	$process_time = $time_end - $time_start;
+	echo "Processing request tooks about ".round($process_time, 2)." seconds.".PHP_EOL;		
+	
+	# TV Modus values
 		
 		/*******
 		values depend on what input is running (tested with BEAM Gen 2 and Samsung TV Frame)
@@ -127,13 +159,7 @@ Tests:
 		Master 			= 21
 		*******/
 		
-		$time_end = microtime(true);
-		$process_time = $time_end - $time_start;
-		echo "Processing request tooks about ".round($process_time, 2)." seconds.".PHP_EOL;
-	} else {
-		# action outside hours
-		DelFiles();
-	}
+		
 
 /**
 /* Function : startLog --> start logging
@@ -157,6 +183,31 @@ function startLog()    {
 	return;
 }
 
+/**
+/* Function : identSB --> identify Soundbars
+/*
+/* @param:  none
+/* @return: array
+**/
+
+function identSB()    {
+	
+	global $sonoszone, $folfilePlOn;
+	
+	# Extract predefined soundbars only (marked with SB and Volume > 0)
+	$soundbars = array_filter($sonoszone, fn($innerArr) => isset($innerArr[11]) && $innerArr[12] > 0);
+
+	# ... and then check for their Online Status
+	$zonesonline = array();	
+	foreach($soundbars as $zonen => $ip) {
+		$handle = is_file($folfilePlOn."".$zonen.".txt");
+		if($handle == true) {
+			$zonesonline[$zonen] = $ip;
+		}
+	}
+	$soundbars = $zonesonline;
+	return $soundbars;
+}
 
 /**
 /* Function : DelFiles --> delete tmp files
@@ -165,17 +216,17 @@ function startLog()    {
 /* @return: none
 **/
 
-function DelFiles()    {
+function DelFiles($mask)    {
 	
 	global $mask;
 	
-	@array_map('unlink', glob($mask));
+	array_map('unlink', glob("/run/shm/".$mask));
 }
 
 
 
 /**
-/* Function : PrepSaveZonesStati --> start Preparation for to save zone status
+/* Function : PrepSaveZonesStati --> start Preparation for save zones
 /*
 /* @param:  none
 /* @return: array saved details 
@@ -388,8 +439,8 @@ function restoreSingleZone() {
 /**
 * Function : restore_details() --> restore the details of each zone
 *
-* @param: 
-* @return: 
+* @param:  Player
+* @return: restore
 **/
 
 function restore_details($zone) {
@@ -398,12 +449,10 @@ function restore_details($zone) {
 	# Playlist/Track
 	$sonos = new SonosAccess($sonoszone[$zone][0]); 
 	if ($actual[$zone]['Type'] == "Track")   {	
-		#echo "TRACK for ".$zone."<br>";		
 		if ($actual[$zone]['PositionInfo']['Track'] != "0")    {
 			$sonos->SetQueue("x-rincon-queue:".$sonoszone[$zone][1]."#0");
 			$sonos->SetTrack($actual[$zone]['PositionInfo']['Track']);
 			$sonos->Seek("REL_TIME", $actual[$zone]['PositionInfo']['RelTime']);
-			//RestoreShuffle($zone);
 			LOGDEB("bin/tv_monitor.php: Source 'Track' has been set for '".$zone."'");
 		}
 	} 

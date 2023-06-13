@@ -408,5 +408,6 @@
 			[BUGFIX] UDP Port Validierung korrigiert
  5.3.3		[BUGFIX] Inbound Error korrigiert (UDP Port Validierung)
 			[BUGFIX] updateplayer beim neustart korrigiert
-			[IMPORVEMENT] Neue Funktion 'TV Monitor' hinzugefügt (siehe Wiki)
+			[IMPORVEMENT] Neue Funktion 'TV Monitoring' hinzugefügt (siehe Wiki)
+ 5.3.4		[BUGFIX] nextpush gefixt
  
