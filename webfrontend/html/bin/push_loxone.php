@@ -302,13 +302,15 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 					$cover = $tempradio["albumArtURI"];						// Cover URL
 				}
 				// TV 
-				if (substr($temp["TrackURI"], 0, 17) == "x-sonos-htastream")     {	
+				if (substr($temp["TrackURI"], 0, 17) == "x-sonos-htastream")     {
+					$tvmodi = $sonos->GetZoneInfo();
 					$value = "TV";
 					$valuesplit[0] = "TV";
 					$valuesplit[1] = "TV";
 					$station = ' ';
 					$cover = ' ';
 					$source = 3;
+					$tvstate = $tvmodi['HTAudioIn'];
 				} 
 				// Playliste 
 				if (substr($temp["TrackURI"], 0, 17) != "x-sonos-htastream" && substr($tempradio['UpnpClass'] ,0 ,36) != "object.item.audioItem.audioBroadcast") {						
@@ -339,6 +341,7 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 					$data['source_'.$zone] = $source;
 					if ($value == "TV")  {
 						$sid = "TV";
+						$data['tvstate_'.$zone] = $tvstate;
 					}
 					$data['sid_'.$zone] = $sid;
 					$data['cover_'.$zone] = $cover;
@@ -350,6 +353,7 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 						$mqtt->publish('Sonos4lox/source/'.$zone, $data['source_'.$zone], 0, 1);
 						$mqtt->publish('Sonos4lox/sid/'.$zone, $data['sid_'.$zone], 0, 1);
 						$mqtt->publish('Sonos4lox/cover/'.$zone, $data['cover_'.$zone], 0, 1);
+						$mqtt->publish('Sonos4lox/tvstate/'.$zone, $data['tvstate_'.$zone], 0, 1);
 					}
 				} catch (Exception $e) {
 					LOGERR("The connection to Loxone could not be initiated!");	
@@ -363,6 +367,7 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 				$sid = ' ';
 				$cover = ' ';
 				$source = 0;
+				$tvstate = ' ';
 				$data['titint_'.$zone] = $valueurl;
 				$data['tit_'.$zone] = $valuesplit[0];
 				$data['int_'.$zone] = $valuesplit[1];
@@ -370,6 +375,9 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 				$data['source_'.$zone] = $source;
 				$data['sid_'.$zone] = $sid;
 				$data['cover_'.$zone] = $cover;
+				if ($value == "TV")  {
+					$data['tvstate_'.$zone] = $tvstate;
+				}
 				if ($mqttstat == "1")   {
 					$mqtt->publish('Sonos4lox/titint/'.$zone, $data['titint_'.$zone], 0, 1);
 					$mqtt->publish('Sonos4lox/tit/'.$zone, $data['tit_'.$zone], 0, 1);
@@ -378,6 +386,7 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 					$mqtt->publish('Sonos4lox/source/'.$zone, $data['source_'.$zone], 0, 1);
 					$mqtt->publish('Sonos4lox/sid/'.$zone, $data['sid_'.$zone], 0, 1);
 					$mqtt->publish('Sonos4lox/cover/'.$zone, $data['cover_'.$zone], 0, 1);
+					$mqtt->publish('Sonos4lox/tvstate/'.$zone, $data['tvstate_'.$zone], 0, 1);
 				}
 			}
 		}

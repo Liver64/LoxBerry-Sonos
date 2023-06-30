@@ -15,6 +15,7 @@ require_once("$lbphtmldir/Speaker.php");
 require_once("$lbphtmldir/voice_engines/GoogleCloud.php");
 require_once("$lbphtmldir/system/bin/openssl_file.class.php");
 require_once("$lbphtmldir/bin/binlog.php");
+require_once("$lbphtmldir/bin/phpmqtt/phpMQTT.php");
 
 $pathlanguagefile 	= "$lbphtmldir/voice_engines/langfiles";		// get languagefiles
 $configfile			= "s4lox_config.json";							// configuration file
@@ -117,11 +118,14 @@ if ($Stunden >=8 && $Stunden <22)   {
 				$url = "http://".$ip.":1400/status/batterystatus";
 				$xml = simpleXML_load_file($url);
 				$batlevel = $xml->LocalBatteryStatus->Data[1];
+				$batlevel = $batlevel[0];
+				sendbatt($batlevel);
 				$temperature = $xml->LocalBatteryStatus->Data[2];
 				$health = $xml->LocalBatteryStatus->Data[0];
 				$PowerSource = $xml->LocalBatteryStatus->Data[3];
-				# check only if MOVE or ROAM is not charging and battery level is less then 30%
-				if ($PowerSource == "BATTERY" && $batlevel <= 10)  {
+				$PowerSource = $PowerSource[0];
+				# check only if MOVE or ROAM is currently not charging and battery level is less then 20%
+				if ($PowerSource == "BATTERY" && $batlevel <= 20)  {
 					LOGWARN('system/battery.php: The battery level of "'.$zone.'" is about '.$batlevel.'%. Please charge your device!');
 					#binlog("Battery check", "system/battery.php:: The battery level of '".$zone."' is about ".$batlevel."%. Please charge your device!");
 					foreach ($mainpl as $main)   {
@@ -184,6 +188,57 @@ function select_lang() {
 	$errortext = $my_msg;
 	return $errortext;
 }
+
+/**
+* Funktion : 	sendbatt --> sendet Batteriestatus an MS.
+*
+* @param: Batterylevel
+* @return: 
+**/
+
+function sendbatt($batlevel) {
+	
+	global $config, $batlevel, $zone;
+	
+	// check if Data transmission is switched off
+	if(!is_enabled($config['LOXONE']['LoxDaten'])) {
+		exit;
+	}
+	
+	$server_port = $config['LOXONE']['LoxPort'];
+	$no_ms = $config['LOXONE']['Loxone'];
+	$mem_sendall = 0;
+	$mem_sendall_sec = 3600;
+	
+	# get MS
+	$ms = LBSystem::get_miniservers();
+	
+	if(is_enabled($config['LOXONE']['LoxDatenMQTT'])) {
+		// Get the MQTT Gateway connection details from LoxBerry
+		$creds = mqtt_connectiondetails();
+		// MQTT requires a unique client id
+		$client_id = uniqid(gethostname()."_client");
+		$mqtt = new Bluerhinos\phpMQTT($creds['brokerhost'],  $creds['brokerport'], $client_id);
+		$mqtt->connect(true, NULL, $creds['brokeruser'], $creds['brokerpass']);
+		$mqttstat = "1";
+	} else {
+		$mqttstat = "0";
+	}
+	// obtain selected Miniserver from config
+	$my_ms = $ms[$config['LOXONE']['Loxone']];
+	
+	$tmp_array["battery_".$zone] = $batlevel;
+	#print_r($batlevel);
+	if ($mqttstat == "1")   {
+		$mqtt->publish('Sonos4lox/battery/'.$zone, $batlevel, 0, 1);
+	}
+	if ($mqttstat == "0")   {
+		$response = udp_send_mem($no_ms, $server_port, "Sonos4lox", $tmp_array);
+	}
+	return;
+}
+
+
 
 function shutdown()
 {

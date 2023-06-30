@@ -49,7 +49,7 @@
                         <label id="lzonen"><TMPL_VAR ZONES.SONOS_ZONE_LABEL></label>
                     </td>
                     <td valign="middle" style="height: 41px; width: 50%;">
-                        <table width="100%" cellpadding="2" cellspacing="0" border="1px" border="1" id="tblzonen">
+                        <table width="100%" cellpadding="2" cellspacing="0" border="1px" border="1" id="tblzonen" name="tblzonen">
                             <tr>
                                 <th style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 35px">
                                     <img class='ico_delete' src='/plugins/<TMPL_VAR PLUGINDIR>/images/recycle-bin.png' border='0' width='24' height='24'>
@@ -1624,6 +1624,29 @@
 				downloadFile(filename);
 			}
 		}
+		
+		// click function to play a Test T2S on clicked Player (Room) in GUI
+		$(function(){
+			$("#tblzonen").on("click", function(event){
+			   var zonetest = event.target.value
+			   let response;
+			   $.ajax({
+					url: '/plugins/<TMPL_VAR PLUGINDIR>/bin/player_on_test.php',
+					type: 'post',
+					data: { "room": zonetest},
+					success: function(response) {}
+				}).done(function(response) {
+					if(response == true){
+						$.post('/plugins/<TMPL_VAR PLUGINDIR>/index.php/?zone=' + zonetest + '&action=say&text=<TMPL_VAR ZONES.SONOS_TEST_PLAYER> ' + zonetest + '&volume=25&playgong=yes');
+						console.log("valid data received");
+					} else {
+						console.log("no data received");
+					}
+				});
+			});
+		});
+			
+			
 		
 		// check if Soundbar(s) are used
 		function validateSB()   {
