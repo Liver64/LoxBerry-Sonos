@@ -416,4 +416,5 @@
 			[IMPORVEMENT] Alle Player (Raum) die Online sind werden farblich (grün) hinterlegt
 			[IMPORVEMENT] Sonos RAY (S36) als Soundbar hinzugefügt
 			[BUGFIX] T2S nach Update auf v5.3.4 nicht verfügbar gefixt
- 
+ 5.3.8		[BUGFIX] TV Monitor optimiert
+			[BUGFIX] kleinere Optimierungen/Fehlerbehebung

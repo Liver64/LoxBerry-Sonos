@@ -584,6 +584,7 @@ sub save_details
 	$pcfg->param("VARIOUS.CALDav2", "\"$R::cal\"");
 	$pcfg->param("VARIOUS.cron", "$R::cron");
 	$pcfg->param("VARIOUS.selfunction", "$R::func_list");
+	$pcfg->param("SYSTEM.checkt2s", "$R::checkt2s");
 		
 	# save all radiostations
 	for ($i = 1; $i <= $countradios; $i++) {
@@ -704,7 +705,6 @@ sub save
 	$pcfg->param("LOCATION.googlekey", "$R::googlekey");
 	$pcfg->param("LOCATION.googletown", "$R::googletown");
 	$pcfg->param("LOCATION.googlestreet", "$R::googlestreet");
-	$pcfg->param("SYSTEM.checkt2s", "$R::checkt2s");
 	$pcfg->param("VARIOUS.donate", "$R::donate");
 	$pcfg->param("LOCATION.town", "\"$R::town\"");
 	$pcfg->param("VARIOUS.CALDavMuell", "\"$R::wastecal\"");
