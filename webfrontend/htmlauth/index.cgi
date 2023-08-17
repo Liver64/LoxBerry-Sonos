@@ -854,8 +854,8 @@ sub scan
 			$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='$config->{$key}->[4]'' /> </td>\n";
 			$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$config->{$key}->[5]'' /> </td>\n";
 			if ($config->{$key}->[11])   {
-				$rowssonosplayer .= "<input type='hidden' id='sb$countplayers' size='100' name='sb$countplayers' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' value='$config->{$key}->[11]'>\n";
-				$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='tvvol$countplayers' size='100' name='tvvol$countplayers' value='$config->{$key}->[12]'' /> </td> </tr>\n";
+				$rowssonosplayer .= "<input type='hidden' id='sb$countplayers' size='100' name='sb$countplayers' value='$config->{$key}->[11]'>\n";
+				$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='tvvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='tvvol$countplayers' value='$config->{$key}->[12]'' /> </td> </tr>\n";
 			}
 			$rowssonosplayer .= "<input type='hidden' id='models$countplayers' name='models$countplayers' value='$config->{$key}->[7]'>\n";
 			$rowssonosplayer .= "<input type='hidden' id='groupId$countplayers' name='groupId$countplayers' value='$config->{$key}->[8]'>\n";
