@@ -5,7 +5,7 @@ function udp_send_mem($msnr, $udpport, $prefix, $params)
 	global $mem_sendall_sec;
 	global $mem_sendall;
 	
-	$memfile = "/run/shm/msudp_mem_${msnr}_${udpport}.json";
+	$memfile = "/run/shm/msudp_mem_{$msnr}_{$udpport}.json";
 	
 	if(empty($udpport) || $udpport > 65535) {
 		LOGERR("UDP port $udpport invalid or not defined");
@@ -247,7 +247,7 @@ function ms_send_mem($msnr, $params, $value = null)
 	global $mem_sendall_sec;
 	global $mem_sendall;
 	
-	$memfile = "/run/shm/mshttp_mem_${msnr}.json";
+	$memfile = "/run/shm/mshttp_mem_{$msnr}.json";
 	
 	if(file_exists($memfile)) {
 		// echo "Read file\n";

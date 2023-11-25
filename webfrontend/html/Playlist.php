@@ -394,7 +394,7 @@ function next_dynamic() {
 	$titelgesammt = $sonos->GetPositionInfo();
 	$titelaktuel = $titelgesammt["Track"];
 	$playlistgesammt = count($sonos->GetCurrentPlaylist());
-	$sonos->SetPlayMode('NORMAL');
+	$sonos->SetPlayMode('0'); // NORMAL
 	$sonos->SetMute(false);
 	if (($titelaktuel < $playlistgesammt) or (substr($titelgesammt["TrackURI"], 0, 9) == "x-rincon:")) {
 		checkifmaster($master);

@@ -379,7 +379,7 @@ function play_tts($filename) {
 			}
 		}
 		$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
-		$sonos->SetPlayMode('NORMAL');
+		$sonos->SetPlayMode('0'); // NORMAL
 		LOGGING("play_t2s.php: Playmode has been set to NORMAL", 7);		
 		$sonos->SetTrack($message_pos);
 		LOGGING("play_t2s.php: Message has been set to Position '".$message_pos."' in current Queue", 7);		
@@ -657,7 +657,7 @@ function sendgroupmessage() {
 			}
 			#sleep($config['TTS']['sleepgroupmessage']); // warten gemäß config.php bis Gruppierung abgeschlossen ist
 			$sonos = new SonosAccess($coord[0]);
-			$sonos->SetPlayMode('NORMAL'); 
+			$sonos->SetPlayMode('0'); // NORMAL 
 			$sonos->SetQueue("x-rincon-queue:". $coord[1] ."#0");
 			if (!isset($_GET['sonos']))  {
 				$sonos->Stop();

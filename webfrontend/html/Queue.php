@@ -225,7 +225,7 @@ function PlayFavorite()
 	$sonos->Stop();
 	$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
 	@$sonos->SetGroupMute(false);
-	$sonos->SetPlayMode('NORMAL');
+	$sonos->SetPlayMode('0'); // NORMAL
 	$sonos->SetVolume($volume);
 	$sonos->ClearQueue();
 	LOGINF("queue.php: Settings to play your favorite has been prepared!");
@@ -387,7 +387,7 @@ if (count($sonos->GetFavorites()) < 1)    {
 		$sonos->Stop();
 		$sonos->ClearQueue();
 		@$sonos->SetGroupMute(false);
-		$sonos->SetPlayMode('NORMAL');
+		$sonos->SetPlayMode('0'); // NORMAL
 		$sonos->SetVolume($volume);
 		LOGINF("queue.php: Settings to play your favorite has been prepared!");
 		$shift = false;
@@ -517,7 +517,7 @@ function PlayTrackFavorites()
 	$sonos->Stop();
 	$sonos->ClearQueue();
 	#@$sonos->SetGroupMute(false);
-	$sonos->SetPlayMode('NORMAL');
+	$sonos->SetPlayMode('0'); // NORMAL
 	$sonos->SetVolume($volume);
 	LOGINF("queue.php: Settings to play your favorite has been prepared!");
 	$shift = false;

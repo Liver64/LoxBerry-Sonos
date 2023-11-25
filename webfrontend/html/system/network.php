@@ -52,7 +52,7 @@
 	$data .= "MX: 1\r\n";
 	$data .= "ST: urn:schemas-upnp-org:device:ZonePlayer:1\r\n";
 
-	socket_sendto($sock, $data, strlen($data), null, $ip, $port);
+	socket_sendto($sock, $data, strlen($data), 0, $ip, $port);
 	
 	# All passed by ref
 	$read = [$sock];
@@ -64,7 +64,7 @@
 	
     $response = "";
     while (socket_select($read, $write, $except, 1)) {
-        socket_recvfrom($sock, $tmp, 2048, null, $name, $port);
+        socket_recvfrom($sock, $tmp, 2048, 0, $name, $port);
         $response .= $tmp;
     }
     $devices = [];
@@ -281,7 +281,7 @@ function broadcast_scan($devices) {
 	$data .= "MX: 1\r\n";
 	$data .= "ST: urn:schemas-upnp-org:device:ZonePlayer:1\r\n";
 
-	socket_sendto($sock, $data, strlen($data), null, $broadcastip, $port);
+	socket_sendto($sock, $data, strlen($data), 0, $broadcastip, $port);
 	
 	# All passed by ref
 	$read = [$sock];
@@ -292,7 +292,7 @@ function broadcast_scan($devices) {
     $tmp = "";
     $response = "";
     while (socket_select($read, $write, $except, 1)) {
-        socket_recvfrom($sock, $tmp, 2048, null, $name, $port);
+        socket_recvfrom($sock, $tmp, 2048, 0, $name, $port);
         $response .= $tmp;
     }
     $devices = [];
