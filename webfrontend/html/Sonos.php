@@ -174,7 +174,7 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 
 	# check if any Favorite function has been executed, if not delete files
 	if (($_GET['action'] == "playallfavorites") || ($_GET['action'] == "playtrackfavorites") || ($_GET['action'] == "playtuneinfavorites")
-		|| ($_GET['action'] == "playradiofavorites") || ($_GET['action'] == "playsonosplaylist") || ($_GET['action'] == "say") || ($_GET['action'] == "playfavorite")
+		|| ($_GET['action'] == "playradiofavorites") || ($_GET['action'] == "playsonosplaylist")|| ($_GET['action'] == "audioclip") || ($_GET['action'] == "say") || ($_GET['action'] == "playfavorite")
 		|| ($_GET['action'] == "play") || ($_GET['action'] == "stop") || ($_GET['action'] == "toggle") || ($_GET['action'] == "playplfavorites")
 		|| ($_GET['action'] == "next") || ($_GET['action'] == "previous") || ($_GET['action'] == "volume") || ($_GET['action'] == "pause") || ($_GET['action'] == "zapzone")
 		|| (isset($_GET['volume']) === true) || ($_GET['action'] == "sendmessage") || ($_GET['action'] == "sonosplaylist") || ($_GET['action'] == "sendgroupmessage")
@@ -881,6 +881,11 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			} else {
 				LOGGING("sonos.php: Same text has been announced within the last ".$min_sec." seconds. We skip this anouncement", 5); 
 			}
+		break;
+
+		case 'audioclip':
+			LOGDEB("sonos.php: audioclip called");
+			playAudioclip();
 		break;
 		
 				

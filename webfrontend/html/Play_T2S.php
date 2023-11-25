@@ -5,6 +5,102 @@
 *
 **/
 
+function guidv4($data = null) {
+    // Generate 16 bytes (128 bits) of random data or use the data passed into the function.
+    $data = $data ?? random_bytes(16);
+    assert(strlen($data) == 16);
+
+    // Set version to 0100
+    $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
+    // Set bits 6-7 to 10
+    $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
+
+    // Output the 36 character UUID.
+    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+}
+
+/**
+* Funktion : audioclip_post_request --> POST to https url of player
+*
+* @param: 	$text, $greet
+* @return: JSON
+**/	
+  
+function audioclip_post_request($ip, $rincon) {
+	
+	global $volume;
+
+	// API Url
+	$url = 'https://'.$ip.':1443/api/v1/players/'.$rincon.'/audioClip';
+	
+	// Initiate cURL.
+	$ch = curl_init($url);
+	 
+	// populate JSON data.
+	$jsonData = array(
+		'name' => "randomName",
+		'appId' => 'de.loxberry.sonos',
+		'clipType' => 'CHIME',
+		'volume' => $volume
+	);
+		 
+	// Encode the array into JSON.
+	$jsonDataEncoded = json_encode($jsonData);
+		 
+	// Tell cURL that we want to send a POST request.
+	curl_setopt($ch, CURLOPT_POST, 1);
+	 
+	// Attach our encoded JSON string to the POST fields.
+	curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonDataEncoded);
+	 
+	// Set the content type to application/json
+	$headers = [
+		'Content-Type: application/json',
+		'X-Sonos-Api-Key: '.guidv4(),
+	];
+	curl_setopt($ch, CURLOPT_HTTPHEADER, $headers); 
+
+	// Accept peer SSL (HTTPS) certificate
+	curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
+	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+	
+	// Request response from Call
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		 
+	// Execute the request
+	$result = curl_exec($ch);
+	
+	// was the request successful?
+	if($result === false)  {
+		LOGGING("Play_T2S.php: audioclip_post_request error: ".curl_error($ch), 7);
+	} else {
+		LOGGING("Play_T2S.php: audioclip_post_request okay!", 7);
+	}
+	// close cURL
+	curl_close($ch);
+	return $result;
+}
+
+
+/**
+* New Function for gong: audioclip
+*
+* @param: empty
+* @return: nothing
+**/
+
+function playAudioclip() {
+	global $sonoszone;
+			
+	if(isset($_GET['zone'])) {
+		LOGDEB("ZONE".$sonoszone[$_GET['zone']][0]);
+		$player = $sonoszone[$_GET['zone']];
+		audioclip_post_request($player[0], $player[1], 20);
+	} else {
+		// sendgroupmessage();
+	}	
+}
+
 /**
 * New Function for T2S: say --> replacement/enhancement for sendmessage/sendgroupmessage
 *
