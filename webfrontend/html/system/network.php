@@ -181,8 +181,9 @@
 		$info = json_decode(file_get_contents('http://' . $zoneip . ':1400/info'), true);
 		$model = $info['device']['model'];
 		$roomraw = $info['device']['name'];
-		$device = $info['device']['modelDisplayName'];		
-		$rinconid = $info['device']['id'];	
+		$device = $info['device']['modelDisplayName'];
+		$capabilities = $info['device']['capabilities'];
+		$rinconid = $info['device']['id'];
 		$search = array('Ä','ä','Ö','ö','Ü','ü','ß');
 		$replace = array('Ae','ae','Oe','oe','Ue','ue','ss');
 		$room = strtolower(str_replace($search,$replace,$roomraw));
@@ -203,10 +204,26 @@
 						(string)$deviceId						
 						];
 		# Check if Soundbar has been detected
+		// Entry 11
 		if(isSoundbar($model) == true) {
 			array_push($zonen, "SB");
 			LOGINF("system/network.php: Player '".$room."' (".(string)strtoupper($device).") has been identified as Soundbar.");
+		} else {
+			array_push($zonen, "noSB");
 		}
+		// Entry 12
+		array_push($zonen, ""); // TV vol SB default empty
+
+		// Entry 13
+		$audioclip = in_array("AUDIO_CLIP", $capabilities);
+		array_push($zonen, $audioclip);
+		LOGINF("system/network.php: Player '".$room."' (".(string)strtoupper($device).") is".($audioclip ? "" : "not ")." AUDIO_CLIP capable");
+		
+		// Entry 14
+		$voice = in_array("VOICE", $capabilities);
+		array_push($zonen, $voice);
+		LOGINF("system/network.php: Player '".$room."' (".(string)strtoupper($device).") is".($audioclip ? "" : "not ")." VOICE capable");
+
 		$raum = array_shift($zonen);
 		$sonosplayerfinal[$raum] = $zonen;
 		# Get Player icons and Save them for UI

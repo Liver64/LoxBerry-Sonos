@@ -1577,7 +1577,10 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		
 		case 'updateplayer':
-			$output = shell_exec('php system/updateplayer.php');
+			echo 'php '.$lbphtmldir.'/bin/updateplayer.php';
+			$out = shell_exec('php '.$lbphtmldir.'/bin/updateplayer.php 2>&1; echo $?');
+			echo "<br>";
+			print_r($out);
 			LOGGING("sonos.php: Player configuration has been updated :-)", 7);
 		break;
 		

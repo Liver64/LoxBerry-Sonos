@@ -49,7 +49,7 @@
 	}
 	$port = 1400;
 	$timeout = 3;	
-	$res = "0";
+	$res = "1";
 	
 	foreach ($sonoszonen as $zone => $player) {
 		$ip = $sonoszonen[$zone][0];
@@ -74,20 +74,42 @@
 				$res = "0";
 				fwrite($h, $zone."[]=".$line."\n");
 			} else {
+				$info = json_decode(file_get_contents('http://' . $ip . ':1400/info'), true);
+				$capabilities = $info['device']['capabilities'];
+				$model = $info['device']['model'];
+				$isSoundbar = isSoundbar($model) == true;
+				$soundbarString = $isSoundbar ? "Soundbar - SB" : "no Soundbar - noSB";
+
 				if (!isset($sonoszonen[$zone][11]))  {
-					$info = json_decode(file_get_contents('http://' . $ip . ':1400/info'), true);
-					# Preparing variables to update config
-					$model = $info['device']['model'];
-					if(isSoundbar($model) == true) {
-						array_push($sonoszonen[$zone], "SB");	
-						$line = implode(',',$sonoszonen[$zone]);
-						echo "<INFO> Updated identified Zone ".$zone." as Soundbar - SB".PHP_EOL;
+					if($isSoundbar) {
+						array_push($sonoszonen[$zone], "SB");
+					} else {
+						array_push($sonoszonen[$zone], "noSB");
+					}
+					echo "<INFO> Updated identified Zone ".$zone." as ".$soundbarString.PHP_EOL;
+					$res = "0";
+					if (!isset($sonoszonen[$zone][12]))  {
+						array_push($sonoszonen[$zone], ""); // TV vol SB default
+						echo "<INFO> Updated identified Zone ".$zone." with empty TV vol".PHP_EOL;
 						$res = "0";
 					}
 				}
+
+				if (!isset($sonoszonen[$zone][13]))  {
+					$audioclip = in_array("AUDIO_CLIP", $capabilities);
+					array_push($sonoszonen[$zone], $audioclip);
+					echo "<INFO> Updated identified Zone ".$zone." as ".($audioclip ? "" : "not ")."AUDIO_CLIP capable".PHP_EOL;
+					$res = "0";
+				}
+				if (!isset($sonoszonen[$zone][14]))  {
+					$voice = in_array("VOICE", $capabilities);
+					array_push($sonoszonen[$zone], $voice);
+					echo "<INFO> Updated identified Zone ".$zone." as ".($voice ? "" : "not ")."VOICE capable".PHP_EOL;
+					$res = "0";
+				}
+
 				$line = implode(',',$sonoszonen[$zone]);
 				#echo "<OK> No update for Zone ".$zone." required.".PHP_EOL;
-				$res = "1";
 				fwrite($h, $zone."[]=".$line."\n");
 				fclose($h);
 			}
@@ -139,5 +161,3 @@
 
 
 ?>
-
-
