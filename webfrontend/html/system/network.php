@@ -203,7 +203,6 @@
 						(string)$householdId,
 						(string)$deviceId						
 						];
-
 		// Entry 11
 		$audioclip = in_array("AUDIO_CLIP", $capabilities);
 		array_push($zonen, $audioclip);
@@ -224,7 +223,26 @@
 		// Entry 14
 		#array_push($zonen, "15"); // TV vol SB default empty
 
+		# Check if Soundbar has been detected
+		// Entry 11
+		if(isSoundbar($model) == true) {
+			array_push($zonen, "SB");
+			LOGINF("system/network.php: Player '".$room."' (".(string)strtoupper($device).") has been identified as Soundbar.");
+		} else {
+			array_push($zonen, "noSB");
+		}
+		// Entry 12
+		array_push($zonen, ""); // TV vol SB default empty
 
+		// Entry 13
+		$audioclip = in_array("AUDIO_CLIP", $capabilities);
+		array_push($zonen, $audioclip);
+		LOGINF("system/network.php: Player '".$room."' (".(string)strtoupper($device).") is".($audioclip ? "" : "not ")." AUDIO_CLIP capable");
+		
+		// Entry 14
+		$voice = in_array("VOICE", $capabilities);
+		array_push($zonen, $voice);
+		LOGINF("system/network.php: Player '".$room."' (".(string)strtoupper($device).") is".($audioclip ? "" : "not ")." VOICE capable");
 
 		$raum = array_shift($zonen);
 		$sonosplayerfinal[$raum] = $zonen;
