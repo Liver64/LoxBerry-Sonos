@@ -888,14 +888,12 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 
 		case 'audioclip':
 			LOGDEB("sonos.php: audioclip called");
-
 			say();
 		break;
 		
 		case 'doorbell':
 			LOGDEB("sonos.php: Doorbell called");
 			doorbell(); 
-			playAudioclip();
 		break;
 		
 		case 'say':
@@ -1586,10 +1584,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		
 		case 'updateplayer':
-			echo 'php '.$lbphtmldir.'/bin/updateplayer.php';
-			$out = shell_exec('php '.$lbphtmldir.'/bin/updateplayer.php 2>&1; echo $?');
-			echo "<br>";
-			print_r($out);
+			$output = shell_exec('php system/updateplayer.php');
 			LOGGING("sonos.php: Player configuration has been updated :-)", 7);
 		break;
 		
