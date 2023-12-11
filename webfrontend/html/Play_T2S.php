@@ -57,7 +57,7 @@ function say() {
 
 function playAudioclip() {
 	
-	global $sonoszone, $messageid, $filename, $volume, $config, $sonos, $act_player, $playstat, $roomcord;
+	global $sonoszone, $messageid, $filename, $volume, $config, $sonos, $act_player, $playstat, $roomcord, $playg;
 	
 
 	# pre check for MP3 Stream
@@ -701,7 +701,7 @@ function sendmessage($errortext= '') {
 
 function sendaudioclip($errortext = "") {
 	
-	global $config, $volume, $filename, $messageid, $sonoszone, $sonos, $act_player, $playstat, $roomcord;
+	global $config, $volume, $filename, $messageid, $sonoszone, $sonos, $act_player, $playstat, $roomcord, $playg;
 			
 	$time_start = microtime(true);
 	if ((empty($config['TTS']['t2s_engine'])) or (empty($config['TTS']['messageLang'])))  {
