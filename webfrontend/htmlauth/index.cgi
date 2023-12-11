@@ -478,7 +478,7 @@ sub form
 		} else {
 			$rowssonosplayer .= "<td style='height: 28px; width: 2%;'><img src='/plugins/$lbpplugindir/images/sonos_logo_sm.png' border='0' width='50' height='50' align='middle'/></td>\n";
 		}
-		$rowssonosplayer .= "<td style='height: 28px; width: 15%;'><input type='text' id='ip$countplayers' name='ip$countplayers' size='30' value='$fields[0]' style='width: 100%; background-color: #e6e6e6;'></td>";
+		$rowssonosplayer .= "<td style='height: 28px; width: 17%;'><input type='text' id='ip$countplayers' name='ip$countplayers' size='30' value='$fields[0]' style='width: 100%; background-color: #e6e6e6;'></td>";
 		# Column Pic green/red
 		if (exists($fields[11]) and is_enabled($fields[11]))   {
 			if (exists($fields[12]) and is_enabled($fields[12]))   {
@@ -897,7 +897,7 @@ sub scan
 			} else {
 				$rowssonosplayer .= "<td style='height: 28px; width: 2%;'><img src='/plugins/$lbpplugindir/images/sonos_logo_sm.png' border='0' width='50' height='50' align='middle'/> </td>\n";
 			}
-			$rowssonosplayer .= "<td style='height: 28px; width: 15%;'><input type='text' id='ip$countplayers' name='ip$countplayers' size='30' value='$config->{$key}->[0]' style='width: 100%; background-color: #e6e6e6;' /> </td>\n";
+			$rowssonosplayer .= "<td style='height: 28px; width: 17%;'><input type='text' id='ip$countplayers' name='ip$countplayers' size='30' value='$config->{$key}->[0]' style='width: 100%; background-color: #e6e6e6;' /> </td>\n";
 			# Column Pic green/red
 			if ($config->{$key}->[11] and is_enabled($config->{$key}->[11]))   {
 				if ($config->{$key}->[12] and is_enabled($config->{$key}->[12]))   {
