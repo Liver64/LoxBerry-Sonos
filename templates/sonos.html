@@ -1662,6 +1662,7 @@
 		// check if Soundbar(s) are used
 		function validateSB()   {
 			var iteration = document.getElementById('countplayers').value;
+			var sbyes = "0";
 			iteration = parseInt(iteration)
 			iteration += 1;
 			for (i = 1; i < iteration; ++i) {
@@ -1675,13 +1676,13 @@
 			if (sbyes == "1")   {
 				$('.tvmonitorsecond').fadeIn(600);
 				$('.tvmonitorstat').fadeIn(600);
-				$('#tblzonen td:nth-child(10)').show();
+				$('#tblzonen td:nth-child(11)').show();
 				validateTVMonReady();
 				validateTVMonVol();
 			} else {
 				$('.tvmonitorsecond').fadeOut(600);
 				$('.tvmonitorstat').fadeOut(600);
-				$('#tblzonen td:nth-child(10)').hide();
+				$('#tblzonen td:nth-child(11)').hide();
 			}
 			$("#tvmon").flipswitch("refresh");
 		}
