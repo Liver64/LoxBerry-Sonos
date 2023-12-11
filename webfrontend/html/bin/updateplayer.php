@@ -7,7 +7,7 @@
 	$myConfigFolder = "$lbpconfigdir";								// get config folder
 	$myBinFolder = "$lbpbindir";									// get bin folder
 	$myConfigFile = "player.cfg";									// get config file
-	$off_file = $lbplogdir."/s4lox_off.tmp";					// path/file for Script turned off
+	$off_file = $lbplogdir."/s4lox_off.tmp";						// path/file for Script turned off
 
 	# check if script/Sonos Plugin is off
 	if (file_exists($off_file)) {
@@ -60,6 +60,7 @@
 			if (!isset($sonoszonen[$zone][6]))   {
 				array_push($sonoszonen[$zone], '');
 			}
+			$mig = false;
 			if (!isset($sonoszonen[$zone][7]))   {
 				$info = json_decode(file_get_contents('http://' . $ip . ':1400/info'), true);
 				# Preparing variables to update config
@@ -79,32 +80,49 @@
 				$model = $info['device']['model'];
 				$isSoundbar = isSoundbar($model) == true;
 				$soundbarString = $isSoundbar ? "is Soundbar" : "no Soundbar";
-				#print_r($info);
+				
+				if (array_key_exists(11, $sonoszonen[$zone]))  {
+					if ($sonoszonen[$zone][11] == "SB")  {
+						$mig = true;
+						echo "<INFO> Identified Zone ".$zone." as Soundbar to be migrated.".PHP_EOL;
+						$sbvol = $sonoszonen[$zone][12];
+						echo "<INFO> TV Monitor Volume '".$sbvol."' for Zone ".$zone." has been saved.".PHP_EOL;
+						unset($sonoszonen[$zone][11]);
+						unset($sonoszonen[$zone][12]);
+					}
+				}
+				array_values($sonoszonen);
+
 				if (!isset($sonoszonen[$zone][11]))  {
 					$audioclip = in_array("AUDIO_CLIP", $capabilities);
-					array_push($sonoszonen[$zone], $audioclip);
+					$sonoszonen[$zone][11] = $audioclip;
 					echo "<INFO> Updated identified Zone ".$zone." as ".($audioclip ? "" : "not ")."AUDIO_CLIP capable".PHP_EOL;
 					$res = "0";
 				}
 				if (!isset($sonoszonen[$zone][12]))  {
 					$voice = in_array("VOICE", $capabilities);
-					array_push($sonoszonen[$zone], $voice);
+					$sonoszonen[$zone][12] = $voice;
 					echo "<INFO> Updated identified Zone ".$zone." as ".($voice ? "" : "not ")."VOICE capable".PHP_EOL;
 					$res = "0";
 				}
 				if (!isset($sonoszonen[$zone][13]))  {
 					if($isSoundbar) {
 						array_push($sonoszonen[$zone], "SB");
+						echo "<INFO> Updated identified ".$zone." as ".$soundbarString.PHP_EOL;
 						if (!isset($sonoszonen[$zone][14]))  {
-							echo "<INFO> Updated identified Zone3 ".$zone." as ".$soundbarString.PHP_EOL;
-							array_push($sonoszonen[$zone], "15"); // TV vol SB default
-							echo "<INFO> Updated identified Soundbar Zone ".$zone." with default 15 for TV Vol".PHP_EOL;
-							$res = "0";
+							if ($mig == true)  {
+								array_push($sonoszonen[$zone], $sbvol); // TV vol migrated
+								echo "<INFO> Updated identified Soundbar Zone ".$zone." with previous value ".$sbvol." for TV Vol".PHP_EOL;
+							} else {
+								array_push($sonoszonen[$zone], "15"); // TV vol SB default
+								echo "<INFO> Updated identified Soundbar Zone ".$zone." with default 15 for TV Vol".PHP_EOL;
+							}
+							#$res = "0";
 						}
 					}
 					$res = "0";
 				}
-
+				
 				$line = implode(',',$sonoszonen[$zone]);
 				#echo "<OK> No update for Zone ".$zone." required.".PHP_EOL;
 				fwrite($h, $zone."[]=".$line."\n");
@@ -130,6 +148,7 @@
 		}
 		
 	}
+
 	if (!copy($myConfigFolder.'/player_template.cfg', $myConfigFolder.'/player.cfg')) {
 		echo "<ERROR> failed to copy player_template.cfg...".PHP_EOL;
 		#echo "<br>";;
@@ -154,7 +173,7 @@
 		break;
 	}
 	echo "<INFO> End of player update.";
-
+	#print_r($sonoszonen);
 
 
 ?>
