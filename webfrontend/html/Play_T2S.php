@@ -32,7 +32,7 @@ function say() {
 		}
 		if(isset($_GET['clip'])) {
 			LOGDEB("play_t2s.php: Single Notification been called");
-			Audioclipevent();
+			//Audioclipevent();
 			sendaudioclip();
 		} else {
 			LOGDEB("play_t2s.php: Single TTS been called");
@@ -59,7 +59,6 @@ function playAudioclip() {
 	
 	global $sonoszone, $messageid, $filename, $volume, $config, $sonos, $act_player, $playstat, $roomcord, $playg;
 	
-
 	# pre check for MP3 Stream
 	if (isset($_GET['messageid']))  {
 		$filenamecheck = $config['SYSTEM']['ttspath']."/mp3/".$messageid.".mp3";
@@ -514,7 +513,7 @@ function play_tts($filename) {
 			}
 		}
 		$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
-		$sonos->SetPlayMode('NORMAL');
+		$sonos->SetPlayMode('0');
 		LOGGING("play_t2s.php: Playmode has been set to NORMAL", 7);		
 		$sonos->SetTrack($message_pos);
 		LOGGING("play_t2s.php: Message has been set to Position '".$message_pos."' in current Queue", 7);		
@@ -702,7 +701,7 @@ function sendmessage($errortext= '') {
 function sendaudioclip($errortext = "") {
 	
 	global $config, $volume, $filename, $messageid, $sonoszone, $sonos, $act_player, $playstat, $roomcord, $playg;
-			
+	
 	$time_start = microtime(true);
 	if ((empty($config['TTS']['t2s_engine'])) or (empty($config['TTS']['messageLang'])))  {
 		LOGGING("play_t2s.php: Audioclip: There is no T2S engine/language selected in Plugin config. Please select before using any T2S functionality.", 3);
@@ -784,7 +783,7 @@ function doorbell() {
 	$prio = "HIGH";
 	$act_player = $sonoszone[$_GET['zone']];
 	
-	if ($_GET['file']) {
+	if (isset($_GET['file'])) {
 		$file = $_GET['file'];
 		$file = $file.'.mp3';
 		$valid = mp3_files($file);
@@ -908,7 +907,7 @@ function sendgroupmessage() {
 			}
 			#sleep($config['TTS']['sleepgroupmessage']); // warten gemäß config.php bis Gruppierung abgeschlossen ist
 			$sonos = new SonosAccess($coord[0]);
-			$sonos->SetPlayMode('NORMAL'); 
+			$sonos->SetPlayMode('0'); 
 			$sonos->SetQueue("x-rincon-queue:". $coord[1] ."#0");
 			if (!isset($_GET['sonos']))  {
 				$sonos->Stop();
@@ -1061,6 +1060,7 @@ function guidv4($data = null) {
     $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
 
     // Output the 36 character UUID.
+	#print_r(vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4)));
     return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
 }
 
@@ -1073,8 +1073,8 @@ function guidv4($data = null) {
   
 function audioclip_post_request($ip, $rincon, $clipType="CUSTOM", $priority="LOW", $tts="") {
 	
-	global $myLBip, $volume, $lbhostname, $lbwebport, $filename, $streamUrl;
-
+	global $myLBip, $volume, $lbhostname, $lbwebport, $filename, $streamUrl, $config, $guid;
+	
 	// API Url
 	$url = 'https://'.$ip.':1443/api/v1/players/'.$rincon.'/audioClip';
 
@@ -1113,7 +1113,7 @@ function audioclip_post_request($ip, $rincon, $clipType="CUSTOM", $priority="LOW
 	// Set the content type to application/json
 	$headers = [
 		'Content-Type: application/json',
-		'X-Sonos-Api-Key: '.guidv4(),
+		'X-Sonos-Api-Key: '.$guid,
 	];
 	curl_setopt($ch, CURLOPT_HTTPHEADER, $headers); 
 
@@ -1142,7 +1142,7 @@ function audioclip_post_request($ip, $rincon, $clipType="CUSTOM", $priority="LOW
 
 function Audioclipevent()   {
 	
-global $rincon, $ip;
+global $rincon, $ip, $config, $guid;
 
 $curl = curl_init();
 
@@ -1156,7 +1156,7 @@ curl_setopt_array($curl, [
   CURLOPT_CUSTOMREQUEST => "POST",
   CURLOPT_HTTPHEADER => [
 		'Content-Type: application/json',
-		'X-Sonos-Api-Key: '.guidv4(),
+		'X-Sonos-Api-Key: '.$guid,
 	],
 ]);
 
@@ -1166,7 +1166,7 @@ $err = curl_error($curl);
 curl_close($curl);
 
 if ($err) {
-	#LOGERR("play_t2s.php: cURL Subscribe Error: " . $err);
+	LOGERR("play_t2s.php: cURL Subscribe Error: " . $err);
 } else {
 	LOGDEB("play_t2s.php: cURL Subscribe event: ".$response);
 	echo "play_t2s.php: cURL Subscribe event: ".$response;

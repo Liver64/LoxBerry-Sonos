@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	5.3.0
-# Datum: 	01.2023
+# Version: 	5.3.9
+# Datum: 	12.2023
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 #
 # http://<IP>:1400/xml/device_description.xml
@@ -77,6 +77,8 @@ $filenst = "/run/shm/s4lox_t2s_stat.tmp";						// Temp Statusfile für messages
 $folfilePlOn = "$lbpdatadir/PlayerStatus/s4lox_on_";			// Folder and file name for Player Status
 $debuggingfile = "$lbpdatadir/s4lox_debug_config.json";			// Folder and file name for Debug Config
 $file = $lbphtmldir."/bin/check_player_dup.txt";				// File to check for duplicate player
+$guid = "3c0d76cc-5b6b-4e5b-b47d-4719a8371191";					// GUID for Sonos AudioClip Function
+
 
 # Files for ONE-click functions
 if (isset($_GET['zone']))  {

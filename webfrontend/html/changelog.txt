@@ -418,3 +418,5 @@
 			[BUGFIX] T2S nach Update auf v5.3.4 nicht verfügbar gefixt
  5.3.8		[BUGFIX] TV Monitor optimiert
 			[BUGFIX] kleinere Optimierungen/Fehlerbehebung
+ 5.4.0		[IMPORVEMENT] Introduce New T2S AudioClip funktion
+			[IMPORVEMENT] PHP 8 readiness
