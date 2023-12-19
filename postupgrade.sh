@@ -32,7 +32,7 @@ PTEMPDIR=$1   # First argument is temp folder during install
 PSHNAME=$2    # Second argument is Plugin-Name for scipts etc.
 PDIR=$3       # Third argument is Plugin installation folder
 PVERSION=$4   # Forth argument is Plugin version
-#LBHOMEDIR=$5 # Comes from /etc/environment now. Fifth argument is
+LBHOMEDIR=$5  # Comes from /etc/environment now. Fifth argument is
               # Base folder of LoxBerry
 
 # Combine them with /etc/environment
@@ -67,6 +67,9 @@ rm -r $5/data/plugins/$3/tts/mp3/update
 echo "<INFO> Start update Player Configuration"
 /usr/bin/php -q REPLACELBPHTMLDIR/bin/updateplayer.php
 
+echo "<INFO> Start update Sonos Configuration (sonos.cfg) with new config values"
+/usr/bin/php -q REPLACELBPHTMLDIR/bin/update_config.php
+
 CONFIGFILE="REPLACELBPCONFIGDIR/s4lox_config.json"
 if [ -f "$CONFIGFILE" ]
 then
@@ -76,8 +79,8 @@ else
 	/usr/bin/php -q REPLACELBPHTMLDIR/bin/create_config.php
 fi
 
-echo "<INFO> Start validation of Radio favorites"
-/usr/bin/php -q REPLACELBPHTMLDIR/bin/checkradiourl.php
+#echo "<INFO> Start validation of Radio favorites"
+#/usr/bin/php -q REPLACELBPHTMLDIR/bin/checkradiourl.php
 
 echo "<INFO> Check T2S Announcement Configuration"
 /usr/bin/php -q REPLACELBPHTMLDIR/bin/notify.php

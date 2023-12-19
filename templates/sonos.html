@@ -69,6 +69,9 @@
                                 <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 147px">
                                     <TMPL_VAR ZONES.SONOS_IP>
                                 </th>
+								<th align="middle" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 35px">
+                                    <TMPL_VAR ZONES.SONOS_AUDIOCLIP>
+                                </th>
                                 <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 98px">
                                     <TMPL_VAR ZONES.SONOS_T2S-VOL>
                                 </th>
@@ -85,7 +88,15 @@
 								</div>
                             </tr>
                             <TMPL_VAR ROWSSONOSPLAYER>
+							
                         </table>
+						<TMPL_IF NAME="PLAYERAVAILABLE">
+						<div class='icoclip' style='text-align: center;'>
+							<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/green.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_GREEN>
+							<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/yellow.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_YELLOW>
+							<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/red.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_RED>
+						</div>
+						</TMPL_IF>
                     </td>
                     <td style="width: 201px; height: 41px;" valign="top">
                         <a onClick="Scan()" id="btnplayerscan" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="#">
@@ -1651,6 +1662,7 @@
 		// check if Soundbar(s) are used
 		function validateSB()   {
 			var iteration = document.getElementById('countplayers').value;
+			var sbyes = "0";
 			iteration = parseInt(iteration)
 			iteration += 1;
 			for (i = 1; i < iteration; ++i) {
@@ -1664,13 +1676,13 @@
 			if (sbyes == "1")   {
 				$('.tvmonitorsecond').fadeIn(600);
 				$('.tvmonitorstat').fadeIn(600);
-				$('#tblzonen td:nth-child(10)').show();
+				$('#tblzonen td:nth-child(11)').show();
 				validateTVMonReady();
 				validateTVMonVol();
 			} else {
 				$('.tvmonitorsecond').fadeOut(600);
 				$('.tvmonitorstat').fadeOut(600);
-				$('#tblzonen td:nth-child(10)').hide();
+				$('#tblzonen td:nth-child(11)').hide();
 			}
 			$("#tvmon").flipswitch("refresh");
 		}

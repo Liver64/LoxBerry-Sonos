@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	5.3.0
-# Datum: 	01.2023
+# Version: 	5.3.9
+# Datum: 	12.2023
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 #
 # http://<IP>:1400/xml/device_description.xml
@@ -29,6 +29,8 @@ include("Radio.php");
 include("Restore_T2S.php");
 include("Save_T2S.php");
 include("Speaker.php");
+include("bin/MpegAudio.php");
+include("bin/MpegAudioFrameHeader.php");
 include('system/logging.php');
 include('system/bin/openssl_file.class.php');
 
@@ -75,6 +77,9 @@ $filenst = "/run/shm/s4lox_t2s_stat.tmp";						// Temp Statusfile für messages
 $folfilePlOn = "$lbpdatadir/PlayerStatus/s4lox_on_";			// Folder and file name for Player Status
 $debuggingfile = "$lbpdatadir/s4lox_debug_config.json";			// Folder and file name for Debug Config
 $file = $lbphtmldir."/bin/check_player_dup.txt";				// File to check for duplicate player
+$guid = "3c0d76cc-5b6b-4e5b-b47d-4719a8371191";					// GUID for Sonos AudioClip Function
+
+
 # Files for ONE-click functions
 if (isset($_GET['zone']))  {
 	$radiofav = "/run/shm/s4lox_fav_all_radio_".$_GET['zone'].".json";				// Radio Stations in PlayAllFavorites
@@ -178,7 +183,7 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 		|| ($_GET['action'] == "play") || ($_GET['action'] == "stop") || ($_GET['action'] == "toggle") || ($_GET['action'] == "playplfavorites")
 		|| ($_GET['action'] == "next") || ($_GET['action'] == "previous") || ($_GET['action'] == "volume") || ($_GET['action'] == "pause") || ($_GET['action'] == "zapzone")
 		|| (isset($_GET['volume']) === true) || ($_GET['action'] == "sendmessage") || ($_GET['action'] == "sonosplaylist") || ($_GET['action'] == "sendgroupmessage")
-		|| (isset($_GET['keepvolume']) === true) || (isset($_GET['groupvolume']) === true) || ($_GET['action'] == "volumeup") || ($_GET['action'] == "volumedown"))  
+		|| (isset($_GET['keepvolume']) === true) || (isset($_GET['groupvolume']) === true) || ($_GET['action'] == "volumeup") || ($_GET['action'] == "gettransportinfo") || ($_GET['action'] == "volumedown"))  
 		{
 		LOGGING("sonos.php: No Exception to delete TempFiles has been called", 7);
 	} else {
@@ -885,10 +890,14 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 
 		case 'audioclip':
 			LOGDEB("sonos.php: audioclip called");
-			playAudioclip();
+			say();
 		break;
 		
-				
+		case 'doorbell':
+			LOGDEB("sonos.php: Doorbell called");
+			doorbell(); 
+		break;
+		
 		case 'say':
 			$oldtext="old";
 			$newtext="new";
