@@ -420,3 +420,4 @@
 			[BUGFIX] kleinere Optimierungen/Fehlerbehebung
  5.4.0		[IMPORVEMENT] Introduce New T2S AudioClip funktion
 			[IMPORVEMENT] PHP 8 readiness
+			[IMPORVEMENT] Switch to JSON Object

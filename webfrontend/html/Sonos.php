@@ -243,7 +243,7 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 	LOGGING("sonos.php: All variables has been collected",7);
 	
 	# To predict any T2S if T2S has been turned off, except the T2S is marked with &urgent
-	if (($config['TTS']['t2son'] != 1) and (!isset($_GET['urgent'])))   {
+	if (is_disabled($config['TTS']['t2son']) and (!isset($_GET['urgent'])))   {
 		if ((isset($_GET['text'])) or (isset($_GET['messageid'])) )   {
 			LOGGING("sonos.php: Text-to-speech blocked because T2S function has been turned off via Plugin Config!", 4);
 			exit(1);

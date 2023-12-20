@@ -19,6 +19,8 @@
 	register_shutdown_function('shutdown');
 
 	$home = $lbhomedir;
+	$myConfigFolder = "$lbpconfigdir";								// get config folder	
+	$myConfigFile = "s4lox_config.json";	
 
 	error_reporting(E_ALL);
 	ini_set("display_errors", "off");
@@ -263,14 +265,23 @@
 **/
 
 function parse_cfg_file() {
-	global $sonosnet, $home, $lbpplugindir;
-	# Load Player from existing config
-	$tmp = parse_ini_file($home.'/config/plugins/'.$lbpplugindir.'/player.cfg', true);
-	$player = ($tmp['SONOSZONEN']);
-	foreach ($player as $zonen => $key) {
-		$sonosnet[$zonen] = explode(',', $key[0]);
+	
+	global $sonosnet, $home, $lbpplugindir, $myConfigFolder, $myConfigFile;
+	 
+	// open config file
+	if (!file_exists($myConfigFolder.'/'.$myConfigFile)) {
+		LOGERR("The file s4lox_config.json could not be opened, please try again! We skip here!");
+		exit(1);
+	} else {
+		$config = json_decode(file_get_contents($myConfigFolder . "/" . $myConfigFile), TRUE);
+		if ($config === false)  {
+			LOGERR("The file 's4lox_config.json' could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file 's4lox_config.json' manually!");
+			exit(1);
+		}
+		LOGOK("system/network.php: Existing configuration file 's4lox_config.json' has been loaded successfully.");
 	}
-	LOGOK("system/network.php: Existing configuration file 'player.cfg' has been loaded successfully.");
+	$sonosnet = $config['sonoszonen'];
+	#print_r($sonosnet);
 	return $sonosnet;
 	}
 

@@ -21,7 +21,7 @@
     <form method="post" data-ajax="false" accept-charset="utf-8" name="main_form" id="main_form" action="./index.cgi?form">
         <input type="hidden" name="saveformdata1" value="1">
 		<input type="hidden" name="regionOptions" id="regionOptions" value="<TMPL_VAR TTS.regionms>">
-			
+	
         <div class="form-group">
             <font COLOR="blue">
                 <TMPL_VAR SAVE>
@@ -468,7 +468,7 @@
                         <label id="lapikey"><TMPL_VAR T2S.LABEL_API_KEY></label>
                     </td>
                     <td style="width: 50%; height: 48px">
-                        <input id="apikey" name="apikey" type="text" class="textfield" value="<TMPL_VAR TTS.api-key>" 
+                        <input id="apikey" name="apikey" type="text" class="textfield" value="<TMPL_VAR TTS.API-key>" 
 						data-validation-error-msg="<TMPL_VAR ERRORS.ERR_APIKEY>" 
 						data-validation-rule="^([A-Z0-9]){20}$|^([A-Za-z0-9\!\#\$\%\&\'\*\+\-\,\/\:\;\=\?\@\[\]\\\]]){32}$|^([A-Za-z0-9\!\#\$\%\&\'\*\+\-\,\/\:\;\=\?\@\[\]\\\]]){39}$">
 					</td>
@@ -1640,6 +1640,7 @@
 		$(function(){
 			$("#tblzonen").on("click", function(event){
 			   var zonetest = event.target.value
+			   console.log("Test: "+zonetest);
 			   let response;
 			   $.ajax({
 					url: '/plugins/<TMPL_VAR PLUGINDIR>/bin/player_on_test.php',
@@ -1717,14 +1718,14 @@
 				$('#addstart').fadeIn(600);
 				$('#addend').fadeIn(600);
 				$('.tvmonitorsecond').fadeIn(600);
-				$('#tblzonen td:nth-child(10)').show();
+				$('#tblzonen td:nth-child(11)').show();
 			} else {
 				$('#lstart').fadeOut(600);
 				$('#lend').fadeOut(600);
 				$('#addstart').fadeOut(600);
 				$('#addend').fadeOut(600);
 				$('.tvmonitorsecond').fadeOut(600);
-				$('#tblzonen td:nth-child(10)').hide();
+				$('#tblzonen td:nth-child(11)').hide();
 			}
 			$("#tvmon").flipswitch("refresh");
 		}
@@ -1925,6 +1926,11 @@
 				for (i = 1; i < iteration; ++i) {
 					if (document.getElementById('mainchk' + i).checked == true) {
 						document.getElementById('mainchk' + i).value = "on";
+						console.log(document.getElementById('mainchk' + i).value);
+						$('input:checkbox').checkboxradio('refresh');
+					} else {
+						document.getElementById('mainchk' + i).value = "off";
+						console.log(document.getElementById('mainchk' + i).value);
 						$('input:checkbox').checkboxradio('refresh');
 					}
 				}

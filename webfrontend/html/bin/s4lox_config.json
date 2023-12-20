@@ -1,0 +1,178 @@
+{
+    "LOCATION": {
+        "googlekey": "AIzaSyD1Vw2gZB55FZzj39GTMqdzlJWn9m0mJOA",
+        "googlestreet": "Jakob-Grimm-Stra\u00dfe 9",
+        "googletown": "D-74722",
+        "region": "baw",
+        "town": "Buchen"
+    },
+    "LOXONE": {
+        "LoxDaten": "true",
+        "LoxDatenMQTT": "true",
+        "Loxone": "1"
+    },
+    "MP3": {
+        "MP3path": "mp3",
+        "MP3store": "7",
+        "cachesize": "500",
+        "file_gong": "2_Airport_gong.mp3",
+        "store": "7",
+        "volumedown": "3",
+        "volumeup": "3",
+        "waiting": "8"
+    },
+    "RADIO": {
+        "radio": {
+            "1": "iTunes TOP 40,http:\/\/streams.ffh.de\/ffhchannels\/mp3\/hqtop40.m3u,https:\/\/cdn-profiles.tunein.com\/s84486\/images\/logod.jpg?t=637091455550000000",
+            "2": "HIT RADIO FFH,http:\/\/streams.ffh.de\/radioffh\/mp3\/hqlivestream.m3u,https:\/\/static.ffh.de\/fileadmin\/_processed_\/3\/9\/csm_ffh_600x600_e20db00e98.jpg",
+            "3": "Top 100,http:\/\/streamhq.top100station.com\/top100station-high.mp3,https:\/\/top100station.de\/assets\/img\/logo.png"
+        }
+    },
+    "SYSTEM": {
+        "checkonline": "1",
+        "checkt2s": "false",
+        "cifsinterface": "\/\/192.168.50.63:80\/plugindata\/sonos4lox\/interfacedownload",
+        "httpinterface": "http:\/\/192.168.50.63:80\/plugins\/sonos4lox\/interfacedownload",
+        "mp3path": "\/opt\/loxberry\/data\/plugins\/sonos4lox\/tts\/mp3",
+        "path": "\/opt\/loxberry\/data\/plugins\/sonos4lox",
+        "ttspath": "\/opt\/loxberry\/data\/plugins\/sonos4lox\/tts"
+    },
+    "TTS": {
+        "apikey": "d1bf720f5b07492ea71ed36fdea07ead",
+        "audiocodec": "48khz_16bit_stereo",
+        "correction": "10",
+        "lamePath": "\/usr\/local\/bin\/",
+        "messageLang": "de-DE-KillianNeural",
+        "phonemute": "6",
+        "rampto": "auto",
+        "regionms": "westeurope",
+        "secret-key": "",
+        "secretkey": "",
+        "sleeptimegong": "3",
+        "t2s_engine": "9001",
+        "t2son": "true",
+        "voice": "",
+        "volrampto": "25",
+        "waiting": "8"
+    },
+    "VARIOUS": {
+        "CALDav2": "http:\/\/192.168.50.63\/plugins\/caldav4lox\/caldav.php?calURL=https:\/\/calendar.google.com\/calendar\/ical\/24i7jtrfql2lvnlsesmqdr6u0k%40group.calendar.google.com\/private-cb4882a4182c459b33c9555fae3ef1a8\/basic.ics&fwdays=21&delay=1",
+        "CALDavMuell": "http:\/\/192.168.50.63\/plugins\/caldav4lox\/caldav.php?calURL=https%3A\/\/calendar.google.com\/calendar\/ical\/4bok1ucuikletvsjq74r8t9u8s%40group.calendar.google.com\/private-cad5bc9cc1cb597d3847472d45f5cee6\/basic.ics&fwdays=14&delay=1&events=Restabfall|Altpapier|Bioabfall|Wertstoffmuell",
+        "announceradio": "0",
+        "announceradio_always": "0",
+        "cron": "1",
+        "donate": "on",
+        "endtime": "22",
+        "fromtime": "19",
+        "phonemute": "6",
+        "phonestop": "0",
+        "selfunction": "nextradio",
+        "starttime": "8",
+        "tvmon": "true",
+        "tvmonnight": "true",
+        "tvmonspeech": "true",
+        "tvmonsurr": "true",
+        "volmax": "1"
+    },
+    "sonoszonen": {
+        "bad": [
+            "192.168.50.114",
+            "RINCON_542A1BB8523001400",
+            "ROAM",
+            "35",
+            "30",
+            "100",
+            "on",
+            "S27",
+            "RINCON_542A1BB8523001400:4062535277",
+            "HHID_q9QLCIEDYeuiyUd7nRrp6Oz9RSC.pJp1vkYNUwN3wa4EUbDc",
+            "54-2A-1B-B8-52-30:1",
+            true,
+            true
+        ],
+        "ben": [
+            "192.168.50.20",
+            "RINCON_000E5872D8AC01400",
+            "PLAY:3",
+            "35",
+            "25",
+            "50",
+            "off",
+            "S3",
+            "RINCON_000E5872D8AC01400:644125076",
+            "HHID_q9QLCIEDYeuiyUd7nRrp6Oz9RSC.pJp1vkYNUwN3wa4EUbDc",
+            "00-0E-58-72-D8-AC:C"
+        ],
+        "nele": [
+            "192.168.50.57",
+            "RINCON_000E5872D59801400",
+            "PLAY:3",
+            "35",
+            "25",
+            "50",
+            "off",
+            "S3",
+            "RINCON_000E5872D59801400:3049529495",
+            "HHID_q9QLCIEDYeuiyUd7nRrp6Oz9RSC.pJp1vkYNUwN3wa4EUbDc",
+            "00-0E-58-72-D5-98:6",
+            true,
+            false
+        ],
+        "schlafen bina": [
+            "192.168.50.35",
+            "RINCON_347E5C335BA201400",
+            "BOOKSHELF",
+            "35",
+            "40",
+            "50",
+            "on",
+            "S21",
+            "RINCON_347E5C335BA201400:1810460104",
+            "HHID_q9QLCIEDYeuiyUd7nRrp6Oz9RSC.pJp1vkYNUwN3wa4EUbDc",
+            "34-7E-5C-33-5B-A2:5"
+        ],
+        "schlafen olli": [
+            "192.168.50.34",
+            "RINCON_347E5C31C4A401400",
+            "BOOKSHELF",
+            "35",
+            "40",
+            "50",
+            "on",
+            "S21",
+            "RINCON_347E5C31C4A401400:1656906484",
+            "HHID_q9QLCIEDYeuiyUd7nRrp6Oz9RSC.pJp1vkYNUwN3wa4EUbDc",
+            "34-7E-5C-31-C4-A4:8"
+        ],
+        "terrasse": [
+            "192.168.50.74",
+            "RINCON_48A6B8E1155E01400",
+            "MOVE",
+            "35",
+            "30",
+            "75",
+            "off",
+            "S17",
+            "RINCON_48A6B8E1155E01400:1416394428",
+            "HHID_q9QLCIEDYeuiyUd7nRrp6Oz9RSC.pJp1vkYNUwN3wa4EUbDc",
+            "48-A6-B8-E1-15-5E:E"
+        ],
+        "wohnzimmer": [
+            "192.168.50.65",
+            "RINCON_949F3EC767F101400",
+            "BEAM",
+            "25",
+            "18",
+            "60",
+            "on",
+            "S14",
+            "RINCON_949F3EC767F101400:3727206233",
+            "HHID_q9QLCIEDYeuiyUd7nRrp6Oz9RSC.pJp1vkYNUwN3wa4EUbDc",
+            "94-9F-3E-C7-67-F1:A",
+            true,
+            true,
+            "SB",
+            "15"
+        ]
+    }
+}
