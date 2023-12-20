@@ -31,7 +31,7 @@ function t2s($textstring, $filename)
 			$speech_api_key = OpenSSLFile::decrypt($sFilename, $sPassword);
 			LOGGING("voice_engines\googleCloud.php: 'nextradio' errormesssage has been announced", 6);
 		} else {
-			$speech_api_key = $config['TTS']['API-key'];
+			$speech_api_key = $config['TTS']['apikey'];
 		}
 		#echo $config['TTS']['voice'];
 		

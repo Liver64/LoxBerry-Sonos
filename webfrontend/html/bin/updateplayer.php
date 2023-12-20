@@ -1,4 +1,4 @@
-<?php
+ <?php
 	#header('Content-Type: application/json; charset=utf-8'); 
 	
 	require_once "loxberry_system.php";
@@ -32,7 +32,7 @@
 		echo "<OK> Player config has been loaded.".PHP_EOL;
 	}
 	$sonoszonen = $config['sonoszonen'];
-	print_R($sonoszonen);
+	#print_R($sonoszonen);
 	
 	if (!copy($myConfigFolder.'/'.$myConfigFile, $myConfigFolder.'/s4lox_config_backup.json')) {
 		echo "<ERROR> failed to copy $myConfigFile...".PHP_EOL;
@@ -130,6 +130,13 @@
 			}
 		}
 		
+	}
+	if (array_key_exists('API-key',$config['TTS']))   {
+		$config['TTS']['apikey'] = $config['TTS']['API-key'];
+		$config['TTS']['secretkey'] = $config['TTS']['secret-key'];
+		unset($config['TTS']['API-key']);
+		unset($config['TTS']['secret-key']);
+		echo "<OK> 'API-key' and 'secret-key' has been migrated to 'apikey' and 'secretkey'.".PHP_EOL;
 	}
 	unset($config['sonoszonen']);
 	$newsonoszonen['sonoszonen'] = $sonoszonen;

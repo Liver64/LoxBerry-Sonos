@@ -8,7 +8,7 @@ function t2s($textstring, $filename)
 {
 	global $config, $pathlanguagefile;
 	
-		$ttskey = $config['TTS']['API-key'];
+		$ttskey = $config['TTS']['apikey'];
 		$ttsaudiocodec = "44khz_16bit_stereo";
 		$textstring = urlencode($textstring);
 		

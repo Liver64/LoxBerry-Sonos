@@ -274,11 +274,11 @@ function debugInfo()     {
 	} else {
 		$debugconfig['VARIOUS']['volmax'] = "disabled";
 	}
-	if ($debugconfig['TTS']['API-key'] != "")    {
-		$debugconfig['TTS']['API-key'] = "valid";
+	if ($debugconfig['TTS']['apikey'] != "")    {
+		$debugconfig['TTS']['apikey'] = "valid";
 	}
-	if ($debugconfig['TTS']['secret-key'] != "")    {
-		$debugconfig['TTS']['secret-key'] = "valid";
+	if ($debugconfig['TTS']['secretkey'] != "")    {
+		$debugconfig['TTS']['secretkey'] = "valid";
 	}
 	if ($debugconfig['LOXONE']['LoxDaten'] == "1")    {
 		$debugconfig['LOXONE']['LoxDaten'] = "enabled";
@@ -299,31 +299,31 @@ function debugInfo()     {
 	#}
 	if ($debugconfig['TTS']['t2s_engine'] == "9001")   {
 		$debugconfig['TTS']['t2s_engine'] = "MS Azure";
-		$debugconfig['TTS']['secret-key'] = "";
+		$debugconfig['TTS']['secretkey'] = "";
 	} elseif ($debugconfig['TTS']['t2s_engine'] == "8001")  {
 		$debugconfig['TTS']['t2s_engine'] = "Google Cloud";
-		$debugconfig['TTS']['secret-key'] = "";
+		$debugconfig['TTS']['secretkey'] = "";
 	} elseif ($debugconfig['TTS']['t2s_engine'] == "4001")  {
 		$debugconfig['TTS']['t2s_engine'] = "AWS Polly";
 	} elseif ($debugconfig['TTS']['t2s_engine'] == "5001")  {
 		$debugconfig['TTS']['t2s_engine'] = "Pico TTS";
-		$debugconfig['TTS']['API-key'] = "";
-		$debugconfig['TTS']['secret-key'] = "";
+		$debugconfig['TTS']['apikey'] = "";
+		$debugconfig['TTS']['secretkey'] = "";
 	} elseif ($debugconfig['TTS']['t2s_engine'] == "7001")  {
 		$debugconfig['TTS']['t2s_engine'] = "Google";
-		$debugconfig['TTS']['API-key'] = "";
-		$debugconfig['TTS']['secret-key'] = "";
+		$debugconfig['TTS']['apikey'] = "";
+		$debugconfig['TTS']['secretkey'] = "";
 	} elseif ($debugconfig['TTS']['t2s_engine'] == "6001")  {
 		$debugconfig['TTS']['t2s_engine'] = "Responsive Voice";
-		$debugconfig['TTS']['API-key'] = "";
-		$debugconfig['TTS']['secret-key'] = "";
+		$debugconfig['TTS']['apikey'] = "";
+		$debugconfig['TTS']['secretkey'] = "";
 	} elseif ($debugconfig['TTS']['t2s_engine'] == "3001")  {
 		$debugconfig['TTS']['t2s_engine'] = "OSX";
-		$debugconfig['TTS']['API-key'] = "";
-		$debugconfig['TTS']['secret-key'] = "";
+		$debugconfig['TTS']['apikey'] = "";
+		$debugconfig['TTS']['secretkey'] = "";
 	} elseif ($debugconfig['TTS']['t2s_engine'] == "1001")  {
 		$debugconfig['TTS']['t2s_engine'] = "Voice RSS";
-		$debugconfig['TTS']['secret-key'] = "";
+		$debugconfig['TTS']['secretkey'] = "";
 	} else {
 		$debugconfig['TTS']['t2s_engine'] = "No TTS Provider selected";
 	}

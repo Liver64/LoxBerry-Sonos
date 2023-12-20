@@ -21,8 +21,8 @@ class POLLY_TTS{
 	public function setCredential()
     {
         global $config;
-        $akey = $config['TTS']['API-key'];
-        $secretkey = $config['TTS']['secret-key'];
+        $akey = $config['TTS']['apikey'];
+        $secretkey = $config['TTS']['secretkey'];
 
         $this->access_key = $akey;
         $this->secret_key = $secretkey;

@@ -8,6 +8,8 @@ declare(strict_types = 1);
 
 class SonosAccess
 {
+    public $address;
+
     public function __construct($address)
     {
         $this->address = $address;

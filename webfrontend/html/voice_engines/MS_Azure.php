@@ -25,7 +25,7 @@ function t2s($textstring, $filename)
 
 
 	$region = $config['TTS']['regionms']; //"westeurope";
-	$apiKey = $config['TTS']['API-key'];
+	$apiKey = $config['TTS']['apikey'];
 	$lang = $config['TTS']['messageLang'];
 	
 	$AccessTokenUri = "https://".$region.".api.cognitive.microsoft.com/sts/v1.0/issueToken";

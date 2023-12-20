@@ -550,7 +550,7 @@ function checkTTSkeys() {
 		if (!file_exists("voice_engines/VoiceRSS.php")) {
 			LOGGING("helper.php: VoiceRSS is currently not available. Please install!", 4);
 		} else {
-			if(strlen($config['TTS']['API-key']) !== 32) {
+			if(strlen($config['TTS']['apikey']) !== 32) {
 				LOGGING("helper.php: The specified VoiceRSS API key is invalid. Please correct!", 4);
 			}
 		}
@@ -584,7 +584,7 @@ function checkTTSkeys() {
 		if (!file_exists("voice_engines/Polly.php")) {
 			LOGGING("helper.php: Amazon Polly is currently not available. Please install!", 4);
 		} else {
-			if((strlen($config['TTS']['API-key']) !== 20) or (strlen($config['TTS']['secret-key']) !== 40)) {
+			if((strlen($config['TTS']['apikey']) !== 20) or (strlen($config['TTS']['secretkey']) !== 40)) {
 				LOGGING("helper.php: The specified AWS Polly API key is invalid. Please correct!!", 4);
 			}
 		}
