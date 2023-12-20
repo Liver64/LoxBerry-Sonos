@@ -41,32 +41,7 @@ if (is_file($lbpconfigdir . "/" . $configfile))    {
 }
 #print_r($config);
 
-/**
-if (!file_exists($myFolder.'/sonos.cfg')) {
-	LOGERR('system/ms_inbound.php: The file sonos.cfg could not be opened, please check/complete your Plugin Config!');
-	exit(1);
-} else {
-	$tmpconfig = parse_ini_file($myFolder.'/sonos.cfg', true);
-	print_r($myFolder.'/sonos.cfg');
-	if ($tmpconfig === false)  {
-		LOGERR('system/ms_inbound.php: The file sonos.cfg could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file "sonos.cfg" manually!');
-		exit(1);
-	}
-}
-
-if (!file_exists($myFolder.'/player.cfg')) {
-	LOGERR('system/ms_inbound.php: The file player.cfg  could not be opened, please check/complete your Plugin Config!');
-	exit(1);
-} else {
-	$tmpplayer = parse_ini_file($myFolder.'/player.cfg', true);
-	if ($tmpplayer === false)  {
-		LOGERR('system/ms_inbound.php: The file player.cfg could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file "player.cfg" manually!');
-		exit(1);
-	}
-}
-*/
-
-if ($config['LOXONE']['LoxDaten'] != 1)   {
+if ($config['LOXONE']['LoxDaten'] != true)   {
 	LOGWARN('system/ms_inbound.php: The Communication to Loxone is switched off, please turn on 1st, save config and try again in order to use the template in Loxone!');
 	exit(1);
 }

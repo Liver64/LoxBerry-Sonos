@@ -25,7 +25,7 @@ $off_file 		= $lbplogdir."/s4lox_off.tmp";					// path/file for Script turned of
 	$log = LBLog::newLog($params);
 	#LOGSTART("CronJob started");
 
-	#echo '<PRE>';
+	echo '<PRE>';
 	if (file_exists($lbpconfigdir . "/" . $configfile))    {
 		$config = json_decode(file_get_contents($lbpconfigdir . "/" . $configfile), TRUE);
 	} else {
@@ -34,6 +34,7 @@ $off_file 		= $lbplogdir."/s4lox_off.tmp";					// path/file for Script turned of
 	}
 	// Übernahme und Deklaration von Variablen aus der Konfiguration
 	$sonoszonen = $config['sonoszonen'];
+	#print_r($sonoszonen);
 	
 	# check if folder exists
 	if (!is_dir("$lbpdatadir/PlayerStatus/"))   {

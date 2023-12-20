@@ -47,7 +47,7 @@ LOGSTART("Sonos PHP");
 	$sonoszone = $filtered;
 	
 	# Array with all predefined soundbars only
-	$soundbars = array_filter($sonoszone, fn($innerArr) => isset($innerArr[11]) && $innerArr[12] > 0);
+	$soundbars = array_filter($sonoszone, fn($innerArr) => isset($innerArr[13]) && $innerArr[14] > 0);
 	#print_r($soundbars);
 	
 	# turn on Autoplay for each soundbar

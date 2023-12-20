@@ -19,6 +19,8 @@
 	register_shutdown_function('shutdown');
 
 	$home = $lbhomedir;
+	$myConfigFolder = "$lbpconfigdir";								// get config folder	
+	$myConfigFile = "s4lox_config.json";	
 
 	error_reporting(E_ALL);
 	ini_set("display_errors", "off");
@@ -181,8 +183,9 @@
 		$info = json_decode(file_get_contents('http://' . $zoneip . ':1400/info'), true);
 		$model = $info['device']['model'];
 		$roomraw = $info['device']['name'];
-		$device = $info['device']['modelDisplayName'];		
-		$rinconid = $info['device']['id'];	
+		$device = $info['device']['modelDisplayName'];
+		$capabilities = $info['device']['capabilities'];
+		$rinconid = $info['device']['id'];
 		$search = array('Ä','ä','Ö','ö','Ü','ü','ß');
 		$replace = array('Ae','ae','Oe','oe','Ue','ue','ss');
 		$room = strtolower(str_replace($search,$replace,$roomraw));
@@ -202,11 +205,29 @@
 						(string)$householdId,
 						(string)$deviceId						
 						];
-		# Check if Soundbar has been detected
+
+		// Entry 11
+		$audioclip = in_array("AUDIO_CLIP", $capabilities);
+		array_push($zonen, $audioclip);
+		LOGINF("system/network.php: Player '".$room."' (".(string)strtoupper($device).") is".($audioclip ? "" : "not ")." AUDIO_CLIP capable");
+		
+		// Entry 12
+		$voice = in_array("VOICE", $capabilities);
+		array_push($zonen, $voice);
+		LOGINF("system/network.php: Player '".$room."' (".(string)strtoupper($device).") is".($audioclip ? "" : "not ")." VOICE capable");
+		
+		// Entry 13
 		if(isSoundbar($model) == true) {
 			array_push($zonen, "SB");
 			LOGINF("system/network.php: Player '".$room."' (".(string)strtoupper($device).") has been identified as Soundbar.");
+			// Entry 14
+			array_push($zonen, ""); // TV vol SB default empty
 		}
+		// Entry 14
+		#array_push($zonen, "15"); // TV vol SB default empty
+
+
+
 		$raum = array_shift($zonen);
 		$sonosplayerfinal[$raum] = $zonen;
 		# Get Player icons and Save them for UI
@@ -244,14 +265,23 @@
 **/
 
 function parse_cfg_file() {
-	global $sonosnet, $home, $lbpplugindir;
-	# Load Player from existing config
-	$tmp = parse_ini_file($home.'/config/plugins/'.$lbpplugindir.'/player.cfg', true);
-	$player = ($tmp['SONOSZONEN']);
-	foreach ($player as $zonen => $key) {
-		$sonosnet[$zonen] = explode(',', $key[0]);
+	
+	global $sonosnet, $home, $lbpplugindir, $myConfigFolder, $myConfigFile;
+	 
+	// open config file
+	if (!file_exists($myConfigFolder.'/'.$myConfigFile)) {
+		LOGERR("The file s4lox_config.json could not be opened, please try again! We skip here!");
+		exit(1);
+	} else {
+		$config = json_decode(file_get_contents($myConfigFolder . "/" . $myConfigFile), TRUE);
+		if ($config === false)  {
+			LOGERR("The file 's4lox_config.json' could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file 's4lox_config.json' manually!");
+			exit(1);
+		}
+		LOGOK("system/network.php: Existing configuration file 's4lox_config.json' has been loaded successfully.");
 	}
-	LOGOK("system/network.php: Existing configuration file 'player.cfg' has been loaded successfully.");
+	$sonosnet = $config['sonoszonen'];
+	#print_r($sonosnet);
 	return $sonosnet;
 	}
 

@@ -21,7 +21,7 @@
     <form method="post" data-ajax="false" accept-charset="utf-8" name="main_form" id="main_form" action="./index.cgi?form">
         <input type="hidden" name="saveformdata1" value="1">
 		<input type="hidden" name="regionOptions" id="regionOptions" value="<TMPL_VAR TTS.regionms>">
-			
+	
         <div class="form-group">
             <font COLOR="blue">
                 <TMPL_VAR SAVE>
@@ -69,6 +69,9 @@
                                 <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 147px">
                                     <TMPL_VAR ZONES.SONOS_IP>
                                 </th>
+								<th align="middle" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 35px">
+                                    <TMPL_VAR ZONES.SONOS_AUDIOCLIP>
+                                </th>
                                 <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 98px">
                                     <TMPL_VAR ZONES.SONOS_T2S-VOL>
                                 </th>
@@ -85,7 +88,15 @@
 								</div>
                             </tr>
                             <TMPL_VAR ROWSSONOSPLAYER>
+							
                         </table>
+						<TMPL_IF NAME="PLAYERAVAILABLE">
+						<div class='icoclip' style='text-align: center;'>
+							<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/green.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_GREEN>
+							<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/yellow.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_YELLOW>
+							<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/red.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_RED>
+						</div>
+						</TMPL_IF>
                     </td>
                     <td style="width: 201px; height: 41px;" valign="top">
                         <a onClick="Scan()" id="btnplayerscan" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="#">
@@ -457,7 +468,7 @@
                         <label id="lapikey"><TMPL_VAR T2S.LABEL_API_KEY></label>
                     </td>
                     <td style="width: 50%; height: 48px">
-                        <input id="apikey" name="apikey" type="text" class="textfield" value="<TMPL_VAR TTS.api-key>" 
+                        <input id="apikey" name="apikey" type="text" class="textfield" value="<TMPL_VAR TTS.apikey>" 
 						data-validation-error-msg="<TMPL_VAR ERRORS.ERR_APIKEY>" 
 						data-validation-rule="^([A-Z0-9]){20}$|^([A-Za-z0-9\!\#\$\%\&\'\*\+\-\,\/\:\;\=\?\@\[\]\\\]]){32}$|^([A-Za-z0-9\!\#\$\%\&\'\*\+\-\,\/\:\;\=\?\@\[\]\\\]]){39}$">
 					</td>
@@ -476,7 +487,7 @@
                         <label id="lseckey"><TMPL_VAR T2S.LABEL_SECRET_KEY></label>
                     </td>
                     <td style="width: 50%; height: 48px;">
-                        <input id="seckey" name="seckey" type="text" class="textfield" value="<TMPL_VAR TTS.secret-key>" 
+                        <input id="seckey" name="seckey" type="text" class="textfield" value="<TMPL_VAR TTS.secretkey>" 
 						data-validation-error-msg="<TMPL_VAR ERRORS.ERR_SECRETKEY>" 
 						data-validation-rule="^([A-Za-z0-9\!\#\$\%\&\'\*\+\-\,\/\:\;\=\?\@\[\]\\\]]){40}$">
 
@@ -1629,6 +1640,7 @@
 		$(function(){
 			$("#tblzonen").on("click", function(event){
 			   var zonetest = event.target.value
+			   console.log("Test: "+zonetest);
 			   let response;
 			   $.ajax({
 					url: '/plugins/<TMPL_VAR PLUGINDIR>/bin/player_on_test.php',
@@ -1651,6 +1663,7 @@
 		// check if Soundbar(s) are used
 		function validateSB()   {
 			var iteration = document.getElementById('countplayers').value;
+			var sbyes = "0";
 			iteration = parseInt(iteration)
 			iteration += 1;
 			for (i = 1; i < iteration; ++i) {
@@ -1664,13 +1677,13 @@
 			if (sbyes == "1")   {
 				$('.tvmonitorsecond').fadeIn(600);
 				$('.tvmonitorstat').fadeIn(600);
-				$('#tblzonen td:nth-child(10)').show();
+				$('#tblzonen td:nth-child(11)').show();
 				validateTVMonReady();
 				validateTVMonVol();
 			} else {
 				$('.tvmonitorsecond').fadeOut(600);
 				$('.tvmonitorstat').fadeOut(600);
-				$('#tblzonen td:nth-child(10)').hide();
+				$('#tblzonen td:nth-child(11)').hide();
 			}
 			$("#tvmon").flipswitch("refresh");
 		}
@@ -1705,14 +1718,14 @@
 				$('#addstart').fadeIn(600);
 				$('#addend').fadeIn(600);
 				$('.tvmonitorsecond').fadeIn(600);
-				$('#tblzonen td:nth-child(10)').show();
+				$('#tblzonen td:nth-child(11)').show();
 			} else {
 				$('#lstart').fadeOut(600);
 				$('#lend').fadeOut(600);
 				$('#addstart').fadeOut(600);
 				$('#addend').fadeOut(600);
 				$('.tvmonitorsecond').fadeOut(600);
-				$('#tblzonen td:nth-child(10)').hide();
+				$('#tblzonen td:nth-child(11)').hide();
 			}
 			$("#tvmon").flipswitch("refresh");
 		}
@@ -1913,6 +1926,11 @@
 				for (i = 1; i < iteration; ++i) {
 					if (document.getElementById('mainchk' + i).checked == true) {
 						document.getElementById('mainchk' + i).value = "on";
+						console.log(document.getElementById('mainchk' + i).value);
+						$('input:checkbox').checkboxradio('refresh');
+					} else {
+						document.getElementById('mainchk' + i).value = "off";
+						console.log(document.getElementById('mainchk' + i).value);
 						$('input:checkbox').checkboxradio('refresh');
 					}
 				}

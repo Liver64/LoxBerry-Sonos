@@ -158,7 +158,7 @@ function CreateStereoPair() {
 
 function getRoomCoordinator_OLD($room){
 	global $sonoszone, $zone, $debug, $master, $sonosclass, $config, $time_start;
-		
+		print_r($room);
 		#$room = $master;
 		if(!$xml=deviceCmdRaw('/status/topology')){
 			return false;
@@ -216,10 +216,29 @@ function getRoomCoordinator_OLD($room){
 * @return: array of (0) IP address and (1) Rincon-ID of Master
 */
  function getRoomCoordinator($room){
+	global $sonoszonen, $zone, $debug, $master, $sonosclass, $config, $time_start;
+	
+	$coord = array($sonoszonen[$room][0], $sonoszonen[$room][1]);
+	return $coord;
+ }
+ 
+ 
+ /**
+* Function: getCoordinator --> identify the Coordinator for provided room (typically for StereoPair)
+*
+* @param:  $room
+* @return: room name
+*/
+ function getCoordinator($room){
+	 
 	global $sonoszone, $zone, $debug, $master, $sonosclass, $config, $time_start;
 	
-	$coord = array($sonoszone[$room][0], $sonoszone[$room][1]);
-	return $coord;
+	$sonos = new SonosAccess($sonoszone[$room][0]);
+	$roomcheck = $sonos->GetZoneGroupAttributes($room);
+	$roomrincon = explode(",", $roomcheck["CurrentZonePlayerUUIDsInGroup"]);
+	$roomcord = recursive_array_search($roomrincon[0],$sonoszone);
+
+	return $roomcord;
  }
  
 
@@ -237,12 +256,13 @@ function getRoomCoordinator_OLD($room){
 	if($room == "") {
 		$room = $_GET['zone'];
 	}
+	#print_r($sonoszone[$room][0]);
 	$sonos = new SonosAccess($sonoszone[$room][0]);
 	$group = $sonos->GetZoneGroupAttributes();
-	
 	$tmp_name = $group["CurrentZoneGroupName"];
 	($group = explode(',', $group["CurrentZonePlayerUUIDsInGroup"]));
 	$grouping = array();
+	
 	if(!empty($tmp_name)) {
 		if(count($group) > 1) {
 			foreach ($group as $zone) {
@@ -256,6 +276,7 @@ function getRoomCoordinator_OLD($room){
 			#print_r($grouping);
 			#echo 'OLLI';
 		#}
+		#print_r($grouping);
 		return $grouping;
 	} else {
 		return false;
