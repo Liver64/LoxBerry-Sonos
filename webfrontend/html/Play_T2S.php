@@ -771,30 +771,39 @@ function sendaudioclip($errortext = "") {
 **/
 
 function doorbell() {
-	
-	global $sonoszone, $config, $volume, $filename, $messageid;
-	
+
+	global $config;
+
 	if(isset($_GET['playgong'])) {
 		LOGERR("play_t2s.php: Audioclip: playgong could not be used im combination with function 'doorbell'");
 		exit;
 	}
-	
+
+	if(!isset($_GET['zone'])) {
+		LOGERR("play_t2s.php: doorbell: zone should be set");
+		exit;
+	}
+
 	$time_start = microtime(true);
 	$prio = "HIGH";
-	$act_player = $sonoszone[$_GET['zone']];
-	
+	$zones = [$_GET['zone']];
+
+	if (isset($_GET['member'])) {
+		$zones = array_merge($zones, audioclip_handle_members($_GET['member']));
+	}
+
 	if (isset($_GET['file'])) {
 		$file = $_GET['file'];
 		$file = $file.'.mp3';
 		$valid = mp3_files($file);
 		if ($valid === true) {
 			$jinglepath = $config['SYSTEM']['httpinterface']."/mp3/".trim($file);
-			audioclip_post_request($act_player[0], $act_player[1], "CUSTOM", $prio, $jinglepath);
 			LOGGING("play_t2s.php: Audioclip: Doorbell '".trim($file)."' with Priority HIGH has been announced", 7);	
+			audioclip_multi_post_request($zones, "CUSTOM", $prio, $jinglepath);
 		} else {
 			if ($_GET['file'] = "chime")   {
-				audioclip_post_request($act_player[0], $act_player[1], "CHIME", $prio);
 				LOGGING("play_t2s.php: Audioclip: Sonos build-in Doorbell CHIME with Priority HIGH has been announced", 7);	
+				audioclip_multi_post_request($zones, "CHIME", $prio);
 			} else {
 				LOGGING("play_t2s.php: Audioclip: Entered file '".$file."' for doorbell is not valid or nothing has been entered. Please correct your syntax", 3);
 				exit;
@@ -1064,6 +1073,148 @@ function guidv4($data = null) {
     return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
 }
 
+function audioclip_handle_members($member) {
+	global $sonoszone;
+
+	$memberon = array();
+	$members = explode(',', $member);
+
+	foreach ($sonoszone as $zone => $zoneData) {
+		if ($member === 'all' || ($members && in_array($zone, $members))) {
+			$zoneon = checkZoneOnline($zone);
+			if ($zoneon === (bool)true)  {
+				array_push($memberon, $zone);
+			}
+		}
+	}
+
+	return $memberon;
+}
+
+function audioclip_multi_post_request($zones, $clipType="CUSTOM", $priority="LOW", $tts="") {
+
+	global $volume, $guid;
+
+	if(empty($zones)) return;
+
+	$headers = [
+		'Content-Type: application/json',
+		'X-Sonos-Api-Key: '.$guid,
+	];
+
+	// Multi curl from: https://stackoverflow.com/a/63612667
+
+	$mh = curl_multi_init();
+
+	foreach ($zones as $zone) {
+
+		$url = audioclip_zone_url($zone);
+
+		if (!$url) continue;
+
+		$jsonData = audiclip_json_data(audioclip_zone_max_volume($zone, $volume), $clipType, $priority, $tts);
+
+		$worker = curl_init();
+		curl_setopt_array($worker, [
+			CURLOPT_URL => $url,
+			CURLOPT_TIMEOUT => 20,
+			CURLOPT_HEADER => 0,
+			CURLOPT_FOLLOWLOCATION => 1,
+			CURLOPT_POST => 1,
+			CURLOPT_POSTFIELDS => $jsonData,
+			CURLOPT_HTTPHEADER => $headers,
+			CURLOPT_SSL_VERIFYHOST => false,
+			CURLOPT_SSL_VERIFYPEER => false,
+			CURLOPT_SSL_VERIFYSTATUS => false,
+			CURLOPT_RETURNTRANSFER => 1,
+			// try to speed up things
+			CURLOPT_USERAGENT => "PHP",
+			CURLOPT_SSL_ENABLE_ALPN => false,
+			CURLOPT_SSL_ENABLE_NPN => false,
+			CURLOPT_SSL_FALSESTART => true,
+			CURLOPT_TCP_NODELAY => true,
+			CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4, // do not use ipv6 resolve
+			CURLOPT_TCP_FASTOPEN => true,
+		]);
+		curl_multi_add_handle($mh, $worker);
+	}
+
+	for (;;) {
+		$still_running = null;
+		do {
+			$err = curl_multi_exec($mh, $still_running);
+		} while ($err === CURLM_CALL_MULTI_PERFORM);
+		if ($err !== CURLM_OK) {
+			// handle curl multi error?
+		}
+		if ($still_running < 1) {
+			// all downloads completed
+			break;
+		}
+		// some haven't finished downloading, sleep until more data arrives:
+		curl_multi_select($mh, 1);
+	}
+
+	$results = [];
+	while (false !== ($info = curl_multi_info_read($mh))) {
+		if ($info["result"] !== CURLE_OK) {
+			// handle download error?
+		}
+		$results[curl_getinfo($info["handle"], CURLINFO_EFFECTIVE_URL)] = curl_multi_getcontent($info["handle"]);
+		curl_multi_remove_handle($mh, $info["handle"]);
+		curl_close($info["handle"]);
+	}
+	curl_multi_close($mh);
+	return $results;
+}
+
+function audiclip_json_data($volume, $clipType="CUSTOM", $priority="LOW", $tts="") {
+	if ($clipType == "CUSTOM") {
+		$jsonData = array(
+			'name' => "AudioClip",
+			'appId' => 'de.loxberry.sonos',
+			'clipType' => "CUSTOM",
+			'streamUrl' => $tts,
+			'priority' => $priority,
+			'volume' => $volume
+		);
+	}
+	if ($clipType == "CHIME") {
+		$jsonData = array(
+			'name' => "AudioClip",
+			'appId' => 'de.loxberry.sonos',
+			'clipType' => "CHIME",
+			'priority' => $priority,
+			'volume' => $volume
+		);
+	}
+
+	$jsonDataEncoded = json_encode($jsonData);
+	return $jsonDataEncoded;
+}
+
+function audioclip_zone_url($zone) {
+	global $sonoszone;
+
+	$zoneData = $sonoszone[$zone];
+	if ($zoneData) return audioclip_url($zoneData[0], $zoneData[1]);
+
+	return false;
+}
+
+function audioclip_zone_max_volume($zone, $volume) {
+	global $sonoszone;
+
+	$zoneData = $sonoszone[$zone];
+	if ($zoneData) return min($volume, $zoneData[5]);
+
+	return $volume;
+}
+
+function audioclip_url($ip, $rincon) {
+	return 'https://'.$ip.':1443/api/v1/players/'.$rincon.'/audioClip';
+}
+
 /**
 * Funktion : audioclip_post_request --> POST to https url of player
 *
@@ -1076,7 +1227,7 @@ function audioclip_post_request($ip, $rincon, $clipType="CUSTOM", $priority="LOW
 	global $myLBip, $volume, $lbhostname, $lbwebport, $filename, $streamUrl, $config, $guid;
 	
 	// API Url
-	$url = 'https://'.$ip.':1443/api/v1/players/'.$rincon.'/audioClip';
+	$url = audioclip_url($ip, $rincon);
 
 	// Initiate cURL.
 	$ch = curl_init($url);
