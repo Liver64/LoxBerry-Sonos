@@ -11,7 +11,7 @@
 	if (!is_file($lbpconfigdir.'/sonos.cfg')) {
 		LOGWARN('sonos.php: The file sonos.cfg could not be opened, please try again!', 4);
 	} else {
-		$tmpsonos = parse_ini_file($lbpconfigdir.'/sonos.cfg', TRUE);
+		$tmpsonos = parse_ini_file($lbpconfigdir.'/sonos.cfg', TRUE, INI_SCANNER_RAW);
 		if ($tmpsonos === false)  {
 			LOGERR('sonos.php: The file sonos.cfg could not be parsed, the file may be disruppted. Please check/save your Plugin Config or check file "sonos.cfg" manually!');
 			exit(1);
