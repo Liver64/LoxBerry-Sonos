@@ -64,14 +64,8 @@ echo "<INFO> Remove temporary/update folders"
 rm -r /tmp/$1\_upgrade
 rm -r $5/data/plugins/$3/tts/mp3/update
 
-CONFIGFILE="REPLACELBPCONFIGDIR/s4lox_config.json"
-if [ -f "$CONFIGFILE" ]
-then
-    echo "<INFO> JSON Config file $CONFIGFILE already exists."
-else 
-    echo "<INFO> Create Config file in JSON Format"
-	/usr/bin/php -q REPLACELBPHTMLDIR/bin/create_config.php
-fi
+echo "<INFO> Check/create new Config file in JSON Format if required"
+/usr/bin/php -q REPLACELBPHTMLDIR/bin/create_config.php
 
 echo "<INFO> Start update Player Configuration"
 /usr/bin/php -q REPLACELBPHTMLDIR/bin/updateplayer.php
