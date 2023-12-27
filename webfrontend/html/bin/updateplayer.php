@@ -2,13 +2,14 @@
 	#header('Content-Type: application/json; charset=utf-8'); 
 	
 	require_once "loxberry_system.php";
+	require_once "loxberry_web.php";
 	require_once "loxberry_log.php";
-	require_once $lbphtmldir."/Helper.php";
+	require_once LBPHTMLDIR."/Helper.php";
 	
-	$myConfigFolder = "$lbpconfigdir";								// get config folder
-	$myBinFolder = "$lbpbindir";									// get bin folder
-	$myConfigFile = "s4lox_config.json";							// configuration file
-	$off_file = $lbplogdir."/s4lox_off.tmp";						// path/file for Script turned off
+	$myConfigFolder = LBPCONFIGDIR;								// get config folder
+	$myBinFolder = LBPBINDIR;									// get bin folder
+	$myConfigFile = "s4lox_config.json";						// configuration file
+	$off_file = LBPLOGDIR."/s4lox_off.tmp";						// path/file for Script turned off
 
 	# check if script/Sonos Plugin is off
 	if (file_exists($off_file)) {

@@ -1,5 +1,3 @@
-#!/usr/bin/env php
-
 <?php
 
 /**
@@ -81,10 +79,10 @@ echo "<PRE>";
 					if (!file_exists("/run/shm/".$status_file."_".$key.".tmp"))   {
 						startLog();
 						$sonos->SetAVTransportURI("x-sonos-htastream:".$soundbars[$key][1].":spdif");
-						if ($soundbars[$key][12] < 5)    {
+						if ($soundbars[$key][14] < 5)    {
 							$sonos->SetVolume($soundbars[$key][4]);
 						} else {
-							$sonos->SetVolume($soundbars[$key][12]);
+							$sonos->SetVolume($soundbars[$key][14]);
 						}
 						try {
 							# Turn Speech/Surround Mode On and Mute Off
@@ -97,10 +95,10 @@ echo "<PRE>";
 								$sonos->SetDialogLevel($config['VARIOUS']['tvmonnight'], 'NightMode');
 							}
 						} catch (Exception $e) {
-							echo "Speech/Surround/Night Mode could'nt been turned On for: ".$soundbars[$key][12]."".PHP_EOL;
-							LOGDEB("bin/tv_monitor.php: Speech/Surround/Night Mode could'nt been turned On for: ".$soundbars[$key][12]);
+							echo "Speech/Surround/Night Mode could'nt been turned On for: ".$key."".PHP_EOL;
+							LOGDEB("bin/tv_monitor.php: Speech/Surround/Night Mode could'nt been turned On for: ".$key);
 						}
-						echo "Volume for ".$key." has been set to: ".$soundbars[$key][12]."".PHP_EOL;
+						echo "Volume for ".$key." has been set to: ".$soundbars[$key][14]."".PHP_EOL;
 						echo "Soundbar ".$key." is ON and in TV Mode".PHP_EOL;
 						echo "Current incoming value for ".$key." at HDMI/SPDIF: ".$tvmodi['HTAudioIn'].PHP_EOL;
 						file_put_contents("/run/shm/".$status_file."_".$key.".tmp", "On");
@@ -205,10 +203,10 @@ function identSB()    {
 	global $sonoszone, $folfilePlOn;
 	
 	# Extract predefined soundbars only (marked with SB and Volume > 0)
-	#$soundbars = array_filter($sonoszone, fn($innerArr) => isset($innerArr[11]) && $innerArr[12] > 0);
+	#$soundbars = array_filter($sonoszone, fn($innerArr) => isset($innerArr[13]) && $innerArr[14] > 0);
 	$soundbars = array();
 	foreach($sonoszone as $zone => $ip) {
-		$existsb = array_key_exists('11', $ip);
+		$existsb = array_key_exists('13', $ip);
 		if ($existsb == true)  {
 			$soundbars[$zone] = $ip;
 		}

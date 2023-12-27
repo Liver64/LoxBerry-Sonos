@@ -1,25 +1,36 @@
-#!/usr/bin/env php
 <?php
 
 require_once "loxberry_system.php";
 require_once "loxberry_log.php";
+
+echo "<PRE>";
 	
 $version = LBSystem::pluginversion();
+
+# if function called directly by URL then overwrite actual LB Version to lower in order to execute script
+$call = "false";
+$syntax = $_SERVER['REQUEST_URI'];
+$pos = strrpos($syntax, "/");
+$rest = substr($syntax, $pos+1, $pos+20); 
+If ($rest == "create_config.php")    {
+	$version = "5.3.8";
+	$call = "true";
+}
+
 	
 If ($version < "5.4.0")   {
 	create_JSON_config();
-	echo "<OK> New JSON configuration file required. Your actual Version is: v".$version."".PHP_EOL;
+	echo "<OK> New JSON configuration file required. Your actual Version is: v".LBSystem::pluginversion()."".PHP_EOL;
 	LOGOK("bin/create_config.php: New JSON configuration file required. Your actual Version is: v".$version);
 } else {
 	echo "<INFO> The JSON configuration is up-to-date, nothing to do :-)".PHP_EOL;
 	LOGINF("bin/create_config.php: The JSON configuration is up-to-date, nothing to do.");
 }
 
-#echo "<PRE>";
-	
+
 function create_JSON_config()    {
 	
-	global $lbpconfigdir;
+	global $lbpconfigdir, $call;
 	
 	$configfile	= $lbpconfigdir."/s4lox_config.json";	
 	
@@ -62,9 +73,15 @@ function create_JSON_config()    {
 	if (file_exists($configfile)) {
 		@unlink($configfile);
 		file_put_contents($configfile, json_encode($config, JSON_PRETTY_PRINT));
+		echo "<INFO> JSON configuration file has been updated".PHP_EOL;
 	} else {
 		file_put_contents($configfile, json_encode($config, JSON_PRETTY_PRINT));
 		echo "<INFO> New JSON configuration file has been created".PHP_EOL;
+	}
+	if ($call == "true")    {
+		#shell_exec('php updateplayer.php');
+		$version = LBSystem::pluginversion();
+		include('updateplayer.php');
 	}
 	#print_r($sonoszonen);
 	#print_r($tmpsonos);

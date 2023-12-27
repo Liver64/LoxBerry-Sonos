@@ -1,0 +1,7 @@
+#!/bin/sh
+
+echo "<INFO> Creating Plugin Backup folder 'webfrontend/html/XL/sonos4lox_backup'"
+mkdir -p $5/webfrontend/html/XL/sonos4lox_backup
+
+echo "<INFO> Copy existing CONFIG files to 'webfrontend/html/XL' folder for further installations"
+cp -p -v -r $5/config/plugins/$3/ $5/webfrontend/html/XL/sonos4lox_backup
