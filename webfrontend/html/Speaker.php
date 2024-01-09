@@ -325,7 +325,7 @@ function GetHtMode()  {
 	$tvmodi = $sonos->GetZoneInfo();
 	$zonestatus = getZoneStatus($master);
 	
-	if ($sonoszone[$master][11] == "SB")  {
+	if ($sonoszone[$master][13] == "SB")  {
 		#echo $tvmodi['HTAudioIn'];
 		if ($zonestatus === 'single')   {
 			if (substr($posinfo["UpnpClass"], 0, 32) == "object.item.audioItem.musicTrack" 

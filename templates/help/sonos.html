@@ -508,32 +508,27 @@
                         <table border=0 width="100%">
                             <tr>
                                 <div data-role="collapsible">
-                                    <td style="height: 36px; width:25%; text-align: left;">
-                                        <fieldset style="width: 100%">
-                                            <select id="t2slang" name="t2slang" data-mini="true";" 
-												data-validation-error-msg="<TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN>" 
-												data-validation-rule="^([A-Za-z0-9]){4,10}$">
-											</select>
+                                    <td style="height: 36px; width: 294px; text-align: left;">
+                                        <fieldset style="width: 286px">
+                                            <select id="t2slang" name="t2slang" data-mini="true" style="width: 258px;" 
+											data-validation-error-msg="<TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN>" 
+											data-validation-rule="^([A-Za-z0-9]){4,10}$">
+								</select>
                                         </fieldset>
                                     </td>
                                     <div id="loginResult" style="display:none;">
                                     </div>
                                     <div id="msg"></div>
-                                    <td style="height: 36px; width: 35%;" class="ttsconfig field-voice 4001 8001 9011" style="display:none">
-                                        <fieldset style="width: 100%">
-                                            <select class="voice_select" id="voice" name="voice" data-mini="true";"
+                                    <td style="height: 36px; width: 294px;" class="ttsconfig field-voice 4001 8001 9011" style="display:none">
+                                        <fieldset style="width: 187px">
+                                            <select id="voice" name="voice" data-mini="true" style="width: 206px;"
 											data-validation-error-msg="<TMPL_VAR T2S.SELECT_VOICE_DROPDOWN>" 
 											data-validation-rule="^([A-Za-z0-9]){4,10}$">
 								</select>
-								<div class="ttsconfig field-voice 9011">
-									<td class="ttsconfig field-voice 9011" style="height: 36px; width: 8%; text-align: left;">
-										<img onclick="playprev()" src='/plugins/<TMPL_VAR PLUGINDIR>/images/play-button.png'>
-									</td>
-								</div>
                                         </fieldset>
-                                        <td style="height: 36px; width: 32%; text-align: right;">
-                                            <fieldset style="width: 15%">
-                                                <input name="langiso" id="langiso" readonly="true" type="text" align="middle">
+                                        <td style="height: 36px; width: 294px; text-align: right;">
+                                            <fieldset style="width: 68px">
+                                                <input name="langiso" id="langiso" style="width: 46px" readonly="true" type="text" align="middle">
                                             </fieldset>
                                         </td>
                                 </div>
@@ -1078,14 +1073,7 @@
 			
         });
 		
-		// play test soundfile when Elevenlabs used
-		function playprev()    {
-		    var selectElement = document.getElementById("voice");
-			var file = (selectElement.options[selectElement.selectedIndex].id);
-			let beat = new Audio(file);
-			beat.play();
-		};
-		
+			
 		function checkboxes() {
 			//console.log('checkboxes');
 			// get count of players for iteration
@@ -1190,7 +1178,7 @@
                 $('#voice').removeClass('ui-disabled');
                 $('#voice').selectmenu('refresh', true);
                 validate_enable('#apikey');
-                //validate_chk_object(['#apikey']);
+                validate_chk_object(['#apikey']);
             }
             if (document.main_form.tts_polly.checked == true) {
                 $('#voice').removeClass('ui-disabled');
@@ -1521,82 +1509,66 @@
 			}
 		}
 		
-
-//************************ Prepare Elevenlabs ********************************	
-	
+		
 		function populateElevenlabsLang()   {
+		
 			console.log("populateElevenlabsLang");
 			if (document.main_form.tts_elevenlabs.checked == true) {
 				var url = 'https://api.elevenlabs.io/v1/models';
 				$('#t2slang').empty();
-				$('#info').empty();
-				//var key = document.getElementById('apikey').value;
-				var key = "77ba25e2758b20cb43867c8926ef30d0";
-				const options = {method: 'GET', headers: {"xi-api-key": "" + key + ""}};
+				$("#info").empty();
+				const options = {method: 'GET', headers: {"xi-api-key": "" + $('#apikey').val() + ""}};
 				fetch(url, options)
 					.then(response => response.json())
 					.then(function(data)  {
-						//console.log("Daten: " + data[0]);
-						if (data[0] === undefined) {
-							text = ("Elevenlabs Error: " + data.detail.message);
-							message(text);
-							return false;
-						} else {
-							$('#info').empty();
-							let lang = data[0]['languages'];
-							$('#t2slang').append('<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>');
-							lang.forEach((lang, index) => {
-								if (lang.language_id == "<TMPL_VAR TTS.messageLang>")   {
-									$('#t2slang').append("<option selected='selected' value=\"" + lang.language_id + "\">&nbsp;" + lang.name + "</option>");
-								} else {
-									$('#t2slang').append("<option value=\"" + lang.language_id + "\">&nbsp;" + lang.name + "</option>");
-								}
-							})
-							$('#t2slang').selectmenu('refresh', true);
+						if (!data) {
+							return;
 						}
+						let lang = data[0]['languages'];
+						console.log(lang);
+						$('#t2slang').append('<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>');
+						lang.forEach((lang, index) => {
+							$('#t2slang').append("<option value=\"" + lang.language_id + "\">&nbsp;" + lang.name + "</option>");
+						})
 					})
-					.catch(err => message(err));
-					populateElevenlabsVoices();
+					//.then(response => console.log(response))
+					//.catch(function(error)   {
+					.catch(err => console.error(err));
+						//console.log(error);
+					//});
+				//populateElevenlabsVoices();
 				};
 			};
 		
 		
 		function populateElevenlabsVoices()   {
+		
 			console.log("populateElevenlabsVoices");
 			$('#voice').empty();
-			$('#info').empty();
-			//var key = document.getElementById('apikey').value;
-			var key = "77ba25e2758b20cb43867c8926ef30d0";
-			const options = {method: 'GET', headers: {"xi-api-key": "" + key + ""}};
+			$("#info").empty();
+			const options = {method: 'GET', headers: {"xi-api-key": "" + $('#apikey').val() + ""}};
 			var url = 'https://api.elevenlabs.io/v1/voices';
+			let response;
+			
 			fetch(url, options)
 				.then(response => response.json())
 				.then(function(data)  {
+					if (!data) {
+	                    return;
+                    }
 					let voice = data['voices'];
-					//console.log("Daten: " + voice);
-					if (voice === undefined) {
-						text = ("Elevenlabs Error: " + data.detail.message);
-						message(text);
-						return false;
-					} else {
-						console.log(voice);
-						$('#voice').append('<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>');
-						voice.forEach((voice, index) => {
-							if (voice.voice_id == "<TMPL_VAR TTS.voice>")   {
-								$('#voice').append("<option selected='selected' id=\"" + voice.preview_url + "\" value=\"" + voice.voice_id + "\">&nbsp;" + voice.name + " - " + voice.labels.age + ", " + voice.labels.description + "</option>");
-							} else {
-								$('#voice').append("<option id=\"" + voice.preview_url + "\" value=\"" + voice.voice_id + "\">&nbsp;" + voice.name + " - " + voice.labels.age + ", " + voice.labels.description + "</option>");
-								//console.log((voice.preview_url));
-							}
-						})
-						$('#voice').selectmenu('refresh', true);
-					}
+					console.log(voice);
+
+					$('#voice').append('<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>');
+					voice.forEach((voice, index) => {
+						$('#voice').append("<option value=\"" + voice.voice_id + "\">&nbsp;" + voice.name + " - " + voice.labels.age + ", " + voice.labels.description + "</option>");
+					})
 				})
-				.catch(err => message(err));
-				return;
+				//.then(response => console.log(response))
+				//.catch(function(error)   {
+				//	console.log(error(err));
+				//});
 		};
-		
-//************************ End of Prepare Elevenlabs ********************************	
 			
 //************************ Prepare MS Azure ********************************
 	  
@@ -1609,6 +1581,7 @@
 			if ($('#apikey').val()) {
 				$('#t2slang').empty();
 				$('#voice').empty();
+				$("#info").empty();
 				var request = new XMLHttpRequest();
 				request.open('GET',
 						'https://' + regionOptions.value + ".tts.speech." +
@@ -1642,7 +1615,6 @@
 				//errorvoice = 'true';
 			} else {
 				if (($('#apikey').val().length == 32))  {
-					$("#info").empty();
 					console.log('Error Code: ' + this.status);
 					$("#info").attr("style", "color:red");
 					$("#info").text('<TMPL_VAR T2S.VOICE_ERROR1>: ' + this.status + '. <TMPL_VAR T2S.VOICE_ERROR2>: ' + $('#apikey').val() + ' <TMPL_VAR T2S.VOICE_ERROR3>');
@@ -1722,18 +1694,6 @@
 			element.click();
 			return;
 		}
-		
-		
-		// function for error messages
-		function message(text)    {
-		$('#info').empty();
-		$("#info").attr("style", "color:red");
-		$("#info").text(text);
-		$('html, body').animate({
-			scrollTop: $("#zone1").offset().top}, 500);
-			$("#zone1").focus();
-		}
-		
 		
 		function checkfile(filename)   {
 			$.post("/plugins/<TMPL_VAR PLUGINDIR>/system/ms_inbound.php");

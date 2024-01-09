@@ -31,7 +31,7 @@ echo "<PRE>";
 	if (file_exists($lbpconfigdir . "/" . $configfile))    {
 		$config = json_decode(file_get_contents($lbpconfigdir . "/" . $configfile), TRUE);
 		# check if no TV Volume turned on
-		if ($config['VARIOUS']['tvmon'] == false)   {
+		if (is_disabled($config['VARIOUS']['tvmon']))   {
 			echo "TV Monitor off".PHP_EOL;
 			exit(1);
 		} else {
@@ -41,7 +41,7 @@ echo "<PRE>";
 		echo "The configuration file could not be loaded, the file may be disrupted. We have to abort :-(')".PHP_EOL;
 		exit;
 	}
-	#print_r($config);
+	
 	
 	# extract Players
 	$sonoszone = ($config['sonoszonen']);
@@ -86,13 +86,13 @@ echo "<PRE>";
 						}
 						try {
 							# Turn Speech/Surround Mode On and Mute Off
-							$sonos->SetDialogLevel($config['VARIOUS']['tvmonspeech'], 'DialogLevel');
-							$sonos->SetDialogLevel($config['VARIOUS']['tvmonsurr'], 'SurroundEnable');
+							$sonos->SetDialogLevel(is_enabled($config['VARIOUS']['tvmonspeech']), 'DialogLevel');
+							$sonos->SetDialogLevel(is_enabled($config['VARIOUS']['tvmonsurr']), 'SurroundEnable');
 							@$sonos->SetMute(false);
-							if ($Stunden >= $config['VARIOUS']['fromtime'] and $config['VARIOUS']['tvmonnight'] == '1')   { 
+							if ($Stunden >= $config['VARIOUS']['fromtime'] and is_enabled($config['VARIOUS']['tvmonnight']))   { 
 							#if ($Stunden >= 12  and $config['VARIOUS']['tvmonnight'] == '1')   { 
 								# Turn Night Mode On/Off						
-								$sonos->SetDialogLevel($config['VARIOUS']['tvmonnight'], 'NightMode');
+								$sonos->SetDialogLevel(is_enabled($config['VARIOUS']['tvmonnight']), 'NightMode');
 							}
 						} catch (Exception $e) {
 							echo "Speech/Surround/Night Mode could'nt been turned On for: ".$key."".PHP_EOL;
@@ -104,11 +104,12 @@ echo "<PRE>";
 						file_put_contents("/run/shm/".$status_file."_".$key.".tmp", "On");
 						LOGDEB("bin/tv_monitor.php: Soundbar ".$key." is ON and in TV Mode.");
 					} else {
-						if ($Stunden >= $config['VARIOUS']['fromtime'] and $config['VARIOUS']['tvmonnight'] == '1')   { 
+						if ($Stunden >= $config['VARIOUS']['fromtime'] and is_enabled($config['VARIOUS']['tvmonnight']))   { 
 						#if ($Stunden >= 12  and $config['VARIOUS']['tvmonnight'] == '1')   { 
 							if (!file_exists("/run/shm/".$statusNight."_".$key.".json"))   {
-								# Turn Night Mode On						
-								$sonos->SetDialogLevel($config['VARIOUS']['tvmonnight'], 'NightMode');
+								# Turn Night Mode On	
+								$sonos->SetDialogLevel(is_enabled($config['VARIOUS']['tvmonspeech']), 'DialogLevel');
+								$sonos->SetDialogLevel(is_enabled($config['VARIOUS']['tvmonnight']), 'NightMode');
 								file_put_contents("/run/shm/".$statusNight."_".$key.".json",json_encode(1, JSON_PRETTY_PRINT));
 							}
 						}
@@ -148,6 +149,7 @@ echo "<PRE>";
 		echo "Outside hours, files has been deleted.".PHP_EOL;
 		DelFiles($mask);
 	}
+	#print_r($config);
 	$time_end = microtime(true);
 	$process_time = $time_end - $time_start;
 	echo "Processing request tooks about ".round($process_time, 2)." seconds.".PHP_EOL;		

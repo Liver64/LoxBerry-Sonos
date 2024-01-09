@@ -565,6 +565,11 @@ function checkTTSkeys() {
 			LOGGING("helper.php: MS_Azure is currently not available. Please install!", 4);
 		}
 	}
+	if ($config['TTS']['t2s_engine'] == 9011) {
+		if (!file_exists("voice_engines/ElevenLabs.php")) {
+			LOGGING("helper.php: Elevenlabs is currently not available. Please install!", 4);
+		}
+	}
 	if ($config['TTS']['t2s_engine'] == 3001) {
 		if (!file_exists("voice_engines/MAC_OSX.php")) {
 			LOGGING("helper.php: MAC OSX is currently not available. Please install!", 4);

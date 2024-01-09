@@ -330,6 +330,12 @@ function create_tts($text ='') {
 		if ($config['TTS']['t2s_engine'] == 9001 and empty($errortext)) {
 			include_once("voice_engines/MS_Azure.php");	
 		}
+		if ($config['TTS']['t2s_engine'] == 9011 and empty($errortext)) {
+			include_once("voice_engines/ElevenLabs.php");	
+		}
+		#if ($config['TTS']['t2s_engine'] == 9012 and empty($errortext)) {
+		#	include_once("voice_engines/Lovo.php");	
+		#}
 		#echo filesize($config['SYSTEM']['ttspath']."/".$filename.".mp3");
 	
 	if(file_exists($config['SYSTEM']['ttspath']."/".$filename.".mp3") && empty($_GET['nocache'])) {
@@ -348,7 +354,7 @@ function create_tts($text ='') {
 		if (filesize($config['SYSTEM']['ttspath']."/".$filename.".mp3") < 1)  {
 			$heute = date("Y-m-d"); 
 			$time = date("His"); 
-			if ($config['SYSTEM']['checkt2s'] === "1")  {
+			if (is_enabled($config['SYSTEM']['checkt2s']))  {
 				rename($config['SYSTEM']['ttspath']."/".$filename.".mp3", $config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");
 				LOGERR("play_t2s.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");	
 				LOGERR("play_t2s.php: Please check...");
@@ -357,9 +363,9 @@ function create_tts($text ='') {
 				LOGERR("play_t2s.php: ...your T2S Engine settings");	
 				LOGERR("play_t2s.php: Please try your requested URL in a browser or change temporally the T2S provider.");	
 				LOGINF("play_t2s.php: If no success at all please add a thread in Loxone Forum");	
-				#LOGOK("play_t2s.php: Hoere was");	
 				$filename = "t2s_not_available";
 				copy($config['SYSTEM']['mp3path']."/t2s_not_available.mp3", $config['SYSTEM']['ttspath']."/t2s_not_available.mp3");
+				//@unlink($config['SYSTEM']['ttspath'] ."/". $filename . ".mp3");
 			} else {
 				rename($config['SYSTEM']['ttspath']."/".$filename.".mp3", $config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");
 				LOGERR("play_t2s.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");	
@@ -369,7 +375,7 @@ function create_tts($text ='') {
 				LOGERR("play_t2s.php: ...your T2S Engine settings");	
 				LOGERR("play_t2s.php: Please try your requested URL in a browser or change temporally the T2S provider.");	
 				LOGINF("play_t2s.php: If no success at all please add a thread in Loxone Forum");	
-				#LOGERR("play_t2s.php: Hoere nix");	
+				//@unlink($config['SYSTEM']['ttspath'] ."/". $filename . ".mp3");
 				exit;
 			}
 		}
@@ -476,7 +482,7 @@ function play_tts($filename) {
 						$heute = date("Y-m-d"); 
 						$time = date("His"); 
 						#echo $config['SYSTEM']['checkt2s'];
-						if ($config['SYSTEM']['checkt2s'] === "1")  {
+						if (is_enabled($config['SYSTEM']['checkt2s']))  {
 							rename($config['SYSTEM']['ttspath']."/".$filename.".mp3", $config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");
 							LOGERR("play_t2s.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");	
 							LOGERR("play_t2s.php: Please check...");
