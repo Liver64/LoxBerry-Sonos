@@ -167,6 +167,10 @@ if (defined $cfg->{TTS}->{'API-key'})  {
 	$cfg->{TTS}->{apikey} = $cfg->{TTS}->{'API-key'};
 	delete $cfg->{TTS}->{'API-key'};
 }
+# copy global API-key to engine-API-key
+if (!defined $cfg->{TTS}->{apikey}->{$cfg->{TTS}->{t2s_engine}}) {
+        $cfg->{TTS}->{apikey}->{$cfg->{TTS}->{t2s_engine}} = $cfg->{TTS}->{apikey};
+}
 # copy old secret-key value to secretkey
 if (defined $cfg->{TTS}->{'secret-key'})  {
 	$cfg->{TTS}->{secretkey} = $cfg->{TTS}->{'secret-key'};
