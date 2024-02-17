@@ -427,7 +427,15 @@
 															
 
                         </fieldset>
-
+			<script>
+				$('#engine-selector input').change(function() {
+					var t2sengine = $('input[name=t2s_engine]:checked').val();
+					$.ajax({url: "./index.cgi?getkeys=1&t2s_engine="+t2sengine, type: 'GET', dataType: 'json', success: function(result){
+						$("#apikey").val(result.apikey);
+						$("#seckey").val(result.seckey);
+					}});
+				});
+			</script>
                         <div class="ttsconfig googleinfo 7001">
                             <label align="middle"><FONT size="-1" COLOR="#0000CD"><TMPL_VAR T2S.GOOGLE_INFO></FONT></label>
                         </div>
@@ -481,7 +489,7 @@
                         <label id="lapikey"><TMPL_VAR T2S.LABEL_API_KEY></label>
                     </td>
                     <td style="width: 50%; height: 48px">
-                        <input id="apikey" name="apikey" type="text" class="textfield" value="<TMPL_VAR TTS.apikey>" 
+                        <input id="apikey" name="apikey" type="text" class="textfield" value="<TMPL_VAR APIKEY>" 
 						data-validation-error-msg="<TMPL_VAR ERRORS.ERR_APIKEY>" 
 						data-validation-rule="^([A-Z0-9]){20}$|^([A-Za-z0-9\!\#\$\%\&\'\*\+\-\,\/\:\;\=\?\@\[\]\\\]]){32}$|^([A-Za-z0-9\!\#\$\%\&\'\*\+\-\,\/\:\;\=\?\@\[\]\\\]]){39}$">
 					</td>
@@ -500,7 +508,7 @@
                         <label id="lseckey"><TMPL_VAR T2S.LABEL_SECRET_KEY></label>
                     </td>
                     <td style="width: 50%; height: 48px;">
-                        <input id="seckey" name="seckey" type="text" class="textfield" value="<TMPL_VAR TTS.secretkey>" 
+                        <input id="seckey" name="seckey" type="text" class="textfield" value="<TMPL_VAR SECKEY>" 
 						data-validation-error-msg="<TMPL_VAR ERRORS.ERR_SECRETKEY>" 
 						data-validation-rule="^([A-Za-z0-9\!\#\$\%\&\'\*\+\-\,\/\:\;\=\?\@\[\]\\\]]){40}$">
 
@@ -1185,35 +1193,35 @@
             }
 
             // T2S INSTANZ
+	    //validate_clean_objects(['#seckey','#apikey']);
             if (document.main_form.tts_voicerss.checked == true) {
                 $('#voice').addClass('ui-disabled');
                 validate_enable('#apikey');
                 validate_chk_object(['#apikey']);
-            }
-			if (document.main_form.tts_azure.checked == true) {
+            } else if (document.main_form.tts_azure.checked == true) {
                 $('#voice').addClass('ui-disabled');
                 validate_enable('#apikey');
                 validate_chk_object(['#apikey']);
-            }
-			if (document.main_form.tts_elevenlabs.checked == true) {
+            } else if (document.main_form.tts_elevenlabs.checked == true) {
                 $('#voice').removeClass('ui-disabled');
                 $('#voice').selectmenu('refresh', true);
                 validate_enable('#apikey');
                 //validate_chk_object(['#apikey']);
-            }
-            if (document.main_form.tts_polly.checked == true) {
+            } else if (document.main_form.tts_polly.checked == true) {
                 $('#voice').removeClass('ui-disabled');
                 $('#voice').selectmenu('refresh', true);
                 validate_enable('#apikey');
                 validate_enable('#seckey');
                 validate_chk_object(['#seckey', '#apikey']);
-            }
-            if (document.main_form.tts_google_cloud.checked == true) {
+            } else if (document.main_form.tts_google_cloud.checked == true) {
                 $('#voice').addClass('ui-disabled');
-				validate_enable('#apikey');
+                validate_enable('#apikey');
                 validate_chk_object(['#apikey']);
                 //$('#t2slang').addClass('ui-disabled');
-            }
+            } else {
+	    	console.log("Clean validate");
+	    	validate_clean_objects(['#seckey','#apikey']);
+	    }
             populateLanguageAndVoiceFields();
         }
 
@@ -1914,6 +1922,7 @@
 				
 				$("#info").trigger('create');
                 if (document.main_form.tts_polly.checked == true) {
+			console.log("Polly checked");
                      if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
@@ -1937,6 +1946,7 @@
                         e.preventDefault();
                     }
                 } else if (document.main_form.tts_mac_osx.checked == true) {
+			conѕole.log("OSX checked");
                     if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
@@ -1949,6 +1959,7 @@
                         e.preventDefault();
                     }
                 } else if (document.main_form.tts_voicerss.checked == true) {
+			console.log("VoiceRSS checked");
                     if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
@@ -1960,7 +1971,8 @@
 						return false;
                         e.preventDefault();
                     }
-				} else if (document.main_form.tts_google_cloud.checked == true) {
+		} else if (document.main_form.tts_google_cloud.checked == true) {
+			console.log("Google Cloud checked");
                     if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
@@ -1972,7 +1984,7 @@
 						return false;
                         e.preventDefault();
                     }
-					if (selectvoice == null) {
+			if (selectvoice == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
 						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
@@ -1983,7 +1995,8 @@
 						return false;
                         e.preventDefault();
                     }
-				} else if (document.main_form.tts_elevenlabs.checked == true) {
+		} else if (document.main_form.tts_elevenlabs.checked == true) {
+			console.log("Elevenlabs checked");
                     if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
@@ -2007,6 +2020,7 @@
                         e.preventDefault();
                     }
                 } else if (document.main_form.tts_pico.checked == true) {
+			console.log("Pico checked");
                     if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
@@ -2019,6 +2033,7 @@
                         e.preventDefault();
                     }
                 } else if (document.main_form.tts_respvoice.checked == true) {
+			console.log("RespVoice checked");
                     if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
@@ -2031,6 +2046,7 @@
                         e.preventDefault();
                     }
                 } else if (document.main_form.tts_google.checked == true) {
+			console.log("Google checked");
                     if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
@@ -2042,7 +2058,8 @@
 						return false;
                         e.preventDefault();
                     }
-				} else if (document.main_form.tts_azure.checked == true) {
+		} else if (document.main_form.tts_azure.checked == true) {
+			console.log("Azure checked");
                     if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
