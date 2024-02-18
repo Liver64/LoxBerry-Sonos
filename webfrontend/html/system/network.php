@@ -171,11 +171,13 @@
 **/
  function getSonosDevices($devices){
 	 
-	global $sonosfinal, $sodevices, $lbphtmldir;
+	global $sonosfinal, $sodevices, $lbphtmldir, $sonosplayerfinal;
 	
 	# http://192.168.50.65:1400/xml/device_description.xml
 	# http://<IP>:1400/info
 	
+	$sub = GetSub($devices, "SW");
+	$sur = GetSub($devices, "LR");
 	$sodevices = $devices[0];
 	$zonen = array();
 	
@@ -189,9 +191,27 @@
 		$search = array('Ä','ä','Ö','ö','Ü','ü','ß');
 		$replace = array('Ae','ae','Oe','oe','Ue','ue','ss');
 		$room = strtolower(str_replace($search,$replace,$roomraw));
-		$groupId = $info['groupId'];
+		if ($sub != "false")    {
+			if (array_key_exists($room, $sub))  {
+				$subwoofer = "SUB";
+			} else {
+				$subwoofer = "NOSUB";
+			}
+		} else {
+			$subwoofer = "NOSUB";
+		}	
+		if ($sur != "false")    {
+			if (array_key_exists($room, $sub))  {
+				$surround = "SUR";
+			} else {
+				$surround = "NOSUR";
+			}
+		} else {
+			$surround = "NOSUR";
+		}	
+		#$groupId = $info['groupId'];
 		$householdId = $info['householdId'];
-		$deviceId = $info['device']['serialNumber'];
+		#$deviceId = $info['device']['serialNumber'];
 		$zonen = 		[$room, 
 						$zoneip,
 						(string)$rinconid,
@@ -201,9 +221,9 @@
 						'',
 						'',
 						(string)$model,
-						(string)$groupId,
+						(string)$subwoofer,
 						(string)$householdId,
-						(string)$deviceId						
+						(string)$surround						
 						];
 
 		// Entry 11
@@ -237,6 +257,7 @@
 			file_put_contents($img, file_get_contents($url));
 		}
 	}
+
 	if (count($sonosplayerfinal) === 0)   {
 		LOGERR("system/network.php: Something went wrong... Device(s) has been found but could not be added to your system! We skip here...");
 		return false;
@@ -371,5 +392,50 @@ function shutdown()
 	
 }
 
+
+/* Funktion :  GetSub --> check for Subwoofer available
+/*
+/* @param: IP of one Zone
+/* @return: array room names
+**/
+
+function GetSub($devices, $val)    {
+
+	global $sonos, $sonosplayerfinal, $config;
+	
+	if ($val != "SW" and $val != "LR")   {
+		return "invalid entries";
+	} elseif ($val == "SW")  {
+		$key = "SUB";
+	} elseif ($val == "LR")  {
+		$key = "SUR";
+	}
+	
+	require_once(LBPHTMLDIR.'/system/bin/XmlToArray.php');
+	
+	$sonos = new SonosAccess($devices[0]); //Sonos IP Adresse
+	$xml = $sonos->GetZoneStates();
+	# https://github.com/vyuldashev/xml-to-array/tree/master
+	$array = XmlToArray::convert($xml);
+	$interim = $array['ZoneGroupState']['ZoneGroups']['ZoneGroup'];
+	
+	$subwoofer = array();
+	foreach($interim as $key => $value)     {
+		if (@$value['ZoneGroupMember']['attributes']['HTSatChanMapSet'])  {
+			$int = explode(";", $value['ZoneGroupMember']['attributes']['HTSatChanMapSet']);
+			foreach ($int as $sub)   {
+				$a = substr($a, -2);
+				if ($a == $val)    {
+					$subsur[strtolower($value['ZoneGroupMember']['attributes']['ZoneName'])] = $key;
+				}
+			}
+		}
+	}
+	if (empty($subwoofer))    {
+		$subwoofer = "false";
+	}
+	# print_r($subwoofer);
+	return $subwoofer;
+}
 
 ?>

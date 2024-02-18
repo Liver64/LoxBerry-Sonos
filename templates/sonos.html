@@ -13,6 +13,7 @@
 	text-shadow: none !important;
 }
 
+
 </style>
 
 <TMPL_IF SETTINGS>
@@ -49,7 +50,7 @@
                         <label id="lzonen"><TMPL_VAR ZONES.SONOS_ZONE_LABEL></label>
                     </td>
                     <td valign="middle" style="height: 41px; width: 60%;">
-                        <table width="100%" cellpadding="2" cellspacing="0" border="1px" border="1" id="tblzonen" name="tblzonen">
+                        <table width="85%" cellpadding="2" cellspacing="0" border="1px" border="1" id="tblzonen" name="tblzonen">
                             <tr>
                                 <th style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 35px">
                                     <img class='ico_delete' src='/plugins/<TMPL_VAR PLUGINDIR>/images/recycle-bin.png' border='0' width='24' height='24'>
@@ -81,31 +82,22 @@
                                 <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 98px">
                                     <TMPL_VAR ZONES.SONOS_MAX-VOL>
                                 </th>
-								<div class="tvmonitorsecond">
-									<th class="tvmonitorsecond" align="left" id="tvmtvol" name="tvmtvol" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 98px">
-										<TMPL_VAR ZONES.SONOS_TV-VOL>
-									</th>
-								</div>
                             </tr>
                             <TMPL_VAR ROWSSONOSPLAYER>
-							
                         </table>
 						<TMPL_IF NAME="PLAYERAVAILABLE">
-						<div class='icoclip' style='text-align: center;'>
-							<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/green.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_GREEN>
-							<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/yellow.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_YELLOW>
-							<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/red.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_RED>
-						</div>
+							<div class='icoclip' style='text-align: left;'>
+								<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/green.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_GREEN>
+								<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/yellow.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_YELLOW>
+								<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/red.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_RED>
+							</div>
 						</TMPL_IF>
                     </td>
-                    <td style="width: 201px; height: 41px;" valign="top">
+                    <td style="width: 50px; height: 41px;" valign="top">
                         <a onClick="Scan()" id="btnplayerscan" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="#">
                             <TMPL_VAR T2S.BUTTON_SCAN>
                         </a>
-                        <br>
-						<script>
-						
-						</script>
+                       <br>
                 </tr>
 				
 				
@@ -151,14 +143,14 @@
                                 <td class="tvmonitorstat" style="width: 23px; text-align: center;">
                                     &nbsp;</td>
                                 <td>
-                                    <table border=0 style="width: 70%">
+                                    <table border=0 style="width: 100%">
                                         <tr>
-                                            <td class="tvmonitorstat" style="width: 20%; height: 60px;">
-                                        <label align="right" id="lstart"><TMPL_VAR ZONES.SONOS_LABEL_START></label>
-									</td>
-                                <td class="tvmonitorstat" style="width: 15%">
+                                            <td class="tvmonitorstat" style="height: 60px; width: 12%">
+												<label align="right" id="lstart"><TMPL_VAR ZONES.SONOS_LABEL_START></label>
+											</td>
+                                <td class="tvmonitorstat" style="width: 10%">
 									<div id="addstart">
-										<fieldset>
+										<fieldset style="width: 95%">
 										<select id="starttime" name="starttime" data-mini="true" data-native-menu="true" style="width: 100%">
 											  <option value="0">0:00</option>
 											  <option value="1">1:00</option>
@@ -191,12 +183,12 @@
                                     </script>
 									</div>
                                 </td>
-								<td class="tvmonitorstat" style="width: 20%; height: 60px;">
+								<td class="tvmonitorstat" style="width: 3%; height: 60px;">
                                     <label align="right" id="lend"><TMPL_VAR ZONES.SONOS_LABEL_END></label>
                                 </td>
-                                <td class="tvmonitorstat" style="width: 15%">
+                                <td class="tvmonitorstat" style="width: 50%">
 									<div id="addend">
-										<fieldset>
+										<fieldset style="width: 20%">
 											<select id="endtime" name="endtime" data-mini="true" data-native-menu="true" style="width: 100%">
 												  <option value="0">0:00</option>
 												  <option value="1">1:00</option>
@@ -229,147 +221,46 @@
 										</script>
 									</div>
                                 </td>
-								
-								
-								
-                                        </tr>
-                                    </table>
-                                </td>
                             </tr>
                         </table>
                     </td>
-                    <td class="empty_template" style="height: 30px; width: 201px;">
-                        <font size="-1">
-                            
-                        </font>
-                    </td>
-                    <td class="empty_template" style="height: 30px; width: 24px;">
-                        <font size="-1">
-                            <div id="testurl">
-                            </div>
-                        </font>
+                </tr>
+            </table>
+        </td>
+        <td class="empty_template" style="height: 30px; width: 201px;">
+            <font size="-1"></font>
+        </td>
+            <td class="empty_template" style="height: 30px; width: 24px;">
+                <font size="-1">
+                    <div id="testurl"></div>
+                </font>
 
-                    </td>
-					
-				</tr>
-				
+            </td>	
+		</tr>
+			
 				<tr class="tvmonitorsecond">
-				<td class="tvmonitorstat" style="height: 20px; width: 25%;"></td>
-                    <td class="tvmonitorstat" width="5%" style="height: 20px">
-                        <table class="tvmonitorstat" border=0 width="100%">
-                            <tr class="tvmonitorstat">
-							<td class="tvmonitorstat" style="width: 10%; height: 20px;">
-                                        <label align="left" id="lspeech"><TMPL_VAR ZONES.SONOS_LABEL_SPEECH></label>
-									</td>
-                                <td class="tvmonitorstat" style="width: 6%">
-                                    <fieldset>
-										<select id="tvmonspeech" name="tvmonspeech" data-role="flipswitch" style="width: 5%">
-											<option selected="selected" value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
-											<option value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
-										</select>
-                                    </fieldset>
-									<script>
-										$('#tvmonspeech').val('<TMPL_VAR VARIOUS.tvmonspeech>');
-									</script>	
-                                </td>
-                                <td class="tvmonitorstat" style="width: 23px; text-align: center;">
-                                    &nbsp;</td>
-                                <td>
-                                    <table border=0 style="width: 100%">
-                                        <tr>
-                                            <td class="tvmonitorstat" style="width: 20%; height: 60px;">
-                                        <label align="right" id="lsurr"><TMPL_VAR ZONES.SONOS_LABEL_SURROUND></label>
-									</td>
-                                <td class="tvmonitorstat" style="width: 15%">
-									<div id="addstart">
-										<fieldset>
-										<select id="tvmonsurr" name="tvmonsurr" data-role="flipswitch" style="width: 5%">
-											<option selected="selected" value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
-											<option value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
-										</select>
-                                    </fieldset>
-									<script>
-										$('#tvmonsurr').val('<TMPL_VAR VARIOUS.tvmonsurr>');
-									</script>	
-									</div>
-                                </td>
-								
-								<td class="tvmonitorstat" style="width: 20%; height: 60px;">
-                                    <label align="right" id="lnight"><TMPL_VAR ZONES.SONOS_LABEL_NIGHT></label>
-                                </td>
-								<td class="tvmonitorstat" style="width: 6%">
-                                    <fieldset>
-										<select id="tvmonnight" name="tvmonnight" data-role="flipswitch" style="width: 5%">
-											<option selected="selected" value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
-											<option value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
-										</select>
-                                    </fieldset>
-									<script>
-										$('#tvmonnight').val('<TMPL_VAR VARIOUS.tvmonnight>');
-									</script>	
-                                </td>
-								<td class="tvmonitorstat" style="width: 20%; height: 60px;">
-                                    <label align="right" id="lfrom"><TMPL_VAR ZONES.SONOS_LABEL_FROM></label>
-                                </td>
-                                <td class="tvmonitorstat" style="width: 15%">
-									<div id="addend">
-										<fieldset>
-											<select id="fromtime" name="fromtime" data-mini="true" data-native-menu="true" style="width: 100%">
-												  <option value="0">0:00</option>
-												  <option value="1">1:00</option>
-												  <option value="2">2:00</option>
-												  <option value="3">3:00</option>
-												  <option value="4">4:00</option>
-												  <option value="5">5:00</option>
-												  <option value="6">6:00</option>
-												  <option value="7">7:00</option>
-												  <option value="8">8:00</option>
-												  <option value="9">9:00</option>
-												  <option value="10">10:00</option>
-												  <option value="11">11:00</option>
-												  <option value="12">12:00</option>
-												  <option value="13">13:00</option>
-												  <option value="14">14:00</option>
-												  <option value="15">15:00</option>
-												  <option value="16">16:00</option>
-												  <option value="17">17:00</option>
-												  <option value="18">18:00</option>
-												  <option selected="selected" value="19">19:00</option>
-												  <option value="20">20:00</option>
-												  <option value="21">21:00</option>
-												  <option value="22">22:00</option>
-												  <option value="23">23:00</option>
-											</select>
-										</fieldset>
-										<script>
-											$('#fromtime').val('<TMPL_VAR VARIOUS.fromtime>');
-										</script>
-									</div>
-                                </td>
-								
-								
-								
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                    <td class="tvmonitorstat" style="height: 30px; width: 201px;">
-                        <font size="-1">
-                            
-                        </font>
-                    </td>
-                    <td class="tvmonitorstat" style="height: 30px; width: 24px;">
-                        <font size="-1">
-                            <div id="testurl">
-                            </div>
-                        </font>
-
-                    </td>
-				
+					<td style="width: 15%; height: 20px;" valign="top">
+						</td>
+					<div class="soundbars">
+						<td valign="middle" style="height: 15px; width: 80%;">
+							<table class="tvmonitorsecond" width="100%" cellpadding="2" cellspacing="0" border="1px" border="1" id="tblsb" name="tblsb">
+								<tr class="tvmonitorsecond">
+									<th style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 15px; width: 13%"><TMPL_VAR SOUNDBARS.LABEL_USE></th>
+									<th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 15px; width: 20%"><TMPL_VAR SOUNDBARS.LABEL_SOUNDBAR></th>
+									<th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 15px; width: 9%"><TMPL_VAR SOUNDBARS.LABEL_SPEECH></th>
+									<th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 15px; width: 13%"><TMPL_VAR SOUNDBARS.LABEL_SURROUND></th>
+									<th align="middle" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 15px; width: 13%"><TMPL_VAR SOUNDBARS.LABEL_SUB></th>
+									<th align="left" id="tvmtvol" name="tvmtvol" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 20px; width: 5%"><TMPL_VAR SOUNDBARS.LABEL_TVVOL></th>
+									<th align="middle" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 15px; width: 9%"><TMPL_VAR SOUNDBARS.LABEL_FROM_TIME></th>
+									<th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 15px; width: 9%"><TMPL_VAR SOUNDBARS.LABEL_NIGHT></th>
+									<th align="middle" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 15px; width: 9%"><TMPL_VAR SOUNDBARS.LABEL_SUB_GAIN></th>
+									
+								</tr>
+								<TMPL_VAR ROWSOUNDBARS>
+							</table>
+						</td>
+					</div>
 				</tr>
-				
 				<tr>
 					<td style="width: 201px; height: 20px;" valign="top">
                     </td>
@@ -735,11 +626,7 @@
 										</div>
 									</td>
 								</td>
-                                <td class="empty_template" style="width: 25%">
-								
-								<!--<button type="button" id="btnAlert">Alert</button>-->
-								
-								</td>
+                                <td class="empty_template" style="width: 25%"></td>
                             </tr>
                         </table>
 						<td class="empty_template" style="width: 50%; height: 60px;">
@@ -1073,7 +960,8 @@
 	<script src="/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/bin/Microsoft/microsoft.cognitiveservices.speech.sdk.bundle.js"></script>
 	<script>
         //***************** Functions to be executed during loading the page **********************
-
+		
+		//console.log(config);
         $(document).on('pageinit', function() {
             selection();
 			//selectudp();
@@ -1082,11 +970,10 @@
             radlayout();
             weatherlayout();
             donation();
-			//validateSB();
-
+			getsbconfig();
+			//getconfig();
+			});
 			
-        });
-		
 		// play test soundfile when Elevenlabs used
 		function playprev()    {
 		    var selectElement = document.getElementById("voice");
@@ -1103,10 +990,8 @@
             iteration += 1;
 			// loop through players
 			for (i = 1; i < iteration; ++i) {
-				//var te = document.getElementById('mainchk' + i).value;
 				if (document.getElementById('mainchk' + i).value == "on") {
 					document.getElementById('mainchk' + i).checked = true;
-					//console.log(document.getElementById('mainchk' + i));
 					$('input:checkbox').checkboxradio('refresh');
 				} else {
 					document.getElementById('mainchk' + i).checked = false;
@@ -1243,7 +1128,7 @@
 					$('.btnc').fadeOut(100);
 					$('.btnd').fadeOut(100);
 					$('.btn').fadeIn(100);
-					//validate_enable('#udpport');
+					validate_enable('#udpport');
 					//validate_chk_object(['#udpport']);
 				}
             } else {
@@ -1786,10 +1671,88 @@
 				});
 			});
 		});
-			
-			
 		
-		// check if Soundbar(s) are used
+		// get soundbar config
+		function getsbconfig()   {
+		
+			$.ajax({
+					url: 'index.cgi',
+					type: 'post',
+					data: { action: 'soundbars',},
+					dataType: 'json',
+						success: function(data) {
+							//console.log(data);
+							$.each(data, function(index, valu) {
+							//$.each(config['sonoszonen'], function(index, valu) {
+								if (valu[13] == 'SB')   {
+									if (valu[8] == 'SUB' && valu.length == 15) {
+										$("#tvmonnightsub_" + index).val(valu[14].tvmonnightsub).flipswitch("refresh");
+										$("#subgain_" + index).val(valu[14].tvmonnightsublevel).selectmenu("refresh");
+									} else if (valu[8] == 'SUB' && valu.length == 14) {
+										$("#tvmonnightsub_" + index).val("false").flipswitch("refresh");
+										$("#subgain_" + index).val("0").selectmenu("refresh");
+									} else {
+										$("#tvmonnightsub_" + index).flipswitch("disable").flipswitch("refresh");
+										$("#subgain_" + index).val("0").selectmenu("disable").selectmenu("refresh");
+									}
+									if (valu[10] == 'SUR' && valu.length == 15) {
+										$("#tvmonsurr_" + index).val(valu[14].tvmonsurr).flipswitch("refresh");
+									} else if (valu[10] == 'SUR' && valu.length == 14) {
+										$("#tvmonsurr_" + index).val("false").flipswitch("refresh");
+									} else {
+										$("#tvmonsurr_" + index).val('false').flipswitch("disable").flipswitch("refresh");
+									}
+									if (valu.length == 15)   {
+										$("#sbzone_" + index).val(index).text("refresh");
+										$("#usesb_" + index).val(valu[14].usesb).flipswitch("refresh");
+										$("#tvmonspeech_" + index).val(valu[14].tvmonspeech).flipswitch("refresh");
+										$("#tvmonnight_" + index).val(valu[14].tvmonnight).flipswitch("refresh");
+										$("#tvmonnightsub_" + index).val(valu[14].tvmonnightsub).flipswitch("refresh");
+										$("#fromtime_" + index).val(valu[14].fromtime).selectmenu("refresh");
+										$("#tvvol_" + index).val(valu[14].tvvol).text("refresh");
+									}
+									var usage = document.getElementById("usesb_" + index).value;
+									if (usage == "true")   {
+										validate_enable("#tvvol_" + index);
+										validate_chk_object(["#tvvol_" + index]);
+									}
+								}
+							});
+						}
+					})
+				.fail(function(data) {
+					console.log( "Action failed", data );
+				})
+				.always(function(data) {
+					return data;
+				})
+		};
+		
+		//var config;
+		// get config
+		//function getconfig()   {
+			
+			var config = $.ajax({
+					url: 'index.cgi',
+					type: 'post',
+					data: { action: 'config',},
+					dataType: 'json',
+						success: function(data) {
+							console.log(data);
+							return data;
+						}
+					})
+				.fail(function(data) {
+					console.log( "Action failed", data );
+				})
+				.always(function(data) {
+					//return data;
+				})
+		//};
+		//console.log((config));
+		
+		
+		// check if Soundbar(s) exist and activate template settings
 		function validateSB()   {
 			var iteration = document.getElementById('countplayers').value;
 			var sbyes = "0";
@@ -1798,17 +1761,13 @@
 			for (i = 1; i < iteration; ++i) {
 				if($('#sb' + i + '').length)   {
 					var sbyes = "1";
-				} else {
-					//var sbyes = "0";
 				}
 			}
-			console.log("sbyes: " + sbyes);
+			//console.log("sbyes: " + sbyes);
 			if (sbyes == "1")   {
 				$('.tvmonitorsecond').fadeIn(600);
 				$('.tvmonitorstat').fadeIn(600);
 				$('#tblzonen td:nth-child(11)').show();
-				validateTVMonReady();
-				validateTVMonVol();
 			} else {
 				$('.tvmonitorsecond').fadeOut(600);
 				$('.tvmonitorstat').fadeOut(600);
@@ -1817,17 +1776,26 @@
 			$("#tvmon").flipswitch("refresh");
 		}
 		
-		// if TV Volume been used show info
+		// if TV Monitor been used show info   
 		function validateTVMon()   {
 			var tvmonitor = document.getElementById('tvmon').value;
 			$("#info").empty();
-			validateTVMonReady();
 			if (tvmonitor == "true")   {
+				$('#lstart').fadeIn(600);
+				$('#lend').fadeIn(600);
+				$('#addstart').fadeIn(600);
+				$('#addend').fadeIn(600);
+				$('.tvmonitorsecond').fadeIn(600);
 				$("#info").trigger('create');
 				$("#info").attr("style", "color:red");
 				$("#info").html('<TMPL_VAR TEMPLATE.TV_MONITOR_ON>');
 				console.log("TV Monitor On");
 			} else {
+				$('#lstart').fadeOut(600);
+				$('#lend').fadeOut(600);
+				$('#addstart').fadeOut(600);
+				$('#addend').fadeOut(600);
+				$('.tvmonitorsecond').fadeOut(600);
 				$("#info").trigger('create');
 				$("#info").attr("style", "color:red");
 				$("#info").html('<TMPL_VAR TEMPLATE.TV_MONITOR_OFF>');
@@ -1836,60 +1804,22 @@
 			$("#tvmon").flipswitch("refresh");
 		}
 		
-		// show/hide fields TV Volume been used
-		function validateTVMonReady()   {
-			var tvmonitor = document.getElementById('tvmon').value;
-			console.log(tvmonitor);
-			$("#info").empty();
-			if (tvmonitor == "true")   {
-				$('#lstart').fadeIn(600);
-				$('#lend').fadeIn(600);
-				$('#addstart').fadeIn(600);
-				$('#addend').fadeIn(600);
-				$('.tvmonitorsecond').fadeIn(600);
-				$('#tblzonen td:nth-child(11)').show();
-			} else {
-				$('#lstart').fadeOut(600);
-				$('#lend').fadeOut(600);
-				$('#addstart').fadeOut(600);
-				$('#addend').fadeOut(600);
-				$('.tvmonitorsecond').fadeOut(600);
-				$('#tblzonen td:nth-child(11)').hide();
-			}
-			$("#tvmon").flipswitch("refresh");
-		}
 		
-		// validate TV Volume entries per player
-		function validateTVMonVol()   {
-			if (document.getElementById('tvmon').value == "true")    {
-				console.log("Validate TV Volume");
-				var iteration = document.getElementById('countplayers').value;
-				iteration = parseInt(iteration)
-				iteration += 1;
-				for (i = 1; i < iteration; ++i) {
-					$('#tvvol' + i + '').fadeIn(600);
-					validate_enable('#tvvol' + i + '');
-					validate_chk_object(['#tvvol' + i + '']);
-					//return false;
-				}
-			}
-			$("#tvmon").flipswitch("refresh");
-		}
-		
-		
-			
-		
-		// function to populate dropdown from JSON files based on selected T2S Provider
+		// document ready
         $(document).ready(function() {
 			console.log("documentreadyfunction");
             $('#engine-selector input').change(prepareTTSConfigFields);
             $('#t2slang').change(populateVoice);
-
+			
             // various validations
             initial_lang_voice_load();
 			checkboxes();
 			validateSB();
-			//validateTVMonReady();
+			getsbconfig();
+			
+			//$.each(config, function(index, valu) {
+				//console.log(index);
+			//});
 			
 			// validate Volume entries per player
             var iteration = document.getElementById('countplayers').value;
@@ -2450,7 +2380,7 @@
                         <label id="lphonemute"><TMPL_VAR T2S.LABEL_PHONEMUTE></label>
                     </td>
                     <td style="height: 60px; width: 800px;">
-                        <input type="range" name="phonemute" id="phonemute" value="<TMPL_VAR TTS.phonemute>" min="0" max="16" step="2">
+                        <input type="range" name="phonemute" id="phonemute" value="<TMPL_VAR VARIOUS.phonemute>" min="0" max="16" step="2">
                     </td>
                     <td style="height: 30px; width: 201px;"></td>
                     <td style="height: 30px; width: 201px;"></td>
@@ -2506,7 +2436,7 @@
                         <label id="lwaiting"><TMPL_VAR T2S.LABEL_WAITING></label>
                     </td>
                     <td style="height: 60px; width: 800px;">
-                        <input type="range" name="waiting" id="waiting" value="<TMPL_VAR TTS.waiting>" min="0" max="10" step="1">
+                        <input type="range" name="waiting" id="waiting" value="<TMPL_VAR MP3.waiting>" min="0" max="10" step="1">
                     </td>
                     <!--Start *** HIDDEN Workaround Felder um 3 Felder zu escapen -->
                     <td style="height: 30px; width: 201px;">

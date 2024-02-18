@@ -837,14 +837,14 @@ function sendgroupmessage() {
 				LOGGING("play_t2s.php: There is no T2S engine/language selected in Plugin config. Please select before using T2S functionality.", 3);
 				exit();
 			}
-			if ((!isset($_GET['text'])) && (!isset($_GET['messageid'])) && (!isset($_GET['sonos'])) &&
-				(!isset($_GET['text'])) && (!isset($_GET['weather'])) && (!isset($_GET['abfall'])) &&
-				(!isset($_GET['witz'])) && (!isset($_GET['pollen'])) && (!isset($_GET['warning'])) &&
-				(!isset($_GET['bauernregel'])) && (!isset($_GET['distance'])) && (!isset($_GET['clock'])) && 
-				(!isset($_GET['calendar'])) && (!isset($_GET['action'])) == 'playbatch') {
-				LOGGING("play_t2s.php: Wrong Syntax, please correct! Even 'say&text=' or 'say&messageid=' are necessary to play an anouncement. (check Wiki)", 3);	
-				exit;
-			}
+			#if ((!isset($_GET['text'])) && (!isset($_GET['messageid'])) && (!isset($_GET['sonos'])) &&
+			#	(!isset($_GET['text'])) && (!isset($_GET['weather'])) && (!isset($_GET['abfall'])) &&
+			#	(!isset($_GET['witz'])) && (!isset($_GET['pollen'])) && (!isset($_GET['warning'])) &&
+			#	(!isset($_GET['bauernregel'])) && (!isset($_GET['distance'])) && (!isset($_GET['clock'])) && 
+			#	(!isset($_GET['calendar'])) && (!isset($_GET['action'])) == 'playbatch') {
+			#	LOGGING("play_t2s.php: Wrong Syntax, please correct! Even 'say&text=' or 'say&messageid=' are necessary to play an anouncement. (check Wiki)", 3);	
+			#	exit;
+			#}
 			if(isset($_GET['batch'])) {
 				LOGGING("play_t2s.php: The parameter batch is not allowed to be used in groups. Please use single message to prepare your batch!", 4);
 				exit;

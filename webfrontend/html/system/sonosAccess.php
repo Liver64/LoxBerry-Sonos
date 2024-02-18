@@ -6,6 +6,7 @@ declare(strict_types = 1);
 // using PHP SoapClient
 
 
+
 class SonosAccess
 {
     public $address;
@@ -448,7 +449,7 @@ class SonosAccess
 	 *
 	 * @return: bool
 	 */	
-    public function GetDialogLevel(): bool
+    public function GetDialogLevel($type)
     {
         $dialogLevel = (int) $this->processSoapCall(
             '/MediaRenderer/RenderingControl/Control',
@@ -456,15 +457,19 @@ class SonosAccess
             'GetEQ',
             [
                 new SoapParam('0', 'InstanceID'),
-                new SoapParam('DialogLevel', 'EQType')
+                new SoapParam($type, 'EQType')
             ]
         );
-
-        if ($dialogLevel === 1) {
-            return true;
-        } else {
-            return false;
-        }
+		
+		if ($type == "SubGain") {
+			return $dialogLevel;
+		} else {
+			if ($dialogLevel === 1) {
+				return true;
+			} else {
+				return false;
+			}
+		}
     }
 
 
@@ -983,17 +988,62 @@ class SonosAccess
 	 * @return String
 	 */
 
-    public function GetZoneGroupState(): string
+    public function GetZoneGroupState()
     {
-        return $this->processSoapCall(
+        $zonegroups = $this->processSoapCall(
             '/ZoneGroupTopology/Control',
             'urn:schemas-upnp-org:service:ZoneGroupTopology:1',
             'GetZoneGroupState',
             []
         );
-    }
+		$xmlParser = xml_parser_create('UTF-8');
+        xml_parser_set_option($xmlParser, XML_OPTION_TARGET_ENCODING, 'UTF-8');
+        xml_parse_into_struct($xmlParser, $zonegroups, $vals, $index);
+        xml_parser_free($xmlParser);
+
+        $xml = new SimpleXMLElement($zonegroups);
+		
+		$liste = array();
+		for($i=0,$size=count($xml->ZoneGroups->ZoneGroup);$i<$size;$i++)
+        {
+			#$attrhead = $xml->ZoneGroups->ZoneGroup[$i]->attributes();
+			$attrdetail = $xml->ZoneGroups->ZoneGroup[$i]->ZoneGroupMember->attributes();
+			$satdetail = $xml->ZoneGroups->ZoneGroup[$i]->ZoneGroupMember->Satellite;
+			$liste[$i]['ZoneName'] = (string)$attrdetail['ZoneName'];
+			$liste[$i]['UUID'] = (string)$attrdetail['UUID'];
+			$liste[$i]['HDMI'] = (string)$attrdetail['HdmiCecAvailable'];
+			$liste[$i]['Wifi_Enabled'] = (string)$attrdetail['WifiEnabled'];
+			$liste[$i]['BehindWifiExtender'] = (string)$attrdetail['BehindWifiExtender'];
+			$liste[$i]['Eth_Enabled'] = (string)$attrdetail['EthLink'];
+			foreach ($satdetail as $key)    {
+				#print_r($key->attributes()->UUID);
+			}
+			#$liste[$i]['Satellite'] = $satdetail;
+        }
+		print_r($liste);
+		print_r($xml->ZoneGroups);
+	}
 	
 	
+	/**
+	 * Get current player Online
+	 *
+	 * @return array
+	 */
+
+    public function GetZoneStates()
+    {
+        $ZoneStates = $this->processSoapCall(
+            '/ZoneGroupTopology/Control',
+            'urn:schemas-upnp-org:service:ZoneGroupTopology:1',
+            'GetZoneGroupState',
+            []
+        );
+		return $ZoneStates;
+	}
+	 
+	 
+	 
 	/**
 	 * Get Autoplay RINCON-ID from player
 	 *
@@ -1904,7 +1954,7 @@ class SonosAccess
 	/**
 	 * Set various options for TV Mode
 	 *
-	 * @param string $mode          0 or 1
+	 * @param string $dialogLevel   0 or 1
 	 * @param string $EQType        SubEnable, SurroundEnable, NightMode, DialogLevel 
 	 *
 	 * @return String
@@ -1912,12 +1962,6 @@ class SonosAccess
  
 	public function SetDialogLevel($dialogLevel, $EQType = "DialogLevel")
     {
-        if ($dialogLevel) {
-            $dialogLevel = '1';
-        } else {
-            $dialogLevel = '0';
-        }
-
         $this->processSoapCall(
             '/MediaRenderer/RenderingControl/Control',
             'urn:schemas-upnp-org:service:RenderingControl:1',

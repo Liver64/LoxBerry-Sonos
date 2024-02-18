@@ -83,6 +83,7 @@ cp -p -v -r $5/webfrontend/htmlauth/plugins/$3/ $LBPDATA/$PDIR/backup/webfronten
 
 echo "<INFO> Copy existing CRON files to Backup folder"
 cp -p -v -r $5/system/cron/cron.01min/Sonos $LBPDATA/$PDIR/backup/cron/Sonos.cron01min
+cp -p -v -r $5/system/cron/cron.03min/Sonos $LBPDATA/$PDIR/backup/cron/Sonos.cron03min
 cp -p -v -r $5/system/cron/cron.hourly/Sonos $LBPDATA/$PDIR/backup/cron/Sonos.cron.hourly
 cp -p -v -r $5/system/cron/cron.daily/Sonos $LBPDATA/$PDIR/backup/cron/Sonos.cron.daily
 cp -p -v -r $5/system/cron/cron.weekly/Sonos $LBPDATA/$PDIR/backup/cron/Sonos.cron.weekly
@@ -96,9 +97,13 @@ mkdir -p /tmp/$1\_upgrade/config
 mkdir -p /tmp/$1\_upgrade/log
 mkdir -p /tmp/$1\_upgrade/data
 mkdir -p /tmp/$1\_upgrade/templates
+mkdir -p /tmp/$1\_upgrade/webfrontend
 
 echo "<INFO> Backing up existing config files"
 cp -p -v -r $5/config/plugins/$3/ /tmp/$1\_upgrade/config
+
+echo "<INFO> Backing up existing Sonos image files"
+cp -p -v -r $5/webfrontend/html/plugins/$3/images/icon* /tmp/$1\_upgrade/webfrontend
 
 echo "<INFO> Backing up existing log files"
 cp -p -v -r $5/log/plugins/$3/ /tmp/$1\_upgrade/log
@@ -108,8 +113,6 @@ cp -p -v -r $5/data/plugins/$3/ /tmp/$1\_upgrade/data
 
 echo "<INFO> Backing up existing Text files"
 cp -v $5/templates/plugins/$3/lang/t2s-text_*.* /tmp/$1\_upgrade/templates
-
-
 
 # Exit with Status 0
 exit 0

@@ -91,7 +91,7 @@ function GetAutoplayRoomUUID($key)  {
 	
 	$sonos = new SonosAccess($soundbars[$key][0]);
 	$AutoPlayUUID = $sonos->GetAutoplayRoomUUID();
-	print_r($AutoPlayUUID);
+	#print_r($AutoPlayUUID);
 	return $AutoPlayUUID;
 }
 
@@ -112,14 +112,14 @@ function SetAutoplayRoomUUID($key, $rincon)  {
 		$sonos->SetAutoplayRoomUUID($rincon);
 		if (!empty($rincon))   {
 			LOGGING("/bin/speaker.php: TV Autoplay mode for Player ".$key." has been set activ.", 7);
-			echo "TV Autoplay mode for Player ".$key." has been set activ.\n";
+			echo "TV Autoplay mode for Player ".$key." has been set activ".PHP_EOL;
 		} else {
 			LOGGING("/bin/speaker.php: TV Autoplay mode for Player ".$key." has been set inactiv.", 7);
-			echo "TV Autoplay mode for Player ".$key." has been set inactiv.\n";
+			echo "TV Autoplay mode for Player ".$key." has been set inactiv".PHP_EOL;
 		}
 	} catch (Exception $e) {
-		LOGGING("/bin/speaker.php: Player ".$key." could not be set to TV Autoplay mode.", 3);
-		echo "Player ".$key." could not be set to TV Autoplay mode.";
+		LOGGING("/bin/speaker.php: Player ".$key." could not be set to TV Autoplay mode.", 4);
+		echo "Player ".$key." could not be set to TV Autoplay mode".PHP_EOL;
 	}
 }
 
@@ -148,25 +148,24 @@ function GetAutoplayLinkedZones()  {
 * @return: none
 **/
 
-function SetAutoplayLinkedZones()  {
+function SetAutoplayLinkedZones($data, $soundbars, $key)  {
 	
-	global $sonoszone, $master;
+	global $soundbars, $sonoszone, $master, $key;
 	
 	if (isset($_GET['status']))   {
 		$value = ($_GET['status']);
+	} else {
+		$value = $data;
+	}
 		try {
-			$sonos = new SonosAccess($sonoszone[$master][0]);
+			$sonos = new SonosAccess($soundbars[$key][0]);
 			$AutoPlayZones = $sonos->SetAutoplayLinkedZones($value);
 			LOGGING("/bin/speaker.php: Include linked zones for Player ".$master." has been set to ".$value." in TV Autoplay mode.", 7);
-			echo "Include linked zones for Player ".$master." has been set to ".$value." in TV Autoplay mode.";
+			echo "Include linked zones for Player ".$key." has been set to ".$value." in TV Autoplay mode.";
 		} catch (Exception $e) {
 			LOGGING("/bin/speaker.php: Include linked zones for Player ".$master." could not be set to TV Autoplay mode.", 3);
-			echo "Include linked zones for Player ".$master." could not be set to TV Autoplay mode.";
+			echo "Include linked zones for Player ".$key." could not be set to TV Autoplay mode.";
 		}
-	} else {
-		LOGGING("/bin/speaker.php: For Player ".$master." the status is missing. Please add '&status=true' or '&status=false' to your syntax", 3);
-		echo "For Player ".$master." the status is missing. Please add '&status=true' or '&status=false' to your syntax";
-	}
 }
 
 
@@ -472,6 +471,39 @@ function SetBassMode($mode)  {
 	} else {
 		LOGGING("/bin/speaker.php: Player ".$master." is not in TV mode.", 4);
 	}
+}
+
+/**
+/* Function : identSB --> identify Soundbars
+/*
+/* @param:  Array(Player), file
+/* @return: array
+**/
+
+function identSB($sonoszone, $file)    {
+	
+	# Extract predefined soundbars only (marked with SB and Volume > 0)
+	$soundbars = array();
+	foreach($sonoszone as $zone => $ip) {
+		$existsb = array_key_exists('13', $ip);
+		if ($existsb == true)  {
+			$soundbars[$zone] = $ip;
+		}
+	}
+
+	# ... and then check for their Online Status
+	$zonesonline = array();	
+	foreach($soundbars as $zonen => $ip) {
+		$handle = is_file($file."".$zonen.".txt");
+		if($handle == true) {
+			$zonesonline[$zonen] = $ip;
+		} else {
+			LOGGING("/bin/tv_monitor_conf.php: Player '".$zonen."' seems to be Offline, please check and run again.", 4);
+		}
+	}
+	$soundbars = $zonesonline;
+	return $soundbars;
+	
 }
 
 ?>

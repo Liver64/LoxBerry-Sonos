@@ -852,10 +852,16 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				unlink($filenst);
 			}	
 			if ((($oldtext==$newtext) AND( $last > $min_sec)) OR ($oldtext!=$newtext))  {
-				sendgroupmessage();
-				$myfile = fopen($filenst, "w") or LOGGING('sonos.php: Unable to open file!', 4);
-				fwrite($myfile,$newtext);
-				fclose($myfile);
+				if(isset($_GET['clip'])) {
+					LOGGING("sonos.php: Audioclip Notification for group messages is not available.", 3);
+					exit;
+				} else {
+					say();
+					LOGGING("sonos.php: we switch to function 'say'", 5);
+					$myfile = fopen($filenst, "w") or LOGGING('sonos.php: Unable to open file!', 4);
+					fwrite($myfile,$newtext);
+					fclose($myfile);
+				}
 			} else {
 				LOGGING("sonos.php: Same text has been announced within the last ".$min_sec." seconds. We skip this anouncement", 5); 
 			}
@@ -879,10 +885,16 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				unlink($filenst);
 			}	
 			if ((($oldtext==$newtext) AND( $last > $min_sec)) OR ($oldtext!=$newtext))  {
-				sendmessage();
-				$myfile = fopen($filenst, "w") or LOGGING('sonos.php: Unable to open file!', 4);
-				fwrite($myfile,$newtext);
-				fclose($myfile);
+				if(isset($_GET['clip'])) {
+					LOGGING("sonos.php: we switch to function 'say'", 5);
+					say();
+				} else {
+					LOGGING("sonos.php: we switch to function 'say'", 5);
+					say();
+					$myfile = fopen($filenst, "w") or LOGGING('sonos.php: Unable to open file!', 4);
+					fwrite($myfile,$newtext);
+					fclose($myfile);
+				}	
 			} else {
 				LOGGING("sonos.php: Same text has been announced within the last ".$min_sec." seconds. We skip this anouncement", 5); 
 			}
@@ -1000,7 +1012,16 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			echo '</PRE>';
 		break; 
 		
-		  
+		case 'getdialoglevel':
+			Getdialoglevel();
+		break;
+		
+		
+		case 'getzonegroupstate':
+			GetZoneState();
+		break;
+		
+		
 		case 'gettransportinfo':
 			# 1 = PLAYING
 			# 2 = PAUSED_PLAYBACK
