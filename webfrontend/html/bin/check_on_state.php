@@ -7,7 +7,7 @@ require_once "loxberry_log.php";
 require_once("$lbphtmldir/system/error.php");
 require_once("$lbphtmldir/Helper.php");
 
-register_shutdown_function('shutdown');
+#register_shutdown_function('shutdown');
 
 $configfile		= "s4lox_config.json";
 $off_file 		= $lbplogdir."/s4lox_off.tmp";					// path/file for Script turned off
@@ -16,20 +16,18 @@ $off_file 		= $lbplogdir."/s4lox_off.tmp";					// path/file for Script turned of
 	if (file_exists($off_file)) {
 		exit;
 	}
-
-	$params = [	"name" => "Sonos PHP",
-				"filename" => "$lbplogdir/sonos.log",
-				"append" => 1,
-				"addtime" => 1,
-				];
-	$log = LBLog::newLog($params);
-	#LOGSTART("CronJob started");
-
 	echo '<PRE>';
+	
 	if (file_exists($lbpconfigdir . "/" . $configfile))    {
 		$config = json_decode(file_get_contents($lbpconfigdir . "/" . $configfile), TRUE);
 	} else {
-		LOGCRIT('Sonos: bin/check_on_state.php: The configuration file could not be loaded, the file may be disrupted. We have to abort :-(');
+		#$params = [	"name" => "Sonos PHP",
+		#		"filename" => "$lbplogdir/sonos.log",
+		#		"append" => 1,
+		#		"addtime" => 1,
+		#		];
+		#$log = LBLog::newLog($params);
+		#LOGCRIT('Sonos: bin/check_on_state.php: The configuration file could not be loaded, the file may be disrupted. We have to abort :-(');
 		exit;
 	}
 	// Übernahme und Deklaration von Variablen aus der Konfiguration
@@ -45,14 +43,14 @@ $off_file 		= $lbplogdir."/s4lox_off.tmp";					// path/file for Script turned of
 	@array_map('unlink', glob("$lbpdatadir/PlayerStatus/s4lox_on_*.txt"));
 	
 	// prüft den Onlinestatus jeder Zone
-	$zonesonline = array();
+	#$zonesonline = array();
 	foreach($sonoszonen as $zonen => $ip) {
 		$port = 1400;
-		$timeout = 3;
+		$timeout = 1;
 		$handle = @stream_socket_client("$ip[0]:$port", $errno, $errstr, $timeout);
 		if($handle) {
-			$sonoszone[$zonen] = $ip;
-			array_push($zonesonline, $zonen);
+			#$sonoszone[$zonen] = $ip;
+			#array_push($zonesonline, $zonen);
 			fclose($handle);
 			# create tmp file for each zone are online
 			file_put_contents("$lbpdatadir/PlayerStatus/s4lox_on_".$zonen.".txt", "on");

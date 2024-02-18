@@ -195,7 +195,10 @@ function debugInfo()     {
 	
 	global $config, $sonos, $actual, $sonoszone, $master, $lbversion, $plugindata, $level, $ms, $heute, $lbpdatadir, $debuggingfile, $lbplogdir;
 	
+	require_once(LBPHTMLDIR.'/system/bin/XmlToArray.php');
+	
 	$debugconfig = $config;
+	#print_r($debugconfig);
 	
 	$sw = file_get_contents("http://".$sonoszone[$master][0] .":1400/xml/device_description.xml");
 	$swv = new SimpleXMLElement($sw);
@@ -204,6 +207,7 @@ function debugInfo()     {
 	$debugconfig['GENERAL']['Loxberry IPv4'] = LBSystem::get_localip();
 	$debugconfig['GENERAL']['Plugin Version'] = $plugindata['PLUGINDB_VERSION'];
 	$debugconfig['GENERAL']['Sonos Version'] = (string)$swv->device->displayVersion[0];
+	#$debugconfig['GENERAL']['Sonos Player Generation'] = (string);
 	$debugconfig['GENERAL']['Plugin Loglevel'] = $level;
 	$debugconfig['GENERAL']['Installed Plugins'] = array();
 	
@@ -230,6 +234,9 @@ function debugInfo()     {
 	unset($debugconfig['VARIOUS']['CALDavMuell']);
 	#unset($debugconfig['VARIOUS']['cron']);
 	
+	$folfilePlOn = "$lbpdatadir/PlayerStatus/s4lox_on_";				// Folder and file name for Player Status
+	$soundbars = identSB($sonoszone, $folfilePlOn);
+	
 	$pluginarray = LBSystem::get_plugins();
 	foreach ($pluginarray as $key)    {
 		array_push($debugconfig['GENERAL']['Installed Plugins'], $key['PLUGINDB_TITLE']);
@@ -237,21 +244,56 @@ function debugInfo()     {
 	foreach ($debugconfig['sonoszonen'] as $zonepl => $val)    {
 		$port = 1400;
 		$timeout = 1;
-		unset($debugconfig['sonoszonen'][$zonepl][1]);
-		unset($debugconfig['sonoszonen'][$zonepl][2]);
-		unset($debugconfig['sonoszonen'][$zonepl][3]);
-		unset($debugconfig['sonoszonen'][$zonepl][4]);
-		unset($debugconfig['sonoszonen'][$zonepl][5]);
-		unset($debugconfig['sonoszonen'][$zonepl][8]);
-		unset($debugconfig['sonoszonen'][$zonepl][9]);
-		unset($debugconfig['sonoszonen'][$zonepl][10]);
+		unset($debugconfig['sonoszonen'][$zonepl][0]); // IP
+		unset($debugconfig['sonoszonen'][$zonepl][1]); // RinconID
+		unset($debugconfig['sonoszonen'][$zonepl][2]); // Player Type
+		unset($debugconfig['sonoszonen'][$zonepl][3]); // Vol
+		unset($debugconfig['sonoszonen'][$zonepl][4]); // Vol
+		unset($debugconfig['sonoszonen'][$zonepl][5]); // Vol
+		unset($debugconfig['sonoszonen'][$zonepl][6]); // T2S
+		unset($debugconfig['sonoszonen'][$zonepl][7]); // Model No.
+		unset($debugconfig['sonoszonen'][$zonepl][8]); // SUB
+		unset($debugconfig['sonoszonen'][$zonepl][9]); // Household
+		unset($debugconfig['sonoszonen'][$zonepl][10]); // Mac
+		unset($debugconfig['sonoszonen'][$zonepl][11]); // Audio
+		unset($debugconfig['sonoszonen'][$zonepl][12]); // Voice
+		unset($debugconfig['sonoszonen'][$zonepl][13]); // Soundbar
+		$data['IP-ADDRESS'] = $val[0];
 		$handle = @stream_socket_client("$val[0]:$port", $errno, $errstr, $timeout);
 		if($handle) {
-			$debugconfig['sonoszonen'][$zonepl][11] = "Online";
+			$data['STATUS'] = "Online";
 		} else {
-			$debugconfig['sonoszonen'][$zonepl][11] = "Offline";
+			$data['STATUS'] = "Offline";
 		}
-		$debugconfig['sonoszonen'][$zonepl] = array_values($debugconfig['sonoszonen'][$zonepl]);
+		if ($debugconfig['sonoszonen'][$zonepl][6] == "On")  {
+			$data['T2S SELECTED'] = "Yes";
+		} else {
+			$data['T2S SELECTED'] = "No";
+		}
+		$data['MODEL NO'] = $val[7];
+		$data['PLAYER TYPE'] = $val[2];
+		if ($val[8] == "SUB")  {
+			$data['SUB'] = "Yes";
+		} else {
+			$data['SUB'] = "No";
+		}
+		if (is_enabled($val[11]))  {
+			$data['AUDIO'] = "Yes";
+		} else {
+			$data['AUDIO'] = "No";
+		}
+		if (is_enabled($val[12]))  {
+			$data['VOICE'] = "Yes";
+		} else {
+			$data['VOICE'] = "No";
+		}
+		if ($val[13] == "SB")  {
+			$data['SOUNDBAR'] = "Yes";
+		} else {
+			$data['SOUNDBAR'] = "No";
+		}
+		
+		$debugconfig['sonoszonen'][$zonepl] = $data;
 	}
 	if (count($ms) > 0)    {
 		$debugconfig['LOXONE']['Miniserver'] = "available";
@@ -324,15 +366,40 @@ function debugInfo()     {
 	} elseif ($debugconfig['TTS']['t2s_engine'] == "1001")  {
 		$debugconfig['TTS']['t2s_engine'] = "Voice RSS";
 		$debugconfig['TTS']['secretkey'] = "";
+	} elseif ($debugconfig['TTS']['t2s_engine'] == "9011")  {
+		$debugconfig['TTS']['t2s_engine'] = "ElevenLabs";
+		$debugconfig['TTS']['secretkey'] = "";
 	} else {
 		$debugconfig['TTS']['t2s_engine'] = "No TTS Provider selected";
 	}
+	$i = 0;
+	foreach($soundbars as $key => $value)   {
+		$sonos = new SonosAccess($sonoszone[$key][0]);
+		$Autoplay = $sonos->GetAutoplayRoomUUID();
+		if (empty($Autoplay['RoomUUID']))    {
+			$debugconfig['SOUNDBARS'][$key]['AUTOPLAY'] = "Off";
+		} else {
+			$debugconfig['SOUNDBARS'][$key]['AUTOPLAY'] = "On";
+		}
+		$Autoplaylinked = $sonos->GetAutoplayLinkedZones();
+		if ($Autoplaylinked[IncludeLinkedZones] == "0")    {
+			$debugconfig['SOUNDBARS'][$key]['AUTOPLAY_LINKED_ZONES'] = "Off";
+		} else {
+			$debugconfig['SOUNDBARS'][$key]['AUTOPLAY_LINKED_ZONES'] = "On";
+		}
+	}
 	
 	$actual = saveZonesStatus();
-	$debugconfig['STATUS'] = $actual;
+	$debugconfig['SNAPSHOT CURRENT'] = $actual;
+	
+	$xml = $sonos->GetZoneStates();
+	# https://github.com/vyuldashev/xml-to-array/tree/master
+	$array = XmlToArray::convert($xml);
+	$interim = $array['ZoneGroupState']['ZoneGroups']['ZoneGroup'];
+	$debugconfig['ZONE INFOS'] = $interim;
 	$actlog = file_get_contents($lbplogdir."/s4lox_debug_".$heute.".log");
 	$debugconfig['LOG'] = $actlog;
-	#print_r($actlog);
+	#print_r($debugconfig);
 	file_put_contents($debuggingfile, print_r($debugconfig, true));
 	echo "A full snapshot of your system/command has been executed...<br><br>";
 	echo "Please check debug file 's4lox_debug_config.json' in '$lbpdatadir' for further analysis! Your personal data has been anonymized.<br>";
@@ -375,6 +442,37 @@ function batteryinfo()  {
 		}
 	}
 }
+
+/**
+/* Funktion : Getdialoglevel --> zeigt Informationen bzgl. DialogLevel der Zone an
+/*
+/* @param: 	empty
+/* @return: 
+**/	
+		
+function Getdialoglevel()  {
+	
+	global $sonos;
+	
+	$dialog = array();
+	echo '<PRE>';
+	$NightMode = $sonos->GetDialogLevel('NightMode');
+	$dialog['NightMode'] = $NightMode;
+	$SurroundEnable = $sonos->GetDialogLevel('SurroundEnable');
+	$dialog['SurroundEnable'] = $SurroundEnable;
+	$DialogLevel = $sonos->GetDialogLevel('DialogLevel');
+	$dialog['DialogLevel'] = $DialogLevel;
+	$SubGain = $sonos->GetDialogLevel('SubGain');
+	$dialog['SubGain'] = $SubGain;
+	$SubEnable = $sonos->GetDialogLevel('SubEnable');
+	$dialog['SubEnable'] = $SubEnable;
+	#print_r($dialog);
+	return $dialog;
+	
+	echo '</PRE>';
+}
+
+
 
 
 ?>

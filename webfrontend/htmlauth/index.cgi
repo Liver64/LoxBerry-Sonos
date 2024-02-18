@@ -62,8 +62,12 @@ my $helplink;
 my $maxzap;
 my $helptemplate;
 my $i;
+my $response;
+my $response_conf;
+my $resp;
 our $lbv;
 our $countplayers;
+our $countsoundbars;
 our $rowssonosplayer;
 our $miniserver;
 our $template;
@@ -71,6 +75,7 @@ our $content;
 our %navbar;
 our $mqttcred;
 our $cfgm;
+our $cgi;
 
 my $helptemplatefilename		= "help/help.html";
 my $languagefile 				= "sonos.ini";
@@ -157,7 +162,7 @@ if (!defined $cfg->{TTS}->{t2son})  {
 }
 # Starttime TV Monitoring
 if (!defined $cfg->{VARIOUS}->{starttime})  {
-	$cfg->{VARIOUS}->{starttime} = "7";
+	$cfg->{VARIOUS}->{starttime} = "10";
 }
 # Endtime TV Monitoring
 if (!defined $cfg->{VARIOUS}->{endtime})  {
@@ -169,9 +174,15 @@ if (defined $cfg->{TTS}->{'API-key'})  {
 	delete $cfg->{TTS}->{'API-key'};
 }
 # copy global API-key to engine-API-key
+
+#if (!defined $cfg->{TTS}->{apikey}->{$cfg->{TTS}->{t2s_engine}}) {
+ #       $cfg->{TTS}->{apikey}->{$cfg->{TTS}->{t2s_engine}} = $cfg->{TTS}->{apikey};
+#}
+
 if (!defined $cfg->{TTS}->{apikeys}) {
 	$cfg->{TTS}->{apikeys}->{$cfg->{TTS}->{t2s_engine}} = $cfg->{TTS}->{apikey};
 }
+
 # copy old secret-key value to secretkey
 if (defined $cfg->{TTS}->{'secret-key'})  {
 	$cfg->{TTS}->{secretkey} = $cfg->{TTS}->{'secret-key'};
@@ -182,7 +193,7 @@ if (!defined $cfg->{TTS}->{secretkeys}) {
 	$cfg->{TTS}->{secretkeys}->{$cfg->{TTS}->{t2s_engine}} = $cfg->{TTS}->{secretkey};
 }
 $jsonobj->write();
-	
+
 
 ##########################################################################
 # Read Settings
@@ -209,6 +220,41 @@ $mqttcred = LoxBerry::IO::mqtt_connectiondetails();
 LOGSTART "Sonos UI started";
 
 
+##########################################################################
+# Init Main Template
+##########################################################################
+
+inittemplate();
+
+#########################################################################
+## Handle ajax requests 
+#########################################################################
+
+our $q = $cgi->Vars;
+
+if( $q->{action} ) 
+{
+	ajax_header_json();
+	if( $q->{action} eq "soundbars" ) {
+		pass_sonoszonen();
+		print JSON::encode_json($response);
+	}
+	if( $q->{action} eq "config" ) {
+		pass_config();
+		print JSON::encode_json($response_conf);
+	}
+	exit;
+}
+
+sub ajax_header_json
+{
+	print $cgi->header(
+			-type => 'application/json',
+			-charset => 'utf-8',
+			-status => '200 OK',
+	);	
+}
+
 
 #########################################################################
 # Parameter
@@ -226,12 +272,7 @@ if ($R::getkeys)
 }
 
 ##########################################################################
-# Init Main Template
-##########################################################################
-inittemplate();
-
-##########################################################################
-# Set LoxBerry SDK to debug in plugin is in debug
+# Set LoxBerry SDK to debug in plugin if in debug
 ##########################################################################
 
 if($log->loglevel() eq "7") {
@@ -262,10 +303,8 @@ $template->param("PLUGINDIR" => $lbpplugindir);
 $template->param("LOGFILE" , $lbplogdir . "/" . $pluginlogfile);
 
 ##########################################################################
-# check if config files exist and they are readable
+# check if config file exist and are readable
 ##########################################################################
-
-# Check if config file exist
 
 if (!-r $lbpconfigdir . "/" . $configfile) 
 {
@@ -323,16 +362,14 @@ if ($R::saveformdata2) {
 
 # check if config already saved, if not highlight header text in RED
 my $countplayer;
-my %configzones = $cfg->{sonoszonen};	
 
-foreach my $key (keys %configzones) {
-	$countplayer++;
-}
-if ( $countplayer < 1 ) {
-	$countplayer = 0;
-} else {
-	$countplayer = 1;
-}
+if(exists($cfg->{sonoszonen}))  { 
+    $countplayer = 1;
+} else { 
+    $countplayer = 0;
+} 
+
+
 $template->param("PLAYERAVAILABLE", $countplayer);
 
 
@@ -371,7 +408,7 @@ exit;
 
 sub form 
 {
-	$template->param( FORMNO => 'FORM' );
+	$template->param(FORMNO => 'FORM' );
 	
 	# check if path exist (upgrade from v3.5.1)
 	if ($cfg->{SYSTEM}->{path} eq "")   {
@@ -392,10 +429,6 @@ sub form
 					
 	$template->param("STORAGEPATH", $storage);
 	
-	#if ($mqttcred && $cfg->{LOXONE}->{LoxDatenMQTT} eq "true")  {
-	#	$cfg->{LOXONE}->{LoxPort} = $cfgm->{Main}->{udpport};
-	#}
-
 	# read info file from Github and save in $info
 	my $info 		= get($urlfile);
 	$template		->param("INFO" 			=> "$info");
@@ -445,6 +478,7 @@ sub form
 	# Player einlesen
 	
 	our $rowssonosplayer;
+	our $rowssoundbar;
 	
 	my $error_volume = $SL{'T2S.ERROR_VOLUME_PLAYER'};
 	my $filename;
@@ -452,7 +486,7 @@ sub form
 		
 	foreach my $key (keys %{$config}) {
 		$countplayers++;
-		my $room = $key;
+		our $room = $key;
 		$filename = $lbphtmldir.'/images/icon-'.$config->{$key}->[7].'.png';
 		our $statusfile = $lbpdatadir.'/PlayerStatus/s4lox_on_'.$room.'.txt';
 		
@@ -471,7 +505,7 @@ sub form
 			$rowssonosplayer .= "<td style='height: 28px; width: 2%;'><img src='/plugins/$lbpplugindir/images/sonos_logo_sm.png' border='0' width='50' height='50' align='middle'/></td>\n";
 		}
 		$rowssonosplayer .= "<td style='height: 28px; width: 17%;'><input type='text' id='ip$countplayers' name='ip$countplayers' size='30' value='$config->{$key}->[0]' style='width: 100%; background-color: #e6e6e6;'></td>\n";
-		# Column Pic green/red
+		# Column Audioclip usage Pics green/red/yellow
 		if (exists($config->{$key}[11]) and is_enabled($config->{$key}[11]))   {
 			if (exists($config->{$key}[12]) and is_enabled($config->{$key}[12]))   {
 				$rowssonosplayer .= "<td style='height: 30px; width: 30px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/green.png' border='0' width='26' height='28' align='center'/></div></td>\n";
@@ -484,30 +518,107 @@ sub form
 		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='$config->{$key}->[3]'></td>\n";
 		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='$config->{$key}->[4]'></td>\n";
 		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$config->{$key}->[5]'></td>\n";
-		# Column Soundbar Volume
+		# Soundbar count
 		if (exists($config->{$key}[13]))   {
-			$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><div class='tvmonitorsecond'><input type='text' id='tvvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='tvvol$countplayers' value='$config->{$key}->[14]'></div></td>\n";
+			$countsoundbars++;
 			$rowssonosplayer .= "<input type='hidden' id='sb$countplayers' name='sb$countplayers' value='$config->{$key}->[13]'>\n";
 		} else {
 			$rowssonosplayer .= "</tr>";
 		}
 		$rowssonosplayer .= "<input type='hidden' id='room$countplayers' name='room$countplayers' value=$room>\n";
 		$rowssonosplayer .= "<input type='hidden' id='models$countplayers' name='models$countplayers' value='$config->{$key}->[7]'>\n";
-		$rowssonosplayer .= "<input type='hidden' id='groupId$countplayers' name='groupId$countplayers' value='$config->{$key}->[8]'>\n";
+		$rowssonosplayer .= "<input type='hidden' id='sub$countplayers' name='sub$countplayers' value='$config->{$key}->[8]'>\n";
 		$rowssonosplayer .= "<input type='hidden' id='householdId$countplayers' name='householdId$countplayers' value='$config->{$key}->[9]'>\n";
-		$rowssonosplayer .= "<input type='hidden' id='deviceId$countplayers' name='deviceId$countplayers' value='$config->{$key}->[10]'>\n";
+		$rowssonosplayer .= "<input type='hidden' id='sur$countplayers' name='sur$countplayers' value='$config->{$key}->[10]'>\n";
 		$rowssonosplayer .= "<input type='hidden' id='audioclip$countplayers' name='audioclip$countplayers' value='$config->{$key}->[11]'>\n";
 		$rowssonosplayer .= "<input type='hidden' id='voice$countplayers' name='voice$countplayers' value='$config->{$key}->[12]'>\n";
 		$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' value='$config->{$key}->[1]'>\n";
+		# Prepare Soundbars
+		if (exists($config->{$key}[13]))   {
+			$rowssoundbar .= "<tr class='tvmonitorsecond'>\n";
+			$rowssoundbar .= "<td style='height: 25px; width: 13%;'><fieldset align='center'><select id='usesb_$room' name='usesb_$room' data-role='flipswitch' style='width: 100%'><option value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
+			$rowssoundbar .= "<div id='tvmonitor'><td style='height: 28px; width: 20%;'><input type='text' id='sbzone_$room' name='sbzone_$room' size='40' readonly='true' value='$room' vertical-align='center' style='width: 100%; background-color: #e6e6e6;'></td>\n";
+			$rowssoundbar .= "<td style='width: 8%'><fieldset align='center'><select id='tvmonspeech_$room' name='tvmonspeech_$room' data-role='flipswitch' style='width: 100%'><option value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
+			$rowssoundbar .= "<td style='width: 8%'><fieldset align='center'><select id='tvmonsurr_$room' name='tvmonsurr_$room' data-role='flipswitch' style='width: 100%'><option selected='selected' value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
+			$rowssoundbar .= "<td style='width: 8%'><fieldset align='center'><select id='tvmonnightsub_$room' name='tvmonnightsub_$room' data-role='flipswitch' style='width: 100%'><option selected='selected' value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
+			$rowssoundbar .= "<td style='width: 5%; height: 28px;'><div><input class='tvvol' type='text' id='tvvol_$room' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='tvvol_$room' value='$config->{$key}->[14]->{tvvol}'></div></td></div>\n";
+			$rowssoundbar .= "<td style='width: 8%'><div id='addend'><fieldset align='center'><select id='fromtime_$room' name='fromtime_$room' data-mini='true' data-native-menu='true' style='width: 100%'>
+								<option value='false'>--</option>
+								<option value='0'>0:00</option>
+								<option value='1'>1:00</option>
+								<option value='2'>2:00</option>
+								<option value='3'>3:00</option>
+								<option value='4'>4:00</option>
+								<option value='5'>5:00</option>
+								<option value='6'>6:00</option>
+								<option value='7'>7:00</option>
+								<option value='8'>8:00</option>
+								<option value='9'>9:00</option>
+								<option value='10'>10:00</option>
+								<option value='11'>11:00</option>
+								<option value='12'>12:00</option>
+								<option value='13'>13:00</option>
+								<option value='14'>14:00</option>
+								<option value='15'>15:00</option>
+								<option value='16'>16:00</option>
+								<option value='17'>17:00</option>
+								<option value='18'>18:00</option>
+								<option selected='selected' value='19'>19:00</option>
+								<option value='20'>20:00</option>
+								<option value='21'>21:00</option>
+								<option value='22'>22:00</option>
+								<option value='23'>23:00</option>
+							</select></fieldset></div></td>\n";
+			$rowssoundbar .= "<td style='width: 8%'><fieldset align='center'><select id='tvmonnight_$room' name='tvmonnight_$room' data-role='flipswitch' style='width: 100%'><option selected='selected' value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
+			$rowssoundbar .= "<td style='width: 8%'><div id='addend'><fieldset align='center'>\n";
+			$rowssoundbar .= "<select id='subgain_$room' name='subgain_$room' data-mini='true' data-native-menu='true' style='width: 100%'>";
+			$rowssoundbar .= "	<option value='-15'>-15</option>
+								<option value='-14'>-14</option>
+								<option value='-12'>-12</option>
+								<option value='-11'>-11</option>
+								<option value='-10'>-10</option>
+								<option value='-9'>-9</option>
+								<option value='-8'>-8</option>
+								<option value='-7'>-7</option>
+								<option value='-6'>-6</option>
+								<option value='-5'>-5</option>
+								<option value='-4'>-4</option>
+								<option value='-3'>-3</option>
+								<option value='-2'>-2</option>
+								<option value='-1'>-1</option>
+								<option selected='selected' value='0'>0</option>
+								<option value='1'>1</option>
+								<option value='2'>2</option>
+								<option value='3'>3</option>
+								<option value='4'>4</option>
+								<option value='5'>5</option>
+								<option value='6'>6</option>
+								<option value='7'>7</option>
+								<option value='8'>8</option>
+								<option value='9'>9</option>
+								<option value='10'>10</option>
+								<option value='11'>11</option>
+								<option value='12'>12</option>
+								<option value='13'>13</option>
+								<option value='14'>14</option>
+								<option value='15'>15</option>
+								</select></fieldset></div></td>\n";
+		}
 	}
-	
-	LOGDEB "Sonos players has been loaded.";					
 	
 	if ( $countplayers < 1 ) {
 		$rowssonosplayer .= "<tr><td colspan=10>" . $SL{'ZONES.SONOS_EMPTY_ZONES'} . "</td></tr>\n";
 	}
 	$rowssonosplayer .= "<input type='hidden' id='countplayers' name='countplayers' value='$countplayers'>\n";
 	$template->param("ROWSSONOSPLAYER", $rowssonosplayer);
+	LOGDEB "Sonos Player has been loaded.";	
+	
+	if ( $countsoundbars < 1 ) {
+		$rowssoundbar .= "<tr><td colspan=8>" . $SL{'ZONES.SONOS_EMPTY_SOUNDBARS'} . "</td></tr>\n";
+	} 
+	$rowssoundbar .= "<input type='hidden' id='countsoundbars' name='countsoundbars' value='$countsoundbars'>\n";
+	$template->param("ROWSOUNDBARS", $rowssoundbar);
+	LOGDEB "Sonos Soundbars has been discovered.";
 	
 	# *******************************************************************************************************************
 	# Get Miniserver
@@ -562,10 +673,7 @@ sub form
 		$template->param("DONATE", '');
 	}
 	printtemplate();
-	#$content = $filename;
-	#print_test($content);
 	exit;
-	
 }
 
 
@@ -653,9 +761,7 @@ sub save_details
 	    unlink ("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
 		LOGOK "Cron job 30 Minutes created";
 	  }
-	  
-	
-	#my $file = qx(/usr/bin/php $lbphtmldir/bin/create_config.php);		
+		
 	LOGOK "Detail settings has been saved successful";
 	&print_save;
 	exit;
@@ -669,6 +775,7 @@ sub save
 {
 	# Everything from Forms
 	my $countplayers	= param('countplayers');
+	my $countsoundbars	= param('countsoundbars');
 	my $countradios 	= param('countradios');
 	my $LoxDaten	 	= param('sendlox');
 	my $selminiserver	= param('ms');
@@ -721,10 +828,6 @@ sub save
 	$cfg->{VARIOUS}->{tvmon} = "$R::tvmon";
 	$cfg->{VARIOUS}->{starttime} = "$R::starttime";
 	$cfg->{VARIOUS}->{endtime} = "$R::endtime";
-	$cfg->{VARIOUS}->{tvmonspeech} = "$R::tvmonspeech";
-	$cfg->{VARIOUS}->{tvmonsurr} = "$R::tvmonsurr";
-	$cfg->{VARIOUS}->{tvmonnight} = "$R::tvmonnight";
-	$cfg->{VARIOUS}->{fromtime} = "$R::fromtime";
 	$cfg->{LOCATION}->{region} = "$R::region";
 	$cfg->{LOCATION}->{googlekey} = "$R::googlekey";
 	$cfg->{LOCATION}->{googletown} = "$R::googletown";
@@ -758,7 +861,7 @@ sub save
 		system ("cp -r $lbpdatadir/$ttsfolder/$mp3folder/* $R::STORAGEPATH/$ttsfolder/$mp3folder");
 	}
 	
-	# save all radiostations
+	# save radiostations
 	for ($i = 1; $i <= $countradios; $i++) {
 		if ( param("chkradios$i") ) { # if radio should be deleted
 			delete $cfg->{RADIO}->{radio}->{$i}  ;
@@ -777,7 +880,13 @@ sub save
 		&error;
 	}
 	
-	# save all Sonos devices
+	my $tvmonnightsub;
+	my $tvmonnightsublevel;
+	my $tvsub;
+	my $tvmonsurr;
+	my $tvsur;
+	
+	# save Sonos devices
 	my $emergecalltts;
 	
 	for ($i = 1; $i <= $countplayers; $i++) {
@@ -797,17 +906,30 @@ sub save
 							param("maxvol$i"), 
 							$emergecalltts, 
 							param("models$i"), 
-							param("groupId$i"), 
+							param("sub$i"), 
 							param("householdId$i"), 
-							param("deviceId$i"), 
+							param("sur$i"), 
 							param("audioclip$i"), 
-							param("voice$i")
+							param("voice$i"),
+							param("sb$i")
 						 );
 			if (param("sb$i") eq "SB")   {
-				push @player , param("sb$i");
-				push @player , param("tvvol$i");
+				# add soundbar settings to zone
+				my $room = param("zone$i");
+				my @sbs = (  {"tvmonspeech" => param("tvmonspeech_$room"), 
+							"usesb" => param("usesb_$room"),
+							"tvvol" => param("tvvol_$room"),
+							"tvmonsurr" => param("tvmonsurr_$room"),
+							"fromtime" => param("fromtime_$room"),
+							"tvmonnight" => param("tvmonnight_$room"),
+							"tvmonnightsub" => param("tvmonnightsub_$room"),
+							"tvmonnightsublevel" => param("subgain_$room")
+							}					
+						);
+				push @player , @sbs;
 			}
 			$cfg->{sonoszonen}->{param("zone$i")} = \@player;
+			
 		}
 	}
 	
@@ -887,12 +1009,12 @@ sub scan
 			# Column Soundbar Volume
 			if ($config->{$key}->[13])   {
 				$rowssonosplayer .= "<input type='hidden' id='sb$countplayers' size='100' name='sb$countplayers' value='$config->{$key}->[13]'>\n";
-				$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='tvvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='tvvol$countplayers' value='$config->{$key}->[14]'' /> </td> </tr>\n";
+				#$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='tvvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='tvvol$countplayers' value='$config->{$key}->[14]'' /> </td> </tr>\n";
 			}
 			$rowssonosplayer .= "<input type='hidden' id='models$countplayers' name='models$countplayers' value='$config->{$key}->[7]'>\n";
-			$rowssonosplayer .= "<input type='hidden' id='groupId$countplayers' name='groupId$countplayers' value='$config->{$key}->[8]'>\n";
+			$rowssonosplayer .= "<input type='hidden' id='sub$countplayers' name='sub$countplayers' value='$config->{$key}->[8]'>\n";
 			$rowssonosplayer .= "<input type='hidden' id='householdId$countplayers' name='householdId$countplayers' value='$config->{$key}->[9]'>\n";
-			$rowssonosplayer .= "<input type='hidden' id='deviceId$countplayers' name='deviceId$countplayers' value='$config->{$key}->[10]'>\n";
+			$rowssonosplayer .= "<input type='hidden' id='sur$countplayers' name='sur$countplayers' value='$config->{$key}->[10]'>\n";
 			$rowssonosplayer .= "<input type='hidden' id='audioclip$countplayers' name='audioclip$countplayers' value='$config->{$key}->[11]'>\n";
 			$rowssonosplayer .= "<input type='hidden' id='voice$countplayers' name='voice$countplayers' value='$config->{$key}->[12]'>\n";
 			$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' value='$config->{$key}->[1]'>\n";
@@ -904,6 +1026,25 @@ sub scan
 }
 
 
+#####################################################
+# pass Sonozonen config to template
+#####################################################
+
+sub pass_sonoszonen
+{
+	my $zonenconfig = $cfg->{sonoszonen};
+	$response = $zonenconfig;
+}
+
+
+#####################################################
+# pass config to template
+#####################################################
+
+sub pass_config
+{
+	$response_conf = $cfg;
+}
 
 
 #####################################################
@@ -914,12 +1055,6 @@ sub scan
 {
 	# executes PHP script and saves XML Template local
 	my $udp_temp = qx(/usr/bin/php $lbphtmldir/system/$udp_file);
-	
-	#if (!-r $lbphtmldir . "/system/" . $XML_file) 
-	#{
-	#	LOGWARN "File '".$XML_file."' has not been generated and could not be downloaded. Please check log file";
-	#	return();
-	#}
 	LOGOK "XML Template files generation has been called";
 	return();
 }
@@ -1026,25 +1161,6 @@ sub printtemplate
 	exit;
 }
 
-
-##########################################################################
-# Print for testing
-##########################################################################
-
-sub print_test
-{
-	# Print Template
-	print "Content-Type: text/html; charset=utf-8\n\n"; 
-	print "*********************************************************************************************";
-	print "<br>";
-	print " *** Ausgabe zu Testzwecken";
-	print "<br>";
-	print "*********************************************************************************************";
-	print "<br>";
-	print "<br>";
-	print Dumper($content); 
-	exit;
-}
 
 
 ##########################################################################

@@ -1431,5 +1431,111 @@ function sendInfoMS($abbr, $player, $val)    {
     return in_array($model, array_keys($soundb));
 }
 
- 
+	
+/* Funktion :  GetZoneState --> check for Zones Online
+/*
+/* @param: none
+/* @return: array
+
+Array
+(
+    [0] => Wohnzimmer
+    [1] => Bad
+    [2] => Ben
+    [3] => Nele
+    [4] => Schlafen
+)
+
+**/
+
+function GetZoneState()    {
+
+	global $sonos;
+	
+	require_once('system/bin/XmlToArray.php');
+	
+	$xml = $sonos->GetZoneStates();
+	# https://github.com/vyuldashev/xml-to-array/tree/master
+	$array = XmlToArray::convert($xml);
+	#print_r($array);
+	$interim = $array['ZoneGroupState']['ZoneGroups']['ZoneGroup'];
+	$final = array();
+	$i = 0;
+	foreach($interim as $key)     {
+		$i++;
+		#array_push($final, $key['ZoneGroupMember']['attributes']['ZoneName']);
+		#array_push($final, $key['ZoneGroupMember']['attributes']['UUID']);
+		foreach($key['ZoneGroupMember']['Satellite'] as $key1)      {
+			@array_push($final, substr($key1['attributes']['HTSatChanMapSet'], -2));
+			#$year = substr($flightDates->departureDate->year, -2);
+		}
+	}
+	# remove empty values, remove duplicate values and re-index array
+	$zoneson = array_unique(array_values(array_filter($final)));
+	if (empty($zoneson))    {
+		GetZoneState();
+	}
+	print_r($zoneson);
+	$subwoofer = recursive_array_search('SE',$zoneson);
+	if ($subwoofer === false ? $sub = "false" : $sub = "true");
+	echo $sub;
+	return $zoneson;
+
+}
+
+
+/* Funktion :  CheckSub --> check for Subwoofer/Surround available
+/*
+/* @param: SW or LR
+/* @return: array of room names
+**/
+
+function CheckSubSur($val)    {
+
+	global $sonos, $config;
+
+	if ($val != "SW" and $val != "LR")   {
+		return "invalid entries";
+	} elseif ($val == "SW")  {
+		$key = "SUB";
+	} elseif ($val == "LR")  {
+		$key = "SUR";
+	}
+	$folfilePlOn = LBPDATADIR."/PlayerStatus/s4lox_on_";				// Folder and file name for Player Status
+	require_once('system/bin/XmlToArray.php');
+	
+	# identify min 1 Zone Online to get IP
+	$int = array();
+	foreach($config['sonoszonen'] as $zonen => $ip) {
+		$handle = is_file($folfilePlOn."".$zonen.".txt");
+		if($handle === true) {
+			array_push($int, $zonen);
+		}
+	}
+	$sonos = new SonosAccess($config['sonoszonen'][$int[0]][0]); //Sonos IP Adresse
+	$xml = $sonos->GetZoneStates();
+	# https://github.com/vyuldashev/xml-to-array/tree/master
+	$array = XmlToArray::convert($xml);
+	$interim = $array['ZoneGroupState']['ZoneGroups']['ZoneGroup'];
+	
+	$subsur = array();
+	foreach($interim as $key => $value)     {
+		if (@$value['ZoneGroupMember']['attributes']['HTSatChanMapSet'])  {
+			$int = explode(";", $value['ZoneGroupMember']['attributes']['HTSatChanMapSet']);
+			foreach ($int as $a)   {
+				$a = substr($a, -2);
+				if ($a == $val)    {
+					$subsur[strtolower($value['ZoneGroupMember']['attributes']['ZoneName'])] = $key;
+				}
+			}
+		}
+	}
+	if (empty($subsur))    {
+		$subsur = "false";
+	}
+	#print_r($subsur);
+	return $subsur;
+}
+
+
 ?>
