@@ -33,6 +33,7 @@ use LWP::Simple;
 use LWP::UserAgent;
 use File::HomeDir;
 use Cwd 'abs_path';
+use Scalar::Util qw/reftype/;
 use JSON qw( decode_json );
 use utf8;
 use warnings;
@@ -167,10 +168,18 @@ if (defined $cfg->{TTS}->{'API-key'})  {
 	$cfg->{TTS}->{apikey} = $cfg->{TTS}->{'API-key'};
 	delete $cfg->{TTS}->{'API-key'};
 }
+# copy global API-key to engine-API-key
+if (!defined $cfg->{TTS}->{apikeys}) {
+	$cfg->{TTS}->{apikeys}->{$cfg->{TTS}->{t2s_engine}} = $cfg->{TTS}->{apikey};
+}
 # copy old secret-key value to secretkey
 if (defined $cfg->{TTS}->{'secret-key'})  {
 	$cfg->{TTS}->{secretkey} = $cfg->{TTS}->{'secret-key'};
 	delete $cfg->{TTS}->{'secret-key'};
+}
+# copy global Secret-key to engine-secretkey
+if (!defined $cfg->{TTS}->{secretkeys}) {
+	$cfg->{TTS}->{secretkeys}->{$cfg->{TTS}->{t2s_engine}} = $cfg->{TTS}->{secretkey};
 }
 $jsonobj->write();
 	
@@ -208,6 +217,13 @@ LOGSTART "Sonos UI started";
 #$saveformdata = defined $R::saveformdata ? $R::saveformdata : undef;
 #$do = defined $R::do ? $R::do : "form";
 
+##
+#AJAX Subs
+##
+if ($R::getkeys)
+{
+	getkeys();
+}
 
 ##########################################################################
 # Init Main Template
@@ -392,6 +408,8 @@ sub form
 	# fill saved values into form
 	$template		->param("SELFURL", $SL{REQUEST_URI});
 	$template		->param("T2S_ENGINE" 	=> $cfg->{TTS}->{t2s_engine}); 
+	$template		->param("APIKEY"	=> $cfg->{TTS}->{apikeys}->{$cfg->{TTS}->{t2s_engine}});
+	$template		->param("SECKEY"	=> $cfg->{TTS}->{secretkeys}->{$cfg->{TTS}->{t2s_engine}});
 	$template		->param("VOICE" 		=> $cfg->{TTS}->{voice});
 	$template		->param("CODE" 			=> $cfg->{TTS}->{messageLang});
 	$template		->param("DATADIR" 		=> $cfg->{SYSTEM}->{path});
@@ -688,7 +706,9 @@ sub save
 	$cfg->{TTS}->{t2s_engine} = "$R::t2s_engine";
 	$cfg->{TTS}->{messageLang} = "$R::t2slang";
 	$cfg->{TTS}->{apikey} = "$R::apikey";
+	$cfg->{TTS}->{apikeys}->{$cfg->{TTS}->{t2s_engine}} = $cfg->{TTS}->{apikey};
 	$cfg->{TTS}->{secretkey} = "$R::seckey";
+	$cfg->{TTS}->{secretkeys}->{$cfg->{TTS}->{t2s_engine}} = $cfg->{TTS}->{secretkey};
 	$cfg->{TTS}->{voice} = "$R::voice";
 	$cfg->{TTS}->{regionms} = $azureregion;
 	$cfg->{TTS}->{t2son} = "$R::t2son";
@@ -921,6 +941,15 @@ sub error
 	exit;
 }
 
+sub getkeys
+{
+	print "Content-type: application/json\n\n";
+	my $engine = defined $R::t2s_engine ? $R::t2s_engine : "";
+	my $apikey = defined $cfg->{TTS}->{apikeys}->{$engine} ? $cfg->{TTS}->{apikeys}->{$engine} : "";
+	my $secret = defined $cfg->{TTS}->{secretkeys}->{$engine} ? $cfg->{TTS}->{secretkeys}->{$engine} : "";
+	print "{\"apikey\":\"$apikey\",\"seckey\":\"$secret\"}";
+	exit;
+}
 
 #####################################################
 # Save
