@@ -57,6 +57,9 @@ cp -p -v -r /tmp/$1\_upgrade/data/$3/* $5/data/plugins/$3/
 echo "<INFO> Copy back existing Text files"
 cp -v /tmp/$1\_upgrade/templates/* $5/templates/plugins/$3/lang/ 
 
+echo "<INFO> Copy back existing Sonos image files"
+cp -v /tmp/$1\_upgrade/webfrontend/* $5/webfrontend/html/plugins/$3/images/ 
+
 echo "<INFO> Update of MP3 Files in tts/mp3"
 cp -v $5/data/plugins/$3/tts/mp3/update/* $5/data/plugins/$3/tts/mp3/
 

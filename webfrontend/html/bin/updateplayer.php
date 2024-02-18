@@ -5,6 +5,7 @@
 	require_once "loxberry_web.php";
 	require_once "loxberry_log.php";
 	require_once LBPHTMLDIR."/Helper.php";
+	require_once LBPHTMLDIR."/system/sonosAccess.php";
 	
 	$myConfigFolder = LBPCONFIGDIR;								// get config folder
 	$myBinFolder = LBPBINDIR;									// get bin folder
@@ -16,7 +17,7 @@
 		exit;
 	}
 	
-	global $config, $result, $tmp_error;
+	global $config, $result, $tmp_error, $sonos;
 	
 	echo "<PRE>";
 		
@@ -44,6 +45,10 @@
 	$port = 1400;
 	$timeout = 3;	
 	$res = "1";
+	
+	$sub = CheckSubSur("SW");		// check for SUB and get room
+	$sur = CheckSubSur("LR");		// check for Surround and get room
+	#print_r($sub);
 	
 	foreach ($sonoszonen as $zone => $player) {
 		$ip = $sonoszonen[$zone][0];
@@ -108,13 +113,38 @@
 								array_push($sonoszonen[$zone], "15"); // TV vol SB default
 								echo "<INFO> Updated identified Soundbar Zone ".$zone." with default 15 for TV Vol".PHP_EOL;
 							}
-							#$res = "0";
 						}
 					}
 					$res = "0";
 				}
-				#$line = implode(',',$sonoszonen[$zone]);
-				#echo "<OK> No update for Zone ".$zone." required.".PHP_EOL;
+				# add SUB for Zone if assigned
+				if ($sub != "false")  {
+					if (array_key_exists($zone, $sub))   {
+						if ($sonoszonen[$zone][8] != "SUB")   {
+							$sonoszonen[$zone][8] = "SUB";
+							echo "<INFO> Updated identified Zone ".$zone." as SUB capable".PHP_EOL;
+							$res = "0";
+						}
+					} else {
+						$sonoszonen[$zone][8] ="NOSUB";
+					}						
+				} else {
+					$sonoszonen[$zone][8] ="NOSUB";
+				}
+				# add SURROUND for Zone if assigned
+				if ($sur != "false")  {
+					if (array_key_exists($zone, $sur))   {
+						if ($sonoszonen[$zone][10] != "SUR")   {
+							$sonoszonen[$zone][10] = "SUR";
+							echo "<INFO> Updated identified Zone ".$zone." as SURROUND capable".PHP_EOL;
+							$res = "0";
+						}
+					} else {
+						$sonoszonen[$zone][10] ="NOSUR";
+					}						
+				} else {
+					$sonoszonen[$zone][10] ="NOSUR";
+				}
 			}
 		} else {
 			if (!isset($sonoszonen[$zone][6]))   {
@@ -127,11 +157,12 @@
 			} else {
 				$res = "3";
 				#$line = implode(',',$sonoszonen[$zone]);
-				echo "<OK> Player '".$zone."' seems to be offline, but main config is OK :-)".PHP_EOL;
+				echo "<OK> Player '".$zone."' seems to be offline, but main config is OK. Please Power On and reboot Loxberry".PHP_EOL;
 			}
 		}
 		
 	}
+	# Migrate API keys
 	if (array_key_exists('API-key',$config['TTS']))   {
 		$config['TTS']['apikey'] = $config['TTS']['API-key'];
 		$config['TTS']['secretkey'] = $config['TTS']['secret-key'];
@@ -139,21 +170,45 @@
 		unset($config['TTS']['secret-key']);
 		echo "<OK> 'API-key' and 'secret-key' has been migrated to 'apikey' and 'secretkey'.".PHP_EOL;
 	}
+	/*
+	# Migrate TV Monitor
+	if (!array_key_exists('14',$config['sonoszonen']))   {
+		foreach ($sonoszonen as $zone => $player) {
+			$ip = $sonoszonen[$zone][0];
+			if (isset($sonoszonen[$zone][13]))   {
+				$config['sonoszonen'][$zone][14] = array('tvmonnight' => $config['VARIOUS']['tvmonnight'], 
+														'tvmonspeech' => $config['VARIOUS']['tvmonspeech'],
+														'tvmonsurr' => $config['VARIOUS']['tvmonsurr'],
+														'fromtime' => $config['VARIOUS']['fromtime'],
+														'tvvol' => $sonoszonen[$zone][14],
+														'usesb' => "true"
+													);
+				#unset($sonoszonen[$zone][14]);
+			}
+		}
+		**/
+		if (isset($config['VARIOUS']['tvmonnight']))    {
+			unset($config['VARIOUS']['tvmonnight']);
+		}
+		if (isset($config['VARIOUS']['tvmonspeech']))    {
+			unset($config['VARIOUS']['tvmonspeech']);
+		}
+		if (isset($config['VARIOUS']['tvmonsurr']))    {
+			unset($config['VARIOUS']['tvmonsurr']);
+		}
+		if (isset($config['VARIOUS']['fromtime']))    {
+			unset($config['VARIOUS']['fromtime']);
+		}
+		#echo "<OK> Soundbar settings has been added to config".PHP_EOL;
+
+	
+		
 	unset($config['sonoszonen']);
 	$newsonoszonen['sonoszonen'] = $sonoszonen;
 	$final = array_merge($config, $newsonoszonen);
-	file_put_contents($myConfigFolder.'/'.$myConfigFile, json_encode($final, JSON_PRETTY_PRINT, JSON_UNESCAPED_UNICODE));
+	file_put_contents($myConfigFolder.'/'.$myConfigFile, json_encode($final, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 	#print_r($final);
 
-	#if (!copy($myConfigFolder.'/player_template.cfg', $myConfigFolder.'/player.cfg')) {
-	#	echo "<ERROR> failed to copy player_template.cfg...".PHP_EOL;
-	#	echo "<br>";;
-	#}
-	#if (!copy($lbphtmldir.'/bin/player_template.cfg', $myConfigFolder.'/player_template.cfg')) {
-	#	echo "<ERROR> failed to copy player_template.cfg...".PHP_EOL;
-	#	echo "<br>";;
-	#}
-	
 	switch ($res) {
 		case "0":	
 			echo '<OK> Player update took place.'.PHP_EOL;
