@@ -170,23 +170,23 @@
 		unset($config['TTS']['secret-key']);
 		echo "<OK> 'API-key' and 'secret-key' has been migrated to 'apikey' and 'secretkey'.".PHP_EOL;
 	}
-	/*
+	
 	# Migrate TV Monitor
-	if (!array_key_exists('14',$config['sonoszonen']))   {
+	if (@!array_key_exists([14],$config['sonoszonen']))   {
 		foreach ($sonoszonen as $zone => $player) {
 			$ip = $sonoszonen[$zone][0];
 			if (isset($sonoszonen[$zone][13]))   {
-				$config['sonoszonen'][$zone][14] = array('tvmonnight' => $config['VARIOUS']['tvmonnight'], 
-														'tvmonspeech' => $config['VARIOUS']['tvmonspeech'],
-														'tvmonsurr' => $config['VARIOUS']['tvmonsurr'],
-														'fromtime' => $config['VARIOUS']['fromtime'],
-														'tvvol' => $sonoszonen[$zone][14],
-														'usesb' => "true"
-													);
-				#unset($sonoszonen[$zone][14]);
+				$sonoszonen[$zone][14] = array('fromtime' => $config['VARIOUS']['fromtime'],
+												'tvmonnight' => $config['VARIOUS']['tvmonnight'], 
+												'tvmonnightsub' => "false",
+												'tvmonnightsublevel' => "0",
+												'tvmonspeech' => $config['VARIOUS']['tvmonspeech'],
+												'tvmonsurr' => $config['VARIOUS']['tvmonsurr'],
+												'tvvol' => $sonoszonen[$zone][14],
+												'usesb' => "true"
+												);
 			}
 		}
-		**/
 		if (isset($config['VARIOUS']['tvmonnight']))    {
 			unset($config['VARIOUS']['tvmonnight']);
 		}
@@ -199,15 +199,12 @@
 		if (isset($config['VARIOUS']['fromtime']))    {
 			unset($config['VARIOUS']['fromtime']);
 		}
-		#echo "<OK> Soundbar settings has been added to config".PHP_EOL;
-
-	
-		
-	unset($config['sonoszonen']);
+		echo "<OK> Settings for TV Monitor has been migrated. Please doublecheck settings for each Zone".PHP_EOL;
+	}	
+	#unset($config['sonoszonen']);
 	$newsonoszonen['sonoszonen'] = $sonoszonen;
 	$final = array_merge($config, $newsonoszonen);
 	file_put_contents($myConfigFolder.'/'.$myConfigFile, json_encode($final, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS | JSON_PRETTY_PRINT));
-	#print_r($final);
 
 	switch ($res) {
 		case "0":	
