@@ -972,14 +972,12 @@
 		//console.log(config);
         $(document).on('pageinit', function() {
             selection();
-			//selectudp();
             callayout();
             destlayout();
             radlayout();
             weatherlayout();
             donation();
 			getsbconfig();
-			//getconfig();
 			});
 			
 		// play test soundfile when Elevenlabs used
@@ -1076,38 +1074,43 @@
             } else {
                 $('.ttsconfig').fadeOut(600);
             }
-
+			console.log("APIKEY: " + document.getElementById('apikey').value);
+			console.log("SECRET-KEY: " + document.getElementById('seckey').value);
             // T2S INSTANZ
-	    //validate_clean_objects(['#seckey','#apikey']);
-            if (document.main_form.tts_voicerss.checked == true) {
+            if (document.getElementById('tts_voicerss').checked == true) {
                 $('#voice').addClass('ui-disabled');
                 validate_enable('#apikey');
                 validate_chk_object(['#apikey']);
-            } else if (document.main_form.tts_azure.checked == true) {
+            } else if (document.getElementById('tts_azure').checked == true) {
                 $('#voice').addClass('ui-disabled');
                 validate_enable('#apikey');
                 validate_chk_object(['#apikey']);
-            } else if (document.main_form.tts_elevenlabs.checked == true) {
+            } else if (document.getElementById('tts_elevenlabs').checked == true) {
                 $('#voice').removeClass('ui-disabled');
                 $('#voice').selectmenu('refresh', true);
                 validate_enable('#apikey');
-                //validate_chk_object(['#apikey']);
-            } else if (document.main_form.tts_polly.checked == true) {
+                validate_chk_object(['#apikey']);
+            } else if (document.getElementById('tts_polly').checked == true) {
+				console.log("POLLY selected");
                 $('#voice').removeClass('ui-disabled');
                 $('#voice').selectmenu('refresh', true);
                 validate_enable('#apikey');
                 validate_enable('#seckey');
-                validate_chk_object(['#seckey', '#apikey']);
-            } else if (document.main_form.tts_google_cloud.checked == true) {
+                //validate_chk_object(['#seckey', '#apikey']);
+            } else if (document.getElementById('tts_google_cloud').checked == true) {
                 $('#voice').addClass('ui-disabled');
                 validate_enable('#apikey');
                 validate_chk_object(['#apikey']);
                 //$('#t2slang').addClass('ui-disabled');
             } else {
-	    	console.log("Clean validate");
-	    	validate_clean_objects(['#seckey','#apikey']);
-	    }
-            populateLanguageAndVoiceFields();
+				console.log("Clean validate");
+				if (document.getElementById('apikey').value != "")   {
+					validate_clean_objects(['#apikey']);
+				} else if (document.getElementById('seckey').value != "")   {
+					validate_clean_objects(['#seckey']);
+				}
+			}
+           populateLanguageAndVoiceFields();
         }
 
         // make fields visible in case flipswitch value is true/false
@@ -1152,27 +1155,6 @@
             $("#sendlox").flipswitch("refresh");
             $('#miniserver').selectmenu('refresh', true);
         }
-		
-		// - OBSOLETE -
-		// validate UDP Port in case flipswitch value UDP is true
-		function selectudp()    {
-			console.log("validate UDP");
-			var cat1 = document.getElementById('sendlox').value;
-			var mqtt1 = document.getElementById('sendloxMQTT').value;
-			$('#udpport').removeClass('ui-disabled');
-			if (cat1 == "true") {
-				if (mqtt1 == "true") {
-					console.log("MQTT selected");
-					validate_clean_objects;
-				} else {
-					console.log("UDP selected");
-					validate_enable('#udpport');
-					validate_chk_object(['#udpport']);
-				}
-			}
-			//$("#sendloxMQTT").flipswitch("refresh");
-			$("#sendlox").flipswitch("refresh");
-		}
 		
 		
 		// prepare the voice list dependend on language list
@@ -1691,7 +1673,6 @@
 						success: function(data) {
 							//console.log(data);
 							$.each(data, function(index, valu) {
-							//$.each(config['sonoszonen'], function(index, valu) {
 								if (valu[13] == 'SB')   {
 									if (valu[8] == 'SUB' && valu.length == 15) {
 										$("#tvmonnightsub_" + index).val(valu[14].tvmonnightsub).flipswitch("refresh");
@@ -1736,29 +1717,6 @@
 				})
 		};
 		
-		//var config;
-		// get config
-		//function getconfig()   {
-			
-			var config = $.ajax({
-					url: 'index.cgi',
-					type: 'post',
-					data: { action: 'config',},
-					dataType: 'json',
-						success: function(data) {
-							console.log(data);
-							return data;
-						}
-					})
-				.fail(function(data) {
-					console.log( "Action failed", data );
-				})
-				.always(function(data) {
-					//return data;
-				})
-		//};
-		//console.log((config));
-		
 		
 		// check if Soundbar(s) exist and activate template settings
 		function validateSB()   {
@@ -1775,11 +1733,9 @@
 			if (sbyes == "1")   {
 				$('.tvmonitorsecond').fadeIn(600);
 				$('.tvmonitorstat').fadeIn(600);
-				$('#tblzonen td:nth-child(11)').show();
 			} else {
 				$('.tvmonitorsecond').fadeOut(600);
 				$('.tvmonitorstat').fadeOut(600);
-				$('#tblzonen td:nth-child(11)').hide();
 			}
 			$("#tvmon").flipswitch("refresh");
 		}
@@ -1794,9 +1750,9 @@
 				$('#addstart').fadeIn(600);
 				$('#addend').fadeIn(600);
 				$('.tvmonitorsecond').fadeIn(600);
-				$("#info").trigger('create');
-				$("#info").attr("style", "color:red");
-				$("#info").html('<TMPL_VAR TEMPLATE.TV_MONITOR_ON>');
+				//$("#info").trigger('create');
+				//$("#info").attr("style", "color:red");
+				//$("#info").html('<TMPL_VAR TEMPLATE.TV_MONITOR_ON>');
 				console.log("TV Monitor On");
 			} else {
 				$('#lstart').fadeOut(600);
@@ -1804,9 +1760,9 @@
 				$('#addstart').fadeOut(600);
 				$('#addend').fadeOut(600);
 				$('.tvmonitorsecond').fadeOut(600);
-				$("#info").trigger('create');
-				$("#info").attr("style", "color:red");
-				$("#info").html('<TMPL_VAR TEMPLATE.TV_MONITOR_OFF>');
+				//$("#info").trigger('create');
+				//$("#info").attr("style", "color:red");
+				//$("#info").html('<TMPL_VAR TEMPLATE.TV_MONITOR_OFF>');
                 console.log("TV Monitor Off");
 			}
 			$("#tvmon").flipswitch("refresh");
@@ -1823,11 +1779,8 @@
             initial_lang_voice_load();
 			checkboxes();
 			validateSB();
+			validateTVMon();
 			getsbconfig();
-			
-			//$.each(config, function(index, valu) {
-				//console.log(index);
-			//});
 			
 			// validate Volume entries per player
             var iteration = document.getElementById('countplayers').value;
@@ -1845,15 +1798,16 @@
 			
 				console.log("submit");
 	            //var selectlang = document.getElementById("t2slang").value;
-				var selectlang = $('#t2slang').val();
-				var selectvoice = $('#voice').val();
+				//var selectlang = $('#t2slang').val();
+				var selectlang = document.getElementById('t2slang').value;
+				var selectvoice = document.getElementById('voice').value;
 				console.log("selectlang: " + selectlang);
 				console.log("selectvoice: " + selectvoice);
 				
 				$("#info").trigger('create');
-                if (document.main_form.tts_polly.checked == true) {
-			console.log("Polly checked");
-                     if (selectlang == null) {
+                if (document.getElementById('tts_polly').checked == true) {
+					console.log("Polly checked");
+                    if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
 						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
@@ -1875,8 +1829,8 @@
 						return false;
                         e.preventDefault();
                     }
-                } else if (document.main_form.tts_mac_osx.checked == true) {
-			conѕole.log("OSX checked");
+                } else if (document.getElementById('tts_mac_osx').checked == true) {
+					conѕole.log("OSX checked");
                     if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
@@ -1888,8 +1842,8 @@
 						return false;
                         e.preventDefault();
                     }
-                } else if (document.main_form.tts_voicerss.checked == true) {
-			console.log("VoiceRSS checked");
+                } else if (document.getElementById('tts_voicerss').checked == true) {
+					console.log("VoiceRSS checked");
                     if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
@@ -1901,32 +1855,8 @@
 						return false;
                         e.preventDefault();
                     }
-		} else if (document.main_form.tts_google_cloud.checked == true) {
-			console.log("Google Cloud checked");
-                    if (selectlang == null) {
-                        //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
-						$("#info").attr("style", "color:red");
-						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
-                        $('html, body').animate({
-                            scrollTop: $("#info").offset().top
-                        }, 1000);
-                        $("#t2slang").focus();
-						return false;
-                        e.preventDefault();
-                    }
-			if (selectvoice == null) {
-                        //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
-						$("#info").attr("style", "color:red");
-						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
-                        $('html, body').animate({
-                            scrollTop: $("#info").offset().top
-                        }, 1000);
-                        $("#voice").focus();
-						return false;
-                        e.preventDefault();
-                    }
-		} else if (document.main_form.tts_elevenlabs.checked == true) {
-			console.log("Elevenlabs checked");
+				} else if (document.getElementById('tts_google_cloud').checked == true) {
+					console.log("Google Cloud checked");
                     if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
@@ -1949,8 +1879,8 @@
 						return false;
                         e.preventDefault();
                     }
-                } else if (document.main_form.tts_pico.checked == true) {
-			console.log("Pico checked");
+				} else if (document.getElementById('tts_elevenlabs').checked == true) {
+					console.log("Elevenlabs checked");
                     if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
@@ -1962,8 +1892,19 @@
 						return false;
                         e.preventDefault();
                     }
-                } else if (document.main_form.tts_respvoice.checked == true) {
-			console.log("RespVoice checked");
+					if (selectvoice == null) {
+                        //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
+						$("#info").attr("style", "color:red");
+						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
+                        $('html, body').animate({
+                            scrollTop: $("#info").offset().top
+                        }, 1000);
+                        $("#voice").focus();
+						return false;
+                        e.preventDefault();
+                    }
+                } else if (document.getElementById('tts_pico').checked == true) {
+					console.log("Pico checked");
                     if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
@@ -1975,8 +1916,26 @@
 						return false;
                         e.preventDefault();
                     }
-                } else if (document.main_form.tts_google.checked == true) {
-			console.log("Google checked");
+
+                //} else if (document.main_form.tts_respvoice.checked == true) {
+				} else if (document.getElementById('tts_respvoice').checked == true) {
+					console.log("RespVoice checked");
+					validate_clean_objects;
+					console.log(selectlang);
+                    if (selectlang == null) {
+						console.log("TEST");
+                        //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
+						$("#info").attr("style", "color:red");
+						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
+                        $('html, body').animate({
+                            scrollTop: $("#info").offset().top
+                        }, 1000);
+                        $("#t2slang").focus();
+						return false;
+                        e.preventDefault();
+                    }
+                } else if (document.getElementById('tts_google').checked == true) {
+					console.log("Google checked");
                     if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
@@ -1988,8 +1947,8 @@
 						return false;
                         e.preventDefault();
                     }
-		} else if (document.main_form.tts_azure.checked == true) {
-			console.log("Azure checked");
+				} else if (document.getElementById('tts_azure').checked == true) {
+					console.log("Azure checked");
                     if (selectlang == null) {
                         //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
 						$("#info").attr("style", "color:red");
@@ -2009,7 +1968,7 @@
                     }, 1000);
                     $("#tts_voicerss").focus();
 					//$("#info").trigger('create');
-					console.log("No T2S");
+					console.log("No T2S Engine");
 					return false;
 					e.preventDefault();
 				}
@@ -2025,11 +1984,11 @@
 				for (i = 1; i < iteration; ++i) {
 					if (document.getElementById('mainchk' + i).checked == true) {
 						document.getElementById('mainchk' + i).value = "on";
-						console.log(document.getElementById('mainchk' + i).value);
+						//console.log(document.getElementById('mainchk' + i).value);
 						$('input:checkbox').checkboxradio('refresh');
 					} else {
 						document.getElementById('mainchk' + i).value = "off";
-						console.log(document.getElementById('mainchk' + i).value);
+						//console.log(document.getElementById('mainchk' + i).value);
 						$('input:checkbox').checkboxradio('refresh');
 					}
 				}
@@ -2363,11 +2322,11 @@
                         <table border=0 width="100%">
                             <td style="width: 60%; height: 45px;">
                                 <fieldset data-role="controlgroup" data-type="horizontal">
-                                    <input onclick="prepareTTSConfigFields()" type="radio" name="rampto" id="rmpsleep" value="sleep">
+                                    <input type="radio" name="rampto" id="rmpsleep" value="sleep">
                                     <label for="rmpsleep">Sleep</label>
-                                    <input onclick="prepareTTSConfigFields()" type="radio" name="rampto" id="rmpalarm" value="alarm">
+                                    <input type="radio" name="rampto" id="rmpalarm" value="alarm">
                                     <label for="rmpalarm">Alarm</label>
-                                    <input onclick="prepareTTSConfigFields()" type="radio" name="rampto" id="rmpauto" value="auto">
+                                    <input type="radio" name="rampto" id="rmpauto" value="auto">
                                     <label for="rmpauto">Auto</label>
                                 </fieldset>
                                 <script>

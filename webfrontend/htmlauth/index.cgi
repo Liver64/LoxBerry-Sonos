@@ -37,8 +37,8 @@ use Scalar::Util qw/reftype/;
 use JSON qw( decode_json );
 use utf8;
 use warnings;
-use strict;
-use Data::Dumper;
+#use strict;
+#use Data::Dumper;
 #use Config::Simple '-strict';
 #no strict "refs"; # we need it for template system
 
@@ -94,7 +94,7 @@ my $plugintempplayerfile	 	= "tmp_player.json";
 my $scanzonesfile	 			= "network.php";
 my $udp_file	 				= "ms_inbound.php";
 my $azureregion					= "westeurope"; # Change here if you have a Azure API key for diff. region
-my $helplink 					= "http://www.loxwiki.eu/display/LOXBERRY/Sonos4Loxone";
+$helplink 						= "http://www.loxwiki.eu/display/LOXBERRY/Sonos4Loxone";
 our $error_message				= "";
 
 my $configfile 					= "s4lox_config.json";
@@ -174,15 +174,9 @@ if (defined $cfg->{TTS}->{'API-key'})  {
 	delete $cfg->{TTS}->{'API-key'};
 }
 # copy global API-key to engine-API-key
-
-#if (!defined $cfg->{TTS}->{apikey}->{$cfg->{TTS}->{t2s_engine}}) {
- #       $cfg->{TTS}->{apikey}->{$cfg->{TTS}->{t2s_engine}} = $cfg->{TTS}->{apikey};
-#}
-
 if (!defined $cfg->{TTS}->{apikeys}) {
 	$cfg->{TTS}->{apikeys}->{$cfg->{TTS}->{t2s_engine}} = $cfg->{TTS}->{apikey};
 }
-
 # copy old secret-key value to secretkey
 if (defined $cfg->{TTS}->{'secret-key'})  {
 	$cfg->{TTS}->{secretkey} = $cfg->{TTS}->{'secret-key'};
@@ -211,7 +205,7 @@ my $lbversion = LoxBerry::System::lbversion();
 #LOGDEB "Loxberry Version: " . $lbversion;
 
 # read all POST-Parameter in namespace "R".
-my $cgi = CGI->new;
+$cgi = CGI->new;
 $cgi->import_names('R');
 
 # Get MQTT Credentials
@@ -239,11 +233,12 @@ if( $q->{action} )
 		pass_sonoszonen();
 		print JSON::encode_json($response);
 	}
-	if( $q->{action} eq "config" ) {
-		pass_config();
-		print JSON::encode_json($response_conf);
-	}
 	exit;
+}
+
+if ($R::getkeys)
+{
+	getkeys();
 }
 
 sub ajax_header_json
@@ -263,13 +258,6 @@ sub ajax_header_json
 #$saveformdata = defined $R::saveformdata ? $R::saveformdata : undef;
 #$do = defined $R::do ? $R::do : "form";
 
-##
-#AJAX Subs
-##
-if ($R::getkeys)
-{
-	getkeys();
-}
 
 ##########################################################################
 # Set LoxBerry SDK to debug in plugin if in debug
@@ -340,12 +328,12 @@ if ($mqttcred and $cfg->{LOXONE}->{LoxDaten} eq "true")  {
 	if($lbv < 3)  {
 		my $cfgfile = $lbhomedir.'/config/plugins/mqttgateway/mqtt.json';
 		my $json = LoxBerry::JSON->new();
-		our $cfgm = $json->open(filename => $cfgfile);
+		$cfgm = $json->open(filename => $cfgfile);
 		$navbar{3}{URL} = '/admin/plugins/mqttgateway/index.cgi';
 	} else {
 		my $cfgfile = $lbhomedir.'/config/system/mqttgateway.json';
 		my $json = LoxBerry::JSON->new();
-		our $cfgm = $json->open(filename => $cfgfile);
+		$cfgm = $json->open(filename => $cfgfile);
 		$navbar{3}{URL} = '/admin/system/mqtt.cgi';
 	}
 	$navbar{3}{target} = '_blank';
@@ -441,8 +429,8 @@ sub form
 	# fill saved values into form
 	$template		->param("SELFURL", $SL{REQUEST_URI});
 	$template		->param("T2S_ENGINE" 	=> $cfg->{TTS}->{t2s_engine}); 
-	$template		->param("APIKEY"	=> $cfg->{TTS}->{apikeys}->{$cfg->{TTS}->{t2s_engine}});
-	$template		->param("SECKEY"	=> $cfg->{TTS}->{secretkeys}->{$cfg->{TTS}->{t2s_engine}});
+	$template		->param("APIKEY"		=> $cfg->{TTS}->{apikeys}->{$cfg->{TTS}->{t2s_engine}});
+	$template		->param("SECKEY"		=> $cfg->{TTS}->{secretkeys}->{$cfg->{TTS}->{t2s_engine}});
 	$template		->param("VOICE" 		=> $cfg->{TTS}->{voice});
 	$template		->param("CODE" 			=> $cfg->{TTS}->{messageLang});
 	$template		->param("DATADIR" 		=> $cfg->{SYSTEM}->{path});
@@ -993,7 +981,7 @@ sub scan
 				$rowssonosplayer .= "<td style='height: 28px; width: 2%;'><img src='/plugins/$lbpplugindir/images/sonos_logo_sm.png' border='0' width='50' height='50' align='middle'/> </td>\n";
 			}
 			$rowssonosplayer .= "<td style='height: 28px; width: 17%;'><input type='text' id='ip$countplayers' name='ip$countplayers' size='30' value='$config->{$key}->[0]' style='width: 100%; background-color: #e6e6e6;' /> </td>\n";
-			# Column Pic green/red
+			# Column Clip Pic green/yellow/red
 			if ($config->{$key}->[11] and is_enabled($config->{$key}->[11]))   {
 				if ($config->{$key}->[12] and is_enabled($config->{$key}->[12]))   {
 					$rowssonosplayer .= "<td style='height: 30px; width: 30px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/green.png' border='0' width='26' height='28' align='center'/></div></td>\n";
@@ -1009,7 +997,6 @@ sub scan
 			# Column Soundbar Volume
 			if ($config->{$key}->[13])   {
 				$rowssonosplayer .= "<input type='hidden' id='sb$countplayers' size='100' name='sb$countplayers' value='$config->{$key}->[13]'>\n";
-				#$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='tvvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='tvvol$countplayers' value='$config->{$key}->[14]'' /> </td> </tr>\n";
 			}
 			$rowssonosplayer .= "<input type='hidden' id='models$countplayers' name='models$countplayers' value='$config->{$key}->[7]'>\n";
 			$rowssonosplayer .= "<input type='hidden' id='sub$countplayers' name='sub$countplayers' value='$config->{$key}->[8]'>\n";
@@ -1027,7 +1014,7 @@ sub scan
 
 
 #####################################################
-# pass Sonozonen config to template
+# pass Sonoszonen config to template (AJAX)
 #####################################################
 
 sub pass_sonoszonen
@@ -1038,12 +1025,17 @@ sub pass_sonoszonen
 
 
 #####################################################
-# pass config to template
+# Get Engine keys (AJAX)
 #####################################################
 
-sub pass_config
+sub getkeys
 {
-	$response_conf = $cfg;
+	print "Content-type: application/json\n\n";
+	my $engine = defined $R::t2s_engine ? $R::t2s_engine : "";
+	my $apikey = defined $cfg->{TTS}->{apikeys}->{$engine} ? $cfg->{TTS}->{apikeys}->{$engine} : "";
+	my $secret = defined $cfg->{TTS}->{secretkeys}->{$engine} ? $cfg->{TTS}->{secretkeys}->{$engine} : "";
+	print "{\"apikey\":\"$apikey\",\"seckey\":\"$secret\"}";
+	exit;
 }
 
 
@@ -1059,7 +1051,6 @@ sub pass_config
 	return();
 }
  
-
 	
 #####################################################
 # Error-Sub
@@ -1076,15 +1067,6 @@ sub error
 	exit;
 }
 
-sub getkeys
-{
-	print "Content-type: application/json\n\n";
-	my $engine = defined $R::t2s_engine ? $R::t2s_engine : "";
-	my $apikey = defined $cfg->{TTS}->{apikeys}->{$engine} ? $cfg->{TTS}->{apikeys}->{$engine} : "";
-	my $secret = defined $cfg->{TTS}->{secretkeys}->{$engine} ? $cfg->{TTS}->{secretkeys}->{$engine} : "";
-	print "{\"apikey\":\"$apikey\",\"seckey\":\"$secret\"}";
-	exit;
-}
 
 #####################################################
 # Save

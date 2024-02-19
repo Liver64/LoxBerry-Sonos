@@ -44,11 +44,11 @@ function create_JSON_config()    {
 	
 	# Path to player.cfg files
 	$pathfileplayer = $lbpconfigdir.'/player.cfg';
-	$pathbackupfileplayer = $lbpdatadir.'/Backup/'.$lbpplugindir.'/config/player.cfg';
+	$pathbackupfileplayer = $lbpdatadir.'/backup/'.$lbpplugindir.'/config/player.cfg';
 	
 	# Path to sonos.cfg files
 	$pathfilesonos = $lbpconfigdir.'/sonos.cfg';
-	$pathbackupfilesonos = $lbpdatadir.'/Backup/'.$lbpplugindir.'/config/sonos.cfg';	
+	$pathbackupfilesonos = $lbpdatadir.'/backup/'.$lbpplugindir.'/config/sonos.cfg';	
 	
 	$mask = 'player*.*';	// mask for deletion
 	
@@ -89,10 +89,10 @@ function create_JSON_config()    {
 
 	if (file_exists($configfile)) {
 		@unlink($configfile);
-		file_put_contents($configfile, json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+		file_put_contents($configfile, json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS | JSON_PRETTY_PRINT));
 		echo "<INFO> JSON configuration file has been updated".PHP_EOL;
 	} else {
-		file_put_contents($configfile, json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+		file_put_contents($configfile, json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS | JSON_PRETTY_PRINT));
 		echo "<INFO> New JSON configuration file has been created".PHP_EOL;
 	}
 	if ($call == "true")    {

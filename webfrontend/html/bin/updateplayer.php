@@ -206,7 +206,7 @@
 	unset($config['sonoszonen']);
 	$newsonoszonen['sonoszonen'] = $sonoszonen;
 	$final = array_merge($config, $newsonoszonen);
-	file_put_contents($myConfigFolder.'/'.$myConfigFile, json_encode($final, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+	file_put_contents($myConfigFolder.'/'.$myConfigFile, json_encode($final, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS | JSON_PRETTY_PRINT));
 	#print_r($final);
 
 	switch ($res) {
