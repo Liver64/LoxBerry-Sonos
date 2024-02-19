@@ -36,9 +36,9 @@ use Cwd 'abs_path';
 use Scalar::Util qw/reftype/;
 use JSON qw( decode_json );
 use utf8;
-use warnings;
+#use warnings;
 #use strict;
-#use Data::Dumper;
+use Data::Dumper;
 #use Config::Simple '-strict';
 #no strict "refs"; # we need it for template system
 
