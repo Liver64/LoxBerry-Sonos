@@ -1426,6 +1426,7 @@ function sendInfoMS($abbr, $player, $val)    {
 				"S31"   =>  "BEAM",
 				"S15"   =>  "CONNECT",
 				"S19"   =>  "ARC",
+				"S16"   =>  "AMP",
 				"S36"   =>  "RAY",
 			];
     return in_array($model, array_keys($soundb));
