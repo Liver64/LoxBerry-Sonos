@@ -137,7 +137,6 @@ echo "<PRE>";
 								LOGDEB("bin/tv_monitor.php: Subwoofer for Soundbar ".$key." has been turned ".$sub);
 								@$sonos->SetMute(false);
 								$dialog = Getdialoglevel();
-								
 								file_put_contents("/run/shm/".$status_file_run."_".$key.".json", json_encode($dialog, JSON_PRETTY_PRINT));
 							} catch (Exception $e) {
 								echo "Speech/Surround/Night Mode/Subwoofer could'nt been turned On for: ".$key."".PHP_EOL;
@@ -251,7 +250,7 @@ echo "<PRE>";
 	# restore previous soundbar settings 
 	#********************************************************
 	# turn nightmode off
-	} elseif ((string)$Stunden == "5" or (string)$Stunden == "7")    {
+	} elseif ((string)$Stunden == "4" or (string)$Stunden == "7")    {
 		$soundbars = identSB($sonoszone, $folfilePlOn);
 		foreach($soundbars as $subkey => $value)   {
 			if (!file_exists("/run/shm/".$restore_file."_".$subkey.".json"))   {

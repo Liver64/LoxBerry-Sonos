@@ -194,6 +194,7 @@
 		if ($sub != "false")    {
 			if (array_key_exists($room, $sub))  {
 				$subwoofer = "SUB";
+				LOGINF("system/network.php: Player '".$room."' has been identified with SUBWOOFER connected.");
 			} else {
 				$subwoofer = "NOSUB";
 			}
@@ -203,6 +204,7 @@
 		if ($sur != "false")    {
 			if (array_key_exists($room, $sub))  {
 				$surround = "SUR";
+				LOGINF("system/network.php: Player '".$room."' has been identified as SURROUND System.");
 			} else {
 				$surround = "NOSUR";
 			}
@@ -291,20 +293,24 @@ function parse_cfg_file() {
 	 
 	// open config file
 	if (!file_exists($myConfigFolder.'/'.$myConfigFile)) {
-		LOGERR("The file s4lox_config.json could not be opened, please try again! We skip here!");
+		LOGERR("system/network.php: The file s4lox_config.json could not be opened, please try again! We skip here!");
 		exit(1);
 	} else {
 		$config = json_decode(file_get_contents($myConfigFolder . "/" . $myConfigFile), TRUE);
 		if ($config === false)  {
-			LOGERR("The file 's4lox_config.json' could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file 's4lox_config.json' manually!");
+			LOGERR("system/network.php: The file 's4lox_config.json' could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file 's4lox_config.json' manually!");
 			exit(1);
+		}    
+		if (array_key_exists('sonoszonen', $config))   {
+			$sonosnet = $config['sonoszonen'];
+			#print_r($sonosnet);
+			return $sonosnet;
+		} else {
+			LOGINF("system/network.php: There is no existing config file, we create a new one");
 		}
 		LOGOK("system/network.php: Existing configuration file 's4lox_config.json' has been loaded successfully.");
 	}
-	$sonosnet = $config['sonoszonen'];
-	#print_r($sonosnet);
-	return $sonosnet;
-	}
+}
 
 
 /**
@@ -393,7 +399,7 @@ function shutdown()
 }
 
 
-/* Funktion :  GetSub --> check for Subwoofer available
+/* Funktion :  GetSubSur --> check for Subwoofer/Surround available
 /*
 /* @param: IP of one Zone
 /* @return: array room names
@@ -410,7 +416,6 @@ function GetSub($devices, $val)    {
 	} elseif ($val == "LR")  {
 		$key = "SUR";
 	}
-	
 	require_once(LBPHTMLDIR.'/system/bin/XmlToArray.php');
 	
 	$sonos = new SonosAccess($devices[0]); //Sonos IP Adresse
@@ -419,11 +424,12 @@ function GetSub($devices, $val)    {
 	$array = XmlToArray::convert($xml);
 	$interim = $array['ZoneGroupState']['ZoneGroups']['ZoneGroup'];
 	
-	$subwoofer = array();
+	#print_r($interim);
+	$subsur = array();
 	foreach($interim as $key => $value)     {
 		if (@$value['ZoneGroupMember']['attributes']['HTSatChanMapSet'])  {
 			$int = explode(";", $value['ZoneGroupMember']['attributes']['HTSatChanMapSet']);
-			foreach ($int as $sub)   {
+			foreach ($int as $a)   {
 				$a = substr($a, -2);
 				if ($a == $val)    {
 					$subsur[strtolower($value['ZoneGroupMember']['attributes']['ZoneName'])] = $key;
@@ -431,11 +437,11 @@ function GetSub($devices, $val)    {
 			}
 		}
 	}
-	if (empty($subwoofer))    {
-		$subwoofer = "false";
+	if (empty($subsur))    {
+		$subsur = "false";
 	}
-	# print_r($subwoofer);
-	return $subwoofer;
+	#print_r($subsur);
+	return $subsur;
 }
 
 ?>

@@ -350,11 +350,14 @@ if ($R::saveformdata2) {
 
 # check if config already saved, if not highlight header text in RED
 my $countplayer;
+my $inst;
 
 if(exists($cfg->{sonoszonen}))  { 
     $countplayer = 1;
+	$inst = "true";
 } else { 
     $countplayer = 0;
+	$inst = "false"
 } 
 
 
@@ -523,14 +526,14 @@ sub form
 		$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' value='$config->{$key}->[1]'>\n";
 		# Prepare Soundbars
 		if (exists($config->{$key}[13]))   {
-			$rowssoundbar .= "<tr class='tvmonitorsecond'>\n";
+			$rowssoundbar .= "<tr class='tvmon_body'>\n";
 			$rowssoundbar .= "<td style='height: 25px; width: 13%;'><fieldset align='center'><select id='usesb_$room' name='usesb_$room' data-role='flipswitch' style='width: 100%'><option value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
 			$rowssoundbar .= "<div id='tvmonitor'><td style='height: 28px; width: 20%;'><input type='text' id='sbzone_$room' name='sbzone_$room' size='40' readonly='true' value='$room' vertical-align='center' style='width: 100%; background-color: #e6e6e6;'></td>\n";
 			$rowssoundbar .= "<td style='width: 8%'><fieldset align='center'><select id='tvmonspeech_$room' name='tvmonspeech_$room' data-role='flipswitch' style='width: 100%'><option value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
 			$rowssoundbar .= "<td style='width: 8%'><fieldset align='center'><select id='tvmonsurr_$room' name='tvmonsurr_$room' data-role='flipswitch' style='width: 100%'><option selected='selected' value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
 			$rowssoundbar .= "<td style='width: 8%'><fieldset align='center'><select id='tvmonnightsub_$room' name='tvmonnightsub_$room' data-role='flipswitch' style='width: 100%'><option selected='selected' value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
 			$rowssoundbar .= "<td style='width: 5%; height: 28px;'><div><input class='tvvol' type='text' id='tvvol_$room' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='tvvol_$room' value='$config->{$key}->[14]->{tvvol}'></div></td></div>\n";
-			$rowssoundbar .= "<td style='width: 8%'><div id='addend'><fieldset align='center'><select id='fromtime_$room' name='fromtime_$room' data-mini='true' data-native-menu='true' style='width: 100%'>
+			$rowssoundbar .= "<td style='width: 8%'><div id='tvmon_addend'><fieldset align='center'><select id='fromtime_$room' name='fromtime_$room' data-mini='true' data-native-menu='true' style='width: 100%'>
 								<option value='false'>--</option>
 								<option value='0'>0:00</option>
 								<option value='1'>1:00</option>
@@ -558,7 +561,7 @@ sub form
 								<option value='23'>23:00</option>
 							</select></fieldset></div></td>\n";
 			$rowssoundbar .= "<td style='width: 8%'><fieldset align='center'><select id='tvmonnight_$room' name='tvmonnight_$room' data-role='flipswitch' style='width: 100%'><option selected='selected' value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
-			$rowssoundbar .= "<td style='width: 8%'><div id='addend'><fieldset align='center'>\n";
+			$rowssoundbar .= "<td style='width: 8%'><div id='tvmon_addend'><fieldset align='center'>\n";
 			$rowssoundbar .= "<select id='subgain_$room' name='subgain_$room' data-mini='true' data-native-menu='true' style='width: 100%'>";
 			$rowssoundbar .= "	<option value='-15'>-15</option>
 								<option value='-14'>-14</option>
@@ -602,7 +605,7 @@ sub form
 	LOGDEB "Sonos Player has been loaded.";	
 	
 	if ( $countsoundbars < 1 ) {
-		$rowssoundbar .= "<tr><td colspan=8>" . $SL{'ZONES.SONOS_EMPTY_SOUNDBARS'} . "</td></tr>\n";
+		$rowssoundbar .= "<tr class='tvmon_header'><td colspan=8>" . $SL{'ZONES.SONOS_EMPTY_SOUNDBARS'} . "</td></tr>\n";
 	} 
 	$rowssoundbar .= "<input type='hidden' id='countsoundbars' name='countsoundbars' value='$countsoundbars'>\n";
 	$template->param("ROWSOUNDBARS", $rowssoundbar);
@@ -876,6 +879,7 @@ sub save
 	
 	# save Sonos devices
 	my $emergecalltts;
+	LOGDEB("Install: ".$inst);
 	
 	for ($i = 1; $i <= $countplayers; $i++) {
 		if ( param("chkplayers$i") ) { # if player should be deleted
@@ -901,23 +905,25 @@ sub save
 							param("voice$i"),
 							param("sb$i")
 						 );
-			if (param("sb$i") eq "SB")   {
-				# add soundbar settings to zone
-				my $room = param("zone$i");
-				my @sbs = (  {"tvmonspeech" => param("tvmonspeech_$room"), 
-							"usesb" => param("usesb_$room"),
-							"tvvol" => param("tvvol_$room"),
-							"tvmonsurr" => param("tvmonsurr_$room"),
-							"fromtime" => param("fromtime_$room"),
-							"tvmonnight" => param("tvmonnight_$room"),
-							"tvmonnightsub" => param("tvmonnightsub_$room"),
-							"tvmonnightsublevel" => param("subgain_$room")
-							}					
-						);
-				push @player , @sbs;
+						 
+			if ($R::tvmon eq "true")  {
+				if (param("sb$i") eq "SB")   {
+					# add soundbar settings to zone
+					my $room = param("zone$i");
+					my @sbs = (  {"tvmonspeech" => param("tvmonspeech_$room"), 
+								"usesb" => param("usesb_$room"),
+								"tvvol" => param("tvvol_$room"),
+								"tvmonsurr" => param("tvmonsurr_$room"),
+								"fromtime" => param("fromtime_$room"),
+								"tvmonnight" => param("tvmonnight_$room"),
+								"tvmonnightsub" => param("tvmonnightsub_$room"),
+								"tvmonnightsublevel" => param("subgain_$room")
+								}					
+							);
+					push @player , @sbs;
+				}
 			}
 			$cfg->{sonoszonen}->{param("zone$i")} = \@player;
-			
 		}
 	}
 	
