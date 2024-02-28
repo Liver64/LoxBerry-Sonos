@@ -13,7 +13,6 @@
 	text-shadow: none !important;
 }
 
-
 </style>
 
 <TMPL_IF SETTINGS>
@@ -21,7 +20,13 @@
 	
     <form method="post" data-ajax="false" accept-charset="utf-8" name="main_form" id="main_form" action="./index.cgi?form">
         <input type="hidden" name="saveformdata1" value="1">
+		<input type="hidden" id="indexerror" name="indexerror" value="<TMPL_VAR ERR_MESSAGE>">
 		<input type="hidden" name="regionOptions" id="regionOptions" value="<TMPL_VAR TTS.regionms>">
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table.css"/>
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.min.css"/>
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.css"/>
+		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.min.js"></script>
+		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.js"></script>
 	
         <div class="form-group">
             <font COLOR="blue">
@@ -42,7 +47,7 @@
                         <td style="height: 33px; text-align: center;">
                             <img class='ico_sonos' src='/plugins/<TMPL_VAR PLUGINDIR>/images/sonos_logo.png' border='0' width='186' height='125' align="absmiddle">
                         </td>
-                        <td style="height: 33px; width: 201px;"></td>
+                        <td style="height: 33px; width: 80px;"></td>
 
                 </tr>
                 <tr>
@@ -50,36 +55,34 @@
                         <label id="lzonen"><TMPL_VAR ZONES.SONOS_ZONE_LABEL></label>
                     </td>
                     <td valign="middle" style="height: 41px; width: 60%;">
-                        <table width="85%" cellpadding="2" cellspacing="0" border="1px" border="1" id="tblzonen" name="tblzonen">
+						<table class="tables" width="85%" id="tblzonen" name="tblzonen">
                             <tr>
-                                <th style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 35px">
-                                    <img class='ico_delete' src='/plugins/<TMPL_VAR PLUGINDIR>/images/recycle-bin.png' border='0' width='24' height='24'>
-                                </th>
-                                <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 196px">
+								<th align="middle"><img class='ico_delete' src='/plugins/<TMPL_VAR PLUGINDIR>/images/recycle-bin.png' border='0' width='24' height='24'></th>
+                                <th align="left">
                                     <TMPL_VAR ZONES.SONOS_ROOM>
                                 </th>
-								<th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 35px">
+								<th align="middle" style="height: 45px; width: 10px">
                                     <TMPL_VAR ZONES.SONOS_MAIN>
                                 </th>
-                                <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 147px">
+                                <th align="left">
                                     <TMPL_VAR ZONES.SONOS_MODEL>
                                 </th>
-								<th align="middle" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 40px">
+								<th align="middle" style="height: 25px; width:10px">
                                     <TMPL_VAR ZONES.SONOS_MODEL.PIC>
                                 </th>
-                                <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 147px">
+                                <th align="left">
                                     <TMPL_VAR ZONES.SONOS_IP>
                                 </th>
-								<th align="middle" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 35px">
+								<th align="middle">
                                     <TMPL_VAR ZONES.SONOS_AUDIOCLIP>
                                 </th>
-                                <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 98px">
+                                <th align="left">
                                     <TMPL_VAR ZONES.SONOS_T2S-VOL>
                                 </th>
-                                <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 98px">
+                                <th align="left">
                                     <TMPL_VAR ZONES.SONOS_SONOS-VOL>
                                 </th>
-                                <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 98px">
+                                <th align="left">
                                     <TMPL_VAR ZONES.SONOS_MAX-VOL>
                                 </th>
                             </tr>
@@ -93,11 +96,11 @@
 							</div>
 						</TMPL_IF>
                     </td>
-                    <td style="width: 50px; height: 41px;" valign="top">
-                        <a onClick="Scan()" id="btnplayerscan" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="#">
+                    <td style="height: 41px;" valign="top">
+                        <a onClick="discover()" id="btnplayerscan" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="#">
                             <TMPL_VAR T2S.BUTTON_SCAN>
                         </a>
-                       <br>
+                    </td>
                 </tr>
 				
 				
@@ -227,33 +230,24 @@
                 </tr>
             </table>
         </td>
-        <td class="empty_template" style="height: 30px; width: 201px;">
-            <font size="-1"></font>
-        </td>
-            <td class="empty_template" style="height: 30px; width: 24px;">
-                <font size="-1">
-                    <div id="testurl"></div>
-                </font>
-
-            </td>	
+        
 		</tr>
-			
 				<tr class="tvmon_header">
 					<td style="width: 15%; height: 20px;" valign="top">
 						</td>
 					<div class="soundbars">
-						<td valign="middle" style="height: 15px; width: 80%;">
-							<table width="100%" cellpadding="2" cellspacing="0" border="1px" border="1" id="tblsb" name="tblsb">
+						<td valign="middle" style="height: 15px; width: 90%;">
+							<table class="tables" width="100%" id="tblsb" name="tblsb">
 								<tr>
-									<th style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 15px; width: 13%"><TMPL_VAR SOUNDBARS.LABEL_USE></th>
-									<th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 15px; width: 20%"><TMPL_VAR SOUNDBARS.LABEL_SOUNDBAR></th>
-									<th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 15px; width: 9%"><TMPL_VAR SOUNDBARS.LABEL_SPEECH></th>
-									<th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 15px; width: 13%"><TMPL_VAR SOUNDBARS.LABEL_SURROUND></th>
-									<th align="middle" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 15px; width: 13%"><TMPL_VAR SOUNDBARS.LABEL_SUB></th>
-									<th align="left" id="tvmtvol" name="tvmtvol" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 20px; width: 5%"><TMPL_VAR SOUNDBARS.LABEL_TVVOL></th>
-									<th align="middle" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 15px; width: 9%"><TMPL_VAR SOUNDBARS.LABEL_FROM_TIME></th>
-									<th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 15px; width: 9%"><TMPL_VAR SOUNDBARS.LABEL_NIGHT></th>
-									<th align="middle" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 15px; width: 9%"><TMPL_VAR SOUNDBARS.LABEL_SUB_GAIN></th>
+									<th align="left"><TMPL_VAR SOUNDBARS.LABEL_USE></th>
+									<th align="left"><TMPL_VAR SOUNDBARS.LABEL_SOUNDBAR></th>
+									<th align="left"><TMPL_VAR SOUNDBARS.LABEL_SPEECH></th>
+									<th align="left"><TMPL_VAR SOUNDBARS.LABEL_SURROUND></th>
+									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_SUB></th>
+									<th align="left" id="tvmtvol" name="tvmtvol"><TMPL_VAR SOUNDBARS.LABEL_TVVOL></th>
+									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_FROM_TIME></th>
+									<th align="left"><TMPL_VAR SOUNDBARS.LABEL_NIGHT></th>
+									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_SUB_GAIN></th>
 									
 								</tr>
 								<TMPL_VAR ROWSOUNDBARS>
@@ -372,7 +366,7 @@
                         </font>
                         <font size="-1"><span><TMPL_VAR T2S.LABEL_CLOUDSERVICE_PRICING></span></font>
                     </td>
-                    <td style="height: 13px; width: 24px;"></td>
+                    
                 </tr>
 
                 <tr class="ttsconfig colapi 1001 4001 8001 9001 9011">
@@ -380,32 +374,26 @@
                         <label id="lapikey"><TMPL_VAR T2S.LABEL_API_KEY></label>
                     </td>
                     <td style="width: 50%; height: 48px">
-                        <input id="apikey" name="apikey" type="text" class="textfield" value="<TMPL_VAR APIKEY>" 
-						data-validation-error-msg="<TMPL_VAR ERRORS.ERR_APIKEY>" 
-						data-validation-rule="^([A-Z0-9]){20}$|^([A-Za-z0-9\!\#\$\%\&\'\*\+\-\,\/\:\;\=\?\@\[\]\\\]]){32}$|^([A-Za-z0-9\!\#\$\%\&\'\*\+\-\,\/\:\;\=\?\@\[\]\\\]]){39}$">
+                        <input id="apikey" name="apikey" type="text" class="textfield" value="<TMPL_VAR APIKEY>">
 					</td>
-                    <td style="height: 48px; width: 201px;" class="auto-style4" valign="top">
+                    <td style="height: 48px; width: 100px;" class="auto-style4" valign="top">
                         <div class="ttsconfig btnpopulategooglevoices 8001 9001 9011">
                             <a onClick="checkProvider()" data-role="button" data-inline="true" data-mini="true" href="#">
                                 <TMPL_VAR T2S.BUTTON_VOICES>
                             </a>
                         </div>
-                    </td>
-					
-                    <td style="height: 48px; width: 24px;"></td>
+                    
                 </tr>
                 <tr class="ttsconfig colsec 4001">
                     <td style="width: 25%; height: 48px;">
                         <label id="lseckey"><TMPL_VAR T2S.LABEL_SECRET_KEY></label>
                     </td>
                     <td style="width: 50%; height: 48px;">
-                        <input id="seckey" name="seckey" type="text" class="textfield" value="<TMPL_VAR SECKEY>" 
-						data-validation-error-msg="<TMPL_VAR ERRORS.ERR_SECRETKEY>" 
-						data-validation-rule="^([A-Za-z0-9\!\#\$\%\&\'\*\+\-\,\/\:\;\=\?\@\[\]\\\]]){40}$">
+                        <input id="seckey" name="seckey" type="text" class="textfield" value="<TMPL_VAR SECKEY>">
 
                         <td style="width: 201px; height: 48px;">
                         </td>
-                        <td style="width: 24px; height: 48px;"></td>
+                        
                 </tr>
 				<p id="errorinfo"></p>
                 <tr class="ttsconfig ttsbaseconfig collang">
@@ -493,11 +481,10 @@
                                 </td>
                             </tr>
                         </table>
-                        <td valign="middle" style="height: 60px; width: 201px;">
+                        <td valign="middle" style="height: 60px; width: 100px;">
                             &nbsp;
                         </td>
-                        <td style="height: 60px; width: 24px;">
-                        </td>
+                        
                 </tr>
 
                 <tr class="ttsconfig ttsbaseconfig colcachesize">
@@ -509,8 +496,7 @@
                     </td>
                     <td style="height: 30px; width: 201px;">
                     </td>
-                    <td style="height: 30px; width: 201px;">
-                    </td>
+                    
                 </tr>
 
                 <tr class="ttsconfig ttsbaseconfig colmp3path">
@@ -538,8 +524,7 @@
                             <TMPL_VAR T2S.LABEL_SONOS_FOLDER5>
                         </font>
                     </td>
-                    <td style="height: 60px; width: 201px;">
-                    </td>
+                    
                 </tr>
 
                 <tr class="ttsconfig ttsbaseconfig">
@@ -588,9 +573,7 @@
                                                 <TMPL_VAR T2S.LABEL_UDP_PORT>
                                             </td>
                                             <td class="field_udp" style="width: 20px">
-                                                <input id="udpport" name="udpport" type="text" value="<TMPL_VAR LOXONE.LoxPort>" align="left" style="width: 71px; " 
-												data-validation-error-msg="<TMPL_VAR ERRORS.ERR_UDPPORT>" 
-												data-validation-rule="special:port">
+                                                <input id="udpport" name="udpport" type="text" value="<TMPL_VAR LOXONE.LoxPort>" align="left" style="width: 71px;">
                                             </td>
                                         </tr>
                                     </table>
@@ -671,7 +654,7 @@
                 </td>
                 <td colspan=3 valign="middle">
                     <div style="display:table-cell; width:60%;">
-                        <div style="display:table; padding:10px; border: 1px solid black; border-radius: 5px; background-color: #6dac20;">
+                        <div style="display:table; border-spacing: 10; border-radius: 20px; border: 8px solid #9a9b98; border-radius: 20px; background-color: #6dac20;">
                             <fieldset data-role="controlgroup">
                                 <div style="display:table-row;">
                                     <div style="display:table-cell;">
@@ -708,25 +691,17 @@
                     </td>
                     <td style="height: 33px; width: 24px;"></td>
                     <tr class="radiodet">
-                        <td colspan=3 valign="middle" style="height: 36px">
+                        <td colspan=3 valign="middle" style="height: 36px"> 
                             <font size="-1">
                                 <TMPL_VAR RADIO.NOTE_RADIO>
                             </font>
                             <p></p>
-                            <table width="100%" cellpadding="2" cellspacing="0" border="1px" border="1" id="tblBasic2">
+                            <table class="tables" width="100%" id="tblBasic2">
                                 <tr class="radiodet">
-                                    <th style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 25px; width: 15px">
-                                        <img class='ico_delete' src='/plugins/<TMPL_VAR PLUGINDIR>/images/recycle-bin.png' border='0' width='24' height='24'>
-                                    </th>
-                                    <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 25px; width: 280px">
-                                        <TMPL_VAR RADIO.RADIO_STATION_NAME>
-                                    </th>
-                                    <th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 888px">
-                                        <TMPL_VAR RADIO.RADIO_STATION_URL>
-                                    </th>
-									<th align="left" style="padding:10px; border: 1px solid black; border-radius: 1px; background-color: #6dac20;height: 45px; width: 888px">
-                                        <TMPL_VAR RADIO.RADIO_STATION_COVER_URL>
-                                    </th>
+                                    <th><img class='ico_delete' src='/plugins/<TMPL_VAR PLUGINDIR>/images/recycle-bin.png' border='0' width='24' height='24'></th>
+                                    <th align="left" style="height: 25px; width: 210px"><TMPL_VAR RADIO.RADIO_STATION_NAME></th>
+                                    <th align="left"><TMPL_VAR RADIO.RADIO_STATION_URL></th>
+									<th align="left"><TMPL_VAR RADIO.RADIO_STATION_COVER_URL></th>
                                 </tr class="radiodet">
                                 <TMPL_VAR ROWSRADIO>
                             </table>
@@ -924,6 +899,9 @@
                 <center>
                     <button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SAVE.SAVE_BUTTON></button>
 				</center>
+				<script>
+				
+				</script>
             </p>
         </div>
 		
@@ -971,15 +949,16 @@
 		
 		//console.log(config);
         $(document).on('pageinit', function() {
-            selection();
-            callayout();
-            destlayout();
-            radlayout();
-            weatherlayout();
-            donation();
-			getsbconfig();
+				selection();
+				callayout();
+				destlayout();
+				radlayout();
+				weatherlayout();
+				donation();
+				getsbconfig();
 			});
-			
+			var tvmonerr = "true";		
+		
 		// play test soundfile when Elevenlabs used
 		function playprev()    {
 		    var selectElement = document.getElementById("voice");
@@ -1074,45 +1053,27 @@
             } else {
                 $('.ttsconfig').fadeOut(600);
             }
-			//console.log("APIKEY: " + document.getElementById('apikey').value);
-			//console.log("SECRET-KEY: " + document.getElementById('seckey').value);
-            // T2S INSTANZ
+			 // T2S INSTANZ
             if (document.getElementById('tts_voicerss').checked == true) {
                 $('#voice').addClass('ui-disabled');
-                validate_enable('#apikey');
-                validate_chk_object(['#apikey']);
             } else if (document.getElementById('tts_azure').checked == true) {
                 $('#voice').addClass('ui-disabled');
-                validate_enable('#apikey');
-                validate_chk_object(['#apikey']);
             } else if (document.getElementById('tts_elevenlabs').checked == true) {
                 $('#voice').removeClass('ui-disabled');
                 $('#voice').selectmenu('refresh', true);
-                validate_enable('#apikey');
-                validate_chk_object(['#apikey']);
             } else if (document.getElementById('tts_polly').checked == true) {
                 $('#voice').removeClass('ui-disabled');
                 $('#voice').selectmenu('refresh', true);
-                validate_enable('#apikey');
-                validate_enable('#seckey');
-                //validate_chk_object(['#seckey', '#apikey']);
             } else if (document.getElementById('tts_google_cloud').checked == true) {
                 $('#voice').addClass('ui-disabled');
-                validate_enable('#apikey');
-                validate_chk_object(['#apikey']);
-                //$('#t2slang').addClass('ui-disabled');
-            } else {
-				//console.log("Clean validate");
-				if (document.getElementById('apikey').value != "")   {
-					validate_clean_objects(['#apikey']);
-				} else if (document.getElementById('seckey').value != "")   {
-					validate_clean_objects(['#seckey']);
-				}
-			}
-           populateLanguageAndVoiceFields();
+            }
+			$('#t2slang').selectmenu('refresh', true);
+			$('#voice').selectmenu('refresh', true);
+            populateLanguageAndVoiceFields();
         }
 
-        // make fields visible in case flipswitch value is true/false
+        
+		// make fields visible in case flipswitch value is true/false
         function selection() {
 			console.log("Selection");
             var cat = document.getElementById('sendlox').value;
@@ -1138,7 +1099,7 @@
 					$('.btnc').fadeOut(100);
 					$('.btnd').fadeOut(100);
 					$('.btn').fadeIn(100);
-					validate_enable('#udpport');
+					//validate_enable('#udpport');
 					//validate_chk_object(['#udpport']);
 				}
             } else {
@@ -1242,14 +1203,11 @@
                 });
                 $('#t2slang').empty();
                 $('#voice').empty();
-				$("#info").empty()
                 fetch(url).then(function(response) {
 				//console.log(response);
                     if (response.status != 200) {
 						if (($('#apikey').val().length == 39))  {
-							//console.log('Error Code: ' + response.status);
-							$("#info").attr("style", "color:red");
-							$("#info").text('<TMPL_VAR T2S.VOICE_ERROR1>: ' + response.status + '. <TMPL_VAR T2S.VOICE_ERROR2>: ' + $('#apikey').val() + ' <TMPL_VAR T2S.VOICE_ERROR3>');
+							dialog('<TMPL_VAR T2S.VOICE_ERROR1>: ' + response.status + '. <TMPL_VAR T2S.VOICE_ERROR2>: ' + $('#apikey').val() + ' <TMPL_VAR T2S.VOICE_ERROR3>', 'OK', 'error', 'Google Cloud Voice');
 							$('#t2slang').empty();
 							$('#voice').empty();
 							$('#t2slang').selectmenu('refresh', true);
@@ -1377,21 +1335,6 @@
         }
 		
 		
-		function checkLoxInSaved(e)  {
-			if ('<TMPL_VAR LOX_ON>' == 'false')  {
-				$("#info").attr("style", "color:red");
-				$("#info").text('Please save your Config first!');
-				$('html, body').animate({
-                    scrollTop: $("#zone1").offset().top
-                    }, 500);
-                    $("#zone1").focus();
-                    //e.preventDefault();
-				throw new Error();
-			}
-		}
-
-
-		
 		function checkProvider() {
 			if (document.main_form.tts_google_cloud.checked == true) {
 				populateGoogleCloudVoices();
@@ -1412,7 +1355,6 @@
 			if (document.main_form.tts_elevenlabs.checked == true) {
 				var url = 'https://api.elevenlabs.io/v1/models';
 				$('#t2slang').empty();
-				$('#info').empty();
 				//var key = document.getElementById('apikey').value;
 				var key = "77ba25e2758b20cb43867c8926ef30d0";
 				const options = {method: 'GET', headers: {"xi-api-key": "" + key + ""}};
@@ -1422,10 +1364,10 @@
 						//console.log("Daten: " + data[0]);
 						if (data[0] === undefined) {
 							text = ("Elevenlabs Error: " + data.detail.message);
-							message(text);
+							//message(text);
+							dialog(text, 'OK', 'error', 'Elevenlabs language');
 							return false;
 						} else {
-							$('#info').empty();
 							let lang = data[0]['languages'];
 							$('#t2slang').append('<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>');
 							lang.forEach((lang, index) => {
@@ -1438,7 +1380,8 @@
 							$('#t2slang').selectmenu('refresh', true);
 						}
 					})
-					.catch(err => message(err));
+					.catch(err => (err));
+					//dialog(err, 'OK', 'error', 'Elevenlabs language');
 					populateElevenlabsVoices();
 				};
 			};
@@ -1447,7 +1390,6 @@
 		function populateElevenlabsVoices()   {
 			console.log("populateElevenlabsVoices");
 			$('#voice').empty();
-			$('#info').empty();
 			//var key = document.getElementById('apikey').value;
 			var key = "77ba25e2758b20cb43867c8926ef30d0";
 			const options = {method: 'GET', headers: {"xi-api-key": "" + key + ""}};
@@ -1459,7 +1401,8 @@
 					//console.log("Daten: " + voice);
 					if (voice === undefined) {
 						text = ("Elevenlabs Error: " + data.detail.message);
-						message(text);
+						//message(text);
+						dialog(text, 'OK', 'error', 'Elevenlabs Voice');
 						return false;
 					} else {
 						//console.log(voice);
@@ -1475,7 +1418,8 @@
 						$('#voice').selectmenu('refresh', true);
 					}
 				})
-				.catch(err => message(err));
+				.catch(err => (err));
+				//dialog(err, 'OK', 'error', 'Elevenlabs Voice');
 				return;
 		};
 		
@@ -1525,10 +1469,8 @@
 				//errorvoice = 'true';
 			} else {
 				if (($('#apikey').val().length == 32))  {
-					$("#info").empty();
 					console.log('Error Code: ' + this.status);
-					$("#info").attr("style", "color:red");
-					$("#info").text('<TMPL_VAR T2S.VOICE_ERROR1>: ' + this.status + '. <TMPL_VAR T2S.VOICE_ERROR2>: ' + $('#apikey').val() + ' <TMPL_VAR T2S.VOICE_ERROR3>');
+					dialog('<TMPL_VAR T2S.VOICE_ERROR1>: ' + this.status + '. <TMPL_VAR T2S.VOICE_ERROR2>: ' + $('#apikey').val() + ' <TMPL_VAR T2S.VOICE_ERROR3>', 'OK', 'error', 'Azure Voice');
 					$('#t2slang').empty();
 					$('#voice').empty();
 					$('#t2slang').selectmenu('refresh', true);
@@ -1607,16 +1549,6 @@
 		}
 		
 		
-		// function for error messages
-		function message(text)    {
-		$('#info').empty();
-		$("#info").attr("style", "color:red");
-		$("#info").text(text);
-		$('html, body').animate({
-			scrollTop: $("#zone1").offset().top}, 500);
-			$("#zone1").focus();
-		}
-		
 		
 		function checkfile(filename)   {
 			$.post("/plugins/<TMPL_VAR PLUGINDIR>/system/ms_inbound.php");
@@ -1626,8 +1558,7 @@
 			http.send(); 
 			//console.log("http status: " + http.status);
 			if (http.status !== 200)  {
-				$("#info").attr("style", "color:red");
-				$("#info").text('<TMPL_VAR ERRORS.ERR_XM_TEMP>');
+				dialog('<TMPL_VAR ERRORS.ERR_XM_TEMP>', 'OK', 'error', 'Check filename');
 				$('html, body').animate({
 								scrollTop: $("#zone1").offset().top
 								}, 500);
@@ -1667,6 +1598,7 @@
 			$.ajax({
 					url: 'index.cgi',
 					type: 'post',
+					async: false,
 					data: { action: 'soundbars',},
 					dataType: 'json',
 						success: function(data) {
@@ -1701,9 +1633,17 @@
 									}
 									var usage = document.getElementById("usesb_" + index).value;
 									if (usage == "true")   {
+										var tvmonvol = document.getElementById("tvvol_" + index).value;
+										//console.log("Länge: " + tvmonvol.length);
+										if (tvmonvol.length == 0)    {
+											tvmonerr = "false";
+										}
+										//callback(tvmonerr);
 										validate_enable("#tvvol_" + index);
 										//validate_chk_object(["#tvvol_" + index]);
+										//return false;
 									}
+									
 								}
 							});
 						}
@@ -1742,29 +1682,116 @@
 		// if TV Monitor been used show info   
 		function validateTVMon()   {
 			var tvmonitor = document.getElementById('tvmon').value;
-			$("#info").empty();
 			if (tvmonitor == "true")   {
 				$('.tvmon_header').show();
-				//$("#info").trigger('create');
-				//$("#info").attr("style", "color:red");
-				//$("#info").html('<TMPL_VAR TEMPLATE.TV_MONITOR_ON>');
+				$('.tvmon_body').show();
 				console.log("TV Monitor On");
 			} else {
 				$('.tvmon_header').hide();
-				//$("#info").trigger('create');
-				//$("#info").attr("style", "color:red");
-				//$("#info").html('<TMPL_VAR TEMPLATE.TV_MONITOR_OFF>');
+				$('.tvmon_body').hide();
                 console.log("TV Monitor Off");
 			}
 			$("#tvmon").flipswitch("refresh");
 		}
 		
 		
+		// OnChange function for TV Monitor
+		$("#tvmon").on("change", function(e){
+			var tvmonitor = document.getElementById('tvmon').value;
+			if (tvmonitor == "true")   {
+				timeout('<TMPL_VAR TEMPLATE.TV_MONITOR_ON>', 'OK', 'info', 'TV Monitor', '4000');
+			} else {
+				timeout('<TMPL_VAR TEMPLATE.TV_MONITOR_OFF>', 'OK', 'info', 'TV Monitor', '4000');
+			}
+		});
+		
+		// pop-up Dailog Box
+		function dialog(text, ButtonText, Icon='', Title)    {
+			// https://silverboxjs.ir/documentation/?v=latest
+			silverBox({
+				alertIcon: Icon,
+				text: text,
+				centerContent: true,
+				title: {
+						text: Title
+						},
+				confirmButton: {
+								bgColor: "#6dac20",
+								border: "10px",
+								borderColor: "#6dac20",
+								textColor: "#fff",
+								text: ButtonText,
+								closeOnClick: true
+								}
+				});
+		}
+		
+		
+		// pop-up Timeout Dailog Box
+		function timeout(text, ButtonText, Icon='', Title, timeout)    {
+			// https://silverboxjs.ir/documentation/?v=latest
+			silverBox({
+				timer: timeout,
+				//alertIcon: Icon,
+				customIcon: "/plugins/<TMPL_VAR PLUGINDIR>/web/images/info.svg",
+				text: text,
+				centerContent: true,
+				title: {
+						text: Title
+						},
+				});
+		}
+		
+		// pop-up Dailog Box für Discover Sonos devices
+		function discover()    {
+			// https://silverboxjs.ir/documentation/?v=latest
+			silverBox({
+				alertIcon: 'warning',
+				text: '<TMPL_VAR ZONES.SONOS_SCAN_TEXT>',
+				footer: "<a href='#'>Auto Discover Sonos</a>",
+				centerContent: true,
+				title: {
+						text: '<TMPL_VAR ZONES.SONOS_SCAN_HEADER>'
+						},
+				confirmButton: {
+								bgColor: "#6dac20",
+								border: "10px",
+								borderColor: "#6dac20",
+								textColor: "#fff",
+								text: '<TMPL_VAR ZONES.BUTTON_NEXT>',
+								iconStart: "/plugins/<TMPL_VAR PLUGINDIR>/web/images/confirm.svg",
+								closeOnClick: false,
+								onClick: () => {url = './index.cgi?do=scanning';
+												document.location.href = url;
+												},
+								},
+				cancelButton: {
+								bgColor: "#6dac20",
+								border: "10px",
+								borderColor: "#6dac20",
+								textColor: "#fff",
+								text: '<TMPL_VAR ZONES.BUTTON_BACK>',
+								iconStart: "/plugins/<TMPL_VAR PLUGINDIR>/web/images/cancel.svg",
+								closeOnClick: true
+								},
+				});
+		}
+
+		
+		function message()   {
+			//console.log("MESSAGE");
+			timeout('<TMPL_VAR SAVE.SAVE_MESSAGE>', 'OK', 'info', '<TMPL_VAR SAVE.SAVE_ALL_OK>', '3500');
+		}
+		
+			
+		
 		// document ready
         $(document).ready(function() {
 			console.log("documentreadyfunction");
             $('#engine-selector input').change(prepareTTSConfigFields);
             $('#t2slang').change(populateVoice);
+			$('#t2slang').selectmenu('refresh', true);
+			$('#voice').selectmenu('refresh', true);
 			
             // various validations
             initial_lang_voice_load();
@@ -1772,7 +1799,7 @@
 			validateSB();
 			validateTVMon();
 			getsbconfig();
-			
+						
 			// validate Volume entries per player
             var iteration = document.getElementById('countplayers').value;
             iteration = parseInt(iteration)
@@ -1786,22 +1813,29 @@
 			
             // Function to control saving, main_form is submitted    
             $("form#main_form").submit(function(e) {
-			
 				console.log("submit");
-	            //var selectlang = document.getElementById("t2slang").value;
-				//var selectlang = $('#t2slang').val();
+				
 				var selectlang = document.getElementById('t2slang').value;
 				var selectvoice = document.getElementById('voice').value;
 				console.log("selectlang: " + selectlang);
 				console.log("selectvoice: " + selectvoice);
 				
-				$("#info").trigger('create');
+				var apidata = document.getElementById('apikey').value;
                 if (document.getElementById('tts_polly').checked == true) {
 					console.log("Polly checked");
+					var seckeydata = document.getElementById('seckey').value;
+					if (apidata.length != 20)    {
+						dialog('<TMPL_VAR ERRORS.ERR_APIKEY20>', 'OK', 'error', 'Polly');
+						return false;
+                        e.preventDefault();
+					}
+					if (seckeydata.length != 40)    {
+						dialog('<TMPL_VAR ERRORS.ERR_SECRETKEY>', 'OK', 'error', 'Polly');
+						return false;
+                        e.preventDefault();
+					}
                     if (selectlang == null) {
-                        //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
-						$("#info").attr("style", "color:red");
-						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
+ 						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'Polly');
                         $('html, body').animate({
                             scrollTop: $("#info").offset().top
                         }, 1000);
@@ -1810,9 +1844,7 @@
                         e.preventDefault();
                     }
                     if (selectvoice == null) {
-                        //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
-						$("#info").attr("style", "color:red");
-						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
+						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'Polly');
                         $('html, body').animate({
                             scrollTop: $("#info").offset().top
                         }, 1000);
@@ -1823,9 +1855,7 @@
                 } else if (document.getElementById('tts_mac_osx').checked == true) {
 					conѕole.log("OSX checked");
                     if (selectlang == null) {
-                        //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
-						$("#info").attr("style", "color:red");
-						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
+						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'Mac OSX');
                         $('html, body').animate({
                             scrollTop: $("#info").offset().top
                         }, 1000);
@@ -1835,10 +1865,13 @@
                     }
                 } else if (document.getElementById('tts_voicerss').checked == true) {
 					console.log("VoiceRSS checked");
+					if (apidata.length != 32)    {
+						dialog('<TMPL_VAR ERRORS.ERR_APIKEY32>', 'OK', 'error', 'Voice RSS');
+						return false;
+                        e.preventDefault();
+					}
                     if (selectlang == null) {
-                        //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
-						$("#info").attr("style", "color:red");
-						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
+ 						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'Voice RSS');
                         $('html, body').animate({
                             scrollTop: $("#info").offset().top
                         }, 1000);
@@ -1848,10 +1881,13 @@
                     }
 				} else if (document.getElementById('tts_google_cloud').checked == true) {
 					console.log("Google Cloud checked");
+					if (apidata.length != 39)    {
+						dialog('<TMPL_VAR ERRORS.ERR_APIKEY39>', 'OK', 'error', 'Google Cloud');
+						return false;
+                        e.preventDefault();
+					}
                     if (selectlang == null) {
-                        //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
-						$("#info").attr("style", "color:red");
-						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
+						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'Google Cloud');
                         $('html, body').animate({
                             scrollTop: $("#info").offset().top
                         }, 1000);
@@ -1860,9 +1896,7 @@
                         e.preventDefault();
                     }
 					if (selectvoice == null) {
-                        //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
-						$("#info").attr("style", "color:red");
-						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
+						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'Google Cloud');
                         $('html, body').animate({
                             scrollTop: $("#info").offset().top
                         }, 1000);
@@ -1872,10 +1906,13 @@
                     }
 				} else if (document.getElementById('tts_elevenlabs').checked == true) {
 					console.log("Elevenlabs checked");
+					if (apidata.length != 32)    {
+						dialog('<TMPL_VAR ERRORS.ERR_APIKEY32>', 'OK', 'error', 'ElevenLabs');
+						return false;
+                        e.preventDefault();
+					}
                     if (selectlang == null) {
-                        //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
-						$("#info").attr("style", "color:red");
-						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
+						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'ElevenLabs');
                         $('html, body').animate({
                             scrollTop: $("#info").offset().top
                         }, 1000);
@@ -1884,9 +1921,7 @@
                         e.preventDefault();
                     }
 					if (selectvoice == null) {
-                        //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
-						$("#info").attr("style", "color:red");
-						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
+						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'ElevenLabs');
                         $('html, body').animate({
                             scrollTop: $("#info").offset().top
                         }, 1000);
@@ -1897,9 +1932,7 @@
                 } else if (document.getElementById('tts_pico').checked == true) {
 					console.log("Pico checked");
                     if (selectlang == null) {
-                        //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
-						$("#info").attr("style", "color:red");
-						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
+						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'Pico');
                         $('html, body').animate({
                             scrollTop: $("#info").offset().top
                         }, 1000);
@@ -1911,13 +1944,10 @@
                 //} else if (document.main_form.tts_respvoice.checked == true) {
 				} else if (document.getElementById('tts_respvoice').checked == true) {
 					console.log("RespVoice checked");
-					validate_clean_objects;
 					console.log(selectlang);
                     if (selectlang == null) {
 						console.log("TEST");
-                        //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
-						$("#info").attr("style", "color:red");
-						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
+						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'Responsive Voice');
                         $('html, body').animate({
                             scrollTop: $("#info").offset().top
                         }, 1000);
@@ -1928,9 +1958,7 @@
                 } else if (document.getElementById('tts_google').checked == true) {
 					console.log("Google checked");
                     if (selectlang == null) {
-                        //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
-						$("#info").attr("style", "color:red");
-						$("#info").text('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
+						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'Google');
                         $('html, body').animate({
                             scrollTop: $("#info").offset().top
                         }, 1000);
@@ -1940,10 +1968,13 @@
                     }
 				} else if (document.getElementById('tts_azure').checked == true) {
 					console.log("Azure checked");
+					if (apidata.length != 32)    {
+						dialog('<TMPL_VAR ERRORS.ERR_APIKEY32>', 'OK', 'error', 'Azure');
+						return false;
+                        e.preventDefault();
+					}
                     if (selectlang == null) {
-                        //alert('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
-						$("#info").attr("style", "color:red");
-						$("#info").html('<TMPL_VAR T2S.VALIDATE_T2S_LANG>');
+						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'Azure');
                         $('html, body').animate({
                             scrollTop: $("#info").offset().top
                         }, 1000);
@@ -1952,13 +1983,11 @@
                         e.preventDefault();
                     }
                 } else {
-					$("#info").attr("style", "color:red");
-					$("#info").html('<TMPL_VAR T2S.VALIDATE_T2S>');
+					dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'T2S Engine');
                     $('html, body').animate({
                         scrollTop: $("#info").offset().top
                     }, 1000);
                     $("#tts_voicerss").focus();
-					//$("#info").trigger('create');
 					console.log("No T2S Engine");
 					return false;
 					e.preventDefault();
@@ -1975,11 +2004,9 @@
 				for (i = 1; i < iteration; ++i) {
 					if (document.getElementById('mainchk' + i).checked == true) {
 						document.getElementById('mainchk' + i).value = "on";
-						//console.log(document.getElementById('mainchk' + i).value);
 						$('input:checkbox').checkboxradio('refresh');
 					} else {
 						document.getElementById('mainchk' + i).value = "off";
-						//console.log(document.getElementById('mainchk' + i).value);
 						$('input:checkbox').checkboxradio('refresh');
 					}
 				}
@@ -1987,35 +2014,32 @@
 				// validate if at least one checkbox is checked
 				var checkBoxes = document.getElementsByClassName('chk-checked');
 				var isChecked = false;
-				$("#info").empty();
 				for (var i = 0; i < checkBoxes.length; i++) {
 					if ( checkBoxes[i].checked ) {
 						isChecked = true;
 					};
 				};
 				if (!isChecked) {
-					$("#info").attr("style", "color:red");
-					$("#info").text('<TMPL_VAR ERRORS.ERR_CHECKBOX>');
 					$('html, body').animate({
                         scrollTop: $("#mainchk1").offset().top
                     }, 1000);
+					dialog('<TMPL_VAR ERRORS.ERR_CHECKBOX>', 'OK', 'error', 'T2S Emergency');
 					return false;
 				} 
+				// show Save message 
+				timeout('<TMPL_VAR SAVE.SAVE_MESSAGE>', 'OK', 'info', '<TMPL_VAR SAVE.SAVE_ALL_OK>', '3500');
 				
 				// validate jingle file selection
-				$("#info").empty();
                 var selectjingle = document.getElementById("file_gong").value;
                 var selectt2s = $("input[name=t2s_engine]:checked").val();
 				//console.log(selectjingle);
 				//console.log(selectt2s);
                 if ((selectjingle == '') && (selectt2s !== "")) {
-					$("#info").attr("style", "color:red");
-					$("#info").text('<TMPL_VAR T2S.VALIDATE_JINGLE>');
                     $('html, body').animate({
                         scrollTop: $("#info").offset().top
                     }, 1000);
+					dialog('<TMPL_VAR T2S.VALIDATE_JINGLE>', 'SELECT', 'error', 'T2S Jingle');
                     $("#file_gong").focus();
-					$("#info").trigger('create');
 					e.preventDefault();
                 }
 				
@@ -2025,26 +2049,19 @@
 				var mqtt = document.getElementById('sendloxMQTT').value;
 				var udp = document.getElementById('udpport').value;
 				$('#udpport').removeClass('ui-disabled');
-				//console.log("MQTT = " + mqtt);
-				//console.log("UDP = " + udp);
-				//console.log("UDP Zeichen = " + udp.length)
 				if (cat == "true" && mqtt == "false") {
 					if (udp.length < 4) {
-						console.log("UDP selected and Port missing");
-						//errorwindow("Please UDP", "udpport");
-						$("#info").attr("style", "color:red");
-						$("#info").text('<TMPL_VAR ERRORS.ERR_UDP_MISSING>');
 						$('html, body').animate({
-							scrollTop: $("#info").offset().top
+							scrollTop: $("#udpport").offset().top
 						}, 1000);
 						$("#udpport").focus();
-						$("#info").trigger('create');
+						dialog('<TMPL_VAR ERRORS.ERR_UDP_MISSING>', 'OK', 'error', 'UPD Port');
 						e.preventDefault();
 						
 					}
 				}
-				//$("#sendloxMQTT").flipswitch("refresh");
 				$("#sendlox").flipswitch("refresh");
+				
             });
         });
     </script>
@@ -2058,112 +2075,14 @@
 </TMPL_IF LOGFILES>
 
 
-<TMPL_IF SAVE>
-    <center>
-        <table border=0>
-            <tr>
-                <td align="center">
-                    <h2>
-                        <TMPL_VAR SAVE.SAVE_ALL_OK>
-                    </h2>
-                    <p>
-                        <TMPL_VAR SAVE.SAVE_MESSAGE>
-                    </p>
-                </td>
-            </tr>
-            <tr>
-                <td align="center">
-                    <p>
-                        <a id="btnok" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="./index.cgi?do=<TMPL_VAR FORMNO>">
-                            <TMPL_VAR SAVE.SAVE_BUTTON_OK>
-                        </a>
-                    </p>
-                </td>
-            </tr>
-        </table>
-    </center>
-</TMPL_IF>
-
-
-<TMPL_IF ERROR>
-    <center>
-        <table border=0>
-            <tr>
-                <td align="center">
-                    <h2>
-                        <FONT COLOR="#FF0000">
-                            <TMPL_VAR ERRORS.ERR_TITLE>
-                        </FONT>
-                    </h2>
-                    <p>
-                        <TMPL_VAR ERR_MESSAGE>
-                    </p>
-                </td>
-            </tr>
-            <tr>
-                <td align="center">
-                    <p>
-                        <a id="btnok" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="./index.cgi?do=<TMPL_VAR FORMNO>">
-                            <TMPL_VAR ERRORS.ERR_BUTTON_BACK>
-                        </a>
-                    </p>
-                </td>
-            </tr>
-        </table>
-    </center>
-</TMPL_IF>
-
-
-<TMPL_IF NOTICE>
-    <center>
-        <form method="post" data-ajax="false" name="main_form" id="main_form" action="./index.cgi?do=form">
-            <table width="100%" border=0>
-                <tr>
-                    <td align="center">
-                        <h2>
-                            <FONT COLOR="#FF0000">
-                                <TMPL_VAR ZONES.SONOS_SCAN_HEADER>
-                            </FONT>
-                        </h2>
-                        <p>
-                            <TMPL_IF NAME="BOOL">
-                                <TMPL_VAR ZONES.SONOS_SSDP_DISABLED>
-                                    <TMPL_ELSE>
-                                        <TMPL_VAR ZONES.SONOS_SCAN_TEXT>
-                            </TMPL_IF>
-                            <br>
-                            <br>
-                        </p>
-                    </td>
-                </tr>
-                <tr>
-                    <td align="center">
-                        <p>
-                            <a id="btnok" data-role="button" data-inline="true" data-mini="true" data-icon="check" onclick="location.href='./index.cgi'">
-                                <TMPL_VAR ZONES.BUTTON_BACK>
-                            </a>
-                            <a id="btok" data-role="button" data-inline="true" data-mini="true" data-icon="check" onclick="Scanning()">
-                                <TMPL_VAR ZONES.BUTTON_NEXT>
-                            </a>
-                        </p>
-                    </td>
-                </tr>
-            </table>
-        </form>
-    </center>
-    <script>
-        function Scanning() {
-            url = './index.cgi?do=scanning';
-            document.location.href = url;
-        }
-    </script>
-</TMPL_IF>
-
-
 <TMPL_IF DETAILS>
     <!-- form 'FORM' DETAILS -->
     <form method="post" data-ajax="false" accept-charset="utf-8" name="main_form" id="main_form" action="./index.cgi?do=details">
         <input type="hidden" name="saveformdata2" value="1">
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.min.css"/>
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.css"/>
+		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.min.js"></script>
+		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.js"></script>
         <div class="form-group">
             <table class="formtable" border="0" width="100%" cellpadding="10">
                 <tr>
@@ -2426,7 +2345,7 @@
             <p>
                 <center>
                     <!--<a id="btncancel" data-role="button" data-inline="true" data-mini="true" data-icon="delete" href="/admin/index.cgi"><TMPL_VAR SAVE.CANCEL_BUTTON></a>-->
-                    <button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SAVE.SAVE_BUTTON></button>
+                    <button onclick="message()" type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SAVE.SAVE_BUTTON></button>
                 </center>
             </p>
 
@@ -2456,16 +2375,49 @@
                         $('.radioannounce').fadeOut(600);
                     }
                 }
-				//function cronjob() {
-                //    var cro = document.getElementById('checkonline').value;
-                //    if (cro === "true") {
-                //        $('.cronjob').fadeIn(600);
-                //    } else {
-                //        $('.cronjob').fadeOut(600);
-                //    }
-                //}
-
-                
+				
+				
+				function message()   {
+					console.log("save");
+					timeout('<TMPL_VAR SAVE.SAVE_MESSAGE>', 'OK', 'info', '<TMPL_VAR SAVE.SAVE_ALL_OK>', '3000');
+				}
+				
+				// pop-up Timeout Dailog Box
+				function timeout(text, ButtonText, Icon='', Title, timeout)    {
+					// https://silverboxjs.ir/documentation/?v=latest
+					silverBox({
+						timer: timeout,
+						//alertIcon: Icon,
+						customIcon: "/plugins/<TMPL_VAR PLUGINDIR>/web/images/info.svg",
+						text: text,
+						centerContent: true,
+						title: {
+								text: Title
+								},
+						});
+				}
+				
+				// pop-up Dailog Box
+				function dialog(text, ButtonText, Icon='', Title)    {
+					// https://silverboxjs.ir/documentation/?v=latest
+					silverBox({
+						alertIcon: Icon,
+						text: text,
+						centerContent: true,
+						title: {
+								text: Title
+								},
+						confirmButton: {
+										bgColor: "#6dac20",
+										border: "10px",
+										borderColor: "#6dac20",
+										textColor: "#fff",
+										text: ButtonText,
+										closeOnClick: true
+										}
+						});
+				}
+				
             </script>
         </div>
     </form>

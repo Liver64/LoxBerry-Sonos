@@ -317,9 +317,11 @@ function debugInfo()     {
 		$debugconfig['VARIOUS']['volmax'] = "disabled";
 	}
 	if ($debugconfig['TTS']['apikey'] != "")    {
+		unset($debugconfig['TTS']['apikeys']);
 		$debugconfig['TTS']['apikey'] = "valid";
 	}
 	if ($debugconfig['TTS']['secretkey'] != "")    {
+		unset($debugconfig['TTS']['secretkeys']);
 		$debugconfig['TTS']['secretkey'] = "valid";
 	}
 	if ($debugconfig['LOXONE']['LoxDaten'] == "1")    {
@@ -375,6 +377,9 @@ function debugInfo()     {
 	$i = 0;
 	foreach($soundbars as $key => $value)   {
 		$sonos = new SonosAccess($sonoszone[$key][0]);
+		$debugconfig['SOUNDBARS']['TV_MONITOR_STATUS'] = $config['VARIOUS']['tvmon'];
+		$debugconfig['SOUNDBARS']['START_TIME'] = $config['VARIOUS']['starttime'];
+		$debugconfig['SOUNDBARS']['END_TIME'] = $config['VARIOUS']['endtime'];
 		$Autoplay = $sonos->GetAutoplayRoomUUID();
 		if (empty($Autoplay['RoomUUID']))    {
 			$debugconfig['SOUNDBARS'][$key]['AUTOPLAY'] = "Off";
@@ -387,6 +392,15 @@ function debugInfo()     {
 		} else {
 			$debugconfig['SOUNDBARS'][$key]['AUTOPLAY_LINKED_ZONES'] = "On";
 		}
+		#print_r($config['sonoszonen']);
+		$debugconfig['SOUNDBARS'][$key]['DETAILS']['NIGHT_FROM_TIME'] = $config['sonoszonen'][$key][14]['fromtime'];
+		$debugconfig['SOUNDBARS'][$key]['DETAILS']['SUB_LEVEL'] = $config['sonoszonen'][$key][14]['tvmonnightsublevel'];
+		$debugconfig['SOUNDBARS'][$key]['DETAILS']['SUBWOOFER'] = $config['sonoszonen'][$key][14]['tvmonnightsub'];
+		$debugconfig['SOUNDBARS'][$key]['DETAILS']['NIGHT_MODE'] = $config['sonoszonen'][$key][14]['tvmonnight'];
+		$debugconfig['SOUNDBARS'][$key]['DETAILS']['SPEECH_MODE'] = $config['sonoszonen'][$key][14]['tvmonspeech'];
+		$debugconfig['SOUNDBARS'][$key]['DETAILS']['SURROUND'] = $config['sonoszonen'][$key][14]['tvmonsurr'];
+		$debugconfig['SOUNDBARS'][$key]['DETAILS']['TV_VOLUME'] = $config['sonoszonen'][$key][14]['tvvol'];
+		$debugconfig['SOUNDBARS'][$key]['DETAILS']['ZONE_STATUS'] = $config['sonoszonen'][$key][14]['usesb'];
 	}
 	
 	$actual = saveZonesStatus();

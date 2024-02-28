@@ -16,7 +16,7 @@ include($lbphtmldir."/Info.php");
 $configfile			= "s4lox_config.json";								// configuration file
 $TV_safe_file		= "s4lox_TV_save";									// saved Values of all SB's
 $status_file		= "s4lox_TV_on";									// TV has been turned on
-$status_file_run	= "s4lox_TV_on_run";								// TV is running
+#$status_file_run	= "s4lox_TV_on_run";								// TV is running
 $restore_file		= "s4lox_restore";									// Settings restore file
 $mask 				= 's4lox_TV*.*';									// mask for deletion
 $folfilePlOn 		= "$lbpdatadir/PlayerStatus/s4lox_on_";				// Folder and file name for Player Status
@@ -114,6 +114,7 @@ echo "<PRE>";
 							echo "TV Mode for Soundbar '".$key."' has been turned On".PHP_EOL;
 							startLog();
 							$sonos->SetAVTransportURI("x-sonos-htastream:".$soundbars[$key][1].":spdif");
+							# Set Volume
 							if ($soundbars[$key][14]['tvvol'] < 5)    {
 								$sonos->SetVolume($soundbars[$key][4]);
 								$vol = $soundbars[$key][4];
@@ -122,10 +123,8 @@ echo "<PRE>";
 								$vol = $soundbars[$key][14]['tvvol'];
 							}
 							try {
-								# Save Original settings
 								$dialog['Volume'] = $vol;
-								file_put_contents("/run/shm/".$status_file."_".$key.".json", json_encode($dialog, JSON_PRETTY_PRINT));
-								# Turn Speech/Surround Mode On and Mute Off
+								# Turn Speech/Surround/Dialog Mode On and Mute Off
 								$sonos->SetDialogLevel(is_enabled($soundbars[$key][14]['tvmonspeech']), 'DialogLevel');
 								echo "DialogLevel for Soundbar ".$key." has been turned ".$dia."".PHP_EOL;
 								LOGDEB("bin/tv_monitor.php: DialogLevel for Soundbar ".$key." has been turned ".$dia."");
@@ -136,8 +135,8 @@ echo "<PRE>";
 								echo "Subwoofer for Soundbar ".$key." has been turned ".$sub."".PHP_EOL;
 								LOGDEB("bin/tv_monitor.php: Subwoofer for Soundbar ".$key." has been turned ".$sub);
 								@$sonos->SetMute(false);
-								$dialog = Getdialoglevel();
-								file_put_contents("/run/shm/".$status_file_run."_".$key.".json", json_encode($dialog, JSON_PRETTY_PRINT));
+								# Save Original settings
+								file_put_contents("/run/shm/".$status_file."_".$key.".json", json_encode($dialog, JSON_PRETTY_PRINT));
 							} catch (Exception $e) {
 								echo "Speech/Surround/Night Mode/Subwoofer could'nt been turned On for: ".$key."".PHP_EOL;
 								LOGWARN("bin/tv_monitor.php: Speech/Surround/Night Mode/Subwoofer could'nt been turned On for: ".$key);
@@ -149,34 +148,6 @@ echo "<PRE>";
 							# Soundbar is already running
 							#******************************************************
 							echo "TV Mode for Soundbar '".$key."' is already running.".PHP_EOL;
-							if (file_exists("/run/shm/".$status_file_run."_".$key.".json"))   {
-								# Overrule by Sonos App
-								$restorerun = json_decode(file_get_contents("/run/shm/".$status_file_run."_".$key.".json"), true);
-								if ((bool)is_enabled($restorerun['DialogLevel'] != $dialog['DialogLevel']))   {
-									startLog();
-									$sonos->SetDialogLevel($dialog['DialogLevel'], 'DialogLevel');
-									echo "Predefined Plugin config DialogLevel for Soundbar ".$key." has been overruled by Sonos App".PHP_EOL;
-									LOGDEB("bin/tv_monitor.php: Predefined Plugin config 'DialogLevel' for Soundbar ".$key." has been overruled by Sonos App");
-									$dialog = Getdialoglevel();
-									file_put_contents("/run/shm/".$status_file_run."_".$key.".json", json_encode($dialog, JSON_PRETTY_PRINT));
-								}
-								if ((bool)is_enabled($restorerun['SurroundEnable'] != $dialog['SurroundEnable']))   {
-									startLog();
-									@$sonos->SetDialogLevel($dialog['SurroundEnable'], 'SurroundEnable');
-									echo "Predefined Plugin config SurroundEnable for Soundbar ".$key." has been overruled by Sonos App".PHP_EOL;
-									LOGDEB("bin/tv_monitor.php: Predefined Plugin config 'SurroundEnable' for Soundbar ".$key." has been overruled by Sonos App");
-									$dialog = Getdialoglevel();
-									file_put_contents("/run/shm/".$status_file_run."_".$key.".json", json_encode($dialog, JSON_PRETTY_PRINT));
-								}
-								if ((bool)is_enabled($restorerun['SubEnable'] != $dialog['SubEnable']))   {
-									startLog();
-									@$sonos->SetDialogLevel($dialog['SubEnable'], 'SubEnable');
-									echo "Predefined Plugin config SubEnable for Soundbar ".$key." has been overruled by Sonos App".PHP_EOL;
-									LOGDEB("bin/tv_monitor.php: Predefined Plugin config 'SubEnable' for Soundbar ".$key." has been overruled by Sonos App");
-									$dialog = Getdialoglevel();
-									file_put_contents("/run/shm/".$status_file_run."_".$key.".json", json_encode($dialog, JSON_PRETTY_PRINT));
-								}
-							}
 							# set Nightmode and Subgain
 							if ($soundbars[$key][14]['fromtime'] != "false")    {
 								if ((string)$Stunden >= (string)$soundbars[$key][14]['fromtime'] and is_enabled($soundbars[$key][14]['tvmonnight']))   { 
@@ -185,37 +156,14 @@ echo "<PRE>";
 										$sonos->SetDialogLevel(is_enabled($soundbars[$key][14]['tvmonnight']), 'NightMode');
 										echo "NightMode for Soundbar ".$key." has been turned to ".$night."".PHP_EOL;
 										LOGDEB("bin/tv_monitor.php: NightMode for Soundbar ".$key." has been turned to ".$night);
-										$dialog = Getdialoglevel();
-										file_put_contents("/run/shm/".$status_file_run."_".$key.".json", json_encode($dialog, JSON_PRETTY_PRINT));
 										# Set Sub Level
 										@$sonos->SetDialogLevel($soundbars[$key][14]['tvmonnightsublevel'], 'SubGain');
 										echo "Subwoofer Level for Soundbar ".$key." has been set to: ".$sublevel."".PHP_EOL;
 										LOGDEB("bin/tv_monitor.php: Subwoofer Level for Soundbar ".$key." has been set to: ".$sublevel);
 										file_put_contents("/run/shm/".$statusNight."_".$key.".json",json_encode("1", JSON_PRETTY_PRINT));
-										$dialog = Getdialoglevel();
-										file_put_contents("/run/shm/".$status_file_run."_".$key.".json", json_encode($dialog, JSON_PRETTY_PRINT));
-									} else {
-										# Overrule by Sonos App
-										$restorerun = json_decode(file_get_contents("/run/shm/".$status_file_run."_".$key.".json"), true);
-										if ((bool)is_enabled($restorerun['NightMode'] != $dialog['NightMode']))   {
-											startLog();
-											$sonos->SetDialogLevel($dialog['NightMode'], 'NightMode');
-											echo "Predefined Plugin config NightMode for Soundbar ".$key." has been overruled by Sonos App".PHP_EOL;
-											LOGDEB("bin/tv_monitor.php: Predefined Plugin config 'NightMode' for Soundbar ".$key." has been overruled by Sonos App");
-											$dialog = Getdialoglevel();
-											file_put_contents("/run/shm/".$status_file_run."_".$key.".json", json_encode($dialog, JSON_PRETTY_PRINT));
-										}
-										if ($restorerun['SubGain'] != $dialog['SubGain'])   {
-											startLog();
-											@$sonos->SetDialogLevel($dialog['SubGain'], 'SubGain');
-											echo "Predefined Plugin config SubwooferLevel for Soundbar ".$key." has been overruled by Sonos App".PHP_EOL;
-											LOGDEB("bin/tv_monitor.php: Predefined Plugin config 'SubwooferLevel' for Soundbar ".$key." has been overruled by Sonos App");
-											$dialog = Getdialoglevel();
-											file_put_contents("/run/shm/".$status_file_run."_".$key.".json", json_encode($dialog, JSON_PRETTY_PRINT));
-										}
 									}
 								}
-							echo "Soundbar ".$key." is On and in TV Mode, Volume has been set previously".PHP_EOL;
+							echo "Soundbar ".$key." is On and in TV Mode, all settings has been set previously".PHP_EOL;
 							}
 						}
 						#******************************************************
@@ -340,12 +288,7 @@ function RestorePrevSBsettings($soundbars)    {
 		$sonos = new SonosAccess($soundbars[$key][0]); //Sonos IP Adresse
 		$sonos->SetAVTransportURI("x-sonos-htastream:".$soundbars[$key][1].":spdif");
 		$sonos->SetDialogLevel(is_enabled(json_encode($restorelevel['NightMode'])), 'NightMode');
-		$sonos->SetDialogLevel(is_enabled(json_encode($restorelevel['SurroundEnable'])), 'SurroundEnable');
-		$sonos->SetDialogLevel(is_enabled(json_encode($restorelevel['DialogLevel'])), 'DialogLevel');
-		$sonos->SetDialogLevel(is_enabled(json_encode($restorelevel['SubEnable'])), 'SubEnable');
 		$sonos->SetDialogLevel($restorelevel['SubGain'], 'SubGain');
-		$sonos->SetVolume($restorelevel['Volume']);
-		#$sonos->SetQueue("x-rincon-queue:".$soundbars[$key][1]."#0");
 		echo "Previous Soundbar settings for '".$key."' has been restored.".PHP_EOL;
 		LOGDEB("bin/tv_monitor.php: Previous Soundbar settings for '".$key."' has been restored");	
 	}
@@ -372,7 +315,6 @@ function PrepSaveZonesStati() {
 	# Filter Player by grouped Players 
 	if (!empty($relzones))    {
 		$filtered = array();
-		echo "OLLI";
 			foreach($sonoszone as $zone => $ip) {
 				$exist = in_array($zone, $relzones);
 				if ($exist == true)  {

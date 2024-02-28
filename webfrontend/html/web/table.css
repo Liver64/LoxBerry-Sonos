@@ -1,0 +1,93 @@
+.tables {
+    border-radius: 20px;
+    border-width: 8px;
+    border-style: solid;
+    border-color: #9a9b98;
+    border-spacing: 0;
+    border-collapse: separate;
+    width: 90%;
+	padding: 0;
+}
+.tables tr td,
+.tables tr th {
+    border-right-width: 2px;
+    border-right-style: solid;
+    border-right-color: #3d3d3d;
+/* row line for each
+    border-bottom-width: 2px;
+    border-bottom-style: solid;
+    border-bottom-color: #3d3d3d;
+*/
+}
+.tables tr th:last-child,
+.tables tr td:last-child {
+    border-right-width: 2px;
+    border-right-style: none;
+    border-right-color: #3d3d3d;
+
+}
+.tables tr:last-child td,
+.tables tr:last-child th {
+    border-bottom-width: 2px;
+    border-bottom-style: none;
+    border-bottom-color: #3d3d3d;
+}
+/* top-left border-radius */
+.tables :not(tfoot) tr:first-child th:first-child,
+.tables :not(tfoot) tr:first-child td:first-child {
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 0;
+	background: #6dac20;
+}
+
+/* top-right border-radius */
+.tables :not(tfoot) tr:first-child th:last-child,
+.tables :not(tfoot) tr:first-child td:last-child {
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 0;
+	background: #6dac20;
+}
+
+/* bottom-left border-radius */
+.tables :not(thead) tr:last-child th:first-child,
+.tables :not(thead) tr:last-child td:first-child {
+    border-bottom-left-radius: 10px;
+}
+
+/* bottom-right border-radius */
+.tables :not(thead) tr:last-child th:last-child,
+.tables :not(thead) tr:last-child td:last-child{
+    border-bottom-right-radius: 10px;
+
+}
+
+/*Handle thead and tfoot borders*/
+.tables thead tr:first-child th,
+.tables thead tr:first-child td {
+  border-top-style: none;
+}
+.tables thead tr:last-child th,
+.tables thead tr:last-child td {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #3d3d3d;
+
+}
+.tables tfoot tr:last-child th,
+.tables tfoot tr:last-child td {
+  border-bottom-style: none;
+;
+}
+.tables tfoot tr:first-child th,
+.tables tfoot tr:first-child td {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #3d3d3d;
+
+}
+.tables tr:first-child th,
+.tables tr:first-child td {
+  border-top-style: none;
+  background: #6dac20;
+  height: 40px;
+}

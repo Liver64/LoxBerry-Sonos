@@ -153,11 +153,11 @@ function nextradio() {
 	#print_r($radio_coverurl);
 	$senderaktuell = array_search($senderuri, $radio_name);
 	if ($senderaktuell < ($radioanzahl) - 1 ) {
-		$sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[$senderaktuell + 1], $radio_name[$senderaktuell + 1], $radio_coverurl[$senderaktuell + 1]);
+		$sonos->SetRadio('x-rincon-mp3radio://'.trim($radio_adresse[$senderaktuell + 1]), trim($radio_name[$senderaktuell + 1]), trim($radio_coverurl[$senderaktuell + 1]));
 		$act = $radio_name[$senderaktuell + 1];
 	}
     if ($senderaktuell == $radioanzahl - 1) {
-	    $sonos->SetRadio('x-rincon-mp3radio://'.$radio_adresse[0], $radio_name[0], $radio_coverurl[0]);
+	    $sonos->SetRadio('x-rincon-mp3radio://'.trim($radio_adresse[0]), trim($radio_name[0]), trim($radio_coverurl[0]));
 		$act = $radio_name[0];
 	}
 	if ($config['VARIOUS']['announceradio'] == 1 and $textan == "0") {

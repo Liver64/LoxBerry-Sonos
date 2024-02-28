@@ -378,8 +378,6 @@ if(!defined $R::do or $R::do eq "form") {
 	$template->param("LOGFILES", "1");
 	$template->param("LOGLIST_HTML", LoxBerry::Web::loglist_html());
 	printtemplate();
-} elsif ($R::do eq "scan") {
-	&attention_scan;
 } elsif ($R::do eq "scanning") {
 	LOGTITLE "Execute Scan";
 	&scan;
@@ -438,6 +436,7 @@ sub form
 	$template		->param("CODE" 			=> $cfg->{TTS}->{messageLang});
 	$template		->param("DATADIR" 		=> $cfg->{SYSTEM}->{path});
 	$template		->param("LOX_ON" 		=> $cfg->{LOXONE}->{LoxDaten});
+	#$template		->param('ERR_MESSAGE', $error_message);
 		
 	# Load saved values for "select"
 	my $t2s_engine		  = $cfg->{TTS}->{t2s_engine};
@@ -481,13 +480,13 @@ sub form
 		$filename = $lbphtmldir.'/images/icon-'.$config->{$key}->[7].'.png';
 		our $statusfile = $lbpdatadir.'/PlayerStatus/s4lox_on_'.$room.'.txt';
 		
-		$rowssonosplayer .= "<tr><td style='height: 25px; width: 4%;' class='auto-style1'><input type='checkbox' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
+		$rowssonosplayer .= "<tr><td style='height: 25px; width: 20px;' class='auto-style1'><input type='checkbox' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
 		if (-e $statusfile) {
-			$rowssonosplayer .= "<td style='height: 28px; width: 16%;'><input type='text' class='pd-price' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$room' style='width: 100%; background-color: #6dac20;'></td>\n";
+			$rowssonosplayer .= "<td style='height: 28px; width: 16%;'><input type='text' class='pd-price' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$room' style='width:100%; background-color:#6dac20; color:white'></td>\n";
 		} else {
 			$rowssonosplayer .= "<td style='height: 28px; width: 16%;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$room' style='width: 100%; background-color: #e6e6e6;'></td>\n";
 		}	
-		$rowssonosplayer .= "<td style='height: 25px; width: 4%;' class='auto-style1'><input type='checkbox' class='chk-checked' name='mainchk$countplayers' id='mainchk$countplayers' value='$config->{$key}->[6]' align='center'></td>\n";
+		$rowssonosplayer .= "<td style='height: 25px; width: 10px;' class='auto-style1'><input type='checkbox' class='chk-checked' name='mainchk$countplayers' id='mainchk$countplayers' value='$config->{$key}->[6]' align='center'></td>\n";
 		$rowssonosplayer .= "<td style='height: 28px; width: 15%;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='$config->{$key}->[2]' style='width: 100%; background-color: #e6e6e6;'></td>\n";
 		# Column Sonos Player Logo
 		if (-e $filename) {
@@ -499,22 +498,22 @@ sub form
 		# Column Audioclip usage Pics green/red/yellow
 		if (exists($config->{$key}[11]) and is_enabled($config->{$key}[11]))   {
 			if (exists($config->{$key}[12]) and is_enabled($config->{$key}[12]))   {
-				$rowssonosplayer .= "<td style='height: 30px; width: 30px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/green.png' border='0' width='26' height='28' align='center'/></div></td>\n";
+				$rowssonosplayer .= "<td style='height: 30px; width: 10px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/green.png' border='0' width='26' height='28' align='center'/></div></td>\n";
 			} else {
-				$rowssonosplayer .= "<td style='height: 30px; width: 30px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/yellow.png' border='0' width='26' height='28' align='center'/></div></td>\n";
+				$rowssonosplayer .= "<td style='height: 30px; width: 10px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/yellow.png' border='0' width='26' height='28' align='center'/></div></td>\n";
 			}
 		} else {
-			$rowssonosplayer .= "<td style='height: 30px; width: 30px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/red.png' border='0' width='26' height='28' align='center'/></div></td>\n";
+			$rowssonosplayer .= "<td style='height: 30px; width: 10px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/red.png' border='0' width='26' height='28' align='center'/></div></td>\n";
 		}
 		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='$config->{$key}->[3]'></td>\n";
 		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='$config->{$key}->[4]'></td>\n";
-		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$config->{$key}->[5]'></td>\n";
+		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$config->{$key}->[5]'></td></tr>\n";
 		# Soundbar count
 		if (exists($config->{$key}[13]))   {
 			$countsoundbars++;
 			$rowssonosplayer .= "<input type='hidden' id='sb$countplayers' name='sb$countplayers' value='$config->{$key}->[13]'>\n";
 		} else {
-			$rowssonosplayer .= "</tr>";
+			#$rowssonosplayer .= "</tr>";
 		}
 		$rowssonosplayer .= "<input type='hidden' id='room$countplayers' name='room$countplayers' value=$room>\n";
 		$rowssonosplayer .= "<input type='hidden' id='models$countplayers' name='models$countplayers' value='$config->{$key}->[7]'>\n";
@@ -524,6 +523,7 @@ sub form
 		$rowssonosplayer .= "<input type='hidden' id='audioclip$countplayers' name='audioclip$countplayers' value='$config->{$key}->[11]'>\n";
 		$rowssonosplayer .= "<input type='hidden' id='voice$countplayers' name='voice$countplayers' value='$config->{$key}->[12]'>\n";
 		$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' value='$config->{$key}->[1]'>\n";
+		#$rowssonosplayer .= "</tr>";
 		# Prepare Soundbars
 		if (exists($config->{$key}[13]))   {
 			$rowssoundbar .= "<tr class='tvmon_body'>\n";
@@ -754,8 +754,10 @@ sub save_details
 	  }
 		
 	LOGOK "Detail settings has been saved successful";
-	&print_save;
-	exit;
+	sleep(3); 
+	$navbar{2}{active} = 1;
+	$template->param("DETAILS", "1");
+	&form;
 }
 
 #####################################################
@@ -860,6 +862,9 @@ sub save
 			my $rname = param("radioname$i");
 			my $rurl = param("radiourl$i");
 			my $curl = param("coverurl$i");
+			$rname =~ s/^\s+|\s+$//g;
+			$rurl =~ s/^\s+|\s+$//g;
+			$curl =~ s/^\s+|\s+$//g;
 			$cfg->{RADIO}->{radio}->{$i} = $rname . "," . $rurl . "," . $curl;
 		}
 	}
@@ -938,9 +943,9 @@ sub save
 	my $tv = qx(/usr/bin/php $lbphtmldir/bin/tv_monitor_conf.php);	
 	LOGOK "Main settings has been saved successful";
 	
-	&print_save;
+	#&print_save;
 	my $on = qx(/usr/bin/php $lbphtmldir/bin/check_on_state.php);	
-	exit;
+	return;
 	
 }
 
@@ -1064,46 +1069,11 @@ sub getkeys
 
 sub error 
 {
-	$template->param("ERROR", "1");
-	$template_title = $SL{'ERRORS.MY_NAME'} . ": v$sversion - " . $SL{'ERRORS.ERR_TITLE'};
-	LoxBerry::Web::lbheader($template_title, $helplink, $helptemplatefilename);
+	$template->param("SETTINGS", "1");
 	$template->param('ERR_MESSAGE', $error_message);
-	print $template->output();
-	LoxBerry::Web::lbfooter();
-	exit;
+	LOGERR($error_message);
+	&form;
 }
-
-
-#####################################################
-# Save
-#####################################################
-
-sub print_save
-{
-	$template->param("SAVE", "1");
-	$template_title = "$SL{'BASIS.MAIN_TITLE'}: v$sversion";
-	LoxBerry::Web::lbheader($template_title, $helplink, $helptemplatefilename);
-	print $template->output();
-	LoxBerry::Web::lbfooter();
-	exit;
-}
-
-
-#####################################################
-# Attention Scan Sonos Player
-#####################################################
-
-sub attention_scan
-{
-	LOGDEB "Scan request for Sonos Zones will be executed.";
-	$template->param("NOTICE", "1");	
-	$template_title = "$SL{'BASIS.MAIN_TITLE'}: v$sversion";
-	LoxBerry::Web::lbheader($template_title, $helplink, $helptemplatefilename);
-	print $template->output();
-	LoxBerry::Web::lbfooter();
-	exit;
-}
-	
 
 
 ##########################################################################
@@ -1160,9 +1130,12 @@ sub END
 	
 	if ($log) {
 		if (@reason) {
-			LOGCRIT "Unhandled exception catched:";
+			#$template->param("SETTINGS", "1");
+			#$template->param('ERR_MESSAGE', "Unhandled exception catched: ".@reason);
+			LOGCRIT "Unhandled exception catched: ";
 			LOGERR @reason;
 			LOGEND "Finished with an exception";
+			#&form;
 		} elsif ($error_message) {
 			LOGEND "Finished with error: ".$error_message;
 		} else {
