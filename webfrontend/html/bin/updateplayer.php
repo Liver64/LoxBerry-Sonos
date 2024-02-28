@@ -20,19 +20,20 @@
 	global $config, $result, $tmp_error, $sonos;
 	
 	echo "<PRE>";
-		
+
 	// open config file
-	if (!file_exists($myConfigFolder.'/'.$myConfigFile)) {
+	if (!file_exists(LBPCONFIGDIR.'/'.$myConfigFile)) {
 		echo "<ERROR> The file s4lox_config.json could not be opened, please try again! We skip here!".PHP_EOL;
 		exit(1);
 	} else {
-		$config = json_decode(file_get_contents($myConfigFolder . "/" . $myConfigFile), TRUE);
+		$config = json_decode(file_get_contents(LBPCONFIGDIR . "/" . $myConfigFile), TRUE);
 		if ($config === false)  {
 			echo "<ERROR> The file s4lox_config.json could not be parsed, the file may be disrupted. Please check/save your Plugin Config or check file 's4lox_config.json' manually!".PHP_EOL;
 			exit(1);
 		}
 		echo "<OK> Player config has been loaded.".PHP_EOL;
 	}
+	
 	$sonoszonen = $config['sonoszonen'];
 	#print_R($sonoszonen);
 	
@@ -41,11 +42,12 @@
 	} else {
 		echo '<OK> s4lox_config.json has been copied to s4lox_config_backup.json'.PHP_EOL;
 	}
-	
+
 	$port = 1400;
 	$timeout = 3;	
 	$res = "1";
-	
+		
+
 	$sub = CheckSubSur("SW");		// check for SUB and get room
 	$sur = CheckSubSur("LR");		// check for Surround and get room
 	#print_r($sub);
@@ -172,19 +174,19 @@
 	}
 	
 	# Migrate TV Monitor
-	if (@!array_key_exists([14],$config['sonoszonen']))   {
 		foreach ($sonoszonen as $zone => $player) {
 			$ip = $sonoszonen[$zone][0];
-			if (isset($sonoszonen[$zone][13]))   {
-				$sonoszonen[$zone][14] = array('fromtime' => $config['VARIOUS']['fromtime'],
-												'tvmonnight' => $config['VARIOUS']['tvmonnight'], 
-												'tvmonnightsub' => "false",
-												'tvmonnightsublevel' => "0",
-												'tvmonspeech' => $config['VARIOUS']['tvmonspeech'],
-												'tvmonsurr' => $config['VARIOUS']['tvmonsurr'],
-												'tvvol' => $sonoszonen[$zone][14],
-												'usesb' => "true"
-												);
+			if (isset($sonoszonen[$zone][13]) and !isset($sonoszonen[$zone][14]['tvmonspeech']))   {
+					$sonoszonen[$zone][14] = array('tvmonspeech' => $config['VARIOUS']['tvmonspeech'],
+													'usesb' => "true",
+													'tvvol' => $sonoszonen[$zone][14],
+													'tvmonsurr' => $config['VARIOUS']['tvmonsurr'],
+													'fromtime' => $config['VARIOUS']['fromtime'],
+													'tvmonnight' => $config['VARIOUS']['tvmonnight'], 
+													'tvmonnightsub' => "false",
+													'tvmonnightsublevel' => "0"
+													);
+				echo "<OK> Settings for TV Monitor has been migrated. Please doublecheck settings for Zone '".$zone."'".PHP_EOL;
 			}
 		}
 		if (isset($config['VARIOUS']['tvmonnight']))    {
@@ -199,8 +201,7 @@
 		if (isset($config['VARIOUS']['fromtime']))    {
 			unset($config['VARIOUS']['fromtime']);
 		}
-		echo "<OK> Settings for TV Monitor has been migrated. Please doublecheck settings for each Zone".PHP_EOL;
-	}	
+
 	#unset($config['sonoszonen']);
 	$newsonoszonen['sonoszonen'] = $sonoszonen;
 	$final = array_merge($config, $newsonoszonen);

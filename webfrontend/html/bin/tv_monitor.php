@@ -39,6 +39,7 @@ echo "<PRE>";
 		# check if no TV Volume turned on
 		if (is_disabled($config['VARIOUS']['tvmon']))   {
 			echo "TV Monitor off".PHP_EOL;
+			DelFiles($mask);
 			exit(1);
 		} else {
 			echo "TV Monitor on".PHP_EOL;
@@ -172,7 +173,7 @@ echo "<PRE>";
 					} else {
 						echo "Music on ".$key." is loaded...".PHP_EOL;
 						$actual = PrepSaveZonesStati();
-						file_put_contents("/run/shm/".$TV_safe_file."_".$key.".json",json_encode($actual, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) );
+						file_put_contents("/run/shm/".$TV_safe_file."_".$key.".json",json_encode($actual, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS | JSON_PRETTY_PRINT));
 						if ($state == 1)   {	
 							echo "...and streaming".PHP_EOL;
 						} else {
