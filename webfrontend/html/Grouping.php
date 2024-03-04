@@ -276,7 +276,7 @@ function getRoomCoordinator_OLD($room){
 			#print_r($grouping);
 			#echo 'OLLI';
 		#}
-		#print_r($grouping);
+		print_r($grouping);
 		return $grouping;
 	} else {
 		return false;

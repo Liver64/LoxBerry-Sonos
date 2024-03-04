@@ -29,6 +29,7 @@ include("Radio.php");
 include("Restore_T2S.php");
 include("Save_T2S.php");
 include("Speaker.php");
+include("follow.php");
 include("bin/MpegAudio.php");
 include("bin/MpegAudioFrameHeader.php");
 include('system/logging.php');
@@ -77,6 +78,7 @@ $filenst = "/run/shm/s4lox_t2s_stat.tmp";						// Temp Statusfile für messages
 $folfilePlOn = "$lbpdatadir/PlayerStatus/s4lox_on_";			// Folder and file name for Player Status
 $debuggingfile = "$lbpdatadir/s4lox_debug_config.json";			// Folder and file name for Debug Config
 $file = $lbphtmldir."/bin/check_player_dup.txt";				// File to check for duplicate player
+$save_status_file = "s4lox_follow";								// Status file for follow function
 $guid = "3c0d76cc-5b6b-4e5b-b47d-4719a8371191";					// GUID for Sonos AudioClip Function
 
 
@@ -395,7 +397,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 	$master = $_GET['zone'];
 	$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
 	switch($_GET['action'])	{
-	
 		case 'play';
 			$posinfo = $sonos->GetPositionInfo();
 			if(!empty($posinfo['TrackURI'])) {
@@ -1420,10 +1421,64 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		
 
-		case 'getsonosinfo':
+		case 'follow':
 			
+			# get zone
+			if (isset($_GET['zone']))   {
+				$client = $_GET['zone'];
+				LOGINF("sonos.php: Client '".$client."' has been entered");
+			} else {
+				LOGWARN("sonos.php: No client (zone) has been entered");
+				exit;
+			}
+			
+			# get host
+			if (isset($_GET['host']))   {
+				$hostroom 	= $_GET['host'];
+				$host		= $sonoszone[$hostroom][1];
+				LOGINF("sonos.php: Host '".$hostroom."' has been entered in URL");
+			} elseif (isset($config['VARIOUS']['follow_host']) 
+					and $config['VARIOUS']['follow_host'] != "false"
+					and $config['VARIOUS']['follow_host'] != "")   {
+				$hostroom 	= $config['VARIOUS']['follow_host'];
+				$host		= $sonoszone[$hostroom][1];
+				LOGINF("sonos.php: Host '".$hostroom."' has been grabbed from config");
+			} else {
+				LOGWARN("sonos.php: No Host has been maintained in config, nore Host has been entered in URL. Please maintain config <Options> or add '...&action=follow&host=ROOMNAME'");
+				exit;
+			}
+			follow($client);
+		
 		break;
 		
+		
+		case 'leave':
+		
+			# get zone
+			if (isset($_GET['zone']))   {
+				$client = $_GET['zone'];
+				LOGINF("sonos.php: Client '".$client."' has been entered");
+			} else {
+				LOGWARN("sonos.php: No client (zone) has been entered");
+				exit;
+			}
+			
+			# get wait time
+			if (isset($_GET['delay']))   {
+				$waitleave = $_GET['delay'];
+				LOGINF("sonos.php: ".$waitleave." seconds delay for '".$client."' has been entered");
+			} elseif (isset($config['VARIOUS']['follow_wait']) 
+					and $config['VARIOUS']['follow_wait'] != "false"
+					and $config['VARIOUS']['follow_wait'] != "")   {
+				$waitleave 	= $config['VARIOUS']['follow_wait'];
+				LOGINF("sonos.php: ".$waitleave." seconds delay for '".$client."' grabbed from config");
+			} else {
+				LOGWARN("sonos.php: No delay to leave 'follow' function has been maintained in config, nore delay has been entered in URL. Please maintain config <Options> or add '...&action=leave&delay=SECONDS'");
+				exit;
+			}
+			leave($client, $waitleave);
+			
+		break;
 				
 		case 'createstereopair':
 			CreateStereoPair();

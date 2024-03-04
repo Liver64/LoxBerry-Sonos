@@ -36,8 +36,8 @@ use Cwd 'abs_path';
 use Scalar::Util qw/reftype/;
 use JSON qw( decode_json );
 use utf8;
-#use warnings;
-#use strict;
+use warnings;
+use strict;
 use Data::Dumper;
 #use Config::Simple '-strict';
 #no strict "refs"; # we need it for template system
@@ -185,6 +185,14 @@ if (defined $cfg->{TTS}->{'secret-key'})  {
 # copy global Secret-key to engine-secretkey
 if (!defined $cfg->{TTS}->{secretkeys}) {
 	$cfg->{TTS}->{secretkeys}->{$cfg->{TTS}->{t2s_engine}} = $cfg->{TTS}->{secretkey};
+}
+# Follow host
+if (!defined $cfg->{VARIOUS}->{follow_host})  {
+	$cfg->{VARIOUS}->{follow_host} = "false";
+}
+# Leave follow host
+if (!defined $cfg->{VARIOUS}->{follow_wait})  {
+	$cfg->{VARIOUS}->{follow_wait} = "false";
 }
 $jsonobj->write();
 
@@ -397,7 +405,7 @@ exit;
 
 sub form 
 {
-	$template->param(FORMNO => 'FORM' );
+	$template->param(FORMNO => 'SETTINGS' );
 	
 	# check if path exist (upgrade from v3.5.1)
 	if ($cfg->{SYSTEM}->{path} eq "")   {
@@ -422,11 +430,6 @@ sub form
 	my $info 		= get($urlfile);
 	$template		->param("INFO" 			=> "$info");
 	
-	if ($cfg->{SYSTEM}->{path} eq "")   {
-		$cfg->{SYSTEM}->{path} = "$lbpdatadir";
-		$jsonobj->write();
-	}
-			
 	# fill saved values into form
 	$template		->param("SELFURL", $SL{REQUEST_URI});
 	$template		->param("T2S_ENGINE" 	=> $cfg->{TTS}->{t2s_engine}); 
@@ -451,7 +454,7 @@ sub form
 	foreach my $key (keys %{$radiofavorites}) {
 		$countradios++;
 		my @fields = split(/,/,$cfg->{RADIO}->{radio}->{$countradios} );
-		$rowsradios .= "<tr><td style='height: 25px; width: 43px;' class='auto-style1'><INPUT type='checkbox' style='width: 20px' name='chkradios$countradios' id='chkradios$countradios' align='center'/></td>\n";
+		$rowsradios .= "<tr><td style='height: 25px; width: 43px;'><INPUT type='checkbox' style='width: 20px' name='chkradios$countradios' id='chkradios$countradios' align='center'/></td>\n";
 		$rowsradios .= "<td style='height: 28px'><input type='text' id='radioname$countradios' name='radioname$countradios' size='20' value='$fields[0]' /> </td>\n";
 		$rowsradios .= "<td style='width: 600px; height: 28px'><input type='text' id='radiourl$countradios' name='radiourl$countradios' size='100' value='$fields[1]' style='width: 100%' /> </td>\n";
 		$rowsradios .= "<td style='width: 600px; height: 28px'><input type='text' id='coverurl$countradios' name='coverurl$countradios' size='100' value='$fields[2]' style='width: 100%' /> </td></tr>\n";
@@ -480,13 +483,14 @@ sub form
 		$filename = $lbphtmldir.'/images/icon-'.$config->{$key}->[7].'.png';
 		our $statusfile = $lbpdatadir.'/PlayerStatus/s4lox_on_'.$room.'.txt';
 		
-		$rowssonosplayer .= "<tr><td style='height: 25px; width: 20px;' class='auto-style1'><input type='checkbox' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
+		$rowssonosplayer .= "<tr>";
+		$rowssonosplayer .= "<td style='height: 25px; width: 20px;'><input type='checkbox' name='chkplayers$countplayers' id='chkplayers$countplayers' align='middle'/></td>\n";
 		if (-e $statusfile) {
 			$rowssonosplayer .= "<td style='height: 28px; width: 16%;'><input type='text' class='pd-price' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$room' style='width:100%; background-color:#6dac20; color:white'></td>\n";
 		} else {
 			$rowssonosplayer .= "<td style='height: 28px; width: 16%;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$room' style='width: 100%; background-color: #e6e6e6;'></td>\n";
 		}	
-		$rowssonosplayer .= "<td style='height: 25px; width: 10px;' class='auto-style1'><input type='checkbox' class='chk-checked' name='mainchk$countplayers' id='mainchk$countplayers' value='$config->{$key}->[6]' align='center'></td>\n";
+		$rowssonosplayer .= "<td style='height: 25px; width: 6px;'><input type='checkbox' class='chk-checked' name='mainchk$countplayers' id='mainchk$countplayers' value='$config->{$key}->[6]' align='center'></td>\n";
 		$rowssonosplayer .= "<td style='height: 28px; width: 15%;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='$config->{$key}->[2]' style='width: 100%; background-color: #e6e6e6;'></td>\n";
 		# Column Sonos Player Logo
 		if (-e $filename) {
@@ -507,7 +511,8 @@ sub form
 		}
 		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='$config->{$key}->[3]'></td>\n";
 		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='$config->{$key}->[4]'></td>\n";
-		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$config->{$key}->[5]'></td></tr>\n";
+		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$config->{$key}->[5]'></td>\n";
+		$rowssonosplayer .= "</tr>";
 		# Soundbar count
 		if (exists($config->{$key}[13]))   {
 			$countsoundbars++;
@@ -523,7 +528,6 @@ sub form
 		$rowssonosplayer .= "<input type='hidden' id='audioclip$countplayers' name='audioclip$countplayers' value='$config->{$key}->[11]'>\n";
 		$rowssonosplayer .= "<input type='hidden' id='voice$countplayers' name='voice$countplayers' value='$config->{$key}->[12]'>\n";
 		$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' value='$config->{$key}->[1]'>\n";
-		#$rowssonosplayer .= "</tr>";
 		# Prepare Soundbars
 		if (exists($config->{$key}[13]))   {
 			$rowssoundbar .= "<tr class='tvmon_body'>\n";
@@ -594,6 +598,7 @@ sub form
 								<option value='14'>14</option>
 								<option value='15'>15</option>
 								</select></fieldset></div></td>\n";
+			$rowssoundbar .= "</tr>";
 		}
 	}
 	
@@ -655,6 +660,15 @@ sub form
 		LOGDEB "MQTT Gateway is not installed or wrong credentials received.";
 	}
 	
+	
+	# create list of host palyer for follow function	
+	my $rowshostplayer;
+	foreach my $key (keys %{$config}) {
+		my $counthost++;
+		$rowshostplayer .= "<option value=".$key." >".$key."</option>";
+	}
+	$template->param("ROWSHOSTPLAYER", $rowshostplayer);
+	
 	LOGOK "Sonos Plugin has been successfully loaded.";
 	
 	# Donation
@@ -690,6 +704,12 @@ sub save_details
 	$cfg->{VARIOUS}->{phonemute} = "$R::phonemute";
 	$cfg->{VARIOUS}->{phonestop} = "$R::phonestop";
 	$cfg->{VARIOUS}->{volmax} = "$R::volmax";
+	if ($R::follow_host ne "")   {
+		$cfg->{VARIOUS}->{follow_host} = "$R::follow_host";
+	}
+	if ($R::follow_wait ne "")   {
+		$cfg->{VARIOUS}->{follow_wait} = "$R::follow_wait";
+	}
 	$cfg->{LOCATION}->{town} = "$R::town";
 	$cfg->{VARIOUS}->{CALDavMuell} = "$R::wastecal";
 	$cfg->{VARIOUS}->{CALDav2} = "$R::cal";
@@ -820,6 +840,8 @@ sub save
 	$cfg->{VARIOUS}->{CALDav2} = "$R::cal";
 	$cfg->{VARIOUS}->{tvmon} = "$R::tvmon";
 	$cfg->{VARIOUS}->{starttime} = "$R::starttime";
+	#$cfg->{VARIOUS}->{follow_host} = "$R::follow_host";
+	#$cfg->{VARIOUS}->{follow_wait} = "$R::follow_wait";
 	$cfg->{VARIOUS}->{endtime} = "$R::endtime";
 	$cfg->{LOCATION}->{region} = "$R::region";
 	$cfg->{LOCATION}->{googlekey} = "$R::googlekey";
@@ -981,17 +1003,17 @@ sub scan
 			my $filename = $lbphtmldir.'/images/icon-'.$config->{$key}->[7].'.png';
 				
 			$countplayers++;
-			$rowssonosplayer .= "<tr><td style='height: 25px; width: 4%;' class='auto-style1'><INPUT type='checkbox' style='width: 20px' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
-			$rowssonosplayer .= "<td style='height: 28px; width: 16%;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$key' style='width: 100%; background-color: #e6e6e6;' /> </td>\n";
-			$rowssonosplayer .= "<td style='height: 25px; width: 4%;' class='auto-style1'><DIV class='chk-group'><INPUT type='checkbox' class='chk-checked' name='mainchk$countplayers' id='mainchk$countplayers' value='$config->{$key}->[6]' align='center'/></DIV></td>\n";
-			$rowssonosplayer .= "<td style='height: 28px; width: 15%;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='$config->{$key}->[2]' style='width: 100%; background-color: #e6e6e6;' /> </td>\n";
+			$rowssonosplayer .= "<tr><td style='height: 25px; width: 4%;'><INPUT type='checkbox' style='width: 20px' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
+			$rowssonosplayer .= "<td style='height: 28px; width: 16%;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$key' style='width: 100%; background-color: #e6e6e6;'/></td>\n";
+			$rowssonosplayer .= "<td style='height: 25px; width: 4%;'><DIV class='chk-group'><INPUT type='checkbox' class='chk-checked' name='mainchk$countplayers' id='mainchk$countplayers' value='$config->{$key}->[6]' align='center'/></DIV></td>\n";
+			$rowssonosplayer .= "<td style='height: 28px; width: 15%;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='$config->{$key}->[2]' style='width: 100%; background-color: #e6e6e6;'/></td>\n";
 			# Column Sonos Player Logo
 			if (-e $filename) {
-				$rowssonosplayer .= "<td style='height: 28px; width: 2%;'><img src='/plugins/$lbpplugindir/images/icon-$config->{$key}->[7].png' border='0' width='50' height='50' align='middle'/> </td>\n";
+				$rowssonosplayer .= "<td style='height: 28px; width: 2%;'><img src='/plugins/$lbpplugindir/images/icon-$config->{$key}->[7].png' border='0' width='50' height='50' align='middle'/></td>\n";
 			} else {
-				$rowssonosplayer .= "<td style='height: 28px; width: 2%;'><img src='/plugins/$lbpplugindir/images/sonos_logo_sm.png' border='0' width='50' height='50' align='middle'/> </td>\n";
+				$rowssonosplayer .= "<td style='height: 28px; width: 2%;'><img src='/plugins/$lbpplugindir/images/sonos_logo_sm.png' border='0' width='50' height='50' align='middle'/></td>\n";
 			}
-			$rowssonosplayer .= "<td style='height: 28px; width: 17%;'><input type='text' id='ip$countplayers' name='ip$countplayers' size='30' value='$config->{$key}->[0]' style='width: 100%; background-color: #e6e6e6;' /> </td>\n";
+			$rowssonosplayer .= "<td style='height: 28px; width: 17%;'><input type='text' id='ip$countplayers' name='ip$countplayers' size='30' value='$config->{$key}->[0]' style='width: 100%; background-color: #e6e6e6;'/></td>\n";
 			# Column Clip Pic green/yellow/red
 			if ($config->{$key}->[11] and is_enabled($config->{$key}->[11]))   {
 				if ($config->{$key}->[12] and is_enabled($config->{$key}->[12]))   {
@@ -1002,9 +1024,9 @@ sub scan
 			} else {
 				$rowssonosplayer .= "<td style='height: 30px; width: 30px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/red.png' border='0' width='26' height='28' align='center'/></div></td>\n";
 			}
-			$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='$config->{$key}->[3]'' /> </td>\n";
-			$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='$config->{$key}->[4]'' /> </td>\n";
-			$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$config->{$key}->[5]'' /> </td>\n";
+			$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='$config->{$key}->[3]'' /></td>\n";
+			$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='$config->{$key}->[4]'' /></td>\n";
+			$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$config->{$key}->[5]'' /></td>\n";
 			# Column Soundbar Volume
 			if ($config->{$key}->[13])   {
 				$rowssonosplayer .= "<input type='hidden' id='sb$countplayers' size='100' name='sb$countplayers' value='$config->{$key}->[13]'>\n";

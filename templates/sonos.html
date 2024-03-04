@@ -20,7 +20,6 @@
 	
     <form method="post" data-ajax="false" accept-charset="utf-8" name="main_form" id="main_form" action="./index.cgi?form">
         <input type="hidden" name="saveformdata1" value="1">
-		<input type="hidden" id="indexerror" name="indexerror" value="<TMPL_VAR ERR_MESSAGE>">
 		<input type="hidden" name="regionOptions" id="regionOptions" value="<TMPL_VAR TTS.regionms>">
 		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table.css"/>
 		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.min.css"/>
@@ -61,7 +60,7 @@
                                 <th align="left">
                                     <TMPL_VAR ZONES.SONOS_ROOM>
                                 </th>
-								<th align="middle" style="height: 45px; width: 10px">
+								<th align="left" style="height: 45px; width: 8px">
                                     <TMPL_VAR ZONES.SONOS_MAIN>
                                 </th>
                                 <th align="left">
@@ -90,7 +89,7 @@
                         </table>
 						<TMPL_IF NAME="PLAYERAVAILABLE">
 							<div class='icoclip' style='text-align: left;'>
-								<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/green.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_GREEN>
+								&nbsp;&nbsp;&nbsp;<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/green.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_GREEN>
 								<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/yellow.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_YELLOW>
 								<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/red.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_RED>
 							</div>
@@ -239,14 +238,14 @@
 						<td valign="middle" style="height: 15px; width: 90%;">
 							<table class="tables" width="100%" id="tblsb" name="tblsb">
 								<tr>
-									<th align="left"><TMPL_VAR SOUNDBARS.LABEL_USE></th>
+									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_USE></th>
 									<th align="left"><TMPL_VAR SOUNDBARS.LABEL_SOUNDBAR></th>
-									<th align="left"><TMPL_VAR SOUNDBARS.LABEL_SPEECH></th>
-									<th align="left"><TMPL_VAR SOUNDBARS.LABEL_SURROUND></th>
+									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_SPEECH></th>
+									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_SURROUND></th>
 									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_SUB></th>
-									<th align="left" id="tvmtvol" name="tvmtvol"><TMPL_VAR SOUNDBARS.LABEL_TVVOL></th>
+									<th align="middle" id="tvmtvol" name="tvmtvol"><TMPL_VAR SOUNDBARS.LABEL_TVVOL></th>
 									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_FROM_TIME></th>
-									<th align="left"><TMPL_VAR SOUNDBARS.LABEL_NIGHT></th>
+									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_NIGHT></th>
 									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_SUB_GAIN></th>
 									
 								</tr>
@@ -420,7 +419,7 @@
                                             <select class="voice_select" id="voice" name="voice" data-mini="true";"
 											data-validation-error-msg="<TMPL_VAR T2S.SELECT_VOICE_DROPDOWN>" 
 											data-validation-rule="^([A-Za-z0-9]){4,10}$">
-								</select>
+										</select>
 								<div class="ttsconfig field-voice 9011">
 									<td class="ttsconfig field-voice 9011" style="height: 36px; width: 8%; text-align: left;">
 										<img onclick="playprev()" src='/plugins/<TMPL_VAR PLUGINDIR>/images/play-button.png'>
@@ -1171,6 +1170,7 @@
 				populateElevenlabsVoices();
 			}
             $('#voice').selectmenu('refresh', true);
+			$('#t2slang').selectmenu('refresh', true);
 
             // generate language ISO Code
             var isocode = '<TMPL_VAR CODE>'.substr(0, 2);
@@ -1598,7 +1598,6 @@
 			$.ajax({
 					url: 'index.cgi',
 					type: 'post',
-					async: false,
 					data: { action: 'soundbars',},
 					dataType: 'json',
 						success: function(data) {
@@ -1783,15 +1782,23 @@
 			timeout('<TMPL_VAR SAVE.SAVE_MESSAGE>', 'OK', 'info', '<TMPL_VAR SAVE.SAVE_ALL_OK>', '3500');
 		}
 		
-			
+		
+		function refresh()   {
+			$("#langiso").textinput("refresh");
+			$('#t2slang').selectmenu('refresh');
+			$('#voice').selectmenu('refresh');
+			//$("#t2slang").html(optionList).selectmenu('refresh', true);
+			//$("#voice").html(optionList).selectmenu('refresh', true);
+		}		
 		
 		// document ready
         $(document).ready(function() {
 			console.log("documentreadyfunction");
             $('#engine-selector input').change(prepareTTSConfigFields);
             $('#t2slang').change(populateVoice);
-			$('#t2slang').selectmenu('refresh', true);
-			$('#voice').selectmenu('refresh', true);
+
+			//$('#t2slang').selectmenu('refresh', true);
+			//$('#voice').selectmenu('refresh', true);
 			
             // various validations
             initial_lang_voice_load();
@@ -1810,7 +1817,6 @@
                 validate_enable('#maxvol' + i + '');
                 validate_chk_object(['#t2svol' + i + '', '#sonosvol' + i + '', '#maxvol' + i + '']);
             }
-			
             // Function to control saving, main_form is submitted    
             $("form#main_form").submit(function(e) {
 				console.log("submit");
@@ -2122,7 +2128,7 @@
 								</td>
                                 <td style="width: 30%">
                                     <!--<table class="cronjob" border=0 style="width: 91%">-->
-                                        	<select id="func_list" name="func_list" data-mini="true" data-native-menu="false">
+                                        	<select id="func_list" name="func_list" data-mini="true" data-native-menu="true">
 												<option selected="selected" disabled value="" >*** Select Function for ZAPZONE ***</option>
 												<option value="nextradio" >Nextradio</option>
 												<option value="trackfavorites" >Track Favorites</option>
@@ -2139,7 +2145,7 @@
                                         <label align="right" id="lcron"><TMPL_VAR T2S_DETAILS.LABEL_ZAPZONE_RESET></label>
                                 </td>
                                 <td style="width: 29%">
-                                    <select id="cron" name="cron" data-mini="true" data-native-menu="false" style="width: 29%">
+                                    <select id="cron" name="cron" data-mini="true" data-native-menu="true" style="width: 29%">
 										<option value="1">1 Min</option>
 										<option value="3">3 Min</option>
 										<option value="5">5 Min</option>
@@ -2165,7 +2171,7 @@
                         <label id="lvolume"><TMPL_VAR T2S_DETAILS.LABEL_T2S_VOLUME_CHANGE></label>
                     </td>
                     <td style="width: 19%">
-                        <select id="volume" name="volume" data-mini="true" data-native-menu="false" style="width: 62%">
+                        <select id="volume" name="volume" data-mini="true" data-native-menu="true" style="width: 100%">
 							<option value="3">3 %</option>
 							<option value="5">5 %</option>
 							<option value="7">7 %</option>
@@ -2271,6 +2277,50 @@
                     <td style="height: 30px; width: 201px;"></td>
                     <td style="height: 30px; width: 201px;"></td>
                 </tr>
+				
+				<tr>
+                    <td style="height: 60px; width: 15%; text-align: left;">
+                        <label id="lcheckonline"><TMPL_VAR ZONES.FOLLOW_LABEL></label>
+                    </td>
+                    <td style="height: 60px; width: 30%;">
+                        <table border=0 width="75%">
+                            <tr>
+							<td style="width: 22%; text-align: left;">
+                                <label align="left" id="lfollow_host"><TMPL_VAR ZONES.FOLLOW_HOST_LABEL></label>
+							</td>
+                            <td style="width: 20%">
+                                <select id="follow_host" name="follow_host" data-mini="true" data-native-menu="true">
+									<option selected="selected" value="false" ><TMPL_VAR ZONES.FOLLOW_HOST_OPTION></option>
+									<TMPL_VAR ROWSHOSTPLAYER>
+								</select>
+								<script>
+								$('#follow_host').val('<TMPL_VAR VARIOUS.follow_host>');
+								</script>	
+                            </td>
+
+								<td style="width: 20%; text-align: left;">
+                                    <label align="right" id="lfollow_wait"><TMPL_VAR ZONES.FOLLOW_HOST_WAIT_LABEL></label>
+								</td>
+                                <td style="width: 20%">
+                                        	<select id="follow_wait" name="follow_wait" data-mini="true" data-native-menu="true">
+												<option selected="selected" value="false" ><TMPL_VAR ZONES.FOLLOW_HOST_WAIT_OPTION></option>
+												<option value="0" ><TMPL_VAR ZONES.FOLLOW_HOST_WAIT_OPTION_TIME></option>
+												<option value="30" >30 Sec.</option>
+												<option value="60" >1 Min.</option>
+												<option value="120" >2 Min.</option>
+												<option value="180" >3 Min.</option>
+												<option value="300" >5 Min.</option>
+											</select>
+										<script>
+											$('#follow_wait').val('<TMPL_VAR VARIOUS.follow_wait>');
+										</script>	
+                                    <!--</table>-->
+                                
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+				
 
                 <tr>
                     <td style="width: 27%">

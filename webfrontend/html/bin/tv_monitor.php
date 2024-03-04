@@ -355,7 +355,7 @@ function saveZonesStati($sonoszone) {
 		$actual[$player]['Group-ID'] = $sonos->GetZoneGroupAttributes($player);
 		$actual[$player]['Grouping'] = getGroup($player);
 		$actual[$player]['ZoneStatus'] = getZoneStatus($player);
-		$actual[$player]['CONNECT'] = GetVolumeModeConnect($player);
+		#$actual[$player]['CONNECT'] = GetVolumeModeConnect($player);
 		$posinfo = $sonos->GetPositionInfo($player);
 		$media = $sonos->GetMediaInfo($player);
 		$zonestatus = getZoneStatus($player);
@@ -386,6 +386,7 @@ function saveZonesStati($sonoszone) {
 **/		
 
 function restoreSingleZone($sonoszone, $master) {
+	
 	global $sonoszone, $sonos, $actual, $time_start, $log, $mode, $tts_stat;
 	
 	$sonos = new SonosAccess($sonoszone[$master][0]); 
@@ -533,6 +534,7 @@ function restore_details($zone) {
 	# Queue empty
 	elseif (empty($actual[$zone]['Type'])) {
 		#echo "No Queue for ".$zone."<br>";	
+		$sonos->SetQueue("x-rincon-queue:".$sonoszone[$zone][1]."#0");
 		LOGDEB("bin/tv_monitor.php: '".$zone."' had no Queue");
 	} else {
 		#echo "Something went wrong :-(<br>";	

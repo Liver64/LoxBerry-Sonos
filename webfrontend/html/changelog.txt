@@ -421,5 +421,9 @@
  5.4.0		[IMPORVEMENT] Introduce New T2S AudioClip funktion
 			[IMPORVEMENT] PHP 8 readiness
 			[IMPORVEMENT] Switch to JSON Object
- 5.5.0		[IMPORVEMENT] TV Monitor ist je Soundbar konfigurierbar
-			[IMPORVEMENT] Plugin Einstellungen des TV Monitors können durch Sonos App Steuerung überschrieben werden
+ 5.5.0		[IMPORVEMENT] TV Monitor ist je Soundbar individuell konfigurierbar
+			[IMPORVEMENT] Plugin Einstellungen des TV Monitors können durch Sonos App Steuerung jederzeit überschrieben werden
+			[IMPORVEMENT] Sonos AMP als Soundbar hinzugefügt
+			[IMPORVEMENT] Alle API Keys werden per Engine gespeichert
+			[BUGFIX] Fehler bei nextradio und nextpush korrigiert (Leerzeichen in den Feldern)
+			[IMPORVEMENT] Neue Funktion Follow-me (Präsenzbasierend)
