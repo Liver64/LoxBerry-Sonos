@@ -96,6 +96,7 @@ echo "<PRE>";
 							startLog();
 							# Restore previous Zone settings
 							restoreSingleZone($sonoszone, $master);
+							@array_map('unlink', glob('/run/shm/s4lox_TV*'.$key.'*.*'));
 							LOGDEB("bin/tv_monitor.php: Soundbar TV Mode for ".$key." has been turned off and previous settings has been restored.");
 						#} elseif (file_exists("/run/shm/".$status_file."_".$key.".json"))   {
 							#RestorePrevSBsettings($soundbars);
@@ -153,7 +154,8 @@ echo "<PRE>";
 							if ($soundbars[$key][14]['fromtime'] != "false")    {
 								if ((string)$Stunden >= (string)$soundbars[$key][14]['fromtime'] and is_enabled($soundbars[$key][14]['tvmonnight']))   { 
 									if (!file_exists("/run/shm/".$statusNight."_".$key.".json"))   {
-										# Turn Night Mode On/Off						
+										# Turn Night Mode On/Off
+										startLog();										
 										$sonos->SetDialogLevel(is_enabled($soundbars[$key][14]['tvmonnight']), 'NightMode');
 										echo "NightMode for Soundbar ".$key." has been turned to ".$night."".PHP_EOL;
 										LOGDEB("bin/tv_monitor.php: NightMode for Soundbar ".$key." has been turned to ".$night);

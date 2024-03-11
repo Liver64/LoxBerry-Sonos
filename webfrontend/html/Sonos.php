@@ -174,7 +174,7 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 	if (isset($_GET['text']))  {
 		if (($_GET['text'] === "null") or ($_GET['text'] === "0"))  {
 			LOGGING("sonos.php: NULL or 0 or Text from Loxone Status has been entered, therefor T2S been skipped", 6);	
-			exit(0);
+			exit(1);
 		}
 	}
 }
@@ -185,7 +185,8 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 		|| ($_GET['action'] == "play") || ($_GET['action'] == "stop") || ($_GET['action'] == "toggle") || ($_GET['action'] == "playplfavorites")
 		|| ($_GET['action'] == "next") || ($_GET['action'] == "previous") || ($_GET['action'] == "volume") || ($_GET['action'] == "pause") || ($_GET['action'] == "zapzone")
 		|| (isset($_GET['volume']) === true) || ($_GET['action'] == "sendmessage") || ($_GET['action'] == "sonosplaylist") || ($_GET['action'] == "sendgroupmessage")
-		|| (isset($_GET['keepvolume']) === true) || (isset($_GET['groupvolume']) === true) || ($_GET['action'] == "volumeup") || ($_GET['action'] == "gettransportinfo") || ($_GET['action'] == "volumedown"))  
+		|| (isset($_GET['keepvolume']) === true) || (isset($_GET['groupvolume']) === true) || ($_GET['action'] == "volumeup") || ($_GET['action'] == "gettransportinfo") || ($_GET['action'] == "volumedown")
+		|| ($_GET['action'] == "leave") || ($_GET['action'] == "follow"))  
 		{
 		LOGGING("sonos.php: No Exception to delete TempFiles has been called", 7);
 	} else {
@@ -318,25 +319,27 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 		}
 	}
 } else {
-	# use standard volume from config
-	$master = $_GET['zone'];
-	$sonos = new SonosAccess($sonoszone[$master][0]);
-	$tmp_vol = $sonos->GetVolume();
-	// prüft auf Max. Lautstärke und korrigiert diese ggf.
-	if ($tmp_vol >= $sonoszone[$master][5]) {
-		$volume = $sonoszone[$master][5];
-	}
-	if (isset($_GET['text']) or isset($_GET['messageid']) or
-		(isset($_GET['sonos'])) or (isset($_GET['weather'])) or 
-		(isset($_GET['abfall'])) or (isset($_GET['witz'])) or 
-		(isset($_GET['pollen'])) or (isset($_GET['warning'])) or
-		(isset($_GET['distance'])) or (isset($_GET['clock'])) or 
-		(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch"))	{
-		$volume = $sonoszone[$master][3];
-		LOGGING("sonos.php: Standard T2S Volume for Player ".$master." has been set to: ".$volume, 7);
-	} else {
-		$volume = $sonoszone[$master][4];
-		LOGGING("sonos.php: Standard Sonos Volume for Player ".$master." has been set to: ".$volume, 7);
+	if (!isset($_GET['volume']))   {
+		# use standard volume from config
+		$master = $_GET['zone'];
+		$sonos = new SonosAccess($sonoszone[$master][0]);
+		$tmp_vol = $sonos->GetVolume();
+		// prüft auf Max. Lautstärke und korrigiert diese ggf.
+		if ($tmp_vol >= $sonoszone[$master][5]) {
+			$volume = $sonoszone[$master][5];
+		}
+		if (isset($_GET['text']) or isset($_GET['messageid']) or
+			(isset($_GET['sonos'])) or (isset($_GET['weather'])) or 
+			(isset($_GET['abfall'])) or (isset($_GET['witz'])) or 
+			(isset($_GET['pollen'])) or (isset($_GET['warning'])) or
+			(isset($_GET['distance'])) or (isset($_GET['clock'])) or 
+			(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch"))	{
+			$volume = $sonoszone[$master][3];
+			LOGGING("sonos.php: Standard T2S Volume for Player ".$master." has been set to: ".$volume, 7);
+		} else {
+			$volume = $sonoszone[$master][4];
+			LOGGING("sonos.php: Standard Sonos Volume for Player ".$master." has been set to: ".$volume, 7);
+		}
 	}
 }
 

@@ -1310,8 +1310,10 @@
             if (!$('#val_t2s').val()) {
                 $('.ttsconfig').hide();
             } else {
-                //console.log("selecting engine: " + $('#val_t2s').val());
+                console.log("selecting engine: " + $('#val_t2s').val());
                 $('#engine-selector input[value="' + $('#val_t2s').val() + '"]').prop('checked', true).checkboxradio("refresh");
+				$('#t2slang').selectmenu('refresh', true);
+				$('#voice').selectmenu('refresh', true);
                 prepareTTSConfigFields();
             }
         };
@@ -2090,7 +2092,7 @@
 		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.min.js"></script>
 		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.js"></script>
         <div class="form-group">
-            <table class="formtable" border="0" width="100%" cellpadding="10">
+            <table class="formtable" border="0" width="90%" cellpadding="10">
                 <tr>
                     <td valign="middle" style="height: 33px; width: 25%; text-align: center;">
                         <h2 class="auto-style3" style="width: 100%">
@@ -2099,7 +2101,6 @@
                         <td style="height: 33px; text-align: center; width: 800px;">
                             <img class='ico_sonos' src='/plugins/<TMPL_VAR PLUGINDIR>/images/sonos_logo.png' border='0' width='186' height='125' align="absmiddle">
                         </td>
-                        <td style="height: 33px; width: 201px;"></td>
                 </tr>
 
                 <tr>
@@ -2170,7 +2171,8 @@
                     <td style="height: 60px; width: 25%;">
                         <label id="lvolume"><TMPL_VAR T2S_DETAILS.LABEL_T2S_VOLUME_CHANGE></label>
                     </td>
-                    <td style="width: 19%">
+					
+                    <td style="width: 20%">
                         <select id="volume" name="volume" data-mini="true" data-native-menu="true" style="width: 100%">
 							<option value="3">3 %</option>
 							<option value="5">5 %</option>
@@ -2180,9 +2182,8 @@
                         <script>
                             $('#volume').val('<TMPL_VAR MP3.volumedown>');
                         </script>
-                    </td>
-                    <td style="height: 30px; width: 201px;"></td>
-                    <td style="height: 30px; width: 24px;">
+					</td>
+                   
 
                 </tr>
                 <td style="width: 27%">
@@ -2226,8 +2227,7 @@
                     <td style="height: 60px; width: 800px;">
                         <input type="range" name="correction" id="correction" value="<TMPL_VAR TTS.correction>" min="0" max="20" step="2">
                     </td>
-                    <td style="height: 30px; width: 201px;"></td>
-                    <td style="height: 30px; width: 201px;"></td>
+                    
                 </tr>
 
                 <tr class="t2sdet">
@@ -2264,7 +2264,7 @@
                                 </table>
                             </td>
                         </table>
-                        <td valign="middle" style="height: 60px; width: 201px;"></td>
+                        
                 </tr>
 
                 <tr>
@@ -2274,8 +2274,8 @@
                     <td style="height: 60px; width: 800px;">
                         <input type="range" name="phonemute" id="phonemute" value="<TMPL_VAR VARIOUS.phonemute>" min="0" max="16" step="2">
                     </td>
-                    <td style="height: 30px; width: 201px;"></td>
-                    <td style="height: 30px; width: 201px;"></td>
+                    
+                    
                 </tr>
 				
 				<tr>
@@ -2283,12 +2283,12 @@
                         <label id="lcheckonline"><TMPL_VAR ZONES.FOLLOW_LABEL></label>
                     </td>
                     <td style="height: 60px; width: 30%;">
-                        <table border=0 width="75%">
+                        <table border=0 width="65%">
                             <tr>
-							<td style="width: 22%; text-align: left;">
+							<td style="width:9%; text-align: right;">
                                 <label align="left" id="lfollow_host"><TMPL_VAR ZONES.FOLLOW_HOST_LABEL></label>
 							</td>
-                            <td style="width: 20%">
+                            <td style="width: 15%">
                                 <select id="follow_host" name="follow_host" data-mini="true" data-native-menu="true">
 									<option selected="selected" value="false" ><TMPL_VAR ZONES.FOLLOW_HOST_OPTION></option>
 									<TMPL_VAR ROWSHOSTPLAYER>
@@ -2298,10 +2298,10 @@
 								</script>	
                             </td>
 
-								<td style="width: 20%; text-align: left;">
+								<td style="width: 11%; text-align: left;">
                                     <label align="right" id="lfollow_wait"><TMPL_VAR ZONES.FOLLOW_HOST_WAIT_LABEL></label>
 								</td>
-                                <td style="width: 20%">
+                                <td style="width: 15%">
                                         	<select id="follow_wait" name="follow_wait" data-mini="true" data-native-menu="true">
 												<option selected="selected" value="false" ><TMPL_VAR ZONES.FOLLOW_HOST_WAIT_OPTION></option>
 												<option value="0" ><TMPL_VAR ZONES.FOLLOW_HOST_WAIT_OPTION_TIME></option>
@@ -2374,21 +2374,24 @@
                     <td style="height: 60px; width: 800px;">
                         <input type="range" name="waiting" id="waiting" value="<TMPL_VAR MP3.waiting>" min="0" max="10" step="1">
                     </td>
-                    <!--Start *** HIDDEN Workaround Felder um 3 Felder zu escapen -->
-                    <td style="height: 30px; width: 201px;">
+					</tr>
+					<!--<tr>
+                    <!--Start *** HIDDEN Workaround Felder um 3 Felder zu escapen
+                    <td style="height: 30px; width: 50px;">
                         <input id="wastecal" name="wastecal" type="hidden" class="textfield" value="<TMPL_VAR VARIOUS.CALDavMuell>">
                     </td>
-                    <td style="height: 30px; width: 201px;">
+                    <td style="height: 30px; width: 50px;">
                         <input id="cal" name="cal" type="hidden" class="textfield" value="<TMPL_VAR VARIOUS.CALDav2>">
                     </td>
-                    <td style="height: 30px; width: 201px;"></td>
-                    <input id="town" name="town" type="hidden" class="textfield" value="<TMPL_VAR LOCATION.town>" style="display:none">
+                    <!--<td style="height: 30px; width: 50px;">
+						<input id="town" name="town" type="text" class="textfield" value="<TMPL_VAR LOCATION.town>">
+					</td>
                     <table id="divCheckbox" style="display:none">
                         <TMPL_VAR ROWSRADIO>
                     </table>
-                    </td>
-                    <!--Ende *** HIDDEN Workaround Felder um 3 Felder zu escapen -->
-                </tr>
+                    
+                    <!--Ende *** HIDDEN Workaround Felder um 3 Felder zu escapen
+                </tr>-->
 
             </table>
             <td></td>
@@ -2411,18 +2414,18 @@
                     var rad = document.getElementById('announceradio').value;
                     var rad1 = document.getElementById('announceradio_always').value;
                     if (rad == true || rad1 == true) {
-                        $('.radioannounce').fadeIn(600);
+                        $('.radioannounce').show();
                     } else {
-                        $('.radioannounce').fadeOut(600);
+                        $('.radioannounce').hide();
                     }
                 }
 
                 function select_always() {
                     var rad1 = document.getElementById('announceradio_always').value;
                     if (rad1 == true) {
-                        $('.radioannounce').fadeIn(600);
+                        $('.radioannounce').show();
                     } else {
-                        $('.radioannounce').fadeOut(600);
+                        $('.radioannounce').hide();
                     }
                 }
 				

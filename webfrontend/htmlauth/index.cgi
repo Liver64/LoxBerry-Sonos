@@ -136,10 +136,6 @@ if (!defined $cfg->{TTS}->{waiting})  {
 if (!defined $cfg->{VARIOUS}->{phonestop})  {
 	$cfg->{VARIOUS}->{phonestop} = "0";
 }
-# Function for zapzone
-if (!defined $cfg->{VARIOUS}->{selfunction})  {
-	$cfg->{VARIOUS}->{selfunction} = "nextradio";
-}
 # Reset Time for zapzone
 if (!defined $cfg->{VARIOUS}->{cron})  {
 	$cfg->{VARIOUS}->{cron} = "1";
@@ -718,12 +714,12 @@ sub save_details
 	$cfg->{SYSTEM}->{checkt2s} = "$R::checkt2s";
 		
 	# save all radiostations
-	for ($i = 1; $i <= $countradios; $i++) {
-		my $rname = param("radioname$i");
-		my $rurl = param("radiourl$i");
-		my $curl = param("coverurl$i");
-		$cfg->{RADIO}->{radio}->{$i} = $rname . "," . $rurl . "," . $curl;
-	}
+	#for ($i = 1; $i <= $countradios; $i++) {
+	#	my $rname = param("radioname$i");
+	#	my $rurl = param("radiourl$i");
+	#	my $curl = param("coverurl$i");
+	#	$cfg->{RADIO}->{radio}->{$i} = $rname . "," . $rurl . "," . $curl;
+	#}
 	$jsonobj->write();
 	
 

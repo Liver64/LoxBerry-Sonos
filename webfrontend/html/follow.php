@@ -33,11 +33,13 @@ function follow($client)    {
 			$posinfo 	 = $sonos->GetPositionInfo();
 			# check if new Host is in TV Mode
 			if ($tvmode['HTAudioIn'] > 21 or (substr($posinfo["TrackURI"], 0, 17) == "x-sonos-htastream"))  {
-				LOGINF("follow.php: Source of new Host '".$hostroom."' is TV, we skip...");
+				$run = playclient($client);
+				LOGINF("follow.php: Source of new Host '".$hostroom."' is TV, we switched to '".$run."'");
 				exit;
 			}
 		} else {
-			LOGINF("follow.php: Host '".$hostroom."' isn't streaming , we skip...");
+			$run = playclient($client);
+			LOGINF("follow.php: Host '".$hostroom."' isn't streaming , we switched to '".$run."'");
 			exit;
 		}
 	# Host is Single or Master
@@ -48,12 +50,14 @@ function follow($client)    {
 		$statehost	 = $sonos->GetTransportInfo();
 		# Host is in TV Mode
 		if ($tvmode['HTAudioIn'] > 21 or (substr($posinfo["TrackURI"], 0, 17) == "x-sonos-htastream"))  {
-			LOGINF("follow.php: Source of Host '".$hostroom."' is TV, we skip...");
+			$run = playclient($client);
+			LOGINF("follow.php: Source of Host '".$hostroom."' is TV, we switched to '".$run."'");
 			exit;
 		}
 		# Host is streaming
 		if ($statehost > 1)   {
-			LOGINF("follow.php: Host '".$hostroom."' isn't streaming , we skip...");
+			$run = playclient($client);
+			LOGINF("follow.php: Host '".$hostroom."' isn't streaming, we switched to '".$run."'");
 			exit;
 		}
 	}
@@ -74,7 +78,7 @@ function follow($client)    {
 		$stateclient  = $sonos->GetTransportInfo();
 		# check if Group master is streaming
 		if ($stateclient == "1")  {
-			LOGINF("follow.php: Client '".$client."' is member of a streaming group , we skip...");
+			LOGINF("follow.php: Client '".$client."' is member of a streaming group");
 			$sonos = new SonosAccess($sonoszone[$client][0]);
 			exit;
 		} else {
@@ -84,7 +88,7 @@ function follow($client)    {
 	}
 	# Client is streaming
 	if ($stateclient == 1)   {
-		LOGINF("follow.php: Client '".$client."' is already streaming , we skip...");
+		LOGINF("follow.php: Client '".$client."' is already streaming");
 		exit;
 	} else {
 		# Save Zone Status to ramdisk
@@ -93,6 +97,9 @@ function follow($client)    {
 		# add client to host
 		$sonos->SetAVTransportURI("x-rincon:" . trim($host));
 		$sonos->SetMute(false);	
+		if (isset($_GET['volume']))   {
+			$sonos->SetVolume($_GET['volume']);
+		}
 		LOGOK("follow.php: Client '".$client."' has been assigned to '".$hostroom."'");
 	}
 }
@@ -110,16 +117,74 @@ function leave($client, $waitleave)    {
 	
 	global $sonoszone, $sonos, $config, $actual, $client, $save_status_file;
 	
+	# restore previous settings prior function has been called
 	if (file_exists("/run/shm/".$save_status_file."_".$client.".json"))   {
 		sleep($waitleave);
 		$actual = json_decode(file_get_contents("/run/shm/".$save_status_file."_".$client.".json"), true);
 		restoreClientZone($client);
 		unlink("/run/shm/".$save_status_file."_".$client.".json");
+		LOGDEB("follow.php: Save file for client '".$client."' has been deleted");
 	} else {
-		LOGINF("follow.php: Client '".$client."' is not connected to Host , we skip...");
+		# pause/stop current Queue 
+		try {			
+			$sonos->Pause();
+		} catch (Exception $e) {
+			$sonos->Stop();
+		}
+		LOGOK("follow.php: Client '".$client."' has been paused streaming");
 		exit;
 	}
+}
+
+/**
+/* Function : playclient --> start playing Queue
+/*
+/* @param:  $roomname
+/* @return: 
+**/
+  
+function playclient($client)    {
 	
+	global $sonoszone, $sonos, $config;
+	
+	# check if not both parameters been called
+	if (isset($_GET['play']) and isset($_GET['function']))   {
+		LOGWARN("follow.php: Please enter even 'play' or 'function' for '".$client."' in URL, not both");
+		exit;
+	}
+	# if play has been entered in URL
+	if (isset($_GET['play']))   {
+		$sonos   	  = new SonosAccess($sonoszone[$client][0]);
+		$getclient    = $sonos->GetMediaInfo();
+		$getpos    	  = $sonos->GetPositionInfo();
+		# if Queue is empty
+		if (empty($getclient['UpnpClass']) and empty($getpos['UpnpClass']))    {
+			LOGWARN("follow.php: Client '".$client."' has no Queue to be played! Please load Playlist/Radio prior to call follow function");
+		} else {
+			$sonos->SetMute(false);	
+			$sonos->Play();	
+			LOGOK("follow.php: Client '".$client."' starts playing current Queue");
+			return "play current Queue";
+		}
+		return;
+	# if function has been entered in URL
+	} elseif (isset($_GET['function']))   {
+		# check if Subfunction is configured
+		if (isset($config['VARIOUS']['selfunction']))   {
+			$source = $config['VARIOUS']['selfunction'];
+			PlayZapzoneNext();
+			LOGDEB("follow.php: '".$source."' from Config has been called by Client '".$client."' to be played");
+		} else {
+			# if no Subfunction configured switch to nextradio
+			$source = "nextradio";
+			nextradio();
+			LOGDEB("follow.php: Backup 'nextradio' has been called by Client '".$client."' to be played. Please select Function in Plugin Config --> Options");
+		}
+		$sonos->SetMute(false);	
+		@$sonos->Play();	
+		LOGOK("follow.php: '".$source."' has been called by Client '".$client."' to be played");
+		return $source;
+	}
 }
 	
 

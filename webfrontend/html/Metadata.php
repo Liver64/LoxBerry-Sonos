@@ -19,7 +19,7 @@ function metadata($value)
 		$sid = $value['sid'];
 	} else {
 		$sid = "000";
-		LOGINF ("No 'sid' has been received.");
+		LOGINF ("metadata.php: No 'sid' has been received.");
 	}
 
 	switch ($sid) {
@@ -199,8 +199,8 @@ function metadata($value)
 		
 		case "000":		// Streaming Service identified as unkown
 			$stype = "Unknown Streaming Service";
-			LOGWARN ("Your Sonos Favorite '".$value['title']."' could not be added because your Streaming Service '000' is unknown");
-			LOGINF ("If you are interest to get missing type added AND your familiar using Application 'Wireshark' you can contact me or remove Favorite from your Sonos Favorites");
+			LOGWARN ("metadata.php: Your Sonos Favorite '".$value['title']."' could not be added because your Streaming Service '000' is unknown");
+			LOGINF ("metadata.php: If you are interest to get missing type added AND your familiar using Application 'Wireshark' you can contact me or remove Favorite from your Sonos Favorites");
 			CreateDebugFile();
 			return false;
 		break;
@@ -210,11 +210,11 @@ function metadata($value)
 				LOGDEB ("Trying to add Streaming Service to Queue");
 				try {
 					CreateDIDL($value, $stype);
-					LOGOK ("Streaming Service has been added to Queue");
+					LOGOK ("metadata.php: Streaming Service has been added to Queue");
 				} catch (Exception $e) {
 					$stype = $service;
 					AddFavToQueueError($value, $stype, $services, $sid);
-					LOGWARN ("Trying to add Streaming Service failed");
+					LOGWARN ("metadata.php: Trying to add Streaming Service failed");
 					return false;
 				}
 			}
@@ -344,7 +344,6 @@ function CreateDIDL($value, $stype)
 	#echo "<br>";
 	
 	$file = $value['resorg'];
-	
 	try {	
 		if ($value['typ'] == "Track" or $value['typ'] == "Playlist" or $value['typ'] == "container")   {
 			AddFavToQueue($file, htmlspecialchars_decode($meta), $value, $stype);
@@ -365,7 +364,7 @@ function AddFavToQueue($file, $meta, $value, $stype)
 	global $sonos, $file, $meta, $stype;
 	
 	@$sonos->AddToQueue($file, $meta);
-	LOGINF ("queue.php: ".$stype." '".htmlspecialchars($value['title'])."' has been added");
+	LOGINF ("metadata.php: : ".$stype." '".htmlspecialchars($value['title'])."' has been added");
 	return;
 }
 
@@ -374,7 +373,7 @@ function SetAVToQueue($file, $meta, $value, $stype)
 	global $sonos, $file, $meta, $stype;
 
 	@$sonos->SetAVTransportURI($file, $meta);
-	LOGINF ("queue.php: ".$stype." '".htmlspecialchars($value['title'])."' has been added");
+	LOGINF ("metadata.php: : ".$stype." '".htmlspecialchars($value['title'])."' has been added");
 	return;
 }
 
@@ -382,8 +381,8 @@ function AddFavToQueueCatch($file, $meta, $value, $stype)
 {
 	global $sonos, $file, $meta, $stype, $sid;
 	
-	LOGWARN ("Streaming type: ".$stype." '".htmlspecialchars($value['title'])."' could not be added");
-	LOGINF ("If you are interest to get missing type added AND your familiar using Application 'Wireshark' you can contact me or remove Favorite from your Sonos Favorites");
+	LOGWARN ("metadata.php: Streaming type: ".$stype." '".htmlspecialchars($value['title'])."' could not be added");
+	LOGINF ("metadata.php: If you are interest to get missing type added AND your familiar using Application 'Wireshark' you can contact me or remove Favorite from your Sonos Favorites");
 	CreateDebugFile();
 	return;
 }
@@ -392,8 +391,8 @@ function AddFavToQueueError($file, $meta, $value, $stype, $services, $sid)
 {
 	global $sonos, $file, $meta, $stype;
 	
-	LOGWARN ("Your Sonos Favorite '".htmlspecialchars($value['title'])."' could not be added because your Streaming Service '".$services[$sid]."' is currently not supported");
-	LOGINF ("If you are interest to get missing type added AND your familiar using Application 'Wireshark' you can contact me or remove Favorite from your Sonos Favorites");
+	LOGWARN ("metadata.php: Your Sonos Favorite '".htmlspecialchars($value['title'])."' could not be added because your Streaming Service '".$services[$sid]."' is currently not supported");
+	LOGINF ("metadata.php: If you are interest to get missing type added AND your familiar using Application 'Wireshark' you can contact me or remove Favorite from your Sonos Favorites");
 	CreateDebugFile();
 	return;
 }
@@ -406,7 +405,8 @@ function CreateDebugFile()
 	$favorite['CurrentURI'] 		= $file;
 	$favorite['CurrentURIMetaData'] = $meta;
 	file_put_contents($debugfile, json_encode($favorite, JSON_PRETTY_PRINT));
-	LOGINF ("Debug file '".$debugfile."' has been created and saved. Please pick up file and send to 'olewald64@gmail.com' so i can support you adding missing Streaming type/Streaming Service");
+	LOGINF ("metadata.php: Debug file '".$debugfile."' has been created and saved. Please pick up file and send to 'olewald64@gmail.com' so i can support you adding missing Streaming type/Streaming Service");
+	return;
 }
 
 
