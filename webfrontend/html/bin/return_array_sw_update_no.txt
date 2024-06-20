@@ -1,0 +1,23 @@
+Array
+(
+    [0] => Array
+        (
+            [tag] => UPDATEITEM
+            [type] => complete
+            [level] => 1
+            [attributes] => Array
+                (
+                    [XMLNS] => urn:schemas-rinconnetworks-com:update-1-0
+                    [TYPE] => Software
+                    [VERSION] => 78.1-51070
+                    [UPDATEURL] => http://update-firmware.sonos.com/firmware/Prod/78.1-51070-v16.1-ky0VGxvZsT-GA-3/^78.1-51070
+                    [DOWNLOADSIZE] => 0
+                    [MANIFESTURL] => http://update.sonos.com/firmware/Prod/78.1-51070-v16.1-ky0VGxvZsT-GA-3/update.upm
+                    [SWGEN] => 2
+                    [LATESTSWGEN] => 2
+                    [MANIFESTREVISION] => a5f1f4c0-4b89-4b55-96a3-05157b7a4d99
+                )
+
+        )
+
+)

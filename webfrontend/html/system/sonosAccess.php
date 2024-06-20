@@ -2263,7 +2263,7 @@ class SonosAccess
 					new SoapParam('0', 'InstanceID')
 				]
 			);
-		$xmlParser = xml_parser_create("UTF-8");
+			$xmlParser = xml_parser_create("UTF-8");
 			xml_parser_set_option($xmlParser, XML_OPTION_TARGET_ENCODING, "ISO-8859-1");
 			xml_parse_into_struct($xmlParser, $returnContent, $vals, $index);
 			xml_parser_free($xmlParser);
@@ -2317,6 +2317,70 @@ class SonosAccess
 				]
 			);
         return $returnContent;
+    }
+	
+	
+	/**
+	 * Check if Player Update is available
+	 *
+	 * @return Array
+	 *
+	**/ 
+
+    public function CheckForUpdate()
+   {
+		$returnContent = $this->processSoapCall(
+				'/ZoneGroupTopology/Control',
+				'urn:schemas-upnp-org:service:ZoneGroupTopology:1',
+				'CheckForUpdate',
+				[
+					new SoapParam('All', 'UpdateType'),
+					new SoapParam('0', 'CachedOnly'),
+					new SoapParam('', 'Version')
+				]
+			);
+			
+			$xmlParser = xml_parser_create("UTF-8");
+			xml_parser_set_option($xmlParser, XML_OPTION_TARGET_ENCODING, "ISO-8859-1");
+			xml_parse_into_struct($xmlParser, $returnContent, $vals, $index);
+			xml_parser_free($xmlParser);
+			#print_r($vals);
+			
+			$return = array();
+			$return['updateitem'] = $index['UPDATEITEM'][0];
+			$return['type'] = $vals[0]['attributes']['TYPE'];
+			$return['swgen'] = $vals[0]['attributes']['SWGEN'];
+			$return['version'] = str_replace("v", "", substr($vals[0]['attributes']['UPDATEURL'], strpos($vals[0]['attributes']['UPDATEURL'], 'v'), 5));
+			$return['build'] = $vals[0]['attributes']['VERSION'];
+			$return['updateurl'] = $vals[0]['attributes']['UPDATEURL'];
+			$return['downloadsize'] = $vals[0]['attributes']['DOWNLOADSIZE'];
+
+			return $return;
+    }
+	
+	
+	
+	/**
+	 * Execute Player Software Update
+	 *
+	 * @param (string) Update URL
+	 *
+	 *
+	**/ 
+
+    public function BeginSoftwareUpdate($UpdateURL, $ui4="ui4", $ExtraOptions="")
+   {
+		$returnContent = $this->processSoapCall(
+				'/ZoneGroupTopology/Control',
+				'urn:schemas-upnp-org:service:ZoneGroupTopology:1',
+				'BeginSoftwareUpdate',
+				[
+					new SoapParam($UpdateURL, 'UpdateURL'),
+					new SoapParam($ui4, 'Flags'),
+					new SoapParam($ExtraOptions, 'ExtraOptions')
+				]
+        );
+		return $returnContent;
     }
 
 

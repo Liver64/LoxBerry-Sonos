@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	5.3.9
-# Datum: 	12.2023
+# Version: 	5.5.5
+# Datum: 	06.2024
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 #
 # http://<IP>:1400/xml/device_description.xml
@@ -78,8 +78,9 @@ $filenst = "/run/shm/s4lox_t2s_stat.tmp";						// Temp Statusfile für messages
 $folfilePlOn = "$lbpdatadir/PlayerStatus/s4lox_on_";			// Folder and file name for Player Status
 $debuggingfile = "$lbpdatadir/s4lox_debug_config.json";			// Folder and file name for Debug Config
 $file = $lbphtmldir."/bin/check_player_dup.txt";				// File to check for duplicate player
-$save_status_file = "s4lox_follow";								// Status file for follow function
-$guid = "3c0d76cc-5b6b-4e5b-b47d-4719a8371191";					// GUID for Sonos AudioClip Function
+$save_status_file = "s4lox_follow";								// Status file for follow function	
+$vol_config	= "s4lox_vol_profiles";								// Config file for Volume Profiles function
+$guid = "7bfca5bf-165e-419b-a4c1-a64b895e95d7";					// GUID for Sonos AudioClip Function
 
 
 # Files for ONE-click functions
@@ -174,7 +175,7 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 	if (isset($_GET['text']))  {
 		if (($_GET['text'] === "null") or ($_GET['text'] === "0"))  {
 			LOGGING("sonos.php: NULL or 0 or Text from Loxone Status has been entered, therefor T2S been skipped", 6);	
-			exit(1);
+			exit;
 		}
 	}
 }
@@ -205,7 +206,7 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 		LOGGING("sonos.php: No Exception to delete TempFiles has been called", 2);
 		exit;
 	}
-		
+	#print_r($config);	
 	// Übernahme und Deklaration von Variablen aus der Konfiguration
 	$sonoszonen = $config['sonoszonen'];
 
@@ -281,6 +282,11 @@ $valid_playmodes = array("NORMAL","REPEAT_ALL","REPEAT_ONE","SHUFFLE_NOREPEAT","
 
 # Start des eigentlichen Srcipts
 
+if (isset($_GET['profile']) and isset($_GET['volume']))   {
+	LOGGING("sonos.php: optional parameter 'volume' in conjunction with 'profile' could not be used. Please correct your syntax!", 3);
+	exit;
+}
+
 # volume for master
 if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100 or isset($_GET['keepvolume'])) {
 	# volume get from syntax
@@ -319,7 +325,7 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 		}
 	}
 } else {
-	if (!isset($_GET['volume']))   {
+	if (!isset($_GET['volume']) && !isset($_GET['profile']))   {
 		# use standard volume from config
 		$master = $_GET['zone'];
 		$sonos = new SonosAccess($sonoszone[$master][0]);
@@ -340,10 +346,10 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 			$volume = $sonoszone[$master][4];
 			LOGGING("sonos.php: Standard Sonos Volume for Player ".$master." has been set to: ".$volume, 7);
 		}
+	} elseif (isset($_GET['profile']) or isset($_GET['Profile']))   {
+		VolumeProfiles();
 	}
 }
-
-
 
 if(isset($_GET['playmode'])) { 
 	$playmode = preg_replace("/[^a-zA-Z0-9_]+/", "", strtoupper($_GET['playmode']));
@@ -392,7 +398,7 @@ if(isset($_GET['rampto'])) {
 				break;
 		}
 	}
-	
+
 if(array_key_exists($_GET['zone'], $sonoszone)){ 
 
 	global $json;
@@ -683,19 +689,31 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		  
 		case 'volumeup': 
 			$volume = $sonos->GetVolume();
-			if($volume < 100) {
-				$volume = $volume + $config['MP3']['volumeup'];
-				$sonos->SetVolume($volume);
-			}      
+			$volume = $volume + $config['MP3']['volumeup'];
+			$sonos->SetVolume($volume);
+		break;
+		
+		case 'grvolup': 
+			$sonos = new SonosAccess($sonoszone[$master][0]); 
+			$volume = $sonos->GetGroupVolume();
+			$volumenew = $volume + $config['MP3']['volumeup'];
+			sleep(1);
+			SetGroupVolume($volumenew);
 		break;
 		
 			
 		case 'volumedown':
 			$volume = $sonos->GetVolume();
-			if($volume > 0) {
-				$volume = $volume - $config['MP3']['volumedown'];
-				$sonos->SetVolume($volume);
-			}
+			$volume = $volume - $config['MP3']['volumedown'];
+			$sonos->SetVolume($volume);
+		break;
+		
+		case 'grvoldown':
+			$sonos = new SonosAccess($sonoszone[$master][0]); 
+			$volume = $sonos->GetGroupVolume();
+			$volumenew = $volume - $config['MP3']['volumeup'];
+			sleep(1);
+			SetGroupVolume($volumenew);
 		break;
 		
 			
@@ -746,29 +764,28 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			
 			// Nichts läuft
 			if ((empty($posinfo['TrackURI'])) and (empty($posinfo["UpnpClass"])))  {
-				$sonos->SetVolume($volume);
 				nextradio();
 				LOGDEB("sonos.php Nextpush has been executed. Queue was empty");
 			}
 			// Radio läuft
 			if ($posinfo["UpnpClass"] === "object.item")  {
-				$sonos->SetVolume($volume);
 				nextradio();
 				LOGDEB("sonos.php Nextpush has been executed. Radio Station was running");
 			}
 			// TV läuft
 			if (substr($posinfo["TrackURI"], 0, 18) === "x-sonos-htastream:")  {
-				$sonos->SetVolume($volume);
 				nextradio();
 				LOGDEB("sonos.php Nextpush has been executed. TV was running");
 			}
 			// Playliste läuft
 			if ((!empty($posinfo['TrackURI'])) and (!empty($posinfo['TrackDuration'])))  {
-				$sonos->SetVolume($volume);
 				LOGDEB("sonos.php Nextpush has been executed. Playlist was running");
 				next_dynamic();
 			}
-			
+			if (isset($_GET['profile']) or isset($_GET['Profile']))    {
+				$volume = $lookup[0]['Player'][$master][0]['Volume'];
+			} 
+			$sonos->SetVolume($volume);
 		break;
 		
 		
@@ -1174,7 +1191,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'becomegroupcoordinator':
 			echo '<PRE>';
 			$sonos->BecomeCoordinatorOfStandaloneGroup();
-			LOGGING("sonos.php: Zone ".$master." is playing in single mode", 7);
+			LOGGING("sonos.php: Zone ".$master." is now in single mode", 7);
 			echo '</PRE>';
 		break;
 		
@@ -1188,8 +1205,9 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			if(($_GET['mute'] == 1) || ($_GET['mute'] == 0)) {
 				$mute = $_GET['mute'];
 				$sonos->SetGroupMute($mute);
+				LOGGING("sonos.php: Group Mute has been set to ".$mute, 6);
 			} else {
-				LOGGING("sonos.php: Der Mute Mode ist unbekannt", 4);
+				LOGGING("sonos.php: Unknown Group Mute!", 4);
 			}
 		break;
 		
@@ -1198,20 +1216,20 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$sonos = new SonosAccess($sonoszone[$master][0]);
 			$sonos->SnapshotGroupVolume();
 			$GetGroupVolume = $sonos->GetGroupVolume();
+			echo $GetGroupVolume;
 		break;
 		
 		case 'setgroupvolume':
-			$sonos = new SonosAccess($sonoszone[$master][0]);
-			echo $GroupVolume = $_GET['volume'];
-			$sonos->SnapshotGroupVolume();
-			$GroupVolume = $sonos->SetGroupVolume($GroupVolume);
+			$groupvolume = $_GET['volume'];
+			SetGroupVolume($groupvolume);
+			LOGGING("sonos.php: Group Volume has been set", 6);
 		break;
 		
 		
 		case 'setrelativegroupvolume':
-			$sonos->SnapshotGroupVolume();
-			$RelativeGroupVolume = $_GET['volume'];
-			$RelativeGroupVolume = $sonos->SetRelativeGroupVolume($RelativeGroupVolume);
+			$groupvolume = $_GET['volume'];
+			SetRelativeGroupVolume($groupvolume);
+			LOGGING("sonos.php: Relative Group Volume has been set", 6);
 		break;
 		
 		
@@ -1425,62 +1443,12 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 
 		case 'follow':
-			
-			# get zone
-			if (isset($_GET['zone']))   {
-				$client = $_GET['zone'];
-				LOGINF("sonos.php: Client '".$client."' has been entered");
-			} else {
-				LOGWARN("sonos.php: No client (zone) has been entered");
-				exit;
-			}
-			
-			# get host
-			if (isset($_GET['host']))   {
-				$hostroom 	= $_GET['host'];
-				$host		= $sonoszone[$hostroom][1];
-				LOGINF("sonos.php: Host '".$hostroom."' has been entered in URL");
-			} elseif (isset($config['VARIOUS']['follow_host']) 
-					and $config['VARIOUS']['follow_host'] != "false"
-					and $config['VARIOUS']['follow_host'] != "")   {
-				$hostroom 	= $config['VARIOUS']['follow_host'];
-				$host		= $sonoszone[$hostroom][1];
-				LOGINF("sonos.php: Host '".$hostroom."' has been grabbed from config");
-			} else {
-				LOGWARN("sonos.php: No Host has been maintained in config, nore Host has been entered in URL. Please maintain config <Options> or add '...&action=follow&host=ROOMNAME'");
-				exit;
-			}
-			follow($client);
-		
+			follow();	
 		break;
 		
 		
 		case 'leave':
-		
-			# get zone
-			if (isset($_GET['zone']))   {
-				$client = $_GET['zone'];
-				LOGINF("sonos.php: Client '".$client."' has been entered");
-			} else {
-				LOGWARN("sonos.php: No client (zone) has been entered");
-				exit;
-			}
-			
-			# get wait time
-			if (isset($_GET['delay']))   {
-				$waitleave = $_GET['delay'];
-				LOGINF("sonos.php: ".$waitleave." seconds delay for '".$client."' has been entered");
-			} elseif (isset($config['VARIOUS']['follow_wait']) 
-					and $config['VARIOUS']['follow_wait'] != "false"
-					and $config['VARIOUS']['follow_wait'] != "")   {
-				$waitleave 	= $config['VARIOUS']['follow_wait'];
-				LOGINF("sonos.php: ".$waitleave." seconds delay for '".$client."' grabbed from config");
-			} else {
-				LOGWARN("sonos.php: No delay to leave 'follow' function has been maintained in config, nore delay has been entered in URL. Please maintain config <Options> or add '...&action=leave&delay=SECONDS'");
-				exit;
-			}
-			leave($client, $waitleave);
-			
+			leave();
 		break;
 				
 		case 'createstereopair':
@@ -1737,7 +1705,27 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'streammode':
 			GetHtMode();
 		break;
-			
+		
+		case 'update':
+			$sonos = new SonosAccess($sonoszone[$master][0]);
+			$update = $sonos->CheckForUpdate();
+			#print_r($update);
+		break;
+		
+		case 'volumeout':
+			curr_volume();
+		break;
+		
+		case 'profile':
+			//VolumeProfiles();
+		break;
+		
+		case 'json':
+			$vol_config			= "s4lox_vol_profiles";
+			$config1 = json_decode(file_get_contents($lbpconfigdir . "/" . $vol_config.".json"), TRUE);
+			print_r($config1);
+		break;
+		
 		case 'ttsp':
 			$text = ($_GET['text']);
 			isset($_GET['greet']) ? $greet = 1 : $greet = 0;
@@ -1761,7 +1749,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			# close file
 			fclose($file);
 			# goahead with plugin actions
-			$sonos->AddToQueue($json['fullhttpinterface']);
+			$sonos->AddToQueue($json['fullcifsinterface']);
 			$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
 			$sonos->SetTrack(1);
 			$sonos->SetVolume($volume);
@@ -1770,6 +1758,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$sonos->ClearQueue();
 		break;
 		
+			
 		case 'getzoneinfo':				
 			$GetZoneInfo = $sonos->GetzoneInfo();
 			echo '<PRE>';
@@ -1803,100 +1792,7 @@ exit;
 
 # Funktionen für Skripte ------------------------------------------------------
 
-
   
-
-/**
-/* Funktion : SetGroupVolume --> setzt Volume für eine Gruppe
-/*
-/* @param: 	Volume
-/* @return: 
-**/	
-function SetGroupVolume($groupvolume) {
-	global $sonos, $sonoszone, $master;
-	
-	$sonos = new SonosAccess($sonoszone[$master][0]); 
-	$sonos->SnapshotGroupVolume();
-	#$GroupVolume = $_GET['volume'];
-	$GroupVolume = $sonos->SetGroupVolume($groupvolume);
- }
-
-/**
-/* Funktion : SetRelativeGroupVolume --> setzt relative Volume für eine Gruppe
-/*
-/* @param: 	Volume
-/* @return: 
-**/	
-function SetRelativeGroupVolume($volume) {
-	global $sonos;
-	$sonos->SnapshotGroupVolume();
-	$RelativeGroupVolume = $_GET['volume'];
-	$RelativeGroupVolume = $sonos->SetRelativeGroupVolume($RelativeGroupVolume);
-}
-
-/**
-/* Funktion : SnapshotGroupVolume --> ermittelt das prozentuale Volume Verhältnis der einzelnen Zonen
-/* einer Gruppe (nur vor SetGroupVolume oder SetRelativeGroupVolume nutzen)
-/*
-/* @return: Volume Verhältnis
-**/	
-function SnapshotGroupVolume() {
-	global $sonos;
-	$SnapshotGroupVolume = $sonos->SnapshotGroupVolume();
-	return $SnapshotGroupVolume;
-}
-
-/**
-/* Funktion : SetGroupMute --> setzt alle Zonen einer Gruppe auf Mute/Unmute
-/* einer Gruppe
-/*
-/* @param: 	MUTE or UNMUTE
-/* @return: 
-**/	
- function SetGroupMute($mute) {
-	global $sonos;
-	$sonos->SetGroupMute($mute);
- }
-
-
-
-
-/**
-/* Funktion : SetBalance --> setzt die Balance für angegeben Zone
-/* einer Gruppe
-/*
-/* @param: 	balance=LF oder RF, wert 
-/* @return: 
-**/	
-
-function SetBalance()  {
-	global $sonos, $master;
-	
-	if (isset($_GET['member']))  {
-		LOGGING('sonos.php: For groups the function could not be used, please correct!', 3);
-		exit;
-	}
-	if ((isset($_GET['balance'])) && (isset($_GET['value']))) {
-		if(is_numeric($_GET['value']) && $_GET['value'] >= 0 && $_GET['value'] <= 100) {
-			$balance_dir = $_GET['balance'];
-			$valid_directions = array('LF' => 'left speaker','RF' => 'right speaker', 'lf' => 'left speaker', 'rf' => 'right speaker');
-			if (array_key_exists($balance_dir, $valid_directions)) {
-				$sonos->SetBalance($balance_dir, $_GET['value']);
-				LOGGING('sonos.php: Balance for '.$valid_directions[$balance_dir].' of Player '.$master.' has been set to '.$_GET['value'].'.', 5);
-			} else {
-				LOGGING('sonos.php: Entered balance direction for Player '.$master.' is not valid. Only "LF/lf" or "RF/rf" are allowed, please correct!', 3);
-				exit;
-			}
-		} else {
-			LOGGING('sonos.php: Entered balance '.$_GET['value'].' for Player '.$master.' is even not numeric or not between 1 and 100, please correct!', 3);
-			exit;
-		}
-	} else {
-		LOGGING('sonos.php: No valid entry for Balance has been entered or syntax is incomplete, please correct!', 3);
-		exit;
-	}
-}
-
 
 /**
 /* Funktion : t2s_post_request --> generiert einen POST request zum text2speech Plugin
@@ -1983,8 +1879,8 @@ function getsonosinfo() {
 
 function volume_group()  {
 	
-	global $sonoszone, $sonos, $master, $config, $sonoszonen, $min_vol;
-	
+	global $sonoszone, $sonos, $master, $volume, $config, $sonoszonen, $min_vol, $lookup;
+
 	$master = $_GET['zone'];
 	$sonos = new SonosAccess($sonoszone[$master][0]);
 	#$sonos->SetMute(true);
@@ -2021,7 +1917,7 @@ function volume_group()  {
 
 		foreach ($member as $memplayer => $zone2) {
 			$sonos = new SonosAccess($sonoszone[$zone2][0]);
-			#$sonos->SetMute(true);
+
 			if(isset($_GET['volume']) or isset($_GET['groupvolume']) or isset($_GET['keepvolume']))  { 
 				//isset($_GET['volume']) ? $groupvolume = $_GET['volume'] : $groupvolume = $_GET['groupvolume'];
 				if(isset($_GET['volume'])) {
@@ -2069,9 +1965,13 @@ function volume_group()  {
 					$volume = $config['sonoszonen'][$zone2][3];
 				} else {
 					# Sonos Standard Volume
-					$volume = $config['sonoszonen'][$zone2][4];
+					if (isset($_GET['profile']) or isset($_GET['Profile']))    {
+						$volume = $lookup[0]['Player'][$zone2][0]['Volume'];
+					} else {
+						$volume = $config['sonoszonen'][$zone2][4];
+						LOGGING("sonos.php: Standard Sonos Volume for Group Member ".$zone2." has been set to: ".$volume, 7);
+					}
 				}
-				LOGGING("sonos.php: Standard Sonos Volume for Group Member ".$zone2." has been set to: ".$volume, 7);
 			}
 			@$sonos->SetMute(false);
 			$sonos->SetVolume($volume);
@@ -2197,10 +2097,10 @@ function shutdown()
 	global $log, $tts_stat, $check_info, $tmp_tts, $time_start;
 	
 	# FALLBACK --> setze 0 für virtuellen Texteingang (T2S End) falls etwas schief lief
-	#if ($tts_stat == 1)  {
+	if ($tts_stat == 1)  {
 		$tts_stat = 0;
 		send_tts_source($tts_stat);
-	#}
+	}
 	if (isset($_GET['debug']))    {
 		debugInfo();
 		$time_end = microtime(true);

@@ -96,7 +96,7 @@ function radio(){
 * @return: 
 **/
 function nextradio() {
-	global $sonos, $config, $master, $debug, $min_vol, $volume, $tmp_tts, $sonoszone, $tmp_error, $stst;
+	global $sonos, $config, $lookup, $master, $debug, $min_vol, $volume, $tmp_tts, $sonoszone, $tmp_error, $stst;
 	
 	$radioanzahl_check = count($config['RADIO']);
 	if($radioanzahl_check == 0)  {
@@ -167,6 +167,9 @@ function nextradio() {
 	$coord = getRoomCoordinator($master);
 	$sonos = new SonosAccess($coord[0]);
 	$sonos->SetMute(false);
+	if (isset($_GET['profile']) or isset($_GET['Profile']))    {
+		$volume = $lookup[0]['Player'][$master][0]['Volume'];
+	}
 	$sonos->SetVolume($volume);
 	$sonos->Play();
 	LOGGING("radio.php: Radio Station '".$act."' has been loaded successful by nextradio",6);
@@ -181,7 +184,7 @@ function nextradio() {
 **/
 
 function random_radio() {
-	global $sonos, $sonoszone, $master, $volume, $min_vol, $config, $tmp_tts;
+	global $sonos, $lookup, $sonoszone, $master, $volume, $min_vol, $config, $tmp_tts;
 	
 	if (file_exists($tmp_tts))  {
 		LOGGING("radio.php: Currently a T2S is running, we skip nextradio for now. Please try again later.",6);
@@ -218,6 +221,9 @@ function random_radio() {
 	$sonos->ClearQueue();
 	$sonos->SetMute(false);
 	$sonos->SetRadio(urldecode($sonoslists[$random]["res"]),$sonoslists[$random]["title"]);
+	if (isset($_GET['profile']) or isset($_GET['Profile']))    {
+		$volume = $lookup[0]['Player'][$master][0]['Volume'];
+	}
 	$sonos->SetVolume($volume);
 	$sonos->Play();
 	LOGGING("radio.php: Radio Station '".$sonoslists[$random]["title"]."' has been loaded successful by randomradio",6);
@@ -375,7 +381,7 @@ function check_date_once() {
 
 function PluginRadio()   
 {
-	global $sonos, $sonoszone, $master, $config, $volume;
+	global $sonos, $sonoszone, $lookup, $master, $config, $volume;
 	
 	if (isset($_GET['radio'])) {
 		if (empty($_GET['radio']))    {
@@ -410,7 +416,7 @@ function PluginRadio()
 	}
 	$check_stat = getZoneStatus($master);
 	if ($check_stat != (string)"single")  {
-		$sonos->BecomeCoordinatorOfStandaloneGroup();
+		#$sonos->BecomeCoordinatorOfStandaloneGroup();
 		LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
 	}
 	if(isset($_GET['member'])) {
@@ -427,6 +433,9 @@ function PluginRadio()
 	try {
 		$sonos->SetRadio('x-rincon-mp3radio://'.$re[0][0][1], $re[0][0][0], $re[0][0][2]);
 		$sonos->SetGroupMute(false);
+		if (isset($_GET['profile']) or isset($_GET['Profile']))    {
+			$volume = $lookup[0]['Player'][$master][0]['Volume'];
+		}
 		$sonos->SetVolume($volume);
 		$sonos->Play();
 		LOGOK("radio.php: Your Radio '".$re[0][0][0]."' has been successful loaded and is playing!");

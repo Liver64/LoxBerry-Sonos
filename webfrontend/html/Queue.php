@@ -123,37 +123,51 @@ function PlayZapzoneNext()
 {
 	global $sonos, $config, $volume, $zapname, $queuetracktmp, $browse, $sonoszone, $re, $master, $favtmp;
 	
+	$value  = substr($config['VARIOUS']['selfunction'], 0, 4);
+	
 	$empty = array();
 	if ($config['VARIOUS']['selfunction'] == "nextradio")   {
 		nextradio();
 		file_put_contents($zapname, json_encode($empty));
-		return;
+		return "nextradio";
 		
 	} elseif ($config['VARIOUS']['selfunction'] == "trackfavorites")   {
 		PlayTrackFavorites();
 		file_put_contents($zapname, json_encode($empty));
-		return;
+		return "trackfavorites";
 		
 	} elseif ($config['VARIOUS']['selfunction'] == "playlistfavorites")   {
 		PlayPlaylistFavorites();
 		file_put_contents($zapname, json_encode($empty));
-		return;
+		return "playlistfavorites";
 		
 	} elseif ($config['VARIOUS']['selfunction'] == "radiofavorites")   {
 		PlayRadioFavorites();
 		file_put_contents($zapname, json_encode($empty));
-		return;
+		return "radiofavorites";
 		
 	} elseif ($config['VARIOUS']['selfunction'] == "tuneinfavorites")   {
 		PlayTuneInPlaylist();
 		file_put_contents($zapname, json_encode($empty));
-		return;
+		return "tuneinfavorites";
+		
+	# Radio Station from Radio Favorites
+	} elseif ($value == "http")   {
+		$index = array_values($config['RADIO']['radio']);
+		foreach ($index as $key => $value)   {
+			$splitted = explode(",", $value);
+			if ($splitted[1] == $config['VARIOUS']['selfunction'])  {
+				$sonos->SetRadio('x-rincon-mp3radio://'.trim($splitted[1]), trim($splitted[0]), trim($splitted[2]));
+				return $splitted[0];
+			}
+		}
+		return "false";
 		
 	} else {
 		nextradio();
 		file_put_contents($zapname, json_encode($empty));
-		LOGGING("queue.php: Exception raised... Please configure zapzone settings in Sonos Plugin under Details/Sub-Function for ZAPZONE:",4);
-		return;
+		LOGGING("queue.php: Exception raised... Please configure zapzone or follow settings in Sonos Plugin under Options",4);
+		return "nextradio";
 	}
 }
 
@@ -167,7 +181,7 @@ function PlayZapzoneNext()
 
 function PlayFavorite() 
 {
-	global $sonos, $volume, $browse, $sonoszone, $re, $master, $favtmp;
+	global $sonos, $volume, $lookup, $browse, $sonoszone, $re, $master, $favtmp;
 	
 	# if playlist has been loaded iterate through tracks
 	if (file_exists($favtmp))  {
@@ -226,6 +240,9 @@ function PlayFavorite()
 	$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
 	@$sonos->SetGroupMute(false);
 	$sonos->SetPlayMode('0'); // NORMAL
+	if (isset($_GET['profile']) or isset($_GET['Profile']))    {
+		$volume = $lookup[0]['Player'][$master][0]['Volume'];
+	} 
 	$sonos->SetVolume($volume);
 	$sonos->ClearQueue();
 	LOGINF("queue.php: Settings to play your favorite has been prepared!");
@@ -277,7 +294,7 @@ function GetFavorites()
 
 function PlayAllFavorites() 
 {
-	global $sonos, $volume, $value, $sonoszone, $master, $services, $radiofav, $radiolist, $queuetmp, $radiofavtmp;
+	global $sonos, $volume, $value, $lookup, $sonoszone, $master, $services, $radiofav, $radiolist, $queuetmp, $radiofavtmp;
 	
 if (count($sonos->GetFavorites()) < 1)    {
 				LOGGING("sonos.php: No Sonos Favorites are maintained.", 4);
@@ -325,6 +342,9 @@ if (count($sonos->GetFavorites()) < 1)    {
 				metadata($value[0]);
 				LOGOK ("queue.php: Radio Favorite '".$value[0]['title']."' has been added and is playing");
 			}
+			if (isset($_GET['profile']) or isset($_GET['Profile']))    {
+				$volume = $lookup[0]['Player'][$master][0]['Volume'];
+			} 
 			$sonos->SetVolume($volume);
 			# check addionally if Radio Station has been loaded
 			$mediainfo = $sonos->GetMediaInfo();
@@ -388,6 +408,9 @@ if (count($sonos->GetFavorites()) < 1)    {
 		$sonos->ClearQueue();
 		@$sonos->SetGroupMute(false);
 		$sonos->SetPlayMode('0'); // NORMAL
+		if (isset($_GET['profile']) or isset($_GET['Profile']))    {
+			$volume = $lookup[0]['Player'][$master][0]['Volume'];
+		} 
 		$sonos->SetVolume($volume);
 		LOGINF("queue.php: Settings to play your favorite has been prepared!");
 		$shift = false;
@@ -456,7 +479,7 @@ if (count($sonos->GetFavorites()) < 1)    {
 
 function PlayTrackFavorites() 
 {
-	global $sonos, $volume, $value, $sonoszone, $master, $queuetracktmp;
+	global $sonos, $volume, $lookup, $value, $sonoszone, $master, $queuetracktmp;
 	
 	$browse = AddDetailsToMetadata();
 	$browseTracks = count($browse);
@@ -518,6 +541,9 @@ function PlayTrackFavorites()
 	$sonos->ClearQueue();
 	#@$sonos->SetGroupMute(false);
 	$sonos->SetPlayMode('0'); // NORMAL
+	if (isset($_GET['profile']) or isset($_GET['Profile']))    {
+		$volume = $lookup[0]['Player'][$master][0]['Volume'];
+	} 
 	$sonos->SetVolume($volume);
 	LOGINF("queue.php: Settings to play your favorite has been prepared!");
 	$shift = false;
@@ -572,7 +598,7 @@ function PlayTrackFavorites()
 
 function PlayRadioFavorites() 
 {
-	global $sonos, $volume, $value, $sonoszone, $master, $queueradiotmp;
+	global $sonos, $volume, $lookup, $value, $lookup, $sonoszone, $master, $queueradiotmp;
 	
 	
 	$browse = AddDetailsToMetadata();
@@ -625,6 +651,9 @@ function PlayRadioFavorites()
 			$proof = @metadata($value[0]);
 		}
 		@$sonos->SetGroupMute(false);
+		if (isset($_GET['profile']) or isset($_GET['Profile']))    {
+			$volume = $lookup[0]['Player'][$master][0]['Volume'];
+		} 
 		$sonos->SetVolume($volume);
 		LOGINF("queue.php: Settings to play your favorite has been prepared!");
 		# check addionally if Radio Station has been successful loaded
@@ -674,7 +703,7 @@ function PlayRadioFavorites()
 
 function PlaySonosPlaylist() 
 {
-	global $sonos, $volume, $value, $sonoszone, $master, $pltmp;
+	global $sonos, $volume, $lookup, $value, $sonoszone, $master, $pltmp;
 	
 	$browse = $sonos->BrowseContentDirectory("SQ:","BrowseDirectChildren");
 			$browseRadio = count($browse);
@@ -728,6 +757,9 @@ function PlaySonosPlaylist()
 			metadata($value[0]);
 		}
 		@$sonos->SetGroupMute(false);
+		if (isset($_GET['profile']) or isset($_GET['Profile']))    {
+			$volume = $lookup[0]['Player'][$master][0]['Volume'];
+		} 
 		$sonos->SetVolume($volume);
 		LOGINF("queue.php: Settings to play your playlist has been prepared!");
 		# check addionally if Playlist has been successful loaded
@@ -775,7 +807,7 @@ function PlaySonosPlaylist()
 
 function PlayTuneInPlaylist() 
 {
-	global $sonos, $volume, $value, $sonoszone, $master, $tuneinradiotmp;
+	global $sonos, $volume, $lookup, $value, $sonoszone, $master, $tuneinradiotmp;
 	
 	$browse = $sonos->BrowseContentDirectory("R:0/0","BrowseDirectChildren");
 			$browseRadio = count($browse);
@@ -826,6 +858,9 @@ function PlayTuneInPlaylist()
 			metadata($value[0]);
 		}
 		@$sonos->SetGroupMute(false);
+		if (isset($_GET['profile']) or isset($_GET['Profile']))    {
+			$volume = $lookup[0]['Player'][$master][0]['Volume'];
+		} 
 		$sonos->SetVolume($volume);
 		LOGINF("queue.php: Settings to play your TuneIn Radio Station has been prepared!");
 		# check addionally if Radio Station has been successful loaded
@@ -875,7 +910,7 @@ function PlayTuneInPlaylist()
 
 function PlayPlaylistFavorites()
 {
-	global $sonos, $volume, $value, $sonoszone, $master, $queuepltmp;
+	global $sonos, $volume, $lookup, $value, $sonoszone, $master, $queuepltmp;
 	
 	$browse = AddDetailsToMetadata();
 			$browseRadio = count($browse);
@@ -932,6 +967,9 @@ function PlayPlaylistFavorites()
 			@metadata($value[0]);
 		}
 		@$sonos->SetGroupMute(false);
+		if (isset($_GET['profile']) or isset($_GET['Profile']))    {
+			$volume = $lookup[0]['Player'][$master][0]['Volume'];
+		} 
 		$sonos->SetVolume($volume);
 		LOGINF("queue.php: Settings to play your playlist has been prepared!");
 		# check addionally if Playlist has been successful loaded

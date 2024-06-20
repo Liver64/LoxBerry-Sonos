@@ -40,7 +40,7 @@ use warnings;
 use strict;
 use Data::Dumper;
 #use Config::Simple '-strict';
-#no strict "refs"; # we need it for template system
+no strict "refs"; # we need it for template system
 
 ##########################################################################
 # Generic exception handler
@@ -69,6 +69,7 @@ our $lbv;
 our $countplayers;
 our $countsoundbars;
 our $rowssonosplayer;
+our $rowsvolplayer;
 our $miniserver;
 our $template;
 our $content;
@@ -80,11 +81,10 @@ our $cgi;
 my $helptemplatefilename		= "help/help.html";
 my $languagefile 				= "sonos.ini";
 my $maintemplatefilename	 	= "sonos.html";
-my $pluginconfigfile 			= "sonos.cfg";
-my $pluginplayerfile 			= "player.cfg";
 my $pluginlogfile				= "sonos.log";
 # my $XML_file					= "VIU_Sonos_UDP.xml";
 my $lbip 						= LoxBerry::System::get_localip();
+my $host						= LoxBerry::System::lbhostname();
 my $lbport						= lbwebserverport();
 my $ttsfolder					= "tts";
 my $mp3folder					= "mp3";
@@ -94,10 +94,12 @@ my $plugintempplayerfile	 	= "tmp_player.json";
 my $scanzonesfile	 			= "network.php";
 my $udp_file	 				= "ms_inbound.php";
 my $azureregion					= "westeurope"; # Change here if you have a Azure API key for diff. region
-$helplink 						= "http://www.loxwiki.eu/display/LOXBERRY/Sonos4Loxone";
+my $helplink 					= "http://www.loxwiki.eu/display/LOXBERRY/Sonos4Loxone";
 our $error_message				= "";
+my $countvolprof;
 
 my $configfile 					= "s4lox_config.json";
+my $volumeconfigfile 			= "s4lox_vol_profiles.json";
 my $jsonobj 					= LoxBerry::JSON->new();
 our $cfg 						= $jsonobj->open(filename => $lbpconfigdir . "/" . $configfile, writeonclose => 0);
 
@@ -122,7 +124,7 @@ if (!defined $cfg->{TTS}->{correction})  {
 # add new parameter for Azure TTS"
 if (!defined $cfg->{TTS}->{regionms})  {
 	$cfg->{TTS}->{regionms} = $azureregion;
-	$jsonobj->write();
+	#$jsonobj->write();
 }
 # add new parameter for Volume phonemute
 if (!defined $cfg->{TTS}->{phonemute})  {
@@ -190,7 +192,7 @@ if (!defined $cfg->{VARIOUS}->{follow_host})  {
 if (!defined $cfg->{VARIOUS}->{follow_wait})  {
 	$cfg->{VARIOUS}->{follow_wait} = "false";
 }
-$jsonobj->write();
+#$jsonobj->write();
 
 
 ##########################################################################
@@ -230,29 +232,33 @@ inittemplate();
 
 our $q = $cgi->Vars;
 
-if( $q->{action} ) 
+if( $q->{action} )
 {
-	ajax_header_json();
+	print "Content-type: application/json\n\n";
 	if( $q->{action} eq "soundbars" ) {
-		pass_sonoszonen();
-		print JSON::encode_json($response);
+		print JSON::encode_json($cfg->{sonoszonen});
+		exit;
 	}
-	exit;
+
+	if( $q->{action} eq "profiles" ) {
+		our $vcfg = $jsonobj->open(filename => $lbpconfigdir . "/s4lox_vol_profiles.json", writeonclose => 0);
+		print JSON::encode_json($vcfg);
+		exit;
+	}	
+
+	if( $q->{action} eq "getradio" ) {
+		print JSON::encode_json($cfg->{RADIO}->{radio});
+		exit;
+	}
 }
+
+
 
 if ($R::getkeys)
 {
 	getkeys();
 }
 
-sub ajax_header_json
-{
-	print $cgi->header(
-			-type => 'application/json',
-			-charset => 'utf-8',
-			-status => '200 OK',
-	);	
-}
 
 
 #########################################################################
@@ -322,12 +328,14 @@ $navbar{1}{Name} = "$SL{'BASIS.MENU_SETTINGS'}";
 $navbar{1}{URL} = './index.cgi';
 $navbar{2}{Name} = "$SL{'BASIS.MENU_OPTIONS'}";
 $navbar{2}{URL} = './index.cgi?do=details';
+$navbar{3}{Name} = "$SL{'BASIS.MENU_VOLUME'}";
+$navbar{3}{URL} = './index.cgi?do=volume';
 $navbar{99}{Name} = "$SL{'BASIS.MENU_LOGFILES'}";
 $navbar{99}{URL} = './index.cgi?do=logfiles';
 
 # if MQTT credentials are valid and Communication turned ON --> insert navbar
 if ($mqttcred and $cfg->{LOXONE}->{LoxDaten} eq "true")  {
-	$navbar{3}{Name} = "$SL{'BASIS.MENU_MQTT'}";
+	$navbar{4}{Name} = "$SL{'BASIS.MENU_MQTT'}";
 	# Lower then LB Version 3
 	if($lbv < 3)  {
 		my $cfgfile = $lbhomedir.'/config/plugins/mqttgateway/mqtt.json';
@@ -338,9 +346,9 @@ if ($mqttcred and $cfg->{LOXONE}->{LoxDaten} eq "true")  {
 		my $cfgfile = $lbhomedir.'/config/system/mqttgateway.json';
 		my $json = LoxBerry::JSON->new();
 		$cfgm = $json->open(filename => $cfgfile);
-		$navbar{3}{URL} = '/admin/system/mqtt.cgi';
+		$navbar{4}{URL} = '/admin/system/mqtt.cgi';
 	}
-	$navbar{3}{target} = '_blank';
+	$navbar{4}{target} = '_blank';
 }
 
 if ($R::saveformdata1) {
@@ -351,6 +359,11 @@ if ($R::saveformdata2) {
 	$template->param( FORMNO => 'details' );
 	&save_details;
 }
+if ($R::saveformdata3) {
+	$template->param( FORMNO => 'volume' );
+	&save_volume;
+}
+
 
 # check if config already saved, if not highlight header text in RED
 my $countplayer;
@@ -387,6 +400,12 @@ if(!defined $R::do or $R::do eq "form") {
 	&scan;
 	$template->param("SETTINGS", "1");
 	&form;
+} elsif($R::do eq "volume") {
+	$navbar{3}{active} = 1;
+	$template->param("VOLUME", "1");
+	volumes();
+	&form;
+	
 } 
 
 $error_message = "Invalid do parameter: ".$R::do;
@@ -406,7 +425,7 @@ sub form
 	# check if path exist (upgrade from v3.5.1)
 	if ($cfg->{SYSTEM}->{path} eq "")   {
 		$cfg->{SYSTEM}->{path} = "$lbpdatadir";
-		$jsonobj->write();
+		#$jsonobj->write();
 		LOGINF("default path has been added to config");
 	}
 	
@@ -423,24 +442,24 @@ sub form
 	$template->param("STORAGEPATH", $storage);
 	
 	# read info file from Github and save in $info
-	my $info 		= get($urlfile);
-	$template		->param("INFO" 			=> "$info");
+	my $info = get($urlfile);
+	$template->param("INFO" 			=> "$info");
 	
 	# fill saved values into form
-	$template		->param("SELFURL", $SL{REQUEST_URI});
-	$template		->param("T2S_ENGINE" 	=> $cfg->{TTS}->{t2s_engine}); 
-	$template		->param("APIKEY"		=> $cfg->{TTS}->{apikeys}->{$cfg->{TTS}->{t2s_engine}});
-	$template		->param("SECKEY"		=> $cfg->{TTS}->{secretkeys}->{$cfg->{TTS}->{t2s_engine}});
-	$template		->param("VOICE" 		=> $cfg->{TTS}->{voice});
-	$template		->param("CODE" 			=> $cfg->{TTS}->{messageLang});
-	$template		->param("DATADIR" 		=> $cfg->{SYSTEM}->{path});
-	$template		->param("LOX_ON" 		=> $cfg->{LOXONE}->{LoxDaten});
-	#$template		->param('ERR_MESSAGE', $error_message);
+	$template->param("SELFURL", $SL{REQUEST_URI});
+	$template->param("T2S_ENGINE" 	=> $cfg->{TTS}->{t2s_engine}); 
+	$template->param("APIKEY"		=> $cfg->{TTS}->{apikeys}->{$cfg->{TTS}->{t2s_engine}});
+	$template->param("SECKEY"		=> $cfg->{TTS}->{secretkeys}->{$cfg->{TTS}->{t2s_engine}});
+	$template->param("VOICE" 		=> $cfg->{TTS}->{voice});
+	$template->param("CODE" 		=> $cfg->{TTS}->{messageLang});
+	$template->param("DATADIR" 		=> $cfg->{SYSTEM}->{path});
+	$template->param("LOX_ON" 		=> $cfg->{LOXONE}->{LoxDaten});
+	#$template->param('ERR_MESSAGE', $error_message);
 		
 	# Load saved values for "select"
-	my $t2s_engine		  = $cfg->{TTS}->{t2s_engine};
-	my $rmpvol	 	  	  = $cfg->{TTS}->{volrampto};
-	my $storepath 		  = $cfg->{SYSTEM}->{path};
+	my $t2s_engine	 = $cfg->{TTS}->{t2s_engine};
+	my $rmpvol	 	 = $cfg->{TTS}->{volrampto};
+	my $storepath 	 = $cfg->{SYSTEM}->{path};
 	
 	# read Radiofavorites
 	our $countradios = 0;
@@ -473,7 +492,7 @@ sub form
 	my $filename;
 	my $config = $cfg->{sonoszonen};
 		
-	foreach my $key (keys %{$config}) {
+	foreach my $key (sort keys %$config) {
 		$countplayers++;
 		our $room = $key;
 		$filename = $lbphtmldir.'/images/icon-'.$config->{$key}->[7].'.png';
@@ -510,11 +529,11 @@ sub form
 		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$config->{$key}->[5]'></td>\n";
 		$rowssonosplayer .= "</tr>";
 		# Soundbar count
-		if (exists($config->{$key}[13]))   {
+		if (($config->{$key}[13]) eq "SB")   {
 			$countsoundbars++;
 			$rowssonosplayer .= "<input type='hidden' id='sb$countplayers' name='sb$countplayers' value='$config->{$key}->[13]'>\n";
 		} else {
-			#$rowssonosplayer .= "</tr>";
+			$rowssonosplayer .= "<input type='hidden' id='sb$countplayers' name='sb$countplayers' value='NOSB'>\n";
 		}
 		$rowssonosplayer .= "<input type='hidden' id='room$countplayers' name='room$countplayers' value=$room>\n";
 		$rowssonosplayer .= "<input type='hidden' id='models$countplayers' name='models$countplayers' value='$config->{$key}->[7]'>\n";
@@ -525,7 +544,7 @@ sub form
 		$rowssonosplayer .= "<input type='hidden' id='voice$countplayers' name='voice$countplayers' value='$config->{$key}->[12]'>\n";
 		$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' value='$config->{$key}->[1]'>\n";
 		# Prepare Soundbars
-		if (exists($config->{$key}[13]))   {
+		if (($config->{$key}[13]) eq "SB")   {
 			$rowssoundbar .= "<tr class='tvmon_body'>\n";
 			$rowssoundbar .= "<td style='height: 25px; width: 13%;'><fieldset align='center'><select id='usesb_$room' name='usesb_$room' data-role='flipswitch' style='width: 100%'><option value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
 			$rowssoundbar .= "<div id='tvmonitor'><td style='height: 28px; width: 20%;'><input type='text' id='sbzone_$room' name='sbzone_$room' size='40' readonly='true' value='$room' vertical-align='center' style='width: 100%; background-color: #e6e6e6;'></td>\n";
@@ -612,6 +631,7 @@ sub form
 	$template->param("ROWSOUNDBARS", $rowssoundbar);
 	LOGDEB "Sonos Soundbars has been discovered.";
 	
+
 	# *******************************************************************************************************************
 	# Get Miniserver
 	my $mshtml = LoxBerry::Web::mslist_select_html( 
@@ -652,7 +672,7 @@ sub form
 	} else {
 		$template->param("MQTT" => "false");
 		$cfg->{LOXONE}->{LoxDatenMQTT} = "false";
-		$jsonobj->write();
+		#$jsonobj->write();
 		LOGDEB "MQTT Gateway is not installed or wrong credentials received.";
 	}
 	
@@ -673,6 +693,7 @@ sub form
 	} else {
 		$template->param("DONATE", '');
 	}
+
 	printtemplate();
 	exit;
 }
@@ -712,14 +733,11 @@ sub save_details
 	$cfg->{VARIOUS}->{cron} = "$R::cron";
 	$cfg->{VARIOUS}->{selfunction} = "$R::func_list";
 	$cfg->{SYSTEM}->{checkt2s} = "$R::checkt2s";
+	$cfg->{SYSTEM}->{hw_update} = "$R::hw_update";
+	$cfg->{SYSTEM}->{hw_update_day} = "$R::hw_update_day";
+	$cfg->{SYSTEM}->{hw_update_time} = "$R::hw_update_time";
+	$cfg->{SYSTEM}->{hw_update_power} = "$R::hw_update_power";
 		
-	# save all radiostations
-	#for ($i = 1; $i <= $countradios; $i++) {
-	#	my $rname = param("radioname$i");
-	#	my $rurl = param("radiourl$i");
-	#	my $curl = param("coverurl$i");
-	#	$cfg->{RADIO}->{radio}->{$i} = $rname . "," . $rurl . "," . $curl;
-	#}
 	$jsonobj->write();
 	
 
@@ -836,8 +854,6 @@ sub save
 	$cfg->{VARIOUS}->{CALDav2} = "$R::cal";
 	$cfg->{VARIOUS}->{tvmon} = "$R::tvmon";
 	$cfg->{VARIOUS}->{starttime} = "$R::starttime";
-	#$cfg->{VARIOUS}->{follow_host} = "$R::follow_host";
-	#$cfg->{VARIOUS}->{follow_wait} = "$R::follow_wait";
 	$cfg->{VARIOUS}->{endtime} = "$R::endtime";
 	$cfg->{LOCATION}->{region} = "$R::region";
 	$cfg->{LOCATION}->{googlekey} = "$R::googlekey";
@@ -847,8 +863,9 @@ sub save
 	$cfg->{SYSTEM}->{mp3path} = "$R::STORAGEPATH/$ttsfolder/$mp3folder";
 	$cfg->{SYSTEM}->{ttspath} = "$R::STORAGEPATH/$ttsfolder";
 	$cfg->{SYSTEM}->{path} = "$R::STORAGEPATH";
-	$cfg->{SYSTEM}->{httpinterface} = "http://$lbip:$lbport/plugins/$lbpplugindir/interfacedownload";
-	$cfg->{SYSTEM}->{cifsinterface} = "//$lbip:$lbport/plugindata/$lbpplugindir/interfacedownload";
+	$cfg->{SYSTEM}->{cifsinterface} = "http://$lbip:$lbport/plugins/$lbpplugindir/interfacedownload";
+	$cfg->{SYSTEM}->{smbinterface} = "smb://$lbip:$lbport/plugindata/$lbpplugindir/interfacedownload";
+	$cfg->{SYSTEM}->{cifsinterface} = "x-file-cifs://$host/plugindata/$lbpplugindir/interfacedownload";
 		
 	LOGINF "Start writing settings to configuration file";
 	
@@ -873,9 +890,9 @@ sub save
 	}
 	
 	# save radiostations
-	for ($i = 1; $i <= $countradios; $i++) {
+	for ($i = 1; $i <= $countradios; $i++)   {
 		if ( param("chkradios$i") ) { # if radio should be deleted
-			delete $cfg->{RADIO}->{radio}->{$i}  ;
+			delete $cfg->{RADIO}->{radio}->{$i};
 		} else { # save
 			my $rname = param("radioname$i");
 			my $rurl = param("radiourl$i");
@@ -894,15 +911,8 @@ sub save
 		&error;
 	}
 	
-	my $tvmonnightsub;
-	my $tvmonnightsublevel;
-	my $tvsub;
-	my $tvmonsurr;
-	my $tvsur;
-	
 	# save Sonos devices
 	my $emergecalltts;
-	LOGDEB("Install: ".$inst);
 	
 	for ($i = 1; $i <= $countplayers; $i++) {
 		if ( param("chkplayers$i") ) { # if player should be deleted
@@ -933,18 +943,35 @@ sub save
 				if (param("sb$i") eq "SB")   {
 					# add soundbar settings to zone
 					my $room = param("zone$i");
-					my @sbs = (  {"tvmonspeech" => param("tvmonspeech_$room"), 
-								"usesb" => param("usesb_$room"),
-								"tvvol" => param("tvvol_$room"),
-								"tvmonsurr" => param("tvmonsurr_$room"),
-								"fromtime" => param("fromtime_$room"),
-								"tvmonnight" => param("tvmonnight_$room"),
-								"tvmonnightsub" => param("tvmonnightsub_$room"),
-								"tvmonnightsublevel" => param("subgain_$room")
+					
+					my $tvmonspeech = param("tvmonspeech_$room");
+					my $usesb = param("usesb_$room");
+					my $tvvol = param("tvvol_$room");
+					my $tvmonsurr = param("tvmonsurr_$room");
+					my $fromtime = param("fromtime_$room");
+					my $tvmonnight = param("tvmonnight_$room");
+					my $tvmonnightsub = param("tvmonnightsub_$room");
+					my$tvmonnightsublevel = param("subgain_$room");
+					my @sbs = (  {"tvmonspeech" => $tvmonspeech,
+								"usesb" => $usesb,
+								"tvvol" => $tvvol,
+								"tvmonsurr" =>$tvmonsurr,
+								"fromtime" => $fromtime,
+								"tvmonnight" => $tvmonnight,
+								"tvmonnightsub" => $tvmonnightsub,
+								"tvmonnightsublevel" => $tvmonnightsublevel
 								}					
 							);
 					push @player , @sbs;
+				} else {
+					# if no Soundbar
+					my @sbs = ("false");
+					push @player , @sbs;
 				}
+			} else {
+				# TV Monitor turned off
+				my @sbs = ("false");
+				push @player , @sbs;
 			}
 			$cfg->{sonoszonen}->{param("zone$i")} = \@player;
 		}
@@ -966,6 +993,8 @@ sub save
 	return;
 	
 }
+
+
 
 
 
@@ -1024,8 +1053,10 @@ sub scan
 			$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='$config->{$key}->[4]'' /></td>\n";
 			$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$config->{$key}->[5]'' /></td>\n";
 			# Column Soundbar Volume
-			if ($config->{$key}->[13])   {
+			if (($config->{$key}[13]) eq "SB")   {
 				$rowssonosplayer .= "<input type='hidden' id='sb$countplayers' size='100' name='sb$countplayers' value='$config->{$key}->[13]'>\n";
+			} else {
+				$rowssonosplayer .= "<input type='hidden' id='sb$countplayers' size='100' name='sb$countplayers' value='NOSB'>\n";
 			}
 			$rowssonosplayer .= "<input type='hidden' id='models$countplayers' name='models$countplayers' value='$config->{$key}->[7]'>\n";
 			$rowssonosplayer .= "<input type='hidden' id='sub$countplayers' name='sub$countplayers' value='$config->{$key}->[8]'>\n";
@@ -1041,17 +1072,191 @@ sub scan
 	}
 }
 
-
 #####################################################
-# pass Sonoszonen config to template (AJAX)
+# Volume page
 #####################################################
 
-sub pass_sonoszonen
-{
-	my $zonenconfig = $cfg->{sonoszonen};
-	$response = $zonenconfig;
+sub volumes
+{	
+	$template->param(FORMNO => 'VOLUME' );
+
+	# check if Config file already exists
+	if (-e $lbpconfigdir . "/" .$volumeconfigfile)    {
+		LOGDEB("Volume Profiles Config file already exist");	
+	} else {
+		my $volfile = qx(/usr/bin/php $lbphtmldir/bin/vol_prof_ini.php);
+		LOGDEB("New Volume Profiles Config file has been created");		
+	}
+	$rowsvolplayer;
+	my @vcfg;
+
+	# count Profiles
+	my $jsonobjvol = LoxBerry::JSON->new();
+	my $vcfg = $jsonobj->open(filename => $lbpconfigdir . "/" . $volumeconfigfile);
+	
+	my $last_id = (keys @$vcfg);
+	my $config = $cfg->{sonoszonen};
+	#LOGDEB(Dumper($vcfg));
+	
+	# create table header
+	for (my $id = 1; $id <= $last_id; $id++)   {
+		$countplayers = 0;
+		$rowsvolplayer .= "<table class='tables' style='width:100%' id='tblvol_prof$id' name='tblvol_prof$id'>\n";
+		$rowsvolplayer .= "<th align='left' style='height: 25px; width:100px'>&nbsp;Profile #$id</th>\n";
+		$rowsvolplayer .= "<th align='middle' colspan='6'><div style='width: 180px; align: left'>\n";
+		$rowsvolplayer .= "<input class='textfield' type='text' style='align: middle; width: 100%' id='profile$id' name='profile$id' value='' placeholder='Volume Profile Name'/>\n";
+		$rowsvolplayer .= "<td valign='left'>";
+		$rowsvolplayer .= "<img title='Load current values from Sonos devices' value='$id' id='btnload$id' name='btnload$id' class='ico-load' src='/plugins/$lbpplugindir/images/musik-note.png' border='0' width='30' height='30'>\n";
+		if ($last_id > 1)   {
+			$rowsvolplayer .= "<img title='Delete current Profile 'onclick='' value='$id' id='btndel$id' name='btndel$id' class='ico-delete' src='/plugins/$lbpplugindir/images/recycle-bin.png' border='0' width='30' height='30'></td>\n";
+		}
+		$rowsvolplayer .= "</th><tr><th style='background-color: #6dac20;' align='left'>&nbsp;Rooms</th><div class='form-group col-7'>\n";
+		$rowsvolplayer .= "<th class='form-control' style='background-color: #6dac20; align: center'>V</th>\n";
+		$rowsvolplayer .= "<th class='form-control' style='background-color: #6dac20; align: center'>T</th>\n";
+		$rowsvolplayer .= "<th class='form-control' style='background-color: #6dac20; align: center'>B</th>\n";
+		$rowsvolplayer .= "<th class='form-control' style='background-color: #6dac20; align: center'>L</th>\n";
+		$rowsvolplayer .= "<th class='form-control' style='background-color: #6dac20; align: center'>SR</th>\n";
+		$rowsvolplayer .= "<th class='form-control' style='background-color: #6dac20; align: center'>SW</th>\n";
+		$rowsvolplayer .= "<th class='form-control' style='background-color: #6dac20; align: center'>SWL</th>\n";
+		$rowsvolplayer .= "</div></tr>";
+		# create table rows	
+		foreach my $key (sort keys %$config) {
+			$countplayers++;
+			$_ = "$countplayers";
+			my $zid = $_."_".$id;
+			my $error_volume = $SL{'T2S.ERROR_VOLUME_PLAYER'};
+			my $error_treble_bass = $SL{'VOLUME_PROFILES.ERROR_TREBLE_BASS_PLAYER'};
+			my $error_sbass = $SL{'VOLUME_PROFILES.ERROR_SUB_LEVEL_PLAYER'};
+			$rowsvolplayer .= "<tr><div class='container'>";
+			#my $statusfile = $lbpdatadir.'/PlayerStatus/s4lox_on_'.$key.'.txt';
+			#if (-e $statusfile) {
+				$rowsvolplayer .= "<td style='height: 15px; width: 160px;'><input type='text' id='zone_$zid' name='zone_$zid' readonly='true' value='$key' style='width: 100%; background-color: #e6e6e6;'></td>\n";	
+			#} else {
+				#$rowsvolplayer .= "<td style='height: 15px; width: 160px;'><input type='text' id='zone_$zid' name='zone_$zid' readonly='true' value='$key' style='width: 100%; background-color: #e6e6e6;'></td>\n";	
+			#}
+			$rowsvolplayer .= "<td style='width: 45px; height: 15px;'><input type='text' class='form-validation' id='vol_$zid' name='vol_$zid' size='100' data-validation-rule='special:number-min-max-value:0:100' data-validation-error-msg='$error_volume' value='$vcfg->[$id-1]->{Player}->{$key}->[0]->{Volume}'></td>\n";
+			$rowsvolplayer .= "<td style='width: 45px; height: 15px;'><input type='text' class='form-validation' id='treble_$zid' name='treble_$zid' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='$error_treble_bass' value='$vcfg->[$id-1]->{Player}->{$key}->[0]->{Treble}'></td>\n";
+			$rowsvolplayer .= "<td style='width: 45px; height: 15px;'><input type='text' class='form-validation' id='bass_$zid' name='bass_$zid' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='$error_treble_bass' value='$vcfg->[$id-1]->{Player}->{$key}->[0]->{Bass}'></td>\n";
+			$rowsvolplayer .= "<td style='height: 10px; width: 5px; align: middle'>";
+			$rowsvolplayer .= "<fieldset><select onchange='' id='loudness_$zid' name='loudness_$zid' data-role='flipswitch' style='width: 5%'>\n";
+			$rowsvolplayer .= "<option value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option>";
+			$rowsvolplayer .= "</select></fieldset></td>\n";
+			$rowsvolplayer .= "<td style='height: 10px; width: 25px; align: middle'>";
+			$rowsvolplayer .= "<fieldset><select onchange='' id='surround_$zid' name='surround_$zid' data-role='flipswitch' style='width: 5%'>\n";
+			$rowsvolplayer .= "<option value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option>";
+			$rowsvolplayer .= "</select></fieldset></td>\n";
+			$rowsvolplayer .= "<td style='height: 10px; width: 25px; align: middle'>";
+			$rowsvolplayer .= "<fieldset><select onchange='' id='subwoofer_$zid' name='subwoofer_$zid' data-role='flipswitch' style='width: 5%'>\n";
+			$rowsvolplayer .= "<option value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option>";
+			$rowsvolplayer .= "</select></fieldset></td>\n";
+			$rowsvolplayer .= "<td style='width: 55px; height: 15px;'><input type='text' class='form-validation' id='sbass_$zid' name='sbass_$zid' size='100' data-validation-rule='special:number-min-max-value:-15:15' data-validation-error-msg='$error_sbass' value='$vcfg->[$id-1]->{Player}->{$key}->[0]->{Subwoofer_level}'></td>\n";
+			$rowsvolplayer .= "</div></tr>";
+		}
+		$rowsvolplayer .= "<br>";
+	}
+	$rowsvolplayer .= "</table>";
+	$rowsvolplayer .= "<input type='hidden' id='last_id' name='last_id' value='$last_id'>\n";
+	$rowsvolplayer .= "<input type='hidden' id='new_id' name='new_id' value='$last_id'>\n";
+	$rowsvolplayer .= "<input type='hidden' id='delprofil' name='delprofil' value=0>\n";
+	$rowsvolplayer .= "<input type='hidden' id='countplayers' name='countplayers' value='$countplayers'>\n";
+	$template->param("ROWSVOLPLAYER", $rowsvolplayer);
+	LOGOK "Sound Profiles has been loaded successful.";
 }
 
+
+
+#####################################################
+# Save Volume Profiles
+#####################################################
+
+sub save_volume
+{
+
+	# Everything from Forms
+	my $countplayers	= param('countplayers');
+	my $last_id			= param('last_id');
+	my $new_id			= param('new_id');
+	my $surround;
+	my $subwoofer;
+	my $Subwoofer_level;
+	my $loudness;
+	my @profiles;
+	
+	my $jsonobjvol = LoxBerry::JSON->new();
+	my $vcfg = $jsonobjvol->open(filename => $lbpconfigdir . "/" . $volumeconfigfile);
+	
+	# delete selected profile
+	if (param("delprofil") > 0) { # if player should be deleted
+		my $jsonobjvol = LoxBerry::JSON->new();
+		my $vcfg = $jsonobjvol->open(filename => $lbpconfigdir . "/" . $volumeconfigfile);
+		my $c = param("delprofil") - 1;
+		splice @{ $vcfg }, $c, 1;
+		$jsonobjvol->write();
+		LOGOK "Sound Profile has been deleted successful.";
+		&volumes;
+		$navbar{3}{active} = 1;
+		$template->param("VOLUME", "1");
+		&form;
+	}
+	
+	# save profiles
+	for ($i = 1; $i <= $new_id; $i++) {
+		$vcfg->[$i - 1]->{Name} = lc(param("profile$i"));
+		$_ = "$i";
+		for (my $k = 1; $k <= $countplayers; $k++)   {
+			my $zid = $k."_".$_;
+			my $zone = param("zone_$zid");
+			# prepare Surround
+			if ($cfg->{sonoszonen}->{$zone}->[10] eq "NOSUR")   {
+				$surround = "na";
+			} else {
+				if (is_enabled(param("surround_$zid")))   {
+					$surround = "true";
+				} else {
+					$surround = "false";
+				}
+			}
+			# prepare Subwoofer
+			if ($cfg->{sonoszonen}->{$zone}->[8] eq "NOSUB")   {
+				$subwoofer = "na";
+				$Subwoofer_level = "";
+			} else {
+				$Subwoofer_level = param("sbass_$zid");
+				if (is_enabled(param("subwoofer_$zid")))   {
+					$subwoofer = "true";
+				} else {
+					$subwoofer = "false";
+				}
+			}
+			# prepare Loudness
+			if (is_enabled(param("loudness_$zid")))   {
+				$loudness = "true";
+			} else {
+				$loudness = "false";
+			}
+			my $Volume = param("vol_$zid");
+			my $Treble = param("treble_$zid"); 
+			my $Bass = param("bass_$zid"); 
+			my @profiles = (  	{"Volume" => $Volume, 
+								"Treble" => $Treble, 
+								"Bass" => $Bass,
+								"Loudness" => $loudness, 
+								"Surround" => $surround,
+								"Subwoofer" => $subwoofer,
+								"Subwoofer_level" => $Subwoofer_level
+								}
+						    );
+			push @profiles;
+			$vcfg->[$i - 1]->{Player}->{$zone} = \@profiles;
+		}
+	}
+	$jsonobjvol->write();
+	LOGOK "Sound Profile has been saved";
+	&volumes;
+	$navbar{3}{active} = 1;
+	$template->param("VOLUME", "1");
+	&form;
+}
 
 #####################################################
 # Get Engine keys (AJAX)

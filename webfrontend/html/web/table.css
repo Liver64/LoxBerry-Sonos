@@ -10,14 +10,15 @@
 }
 .tables tr td,
 .tables tr th {
-    border-right-width: 2px;
+	/* column line for each */
+    border-right-width: 0px;
     border-right-style: solid;
     border-right-color: #3d3d3d;
-/* row line for each
-    border-bottom-width: 2px;
+	/* row line for each */
+    border-bottom-width: 0px;
     border-bottom-style: solid;
     border-bottom-color: #3d3d3d;
-*/
+
 }
 /*
 .tables tr:nth-child(odd) {
@@ -98,4 +99,8 @@
   border-top-style: none;
   background: #6dac20;
   height: 40px;
+}
+
+.tables thead th { 
+	border-bottom: 1px solid #000; 
 }

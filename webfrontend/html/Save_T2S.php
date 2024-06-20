@@ -27,7 +27,7 @@ function saveZonesStatus() {
 		$actual[$player]['TransportSettings'] = $sonos->GetTransportSettings($player);
 		$actual[$player]['Group-ID'] = $sonos->GetZoneGroupAttributes($player);
 		$actual[$player]['Coordinator'] = getCoordinator($player);
-		#$actual[$player]['Grouping'] = getGroup($player);
+		$actual[$player]['Grouping'] = getGroup($player);
 		$actual[$player]['ZoneStatus'] = getZoneStatus($player);
 		$actual[$player]['CONNECT'] = GetVolumeModeConnect($player);
 		$posinfo = $sonos->GetPositionInfo($player);

@@ -216,8 +216,7 @@ function debugInfo()     {
 	unset($debugconfig['MP3']['volumedown']);
 	unset($debugconfig['MP3']['cachesize']);
 	unset($debugconfig['MP3']['MP3store']);
-	#unset($debugconfig['SYSTEM']['cifsinterface']);
-	#unset($debugconfig['SYSTEM']['httpinterface']);
+	unset($debugconfig['SYSTEM']['cifsinterface']);
 	unset($debugconfig['SYSTEM']['checkonline']);
 	unset($debugconfig['SYSTEM']['checkt2s']);
 	unset($debugconfig['TTS']['phonemute']);
@@ -469,7 +468,7 @@ function Getdialoglevel()  {
 	global $sonos;
 	
 	$dialog = array();
-	echo '<PRE>';
+	#echo '<PRE>';
 	$NightMode = $sonos->GetDialogLevel('NightMode');
 	$dialog['NightMode'] = $NightMode;
 	$SurroundEnable = $sonos->GetDialogLevel('SurroundEnable');
@@ -483,7 +482,7 @@ function Getdialoglevel()  {
 	#print_r($dialog);
 	return $dialog;
 	
-	echo '</PRE>';
+	#echo '</PRE>';
 }
 
 

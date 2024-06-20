@@ -16,7 +16,7 @@
 
 function AddAmazon() {
 	
-	global $sonoszone, $master, $sonos, $volume;
+	global $sonoszone, $master, $sonos, $lookup, $volume;
 
 	// playlist-ID = B07G4L7CLZ
 	// album-ID = B003Z69GS8
@@ -61,6 +61,9 @@ function AddAmazon() {
 		LOGGING("MusicService.php: The entered Amazon-ID ".$pl." seems to be not valid! Please check!", 3);
 		exit;
 	}
+	if (isset($_GET['profile']) or isset($_GET['Profile']))    {
+		$volume = $lookup[0]['Player'][$master][0]['Volume'];
+	}
 	$sonos->SetVolume($volume);
 	$sonos->SetMute(false);
 	LOGGING("MusicService.php: Requested Amazon Music plays now.", 7);
@@ -84,7 +87,7 @@ function AddAmazon() {
 
 function AddApple() {
 	
-	global $sonoszone, $master, $sonos, $volume;
+	global $sonoszone, $master, $lookup, $sonos, $volume;
 
 	// playlist geht = 914196c8783d46a5ba46f38eda448a43
 	// album geht = 1623854804
@@ -129,6 +132,9 @@ function AddApple() {
 		LOGGING("MusicService.php: The entered Apple-ID ".$pl." seems to be not valid! Please check!", 3);
 		exit;
 	}
+	if (isset($_GET['profile']) or isset($_GET['Profile']))    {
+		$volume = $lookup[0]['Player'][$master][0]['Volume'];
+	}
 	$sonos->SetVolume($volume);
 	$sonos->SetMute(false);
 	LOGGING("MusicService.php: Requested Apple Music plays now.", 7);
@@ -159,7 +165,7 @@ function AddApple() {
 
 function AddNapster() {
 	
-	global $sonoszone, $master, $sonos, $volume;
+	global $sonoszone, $master, $lookup, $sonos, $volume;
 
 	$mail = '';
 	$reg = 'SA_RINCON51975_'.$mail;
@@ -199,6 +205,9 @@ function AddNapster() {
 		LOGGING("MusicService.php: The entered Napster-ID ".$pl." seems to be not valid! Please check!", 3);
 		exit;
 	}
+	if (isset($_GET['profile']) or isset($_GET['Profile']))    {
+		$volume = $lookup[0]['Player'][$master][0]['Volume'];
+	}
 	$sonos->SetVolume($volume);
 	$sonos->SetMute(false);
 	LOGGING("MusicService.php: Requested Napster Music plays now.", 7);
@@ -222,7 +231,7 @@ function AddNapster() {
 // x-sonos-spotify:spotify:track:6If6tXpbwYs5zBop1AqfwG?sid=9&flags=8224&sn=5
 
 function AddSpotify($user = '') {
-	global $sonoszone, $master, $sonos, $volume;
+	global $sonoszone, $master, $sonos, $lookup, $volume;
 
 	// playlist geht = 37i9dQZF1DX1i11qSEWNoS, 18J8kfJh79lgmZZGOcV7dZ
 	// album geht = 0PNXB6AmSfM9oS0YwNkCYH, 7GcrxecamwbZqW0Vf0TEo7
@@ -270,6 +279,9 @@ function AddSpotify($user = '') {
 		LOGGING("MusicService.php: The entered Spotify-ID ".$pl." seems to be not valid! Please check!", 3);
 		exit;
 	}
+	if (isset($_GET['profile']) or isset($_GET['Profile']))    {
+		$volume = $lookup[0]['Player'][$master][0]['Volume'];
+	}
 	$sonos->SetVolume($volume);
 	$sonos->SetMute(false);
 	LOGGING("MusicService.php: Requested Spotify Music plays now.", 7);
@@ -290,7 +302,7 @@ function AddSpotify($user = '') {
 
 function AddTrack() {
 	
-	global $sonoszone, $master, $sonos, $volume, $mute;
+	global $sonoszone, $master, $sonos, $lookup, $volume, $mute;
 
 	$sonos = new SonosAccess($sonoszone[$master][0]);
 	$rincon = $sonoszone[$master][1];
@@ -335,6 +347,9 @@ function AddTrack() {
 			exit;
 		}
 		LOGGING('local_track.php: The entered Local-Track has been loaded',6);
+	}
+	if (isset($_GET['profile']) or isset($_GET['Profile']))    {
+		$volume = $lookup[0]['Player'][$master][0]['Volume'];
 	}
 	$sonos->SetVolume($volume);
 	$sonos->SetMute(false);

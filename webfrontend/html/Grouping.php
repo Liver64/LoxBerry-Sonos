@@ -274,9 +274,8 @@ function getRoomCoordinator_OLD($room){
 	if(!empty($grouping)) {
 		#if($debug == 1) { 
 			#print_r($grouping);
-			#echo 'OLLI';
 		#}
-		print_r($grouping);
+		#print_r($grouping);
 		return $grouping;
 	} else {
 		return false;
@@ -295,14 +294,14 @@ function getGroups() {
 	global $sonoszone, $debug;
 
 	foreach ($sonoszone as $room => $value) {
-		$groups[] = getGroup($room);
+		$group = getGroup($room);
 		#if($debug == 1) { 
-			print_r($groups);
+			print_r($group);
 			
 		#}
 		#return($groups);
 	}
-	print_r($groups);
+	#print_r($groups);
 	#return($groups);
  }
  
@@ -412,7 +411,7 @@ function checkifmaster($master) {
 	if (substr($posinfo["TrackURI"], 0, 9) == "x-rincon:") {
 		$GroupMaster = trim(substr($posinfo["TrackURI"], 9, 30));
 		$master = recursive_array_search($GroupMaster,$sonoszone);
-		echo $master;
+		#echo $master;
 		return $master;
 	}      
 }

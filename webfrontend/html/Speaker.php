@@ -118,6 +118,7 @@ function SetAutoplayRoomUUID($key, $rincon)  {
 			echo "TV Autoplay mode for Player ".$key." has been set inactiv".PHP_EOL;
 		}
 	} catch (Exception $e) {
+		startlog("TV Monitor", "tv_monitor");
 		LOGGING("/bin/speaker.php: Player ".$key." could not be set to TV Autoplay mode.", 4);
 		echo "Player ".$key." could not be set to TV Autoplay mode".PHP_EOL;
 	}
@@ -157,15 +158,16 @@ function SetAutoplayLinkedZones($data, $soundbars, $key)  {
 	} else {
 		$value = $data;
 	}
-		try {
-			$sonos = new SonosAccess($soundbars[$key][0]);
-			$AutoPlayZones = $sonos->SetAutoplayLinkedZones($value);
-			LOGGING("/bin/speaker.php: Include linked zones for Player ".$master." has been set to ".$value." in TV Autoplay mode.", 7);
-			echo "Include linked zones for Player ".$key." has been set to ".$value." in TV Autoplay mode.";
-		} catch (Exception $e) {
-			LOGGING("/bin/speaker.php: Include linked zones for Player ".$master." could not be set to TV Autoplay mode.", 3);
-			echo "Include linked zones for Player ".$key." could not be set to TV Autoplay mode.";
-		}
+	try {
+		$sonos = new SonosAccess($soundbars[$key][0]);
+		$AutoPlayZones = $sonos->SetAutoplayLinkedZones($value);
+		LOGGING("/bin/speaker.php: Include linked zones for Player ".$master." has been set to ".$value." in TV Autoplay mode.", 7);
+		echo "Include linked zones for Player ".$key." has been set to ".$value." in TV Autoplay mode.";
+	} catch (Exception $e) {
+		startlog("TV Monitor", "tv_monitor");
+		LOGGING("/bin/speaker.php: Include linked zones for Player ".$master." could not be set to TV Autoplay mode.", 3);
+		echo "Include linked zones for Player ".$key." could not be set to TV Autoplay mode.";
+	}
 }
 
 
@@ -482,11 +484,11 @@ function SetBassMode($mode)  {
 
 function identSB($sonoszone, $file)    {
 	
-	# Extract predefined soundbars only (marked with SB and Volume > 0)
+	# Extract predefined soundbars only (marked with SB)
 	$soundbars = array();
 	foreach($sonoszone as $zone => $ip) {
-		$existsb = array_key_exists('13', $ip);
-		if ($existsb == true)  {
+		#$existsb = array_key_exists('13', $ip);
+		if ($sonoszone[$zone][13] == "SB")  {
 			$soundbars[$zone] = $ip;
 		}
 	}
@@ -503,7 +505,253 @@ function identSB($sonoszone, $file)    {
 	}
 	$soundbars = $zonesonline;
 	return $soundbars;
-	
 }
 
+
+/**
+/* Funktion : curr_volume --> collect alle Volume Infos
+/*
+/* @param: empty                             
+/* @return: On Screen Volume Infos
+**/
+
+function curr_volume()   {
+	
+	global $sonoszone, $master;
+
+	foreach ($sonoszone as $key => $value)   {
+		$group = getGroup($key);
+		if (is_array($group))   {
+			echo "-------------------------------------------------".PHP_EOL;
+			foreach ($group as $key1)   {
+				$sonos = new SonosAccess($sonoszone[$key1][0]);
+				$volume = $sonos->GetVolume();
+				echo "Volume for ".$key1." in Group = ".$volume.PHP_EOL;
+			}
+			$room = $group[0];
+			$sonos = new SonosAccess($sonoszone[$room][0]);
+			$groupvolume = $sonos->GetGroupVolume();
+			$gr = implode(", ", $group);
+			echo "Groupvolume for Group: ".$gr." = ".$groupvolume.PHP_EOL;
+			echo "-------------------------------------------------".PHP_EOL;
+		} else {
+			$sonos = new SonosAccess($sonoszone[$key][0]);
+			$volume = $sonos->GetVolume();
+			echo "Volume for ".$key." = ".$volume.PHP_EOL;
+		}
+	}
+	echo "<br>";
+	echo "<br>";
+}
+
+/**
+/* Funktion : SetGroupVolume --> setzt Volume für eine Gruppe
+/*
+/* @param: 	Volume
+/* @return: 
+**/	
+function SetGroupVolume($groupvolume) {
+	
+	global $sonoszone, $master;
+	
+	VolumeOut();
+	$sonos = new SonosAccess($sonoszone[$master][0]); 
+	$sonos->SnapshotGroupVolume();
+	$sonos->SetGroupVolume($groupvolume);
+	VolumeOut();
+ }
+
+/**
+/* Funktion : SetRelativeGroupVolume --> setzt relative Volume für eine Gruppe
+/*
+/* @param: 	Volume
+/* @return: 
+**/	
+function SetRelativeGroupVolume($groupvolume) {
+	
+	global $sonoszone, $master;
+	
+	VolumeOut();
+	$sonos = new SonosAccess($sonoszone[$master][0]); 
+	$sonos->SnapshotGroupVolume();
+	$sonos->SetRelativeGroupVolume($groupvolume);
+	VolumeOut();
+}
+
+/**
+/* Sub Funktion : SnapshotGroupVolume --> ermittelt das prozentuale Volume Verhältnis der einzelnen Zonen
+/* einer Gruppe (nur vor SetGroupVolume oder SetRelativeGroupVolume nutzen)
+/*
+/* @return: Volume Verhältnis
+**/	
+function SnapshotGroupVolume() {
+	
+	global $sonos;
+	
+	$SnapshotGroupVolume = $sonos->SnapshotGroupVolume();
+	return $SnapshotGroupVolume;
+}
+
+/**
+/* Funktion : SetGroupMute --> setzt alle Zonen einer Gruppe auf Mute/Unmute
+/* einer Gruppe
+/*
+/* @param: 	MUTE or UNMUTE
+/* @return: 
+**/	
+ function SetGroupMute($mute) {
+	 
+	global $sonos;
+	
+	$sonos->SetGroupMute($mute);
+ }
+
+
+
+
+/**
+/* Funktion : SetBalance --> setzt die Balance für angegeben Zone
+/* einer Gruppe
+/*
+/* @param: 	balance=LF oder RF, wert 
+/* @return: 
+**/	
+
+function SetBalance()  {
+	
+	global $sonos, $master;
+	
+	if (isset($_GET['member']))  {
+		LOGGING('sonos.php: For groups the function could not be used, please correct!', 3);
+		exit;
+	}
+	if ((isset($_GET['balance'])) && (isset($_GET['value']))) {
+		if(is_numeric($_GET['value']) && $_GET['value'] >= 0 && $_GET['value'] <= 100) {
+			$balance_dir = $_GET['balance'];
+			$valid_directions = array('LF' => 'left speaker','RF' => 'right speaker', 'lf' => 'left speaker', 'rf' => 'right speaker');
+			if (array_key_exists($balance_dir, $valid_directions)) {
+				$sonos->SetBalance($balance_dir, $_GET['value']);
+				LOGGING('sonos.php: Balance for '.$valid_directions[$balance_dir].' of Player '.$master.' has been set to '.$_GET['value'].'.', 5);
+			} else {
+				LOGGING('sonos.php: Entered balance direction for Player '.$master.' is not valid. Only "LF/lf" or "RF/rf" are allowed, please correct!', 3);
+				exit;
+			}
+		} else {
+			LOGGING('sonos.php: Entered balance '.$_GET['value'].' for Player '.$master.' is even not numeric or not between 1 and 100, please correct!', 3);
+			exit;
+		}
+	} else {
+		LOGGING('sonos.php: No valid entry for Balance has been entered or syntax is incomplete, please correct!', 3);
+		exit;
+	}
+}
+
+
+/**
+/* Funktion : VolumeOut --> gibt die Werte an UI
+/*
+/* @param: 	&out in URL
+/* @return: 
+**/	
+
+function VolumeOut() {
+	
+	if (isset($_GET['out']))   {
+		curr_volume();
+		return;
+	}
+}
+
+
+/**
+/* Funktion : VolumeProfiles --> ändert die Audioeinstellungen gemäß dem gewählten Profil
+/*
+/* @param: 	
+/* @return: 
+**/	
+
+function VolumeProfiles() {
+	
+	global $sonos, $master, $volume, $lookup, $sonoszone, $vol_config, $lbpconfigdir;
+	#echo $_GET['action'];
+	
+	if (isset($_GET['profile']) and ($_GET['action'] === "say" or $_GET['action'] === "sendmessage" or $_GET['action'] === "sendgroupmessage"))    {
+		LOGERR("helper.php: Sound Profiles could not be used by Text-to-speech. Please check your entry!");
+		exit;
+	}
+	
+	if(isset($_GET['profile']) or $_GET['action'] == "Profile")    {
+		$volprofil = $_GET['profile'];
+		$volconfig = json_decode(file_get_contents($lbpconfigdir . "/" . $vol_config.".json"), TRUE);
+		$lookup = array_multi_search(strtolower($volprofil), $volconfig, $sKey = "");
+		
+		if (!$lookup)   {
+			LOGERR("speaker.php: Entered Volume Profile '".$_GET['profile']."' in URL could not be found. Please check your entry!");
+			exit(1);
+		} else {
+			LOGINF("speaker.php: Volume Profile '".$_GET['profile']."' has been selected!");
+		}
+		#print_r($lookup);
+		$master = $_GET['zone'];
+		$playerprof[] = $master;
+		if(isset($_GET['member'])) {
+			$member = $_GET['member'];
+			if($member === 'all') {
+				$member = array();
+				foreach ($sonoszone as $zone => $ip) {
+					# exclude master Zone
+					if ($zone != $master) {
+						array_push($playerprof, $zone);
+					}
+				}
+			} else {
+				$member = explode(',', $member);
+				$playerprof = array_merge($playerprof, $member);
+			}
+		}
+		#print_r($lookup);
+		
+		foreach ($playerprof as $key)  {
+			try {
+				@$sonos = new SonosAccess($sonoszone[$key][0]);
+				#@$sonos->SetMute(true);
+				# Set Volume				
+				$sonos->SetVolume($lookup[0]['Player'][$key][0]['Volume']);
+				$volume = $lookup[0]['Player'][$key][0]['Volume'];
+				#$sonos->RampToVolume("AUTOPLAY_RAMP_TYPE", $lookup[0]['Player'][$key][0]['Volume']);
+				LOGINF("speaker.php: Volume for '".$key."' has been set to: ".$lookup[0]['Player'][$key][0]['Volume']);
+				# Set Treble
+				$sonos->SetTreble($lookup[0]['Player'][$key][0]['Treble']);
+				LOGDEB("speaker.php: Treble for '".$key."' has been set to: ".$lookup[0]['Player'][$key][0]['Treble']);
+				# Set Bass
+				$sonos->SetBass($lookup[0]['Player'][$key][0]['Bass']);
+				LOGDEB("speaker.php: Bass for '".$key."' has been set to: ".$lookup[0]['Player'][$key][0]['Bass']);
+				# Set Loudness
+				if ((bool)is_enabled($lookup[0]['Player'][$key][0]['Loudness'] === "true" ? $ldstate = "1" : $ldstate = "0"));
+				$sonos->SetLoudness($ldstate);
+				if ((bool)is_enabled($lookup[0]['Player'][$key][0]['Loudness']) === true ? $ld = "On" : $ld = "Off");
+				LOGDEB("speaker.php: Loudness for '".$key."' has been switched ".$ld);
+				# Set Surround
+				if ($lookup[0]['Player'][$key][0]['Surround'] != "na")   {
+					$sonos->SetDialogLevel(is_enabled($lookup[0]['Player'][$key][0]['Surround']), 'SurroundEnable');
+					if ((bool)is_enabled($lookup[0]['Player'][$key][0]['Surround']) === true ? $sur = "On" : $sur = "Off");
+					LOGDEB("speaker.php: Surround for '".$key."' has been switched ".$sur);
+				}
+				# Set Subwoofer and Subwoofer Bass Level
+				if ($lookup[0]['Player'][$key][0]['Subwoofer'] != "na")   {
+					$sonos->SetDialogLevel(is_enabled($lookup[0]['Player'][$key][0]['Subwoofer']), 'SubEnable');
+					if ((bool)is_enabled($lookup[0]['Player'][$key][0]['Subwoofer']) === true ? $sub = "On" : $sub = "Off");
+					LOGDEB("speaker.php: Subwoofer for '".$key."' has been switched ".$sub);
+					$sonos->SetDialogLevel($lookup[0]['Player'][$key][0]['Subwoofer_level'], 'SubGain');
+					LOGDEB("speaker.php: Subwoofer Bass for '".$key."' has been set to: ".$lookup[0]['Player'][$key][0]['Subwoofer_level']);
+				}
+			} catch (Exception $e) {
+				LOGERR("speaker.php: Player '".$key."' does not respond. Please check your settings");
+				continue;
+			}
+		}
+		LOGINF("speaker.php: Settings for Volume Profile '".$_GET['profile']."' has been set sucessfull.");
+		return $lookup;
+	}
+}
 ?>

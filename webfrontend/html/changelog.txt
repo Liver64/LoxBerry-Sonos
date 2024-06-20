@@ -422,8 +422,13 @@
 			[IMPORVEMENT] PHP 8 readiness
 			[IMPORVEMENT] Switch to JSON Object
  5.5.0		[IMPORVEMENT] TV Monitor ist je Soundbar individuell konfigurierbar
-			[IMPORVEMENT] Plugin Einstellungen des TV Monitors können durch Sonos App Steuerung jederzeit überschrieben werden
-			[IMPORVEMENT] Sonos AMP als Soundbar hinzugefügt
+			[IMPORVEMENT] Default Einstellungen des TV Monitors können durch Sonos App Steuerung jederzeit überschrieben werden
+			[IMPORVEMENT] Sonos:AMP als Soundbar hinzugefügt
 			[IMPORVEMENT] Alle API Keys werden per Engine gespeichert
 			[BUGFIX] Fehler bei nextradio und nextpush korrigiert (Leerzeichen in den Feldern)
-			[IMPORVEMENT] Neue Funktion Follow-me (Präsenzbasierend)
+			[BUGFIX] Ungroup bei pluginradio korrigiert
+			[IMPORVEMENT] Auto Update der Sonos Soft-/Firmware inkl. Power-On Funktion (optional)
+			[IMPORVEMENT] Neue Funktion Follow-me (Präsenzbasierend) optional
+			[IMPORVEMENT] Neue Funktion Sound Profile 
+			[BUGFIX] kleine Fehlerkorrekturen bzw. Optimierungen
+			[IMPORVEMENT] optische Anpassungen

@@ -128,6 +128,20 @@ function metadata($value)
 			CreateDIDL($value, $stype);
 		break;
 		
+		case "333":		// TuneIn Radio (new)
+			$value['token'] = "SA_RINCON65031_";
+			if (!isset($value['protocolInfo']))    {
+				$stype = "TuneIn (New)";
+				$value['UpnpClass'] = "object.item.audioItem.audioBroadcast";
+				$value['artist'] = "TuneIn (New) Radio";
+			} else {
+				$stype = "TuneIn (New) Favorite";
+				$value['UpnpClass'] = "object.item.audioItem.audioBroadcast";
+				$value['artist'] = "TuneIn (New) Radio";
+			}
+			CreateDIDL($value, $stype);
+		break;
+		
 		
 		case "2":		// Deezer
 			if ($value['typ'] == "Track")    {
@@ -311,6 +325,7 @@ function metadata($value)
 			"169"=>"Tribe of Noise",
 			"193"=>"Tunify for Business",
 			"254"=>"TuneIn",
+			"333"=>"TuneIn (new)",
 			"231"=>"Wolfgang's Music",
 			"272"=>"Worldwide FM",
 			"317"=>"Yogi Tunes",
@@ -364,7 +379,7 @@ function AddFavToQueue($file, $meta, $value, $stype)
 	global $sonos, $file, $meta, $stype;
 	
 	@$sonos->AddToQueue($file, $meta);
-	LOGINF ("metadata.php: : ".$stype." '".htmlspecialchars($value['title'])."' has been added");
+	LOGINF ("metadata.php: : ".$stype." '".htmlspecialchars($value['title'])."' has been added1");
 	return;
 }
 
@@ -373,7 +388,7 @@ function SetAVToQueue($file, $meta, $value, $stype)
 	global $sonos, $file, $meta, $stype;
 
 	@$sonos->SetAVTransportURI($file, $meta);
-	LOGINF ("metadata.php: : ".$stype." '".htmlspecialchars($value['title'])."' has been added");
+	LOGINF ("metadata.php: : ".$stype." '".htmlspecialchars($value['title'])."' has been added2");
 	return;
 }
 

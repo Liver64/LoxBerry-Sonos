@@ -14,7 +14,7 @@
 
 function playlist() {
 	
-	global $debug, $sonos, $master, $sonoszone, $config, $volume, $sonospltmp;
+	global $debug, $sonos, $master, $lookup, $sonoszone, $config, $volume, $sonospltmp;
 	
 	if (file_exists($sonospltmp) and (!isset($_GET['load'])))  {
 		# load previously saved Sonos Playlist
@@ -23,7 +23,7 @@ function playlist() {
 		$currtrack = $sonos->GetPositioninfo();
 		if ($currtrack['Track'] < $countqueue)    {
 			NextTrack();
-			LOGINF ("playlist.php: Next track hs been called.");
+			LOGINF ("playlist.php: Next track has been called.");
 			return true;
 		} else {
 			@unlink($sonospltmp);
@@ -81,6 +81,9 @@ function playlist() {
 		if(!isset($_GET['load'])) {
 			$sonos->SetMute(false);
 			$sonos->Stop();
+			if (isset($_GET['profile']) or isset($_GET['Profile']))    {
+				$volume = $lookup[0]['Player'][$master][0]['Volume'];
+			}
 			$sonos->SetVolume($volume);
 			$sonos->Play();
 		} else {

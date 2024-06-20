@@ -37,11 +37,11 @@
 	$sonoszonen = $config['sonoszonen'];
 	#print_R($sonoszonen);
 	
-	if (!copy($myConfigFolder.'/'.$myConfigFile, $myConfigFolder.'/s4lox_config_backup.json')) {
-		echo "<ERROR> failed to copy $myConfigFile...".PHP_EOL;
-	} else {
-		echo '<OK> s4lox_config.json has been copied to s4lox_config_backup.json'.PHP_EOL;
-	}
+	#if (!copy(LBPCONFIGDIR.'/'.$myConfigFile, LBPCONFIGDIR.'/s4lox_config_backup.json')) {
+		#echo "<ERROR> failed to copy $myConfigFile...".PHP_EOL;
+	#} else {
+		#echo '<OK> s4lox_config.json has been copied to s4lox_config_backup.json'.PHP_EOL;
+	#}
 
 	$port = 1400;
 	$timeout = 3;	
@@ -116,6 +116,8 @@
 								echo "<INFO> Updated identified Soundbar Zone ".$zone." with default 15 for TV Vol".PHP_EOL;
 							}
 						}
+					} else {
+						array_push($sonoszonen[$zone], "NOSB");
 					}
 					$res = "0";
 				}
@@ -176,7 +178,7 @@
 	# Migrate TV Monitor
 		foreach ($sonoszonen as $zone => $player) {
 			$ip = $sonoszonen[$zone][0];
-			if (isset($sonoszonen[$zone][13]) and !isset($sonoszonen[$zone][14]['tvmonspeech']))   {
+			if (($sonoszonen[$zone][13] == "SB") and !isset($sonoszonen[$zone][14]['tvmonspeech']))   {
 					$sonoszonen[$zone][14] = array('tvmonspeech' => $config['VARIOUS']['tvmonspeech'],
 													'usesb' => "true",
 													'tvvol' => $sonoszonen[$zone][14],

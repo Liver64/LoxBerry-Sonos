@@ -7,17 +7,21 @@ require_once "loxberry_log.php";
 require_once("$lbphtmldir/system/error.php");
 require_once("$lbphtmldir/Helper.php");
 
-#register_shutdown_function('shutdown');
-
 $configfile		= "s4lox_config.json";
 $off_file 		= $lbplogdir."/s4lox_off.tmp";					// path/file for Script turned off
+$updatefile 	= "/run/shm/Sonos4lox_update.json";				// Status file during Sonos Update
 
+	echo '<PRE>';
 	# check if script/Sonos Plugin is off
 	if (file_exists($off_file)) {
 		exit;
 	}
-	echo '<PRE>';
-	
+	# check if Sonos Firmware Update is running
+	if (file_exists($updatefile)) {
+		echo "<WARNING> Sonos Update is currently running, we abort here...".PHP_EOL;
+		exit;
+	}
+
 	if (file_exists($lbpconfigdir . "/" . $configfile))    {
 		$config = json_decode(file_get_contents($lbpconfigdir . "/" . $configfile), TRUE);
 	} else {
@@ -46,7 +50,7 @@ $off_file 		= $lbplogdir."/s4lox_off.tmp";					// path/file for Script turned of
 	#$zonesonline = array();
 	foreach($sonoszonen as $zonen => $ip) {
 		$port = 1400;
-		$timeout = 1;
+		$timeout = 3;
 		$handle = @stream_socket_client("$ip[0]:$port", $errno, $errstr, $timeout);
 		if($handle) {
 			#$sonoszone[$zonen] = $ip;
@@ -67,10 +71,4 @@ $off_file 		= $lbplogdir."/s4lox_off.tmp";					// path/file for Script turned of
 		}	
 	}
 	
-	
-function shutdown()  {
-	
-	#$log->LOGEND("CronJob finished");
-	#LOGEND("PHP finished");
-}
 ?>
