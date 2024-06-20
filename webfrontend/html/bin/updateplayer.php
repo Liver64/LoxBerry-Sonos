@@ -1,4 +1,4 @@
- <?php
+<?php
 	#header('Content-Type: application/json; charset=utf-8'); 
 	
 	require_once "loxberry_system.php";
@@ -33,7 +33,6 @@
 		}
 		echo "<OK> Player config has been loaded.".PHP_EOL;
 	}
-	
 	$sonoszonen = $config['sonoszonen'];
 	#print_R($sonoszonen);
 	
@@ -175,19 +174,24 @@
 		echo "<OK> 'API-key' and 'secret-key' has been migrated to 'apikey' and 'secretkey'.".PHP_EOL;
 	}
 	
+	# update cifs Interface path
+	unset($config['SYSTEM']['cifsinterface']);
+	$lbhostname = lbhostname();
+	$config['SYSTEM']['cifsinterface'] = "x-file-cifs://".$lbhostname."/plugindata/".$lbpplugindir."/interfacedownload";
+	
 	# Migrate TV Monitor
 		foreach ($sonoszonen as $zone => $player) {
 			$ip = $sonoszonen[$zone][0];
 			if (($sonoszonen[$zone][13] == "SB") and !isset($sonoszonen[$zone][14]['tvmonspeech']))   {
-					$sonoszonen[$zone][14] = array('tvmonspeech' => $config['VARIOUS']['tvmonspeech'],
-													'usesb' => "true",
-													'tvvol' => $sonoszonen[$zone][14],
-													'tvmonsurr' => $config['VARIOUS']['tvmonsurr'],
-													'fromtime' => $config['VARIOUS']['fromtime'],
-													'tvmonnight' => $config['VARIOUS']['tvmonnight'], 
-													'tvmonnightsub' => "false",
-													'tvmonnightsublevel' => "0"
-													);
+				$sonoszonen[$zone][14] = array('tvmonspeech' => $config['VARIOUS']['tvmonspeech'],
+												'usesb' => "true",
+												'tvvol' => $sonoszonen[$zone][14],
+												'tvmonsurr' => $config['VARIOUS']['tvmonsurr'],
+												'fromtime' => $config['VARIOUS']['fromtime'],
+												'tvmonnight' => $config['VARIOUS']['tvmonnight'], 
+												'tvmonnightsub' => "false",
+												'tvmonnightsublevel' => "0"
+												);
 				echo "<OK> Settings for TV Monitor has been migrated. Please doublecheck settings for Zone '".$zone."'".PHP_EOL;
 			}
 		}

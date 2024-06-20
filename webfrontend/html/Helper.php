@@ -1513,6 +1513,7 @@ function CheckSubSur($val)    {
 			array_push($int, $zonen);
 		}
 	}
+	#print_r($int);
 	$sonos = new SonosAccess($config['sonoszonen'][$int[0]][0]); //Sonos IP Adresse
 	$xml = $sonos->GetZoneStates();
 	# https://github.com/vyuldashev/xml-to-array/tree/master
