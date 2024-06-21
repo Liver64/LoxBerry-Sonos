@@ -1,6 +1,6 @@
 <img width="200px" src="webfrontend/html/images/sonos_logo.png" align="left"/>
 
-# Sonos Control
+# Control
 
 ![](https://img.shields.io/badge/Release-v5.5.0-blue)
 ![](https://img.shields.io/badge/PreRrelease-v5.3.9-blue)
@@ -18,20 +18,21 @@ you want by using a widget of Loxberry.
 ![Plugin logo](webfrontend/html/images/SR2.png)
 ![Plugin logo](webfrontend/html/images/SR3.png)
 
-The library contains rigt now nine diff. Text-to-speech Providers:
-* MS Azure 
-* AWS Polly 
-* Google Cloud
+The library contains rigt now 9 diff. Text-to-speech Providers:
+* MS Azure (API key required)
+* AWS Polly (API key required)
+* Google Cloud (API key required)
 * Google Translate 
 * Pico2wave
-* VoiceRSS 
+* VoiceRSS (API key required)
 * ResponsiveVoice
-* ElevenLabs 
+* ElevenLabs (API key required)
 * MAC OSX 
-fitting most likely all languages around the world.
-There is no programming experience necessary, just entering some data and clicking through the configuration
 
-To use this library you need to have a minicomputer like Raspberry etc., install the LoxBerry image and then the Sonos Plugin.
+fitting most likely all languages around the world.
+For configuration of your Sonos Plugin there is no programming experience necessary, just entering some data and clicking through.
+
+To use this library you need to have a minicomputer like a Raspberry etc., install the LoxBerry image and then the Sonos Plugin.
 Full documentation incl. examples is available at http://www.loxwiki.eu/display/LOXBERRY/Sonos4Loxone  
 
 
