@@ -35,15 +35,20 @@ For configuration of your Sonos Plugin there is no programming experience necess
 Besides the standard features to Control your Sonos System the Plugin deliver quit a huge amount of additional services:
 
 * 9 different Text-to-Speech Providers
-* A TV Monitor to set some time depending Audio defaults
+* A TV Monitor to set some time depending TV Sound Audio defaults
 * Outbound Data connection to deliver diff. Information for each Player using MQTT Protocol
 * Your Own Radio Favorites as endless function (ONE-Click)
 * Calendar Integration to speech
 * Various ONE-click functions like zapzone, nextradio, nextdynamic, etc.
 * Auto Update your Sonos Firmware
 * Follow-me function to follow a specific Player through presence detection
+
+![Plugin logo](webfrontend/html/images/SO1.png)
+![Plugin logo](webfrontend/html/images/SO2.png)
+
 * Sound Profiles to set easily various Audio settings for each Player (Volume, Bass, Treble, Loudness, Surround, Subwoofer (-level)
 
+![Plugin logo](webfrontend/html/images/SS1.png)
 
 To use this library you need to have a minicomputer like a Raspberry etc., install the LoxBerry image and then the Sonos Plugin.
 Full documentation incl. examples is available at [LoxWiki](https://wiki-loxberry-de.translate.goog/plugins/sonos4loxone/start?_x_tr_sl=de&_x_tr_tl=en&_x_tr_hl=de&_x_tr_pto=wapp)
