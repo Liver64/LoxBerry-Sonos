@@ -33,7 +33,8 @@ fitting most likely all languages around the world.
 For configuration of your Sonos Plugin there is no programming experience necessary, just entering some data and clicking through.
 
 To use this library you need to have a minicomputer like a Raspberry etc., install the LoxBerry image and then the Sonos Plugin.
-Full documentation incl. examples is available at [Loxwiki] (https://wiki-loxberry-de.translate.goog/plugins/sonos4loxone/start?_x_tr_sl=de&_x_tr_tl=en&_x_tr_hl=de&_x_tr_pto=wapp)
+Full documentation incl. examples is available at [LoxWiki](https://wiki-loxberry-de.translate.goog/plugins/sonos4loxone/start?_x_tr_sl=de&_x_tr_tl=en&_x_tr_hl=de&_x_tr_pto=wapp)
+
 
 
 
