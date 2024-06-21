@@ -2010,22 +2010,23 @@
 				for (i = 1; i < iteration; ++i) {
 					if (document.getElementById('mainchk' + i).checked == true) {
 						document.getElementById('mainchk' + i).value = "on";
-						$('input:checkbox').checkboxradio('refresh');
 					} else {
 						document.getElementById('mainchk' + i).value = "off";
-						$('input:checkbox').checkboxradio('refresh');
 					}
+					$('input:checkbox').checkboxradio('refresh');
 				}
 				
+				
 				// validate if at least one checkbox is checked
+				var isChecked;
 				var checkBoxes = document.getElementsByClassName('chk-checked');
-				var isChecked = false;
+				isChecked = false;
 				for (var i = 0; i < checkBoxes.length; i++) {
 					if ( checkBoxes[i].checked ) {
 						isChecked = true;
 					};
 				};
-				if (!isChecked) {
+				if (isChecked == false) {
 					$('html, body').animate({
                         scrollTop: $("#mainchk1").offset().top
                     }, 1000);

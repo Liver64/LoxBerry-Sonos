@@ -432,3 +432,4 @@
 			[IMPORVEMENT] Neue Funktion Sound Profile 
 			[BUGFIX] kleine Fehlerkorrekturen bzw. Optimierungen
 			[IMPORVEMENT] optische Anpassungen
+			[IMPORVEMENT] Umstellung T2S von HTTP auf CIFS zur Sicherstellung der T2S Funktionen nach kommenden Sonos Update
