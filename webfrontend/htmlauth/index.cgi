@@ -863,7 +863,7 @@ sub save
 	$cfg->{SYSTEM}->{mp3path} = "$R::STORAGEPATH/$ttsfolder/$mp3folder";
 	$cfg->{SYSTEM}->{ttspath} = "$R::STORAGEPATH/$ttsfolder";
 	$cfg->{SYSTEM}->{path} = "$R::STORAGEPATH";
-	$cfg->{SYSTEM}->{cifsinterface} = "http://$lbip:$lbport/plugins/$lbpplugindir/interfacedownload";
+	$cfg->{SYSTEM}->{httpinterface} = "http://$lbip:$lbport/plugins/$lbpplugindir/interfacedownload";
 	$cfg->{SYSTEM}->{smbinterface} = "smb://$lbip:$lbport/plugindata/$lbpplugindir/interfacedownload";
 	$cfg->{SYSTEM}->{cifsinterface} = "x-file-cifs://$host/plugindata/$lbpplugindir/interfacedownload";
 		

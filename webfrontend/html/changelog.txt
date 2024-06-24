@@ -427,9 +427,11 @@
 			[IMPORVEMENT] Alle API Keys werden per Engine gespeichert
 			[BUGFIX] Fehler bei nextradio und nextpush korrigiert (Leerzeichen in den Feldern)
 			[BUGFIX] Ungroup bei pluginradio korrigiert
-			[IMPORVEMENT] Auto Update der Sonos Soft-/Firmware inkl. Power-On Funktion (optional)
-			[IMPORVEMENT] Neue Funktion Follow-me (Präsenzbasierend) optional
+			[IMPORVEMENT] Auto Update der Sonos Player Firmware inkl. Power-On Funktion (optional)
+			[IMPORVEMENT] Neue Funktion Follow-me (Präsenzbasierend)
 			[IMPORVEMENT] Neue Funktion Sound Profile 
-			[BUGFIX] kleine Fehlerkorrekturen bzw. Optimierungen
-			[IMPORVEMENT] optische Anpassungen
 			[IMPORVEMENT] Umstellung T2S von HTTP auf CIFS zur Sicherstellung der T2S Funktionen nach kommenden Sonos Update
+			[BUGFIX] kleine Fehlerkorrekturen bzw. Optimierungen
+			[IMPORVEMENT] Design Anpassungen
+ 5.6.0		[BUGFIX] Clip&Doorbell Funktion gefixt
+			[BUGFIX] Port Error nach Installation behoben

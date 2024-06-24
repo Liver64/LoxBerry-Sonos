@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	5.5.5
-# Datum: 	06.2024
+# Version: 	5.5.0
+# Datum: 	04.2024
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 #
 # http://<IP>:1400/xml/device_description.xml
@@ -80,7 +80,7 @@ $debuggingfile = "$lbpdatadir/s4lox_debug_config.json";			// Folder and file nam
 $file = $lbphtmldir."/bin/check_player_dup.txt";				// File to check for duplicate player
 $save_status_file = "s4lox_follow";								// Status file for follow function	
 $vol_config	= "s4lox_vol_profiles";								// Config file for Volume Profiles function
-$guid = "7bfca5bf-165e-419b-a4c1-a64b895e95d7";					// GUID for Sonos AudioClip Function
+$guid = "622493a2-4877-496c-9bba-abcb502908a5";					// GUID for Sonos AudioClip Function (Alternative: 123e4567-e89b-12d3-a456-426655440000)
 
 
 # Files for ONE-click functions

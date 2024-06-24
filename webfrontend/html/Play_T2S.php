@@ -1171,6 +1171,12 @@ function audioclip_multi_post_request($zones, $clipType="CUSTOM", $priority="LOW
 }
 
 function audiclip_json_data($volume, $clipType="CUSTOM", $priority="LOW", $tts="") {
+	
+	# Get Volume (Backup)
+	if (isset($_GET['volume']))    {
+		$volume = $_GET['volume'];
+	}
+	
 	if ($clipType == "CUSTOM") {
 		$jsonData = array(
 			'name' => "AudioClip",
@@ -1217,6 +1223,14 @@ function audioclip_url($ip, $rincon) {
 	return 'https://'.$ip.':1443/api/v1/players/'.$rincon.'/audioClip';
 }
 
+  
+function audioclip_guid_selection() {
+	return $guid = array("guid1" => "622493a2-4877-496c-9bba-abcb502908a5",
+						 "guid2" => "123e4567-e89b-12d3-a456-426655440000",
+						);
+}
+	
+
 /**
 * Funktion : audioclip_post_request --> POST to https url of player
 *
@@ -1226,7 +1240,7 @@ function audioclip_url($ip, $rincon) {
   
 function audioclip_post_request($ip, $rincon, $clipType="CUSTOM", $priority="LOW", $tts="") {
 	
-	global $myLBip, $volume, $lbhostname, $lbwebport, $filename, $streamUrl, $config, $guid;
+	global $myLBip, $sonos, $volume, $lbhostname, $lbwebport, $filename, $streamUrl, $config, $guid;
 	
 	/**
 	echo "IP: ".$ip.PHP_EOL;
@@ -1244,8 +1258,13 @@ function audioclip_post_request($ip, $rincon, $clipType="CUSTOM", $priority="LOW
 	/**
 	echo "url: ".$url.PHP_EOL;
 	echo "<br>";
-	**/	
+	**/
 	
+	# Get Volume (Backup)
+	if (isset($_GET['volume']))    {
+		$volume = $_GET['volume'];
+	}
+						
 	// Initiate cURL.
 	$ch = curl_init($url);
 
