@@ -435,3 +435,9 @@
 			[IMPORVEMENT] Design Anpassungen
  5.6.0		[BUGFIX] Clip&Doorbell Funktion gefixt
 			[BUGFIX] Port Error nach Installation behoben
+ 5.7.0		[BUGFIX] Doorbell Funktion gefixt
+			[BUGFIX] Für T2S (cifs) wird nun die IP Adresse genutzt
+			[BUGFIX] Cronjob für Firmware Update hinzugefügt
+			[BUGFIX] Fixed T2S wenn Player war master einer Gruppe
+			[BUGFIX] API-key für ElevenLabs gefixt
+

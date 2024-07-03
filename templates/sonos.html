@@ -108,7 +108,7 @@
 						<label id="lt2son"><TMPL_VAR T2S.LABEL_T2SON></label>
 					</td>
 					<td style="height: 60px; width: 20%;">
-						<table border=0 width="10%">
+						<table border=0 width="90%">
 								<td style="width: 5%">
 									<fieldset>
 										<select id="t2son" name="t2son" data-role="flipswitch" style="width: 5%">
@@ -119,6 +119,7 @@
 									<script>
 										$('#t2son').val('<TMPL_VAR TTS.t2son>')
 									</script>
+
 								</td>
 						</table>
 					</td>		
@@ -340,8 +341,6 @@
                             </font>
                         </div>
 						
-						
-						
 						<div class="ttsconfig azureinfo 9001">
                              <font size="-1" align="middle">
                                 <a id="linkazureapi" href="/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/bin/Azure_Account.pdf" target="_blank">
@@ -405,7 +404,7 @@
                                 <div data-role="collapsible">
                                     <td style="height: 36px; width:25%; text-align: left;">
                                         <fieldset style="width: 100%">
-                                            <select id="t2slang" name="t2slang" data-mini="true";" 
+                                            <select id="t2slang" name="t2slang" data-mini="true"; 
 												data-validation-error-msg="<TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN>" 
 												data-validation-rule="^([A-Za-z0-9]){4,10}$">
 											</select>
@@ -416,7 +415,7 @@
                                     <div id="msg"></div>
                                     <td style="height: 36px; width: 35%;" class="ttsconfig field-voice 4001 8001 9011" style="display:none">
                                         <fieldset style="width: 100%">
-                                            <select class="voice_select" id="voice" name="voice" data-mini="true";"
+                                            <select class="voice_select" id="voice" name="voice" data-mini="true";
 											data-validation-error-msg="<TMPL_VAR T2S.SELECT_VOICE_DROPDOWN>" 
 											data-validation-rule="^([A-Za-z0-9]){4,10}$">
 										</select>
@@ -1357,8 +1356,8 @@
 			if (document.main_form.tts_elevenlabs.checked == true) {
 				var url = 'https://api.elevenlabs.io/v1/models';
 				$('#t2slang').empty();
-				//var key = document.getElementById('apikey').value;
-				var key = "77ba25e2758b20cb43867c8926ef30d0";
+				var key = document.getElementById('apikey').value;
+				//var key = "77ba25e2758b20cb43867c8926ef30d0";
 				const options = {method: 'GET', headers: {"xi-api-key": "" + key + ""}};
 				fetch(url, options)
 					.then(response => response.json())
@@ -1392,8 +1391,8 @@
 		function populateElevenlabsVoices()   {
 			console.log("populateElevenlabsVoices");
 			$('#voice').empty();
-			//var key = document.getElementById('apikey').value;
-			var key = "77ba25e2758b20cb43867c8926ef30d0";
+			var key = document.getElementById('apikey').value;
+			//var key = "77ba25e2758b20cb43867c8926ef30d0";
 			const options = {method: 'GET', headers: {"xi-api-key": "" + key + ""}};
 			var url = 'https://api.elevenlabs.io/v1/voices';
 			fetch(url, options)
@@ -1788,7 +1787,8 @@
 			$('#voice').selectmenu('refresh');
 			//$("#t2slang").html(optionList).selectmenu('refresh', true);
 			//$("#voice").html(optionList).selectmenu('refresh', true);
-		}		
+		}
+		
 		
 		// document ready
         $(document).ready(function(e) {
@@ -1805,7 +1805,6 @@
 			validateSB();
 			validateTVMon();
 			getsbconfig();
-
 		
 			// validate Volume entries per player
             var iteration = document.getElementById('countplayers').value;
@@ -1817,6 +1816,8 @@
                 validate_enable('#maxvol' + i + '');
                 validate_chk_object(['#t2svol' + i + '', '#sonosvol' + i + '', '#maxvol' + i + '']);
             }
+			
+				
             // Function to control saving, main_form is submitted    
             $("form#main_form").submit(function(e) {
 				console.log("submit");
@@ -1912,7 +1913,7 @@
                     }
 				} else if (document.getElementById('tts_elevenlabs').checked == true) {
 					console.log("Elevenlabs checked");
-					if (apidata.length != 32)    {
+					if (apidata.length != 32 && apidata.length != 51)    {
 						dialog('<TMPL_VAR ERRORS.ERR_APIKEY32>', 'OK', 'error', 'ElevenLabs');
 						return false;
                         e.preventDefault();
@@ -2048,6 +2049,7 @@
                     $("#file_gong").focus();
 					e.preventDefault();
                 }
+				
 				
 				// validate UDP Port entered if UDP selected
 				console.log("validate UDP");

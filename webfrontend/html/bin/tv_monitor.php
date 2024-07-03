@@ -428,6 +428,7 @@ function restoreSingleZone($sonoszone, $master) {
 			} else {
 				#$prevStatus = "master";
 				$oldGroup = $actual[$master]['Grouping'];
+				array_shift($oldGroup);
 				foreach ($oldGroup as $newMaster) {
 					// loop threw former Members in order to get the New Coordinator
 					try {

@@ -188,9 +188,13 @@ if (!defined $cfg->{TTS}->{secretkeys}) {
 if (!defined $cfg->{VARIOUS}->{follow_host})  {
 	$cfg->{VARIOUS}->{follow_host} = "false";
 }
-# Leave follow host
+# Leave/follow host
 if (!defined $cfg->{VARIOUS}->{follow_wait})  {
 	$cfg->{VARIOUS}->{follow_wait} = "false";
+}
+# host or ip for cifs
+if (!defined $cfg->{TTS}->{hostip})  {
+	$cfg->{TTS}->{hostip} = "host";
 }
 #$jsonobj->write();
 
@@ -863,9 +867,9 @@ sub save
 	$cfg->{SYSTEM}->{mp3path} = "$R::STORAGEPATH/$ttsfolder/$mp3folder";
 	$cfg->{SYSTEM}->{ttspath} = "$R::STORAGEPATH/$ttsfolder";
 	$cfg->{SYSTEM}->{path} = "$R::STORAGEPATH";
-	$cfg->{SYSTEM}->{httpinterface} = "http://$lbip:$lbport/plugins/$lbpplugindir/interfacedownload";
+	$cfg->{SYSTEM}->{httpinterface} = "http://$host:$lbport/plugins/$lbpplugindir/interfacedownload";
 	$cfg->{SYSTEM}->{smbinterface} = "smb://$lbip:$lbport/plugindata/$lbpplugindir/interfacedownload";
-	$cfg->{SYSTEM}->{cifsinterface} = "x-file-cifs://$host/plugindata/$lbpplugindir/interfacedownload";
+	$cfg->{SYSTEM}->{cifsinterface} = "x-file-cifs://$lbip/plugindata/$lbpplugindir/interfacedownload";
 		
 	LOGINF "Start writing settings to configuration file";
 	

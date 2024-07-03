@@ -10,6 +10,7 @@
 # Will be executed as user "loxberry".
 
 /usr/bin/php REPLACELBPHTMLDIR/bin/battery.php
+/usr/bin/php REPLACELBPHTMLDIR/bin/SW_Update.php
 
 if [ -e /run/shm/s4lox_errorMP3Stream.json ]
 then
