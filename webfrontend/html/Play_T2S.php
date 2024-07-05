@@ -788,7 +788,7 @@ function doorbell() {
 
 	$time_start = microtime(true);
 	$prio = "HIGH";
-	$zones = $master;
+	$zones = array($master);
 
 	if (isset($_GET['member'])) {
 		$zones = array_merge($zones, audioclip_handle_members($_GET['member']));
@@ -811,7 +811,10 @@ function doorbell() {
 				exit;
 			}
 		}
-	} 
+	} else {
+		LOGGING("play_t2s.php: Audioclip: File for Doorbell is missing! Use even ...action=doorbell&file=chime or ...action=doorbell&file=<MP2 File from tts/mp3 Folder>", 3);
+		exit;		
+	}
 	$time_end = microtime(true);
 	$t2s_time = $time_end - $time_start;
 	LOGGING("play_t2s.php: Audioclip: Doorbell tooks ".round($t2s_time, 2)." seconds to be processed.", 5);	
