@@ -177,7 +177,8 @@
 	# update cifs Interface path
 	unset($config['SYSTEM']['cifsinterface']);
 	$lbhostname = lbhostname();
-	$config['SYSTEM']['cifsinterface'] = "x-file-cifs://".$lbhostname."/plugindata/".$lbpplugindir."/interfacedownload";
+	$myip = LBSystem::get_localip();
+	$config['SYSTEM']['cifsinterface'] = "x-file-cifs://".$myip."/plugindata/".$lbpplugindir."/interfacedownload";
 	
 	# Migrate TV Monitor
 		foreach ($sonoszonen as $zone => $player) {
