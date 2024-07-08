@@ -255,12 +255,12 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 	}
 	
 	# check if LBPort already exist in config, if not force user to save config
-	$checklb = explode(':', $config['SYSTEM']['httpinterface']);
-	$checklbport = explode('/', $checklb[2]);
-	if ($checklbport[0] <> $lbport)  {
-		LOGGING(htmlspecialchars($L['ERRORS.ERR_CHECK_LBPORT']), 3);
-		exit;
-	}
+	#$checklb = explode(':', $config['SYSTEM']['httpinterface']);
+	#$checklbport = explode('/', $checklb[2]);
+	#if ($checklbport[0] <> $lbport)  {
+		#LOGGING(htmlspecialchars($L['ERRORS.ERR_CHECK_LBPORT']), 3);
+		#exit;
+	#}
 	# select language file for text-to-speech
 	$t2s_langfile = "t2s-text_".substr($config['TTS']['messageLang'],0,2).".ini";			// language file for text-speech
 
