@@ -440,4 +440,8 @@
 			[BUGFIX] Cronjob für Firmware Update hinzugefügt
 			[BUGFIX] Fixed T2S wenn Player war master einer Gruppe
 			[BUGFIX] API-key für ElevenLabs gefixt
+ 5.7.1		[BUGFIX] Doorbell Funktion gefixt
+ 5.7.2		[BUGFIX] Fixed check for used Port
+			[BUGFIX] Fixed cronjob for Firmware Update
+ 
 
