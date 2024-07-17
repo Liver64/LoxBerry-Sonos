@@ -1353,12 +1353,12 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			echo '</PRE>';
 		break;
 		
-		
+	
 		case 'setledstate':
-			echo '<PRE>';
-			if(($_GET['state'] == "On") || ($_GET['state'] == "Off")) {
+			if(($_GET['state'] == "On") || ($_GET['state'] == "Off") || ($_GET['state'] == "on") || ($_GET['state'] == "off")) {
 				$state = $_GET['state'];
 				$sonos->SetLEDState($state);
+				LOGGING('sonos.php: LED State for Player '.$master.' has been set to '.$state, 7);
 			} else {
 				LOGGING('sonos.php: Please correct input. Only On or off is allowed', 4);
 				echo '</PRE>';
@@ -1963,6 +1963,7 @@ function volume_group()  {
 					(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch"))	{
 					# T2S Standard Volume
 					$volume = $config['sonoszonen'][$zone2][3];
+					LOGGING("sonos.php: Standard T2S Volume for Member ".$zone2." has been set to: ".$volume, 7);
 				} else {
 					# Sonos Standard Volume
 					if (isset($_GET['profile']) or isset($_GET['Profile']))    {

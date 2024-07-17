@@ -443,5 +443,7 @@
  5.7.1		[BUGFIX] Doorbell Funktion gefixt
  5.7.2		[BUGFIX] Fixed check for used Port
 			[BUGFIX] Fixed cronjob for Firmware Update
- 
+			[BUGFIX] Fixed updateplayer for CIFS Protokoll
+ 5.7.3		[BUGFIX] Fixed T2S Volume bei Gruppendurchsagen für den Master der Gruppe
+			[BUGFIX] Fixed Software Update
 

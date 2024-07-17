@@ -125,7 +125,7 @@ if ((is_enabled($hw_update) and $hw_update_time == $Stunden and $hw_update_day =
 	if ($count > 0)  {
 		foreach($updateneed as $key) {
 			$sonos = new SonosAccess($sonoszone[$key][0]);
-			#$update = $sonos->BeginSoftwareUpdate($update['updateurl']);
+			$update = $sonos->BeginSoftwareUpdate($update['updateurl']);
 			sleep(1);
 		}
 		LOGDEB("bin/SW_Update.php: We wait 10 Minutes until all players were updated...");

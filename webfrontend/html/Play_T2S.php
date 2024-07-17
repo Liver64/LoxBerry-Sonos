@@ -511,6 +511,7 @@ function play_tts($filename) {
 					$sonos->AddToQueue($config['SYSTEM']['cifsinterface']."/".$filename.".mp3");
 					LOGGING("play_t2s.php: T2S '".trim($filename).".mp3' has been added to Queue", 7);
 				} else {
+					#print_r($config['SYSTEM']['cifsinterface']."/mp3/".$messageid.".mp3");
 					$sonos->AddToQueue($config['SYSTEM']['cifsinterface']."/mp3/".$messageid.".mp3");
 					LOGGING("play_t2s.php: MP3 File '".trim($messageid).".mp3' has been added to Queue", 7);
 					$filename = $messageid;
@@ -526,7 +527,9 @@ function play_tts($filename) {
 		$sonos->SetTrack($message_pos);
 		LOGGING("play_t2s.php: Message has been set to Position '".$message_pos."' in current Queue", 7);		
 		$sonos->SetMute(false);
-		$sonos->SetVolume($volume);
+		if(!isset($_GET['member'])) {
+			$sonos->SetVolume($volume);
+		}
 		LOGGING("play_t2s.php: Mute for relevant Player(s) has been turned off", 7);		
 		try {
 			$try_play = $sonos->Play();
