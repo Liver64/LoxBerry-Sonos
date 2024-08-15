@@ -35,7 +35,7 @@
             <table class="formtable" border="0" width="100%" cellpadding="10">
                 <tr>
 				
-				<TMPL_IF NAME="PLAYERAVAILABLE">
+				<TMPL_IF NAME="PLAYER_AVAILABLE">
                     <td valign="middle" style="height: 33px; width: 25%; text-align: center; color:black">
 				<TMPL_ELSE>
 					<td valign="middle" style="height: 33px; width: 25%; text-align: center; color:red">
@@ -87,7 +87,7 @@
                             </tr>
                             <TMPL_VAR ROWSSONOSPLAYER>
                         </table>
-						<TMPL_IF NAME="PLAYERAVAILABLE">
+						<TMPL_IF NAME="PLAYER_AVAILABLE">
 							<div class='icoclip' style='text-align: left;'>
 								&nbsp;&nbsp;&nbsp;<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/green.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_GREEN>
 								<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/yellow.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_YELLOW>
@@ -107,8 +107,8 @@
 					<td style="height: 60px; width: 15%;">
 						<label id="lt2son"><TMPL_VAR T2S.LABEL_T2SON></label>
 					</td>
-					<td style="height: 60px; width: 20%;">
-						<table border=0 width="90%">
+					<td style="height: 60px; width: 70%;">
+						<table border=0 width="92%">
 								<td style="width: 5%">
 									<fieldset>
 										<select id="t2son" name="t2son" data-role="flipswitch" style="width: 5%">
@@ -119,8 +119,25 @@
 									<script>
 										$('#t2son').val('<TMPL_VAR TTS.t2son>')
 									</script>
-
 								</td>
+								<td style="height: 60px; width: 25%">
+								<TMPL_IF NAME="RESTORE_POSSIBLE">
+									<label id="lt2son" align="right"><TMPL_VAR BASIS.PLUGIN_RESTORE></label>
+								<TMPL_ELSE>
+									<TMPL_IF NAME="CONFIG_DIFFERENT">
+										<label id="lt2son" align="right"><TMPL_VAR BASIS.PLUGIN_BACKUP></label>
+									</TMPL_IF>
+								</TMPL_IF>
+									<td style="height: 60px; width: 1%">
+									<TMPL_IF NAME="CONFIG_DIFFERENT">									
+										<a id="savec" name="savec" data-role="button" data-inline="true" data-mini="true" data-icon="check">Backup</a>
+									</TMPL_IF>										
+									<TMPL_IF NAME="RESTORE_POSSIBLE">
+										<a id="restorec" name="restorec" data-role="button" data-inline="true" data-mini="true" data-icon="refresh">Restore</a>
+									</TMPL_IF>
+									</td>
+								</td>
+								
 						</table>
 					</td>		
 				</tr>
@@ -1701,6 +1718,72 @@
 			}
 		});
 		
+		
+		// Save config file extern
+		$(function() {
+			$("#savec").click(function(){
+				console.log("Save pressed");
+				$("#savec").attr("disabled", true);
+				$.ajax({
+						url: 'index.cgi',
+						type: 'post',
+						data: { action: 'saveconfig'},
+							success: function( response, textStatus, jqXHR )  {
+							if(response == true)	{
+								//For wait 3 seconds
+								setTimeout(function()  {
+									location.reload();  //Refresh page
+								}, 3000);
+							}
+							console.log( "Action file saved" );
+							//dialog('<TMPL_VAR BASIS.PLUGIN_BACKUP_SUCCESS>', 'OK', 'success', 'Backup Config');
+							timeout('<TMPL_VAR BASIS.PLUGIN_BACKUP_SUCCESS>', 'OK', 'success', 'Backup Config', '3000');
+							}
+						})
+						.fail(function (jqXHR, textStatus, errorThrown) {
+							dialog('<TMPL_VAR BASIS.PLUGIN_BACKUP_FAIL> Error: ' + errorThrown, '<TMPL_VAR BASIS.PLUGIN_BUTTON>', 'error', 'Backup Config');
+							console.log(errorThrown);
+						})
+						.always(function(response) {
+							console.log( "Action save file executed" );
+						})
+			});
+		});
+		
+		// Save config file extern
+		$(function() {
+			$("#restorec").click(function(){
+				console.log("Restore pressed");
+				$("#restorec").attr("disabled", true);
+				$.ajax({
+						url: 'index.cgi',
+						type: 'post',
+						data: { action: 'restoreconfig'},
+							success: function( response, textStatus, jqXHR )  {
+							if(response == true)	{
+								//For wait 3 seconds
+								setTimeout(function()  {
+									location.reload();  //Refresh page
+								}, 3000);
+							}
+							console.log( "Action file restored" );
+							//dialog('<TMPL_VAR BASIS.PLUGIN_RESTORE_SUCCESS>', 'OK', 'success', 'Restore Config');
+							timeout('<TMPL_VAR BASIS.PLUGIN_RESTORE_SUCCESS>', 'OK', 'success', 'Restore Config', '3000');
+							}
+						})
+						.fail(function (jqXHR, textStatus, errorThrown) {
+							dialog('<TMPL_VAR BASIS.PLUGIN_RESTORE_FAIL> Error: ' + errorThrown, '<TMPL_VAR BASIS.PLUGIN_BUTTON>', 'error', 'Restore Config');
+							console.log(errorThrown);
+						})
+						.always(function(response) {
+							console.log( "Action restore file executed" );
+						})
+			});
+			
+			//location.reload();
+			$('#main_form').trigger('create');
+		});
+		
 		// pop-up Dailog Box
 		function dialog(text, ButtonText, Icon='', Title)    {
 			// https://silverboxjs.ir/documentation/?v=latest
@@ -1717,7 +1800,10 @@
 								borderColor: "#6dac20",
 								textColor: "#fff",
 								text: ButtonText,
-								closeOnClick: true
+								closeOnClick: true,
+								onClick: () => {$("button").button(); 
+												$("restorec").button("enable"); 
+												},
 								}
 				});
 		}
@@ -2682,7 +2768,7 @@
                                         <label align="right" id="lcron"><TMPL_VAR T2S_DETAILS.LABEL_ZAPZONE_RESET></label>
                                 </td>
                                 <td style="width: 29%">
-                                    <select id="cron" name="cron" data-mini="true" data-native-menu="true" style="width: 29%">
+                                    <select id="cron" name="cron" data-mini="true" data-native-menu="true" style="width: 100%">
 										<option value="1">1 Min</option>
 										<option value="3">3 Min</option>
 										<option value="5">5 Min</option>

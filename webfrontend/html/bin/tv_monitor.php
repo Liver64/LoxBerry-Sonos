@@ -259,9 +259,9 @@ function DelFiles($mask)    {
 
 function RestorePrevSBsettings($soundbars)    {
 	
-	global $status_file;
+	global $status_file, $logname;
 	
-	startlog("TV Monitor", "tv_monitor");
+	$logname = startlog("TV Monitor", "tv_monitor");
 	foreach($soundbars as $key => $value)   {
 		$restorelevel = json_decode(file_get_contents("/run/shm/".$status_file."_".$key.".json"), true);
 		$sonos = new SonosAccess($soundbars[$key][0]); //Sonos IP Adresse

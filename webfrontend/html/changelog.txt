@@ -446,4 +446,6 @@
 			[BUGFIX] Fixed updateplayer for CIFS Protokoll
  5.7.3		[BUGFIX] Fixed T2S Volume bei Gruppendurchsagen für den Master der Gruppe
 			[BUGFIX] Fixed Software Update
+ 5.7.4		[IMPORVEMENT] Neue Funktion zum Backup/Restore der Plugin Konfiguration für eine Neuinstallation des Plugins
+			[IMPORVEMENT] Neue Funktionen "present" und "absent" zur Unterdrückung von TTS bei Abwesenheit
 

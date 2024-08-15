@@ -22,7 +22,8 @@ $myLBip = LBSystem::get_localip();
 function say() {
 	
 	global $sonos;
-			
+	
+	presence_detection();
 	if(!isset($_GET['member'])) {
 		if ((!isset($_GET['text'])) && (!isset($_GET['messageid'])) && (!isset($errortext)) && (!isset($_GET['sonos'])) &&
 			(!isset($_GET['text'])) && (!isset($_GET['weather'])) && (!isset($_GET['abfall'])) &&
@@ -601,6 +602,7 @@ function play_tts($filename) {
 function sendmessage($errortext= '') {
 			global $text, $dist, $master, $messageid, $errortext, $logging, $textstring, $voice, $config, $actual, $act_player, $volume, $source, $sonos, $coord, $time_start, $filename, $sonoszone, $sonoszonen, $tmp_batch, $mode, $MP3path, $tts_stat;
 			
+			presence_detection();
 			if(isset($_GET['member'])) {
 				sendgroupmessage();
 				LOGGING("play_t2s.php: Member has been entered for a single Zone function, we switch to 'sendgroupmessage'. Please correct your syntax!", 4);
@@ -834,6 +836,7 @@ function doorbell() {
 function sendgroupmessage() {			
 			global $coord, $sonos, $text, $sonoszone, $errortext, $member, $master, $zone, $messageid, $logging, $textstring, $voice, $config, $mute, $volume, $membermaster, $getgroup, $checkgroup, $time_start, $mode, $modeback, $actual, $errortext;
 			
+			presence_detection();
 			$time_start = microtime(true);
 			if ((empty($config['TTS']['t2s_engine'])) or (empty($config['TTS']['messageLang'])))  {
 				LOGGING("play_t2s.php: There is no T2S engine/language selected in Plugin config. Please select before using T2S functionality.", 3);
@@ -1351,6 +1354,56 @@ function audioclip_post_request($ip, $rincon, $clipType="CUSTOM", $priority="LOW
 	curl_close($ch);
 	#print_r($result);
 	return $result;
+}
+
+
+/**
+* Funktion : presence --> Set TTS config to allow TTS only if present detected
+*
+* @param: 	none
+* @return:  set true or false in config
+**/	
+  
+function presence()   {
+
+	global $config, $lbpconfigdir, $configfile, $master;
+	
+	require_once "loxberry_json.php";
+	// Open json file
+	$cfg = new LBJSON($lbpconfigdir . "/" . $configfile);
+	
+	if ($_GET['action'] == "present")   {
+		$cfg->TTS->presence = "true";
+		LOGOK("Play_T2S.php: Presence detection has been turned ON");
+	} 
+	if ($_GET['action'] == "absent")   {
+		$cfg->TTS->presence = "false";
+		LOGOK("Play_T2S.php: Presence detection has been turned OFF");
+	}
+	$cfg->write();
+}
+
+
+/**
+* Funktion : presence_detection --> Interrupt TTS if Presence is Off
+*
+* @param: 	none
+* @return:  nothing
+**/	
+  
+function presence_detection()   {
+
+	global $config, $lbpconfigdir, $configfile, $master;
+	
+	require_once "loxberry_json.php";
+	// Open json file
+	$cfg = new LBJSON($lbpconfigdir . "/" . $configfile);
+	
+	if ($cfg->TTS->presence == "false")   {
+		LOGINF("Play_T2S.php: Presence detection is OFF, no TTS been announced!");
+		exit;
+	}
+
 }
 
 

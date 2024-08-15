@@ -180,6 +180,11 @@
 	$myip = LBSystem::get_localip();
 	$config['SYSTEM']['cifsinterface'] = "x-file-cifs://".$myip."/plugindata/".$lbpplugindir."/interfacedownload";
 	
+	# Update T2S Presence
+	if (!isset($config['TTS']['presence']))    {
+		$config['TTS']['presence'] = "true";
+	}
+	
 	# Migrate TV Monitor
 		foreach ($sonoszonen as $zone => $player) {
 			$ip = $sonoszonen[$zone][0];

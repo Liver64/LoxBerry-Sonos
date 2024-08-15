@@ -25,6 +25,7 @@ use LoxBerry::Log;
 use LoxBerry::Storage;
 use LoxBerry::IO;
 use LoxBerry::JSON;
+use File::Copy qw(copy);
 
 use CGI::Carp qw(fatalsToBrowser);
 use CGI qw/:standard/;
@@ -39,6 +40,7 @@ use utf8;
 use warnings;
 use strict;
 use Data::Dumper;
+use File::Compare;
 #use Config::Simple '-strict';
 no strict "refs"; # we need it for template system
 
@@ -72,6 +74,7 @@ our $rowssonosplayer;
 our $rowsvolplayer;
 our $miniserver;
 our $template;
+my $compare;
 our $content;
 our %navbar;
 our $mqttcred;
@@ -97,6 +100,7 @@ my $azureregion					= "westeurope"; # Change here if you have a Azure API key fo
 my $helplink 					= "http://www.loxwiki.eu/display/LOXBERRY/Sonos4Loxone";
 our $error_message				= "";
 my $countvolprof;
+our $lbhomedir;
 
 my $configfile 					= "s4lox_config.json";
 my $volumeconfigfile 			= "s4lox_vol_profiles.json";
@@ -192,6 +196,10 @@ if (!defined $cfg->{VARIOUS}->{follow_host})  {
 if (!defined $cfg->{VARIOUS}->{follow_wait})  {
 	$cfg->{VARIOUS}->{follow_wait} = "false";
 }
+# TTS Presence
+if (!defined $cfg->{TTS}->{presence})  {
+	$cfg->{TTS}->{presence} = "true";
+}
 # host or ip for cifs
 if (!defined $cfg->{TTS}->{hostip})  {
 	$cfg->{TTS}->{hostip} = "host";
@@ -237,7 +245,9 @@ inittemplate();
 our $q = $cgi->Vars;
 
 if( $q->{action} )
+
 {
+	LOGSTART "Sonos UI started";
 	print "Content-type: application/json\n\n";
 	if( $q->{action} eq "soundbars" ) {
 		print JSON::encode_json($cfg->{sonoszonen});
@@ -254,9 +264,19 @@ if( $q->{action} )
 		print JSON::encode_json($cfg->{RADIO}->{radio});
 		exit;
 	}
+	
+	if( $q->{action} eq "saveconfig" ) {
+		use LoxBerry::System;
+		print saveconfig();
+		exit;
+	}
+	
+	if( $q->{action} eq "restoreconfig" ) {
+		use LoxBerry::System;
+		print restoreconfig();
+		exit;
+	}
 }
-
-
 
 if ($R::getkeys)
 {
@@ -321,11 +341,9 @@ if (!-r $lbpconfigdir . "/" . $configfile)
 LOGDEB "Loxberry Version: " . $lbversion;
 $lbv = substr($lbversion,0,1);
 
-
 ##########################################################################
 # Main program
 ##########################################################################
-
 
 #our %navbar;
 $navbar{1}{Name} = "$SL{'BASIS.MENU_SETTINGS'}";
@@ -370,7 +388,7 @@ if ($R::saveformdata3) {
 
 
 # check if config already saved, if not highlight header text in RED
-my $countplayer;
+our $countplayer;
 my $inst;
 
 if(exists($cfg->{sonoszonen}))  { 
@@ -380,9 +398,38 @@ if(exists($cfg->{sonoszonen}))  {
     $countplayer = 0;
 	$inst = "false"
 } 
+$template->param("PLAYER_AVAILABLE", $countplayer);
 
+# check if basic Plugin backup config already exists
+if (-r $lbhomedir."/webfrontend/html/XL/" . $configfile)   {
+	my $compare = compare($lbpconfigdir . "/" . $configfile, $lbhomedir."/webfrontend/html/XL/" . $configfile);
+	# checking if the files are different
+	if ($compare == 1 && $inst eq "true")   {
+		LOGDEB("Files are not equal.");
+		$template->param("CONFIG_DIFFERENT", "1");
+	}
+	if ($compare == 1 && $inst eq "false")   {
+		$template->param("RESTORE_POSSIBLE", "1");
+	}
+} else {
+	$template->param("CONFIG_DIFFERENT", "1");
+}
 
-$template->param("PLAYERAVAILABLE", $countplayer);
+# check if Sound Profile backup config already exists
+if (-r $lbhomedir."/webfrontend/html/XL/" . $volumeconfigfile)   {
+	my $compare = compare($lbpconfigdir . "/" . $volumeconfigfile, $lbhomedir."/webfrontend/html/XL/" . $volumeconfigfile);
+	# checking if the files are different
+	if ($compare == 1 && $inst eq "true")   {
+		LOGDEB("Files are not equal.");
+		$template->param("CONFIG_DIFFERENT", "1");
+	}
+	if ($compare == 1 && $inst eq "false")   {
+		$template->param("RESTORE_POSSIBLE", "1");
+	}
+} else {
+	$template->param("CONFIG_DIFFERENT", "1");
+}
+
 
 
 if(!defined $R::do or $R::do eq "form") {
@@ -411,7 +458,6 @@ if(!defined $R::do or $R::do eq "form") {
 	&form;
 	
 } 
-
 $error_message = "Invalid do parameter: ".$R::do;
 &error;
 exit;
@@ -635,7 +681,6 @@ sub form
 	$template->param("ROWSOUNDBARS", $rowssoundbar);
 	LOGDEB "Sonos Soundbars has been discovered.";
 	
-
 	# *******************************************************************************************************************
 	# Get Miniserver
 	my $mshtml = LoxBerry::Web::mslist_select_html( 
@@ -697,7 +742,6 @@ sub form
 	} else {
 		$template->param("DONATE", '');
 	}
-
 	printtemplate();
 	exit;
 }
@@ -1260,6 +1304,41 @@ sub save_volume
 	$navbar{3}{active} = 1;
 	$template->param("VOLUME", "1");
 	&form;
+}
+
+
+#####################################################
+# Save config file (AJAX)
+#####################################################
+sub saveconfig
+{	
+	my $config_file = $lbpconfigdir . "/" . $configfile;
+	my $volconfig_file = $lbpconfigdir . "/" . $volumeconfigfile;
+	chmod 0700, $lbhomedir."/webfrontend/html/XL";
+	my $new_config_file = $lbhomedir."/webfrontend/html/XL/" . $configfile;
+	my $new_volconfig_file = $lbhomedir."/webfrontend/html/XL/" . $volumeconfigfile;
+	copy $config_file, $new_config_file;
+	copy $volconfig_file, $new_volconfig_file;
+	LOGOK "Plugin Config has been saved";
+	return "true";
+}
+
+#####################################################
+# Restore config file (AJAX)
+#####################################################
+sub restoreconfig
+{	
+	my $config_file = $lbpconfigdir . "/" . $configfile;
+	my $volconfig_file = $lbpconfigdir . "/" . $volumeconfigfile;
+	my $new_config_file = $lbhomedir."/webfrontend/html/XL/" . $configfile;
+	my $new_volconfig_file = $lbhomedir."/webfrontend/html/XL/" . $volumeconfigfile;
+	copy $new_config_file, $config_file;
+	copy $new_volconfig_file, $volconfig_file;
+	unlink($new_config_file);
+	unlink($new_volconfig_file);
+	chmod 0500, $lbhomedir."/webfrontend/html/XL";
+	LOGOK "Plugin Config has been restored";
+	return "true";
 }
 
 #####################################################

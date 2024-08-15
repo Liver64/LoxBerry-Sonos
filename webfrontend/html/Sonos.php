@@ -1621,6 +1621,14 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			scripton();
 		break;
 		
+		case 'present':
+			presence();
+		break;
+		
+		case 'absent':
+			presence();
+		break;
+		
 		case 'battery':
 			echo 'php '.$lbphtmldir.'/system/battery.php';
 			$out = shell_exec('php '.$lbphtmldir.'/system/battery.php');
