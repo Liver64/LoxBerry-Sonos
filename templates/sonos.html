@@ -147,7 +147,7 @@
                         <label align="left" id="lfunc_list"><TMPL_VAR ZONES.SONOS_LABEL_TV-VOL></label>
                     </td>
                     <td class="tvmon_switch" width="5%" style="height: 60px">
-                        <table border=0 width="100%">
+                        <table border="0" width="100%">
                             <tr>
                                 <td style="width: 6%">
                                     <fieldset>
@@ -163,7 +163,7 @@
                                 <td class="tvmon_header" style="width: 23px; text-align: center;">
                                     &nbsp;</td>
                                 <td>
-                                    <table border=0 style="width: 100%">
+                                    <table border="0" style="width: 100%">
                                         <tr>
                                             <td class="tvmon_header" style="height: 60px; width: 12%">
 												<label align="right" id="lstart"><TMPL_VAR ZONES.SONOS_LABEL_START></label>
@@ -253,8 +253,8 @@
 					<td style="width: 15%; height: 20px;" valign="top">
 						</td>
 					<div class="soundbars">
-						<td valign="middle" style="height: 15px; width: 90%;">
-							<table class="tables" width="100%" id="tblsb" name="tblsb">
+						<td valign="middle" style="height: 15px; width: 100%;">
+							<table class="tables" border="0" width="100%" id="tblsb" name="tblsb">
 								<tr>
 									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_USE></th>
 									<th align="left"><TMPL_VAR SOUNDBARS.LABEL_SOUNDBAR></th>
@@ -262,6 +262,8 @@
 									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_SURROUND></th>
 									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_SUB></th>
 									<th align="middle" id="tvmtvol" name="tvmtvol"><TMPL_VAR SOUNDBARS.LABEL_TVVOL></th>
+									<th align="middle" id="tvmttreble" name="tvmttreble"><TMPL_VAR SOUNDBARS.LABEL_TVTREBLE></th>
+									<th align="middle" id="tvmtbass" name="tvmtbass"><TMPL_VAR SOUNDBARS.LABEL_TVBASS></th>
 									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_FROM_TIME></th>
 									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_NIGHT></th>
 									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_SUB_GAIN></th>
@@ -1645,16 +1647,28 @@
 										$("#tvmonnightsub_" + index).val(valu[14].tvmonnightsub).flipswitch("refresh");
 										$("#fromtime_" + index).val(valu[14].fromtime).selectmenu("refresh");
 										$("#tvvol_" + index).val(valu[14].tvvol).text("refresh");
+										$("#tvbass_" + index).val(valu[14].tvbass).text("refresh");
+										$("#tvtreble_" + index).val(valu[14].tvtreble).text("refresh");
 									}
 									var usage = document.getElementById("usesb_" + index).value;
 									if (usage == "true")   {
 										var tvmonvol = document.getElementById("tvvol_" + index).value;
+										var tvmontreble = document.getElementById("tvtreble_" + index).value;
+										var tvmonbass = document.getElementById("tvbass_" + index).value;
 										//console.log("Länge: " + tvmonvol.length);
 										if (tvmonvol.length == 0)    {
 											tvmonerr = "false";
 										}
+										if (tvmontreble.length == 0)    {
+											tvmonerr = "false";
+										}
+										if (tvmonbass.length == 0)    {
+											tvmonerr = "false";
+										}
 										//callback(tvmonerr);
 										validate_enable("#tvvol_" + index);
+										validate_enable("#tvtreble_" + index);
+										validate_enable("#tvbass_" + index);
 									}
 									
 								}

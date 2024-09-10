@@ -30,7 +30,7 @@ $time_start 		= microtime(true);
 #var_dump($Stunden);
 
 echo "<PRE>";
-
+exit;
 	# Preparation
 	
 	# load Configuration
@@ -122,8 +122,24 @@ echo "<PRE>";
 								$sonos->SetVolume($soundbars[$key][14]['tvvol']);
 								$vol = $soundbars[$key][14]['tvvol'];
 							}
+							if (!empty($soundbars[$key][14]['tvtreble']))    {
+								$sonos->SetTreble($soundbars[$key][14]['tvtreble']);
+								$treble = $soundbars[$key][14]['tvtreble'];
+								echo "Treble for '".$key."' has been set to: ".$treble.PHP_EOL;
+								LOGDEB("bin/tv_monitor.php: Treble for '".$key."' has been set to: ".$treble);
+							}
+							if (!empty($soundbars[$key][14]['tvbass']))    {
+								$sonos->SetBass($soundbars[$key][14]['tvbass']);
+								$bass = $soundbars[$key][14]['tvbass'];
+								echo "Bass for '".$key."' has been set to: ".$bass.PHP_EOL;
+								LOGDEB("bin/tv_monitor.php: Bass for '".$key."' has been set to: ".$bass);
+							}
 							try {
 								$dialog['Volume'] = $vol;
+								$dialog['Treble'] = $treble;
+								$dialog['Bass'] = $bass;
+								LOGDEB("bin/tv_monitor.php: Volume for '".$key."' has been set to: ".$vol);
+								echo "Volume for '".$key."' has been set to: ".$vol.PHP_EOL;
 								# Turn Speech/Surround/Dialog Mode On and Mute Off
 								$sonos->SetDialogLevel(is_enabled($soundbars[$key][14]['tvmonspeech']), 'DialogLevel');
 								echo "DialogLevel for Soundbar ".$key." has been turned ".$dia."".PHP_EOL;
@@ -142,7 +158,9 @@ echo "<PRE>";
 								LOGWARN("bin/tv_monitor.php: Speech/Surround/Night Mode/Subwoofer could'nt been turned On for: ".$key);
 								@LOGEND($logname);	
 							}
-							echo "Volume for '".$key."' has been set to: ".$vol.PHP_EOL;
+							#echo "Volume for '".$key."' has been set to: ".$vol.PHP_EOL;
+							#echo "Treble for '".$key."' has been set to: ".$treble.PHP_EOL;
+							#echo "Bass for '".$key."' has been set to: ".$bass.PHP_EOL;
 							LOGDEB("bin/tv_monitor.php: Soundbar ".$key." is On and in TV Mode.");
 						} else {
 							#******************************************************
@@ -326,6 +344,8 @@ function saveZonesStati($sonoszone) {
 		@$sonos = new SonosAccess($sonoszone[$player][0]); 
 		$actual[$player]['Mute'] = $sonos->GetMute($player);
 		$actual[$player]['Volume'] = $sonos->GetVolume($player);
+		$actual[$player]['Bass'] = $sonos->GetBass($player);
+		$actual[$player]['Treble'] = $sonos->GetTreble($player);
 		$actual[$player]['MediaInfo'] = $sonos->GetMediaInfo($player);
 		$actual[$player]['PositionInfo'] = $sonos->GetPositionInfo($player);
 		$actual[$player]['TransportInfo'] = $sonos->GetTransportInfo($player);
@@ -376,6 +396,8 @@ function restoreSingleZone($sonoszone, $master) {
 			#$prevStatus = "single";
 			restore_details($master);
 			$sonos->SetVolume($actual[$master]['Volume']);
+			$sonos->SetTreble($actual[$master]['Treble']);
+			$sonos->SetBass($actual[$master]['Bass']);
 			$sonos->SetMute($actual[$master]['Mute']);
 			if (($actual[$master]['TransportInfo'] == 1)) {
 				$sonos->Play();	
@@ -390,6 +412,8 @@ function restoreSingleZone($sonoszone, $master) {
 			try {
 				$sonos->SetAVTransportURI($actual[$master]['PositionInfo']["TrackURI"]); 
 				$sonos->SetVolume($actual[$master]['Volume']);
+				$sonos->SetTreble($actual[$master]['Treble']);
+				$sonos->SetBass($actual[$master]['Bass']);
 				$sonos->SetMute($actual[$master]['Mute']);
 				LOGDEB("bin/tv_monitor.php: Zone ".$master." has been added back to group.");
 			} catch (Exception $e) {
@@ -416,6 +440,8 @@ function restoreSingleZone($sonoszone, $master) {
 						$sonos = new SonosAccess($sonoszone[$groupmem][0]);
 						$sonos->SetAVTransportURI($actual[$groupmem]['PositionInfo']["TrackURI"]);
 						$sonos->SetVolume($actual[$groupmem]['Volume']);
+						$sonos->SetTreble($actual[$groupmem]['Treble']);
+						$sonos->SetBass($actual[$groupmem]['Bass']);
 						$sonos->SetMute($actual[$groupmem]['Mute']);
 					} catch (Exception $e) {
 						LOGWARN("bin/tv_monitor.php: Restore to previous status (Member of Line-in) failed.");	
@@ -424,6 +450,8 @@ function restoreSingleZone($sonoszone, $master) {
 				# Start restore Master settings
 				$sonos = new SonosAccess($sonoszone[$master][0]);
 				$sonos->SetVolume($actual[$master]['Volume']);
+				$sonos->SetTreble($actual[$master]['Treble']);
+				$sonos->SetBass($actual[$master]['Bass']);
 				$sonos->SetMute($actual[$master]['Mute']);
 			} else {
 				#$prevStatus = "master";
@@ -443,6 +471,8 @@ function restoreSingleZone($sonoszone, $master) {
 							// if TrackURI is empty add Zone to New Coordinator
 							$sonos_old = new SonosAccess($sonoszone[$master][0]);
 							$sonos_old->SetVolume($actual[$master]['Volume']);
+							$sonos_old->SetTreble($actual[$master]['Treble']);
+							$sonos_old->SetBass($actual[$master]['Bass']);
 							$sonos_old->SetMute($actual[$master]['Mute']);
 							$sonos_old->SetAVTransportURI("x-rincon:" . $sonoszone[$newMaster][1]);
 						} catch (Exception $e) {
@@ -455,6 +485,8 @@ function restoreSingleZone($sonoszone, $master) {
 				try {
 					$sonos->SetAVTransportURI("x-rincon:" . $rinconOfNewMaster);
 					$sonos->SetVolume($actual[$master]['Volume']);
+					$sonos->SetTreble($actual[$master]['Treble']);
+					$sonos->SetBass($actual[$master]['Bass']);
 					$sonos->SetMute($actual[$master]['Mute']);
 					# delegate back to exMaster
 					#$sonos = new SonosAccess($sonoszone[$newMaster][0]);

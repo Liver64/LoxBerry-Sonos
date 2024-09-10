@@ -45,14 +45,15 @@
 
 	$sock = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
 	$level = getprotobyname("ip");
-	socket_set_option($sock, $level, IP_MULTICAST_TTL, 2);
+	$search = "urn:schemas-upnp-org:device:ZonePlayer:1";
+	//socket_set_option($sock, $level, IP_MULTICAST_TTL, 2);
 	
 		
 	$data = "M-SEARCH * HTTP/1.1\r\n";
-	$data .= "HOST: {$ip}:reservedSSDPport\r\n";
+	$data .= "HOST: {$ip}:$port\r\n";
 	$data .= "MAN: ssdp:discover\r\n";
 	$data .= "MX: 1\r\n";
-	$data .= "ST: urn:schemas-upnp-org:device:ZonePlayer:1\r\n";
+	$data .= "ST: $search\r\n";
 
 	socket_sendto($sock, $data, strlen($data), 0, $ip, $port);
 	
@@ -78,7 +79,6 @@
         if (@strpos($reply, $search) === false) {
             continue;
         }
-
         $data = [];
         foreach (explode("\r\n", $reply) as $line) {
             if (!$pos = strpos($line, ":")) {
@@ -92,6 +92,7 @@
     }
     $return = [];
     $unique = [];
+	#print_r($devices);
     foreach ($devices as $device) {
         if ($device["st"] !== "urn:schemas-upnp-org:device:ZonePlayer:1") {
             continue;

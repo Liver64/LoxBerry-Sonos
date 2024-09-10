@@ -20,7 +20,7 @@ echo "<PRE>";
 if (file_exists($lbpconfigdir . "/" . $configfile))    {
 	$config = json_decode(file_get_contents($lbpconfigdir . "/" . $configfile), TRUE);
 } else {
-	$logname = startlog("Sonos Software Update", "update");
+	$logname = startlog("Firmware Update", "update");
 	LOGERR("bin/SW_Update.php: The configuration file could not be loaded, the file may be disrupted. We have to abort...");
 	exit;
 }
@@ -43,7 +43,7 @@ $updatefile 		= "/run/shm/Sonos4lox_update.json";
 # check 1st if Software Update is turned On and scheduled
 if ((is_enabled($hw_update) and $hw_update_time == $Stunden and $hw_update_day == $day) or (is_enabled($hw_update) and $hw_update_time == $Stunden and $hw_update_day == "10"))    {
 
-	$logname = startlog("Sonos Software Update", "update");
+	$logname = startlog("Firmware Update", "update");
 	LOGOK("bin/SW_Update.php: Run Updatecheck for Players");
 	
 	# extract Sonoszonen only

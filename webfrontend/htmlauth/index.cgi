@@ -229,7 +229,7 @@ $cgi->import_names('R');
 # Get MQTT Credentials
 $mqttcred = LoxBerry::IO::mqtt_connectiondetails();
 
-LOGSTART "Sonos UI started";
+LOGSTART "Plugin GUI";
 
 
 ##########################################################################
@@ -247,7 +247,7 @@ our $q = $cgi->Vars;
 if( $q->{action} )
 
 {
-	LOGSTART "Sonos UI started";
+	LOGSTART "Plugin GUI";
 	print "Content-type: application/json\n\n";
 	if( $q->{action} eq "soundbars" ) {
 		print JSON::encode_json($cfg->{sonoszonen});
@@ -537,6 +537,7 @@ sub form
 	
 	our $rowssonosplayer;
 	our $rowssoundbar;
+	my $error_treble_bass = $SL{'VOLUME_PROFILES.ERROR_TREBLE_BASS_PLAYER'};
 	
 	my $error_volume = $SL{'T2S.ERROR_VOLUME_PLAYER'};
 	my $filename;
@@ -601,7 +602,9 @@ sub form
 			$rowssoundbar .= "<td style='width: 8%'><fieldset align='center'><select id='tvmonspeech_$room' name='tvmonspeech_$room' data-role='flipswitch' style='width: 100%'><option value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
 			$rowssoundbar .= "<td style='width: 8%'><fieldset align='center'><select id='tvmonsurr_$room' name='tvmonsurr_$room' data-role='flipswitch' style='width: 100%'><option selected='selected' value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
 			$rowssoundbar .= "<td style='width: 8%'><fieldset align='center'><select id='tvmonnightsub_$room' name='tvmonnightsub_$room' data-role='flipswitch' style='width: 100%'><option selected='selected' value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
-			$rowssoundbar .= "<td style='width: 5%; height: 28px;'><div><input class='tvvol' type='text' id='tvvol_$room' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='tvvol_$room' value='$config->{$key}->[14]->{tvvol}'></div></td></div>\n";
+			$rowssoundbar .= "<td style='width: 6%; height: 28px;'><div><input class='tvvol' type='text' id='tvvol_$room' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='tvvol_$room' value='$config->{$key}->[14]->{tvvol}'></div></td></div>\n";
+			$rowssoundbar .= "<td style='width: 6%; height: 28px;'><div><input class='tvtreble' type='text' id='tvtreble_$room' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='$error_treble_bass' name='tvtreble_$room' value='$config->{$key}->[14]->{tvtreble}'></div></td></div>\n";
+			$rowssoundbar .= "<td style='width: 6%; height: 28px;'><div><input class='tvbass' type='text' id='tvbass_$room' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='$error_treble_bass' name='tvbass_$room' value='$config->{$key}->[14]->{tvbass}'></div></td></div>\n";
 			$rowssoundbar .= "<td style='width: 8%'><div id='tvmon_addend'><fieldset align='center'><select id='fromtime_$room' name='fromtime_$room' data-mini='true' data-native-menu='true' style='width: 100%'>
 								<option value='false'>--</option>
 								<option value='0'>0:00</option>
@@ -995,14 +998,27 @@ sub save
 					my $tvmonspeech = param("tvmonspeech_$room");
 					my $usesb = param("usesb_$room");
 					my $tvvol = param("tvvol_$room");
+					if ($tvvol eq "false")   {
+						$tvvol = "";
+					}
+					my $tvtreble = param("tvtreble_$room");
+					if ($tvtreble eq "false")   {
+						$tvtreble = "";
+					}
+					my $tvbass = param("tvbass_$room");
+					if ($tvbass eq "false")   {
+						$tvbass = "";
+					}
 					my $tvmonsurr = param("tvmonsurr_$room");
 					my $fromtime = param("fromtime_$room");
 					my $tvmonnight = param("tvmonnight_$room");
 					my $tvmonnightsub = param("tvmonnightsub_$room");
-					my$tvmonnightsublevel = param("subgain_$room");
+					my $tvmonnightsublevel = param("subgain_$room");
 					my @sbs = (  {"tvmonspeech" => $tvmonspeech,
 								"usesb" => $usesb,
 								"tvvol" => $tvvol,
+								"tvtreble" => $tvtreble,
+								"tvbass" => $tvbass,
 								"tvmonsurr" =>$tvmonsurr,
 								"fromtime" => $fromtime,
 								"tvmonnight" => $tvmonnight,
