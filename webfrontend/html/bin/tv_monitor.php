@@ -30,7 +30,7 @@ $time_start 		= microtime(true);
 #var_dump($Stunden);
 
 echo "<PRE>";
-exit;
+
 	# Preparation
 	
 	# load Configuration
