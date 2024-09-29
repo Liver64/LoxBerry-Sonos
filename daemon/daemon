@@ -2,6 +2,7 @@
 
 # updateplayer
 /usr/bin/php -q REPLACELBPHTMLDIR/bin/updateplayer.php &
+# check if Player is On and available
 /usr/bin/php -q REPLACELBPHTMLDIR/bin/check_on_state.php &
 
 exit 0

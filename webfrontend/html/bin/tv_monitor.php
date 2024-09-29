@@ -202,8 +202,8 @@ echo "<PRE>";
 					echo "Current incoming value for ".$key." at HDMI/SPDIF: ".$tvmodi['HTAudioIn'].PHP_EOL;
 				} catch (Exception $e) {
 					echo "Soundbar '".$key."' has not responded , maybe Soundbar is offline, we skip here...".PHP_EOL;
-					$logname = startlog("TV Monitor", "tv_monitor");
-					LOGINF("bin/tv_monitor.php: Soundbar '".$key."' has not responded , maybe Soundbar is offline, we skip here...");
+					#$logname = startlog("TV Monitor", "tv_monitor");
+					#LOGINF("bin/tv_monitor.php: Soundbar '".$key."' has not responded , maybe Soundbar is offline, we skip here...");
 				}
 			#********************************************
 			# If Soundbar is turned Off in Plugin

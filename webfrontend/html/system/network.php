@@ -186,12 +186,17 @@
 		$info = json_decode(file_get_contents('http://' . $zoneip . ':1400/info'), true);
 		$model = $info['device']['model'];
 		$roomraw = $info['device']['name'];
+		$rinconid = $info['device']['id'];
 		$device = $info['device']['modelDisplayName'];
 		$capabilities = $info['device']['capabilities'];
-		$rinconid = $info['device']['id'];
 		$search = array('Ä','ä','Ö','ö','Ü','ü','ß');
 		$replace = array('Ae','ae','Oe','oe','Ue','ue','ss');
 		$room = strtolower(str_replace($search,$replace,$roomraw));
+		$swgen = $info['device']['swGen'];
+		if ($swgen == "1")   {
+			LOGWARN("system/network.php: Player '".$room."' has been identified as Generation S1 and will only supported with certain restrictions.");
+			notify( LBPPLUGINDIR, "Sonos", "Player '".$room."' has been identified as Generation S1 and will only supported with certain restrictions.", "warning");
+		}
 		if ($sub != "false")    {
 			if (array_key_exists($room, $sub))  {
 				$subwoofer = "SUB";
@@ -225,7 +230,7 @@
 						'',
 						(string)$model,
 						(string)$subwoofer,
-						(string)$householdId,
+						(string)$swgen,
 						(string)$surround						
 						];
 

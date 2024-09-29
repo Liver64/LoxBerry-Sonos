@@ -450,3 +450,6 @@
 			[IMPORVEMENT] Neue Funktionen "present" und "absent" zur Unterdrückung von TTS bei Abwesenheit
  5.7.6		[IMPORVEMENT] Treble und Bass beim TV Monitor hinzugefügt
 			[BUGFIX] Scannen (Multicast) korrigiert
+ 5.7.8		[BUGFIX] Type TV Monitor korrigert
+ 5.8.0		[IMPROVEMENT] Optischer Hinweis und reduzierter Support für alte S1 Player
+			[BUGFIX] T2S mit Verwendung der messageid korrigiert

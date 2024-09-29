@@ -508,11 +508,9 @@ function play_tts($filename) {
 							exit;
 						}						
 					}
-					#print_r($config['SYSTEM']['cifsinterface']."/".$filename.".mp3");
 					$sonos->AddToQueue($config['SYSTEM']['cifsinterface']."/".$filename.".mp3");
 					LOGGING("play_t2s.php: T2S '".trim($filename).".mp3' has been added to Queue", 7);
 				} else {
-					#print_r($config['SYSTEM']['cifsinterface']."/mp3/".$messageid.".mp3");
 					$sonos->AddToQueue($config['SYSTEM']['cifsinterface']."/mp3/".$messageid.".mp3");
 					LOGGING("play_t2s.php: MP3 File '".trim($messageid).".mp3' has been added to Queue", 7);
 					$filename = $messageid;

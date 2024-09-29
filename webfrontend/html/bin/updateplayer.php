@@ -51,6 +51,12 @@
 	$sur = CheckSubSur("LR");		// check for Surround and get room
 	#print_r($sub);
 	
+	$ttspath = LBPDATADIR."/tts";
+	$mp3path = LBPDATADIR."/tts/mp3";
+	system("chmod -R 0755 $ttspath");
+	system("chmod -R 0755 $mp3path");
+	echo "<INFO> Access rights for all files in /tts/mp3 folder has been set to 0755".PHP_EOL;
+
 	foreach ($sonoszonen as $zone => $player) {
 		$ip = $sonoszonen[$zone][0];
 
@@ -76,6 +82,7 @@
 				$info = json_decode(file_get_contents('http://' . $ip . ':1400/info'), true);
 				$capabilities = $info['device']['capabilities'];
 				$model = $info['device']['model'];
+				$swgen = $info['device']['swGen'];
 				$isSoundbar = isSoundbar($model) == true;
 				$soundbarString = $isSoundbar ? "is Soundbar" : "no Soundbar";
 				if (array_key_exists(11, $sonoszonen[$zone]))  {
@@ -149,6 +156,11 @@
 					$sonoszonen[$zone][10] ="NOSUR";
 				}
 			}
+			# Update Software Version of Player
+			if ($sonoszonen[$zone][9] <> "2" and $sonoszonen[$zone][9] <> "1")  {
+				$sonoszonen[$zone][9] = "$swgen";
+				echo "<INFO> Updated identified Zone ".$zone." as S".$swgen." Version".PHP_EOL;
+			}
 		} else {
 			if (!isset($sonoszonen[$zone][6]))   {
 				if (!isset($sonoszonen[$zone][7]))   {
@@ -188,17 +200,19 @@
 	# Migrate TV Monitor
 		foreach ($sonoszonen as $zone => $player) {
 			$ip = $sonoszonen[$zone][0];
-			if (($sonoszonen[$zone][13] == "SB") and !isset($sonoszonen[$zone][14]['tvmonspeech']))   {
-				$sonoszonen[$zone][14] = array('tvmonspeech' => $config['VARIOUS']['tvmonspeech'],
-												'usesb' => "true",
-												'tvvol' => $sonoszonen[$zone][14],
-												'tvmonsurr' => $config['VARIOUS']['tvmonsurr'],
-												'fromtime' => $config['VARIOUS']['fromtime'],
-												'tvmonnight' => $config['VARIOUS']['tvmonnight'], 
-												'tvmonnightsub' => "false",
-												'tvmonnightsublevel' => "0"
-												);
-				echo "<OK> Settings for TV Monitor has been migrated. Please doublecheck settings for Zone '".$zone."'".PHP_EOL;
+			if ($config['VARIOUS']['tvmon'] == "true") {  
+				if (($sonoszonen[$zone][13] == "SB") and !isset($sonoszonen[$zone][14]['tvmonspeech']))   {
+					$sonoszonen[$zone][14] = array('tvmonspeech' => $config['VARIOUS']['tvmonspeech'],
+													'usesb' => "true",
+													'tvvol' => $sonoszonen[$zone][14],
+													'tvmonsurr' => $config['VARIOUS']['tvmonsurr'],
+													'fromtime' => $config['VARIOUS']['fromtime'],
+													'tvmonnight' => $config['VARIOUS']['tvmonnight'], 
+													'tvmonnightsub' => "false",
+													'tvmonnightsublevel' => "0"
+													);
+					echo "<OK> Settings for TV Monitor has been migrated. Please doublecheck settings for Zone '".$zone."'".PHP_EOL;
+				}
 			}
 		}
 		if (isset($config['VARIOUS']['tvmonnight']))    {

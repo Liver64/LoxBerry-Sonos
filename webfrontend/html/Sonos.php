@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	5.5.0
-# Datum: 	04.2024
+# Version: 	5.7.8
+# Datum: 	09.2024
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 #
 # http://<IP>:1400/xml/device_description.xml
@@ -1708,6 +1708,14 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		case 'debuginfo':
 			debugInfo();
+		break;
+		
+		case 'mp3rights':
+			$ttspath = LBPDATADIR."/tts";
+			$mp3path = LBPDATADIR."/tts/mp3";
+			system("chmod -R 0755 $ttspath");
+			system("chmod -R 0755 $mp3path");
+			LOGGING("sonos.php: Access rights for all files in /tts/mp3 folder has been set to 0755", 7);
 		break;
 		
 		case 'streammode':
