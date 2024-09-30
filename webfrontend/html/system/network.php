@@ -194,8 +194,8 @@
 		$room = strtolower(str_replace($search,$replace,$roomraw));
 		$swgen = $info['device']['swGen'];
 		if ($swgen == "1")   {
-			LOGWARN("system/network.php: Player '".$room."' has been identified as Generation S1 and will only supported with certain restrictions.");
-			notify( LBPPLUGINDIR, "Sonos", "Player '".$room."' has been identified as Generation S1 and will only supported with certain restrictions.", "warning");
+			LOGWARN("system/network.php: Player '".$room."' has been identified as Generation S1 and TTS/MP3 is only possible as Group Member!");
+			notify( LBPPLUGINDIR, "Sonos", "Player '".$room."' has been identified as Generation S1 and TTS/MP3 is only possible as Group Member!", "warning");
 		}
 		if ($sub != "false")    {
 			if (array_key_exists($room, $sub))  {
