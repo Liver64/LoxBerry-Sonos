@@ -754,4 +754,27 @@ function VolumeProfiles() {
 		return $lookup;
 	}
 }
+
+
+
+/**
+/* Funktion : checks1 --> check if S1 device is master
+/*
+/* @param: none                        
+/* @return: 
+**/
+
+function checks1()   {
+	
+global $app, $master, $sonoszone, $config;
+
+	$swgen = $sonoszone[$master][9];
+	if ($swgen == "1")   {
+		LOGERR("system/speaker.php: Player '".$master."' has been identified as Generation S1 or you are using Sonos S1 App.");
+		LOGERR("system/speaker.php: Both variants support only Shares using SMB1, but actually the Loxberry Samba Share is on SMB2.");
+		LOGERR("system/speaker.php: You may replace/delete '".$master."' or update your App to Sonos S2! By updating only you can't use '".$master."' for Single TTS or Master of a group");
+		#notify( LBPPLUGINDIR, "Sonos", "Player '".$room."' has been identified as Generation S1 and will only supported with certain restrictions.", "warning");
+		exit(1);
+	}
+}
 ?>

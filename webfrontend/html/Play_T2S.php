@@ -26,8 +26,7 @@ function say() {
 	presence_detection();
 	if(!isset($_GET['member'])) {
 		if ((!isset($_GET['text'])) && (!isset($_GET['messageid'])) && (!isset($errortext)) && (!isset($_GET['sonos'])) &&
-			(!isset($_GET['text'])) && (!isset($_GET['weather'])) && (!isset($_GET['abfall'])) &&
-			(!isset($_GET['witz'])) && (!isset($_GET['pollen'])) && (!isset($_GET['warning'])) &&
+			(!isset($_GET['text'])) && (!isset($_GET['weather'])) && (!isset($_GET['abfall'])) && (!isset($_GET['pollen'])) && (!isset($_GET['warning'])) &&
 			(!isset($_GET['bauernregel'])) && (!isset($_GET['distance'])) && (!isset($_GET['clock'])) && 
 			(!isset($_GET['calendar']))) {
 			LOGGING("play_t2s.php: Wrong Syntax, please correct! Even 'say&text=' or 'say&messageid=' in combination with &clip are necessary to play an anouncement. (check Wiki)", 3);	
@@ -35,15 +34,19 @@ function say() {
 		}
 		if(isset($_GET['clip'])) {
 			LOGDEB("play_t2s.php: Single Notification been called");
+			checks1();
 			sendaudioclip();
 		} else {
 			LOGDEB("play_t2s.php: Single TTS been called");
+			checks1();
 			sendmessage();
 		}
 	} else {
 		if(isset($_GET['clip'])) {
 			// to be added
 		} else {
+			LOGDEB("play_t2s.php: Group TTS been called");
+			checks1();
 			sendgroupmessage();
 		}
 	}	
