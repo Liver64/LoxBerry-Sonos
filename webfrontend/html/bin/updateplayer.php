@@ -51,11 +51,11 @@
 	$sur = CheckSubSur("LR");		// check for Surround and get room
 	#print_r($sub);
 	
-	$ttspath = LBPDATADIR."/tts";
-	$mp3path = LBPDATADIR."/tts/mp3";
+	$ttspath = $config['SYSTEM']['ttspath'];
+	$mp3path = $config['SYSTEM']['mp3path'];
 	system("chmod -R 0755 $ttspath");
 	system("chmod -R 0755 $mp3path");
-	echo "<INFO> Access rights for all files in /tts/mp3 folder has been set to 0755".PHP_EOL;
+	echo "<INFO> Access rights for all files in your TTS folder has been set to 0755".PHP_EOL;
 
 	foreach ($sonoszonen as $zone => $player) {
 		$ip = $sonoszonen[$zone][0];

@@ -147,8 +147,9 @@ if (!defined $cfg->{VARIOUS}->{cron})  {
 	$cfg->{VARIOUS}->{cron} = "1";
 }
 # checkonline
-if ($cfg->{SYSTEM}->{checkt2s} eq '')  {
-	$cfg->{SYSTEM}->{checkt2s} = "false";
+if (!defined $cfg->{SYSTEM}->{checkonline})  {
+#if ($cfg->{SYSTEM}->{checkonline} eq '')  {
+	$cfg->{SYSTEM}->{checkonline} = "false";
 }
 # maxVolume
 if (!defined $cfg->{VARIOUS}->{volmax})  {
@@ -809,7 +810,7 @@ sub save_details
 	  }
 	  if ($R::cron eq "3") 
 	  {
-	    system ("ln -s $lbphtmldir/bin/cronjob.sh $lbhomedir/system/cron/cron.03min/$lbpplugindir");
+	    system ("ln -s $lbphtmldir/bin/cron/cronjob.sh $lbhomedir/system/cron/cron.03min/$lbpplugindir");
 	    unlink ("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
 		unlink ("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
 	    unlink ("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
@@ -818,7 +819,7 @@ sub save_details
 	  }
 	  if ($R::cron eq "5") 
 	 {
-	    system ("ln -s $lbphtmldir/bin/cronjob.sh $lbhomedir/system/cron/cron.05min/$lbpplugindir");
+	    system ("ln -s $lbphtmldir/bin/cron/cronjob.sh $lbhomedir/system/cron/cron.05min/$lbpplugindir");
 	    unlink ("$lbhomedir/system/cron/cron.03min/$lbpplugindir");
 		unlink ("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
 	    unlink ("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
@@ -827,7 +828,7 @@ sub save_details
 	  }
 	  if ($R::cron eq "10") 
 	  {
-	    system ("ln -s $lbphtmldir/bin/cronjob.sh $lbhomedir/system/cron/cron.10min/$lbpplugindir");
+	    system ("ln -s $lbphtmldir/bin/cron/cronjob.sh $lbhomedir/system/cron/cron.10min/$lbpplugindir");
 	    unlink ("$lbhomedir/system/cron/cron.03min/$lbpplugindir");
 		unlink ("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
 	    unlink ("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
@@ -836,7 +837,7 @@ sub save_details
 	  }
 	  if ($R::cron eq "30") 
 	  {
-	    system ("ln -s $lbphtmldir/bin/cronjob.sh $lbhomedir/system/cron/cron.30min/$lbpplugindir");
+	    system ("ln -s $lbphtmldir/bin/cron/cronjob.sh $lbhomedir/system/cron/cron.30min/$lbpplugindir");
 	    unlink ("$lbhomedir/system/cron/cron.03min/$lbpplugindir");
 		unlink ("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
 	    unlink ("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
@@ -917,6 +918,7 @@ sub save
 	$cfg->{LOCATION}->{googletown} = "$R::googletown";
 	$cfg->{LOCATION}->{googlestreet} = "$R::googlestreet";
 	$cfg->{LOCATION}->{town} = "$R::town";
+	$cfg->{SYSTEM}->{checkonline} = "$R::checkonline";
 	$cfg->{SYSTEM}->{mp3path} = "$R::STORAGEPATH/$ttsfolder/$mp3folder";
 	$cfg->{SYSTEM}->{ttspath} = "$R::STORAGEPATH/$ttsfolder";
 	$cfg->{SYSTEM}->{path} = "$R::STORAGEPATH";
@@ -1058,14 +1060,119 @@ sub save
 	my $tv = qx(/usr/bin/php $lbphtmldir/bin/tv_monitor_conf.php);	
 	LOGOK "Main settings has been saved successful";
 	
+	&save_cronjob;
+	
 	#&print_save;
-	my $on = qx(/usr/bin/php $lbphtmldir/bin/check_on_state.php);	
+	#my $on = qx(/usr/bin/php $lbphtmldir/bin/check_on_state.php);	
 	return;
 	
 }
 
 
+#####################################################
+# Save Cronjob for Onlinecheck
+#####################################################
 
+sub save_cronjob
+{
+	if (-r $lbhomedir."/system/cron/cron.03min/Sonos") 
+	{
+		unlink ("$lbhomedir/system/cron/cron.03min/Sonos");
+		LOGINF "Previous file for Online check has been deleted.";
+	}
+
+	if ($R::checkonline eq "3") 
+	  {
+	    system ("ln -s $lbphtmldir/bin/cron/Sonos_On_check.sh $lbhomedir/system/cron/cron.03min/Sonos_On_check");
+		unlink ("$lbhomedir/system/cron/cron.05min/Sonos_On_check");
+	    unlink ("$lbhomedir/system/cron/cron.15min/Sonos_On_check");
+	    unlink ("$lbhomedir/system/cron/cron.30min/Sonos_On_check");
+		unlink ("$lbhomedir/system/cron/cron.hourly/Sonos_On_check");
+		unlink ("$lbhomedir/system/cron/cron.daily/Sonos_On_check");
+		&call_php;
+		LOGOK "Cronjob 3 Minutes prepared";
+	  }
+	  if ($R::checkonline eq "5") 
+	 {
+	    system ("ln -s $lbphtmldir/bin/cron/Sonos_On_check.sh $lbhomedir/system/cron/cron.05min/Sonos_On_check");
+	    unlink ("$lbhomedir/system/cron/cron.03min/Sonos_On_check");
+	    unlink ("$lbhomedir/system/cron/cron.15min/Sonos_On_check");
+	    unlink ("$lbhomedir/system/cron/cron.30min/Sonos_On_check");
+		unlink ("$lbhomedir/system/cron/cron.hourly/Sonos_On_check");
+		unlink ("$lbhomedir/system/cron/cron.daily/Sonos_On_check");
+		&call_php;	
+		LOGOK "Cronjob 5 Minutes prepared";
+	  }
+	  if ($R::checkonline eq "15") 
+	  {
+	    system ("ln -s $lbphtmldir/bin/cron/Sonos_On_check.sh $lbhomedir/system/cron/cron.15min/Sonos_On_check");
+	    unlink ("$lbhomedir/system/cron/cron.03min/Sonos_On_check");
+		unlink ("$lbhomedir/system/cron/cron.05min/Sonos_On_check");
+	    unlink ("$lbhomedir/system/cron/cron.30min/Sonos_On_check");
+		unlink ("$lbhomedir/system/cron/cron.hourly/Sonos_On_check");
+		unlink ("$lbhomedir/system/cron/cron.daily/Sonos_On_check");
+		&call_php;
+		LOGOK "Cronjob 15 Minutes prepared";
+	  }
+	  if ($R::checkonline eq "30") 
+	  {
+	    system ("ln -s $lbphtmldir/bin/cron/Sonos_On_check.sh $lbhomedir/system/cron/cron.30min/Sonos_On_check");
+	    unlink ("$lbhomedir/system/cron/cron.03min/Sonos_On_check");
+		unlink ("$lbhomedir/system/cron/cron.05min/Sonos_On_check");
+	    unlink ("$lbhomedir/system/cron/cron.15min/Sonos_On_check");
+		unlink ("$lbhomedir/system/cron/cron.hourly/Sonos_On_check");
+		unlink ("$lbhomedir/system/cron/cron.daily/Sonos_On_check");
+		&call_php;	
+		LOGOK "Cronjob 30 Minutes prepared";
+	  }
+	  if ($R::checkonline eq "hourly") 
+	  {
+	    system ("ln -s $lbphtmldir/bin/cron/Sonos_On_check.sh $lbhomedir/system/cron/cron.hourly/Sonos_On_check");
+	    unlink ("$lbhomedir/system/cron/cron.03min/Sonos_On_check");
+		unlink ("$lbhomedir/system/cron/cron.05min/Sonos_On_check");
+	    unlink ("$lbhomedir/system/cron/cron.15min/Sonos_On_check");
+	    unlink ("$lbhomedir/system/cron/cron.30min/Sonos_On_check");
+		unlink ("$lbhomedir/system/cron/cron.daily/Sonos_On_check");
+		&call_php;
+		LOGOK "Cronjob hourly prepared";
+	  }
+	  if ($R::checkonline eq "daily") 
+	  {
+	    system ("ln -s $lbphtmldir/bin/cron/Sonos_On_check.sh $lbhomedir/system/cron/cron.daily/Sonos_On_check");
+	    unlink ("$lbhomedir/system/cron/cron.03min/Sonos_On_check");
+		unlink ("$lbhomedir/system/cron/cron.05min/Sonos_On_check");
+	    unlink ("$lbhomedir/system/cron/cron.15min/Sonos_On_check");
+	    unlink ("$lbhomedir/system/cron/cron.30min/Sonos_On_check");
+		unlink ("$lbhomedir/system/cron/cron.hourly/Sonos_On_check");
+		&call_php;
+		LOGOK "Cronjob daily prepared";
+	  }
+	  if ($R::checkonline eq "false") 
+	  {
+	    unlink ("$lbhomedir/system/cron/cron.03min/Sonos_On_check");
+		unlink ("$lbhomedir/system/cron/cron.05min/Sonos_On_check");
+	    unlink ("$lbhomedir/system/cron/cron.15min/Sonos_On_check");
+	    unlink ("$lbhomedir/system/cron/cron.30min/Sonos_On_check");
+		unlink ("$lbhomedir/system/cron/cron.hourly/Sonos_On_check");
+		unlink ("$lbhomedir/system/cron/cron.daily/Sonos_On_check");
+		my $files = qx(/usr/bin/php $lbphtmldir/bin/create_player_files.php);	
+		LOGOK "Cronjob has been deleted";
+	  }
+		
+	LOGOK "Cronjob for Onlinecheck has been created successful";
+	return();
+}
+
+
+#####################################################
+# Call check_on_state
+#####################################################
+
+sub call_php
+{
+	my $files = qx(/usr/bin/php $lbphtmldir/bin/check_on_state.php);
+	return();
+}
 
 
 #####################################################
@@ -1171,9 +1278,9 @@ sub volumes
 	# create table header
 	for (my $id = 1; $id <= $last_id; $id++)   {
 		$countplayers = 0;
-		$rowsvolplayer .= "<table class='tables' style='width:100%' id='tblvol_prof$id' name='tblvol_prof$id'>\n";
+		$rowsvolplayer .= "<table class='tables' style='width:100%' id='tblvol_prof$id' name='tblvol_prof$id' border='0'>\n";
 		$rowsvolplayer .= "<th align='left' style='height: 25px; width:100px'>&nbsp;Profile #$id</th>\n";
-		$rowsvolplayer .= "<th align='middle' colspan='6'><div style='width: 180px; align: left'>\n";
+		$rowsvolplayer .= "<th align='middle' colspan='8'><div style='width: 180px; align: left'>\n";
 		$rowsvolplayer .= "<input class='textfield' type='text' style='align: middle; width: 100%' id='profile$id' name='profile$id' value='' placeholder='Volume Profile Name'/>\n";
 		$rowsvolplayer .= "<td valign='left'>";
 		$rowsvolplayer .= "<img title='Load current values from Sonos devices' value='$id' id='btnload$id' name='btnload$id' class='ico-load' src='/plugins/$lbpplugindir/images/musik-note.png' border='0' width='30' height='30'>\n";
@@ -1188,6 +1295,8 @@ sub volumes
 		$rowsvolplayer .= "<th class='form-control' style='background-color: #6dac20; align: center'>SR</th>\n";
 		$rowsvolplayer .= "<th class='form-control' style='background-color: #6dac20; align: center'>SW</th>\n";
 		$rowsvolplayer .= "<th class='form-control' style='background-color: #6dac20; align: center'>SWL</th>\n";
+		$rowsvolplayer .= "<th class='form-control' style='background-color: #6dac20; align: center'>MA</th>\n";
+		$rowsvolplayer .= "<th class='form-control' style='background-color: #6dac20; align: center'>ME</th>\n";
 		$rowsvolplayer .= "</div></tr>";
 		# create table rows	
 		foreach my $key (sort keys %$config) {
@@ -1219,7 +1328,9 @@ sub volumes
 			$rowsvolplayer .= "<fieldset><select onchange='' id='subwoofer_$zid' name='subwoofer_$zid' data-role='flipswitch' style='width: 5%'>\n";
 			$rowsvolplayer .= "<option value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option>";
 			$rowsvolplayer .= "</select></fieldset></td>\n";
-			$rowsvolplayer .= "<td style='width: 55px; height: 15px;'><input type='text' class='form-validation' id='sbass_$zid' name='sbass_$zid' size='100' data-validation-rule='special:number-min-max-value:-15:15' data-validation-error-msg='$error_sbass' value='$vcfg->[$id-1]->{Player}->{$key}->[0]->{Subwoofer_level}'></td>\n";
+			$rowsvolplayer .= "<td style='width: 55px; height: 15px'><input type='text' class='form-validation' id='sbass_$zid' name='sbass_$zid' size='100' data-validation-rule='special:number-min-max-value:-15:15' data-validation-error-msg='$error_sbass' value='$vcfg->[$id-1]->{Player}->{$key}->[0]->{Subwoofer_level}'></td>\n";
+			$rowsvolplayer .= "<td style='width: 60px; height: 15px'><div class='$id' id='$id'><input type='checkbox' id='master_$zid' name='master_$zid' class='$id' value='$vcfg->[$id-1]->{Player}->{$key}->[0]->{Master}'></div></td>\n";
+			$rowsvolplayer .= "<td style='width: 60px; height: 15px'><input type='checkbox' id='member_$zid' name='member_$zid' class='member_$id' value='$vcfg->[$id-1]->{Player}->{$key}->[0]->{Member}'></td>\n";
 			$rowsvolplayer .= "</div></tr>";
 		}
 		$rowsvolplayer .= "<br>";
@@ -1268,11 +1379,19 @@ sub save_volume
 		$template->param("VOLUME", "1");
 		&form;
 	}
-	
+
 	# save profiles
+	my $master;
+	my $member;
+	my $hasMaster;
+	my $hasMember;
+	my $isGroup;
+	
 	for ($i = 1; $i <= $new_id; $i++) {
 		$vcfg->[$i - 1]->{Name} = lc(param("profile$i"));
 		$_ = "$i";
+		$hasMaster = "false";
+		$hasMember = "false";
 		for (my $k = 1; $k <= $countplayers; $k++)   {
 			my $zid = $k."_".$_;
 			my $zone = param("zone_$zid");
@@ -1306,19 +1425,44 @@ sub save_volume
 			}
 			my $Volume = param("vol_$zid");
 			my $Treble = param("treble_$zid"); 
-			my $Bass = param("bass_$zid"); 
+			my $Bass = param("bass_$zid");
+			if (param("master_$zid") eq "true")   {
+				$master = "true";
+				$hasMaster = "true";
+			} else {
+				$master = "false";
+			}
+			if (param("member_$zid") eq "true")   {
+				$member = "true";
+				$hasMember = "true";
+			} else {
+				$member = "false";
+			}			
 			my @profiles = (  	{"Volume" => $Volume, 
 								"Treble" => $Treble, 
 								"Bass" => $Bass,
 								"Loudness" => $loudness, 
 								"Surround" => $surround,
 								"Subwoofer" => $subwoofer,
-								"Subwoofer_level" => $Subwoofer_level
+								"Subwoofer_level" => $Subwoofer_level,
+								"Master" => $master,
+								"Member" => $member
 								}
 						    );
 			push @profiles;
 			$vcfg->[$i - 1]->{Player}->{$zone} = \@profiles;
 		}
+		# determine Group status for Profile
+		if ($hasMaster eq "true" and $hasMember eq "true")   {
+			$isGroup = "Group";  # is Group
+		} elsif ($hasMaster eq "true" and $hasMember eq "false")   {
+			$isGroup = "Single";	 # is only Master
+		} elsif ($hasMaster eq "false" and $hasMember eq "true")   {
+			$isGroup = "Error";	 # has only Members, no Master --> Error
+		} elsif ($hasMaster eq "false" and $hasMember eq "false")   {
+			$isGroup = "NoGroup";	 # No Group
+		}
+		$vcfg->[$i - 1]->{Group} = $isGroup;
 	}
 	$jsonobjvol->write();
 	LOGOK "Sound Profile has been saved";

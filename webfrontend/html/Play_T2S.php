@@ -880,6 +880,8 @@ function sendgroupmessage() {
 					if ($zone != $master) {
 						if ($zoneon === (bool)true)  {
 							array_push($memberon, $zone);
+						} else {
+							LOGGING("play_t2s.php: Player '".$zone."' could not be added to the group!!", 4);
 						}
 					}
 				}

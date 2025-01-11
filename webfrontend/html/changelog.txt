@@ -453,3 +453,6 @@
  5.7.8		[BUGFIX] Type TV Monitor korrigert
  5.8.0		[IMPROVEMENT] Optischer Hinweis und reduzierter Support für alte S1 Player
 			[BUGFIX] T2S mit Verwendung der messageid korrigiert
+ 5.8.2		[BUGFIX] Gruppierungs- bzw. Restorefunktion bei T2S stabilisiert bzw. optimiert
+			[IMPROVEMENT] Neue Config Option die Prüfung der Online Verfügbarkeit der Player individuell zu konfigurieren oder gänzlich auszuschalten
+			[IMPROVEMENT] Bei den Sound Profilen sind Auto Gruppierungen möglich

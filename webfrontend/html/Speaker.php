@@ -676,7 +676,7 @@ function VolumeProfiles() {
 	#echo $_GET['action'];
 	
 	if (isset($_GET['profile']) and ($_GET['action'] === "say" or $_GET['action'] === "sendmessage" or $_GET['action'] === "sendgroupmessage"))    {
-		LOGERR("helper.php: Sound Profiles could not be used by Text-to-speech. Please check your entry!");
+		LOGERR("helper.php: Sound Profiles could not be used for Text-to-speech. Please check your entry!");
 		exit;
 	}
 	
@@ -686,72 +686,133 @@ function VolumeProfiles() {
 		$lookup = array_multi_search(strtolower($volprofil), $volconfig, $sKey = "");
 		
 		if (!$lookup)   {
-			LOGERR("speaker.php: Entered Volume Profile '".$_GET['profile']."' in URL could not be found. Please check your entry!");
+			LOGERR("speaker.php: Entered Sound Profile '".$_GET['profile']."' in URL could not be found. Please check your entry!");
 			exit(1);
 		} else {
-			LOGINF("speaker.php: Volume Profile '".$_GET['profile']."' has been selected!");
+			LOGINF("speaker.php: Sound Profile '".$_GET['profile']."' has been selected!");
 		}
-		#print_r($lookup);
-		$master = $_GET['zone'];
-		$playerprof[] = $master;
-		if(isset($_GET['member'])) {
-			$member = $_GET['member'];
-			if($member === 'all') {
-				$member = array();
-				foreach ($sonoszone as $zone => $ip) {
-					# exclude master Zone
-					if ($zone != $master) {
-						array_push($playerprof, $zone);
-					}
-				}
-			} else {
-				$member = explode(',', $member);
-				$playerprof = array_merge($playerprof, $member);
-			}
-		}
-		#print_r($lookup);
+		//print_r($lookup); // Data of Profile (array)
 		
-		foreach ($playerprof as $key)  {
-			try {
-				@$sonos = new SonosAccess($sonoszone[$key][0]);
-				#@$sonos->SetMute(true);
-				# Set Volume				
-				$sonos->SetVolume($lookup[0]['Player'][$key][0]['Volume']);
-				$volume = $lookup[0]['Player'][$key][0]['Volume'];
-				#$sonos->RampToVolume("AUTOPLAY_RAMP_TYPE", $lookup[0]['Player'][$key][0]['Volume']);
-				LOGINF("speaker.php: Volume for '".$key."' has been set to: ".$lookup[0]['Player'][$key][0]['Volume']);
-				# Set Treble
-				$sonos->SetTreble($lookup[0]['Player'][$key][0]['Treble']);
-				LOGDEB("speaker.php: Treble for '".$key."' has been set to: ".$lookup[0]['Player'][$key][0]['Treble']);
-				# Set Bass
-				$sonos->SetBass($lookup[0]['Player'][$key][0]['Bass']);
-				LOGDEB("speaker.php: Bass for '".$key."' has been set to: ".$lookup[0]['Player'][$key][0]['Bass']);
-				# Set Loudness
-				if ((bool)is_enabled($lookup[0]['Player'][$key][0]['Loudness'] === "true" ? $ldstate = "1" : $ldstate = "0"));
-				$sonos->SetLoudness($ldstate);
-				if ((bool)is_enabled($lookup[0]['Player'][$key][0]['Loudness']) === true ? $ld = "On" : $ld = "Off");
-				LOGDEB("speaker.php: Loudness for '".$key."' has been switched ".$ld);
-				# Set Surround
-				if ($lookup[0]['Player'][$key][0]['Surround'] != "na")   {
-					$sonos->SetDialogLevel(is_enabled($lookup[0]['Player'][$key][0]['Surround']), 'SurroundEnable');
-					if ((bool)is_enabled($lookup[0]['Player'][$key][0]['Surround']) === true ? $sur = "On" : $sur = "Off");
-					LOGDEB("speaker.php: Surround for '".$key."' has been switched ".$sur);
+		# Selection
+		if ($lookup[0]['Group'] == "Group" or $lookup[0]['Group'] == "Single")  {
+			$playerprof = array();
+			foreach ($sonoszone as $zone => $ip) {
+				$sonos = new SonosAccess($sonoszone[$zone][0]); 
+				# Remove master from Group (if applicable)
+				if ($lookup[0]['Player'][$zone][0]['Master'] == "true")   {
+					array_push($playerprof, $zone);
+					$masterrincon = $sonoszone[$zone][1];
+					$sonos->BecomeCoordinatorOfStandaloneGroup();
+					LOGDEB("speaker.php: Master '".$zone."' from Sound Profile '".$_GET['profile']."' has been adopted!");
 				}
-				# Set Subwoofer and Subwoofer Bass Level
-				if ($lookup[0]['Player'][$key][0]['Subwoofer'] != "na")   {
-					$sonos->SetDialogLevel(is_enabled($lookup[0]['Player'][$key][0]['Subwoofer']), 'SubEnable');
-					if ((bool)is_enabled($lookup[0]['Player'][$key][0]['Subwoofer']) === true ? $sub = "On" : $sub = "Off");
-					LOGDEB("speaker.php: Subwoofer for '".$key."' has been switched ".$sub);
-					$sonos->SetDialogLevel($lookup[0]['Player'][$key][0]['Subwoofer_level'], 'SubGain');
-					LOGDEB("speaker.php: Subwoofer Bass for '".$key."' has been set to: ".$lookup[0]['Player'][$key][0]['Subwoofer_level']);
+				# add member to Master
+				if ($lookup[0]['Player'][$zone][0]['Member'] == "true")   {
+					array_push($playerprof, $zone);
+					$sonos->SetAVTransportURI("x-rincon:" . $masterrincon); 
+					$sonos->SetMute(false);
+					LOGDEB("speaker.php: Member '".$zone."' from Sound Profile '".$_GET['profile']."' has been grouped to Master!");
 				}
-			} catch (Exception $e) {
-				LOGERR("speaker.php: Player '".$key."' does not respond. Please check your settings");
-				continue;
 			}
+			#print_r($playerprof);
+			LOGOK("speaker.php: Player(s) of Sound Profile '".$_GET['profile']."' has been adopted!");
+		} elseif ($lookup[0]['Group'] == "Error")  {
+			# Profile with Group selected, but no Master clicked, just one member
+			LOGERR("speaker.php: Grouping for Sound Profile '".$_GET['profile']."' failed due to missing Master! Please correct your Sound Profile Config.");
+			exit(1);
+		} else {
+			# NoGroup, pick from URL
+			$playerprof = VolumeProfilesArrayURL();
+			LOGOK("speaker.php: Sound Profile '".$_GET['profile']."' has been adopted by URL!");
 		}
-		LOGINF("speaker.php: Settings for Volume Profile '".$_GET['profile']."' has been set sucessfull.");
+		# Set Sound settings
+		VolumeProfilesSound($playerprof);
+		LOGINF("speaker.php: Settings for Sound Profile '".$_GET['profile']."' has been set sucessfull.");
 		return $lookup;
+	}
+}
+
+/**
+/* Funktion : VolumeProfilesArrayURL --> array of all players from URL
+/*
+/* @param: array of player                        
+/* @return: 
+**/
+
+function VolumeProfilesArrayURL()   {
+	
+	global $sonoszone;
+
+	# Prepare array of players for audio
+	$master = $_GET['zone'];
+	$playerprof[] = $master;
+	if(isset($_GET['member'])) {
+		$member = $_GET['member'];
+		if($member === 'all') {
+			$member = array();
+			foreach ($sonoszone as $zone => $ip) {
+				# exclude master Zone
+				if ($zone != $master) {
+					array_push($playerprof, $zone);
+				}
+			}
+		} else {
+			$member = explode(',', $member);
+			$playerprof = array_merge($playerprof, $member);
+		}
+	}
+	return $playerprof;
+}
+
+
+
+/**
+/* Funktion : VolumeProfilesSound --> array of all players
+/*
+/* @param: array of player                        
+/* @return: 
+**/
+
+function VolumeProfilesSound($playerprof)   {
+	
+global $sonoszone, $lookup, $config;
+
+foreach ($playerprof as $key)  {
+	try {
+		@$sonos = new SonosAccess($sonoszone[$key][0]);
+		#@$sonos->SetMute(true)
+		# Set Volume				
+		$sonos->SetVolume($lookup[0]['Player'][$key][0]['Volume']);
+		$volume = $lookup[0]['Player'][$key][0]['Volume'];
+		LOGINF("speaker.php: Volume for '".$key."' has been set to: ".$lookup[0]['Player'][$key][0]['Volume']);
+		# Set Treble
+		$sonos->SetTreble($lookup[0]['Player'][$key][0]['Treble']);
+		LOGDEB("speaker.php: Treble for '".$key."' has been set to: ".$lookup[0]['Player'][$key][0]['Treble']);
+		# Set Bass
+		$sonos->SetBass($lookup[0]['Player'][$key][0]['Bass']);
+		LOGDEB("speaker.php: Bass for '".$key."' has been set to: ".$lookup[0]['Player'][$key][0]['Bass']);
+		# Set Loudness
+		if ((bool)is_enabled($lookup[0]['Player'][$key][0]['Loudness'] === "true" ? $ldstate = "1" : $ldstate = "0"));
+		$sonos->SetLoudness($ldstate);
+		if ((bool)is_enabled($lookup[0]['Player'][$key][0]['Loudness']) === true ? $ld = "On" : $ld = "Off");
+		LOGDEB("speaker.php: Loudness for '".$key."' has been switched ".$ld);
+		# Set Surround
+		if ($lookup[0]['Player'][$key][0]['Surround'] != "na")   {
+			$sonos->SetDialogLevel(is_enabled($lookup[0]['Player'][$key][0]['Surround']), 'SurroundEnable');
+			if ((bool)is_enabled($lookup[0]['Player'][$key][0]['Surround']) === true ? $sur = "On" : $sur = "Off");
+			LOGDEB("speaker.php: Surround for '".$key."' has been switched ".$sur);
+		}
+		# Set Subwoofer and Subwoofer Bass Level
+		if ($lookup[0]['Player'][$key][0]['Subwoofer'] != "na")   {
+			$sonos->SetDialogLevel(is_enabled($lookup[0]['Player'][$key][0]['Subwoofer']), 'SubEnable');
+			if ((bool)is_enabled($lookup[0]['Player'][$key][0]['Subwoofer']) === true ? $sub = "On" : $sub = "Off");
+				LOGDEB("speaker.php: Subwoofer for '".$key."' has been switched ".$sub);
+				$sonos->SetDialogLevel($lookup[0]['Player'][$key][0]['Subwoofer_level'], 'SubGain');
+				LOGDEB("speaker.php: Subwoofer Bass for '".$key."' has been set to: ".$lookup[0]['Player'][$key][0]['Subwoofer_level']);
+			}
+		} catch (Exception $e) {
+			LOGERR("speaker.php: Player '".$key."' does not respond. Please check your settings");
+			continue;
+		}
 	}
 }
 

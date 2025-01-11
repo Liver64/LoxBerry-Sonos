@@ -290,9 +290,10 @@ if (isset($_GET['profile']) and isset($_GET['volume']))   {
 # volume for master
 if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100 or isset($_GET['keepvolume'])) {
 	# volume get from syntax
+	$master = $_GET['zone'];
 	if (isset($_GET['volume']))  {
 		$volume = $_GET['volume'];
-		$master = $_GET['zone'];
+		#$master = $_GET['zone'];
 		// prüft auf Max. Lautstärke und korrigiert diese ggf.
 		if($volume >= $sonoszone[$master][5]) {
 			$volume = $sonoszone[$master][5];
@@ -302,7 +303,7 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 		}
 	# current volume should be used
 	} elseif (isset($_GET['keepvolume']))  {
-		$master = $_GET['zone'];
+		#$master = $_GET['zone'];
 		$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
 		$tm_volume = $sonos->GetVolume();
 		# if current volume is less then treshold then take standard from config
@@ -1711,11 +1712,11 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		
 		case 'mp3rights':
-			$ttspath = LBPDATADIR."/tts";
-			$mp3path = LBPDATADIR."/tts/mp3";
+			$ttspath = $config['SYSTEM']['ttspath'];
+			$mp3path = $config['SYSTEM']['mp3path'];
 			system("chmod -R 0755 $ttspath");
 			system("chmod -R 0755 $mp3path");
-			LOGGING("sonos.php: Access rights for all files in /tts/mp3 folder has been set to 0755", 7);
+			LOGGING("sonos.php: Access rights for all files in your TTS folder has been set to 0755", 7);
 		break;
 		
 		case 'streammode':
