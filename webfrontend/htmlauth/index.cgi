@@ -149,7 +149,7 @@ if (!defined $cfg->{VARIOUS}->{cron})  {
 # checkonline
 if (!defined $cfg->{SYSTEM}->{checkonline})  {
 #if ($cfg->{SYSTEM}->{checkonline} eq '')  {
-	$cfg->{SYSTEM}->{checkonline} = "false";
+	$cfg->{SYSTEM}->{checkonline} = 3;
 }
 # maxVolume
 if (!defined $cfg->{VARIOUS}->{volmax})  {
