@@ -457,3 +457,4 @@
 			[IMPROVEMENT] Neue Config Option die Prüfung der Online Verfügbarkeit der Player individuell zu konfigurieren oder gänzlich auszuschalten
 			[IMPROVEMENT] Bei den Sound Profilen sind Auto Gruppierungen möglich
  5.8.4		[BUGFIX] Typo in index.cgi korrigiert
+ 5.8.6		[BUGFIX] Fixed play Funktion in Verbindung mit playlists

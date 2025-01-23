@@ -409,36 +409,45 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 	switch($_GET['action'])	{
 		case 'play';
 			$posinfo = $sonos->GetPositionInfo();
+			$trackrunning = $sonos->GetTransportInfo();
 			if(!empty($posinfo['TrackURI'])) {
-				if(empty($config['TTS']['volrampto'])) {
-					$config['TTS']['volrampto'] = "25";
-					LOGGING("sonos.php: Rampto Volume in config has not been set. Default of 25% Volume has been taken, please update Plugin Config (T2S Optionen).", 4);
-				}
-				if($sonos->GetVolume() <= $config['TTS']['volrampto']) {
-					$sonos->RampToVolume($config['TTS']['rampto'], $volume);
+				#if(empty($config['TTS']['volrampto'])) {
+				#	$config['TTS']['volrampto'] = "25";
+				#	LOGGING("sonos.php: Rampto Volume in config has not been set. Default of 25% Volume has been taken, please update Plugin Config (T2S Optionen).", 4);
+				#}
+				#if($sonos->GetVolume() <= $config['TTS']['volrampto']) {
+				#	$sonos->RampToVolume($config['TTS']['rampto'], $volume);
+				#	checkifmaster($master);
+				#	$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
+				#	$pos = $sonos->GetPositionInfo();
+				#	if (substr($posinfo["TrackURI"], 0, 18) === "x-sonos-htastream:")  {
+				#		$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
+				#		$sonos->Play();
+				#	}
+				#	if (substr($posinfo["UpnpClass"], 0, 32) === "object.item.audioItem.musicTrack")  {
+				#		#$sonos->ClearQueue();
+				#		if ($trackrunning != "1")   {
+				#			$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
+				#			$sonos->Play();
+				#		}
+				#	}
+					
+				#} else {
 					checkifmaster($master);
 					$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
-					$pos = $sonos->GetPositionInfo();
+					$sonos->SetVolume($volume);
 					if (substr($posinfo["TrackURI"], 0, 18) === "x-sonos-htastream:")  {
 						$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
+						$sonos->Play();
 					}
 					if (substr($posinfo["UpnpClass"], 0, 32) === "object.item.audioItem.musicTrack")  {
-						#$sonos->ClearQueue();
-						$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
+						if ($trackrunning != "1")   {
+							$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
+							$sonos->Play();
+						} 
 					}
-					$sonos->Play();
-				} else {
-					checkifmaster($master);
-					$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
-					if (substr($posinfo["TrackURI"], 0, 18) === "x-sonos-htastream:")  {
-						$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
-					}
-					if (substr($posinfo["UpnpClass"], 0, 32) === "object.item.audioItem.musicTrack")  {
-						#$sonos->ClearQueue();
-						$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
-					}
-					$sonos->Play();
-				}
+					
+				#}
 			} else {
 				LOGGING("sonos.php: No tracks in Queue to be played.", 4);
 			}
