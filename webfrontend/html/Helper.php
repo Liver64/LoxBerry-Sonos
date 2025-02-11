@@ -166,7 +166,6 @@ function checkZoneOnline($MemberTest) {
 		LOGWARN("helper.php: The entered Zone '".$MemberTest."' does not exist, please correct your syntax!!");
 		#return false;
 	}
-	#$handle = @fsockopen($sonoszonen[$MemberTest][0], 1400, $errno, $errstr, 2);
 	$handle = file_exists($folfilePlOn."".$MemberTest.".txt");
 	if(!$handle === false) {
 		$zoneon = true;
@@ -677,6 +676,50 @@ function SetPlaymodes($zone, $mode)  {
 }
 
 
+/**
+* Funktion : 	isSpeaker --> filtert die gefunden Sonos Devices nach Zonen
+* 				Subwoofer, Bridge und Dock werden nicht berücksichtigt
+*
+* @param: 	$model --> alle gefundenen Devices
+* @return: $models --> Sonos Zonen
+**/
+
+ function isSpeaker($model) {
+    $models = [
+            "S1"    =>  "PLAY:1",
+            "S12"   =>  "PLAY:1",
+            "S3"    =>  "PLAY:3",
+            "S5"    =>  "PLAY:5",
+            "S6"    =>  "PLAY:5",
+			"S24"   =>  "PLAY:5",
+            "S9"    =>  "PLAYBAR",
+            "S11"   =>  "PLAYBASE",
+            "S13"   =>  "ONE",
+			"S18"   =>  "ONE",
+            "S14"   =>  "BEAM",
+			"S31"   =>  "BEAM",
+			"S15"   =>  "CONNECT",
+			"S17"   =>  "MOVE",
+			"S19"   =>  "ARC",
+			"S20"   =>  "SYMFONISK LAMP",
+			"S21"   =>  "SYMFONISK WALL",
+			"S33"   =>  "SYMFONISK",
+			"S22"   =>  "ONE SL",
+			"S38"   =>  "ONE SL",
+			"S23"   =>  "PORT",
+			"S27"   =>  "ROAM",
+			"S35"   =>  "ROAM SL",
+			"S29"   =>  "SYMFONISK FRAME",
+            "ZP80"  =>  "ZONEPLAYER",
+			"ZP90"  =>  "CONNECT",
+			"S16"  	=>  "CONNECT:AMP",
+            "ZP100" =>  "CONNECT:AMP",
+            "ZP120" =>  "CONNECT:AMP",
+        ];
+    return in_array($model, array_keys($models));
+}
+
+
 
 /**
 * Funktion : 	allowLineIn --> filtert die gefunden Sonos Devices nach Zonen
@@ -690,6 +733,7 @@ function SetPlaymodes($zone, $mode)  {
     $models = [
         "S5"    =>  "PLAY:5",
         "S6"    =>  "PLAY:5",
+		"S23"   =>  "PORT",
         "ZP80"  =>  "CONNECT",
         "ZP90"  =>  "CONNECT",
 		"S15"   =>  "CONNECT",

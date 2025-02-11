@@ -2,12 +2,14 @@
 
 ##############################################################################################################################
 #
-# Version: 	5.7.8
-# Datum: 	09.2024
+# Version: 	5.8.6
+# Datum: 	01.2025
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 #
 # http://<IP>:1400/xml/device_description.xml
 # http://<IP>:1400/support/review
+#
+# https://www.reddit.com/r/sonos/comments/1ggv8dk/sonos_network_troubleshooting_an_unofficial/
 # 
 ##############################################################################################################################
 
@@ -30,8 +32,8 @@ include("Restore_T2S.php");
 include("Save_T2S.php");
 include("Speaker.php");
 include("follow.php");
-include("bin/MpegAudio.php");
-include("bin/MpegAudioFrameHeader.php");
+include("bin/mp3/MpegAudio.php");
+include("bin/mp3/MpegAudioFrameHeader.php");
 include('system/logging.php');
 include('system/bin/openssl_file.class.php');
 
@@ -409,27 +411,23 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 	switch($_GET['action'])	{
 		case 'play';
 			$posinfo = $sonos->GetPositionInfo();
-			#$posinf = $sonos->GetMediaInfo();
-			#print_r($posinf);
 			$trackrunning = $sonos->GetTransportInfo();
 			if(!empty($posinfo['TrackURI'])) {
 				#checkifmaster($master);
-				$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
-				if (substr($posinfo["TrackURI"], 0, 18) === "x-sonos-htastream:")  {
-					$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
-					$sonos->Play();
-				}
 				if (substr($posinfo["UpnpClass"], 0, 32) === "object.item.audioItem.musicTrack")  {
 					if ($trackrunning != "1")   {
 						$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
 						$sonos->SetTrack($posinfo['Track']);
 						$sonos->Seek("REL_TIME", $posinfo['RelTime']);
 						$sonos->Play();
-					} 
-				}
-				if (substr($posinfo["ProtocolInfo"], 0, 17) === "x-rincon-mp3radio")  {
+					} else {
+						LOGGING("sonos.php: Current State is PLAYING. Canceled action play.", 7);
+						return;
+					}
+				} else {
 					$sonos->Play();
 				}
+				LOGGING("sonos.php: Play been executed.", 7);
 			} else {
 				LOGGING("sonos.php: Current Queue is empty.", 4);
 			}
@@ -680,32 +678,34 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		  
 		case 'volumeup': 
-			$volume = $sonos->GetVolume();
-			$volume = $volume + $config['MP3']['volumeup'];
-			$sonos->SetVolume($volume);
+			$volume_tmp = $sonos->GetVolume();
+			usleep(500000);
+			$volume_up = $volume_tmp + $config['MP3']['volumeup'];
+			$sonos->SetVolume($volume_up);
 		break;
 		
 		case 'grvolup': 
 			$sonos = new SonosAccess($sonoszone[$master][0]); 
-			$volume = $sonos->GetGroupVolume();
-			$volumenew = $volume + $config['MP3']['volumeup'];
-			sleep(1);
-			SetGroupVolume($volumenew);
+			$volume_tmp = $sonos->GetGroupVolume();
+			usleep(500000);
+			$volumenew_up = $volume_tmp + $config['MP3']['volumeup'];
+			SetGroupVolume($volumenew_up);
 		break;
 		
 			
 		case 'volumedown':
-			$volume = $sonos->GetVolume();
-			$volume = $volume - $config['MP3']['volumedown'];
-			$sonos->SetVolume($volume);
+			$volume_tmp = $sonos->GetVolume();
+			usleep(500000);
+			$volume_down = $volume_tmp - $config['MP3']['volumedown'];
+			$sonos->SetVolume($volume_down);
 		break;
 		
 		case 'grvoldown':
 			$sonos = new SonosAccess($sonoszone[$master][0]); 
-			$volume = $sonos->GetGroupVolume();
-			$volumenew = $volume - $config['MP3']['volumeup'];
-			sleep(1);
-			SetGroupVolume($volumenew);
+			$volume_tmp = $sonos->GetGroupVolume();
+			usleep(500000);
+			$volumenew_down = $volume_tmp - $config['MP3']['volumeup'];
+			SetGroupVolume($volumenew_down);
 		break;
 		
 			
@@ -1150,6 +1150,17 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$stat = saveZonesStatus();
 			print_r($stat);
 		break;
+		
+		case 'subscribe':
+			require_once('system/sonos_class.php');
+			$p = new SonosUpnpDevice($sonoszone[$master][0]); //Slave Sonos ZP IPAddress
+			print_r($p->GetServiceNames());
+			$p->GetServiceNames(); 
+			print_r( $p->GetServiceFunctionNames('RenderingControl'));
+			$r=$p->CallService('RenderingControl','RegisterEventCallback',array('http://192.168.50.47:9999',90));
+			#$r=$p->CallService('RenderingControl','RegisterEventCallback',array('http://192.168.50.47:9999',90));
+			print_r($r);
+		break;
 
 		case 'masterplayer':
 			Global $zone, $master;	
@@ -1528,6 +1539,11 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		case 'linein':
 			LineIn();
+		break;
+		
+		
+		case 'paused':
+			IdentPausedPlayers();
 		break;
 		
 		

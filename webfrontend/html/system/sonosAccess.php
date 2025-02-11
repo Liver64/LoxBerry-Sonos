@@ -145,7 +145,7 @@ class SonosAccess
         );
     }
 	
-	
+		
 	/**
 	 * Save current queue as Sonos Playlist
 	 *

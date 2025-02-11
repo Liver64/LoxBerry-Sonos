@@ -13,8 +13,9 @@
 **/
 
 function LineIn() {
-	global $sonoszone, $master;
 	
+	global $sonoszone, $master;
+	/**
 	$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
 	$url = "http://" . $sonoszone[$master][0] . ":1400/xml/device_description.xml";
 	$xml = simpleXML_load_file($url);
@@ -25,7 +26,16 @@ function LineIn() {
 		$sonos->SetAVTransportURI("x-rincon-stream:" . $sonoszone[$master][1]);
 		$sonos->Play();	
 	} else {
-		LOGGING("speaker.php: The specified Zone does not support Line-in to be selected!", 3);
+		
+	}
+	**/
+	try {
+		$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
+		$sonos->SetAVTransportURI("x-rincon-stream:" . $sonoszone[$master][1]);
+		$sonos->Play();	
+		LOGGING("speaker.php: Line in has been selected successful",6);
+	} catch (Exception $e) {
+		LOGGING("speaker.php: The specified Player '".$master."' does not support Line-in to be selected!", 3);
 		exit;
 	}
 }
@@ -819,23 +829,86 @@ foreach ($playerprof as $key)  {
 
 
 /**
-/* Funktion : checks1 --> check if S1 device is master
+/* Funktion : check_S1_player --> check if S1 device is master
 /*
 /* @param: none                        
 /* @return: 
 **/
 
-function checks1()   {
+function check_S1_player()   {
 	
 global $app, $master, $sonoszone, $config;
 
 	$swgen = $sonoszone[$master][9];
 	if ($swgen == "1")   {
-		LOGERR("system/speaker.php: Player '".$master."' has been identified as Generation S1 or you are using Sonos S1 App.");
-		LOGERR("system/speaker.php: Both variants support only Shares using SMB1, but actually the Loxberry Samba Share is on SMB2.");
-		LOGERR("system/speaker.php: You may replace/delete '".$master."' or update your App to Sonos S2! By updating only you can't use '".$master."' for Single TTS or Master of a group");
+		LOGERR("speaker.php: Player '".$master."' has been identified as Generation S1 or you are using Sonos S1 App.");
+		LOGERR("speaker.php: Both variants support only Shares using SMB1, but actually the Loxberry Samba Share is on SMB2.");
+		LOGERR("speaker.php: You may replace/delete '".$master."' or update your App to Sonos S2! By updating only you can't use '".$master."' for Single TTS or Master of a group");
 		#notify( LBPPLUGINDIR, "Sonos", "Player '".$room."' has been identified as Generation S1 and will only supported with certain restrictions.", "warning");
 		exit(1);
 	}
+}
+
+
+
+/**
+/* Function : IdentPausedPlayers --> identify all players currently NOT playing (PAUSED/STOPPED)
+/*
+/* @param:  Array(sonoszone)
+/* @return: Array
+				(
+					[bad] => Array
+						(
+							[0] => 192.168.50.114
+							[1] => RINCON_542A1BB8523001400
+							[2] => ROAM
+							[3] => 32
+							[4] => 30
+							[5] => 100
+							[6] => off
+							[7] => S27
+							[8] => NOSUB
+							[9] => 2
+							[10] => NOSUR
+							[11] => 1
+							[12] => 1
+							[13] => NOSB
+							[14] => false
+						)
+				)
+**/
+
+function IdentPausedPlayers()    {
+	
+	global $sonoszone, $sonos;
+	
+	$pausedplayer = array();
+	foreach($sonoszone as $zone => $ip) {
+		$sonos = new SonosAccess($ip[0]);
+		$posinfo = $sonos->GetPositionInfo();
+		if (substr($posinfo["TrackURI"], 0, 17) != "x-sonos-htastream")    {
+			# check single or master zones
+			if (getZoneStatus($zone) == "single" or getZoneStatus($zone) == "master")   {
+				if ($sonos->GetTransportInfo() != "1")   {
+					$pausedplayer[$zone] = $ip;
+				}
+			} elseif (getZoneStatus($zone) == "member")   {
+				# get master of member zone to check play status
+				$r = array_multi_search(substr($sonos->GetMediaInfo()['CurrentURI'], 9, 40), $sonoszone, $sKey = "");
+				$sonos = new SonosAccess($r[0][0]);
+				if ($sonos->GetTransportInfo() != "1")   {
+					$pausedplayer[$zone] = $ip;
+				}
+			}
+		} else {
+			# check if Playbar is in TV mode and (not) running
+			if ($sonos->GetZoneInfo()['HTAudioIn'] < 35000)   {
+				$pausedplayer[$zone] = $ip;
+			}
+		}
+	}
+	LOGINF("speaker.php: Currently not playing Players has been identified.");
+	#print_r($pausedplayer);
+	return $pausedplayer;
 }
 ?>

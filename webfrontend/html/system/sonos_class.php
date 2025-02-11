@@ -1,4 +1,4 @@
-<?
+<?php
 /*---------------------------------------------------------------------------/
 	
 File:  
@@ -275,7 +275,7 @@ class SonosUpnpDevice {
         $fp = fsockopen($this->_IP, $this->_PORT, $errno, $errstr, 10);
         if (!$fp)throw new Exception("Error opening socket: ".$errstr." (".$errno.")");
             fputs ($fp,$content);$ret = "";
-            while (!feof($fp))$ret.= fgetss($fp,128); // filters xml answer
+            while (!feof($fp))$ret.= fgets($fp,128); // filters xml answer
             fclose($fp);
         if(strpos($ret, "200 OK") === false)throw new Exception("Error sending command: ".$ret);
         foreach(preg_split("/\n/", $ret) as $v)if(trim($v)&&(strpos($v,"200 OK")===false))$array[]=trim($v);
@@ -349,6 +349,7 @@ TIMEOUT: Second-'.$timeout.'
 Content-Length: 0
 
 ';
+print_r($content);
         $a=$this->BASE->sendPacket($content);$res=false;
         if($a)foreach($a as $r){$m=explode(':',$r);if(isSet($m[1])){$b=array_shift($m);$res[$b]=implode(':',$m);}}
         return $res;
