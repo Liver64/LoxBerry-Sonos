@@ -2,7 +2,7 @@
 
 # Control
 
-![](https://img.shields.io/badge/Release-v5.8.4-blue)
+![](https://img.shields.io/badge/Release-v5.8.6-blue)
 ![](https://img.shields.io/badge/PreRrelease-v5.3.9-blue)
 
 Sonos for Smart Home
@@ -46,7 +46,7 @@ Besides the standard features to Control your Sonos System the Plugin deliver qu
 ![Plugin logo](webfrontend/html/images/SO1.png)
 ![Plugin logo](webfrontend/html/images/SO2.png)
 
-* Sound Profiles to set easily various Audio settings for each Player (Volume, Bass, Treble, Loudness, Surround, Subwoofer (-level)
+* Sound Profiles incl. grouping to set easily various Audio settings for each Player (Volume, Bass, Treble, Loudness, Surround, Subwoofer (-level)
 
 ![Plugin logo](webfrontend/html/images/SS1.png)
 

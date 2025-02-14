@@ -1470,6 +1470,7 @@ function sendInfoMS($abbr, $player, $val)    {
 				"S31"   =>  "BEAM",
 				"S15"   =>  "CONNECT",
 				"S19"   =>  "ARC",
+				"S45"   =>  "ARC ULTRA",
 				"S16"   =>  "AMP",
 				"S36"   =>  "RAY",
 			];

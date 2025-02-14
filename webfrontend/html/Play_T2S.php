@@ -636,7 +636,7 @@ function sendmessage($errortext = "") {
 			}
 			if (substr($test['TrackURI'], 0, 18) == "x-sonos-htastream:") {
 				$sonos->SetQueue("x-rincon-queue:". $sonoszone[$master][1] ."#0");
-				LOGGING("play_t2s.php: Streaming/TV endet successful", 7);		
+				LOGGING("play_t2s.php: Streaming/TV end successful", 7);		
 			}
 			#if ((substr($test, 0, 18) !== "x-sonos-htastream:") and (!isset($_GET['sonos'])))  {
 			if (!isset($_GET['sonos']))  {
@@ -708,18 +708,26 @@ function sendAudioMultiClip($errortext = "") {
 	
 	LOGDEB("play_t2s.php: Audioclip: Notification for Player has been called.");
 	
-	if (isset($_GET['member'])) {
+	if (isset($_GET['member']) and !isset($_GET['paused'])) {
 		$zones = array();
 		$zones = array_merge($zones, audioclip_handle_members($_GET['member']));
+		$zones = array_keys($zones);
+		$r = implode(',', $zones);
+		LOGGING("play_t2s.php: Audioclip: Players ".$r." for audioclip retrieved from URL", 7);
 	}
-	#print_r($zones);
+	if (isset($_GET['paused']))    {
+		$zones = IdentPausedPlayers();
+		$zones = array_keys($zones);
+		$r = implode(',', $zones);
+		LOGGING("play_t2s.php: Audioclip: Players ".$r." for audioclip retrieved from currently not streaming player", 7);
+	}
 	
 	foreach ($zones as $key)   {
 		# determine if Player is fully supported/partial supported  for AUDIO_CLIP
-		if(isset($sonoszone[$key][11]) and $sonoszone[$key][11] == true) {
+		if(isset($sonoszone[$key][11]) and is_enabled($sonoszone[$key][11])) {
 			LOGDEB("play_t2s.php: Audioclip: Player '". $key ."' does support Audio Clip");
 		} else {
-			LOGERR("play_t2s.php: Audioclip: Player '". $key ."' does not support Audio Clip. Please remove player from URL!");
+			LOGWARN("play_t2s.php: Audioclip: Player '". $key ."' does not support Audio Clip. Please remove player from URL!");
 			exit;
 		}
 	}
@@ -739,7 +747,7 @@ function sendAudioMultiClip($errortext = "") {
 
 function doorbell() {
 
-	global $config, $sonos, $time_start;
+	global $config, $sonos, $sonoszone, $time_start;
 
 	if(isset($_GET['playgong'])) {
 		LOGERR("play_t2s.php: Audioclip: playgong could not be used im combination with function 'doorbell'");
@@ -750,8 +758,17 @@ function doorbell() {
 	$prio = "HIGH";
 	$zonesdoor = array();
 
-	if (isset($_GET['member'])) {
+	if (isset($_GET['member']) and !isset($_GET['paused'])) {
 		$zonesdoor = array_merge($zonesdoor, audioclip_handle_members($_GET['member']));
+		$zones = array_keys($zonesdoor);
+		$r = implode(',', $zones);
+		LOGGING("play_t2s.php: Audioclip: Players for doorbell ".$r." retrieved from URL", 7);
+	}
+	if (isset($_GET['paused']))    {
+		$zones = IdentPausedPlayers();
+		$zones = array_keys($zones);
+		$r = implode(',', $zones);
+		LOGGING("play_t2s.php: Audioclip: Players for doorbell ".$r." retrieved from currently not streaming player", 7);
 	}
 	if (isset($_GET['file'])) {
 		$file = $_GET['file'];
@@ -760,11 +777,11 @@ function doorbell() {
 		if ($valid === true) {
 			$jinglepath = $config['SYSTEM']['cifsinterface']."/mp3/".trim($file);
 			LOGGING("play_t2s.php: Audioclip: Doorbell '".trim($file)."' with Priority HIGH has been announced", 7);	
-			audioclip_multi_post_request($zonesdoor, "CUSTOM", $prio, $jinglepath);
+			audioclip_multi_post_request($zones, "CUSTOM", $prio, $jinglepath);
 		} else {
 			if ($_GET['file'] = "chime")   {
 				LOGGING("play_t2s.php: Audioclip: Sonos build-in Doorbell CHIME with Priority HIGH has been announced", 7);	
-				audioclip_multi_post_request($zonesdoor, "CHIME", $prio);
+				audioclip_multi_post_request($zones, "CHIME", $prio);
 			} else {
 				LOGGING("play_t2s.php: Audioclip: Entered file '".$file."' for doorbell is not valid or nothing has been entered. Please correct your syntax", 3);
 				exit;
@@ -773,6 +790,15 @@ function doorbell() {
 	} else {
 		LOGGING("play_t2s.php: Audioclip: File for Doorbell is missing! Use even ...action=doorbell&file=chime or ...action=doorbell&file=<MP3 File from tts/mp3 Folder>", 3);
 		exit;		
+	}
+	foreach ($zones as $key)   {
+		# determine if Player is fully supported/partial supported  for AUDIO_CLIP
+		if(isset($sonoszone[$key][11]) and is_enabled($sonoszone[$key][11])) {
+			LOGDEB("play_t2s.php: Audioclip: Player '". $key ."' does support Audio Clip (Doorbell)");
+		} else {
+			LOGWARN("play_t2s.php: Audioclip: Player '". $key ."' does not support Audio Clip (Doorbell). Please remove player from URL!");
+			exit;
+		}
 	}
 	proccessing_time();
 }
@@ -808,13 +834,12 @@ function handle_playgong($zones, $source) {
 					# Replace whitespaces from filename
 					$name = str_replace(" ", '%20', $file);
 					$jinglepath = $config['SYSTEM']['cifsinterface']."/mp3/".trim($file);
-					# chech upfront if file is accessable
+					# check upfront if file is accessable
 					if (@file_get_contents($config['SYSTEM']['httpinterface']."/mp3/".$name) === false)    {
 						LOGGING("play_t2s.php: Audioclip: The provided playgong file could not be played due to unsupported characters or whitespaces in filename!! Please change filename accordingly", 3);	
 						exit;
 					}
 					$duration = round(\falahati\PHPMP3\MpegAudio::fromFile($config['SYSTEM']['httpinterface']."/mp3/".$name)->getTotalDuration());
-					echo $duration;
 					if ($source === "multi")   {
 						audioclip_multi_post_request($zones, "CUSTOM", $prio, $jinglepath);
 					} else {
@@ -1123,21 +1148,21 @@ function guidv4($data = null) {
 
 function audioclip_handle_members($member) {
 	
-	global $sonoszone, $time_start, $memberon, $master;
+	global $sonoszone, $sonoszonen, $time_start, $memberon, $master;
 
-	$memberon = array($master);
+	$memberon = array();
 	$members = explode(',', $member);
-
 	foreach ($sonoszone as $zone => $zoneData) {
+		$memberon[$master] = $zoneData;
 		if ($member === 'all' || ($members && in_array($zone, $members))) {
 			$zoneon = checkZoneOnline($zone);
 			if ($zoneon === (bool)true and $master != $zone)  {
-				array_push($memberon, $zone);
+				$memberon[$zone] = $zoneData;
 			}
 		}
 		
 	}
-	LOGGING("play_t2s.php: MultiAudioclip: ".count($memberon)." Member has been identified plus Master", 7);
+	LOGGING("play_t2s.php: Audioclip: ".count($memberon)." Member has been identified (plus Master)", 7);
 	
 	#print_r($memberon);
 	return $memberon;

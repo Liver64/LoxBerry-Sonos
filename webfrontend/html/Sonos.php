@@ -914,12 +914,10 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 
 		case 'audioclip':
-			LOGDEB("sonos.php: audioclip called");
 			say();
 		break;
 		
 		case 'doorbell':
-			LOGDEB("sonos.php: Doorbell called");
 			doorbell(); 
 		break;
 		

@@ -258,6 +258,7 @@ function read_txt_file_to_array() {
 **/
 
 function restore_details($zone) {
+	
 	global $sonoszone, $sonos, $master, $actual, $j, $browselist, $senderName;
 
 	#print_r($actual);
@@ -265,10 +266,14 @@ function restore_details($zone) {
 	if ($actual[$zone]['Type'] == "Track")   {
 		#echo "TRACK for ".$zone."<br>";		
 		if ($actual[$zone]['PositionInfo']['Track'] != "0")    {
-			$sonos->SetTrack($actual[$zone]['PositionInfo']['Track']);
-			$sonos->Seek("REL_TIME", $actual[$zone]['PositionInfo']['RelTime']);
-			//RestoreShuffle($zone);
-			LOGGING("restore_t2s.php: Source 'Track' has been set for '".$zone."'", 7);
+			try {
+				$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$zone][1])."#0");
+				$sonos->SetTrack($actual[$zone]['PositionInfo']['Track']);
+				$sonos->Seek("REL_TIME", $actual[$zone]['PositionInfo']['RelTime']);
+				LOGGING("restore_t2s.php: Source 'Track' has been set for '".$zone."'", 7);
+			} catch (Exception $e) {
+				LOGGING("restore_t2s.php: Source 'Track' for '".$zone."' could not be restored", 4);
+			}	
 		}
 	} 
 	# TV
@@ -290,12 +295,12 @@ function restore_details($zone) {
 		LOGGING("restore_t2s.php: Source 'Radio' has been set for '".$zone."'", 7);
 	}
 	# Queue empty
-	elseif (empty($actual[$zone]['Type'])) {
+	elseif ($actual[$zone]['Type'] == "Nothing") {
 		#echo "No Queue for ".$zone."<br>";	
-		LOGGING("restore_t2s.php: '".$zone."' had no Queue", 7);
+		LOGGING("restore_t2s.php: Player '".$zone."' had no Queue", 7);
 	} else {
 		#echo "Something went wrong :-(<br>";	
-		LOGGING("restore_t2s.php: Something went wrong :-(", 4);
+		LOGGING("restore_t2s.php: Something unexpected went wrong for Player '".$zone."' :-(", 4);
 	}
 	return;
 }

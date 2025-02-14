@@ -41,7 +41,7 @@ function saveZonesStatus() {
 			} elseif (substr($posinfo["TrackURI"], 0, 15) == "x-rincon-stream")   {
 				$actual[$player]['Type'] = "LineIn";
 			} elseif (empty($posinfo["CurrentURIMetaData"]))   {
-				$actual[$player]['Type'] = "";
+				$actual[$player]['Type'] = "Nothing";
 			} else {
 				$actual[$player]['Type'] = "Track";
 			}

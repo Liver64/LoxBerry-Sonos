@@ -458,3 +458,8 @@
 			[IMPROVEMENT] Bei den Sound Profilen sind Auto Gruppierungen möglich
  5.8.4		[BUGFIX] Typo in index.cgi korrigiert
  5.8.6		[BUGFIX] Fixed play Funktion in Verbindung mit playlists
+			[BUGFIX] Fixed line-in selection
+			[BUGFIX] Fixed doorbell funktion (spielte zweitweise zweimal)
+			[IMPROVEMENT] AudioClip ist als Gruppenfunktion verfügbar
+			[NOTE] Sonos ARC ULTRA wurde als Soundbar hinzugefügt
+			[BUGFIX] Stabilisierung der Restore Funktion bei Gruppen TTS
