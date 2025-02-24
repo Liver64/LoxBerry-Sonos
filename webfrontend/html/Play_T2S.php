@@ -747,7 +747,7 @@ function sendAudioMultiClip($errortext = "") {
 
 function doorbell() {
 
-	global $config, $sonos, $sonoszone, $time_start;
+	global $config, $master, $sonos, $sonoszone, $time_start;
 
 	if(isset($_GET['playgong'])) {
 		LOGERR("play_t2s.php: Audioclip: playgong could not be used im combination with function 'doorbell'");
@@ -763,6 +763,8 @@ function doorbell() {
 		$zones = array_keys($zonesdoor);
 		$r = implode(',', $zones);
 		LOGGING("play_t2s.php: Audioclip: Players for doorbell ".$r." retrieved from URL", 7);
+	} else {
+		$zones = array($master);
 	}
 	if (isset($_GET['paused']))    {
 		$zones = IdentPausedPlayers();
@@ -779,7 +781,7 @@ function doorbell() {
 			LOGGING("play_t2s.php: Audioclip: Doorbell '".trim($file)."' with Priority HIGH has been announced", 7);	
 			audioclip_multi_post_request($zones, "CUSTOM", $prio, $jinglepath);
 		} else {
-			if ($_GET['file'] = "chime")   {
+			if ($_GET['file'] == "chime")   {
 				LOGGING("play_t2s.php: Audioclip: Sonos build-in Doorbell CHIME with Priority HIGH has been announced", 7);	
 				audioclip_multi_post_request($zones, "CHIME", $prio);
 			} else {
@@ -955,6 +957,7 @@ function sendgroupmessage() {
 			} else {
 				$member = explode(',', $member);
 				$memberon = array();
+				#print_r($member);
 				foreach ($member as $value) {
 					$zoneon = checkZoneOnline($value);
 					if ($zoneon === (bool)true)  {
@@ -1153,14 +1156,17 @@ function audioclip_handle_members($member) {
 	$memberon = array();
 	$members = explode(',', $member);
 	foreach ($sonoszone as $zone => $zoneData) {
-		$memberon[$master] = $zoneData;
+		if ($zone == $master)   {
+			$memberon[$master] = $zoneData;
+			LOGGING("play_t2s.php: Audioclip: Player '".$master."' has been added", 5);
+		}
 		if ($member === 'all' || ($members && in_array($zone, $members))) {
 			$zoneon = checkZoneOnline($zone);
 			if ($zoneon === (bool)true and $master != $zone)  {
 				$memberon[$zone] = $zoneData;
+				LOGGING("play_t2s.php: Audioclip: Member '".$zone."' has been added", 5);
 			}
-		}
-		
+		} 
 	}
 	LOGGING("play_t2s.php: Audioclip: ".count($memberon)." Member has been identified (plus Master)", 7);
 	
