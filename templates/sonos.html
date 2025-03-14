@@ -19,12 +19,30 @@ td input[type="checkbox"] {
     width: 70%;
 }
 
+div.scrollmenu {
+  overflow: auto;
+  white-space: nowrap;
+}
+
+div.scrollmenu a {
+  display: inline-block;
+  color: white;
+  text-align: center;
+  padding: 14px;
+  text-decoration: none;
+}
+
+div.scrollmenu a:hover {
+  background-color: #777;
+}
+
 </style>
 
 <TMPL_IF SETTINGS>
     <!-- form 'FORM' START -->
 	
     <form method="post" data-ajax="false" accept-charset="utf-8" name="main_form" id="main_form" action="./index.cgi?form">
+		<!--<div class="scrollmenu">-->
         <input type="hidden" name="saveformdata1" value="1">
 		<input type="hidden" name="regionOptions" id="regionOptions" value="<TMPL_VAR TTS.regionms>">
 		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table.css"/>
@@ -59,7 +77,7 @@ td input[type="checkbox"] {
                     <td style="height: 41px; width: 25%;" valign="top">
                         <label id="lzonen"><TMPL_VAR ZONES.SONOS_ZONE_LABEL></label>
                     </td>
-                    <td valign="middle" style="height: 41px; width: 60%;">
+                    <td valign="middle" style="height: 41px; width: 90%;">
 						<table class="tables" width="85%" id="tblzonen" name="tblzonen">
                             <tr>
 								<th align="middle"><img class='ico_delete' src='/plugins/<TMPL_VAR PLUGINDIR>/images/recycle-bin.png' border='0' width='24' height='24'></th>
@@ -89,6 +107,12 @@ td input[type="checkbox"] {
                                 </th>
                                 <th align="left">
                                     <TMPL_VAR ZONES.SONOS_MAX-VOL>
+                                </th>
+								<th align="left">
+                                    <TMPL_VAR ZONES.SONOS_FROM>
+                                </th>
+								<th align="left">
+                                    <TMPL_VAR ZONES.SONOS_TO>
                                 </th>
                             </tr>
                             <TMPL_VAR ROWSSONOSPLAYER>
@@ -192,79 +216,25 @@ td input[type="checkbox"] {
                                 <td class="tvmon_header" style="width: 23px; text-align: center;">
                                     &nbsp;</td>
                                 <td>
-                                    <table border="0" style="width: 100%">
+                                    <table border="0" style="width: 40%">
                                         <tr>
-                                            <td class="tvmon_header" style="height: 60px; width: 12%">
-												<label align="right" id="lstart"><TMPL_VAR ZONES.SONOS_LABEL_START></label>
+                                            <td class="tvmon_header" style="height: 25%; width: 35%">
+												<label align="center" id="lstart"><TMPL_VAR ZONES.SONOS_LABEL_START></label>
 											</td>
-                                <td class="tvmon_header" style="width: 10%">
+                                <td class="tvmon_header" style="width: 20%">
 									<div id="tvmon_addstart">
-										<fieldset style="width: 95%">
-										<select id="starttime" name="starttime" data-mini="true" data-native-menu="true" style="width: 100%">
-											  <option value="0">0:00</option>
-											  <option value="1">1:00</option>
-											  <option value="2">2:00</option>
-											  <option value="3">3:00</option>
-											  <option value="4">4:00</option>
-											  <option value="5">5:00</option>
-											  <option value="6">6:00</option>
-											  <option value="7">7:00</option>
-											  <option value="8">8:00</option>
-											  <option value="9">9:00</option>
-											  <option value="10">10:00</option>
-											  <option value="11">11:00</option>
-											  <option value="12">12:00</option>
-											  <option value="13">13:00</option>
-											  <option value="14">14:00</option>
-											  <option value="15">15:00</option>
-											  <option value="16">16:00</option>
-											  <option value="17">17:00</option>
-											  <option value="18">18:00</option>
-											  <option value="19">19:00</option>
-											  <option value="20">20:00</option>
-											  <option value="21">21:00</option>
-											  <option selected="selected" value="22">22:00</option>
-											  <option value="23">23:00</option>
-										</select>
-									</fieldset>
-                                    <script>
-                                        $('#starttime').val('<TMPL_VAR VARIOUS.starttime>');
-                                    </script>
+										<input id='starttime' type='time' name='starttime'  style='width: 100px'>
+										<script>
+											$('#starttime').val('<TMPL_VAR VARIOUS.starttime>');
+										</script>
 									</div>
+								</td>
+								<td class="tvmon_header" style="width: 5%; height: 15%;">
+                                    <label align="center" id="lend"><TMPL_VAR ZONES.SONOS_LABEL_END></label>
                                 </td>
-								<td class="tvmon_header" style="width: 3%; height: 60px;">
-                                    <label align="right" id="lend"><TMPL_VAR ZONES.SONOS_LABEL_END></label>
-                                </td>
-                                <td class="tvmon_header" style="width: 50%">
+                                <td class="tvmon_header" style="width: 20%">
 									<div id="tvmon_addend">
-										<fieldset style="width: 20%">
-											<select id="endtime" name="endtime" data-mini="true" data-native-menu="true" style="width: 100%">
-												  <option value="0">0:00</option>
-												  <option value="1">1:00</option>
-												  <option value="2">2:00</option>
-												  <option value="3">3:00</option>
-												  <option value="4">4:00</option>
-												  <option value="5">5:00</option>
-												  <option value="6">6:00</option>
-												  <option value="7">7:00</option>
-												  <option value="8">8:00</option>
-												  <option value="9">9:00</option>
-												  <option value="10">10:00</option>
-												  <option value="11">11:00</option>
-												  <option value="12">12:00</option>
-												  <option value="13">13:00</option>
-												  <option value="14">14:00</option>
-												  <option value="15">15:00</option>
-												  <option value="16">16:00</option>
-												  <option value="17">17:00</option>
-												  <option value="18">18:00</option>
-												  <option value="19">19:00</option>
-												  <option value="20">20:00</option>
-												  <option value="21">21:00</option>
-												  <option selected="selected" value="22">22:00</option>
-												  <option value="23">23:00</option>
-											</select>
-										</fieldset>
+										<input id='endtime' type='time' name='endtime'>
 										<script>
 											$('#endtime').val('<TMPL_VAR VARIOUS.endtime>');
 										</script>
@@ -983,7 +953,9 @@ td input[type="checkbox"] {
                 </div>
         </div>
         <!-- Ende Donation -->
-    </form>
+    <!--</div>-->
+	</form>
+	
 	
 
 	<!-- Speech SDK reference sdk. -->
@@ -1651,7 +1623,8 @@ td input[type="checkbox"] {
 							//console.log(data);
 							$.each(data, function(index, valu) {
 								if (valu[13] == 'SB')   {
-									if (valu[8] == 'SUB' && valu.length == 15) {
+									console.log(valu);
+									if (valu[8] == 'SUB' && valu.length == 15 || valu.length == 17) {
 										$("#tvmonnightsub_" + index).val(valu[14].tvmonnightsub).flipswitch("refresh");
 										$("#subgain_" + index).val(valu[14].tvmonnightsublevel).selectmenu("refresh");
 									} else if (valu[8] == 'SUB' && valu.length == 14) {
@@ -1661,14 +1634,14 @@ td input[type="checkbox"] {
 										$("#tvmonnightsub_" + index).flipswitch("disable").flipswitch("refresh");
 										$("#subgain_" + index).val("0").selectmenu("disable").selectmenu("refresh");
 									}
-									if (valu[10] == 'SUR' && valu.length == 15) {
+									if (valu[10] == 'SUR' && valu.length == 15 || valu.length == 17) {
 										$("#tvmonsurr_" + index).val(valu[14].tvmonsurr).flipswitch("refresh");
 									} else if (valu[10] == 'SUR' && valu.length == 14) {
 										$("#tvmonsurr_" + index).val("false").flipswitch("refresh");
 									} else {
 										$("#tvmonsurr_" + index).val('false').flipswitch("disable").flipswitch("refresh");
 									}
-									if (valu.length == 15)   {
+									if (valu.length == 15 || valu.length == 17)   {
 										$("#sbzone_" + index).val(index).text("refresh");
 										$("#usesb_" + index).val(valu[14].usesb).flipswitch("refresh");
 										$("#tvmonspeech_" + index).val(valu[14].tvmonspeech).flipswitch("refresh");
@@ -2210,6 +2183,7 @@ td input[type="checkbox"] {
 <TMPL_IF VOLUME>
 <!-- form 'FORM' VOLUME -->
 <form method="post" data-ajax="false" accept-charset="utf-8" name="main_form" id="main_form" action="./index.cgi?do=volume">
+		<!--<div class="scrollmenu">-->
         <input type="hidden" name="saveformdata3" value="1">
 		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table.css"/>
 		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.min.css"/>
@@ -2838,6 +2812,7 @@ td input[type="checkbox"] {
 		
 
 		</script>
+	<!--</div>-->
 </form>	
 		
 </TMPL_IF>

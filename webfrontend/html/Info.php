@@ -216,9 +216,16 @@ function debugInfo()     {
 	unset($debugconfig['MP3']['volumedown']);
 	unset($debugconfig['MP3']['cachesize']);
 	unset($debugconfig['MP3']['MP3store']);
-	unset($debugconfig['SYSTEM']['cifsinterface']);
-	unset($debugconfig['SYSTEM']['checkonline']);
+	unset($debugconfig['SYSTEM']['httpinterface']);
+	#unset($debugconfig['SYSTEM']['checkonline']);
 	unset($debugconfig['SYSTEM']['checkt2s']);
+	unset($debugconfig['SYSTEM']['smbinterface']);
+	#unset($debugconfig['SYSTEM']['hw_update']);
+	unset($debugconfig['SYSTEM']['hw_update_day']);
+	unset($debugconfig['SYSTEM']['hw_update_power']);
+	unset($debugconfig['SYSTEM']['hw_update_time']);
+	unset($debugconfig['SYSTEM']['path']);
+	unset($debugconfig['SYSTEM']['ttspath']);
 	unset($debugconfig['TTS']['phonemute']);
 	unset($debugconfig['TTS']['volrampto']);
 	unset($debugconfig['TTS']['audiocodec']);
@@ -231,7 +238,7 @@ function debugInfo()     {
 	unset($debugconfig['VARIOUS']['donate']);
 	unset($debugconfig['VARIOUS']['CALDav2']);
 	unset($debugconfig['VARIOUS']['CALDavMuell']);
-	#unset($debugconfig['VARIOUS']['cron']);
+	unset($debugconfig['VARIOUS']['cron']);
 	
 	$folfilePlOn = "$lbpdatadir/PlayerStatus/s4lox_on_";				// Folder and file name for Player Status
 	$soundbars = identSB($sonoszone, $folfilePlOn);
@@ -257,7 +264,12 @@ function debugInfo()     {
 		unset($debugconfig['sonoszonen'][$zonepl][11]); // Audio
 		unset($debugconfig['sonoszonen'][$zonepl][12]); // Voice
 		unset($debugconfig['sonoszonen'][$zonepl][13]); // Soundbar
-		$data['IP-ADDRESS'] = $val[0];
+		#$data['IP-ADDRESS'] = $val[0];
+		$split_ip = explode(".", $val[0]);
+		#print_r($split_ip);
+		$split_ip[3] = "xxx";
+		$ipadr = $split_ip[0].".".$split_ip[1].".".$split_ip[2].".".$split_ip[3];
+		#$data['IP-ADDRESS'] = $ipadr;
 		$handle = @stream_socket_client("$val[0]:$port", $errno, $errstr, $timeout);
 		if($handle) {
 			$data['STATUS'] = "Online";
@@ -271,10 +283,20 @@ function debugInfo()     {
 		}
 		$data['MODEL NO'] = $val[7];
 		$data['PLAYER TYPE'] = $val[2];
+		if ($val[13] == "SB")  {
+			$data['SOUNDBAR'] = "Yes";
+		} else {
+			$data['SOUNDBAR'] = "No";
+		}
 		if ($val[8] == "SUB")  {
 			$data['SUB'] = "Yes";
 		} else {
 			$data['SUB'] = "No";
+		}
+		if ($val[10] === "SUR")  {
+			$data['SURROUND'] = "Yes";
+		} else {
+			$data['SURROUND'] = "No";
 		}
 		if (is_enabled($val[11]))  {
 			$data['AUDIO'] = "Yes";
@@ -286,11 +308,8 @@ function debugInfo()     {
 		} else {
 			$data['VOICE'] = "No";
 		}
-		if ($val[13] == "SB")  {
-			$data['SOUNDBAR'] = "Yes";
-		} else {
-			$data['SOUNDBAR'] = "No";
-		}
+		$data['ACTIVE FROM'] = $debugconfig['sonoszonen'][$zonepl][15];
+		$data['ACTIVE TO'] = $debugconfig['sonoszonen'][$zonepl][16];
 		
 		$debugconfig['sonoszonen'][$zonepl] = $data;
 	}
@@ -323,22 +342,24 @@ function debugInfo()     {
 		unset($debugconfig['TTS']['secretkeys']);
 		$debugconfig['TTS']['secretkey'] = "valid";
 	}
-	if ($debugconfig['LOXONE']['LoxDaten'] == "1")    {
+	unset($debugconfig['LOXONE']['LoxPort']);
+	if (is_enabled($debugconfig['LOXONE']['LoxDaten']))    {
 		$debugconfig['LOXONE']['LoxDaten'] = "enabled";
-		if ($debugconfig['LOXONE']['LoxDatenMQTT'] == "1")    {
-			$debugconfig['LOXONE']['LoxDaten'] = "MQTT";
-			$debugconfig['LOXONE']['LoxPort'] = "";
+		if (is_enabled($debugconfig['LOXONE']['LoxDatenMQTT']))    {
+			$debugconfig['LOXONE']['LoxDatenProtocol'] = "MQTT";
 		} else {
-			$debugconfig['LOXONE']['LoxDaten'] = "UDP";
+			$debugconfig['LOXONE']['LoxDatenProtocol'] = "UDP";
+			if (is_disabled($debugconfig['LOXONE']['LoxPort']))    {
+				$debugconfig['LOXONE']['LoxPort'] = "entered";
+			}
 		}
 	} else {
 		$debugconfig['LOXONE']['LoxDaten'] = "disabled";
-		$debugconfig['LOXONE']['LoxPort'] = "";
 	}
 	unset($debugconfig['LOXONE']['LoxDatenMQTT']);
 	# Anynomise last digits of IP-Address
 	#foreach ($debugconfig['sonoszonen'] as $key => $value)   {
-	#	$debugconfig['sonoszonen'][$key][0] = substr($value[0], 0, 10).".xxx";
+		#$data['IPADR'] = substr($value[0], 0, 10).".xxx";
 	#}
 	if ($debugconfig['TTS']['t2s_engine'] == "9001")   {
 		$debugconfig['TTS']['t2s_engine'] = "MS Azure";
@@ -411,8 +432,11 @@ function debugInfo()     {
 	$interim = $array['ZoneGroupState']['ZoneGroups']['ZoneGroup'];
 	$debugconfig['ZONE INFOS'] = $interim;
 	$actlog = file_get_contents($lbplogdir."/s4lox_debug_".$heute.".log");
-	$debugconfig['LOG'] = $actlog;
+	$debugconfig['SONOS_LOG'] = $actlog;
+	$phplog = file_get_contents(LBHOMEDIR."/log/system_tmpfs/apache2/php.log");
+	$debugconfig['PHP_LOG'] = $phplog;
 	#print_r($debugconfig);
+	
 	file_put_contents($debuggingfile, print_r($debugconfig, true));
 	echo "A full snapshot of your system/command has been executed...<br><br>";
 	echo "Please check debug file 's4lox_debug_config.json' in '$lbpdatadir' for further analysis! Your personal data has been anonymized.<br>";

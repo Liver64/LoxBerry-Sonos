@@ -1,7 +1,7 @@
 <?php
 
 /**
-* Submodul: Radio
+* Submodul: Radio (obsolete da neues TuneIN)
 *
 **/
 
@@ -31,12 +31,12 @@ function radio(){
 		LOGERR("radio.php: You have maybe a typo! Correct syntax is: &action=radioplaylist&playlist=<PLAYLIST> or <RADIO>");
 		exit;
 	}
-	$check_stat = getZoneStatus($master);
-	if ($check_stat != (string)"single")  {
-		$sonos->BecomeCoordinatorOfStandaloneGroup();
-		LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
-	}
-	$sonos = new SonosAccess($config['sonoszonen'][$master][0]);
+	#$check_stat = getZoneStatus($master);
+	#if ($check_stat != (string)"single")  {
+	#	$sonos->BecomeCoordinatorOfStandaloneGroup();
+	#	LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
+	#}
+	$sonos = new SonosAccess($sonoszone[$master][0]);
 	$coord = $master;
 	$roomcord = getRoomCoordinator($coord);
 	$sonosroom = new SonosAccess($roomcord[0]); //Sonos IP Adresse
@@ -66,12 +66,16 @@ function radio(){
 	$countradio = count($found);
 	if ($countradio > 0)   {
 		$sonos->SetRadio(urldecode($found[0][0]["res"]),$found[0][0]["title"]);
-		if(!isset($_GET['load'])) {
-			$sonosroom->SetMute(false);
-			$sonosroom->Stop();
-			$sonosroom->SetVolume($volume);
-			$sonosroom->Play();
+		if(!isset($_GET['load']) and !isset($_GET['rampto'])) {
+			$sonos->SetMute(false);
+			$sonos->Stop();
+			$sonos->SetVolume($volume);
+			$sonos->Play();
+			LOGOK("radio.php: Your Plugin Radio '".$found[0][0]["title"]."' has been successful loaded and is playing!");
+		} else {
+			LOGOK("radio.php: Your Plugin Radio '".$found[0][0]["title"]."' has only been successful loaded. Please execute play seperatelly");
 		}
+		RampTo();
 		LOGGING("radio.php: Radio Station '".$found[0][0]["title"]."' has been loaded successful",6);
 	} else {
 		LOGGING("radio.php: Radio Station '".$found[0][0]["title"]."' could not be loaded. Please check your input.",3);
@@ -81,10 +85,10 @@ function radio(){
 		#}
 		exit;
 	}
-	if(isset($_GET['member']))   {
-		AddMemberTo();
-		LOGGING("radio.php: Group Radio has been called.", 7);
-	}
+	#if(isset($_GET['member']))   {
+	#	AddMemberTo();
+	#	LOGGING("radio.php: Group Radio has been called.", 7);
+	#}
 }
 
 
@@ -96,6 +100,7 @@ function radio(){
 * @return: 
 **/
 function nextradio() {
+	
 	global $sonos, $config, $lookup, $master, $debug, $min_vol, $volume, $tmp_tts, $sonoszone, $tmp_error, $stst;
 	
 	$radioanzahl_check = count($config['RADIO']);
@@ -106,6 +111,12 @@ function nextradio() {
 	if (file_exists($tmp_tts))  {
 		LOGGING("radio.php: Currently a T2S is running, we skip nextradio for now. Please try again later.",6);
 		exit;
+	}
+	#print_r(GROUPMASTER);
+	if (isset($_GET['member'])) {
+		$master = GROUPMASTER;
+	} else {
+		$master = $_GET['zone'];
 	}
 	$textan = "0";
 	if (file_exists($tmp_error)) {
@@ -121,9 +132,8 @@ function nextradio() {
 			$textan = "1";
 			LOGINF("Sonos: radio.php: Info of broken Radio URL has been announced once.");
 		}
-		#exit;
 	}
-	$sonos = new SonosAccess($config['sonoszonen'][$master][0]);
+	$sonos = new SonosAccess($sonoszone[$master][0]);
 	$sonos->ClearQueue();
 		$playstatus = $sonos->GetTransportInfo();
 	$radioname = $sonos->GetMediaInfo();
@@ -305,10 +315,10 @@ function say_radio_station($errortext ='') {
 		if ($tmp_volume >= $min_vol)  {
 			$volume = $tmp_volume;
 		} else {
-			$volume = $config['sonoszonen'][$master][4];
+			$volume = $sonoszone[$master][4];
 		}
 	} else {
-		$volume = $config['sonoszonen'][$master][4];
+		$volume = $sonoszone[$master][4];
 	}
 	return $volume;
 }
@@ -389,6 +399,11 @@ function PluginRadio()
 			exit(1);
 		}
     }
+	if (isset($_GET['member'])) {
+		$master = GROUPMASTER;
+	} else {
+		$master = $_GET['zone'];
+	}
 	$sonos = new SonosAccess($sonoszone[$master][0]);
 	$enteredRadio = mb_strtolower($_GET['radio']);
 	$radios = $config['RADIO']['radio'];
@@ -414,15 +429,6 @@ function PluginRadio()
 		LOGERR ("radio.php: Your entered favorite/keyword '".$enteredRadio."' has more then 1 hit! Please specify more detailed.");
 		exit;
 	}
-	$check_stat = getZoneStatus($master);
-	if ($check_stat != (string)"single")  {
-		#$sonos->BecomeCoordinatorOfStandaloneGroup();
-		LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
-	}
-	if(isset($_GET['member'])) {
-		AddMemberTo();
-		LOGINF ("radio.php: Member has been added");
-	}
 	# if no match has been found
 	if (count($re) < 1)  {
 		LOGERR ("radio.php: Your entered favorite/keyword '".$enteredRadio."' could not be found! Please specify more detailed.");
@@ -436,9 +442,15 @@ function PluginRadio()
 		if (isset($_GET['profile']) or isset($_GET['Profile']))    {
 			$volume = $lookup[0]['Player'][$master][0]['Volume'];
 		}
-		$sonos->SetVolume($volume);
-		$sonos->Play();
-		LOGOK("radio.php: Your Radio '".$re[0][0][0]."' has been successful loaded and is playing!");
+		
+		if(!isset($_GET['load']) and !isset($_GET['rampto'])) {
+			$sonos->SetMute(false);
+			$sonos->Stop();
+			$sonos->SetVolume($volume);
+			$sonos->Play();
+			LOGOK("radio.php: Your Plugin Radio '".$re[0][0][0]."' has been successful loaded and is playing!");
+		}
+		RampTo();
 	} catch (Exception $e) {
 		LOGERR("radio.php: Something went unexpected wrong! Please check your URL/entry and try again!");
 		exit;

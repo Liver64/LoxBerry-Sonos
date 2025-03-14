@@ -155,6 +155,9 @@
 				} else {
 					$sonoszonen[$zone][10] ="NOSUR";
 				}
+				#if (isset($sonoszonen[$zone][14]['fromtime']) and strlen((string)$sonoszonen[$zone][14]['fromtime']) == "2")  {
+				#	$mig = $sonoszonen[$zone][14]['fromtime'].":00";
+				#}
 			}
 			# Update Software Version of Player
 			if ($sonoszonen[$zone][9] <> "2" and $sonoszonen[$zone][9] <> "1")  {
@@ -214,6 +217,9 @@
 					echo "<OK> Settings for TV Monitor has been migrated. Please doublecheck settings for Zone '".$zone."'".PHP_EOL;
 				}
 			}
+			if (isset($sonoszonen[$zone][14]['fromtime']) and strlen((string)$sonoszonen[$zone][14]['fromtime']) == "2")  {
+				$sonoszonen[$zone][14]['fromtime'] = $sonoszonen[$zone][14]['fromtime'].":00";
+			}
 		}
 		if (isset($config['VARIOUS']['tvmonnight']))    {
 			unset($config['VARIOUS']['tvmonnight']);
@@ -226,6 +232,14 @@
 		}
 		if (isset($config['VARIOUS']['fromtime']))    {
 			unset($config['VARIOUS']['fromtime']);
+		}
+		$TV_start = strlen($config['VARIOUS']['starttime']);
+		$TV_end = strlen($config['VARIOUS']['endtime']);
+		if (isset($config['VARIOUS']['starttime']) and $TV_start == 2)    {
+			$config['VARIOUS']['starttime'] = $config['VARIOUS']['starttime'].":00";
+		}
+		if (isset($config['VARIOUS']['endtime']) and $TV_end == 2)    {
+			$config['VARIOUS']['endtime'] = $config['VARIOUS']['endtime'].":00";
 		}
 
 	#unset($config['sonoszonen']);

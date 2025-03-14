@@ -38,7 +38,7 @@ $stat = $lbphtmldir."/".$tmp_play;
 $mem_sendall = 0;
 $mem_sendall_sec = 3600;
 
-global $mem_sendall, $mem_sendall_sec, $nextr;
+global $mem_sendall, $mem_sendall_sec, $nextr, $sonoszone;
 
 	# Parsen der Konfigurationsdatei sonos.cfg
 	if (file_exists($lbpconfigdir . "/" . $configfile))    {
@@ -52,6 +52,9 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 	if(!is_enabled($config['LOXONE']['LoxDaten'])) {
 		exit;
 	}
+	
+	# Declaration of variable
+	$sonoszonen = $config['sonoszonen'];
 	
 	# get MS
 	$ms = LBSystem::get_miniservers();
@@ -68,8 +71,7 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 		$mqttstat = "0";
 	}
 	
-	# Declaration of variable
-	$sonoszonen = $config['sonoszonen'];
+	
 	
 	/**
 	// check if zones are connected	
@@ -99,17 +101,21 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 		#$sonoszone = $sonoszonen;
 	}
 	#print_r($zonesonline);
-	*/
+	
 	
 	// addded 20072022
+	$zonesonline = array();
 	foreach($sonoszonen as $zonen => $ip) {
 		$handle = is_file($folfilePlOn."".$zonen.".txt");
 		#var_dump($handle);
 		if($handle === true) {
 			$sonoszone[$zonen] = $ip;
-			#array_push($zonesonline, $zonen);
+			array_push($zonesonline, $zonen);
 		}
 	}
+	*/
+	# get active zones
+	$sonoszone = sonoszonen_on();
 	
 	// identify those zones which are not single/master
 	$tmp_playing = array();
@@ -172,7 +178,7 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 	function send_udp()  {	
 	
 	global $config, $mqtt, $mqttstat, $my_ms, $sonoszone, $sonoszonen, $sonos, $mem_sendall_sec, $mem_sendall, $response, $nextr; 
-	
+
 		// LoxBerry **********************
 		# send UDP data
 		$sonos_array_diff = @array_diff_key($sonoszonen, $sonoszone);
@@ -244,17 +250,17 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 	function send_vit()  {
 		
 		global $config, $mqtt, $mqttstat, $my_ms, $sonoszone, $sonoszonen, $sonos, $valuesplit, $split, $station, $nextr; 
-
+		
 		foreach ($sonoszone as $zone => $player) {
 			$sonos = new SonosAccess($sonoszone[$zone][0]);
 			$temp = $sonos->GetPositionInfo();
 			$w = getZoneStatus($zone);
 			if ($w == 'master')   {
 				$sid = getStreamingService($player[0]);
-				file_put_contents("/tmp/sid.txt", $sid);
+				file_put_contents("/run/shm/sid.txt", $sid);
 			}
 			else if ($w == 'member')   {
-				$sid = file_get_contents("/tmp/sid.txt");
+				$sid = file_get_contents("/run/shm/sid.txt");
 			}
 			else if ($w == 'single')   {
 				$sid = getStreamingService($player[0]);
@@ -342,6 +348,9 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 					if ($value == "TV")  {
 						$sid = "TV";
 						$data['tvstate_'.$zone] = $tvstate;
+					} else {
+						$sid = "";
+						$data['tvstate_'.$zone] = "";
 					}
 					$data['sid_'.$zone] = $sid;
 					$data['cover_'.$zone] = $cover;
@@ -363,6 +372,7 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 				$valuesplit[0] = ' ';
 				$valuesplit[1] = ' ';
 				$valueurl = ' ';
+				$value = ' ';
 				$station = ' ';
 				$sid = ' ';
 				$cover = ' ';
@@ -375,9 +385,11 @@ global $mem_sendall, $mem_sendall_sec, $nextr;
 				$data['source_'.$zone] = $source;
 				$data['sid_'.$zone] = $sid;
 				$data['cover_'.$zone] = $cover;
-				if ($value == "TV")  {
-					$data['tvstate_'.$zone] = $tvstate;
-				}
+				#if ($value == "TV")  {
+				$data['tvstate_'.$zone] = $value;
+				#} else {
+				#	$data['tvstate_'.$zone] = "";
+				#}
 				if ($mqttstat == "1")   {
 					$mqtt->publish('Sonos4lox/titint/'.$zone, $data['titint_'.$zone], 0, 1);
 					$mqtt->publish('Sonos4lox/tit/'.$zone, $data['tit_'.$zone], 0, 1);

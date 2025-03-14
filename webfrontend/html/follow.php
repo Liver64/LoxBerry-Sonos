@@ -44,7 +44,7 @@ function getHost()    {
 		$state = checkOnline($hostroom);
 		if ($state == "true")  {
 			LOGINF("follow.php: Host '".$hostroom."' has been entered in URL and is Online");
-			$host		= $sonoszone[$hostroom][1];
+			$host = $sonoszone[$hostroom][1];
 		} else {
 			# Switch to function/play
 			if (is_enabled($backup))    {

@@ -20,7 +20,7 @@ function zap()
 		exit;
 	}
 	# become single zone 1st
-	$sonos = new SonosAccess($config['sonoszonen'][$master][0]);
+	$sonos = new SonosAccess($sonoszone[$master][0]);
 	$check_stat = getZoneStatus($master);
 	if ($check_stat != (string)"single")  {
 		$sonos->BecomeCoordinatorOfStandaloneGroup();
@@ -70,7 +70,7 @@ function zap()
 			LOGGING("queue.php: Zapzone Sub-Function '".$subfunction."' has been called ",7);
 		} else {
 			# join zone to currently running zone
-			$sonos = new SonosAccess($config['sonoszonen'][$master][0]);
+			$sonos = new SonosAccess($sonoszone[$master][0]);
 			$sonos->SetAVTransportURI("x-rincon:" . $runarray[2]);
 			LOGGING("queue.php: Zone ".$master." has been added as member to Zone ".$runarray[0],7);
 			sleep(1);
@@ -94,7 +94,7 @@ function zap()
 			exit;
 		} else {
 			# add master to zone and remove zone from array
-			$sonos = new SonosAccess($config['sonoszonen'][$master][0]);
+			$sonos = new SonosAccess($sonoszone[$master][0]);
 			$sonos->SetAVTransportURI("x-rincon:" . $file[2]);
 			LOGGING("queue.php: Zone ".$master." has been added as member to Zone ".$file[0],7);
 			sleep(1);
@@ -231,10 +231,10 @@ function PlayFavorite()
 		$sonos->BecomeCoordinatorOfStandaloneGroup();
 		LOGGING("queue.php: Zone ".$master." has been ungrouped.",5);
 	}
-	if(isset($_GET['member'])) {
-		AddMemberTo();
-		LOGINF ("queue.php: Member has been added");
-	}
+	#if(isset($_GET['member'])) {
+	#	AddMemberTo();
+	#	LOGINF ("queue.php: Member has been added");
+	#}
 	$sonos = new SonosAccess($sonoszone[$master][0]);
 	$sonos->Stop();
 	$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
@@ -307,11 +307,11 @@ if (count($sonos->GetFavorites()) < 1)    {
 					$sonos->BecomeCoordinatorOfStandaloneGroup();
 					LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
 				}
-				if(isset($_GET['member'])) {
-					AddMemberTo();
-					$sonos = new SonosAccess($sonoszone[$master][0]);
-					LOGINF ("sonos.php: Member has been added");
-				}
+				#if(isset($_GET['member'])) {
+				#	AddMemberTo();
+				#	$sonos = new SonosAccess($sonoszone[$master][0]);
+				#	LOGINF ("sonos.php: Member has been added");
+				#}
 				DeleteTmpFavFiles();
 				@$sonos->ClearQueue();
 				LOGGING("Queue has been deleted", 7);
@@ -501,11 +501,11 @@ function PlayTrackFavorites()
 			$sonos->BecomeCoordinatorOfStandaloneGroup();
 			LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
 		}
-		if(isset($_GET['member'])) {
-			AddMemberTo();
-			$sonos = new SonosAccess($sonoszone[$master][0]);
-			LOGINF ("sonos.php: Requested Member has been added");
-		}
+		#if(isset($_GET['member'])) {
+		#	AddMemberTo();
+		#	$sonos = new SonosAccess($sonoszone[$master][0]);
+		#	LOGINF ("sonos.php: Requested Member has been added");
+		#}
 		DeleteTmpFavFiles();
 		@$sonos->ClearQueue();
 		LOGGING("sonos.php: Queue has been deleted", 7);
@@ -621,11 +621,11 @@ function PlayRadioFavorites()
 					$sonos->BecomeCoordinatorOfStandaloneGroup();
 					LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
 				}
-				if(isset($_GET['member'])) {
-					AddMemberTo();
-					$sonos = new SonosAccess($sonoszone[$master][0]);
-					LOGINF ("sonos.php: Member has been added");
-				}
+				#if(isset($_GET['member'])) {
+				#	AddMemberTo();
+				#	$sonos = new SonosAccess($sonoszone[$master][0]);
+				#	LOGINF ("sonos.php: Member has been added");
+				#}
 				LOGOK ("sonos.php: Your Radio Favorites has been identified");
 				DeleteTmpFavFiles();
 				@$sonos->ClearQueue();
@@ -725,11 +725,11 @@ function PlaySonosPlaylist()
 					$sonos->BecomeCoordinatorOfStandaloneGroup();
 					LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
 				}
-				if(isset($_GET['member'])) {
-					AddMemberTo();
-					$sonos = new SonosAccess($sonoszone[$master][0]);
-					LOGINF ("sonos.php: Member has been added");
-				}
+				#if(isset($_GET['member'])) {
+				#	AddMemberTo();
+				#	$sonos = new SonosAccess($sonoszone[$master][0]);
+				#	LOGINF ("sonos.php: Member has been added");
+				#}
 				LOGOK ("sonos.php: Your Radio Favorites has been identified");
 				DeleteTmpFavFiles();
 				@$sonos->ClearQueue();
@@ -828,11 +828,11 @@ function PlayTuneInPlaylist()
 					$sonos->BecomeCoordinatorOfStandaloneGroup();
 					LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
 				}
-				if(isset($_GET['member'])) {
-					AddMemberTo();
-					$sonos = new SonosAccess($sonoszone[$master][0]);
-					LOGINF ("sonos.php: Member has been added");
-				}
+				#if(isset($_GET['member'])) {
+				#	AddMemberTo();
+				#	$sonos = new SonosAccess($sonoszone[$master][0]);
+				#	LOGINF ("sonos.php: Member has been added");
+				#}
 				LOGOK ("sonos.php: Your TuneIn Favorite Radio Station has been identified");
 				DeleteTmpFavFiles();
 				@$sonos->ClearQueue();
@@ -934,11 +934,11 @@ function PlayPlaylistFavorites()
 					$sonos->BecomeCoordinatorOfStandaloneGroup();
 					LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
 				}
-				if(isset($_GET['member'])) {
-					AddMemberTo();
-					$sonos = new SonosAccess($sonoszone[$master][0]);
-					LOGINF ("sonos.php: Member has been added");
-				}
+				#if(isset($_GET['member'])) {
+				#	AddMemberTo();
+				#	$sonos = new SonosAccess($sonoszone[$master][0]);
+				#	LOGINF ("sonos.php: Member has been added");
+				#}
 				LOGOK ("sonos.php: Your Radio Favorites has been identified");
 				DeleteTmpFavFiles();
 				@$sonos->ClearQueue();

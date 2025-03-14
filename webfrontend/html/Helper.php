@@ -121,13 +121,13 @@ function searchForKey($id, $array) {
 
 function checkZonesOnline($member) {
 	
-	global $sonoszonen, $zonen, $debug, $config, $folfilePlOn;
+	global $sonoszonen, $sonoszone, $zonen, $debug, $config, $folfilePlOn;
 	
 	$memberzones = $member;
 	
 	foreach($memberzones as $zonen) {
 		if(!array_key_exists($zonen, $sonoszonen)) {
-			LOGGING("helper.php: The entered member zone does not exist, please correct your syntax!!", 3);
+			LOGGING("helper.php: The entered member zone if Offline, time restricted or does not exist, please correct your syntax!!", 3);
 			exit;
 		}
 	}
@@ -136,13 +136,15 @@ function checkZonesOnline($member) {
 	LOGGING("sonos.php: Backup Online check for Players will be executed",7);
 	foreach($sonoszonen as $zonen => $ip) {
 		$handle = file_exists($folfilePlOn."".$zonen.".txt");
-		if($handle) {
-			$sonoszone[$zonen] = $ip;
-			array_push($zonesonline, $zonen);
+		if($handle === true) {
+			if (array_key_exists($zonen, $sonoszone)) {
+				#$sonoszone[$zonen] = $ip;
+				array_push($zonesonline, $zonen);
+			}
 		}
 	}
 	$member = $zonesonline;
-	// print_r($member);
+	#print_r($member);
 	return($member);
 }
 
@@ -155,21 +157,28 @@ function checkZonesOnline($member) {
 /* @return: true or nothing
 **/
 
-function checkZoneOnline($MemberTest) {
+function checkZoneOnline($MemberTest)   {
 	
-	global $sonoszone, $debug, $config, $folfilePlOn;
+	global $sonoszone, $sonoszonen, $debug, $config, $folfilePlOn;
 
 	if ($MemberTest == 'all')   {
 		return false;
 	}
-	if(!array_key_exists($MemberTest, $sonoszone)) {
-		LOGWARN("helper.php: The entered Zone '".$MemberTest."' does not exist, please correct your syntax!!");
-		#return false;
+	#print_r($MemberTest);
+	if(!array_key_exists($MemberTest, $sonoszonen)) {
+		LOGERR("helper.php: The entered Zone '".$MemberTest."' does not exist. Please correct your syntax!!");
+		exit;
 	}
-	$handle = file_exists($folfilePlOn."".$MemberTest.".txt");
-	if(!$handle === false) {
-		$zoneon = true;
-		return($zoneon);
+	#if(!array_key_exists($MemberTest, $sonoszone)) {
+		#LOGWARN("helper.php: The entered Zone '".$MemberTest."' is Offline or time restriction is maintained. Please correct your syntax!!");
+		#return false;
+	#}
+	$handle = is_file($folfilePlOn."".$MemberTest.".txt");
+	if($handle === true) {
+		if (array_key_exists($MemberTest, $sonoszone)) {
+			$zoneon = true;
+			return($zoneon);
+		}
 	}
 }
 
@@ -387,9 +396,44 @@ function URL_Encode($string) {
 **/
 function AddMemberTo() { 
 
-	global $sonoszone, $master, $config, $sleepaddmember;
+	global $sonoszone, $master, $samearray, $profile_selected, $config, $memberarray, $sleepaddmember, $profile, $masterzone;
+	
+	#print_r(MEMBER);
+	#print_r(GROUPMASTER);
+	
+	if(MEMBER != "empty") {
+		foreach (MEMBER as $zone)  {
+			$sonos = new SonosAccess($sonoszone[$zone][0]);
+			if ($zone != GROUPMASTER)    {
+				try {
+					$sonos->SetAVTransportURI("x-rincon:" . trim($sonoszone[GROUPMASTER][1])); 
+					LOGGING("helper.php: Zone: ".$zone." has been added to master: ".GROUPMASTER,6);
+				} catch (Exception $e) {
+					LOGGING("helper.php: Zone: ".$zone." could not be added to master: ".GROUPMASTER,4);
+				}
+			}
+			usleep((int)($sleepaddmember * 1000000));
+		}
+		$sonos = new SonosAccess($sonoszone[GROUPMASTER][0]);
+		volume_group();
+	}
+}
 
-	if(isset($_GET['member'])) {
+
+
+/**
+*
+* Function : CreateMember --> erstellt array von member
+*
+* @param: 	empty
+* @return:  create Group
+**/
+function CreateMember($member = "", $masterzone = "") { 
+
+	global $sonoszone, $master, $profile_selected, $samearray, $memberarray, $config, $sleepaddmember, $profile, $masterzone;
+	
+		@unlink($profile_selected);
+		LOGGING("helper.php: Member has been entered",5);
 		$member = $_GET['member'];
 		if($member === 'all') {
 			$member = array();
@@ -400,34 +444,56 @@ function AddMemberTo() {
 				}
 			}
 		} else {
+			# member from URL
 			$member = explode(',', $member);
 		}
+		#print_r($member);
 		
+		# check if array has been stored in previous call
+		if (file_exists($memberarray))   {
+			$savedmember = json_decode(file_get_contents($memberarray), true);
+			$result = array_diff_assoc($member, $savedmember);
+			$result_leaver = array_diff($savedmember, $member);
+			#print_r($result);
+			#print_r($result_leaver);
+			if (count($result) == 0)   {
+				LOGGING("helper.php: Array of Member is identical",6);
+				define("MEMBER", $member);
+				define("GROUPMASTER", $master);
+				$samearray = true;
+				return;
+			} else {
+				print_r($result_leaver);
+				if (count($result_leaver) != 0)   {
+					foreach ($result_leaver as $zone)   {
+						$sonos = new SonosAccess($sonoszone[$zone][0]);
+						@$sonos->BecomeCoordinatorOfStandaloneGroup();
+						LOGGING("helper.php: Zone '".$zone."' has left existing group",7);
+					}
+				}
+				@unlink($memberarray);
+				LOGGING("helper.php: Saved Array of Member file has been deleted",6);
+			}		
+		} 
 		# check if member is ON and create valid array
 		$memberon = array();
 		foreach ($member as $zone) {
 			$zoneon = checkZoneOnline($zone);
 			if ($zoneon === (bool)true)   {
 				array_push($memberon, $zone);
+				LOGGING("helper.php: Zone: ".$zone." has been added to MEMBER array",6);
 			}
 		}
 		$member = $memberon;
-		foreach ($member as $zone) {
-			$sonos = new SonosAccess($sonoszone[$zone][0]);
-			if ($zone != $master)    {
-				try {
-					$sonos->SetAVTransportURI("x-rincon:" . trim($sonoszone[$master][1])); 
-					LOGGING("helper.php: Zone: ".$zone." has been added to master: ".$master,6);
-				} catch (Exception $e) {
-					LOGGING("helper.php: Zone: ".$zone." could not be added to master: ".$master,4);
-				}
-			}
-			usleep((int)($sleepaddmember * 1000000));
-		}
-		volume_group();
-		$sonos = new SonosAccess($sonoszone[$master][0]);
-	}	
-}
+
+		# Define global Constante MEMBER
+		define("MEMBER", $member);
+		define("GROUPMASTER", $master);
+		file_put_contents($memberarray, json_encode($member));
+		AddMemberTo();
+		
+	}
+
 
 
 // check if current zone is streaming
@@ -1212,11 +1278,80 @@ function NextTrack() {
 	
 	$sonos->Next();
 	sleep(1);
-	LOGINF ("queue.php: Function 'next' has been executed");
+	LOGINF ("helper.php: Function 'next' has been executed");
 	$currun = $sonos->GetTransportInfo();
 	if ($currun != (int)"1")   {
 		$sonos->Play();
 	}
+}
+
+
+
+/**
+/* Funktion : RampTo --> control volume by diff rampto parameters
+/*
+/* @param: empty                             
+/* @return: 
+**/
+
+function RampTo() {
+	
+	global $sonos, $master, $sonoszone;
+	
+	if (isset($_GET['member']))	   {
+		LOGGING("helper.php: rampto parameter does not work with member, Volume for member has been set to fixed Volume. Please correct your syntax", 6);
+	}
+
+	if (isset($_GET['rampto']))	   {
+		$rampto = $_GET['rampto'];
+		$zero = isset($_GET['zero']);
+		if (isset($_GET['volume']))    {
+			$volume = $_GET['volume'];
+			$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
+			$sonos->SetMute(false);
+			if ($rampto == "sleep")  {
+				$vol = $zero === true ? $sonos->SetVolume(0) : $sonos->SetVolume($volume);
+				$sonos->RampToVolume("SLEEP_TIMER_RAMP_TYPE", $volume);
+				LOGGING("helper.php: rampto Parameter '".$rampto."' for Zone '".$master."' has been entered and volume set to: '".$volume."'", 7);
+			} elseif ($rampto == "alarm")   {
+				$vol = $zero === true ? $sonos->SetVolume(0) : $sonos->SetVolume($volume);
+				$sonos->RampToVolume("ALARM_RAMP_TYPE", $volume);
+				LOGGING("helper.php: rampto Parameter '".$rampto."' for Zone '".$master."' has been entered and volume set to: '".$volume."'", 7);
+			} elseif ($rampto == "auto")   {
+				$vol = $zero === true ? $sonos->SetVolume(0) : $sonos->SetVolume($volume);
+				$sonos->RampToVolume("AUTOPLAY_RAMP_TYPE", $volume);
+				LOGGING("helper.php: rampto Parameter '".$rampto."' for Zone '".$master."' has been entered and volume set to: '".$volume."'", 7);
+			} else {
+				LOGGING("helper.php: The entered rampto Parameter '".$rampto."' does not exists. Please correct your syntax", 4);
+				$volume = $_GET['volume'];
+				$sonos->SetVolume($volume);
+			}
+			if(!isset($_GET['load']))   {
+				try {
+					$sonos->Play();
+				} catch (Exception $e) {
+					LOGGING("helper.php: play could not be executed. Please correct your syntax", 3);
+				}
+			} else {
+				LOGINF("helper.php: Parameter 'load' has been used. Please execute play seperatelly");
+			}
+		} else {
+			LOGGING("helper.php: The entered rampto Parameter '".$rampto."' requires volume. Please correct your syntax!", 4);
+			$volume = $sonoszone[$master][4];
+			$sonos->SetVolume($volume);
+			LOGGING("helper.php: As backup the standard Sonos Volume for Zone '".$master."' has been adopted from config without rampto! Please correct your syntax", 4);
+			if(!isset($_GET['load']))   {
+				try {
+					$sonos->Play();
+				} catch (Exception $e) {
+					LOGGING("helper.php: play could not be executed. Please correct your syntax", 3);
+				}
+			} else {
+				LOGINF("helper.php: Parameter 'load' has been used. Please execute play seperatelly");
+			}
+		}
+	}
+	return;
 }
 
 /**
@@ -1587,16 +1722,55 @@ function CheckSubSur($val)    {
 
 function checkOnline($zone)   {
 	
-	global $folfilePlOn;
+	global $folfilePlOn, $config, $sonoszonen, $sonoszone;
 		
 	$handle = is_file($folfilePlOn."".$zone.".txt");
-	#var_dump($handle);
+	
 	if($handle === true)   {
-		$zoneon = "true";
+		if (array_key_exists($zone, $sonoszone)) {
+			$zoneon = "true";
+		} else {
+			$zoneon = "false";
+		}
 	} else {
 		$zoneon = "false";
 	}
+	#echo $zoneon;
 	return $zoneon;
+}
+
+
+function sonoszonen_on()    {
+	
+	global $config, $sonoszonen, $folfilePlOn;
+	
+	// prüft den Onlinestatus jeder Zone
+	$sonoszone = array();
+	#LOGINF("sonos.php: Online check for Players will be executed");
+	$act_time = date("H:i"); #"16:58"
+	foreach($sonoszonen as $zonen => $ip) {
+		$handle = is_file($folfilePlOn."".$zonen.".txt");
+		#var_dump($handle);
+		if($handle === true) {
+			if ($config['SYSTEM']['checkonline'] != false)   {
+				# add zones having time restrictions
+				if ($sonoszonen[$zonen][15] != "" and $sonoszonen[$zonen][16] != "")   {
+					$startime = $sonoszonen[$zonen][15]; #"07:15"
+					$endtime = $sonoszonen[$zonen][16]; #"20:32"
+					if ((string)$startime <= (string)$act_time and (string)$endtime >= (string)$act_time)   {
+						$sonoszone[$zonen] = $ip;
+					}
+				} else {
+					# add zones having no time restrictions
+					$sonoszone[$zonen] = $ip;
+				}
+			} else {
+				$sonoszone[$zonen] = $ip;
+			}
+		}
+	}
+	#print_r($sonoszone);
+	return $sonoszone;
 }
 
 
@@ -1625,12 +1799,12 @@ function array_filter_recursive( array $array, callable $callback = null ) {
 /*
 /* @param: Name of Log, filename of Log                        
 /* @return: 
-**/
+
 
 function startlog($name, $file)   {
 
-require_once "loxberry_system.php";	
-require_once "loxberry_log.php";
+#require_once "loxberry_system.php";	
+#require_once "loxberry_log.php";
 
 $params = [	"name" => $name,
 				"filename" => LBPLOGDIR."/".$file.".log",
@@ -1642,6 +1816,6 @@ $log = LBLog::newLog($params);
 LOGSTART($name);
 return $name;
 }
-
+**/
 
 ?>

@@ -938,7 +938,15 @@ function sendgroupmessage() {
 			#$master = $_GET['zone'];
 			$member = $_GET['member'];
 			create_tts($errortext);
+			#CreateMember();
 			// if parameter 'all' has been entered all zones were grouped
+			#if (isset($_GET['member']))   {
+				#$member = CreateMember();
+			#	$member = MEMBER;
+			#	$master = GROUPMASTER;
+			#}
+			#/**
+			
 			if($member === 'all') {
 				$memberon = array();
 				foreach ($sonoszone as $zone => $ip) {
@@ -968,6 +976,8 @@ function sendgroupmessage() {
 				}
 				$member = $memberon;
 			}
+			#**/
+			define("MEMBER", $member);
 			if (in_array($master, $member)) {
 				LOGGING("play_t2s.php: The zone ".$master." could not be entered as member again. Please remove from Syntax '&member=".$master."' !", 3);
 				exit;

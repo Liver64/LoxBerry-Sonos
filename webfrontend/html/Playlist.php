@@ -14,10 +14,13 @@
 
 function playlist() {
 	
-	global $debug, $sonos, $master, $lookup, $sonoszone, $config, $volume, $sonospltmp;
+	global $debug, $sonos, $master, $lookup, $memberarray, $samearray, $sonoszone, $config, $volume, $masterzone, $sonospltmp, $profile_selected;
+	
+	#print_r(SOUNDZONES);
 	
 	if (file_exists($sonospltmp) and (!isset($_GET['load'])))  {
 		# load previously saved Sonos Playlist
+		$sonos = new SonosAccess($sonoszone[GROUPMASTER][0]);
 		$value = json_decode(file_get_contents($sonospltmp), TRUE);
 		$countqueue = count($sonos->GetCurrentPlaylist());
 		$currtrack = $sonos->GetPositioninfo();
@@ -27,7 +30,7 @@ function playlist() {
 			return true;
 		} else {
 			@unlink($sonospltmp);
-			if(isset($_GET['member'])) {
+			if(isset($_GET['member']) and !isset($_GET['profile']) and !$_GET['action'] == "Profile")   {
 				removemember();
 				LOGINF ("playlist.php: Member has been removed");
 			}
@@ -35,14 +38,8 @@ function playlist() {
 			LOGOK ("playlist.php: ** Loop ended, we start from beginning **");
 		}
 	} 
-	# initial load
-	$master = $_GET['zone'];
-	$check_stat = getZoneStatus($master);
-	if ($check_stat != (string)"single")  {
-		$sonos->BecomeCoordinatorOfStandaloneGroup();
-		LOGGING("playlist.php: Zone ".$master." has been ungrouped.",5);
-	}
-	$sonos = new SonosAccess($sonoszone[$master][0]);
+		
+	$sonos = new SonosAccess($sonoszone[GROUPMASTER][0]);
 	if(isset($_GET['playlist']))   {
 		$epl = $_GET['playlist'];
 		$playlist = mb_strtolower($_GET['playlist']);	
@@ -71,219 +68,35 @@ function playlist() {
 	} else {
 		LOGGING("playlist.php: Playlist '".$found[0][0]["title"]."' has been found.", 5);
 	}
-	$sonos->SetQueue("x-rincon-queue:" . trim($sonoszone[$master][1]) . "#0");
+	$sonos->SetQueue("x-rincon-queue:" . trim($sonoszone[GROUPMASTER][1]) . "#0");
 	$sonos->ClearQueue();	
 	$countpl = count($found);
 	if ($countpl > 0)   {
 		$plfile = urldecode($found[0][0]["file"]);
 		$sonos->AddToQueue($plfile);
 		$currpl = file_put_contents($sonospltmp, json_encode($plfile));
-		if(!isset($_GET['load'])) {
+		if(!isset($_GET['load']) and !isset($_GET['rampto'])) {
 			$sonos->SetMute(false);
 			$sonos->Stop();
 			if (isset($_GET['profile']) or isset($_GET['Profile']))    {
-				$volume = $lookup[0]['Player'][$master][0]['Volume'];
+				$volume = $lookup[0]['Player'][GROUPMASTER][0]['Volume'];
 			}
 			$sonos->SetVolume($volume);
 			$sonos->Play();
 		} else {
-			$sonos->SetQueue("x-rincon-queue:" . trim($sonoszone[$master][1]) . "#0");
+			$sonos->SetQueue("x-rincon-queue:" . trim($sonoszone[GROUPMASTER][1]) . "#0");
 		}
+		RampTo();
 		LOGGING("playlist.php: Playlist '".$found[0][0]["title"]."' has been loaded successful",6);
 	} else {
 		LOGGING("playlist.php: Playlist '".$found[0][0]["title"]."' could not be loaded. Please check your input.",3);
-		if(isset($_GET['member'])) {
+		if(isset($_GET['member']) and !isset($_GET['profile']) and !$_GET['action'] == "Profile")   {
 			removemember();
 			LOGINF ("playlist.php: Member has been removed");
 		}
 		exit;
 	}
-	if(isset($_GET['member']))   {
-		AddMemberTo();
-		volume_group();
-		LOGGING("playlist.php: Group Sonosplaylist has been called.", 7);
-	}
 }
-
-/**
-/**
-* Function: zapzone --> checks each zone in network and if playing add current zone as member
-*
-* @param: empty
-* @return: 
-
-
-function zapzone() {
-	global $config, $volume, $tmp_tts, $sonos, $sonoszone, $master, $playzones, $count, $maxzap, $count_file, $curr_zone_file;
-	
-	if (file_exists($tmp_tts))  {
-		LOGGING("playlist.php: Currently a T2S is running, we skip zapzone for now. Please try again later.",6);
-		exit;
-	}
-	$sonos = new SonosAccess($sonoszone[$master][0]);
-	$check_stat = getZoneStatus($master);
-	if ($check_stat == "member")  {
-		$sonos->BecomeCoordinatorOfStandaloneGroup();
-		LOGGING("playlist.php: Zone ".$master." has been ungrouped.",5);
-	}
-	play_zones();
-	$playingzones = $_SESSION["playingzone"];
-	#print_r($playingzones);
-	$max_loop = count($playingzones);
-	$count = countzones();
-	// if no zone is playing switch to nextradio
-	if (empty($playingzones) or $count > count($playingzones)) {
-		nextradio();
-		LOGGING("playlist.php: Function nextradio has been used",6);
-		sleep($maxzap);
-		if(file_exists($count_file))  {
-			unlink($count_file);
-			LOGGING("playlist.php: Function zapzone has been reseted",6);
-		}
-		exit;
-	}
-	$currentZone = currentZone();
-	// finally loop by call through array
-    foreach ($playingzones as $key => $value) {
-		if($key == $currentZone) {
-            $nextZoneUrl 	= next($playingzones);
-            $nextZoneKey    = key($playingzones);
-            //if last element catched, move to first element
-            if(!$nextZoneUrl)  {
-                $nextZoneUrl 	= reset($playingzones);
-                $nextZoneKey    = key($playingzones);
-			}
-			break;
-        } else {
-			next($playingzones);
-		}
-	}
-	if (empty($nextZoneKey)) {
-		$nextZoneKey = $key;
-	}
-	echo $nextZoneUrl;
-	#echo '<br>Zone: ['.$nextZoneKey.']';
-	saveCurrentZone($nextZoneKey);
-	if ($config['VARIOUS']['announceradio'] == 1) {
-		if ($check_stat == "single")  {
-			say_zone($nextZoneKey);
-		} else {
-			LOGGING("playlist.php: Song/Artist could not be announced because Master is grouped",6);
-		}
-	}
-	unset ($playingzones[$nextZoneKey]);
-	$sonos = new SonosAccess($config['sonoszonen'][$master][0]);
-	$sonos->SetAVTransportURI("x-rincon:" . $sonoszone[$nextZoneKey][1]);
-	LOGGING("playlist.php: Zone ".$master." has been grouped as member to Zone ".$nextZoneKey, 7);
-	$sonos->SetMute(false);
-	$sonos->SetVolume($volume);
-	}
-
-
-
-* Sub-Function for zapzone: saveCurrentZone --> saves current playing zone to file
-*
-* @param: Zone
-* @return: 
-
-
-function saveCurrentZone($nextZoneKey) {
-	global $curr_zone_file;
-	
-	$curr_zone_file = "/run/shm/sonos_currzone_mem.txt";
-	
-    if(!touch($curr_zone_file)) {
-		LOGGING("playlist.php: No permission to write file", 3);
-		exit;
-    }
-	$handle = fopen ($curr_zone_file, 'w');
-    fwrite ($handle, $nextZoneKey);
-    fclose ($handle);                
-} 
-
-
-
-* Sub-Function for zapzone: currentZone --> open file and read last playing zone
-*
-* @param: 
-* @return: last playing zone 
-     
-
-function currentZone() {
-	global $config, $master, $curr_zone_file;
-	
-	$curr_zone_file = "/run/shm/sonos_currzone_mem.txt";
-		
-	$playingzones = $_SESSION["playingzone"];
-	if(!touch($curr_zone_file)) {
-		LOGGING("playlist.php: Could not open file", 3);
-		exit;
-    }
-	$currentZone = file($curr_zone_file);
-	if(empty($currentZone)) {
-		reset($playingzones);
-        $currentZone[0] = key($playingzones);
-        saveCurrentZone($currentZone[0]);
-    }
-	return $currentZone[0];
-}
-
-
-
-* Sub-Function for zapzone: play_zones --> scans through Sonos Network and create array of currently playing zones
-*
-* @param: 
-* @return: array of zones 
-
-
-function play_zones() {
-	global $sonoszone, $master, $sonos, $playingzones;
-	
-	$playzone = $sonoszone;
-	unset($playzone[$master]); 
-	foreach ($playzone as $key => $val) {
-		$sonos = new SonosAccess($playzone[$key][0]);
-		// only zones which are not a group member
-		$zonestatus = getZoneStatus($key);
-		if ($zonestatus <> 'member') {
-			$tmpplay = $sonos->GetPositionInfo();
-			// check if zone is currently playing and not TV then add to array
-			if(($sonos->GetTransportInfo() == 1) and (substr($tmpplay["TrackURI"], 0, 18) != "x-sonos-htastream:")) {
-				$playingzones[$key] = $val[1];
-			}
-		}
-	}
-	$_SESSION["playingzone"] = $playingzones;
-	#print_r($playingzones);
-	return array($playingzones);
-}
-
-
-
-* Sub-Function for zapzone: countzones --> increment counter by each click
-*
-* @param: 
-* @return: amount if clicks
-
-
-function countzones() {
-	
-	global $count_file;
-	
-	$count_file = "/run/shm/sonos_zapzone_mem_count.txt";
-	
-	if(!file_exists($count_file)){
-        fopen($count_file, "a" );
-        #$aufruf=0;
-	}
-	$counter=fopen($count_file,"r+"); 
-	$output=fgets($counter,100);
-	$output=$output+1;
-	rewind($counter);
-	fputs($counter,$output);
-	return $output;
-}
-
 
 
 
@@ -333,17 +146,16 @@ function DelPlaylist() {
 **/
 
 function random_playlist() {
+	
 	global $sonos, $sonoszone, $master, $min_vol, $volume, $config;
 	
 	if (isset($_GET['member'])) {
-		LOGGING("playlist.php: This function could not be used with groups!", 3);
-		exit;
+		$master = GROUPMASTER;
+	} else {
+		$master = $_GET['zone'];
 	}
-	$check_stat = getZoneStatus($master);
-	if ($check_stat != (string)"single")  {
-		$sonos->BecomeCoordinatorOfStandaloneGroup();
-		LOGGING("playlist.php: Zone ".$master." has been ungrouped.",5);
-	}
+	
+	$sonos = new SonosAccess($sonoszone[$master][0]);
 	$sonoslists = $sonos->GetSONOSPlaylists();
 	#print_r($sonoslists);
 	if(!isset($_GET['except'])) {
@@ -362,7 +174,9 @@ function random_playlist() {
 		$countpl = count($sonoslists);
 		$random = mt_rand(0, $countpl - 1);
 	}
+	$plfile_log = ($sonoslists[$random]["file"]);
 	$plfile = urldecode($sonoslists[$random]["file"]);
+	$pl = array_multi_search($plfile_log, $sonoslists, "file");
 	$tmp_volume = $sonos->GetVolume();
 	$sonos->ClearQueue();
 	$sonos->SetMute(false);
@@ -374,12 +188,12 @@ function random_playlist() {
 		if ($tmp_volume >= $min_vol)  {
 			$volume = $tmp_volume;
 		} else {
-			$volume = $config['sonoszonen'][$master][4];
+			$volume = $sonoszone[$master][4];
 		}
 	} else {
-		$volume = $config['sonoszonen'][$master][4];
+		$volume = $sonoszone[$master][4];
 	}
-	LOGGING("playlist.php: Random playlist has been added to Queue.", 6);
+	LOGGING("playlist.php: Random playlist '".urldecode($pl[0]['title'])."' has been added to Queue.", 6);
 	$sonos->Play();
 }
 
@@ -392,6 +206,7 @@ function random_playlist() {
 **/
 
 function next_dynamic() {
+	
 	global $sonos, $sonoszone, $master;
 	
 	$titelgesammt = $sonos->GetPositionInfo();
@@ -462,10 +277,10 @@ function say_zone($zone) {
 		if ($tmp_volume >= $min_vol)  {
 			$volume = $tmp_volume;
 		} else {
-			$volume = $config['sonoszonen'][$master][4];
+			$volume = $sonoszone[$master][4];
 		}
 	} else {
-		$volume = $config['sonoszonen'][$master][4];
+		$volume = $sonoszone[$master][4];
 	}
 	#$sonos->Play();
 	return $volume;

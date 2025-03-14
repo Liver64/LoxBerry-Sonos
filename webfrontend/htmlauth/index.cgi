@@ -230,14 +230,13 @@ $cgi->import_names('R');
 # Get MQTT Credentials
 $mqttcred = LoxBerry::IO::mqtt_connectiondetails();
 
-LOGSTART "Plugin GUI";
-
 
 ##########################################################################
 # Init Main Template
 ##########################################################################
 
 inittemplate();
+LOGSTART "Plugin GUI";
 
 #########################################################################
 ## Handle ajax requests 
@@ -248,7 +247,7 @@ our $q = $cgi->Vars;
 if( $q->{action} )
 
 {
-	LOGSTART "Plugin GUI";
+	#LOGSTART "Plugin GUI";
 	print "Content-type: application/json\n\n";
 	if( $q->{action} eq "soundbars" ) {
 		print JSON::encode_json($cfg->{sonoszonen});
@@ -538,12 +537,16 @@ sub form
 	
 	our $rowssonosplayer;
 	our $rowssoundbar;
+	our $currtime;
 	my $error_treble_bass = $SL{'VOLUME_PROFILES.ERROR_TREBLE_BASS_PLAYER'};
 	
 	my $error_volume = $SL{'T2S.ERROR_VOLUME_PLAYER'};
 	my $filename;
 	my $config = $cfg->{sonoszonen};
-		
+	
+	use POSIX qw(strftime); 
+	$currtime = strftime("%H:%M",localtime()); 
+	
 	foreach my $key (sort keys %$config) {
 		$countplayers++;
 		our $room = $key;
@@ -556,7 +559,7 @@ sub form
 			$rowssonosplayer .= "<td style='height: 28px; width: 16%;'><input type='text' class='pd-price' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$room' style='width:100%; background-color:#6dac20; color:white'></td>\n";
 		} else {
 			$rowssonosplayer .= "<td style='height: 28px; width: 16%;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$room' style='width: 100%; background-color: #e6e6e6;'></td>\n";
-		}	
+		}
 		$rowssonosplayer .= "<td style='height: 25px; width: 6px;'><input type='checkbox' class='chk-checked' name='mainchk$countplayers' id='mainchk$countplayers' value='$config->{$key}->[6]' align='center'></td>\n";
 		# highlight old S1 Devices red
 		if (($config->{$key}[9]) eq "1")   {
@@ -585,13 +588,26 @@ sub form
 		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='$config->{$key}->[3]'></td>\n";
 		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='$config->{$key}->[4]'></td>\n";
 		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$config->{$key}->[5]'></td>\n";
-		$rowssonosplayer .= "</tr>";
+		
 		# Soundbar count
 		if (($config->{$key}[13]) eq "SB")   {
 			$countsoundbars++;
 			$rowssonosplayer .= "<input type='hidden' id='sb$countplayers' name='sb$countplayers' value='$config->{$key}->[13]'>\n";
 		} else {
 			$rowssonosplayer .= "<input type='hidden' id='sb$countplayers' name='sb$countplayers' value='NOSB'>\n";
+		}
+		# Time restrictions
+		if ($config->{$key}->[15] ne "" || $config->{$key}->[16] ne "")   {
+			if ($currtime ge $config->{$key}->[15] && $currtime lt $config->{$key}->[16])  {
+				$rowssonosplayer .= "<td style='width: 9%; height: 28px;'><input id='pl-start-time$countplayers' type='time' name='pl-start-time$countplayers' value='$config->{$key}->[15]'></td>\n";
+				$rowssonosplayer .= "<td style='width: 9%; height: 28px;'><input id='pl-end-time$countplayers' type='time' name='pl-end-time$countplayers' value='$config->{$key}->[16]'></td></tr>\n";
+			} else {
+				$rowssonosplayer .= "<td style='width: 9%; height: 28px;'><input id='pl-start-time$countplayers' type='time' name='pl-start-time$countplayers' value='$config->{$key}->[15]' style='width:100%; background-color:orange; color:black'></td>\n";
+				$rowssonosplayer .= "<td style='width: 9%; height: 28px;'><input id='pl-end-time$countplayers' type='time' name='pl-end-time$countplayers' value='$config->{$key}->[16]'style='width:100%; background-color:orange; color:black'></td></tr>\n";
+			}
+		} else {
+			$rowssonosplayer .= "<td style='width: 9%; height: 28px;'><input id='pl-start-time$countplayers' type='time' name='pl-start-time$countplayers' value='$config->{$key}->[15]'></td>\n";
+			$rowssonosplayer .= "<td style='width: 9%; height: 28px;'><input id='pl-end-time$countplayers' type='time' name='pl-end-time$countplayers' value='$config->{$key}->[16]'></td></tr>\n";
 		}
 		$rowssonosplayer .= "<input type='hidden' id='room$countplayers' name='room$countplayers' value=$room>\n";
 		$rowssonosplayer .= "<input type='hidden' id='models$countplayers' name='models$countplayers' value='$config->{$key}->[7]'>\n";
@@ -612,33 +628,7 @@ sub form
 			$rowssoundbar .= "<td style='width: 6%; height: 28px;'><div><input class='tvvol' type='text' id='tvvol_$room' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='tvvol_$room' value='$config->{$key}->[14]->{tvvol}'></div></td></div>\n";
 			$rowssoundbar .= "<td style='width: 6%; height: 28px;'><div><input class='tvtreble' type='text' id='tvtreble_$room' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='$error_treble_bass' name='tvtreble_$room' value='$config->{$key}->[14]->{tvtreble}'></div></td></div>\n";
 			$rowssoundbar .= "<td style='width: 6%; height: 28px;'><div><input class='tvbass' type='text' id='tvbass_$room' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='$error_treble_bass' name='tvbass_$room' value='$config->{$key}->[14]->{tvbass}'></div></td></div>\n";
-			$rowssoundbar .= "<td style='width: 8%'><div id='tvmon_addend'><fieldset align='center'><select id='fromtime_$room' name='fromtime_$room' data-mini='true' data-native-menu='true' style='width: 100%'>
-								<option value='false'>--</option>
-								<option value='0'>0:00</option>
-								<option value='1'>1:00</option>
-								<option value='2'>2:00</option>
-								<option value='3'>3:00</option>
-								<option value='4'>4:00</option>
-								<option value='5'>5:00</option>
-								<option value='6'>6:00</option>
-								<option value='7'>7:00</option>
-								<option value='8'>8:00</option>
-								<option value='9'>9:00</option>
-								<option value='10'>10:00</option>
-								<option value='11'>11:00</option>
-								<option value='12'>12:00</option>
-								<option value='13'>13:00</option>
-								<option value='14'>14:00</option>
-								<option value='15'>15:00</option>
-								<option value='16'>16:00</option>
-								<option value='17'>17:00</option>
-								<option value='18'>18:00</option>
-								<option selected='selected' value='19'>19:00</option>
-								<option value='20'>20:00</option>
-								<option value='21'>21:00</option>
-								<option value='22'>22:00</option>
-								<option value='23'>23:00</option>
-							</select></fieldset></div></td>\n";
+			$rowssoundbar .= "<td style='width: 8%; height: 28px;'><div id='tvmon_addend'><input id='fromtime_$room' type='time' name='fromtime_$room' value='$config->{$key}->[13]->{fromtime}'></div></td>\n";
 			$rowssoundbar .= "<td style='width: 8%'><fieldset align='center'><select id='tvmonnight_$room' name='tvmonnight_$room' data-role='flipswitch' style='width: 100%'><option selected='selected' value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
 			$rowssoundbar .= "<td style='width: 8%'><div id='tvmon_addend'><fieldset align='center'>\n";
 			$rowssoundbar .= "<select id='subgain_$room' name='subgain_$room' data-mini='true' data-native-menu='true' style='width: 100%'>";
@@ -892,7 +882,7 @@ sub save
 		if ($R::sendloxMQTT eq "false")  {
 			$cfg->{LOXONE}->{LoxPort} = "$R::udpport";
 		} else {
-			delete $cfg->{LOXONE}->{LoxPort};
+			$cfg->{LOXONE}->{LoxPort} = "";
 		}
 	}
 	$cfg->{TTS}->{t2s_engine} = "$R::t2s_engine";
@@ -995,7 +985,9 @@ sub save
 							param("sur$i"), 
 							param("audioclip$i"), 
 							param("voice$i"),
-							param("sb$i")
+							param("sb$i"),
+							#param("pl-start-time$i"),
+							#param("pl-end-time$i")
 						 );
 						 
 			if ($R::tvmon eq "true")  {
@@ -1016,12 +1008,14 @@ sub save
 					my $tvbass = param("tvbass_$room");
 					if ($tvbass eq "false")   {
 						$tvbass = "";
-					}
+					}				
 					my $tvmonsurr = param("tvmonsurr_$room");
 					my $fromtime = param("fromtime_$room");
 					my $tvmonnight = param("tvmonnight_$room");
 					my $tvmonnightsub = param("tvmonnightsub_$room");
 					my $tvmonnightsublevel = param("subgain_$room");
+					my $starttime = param("pl-start-time$i");
+					my $endtime = param("pl-end-time$i");
 					my @sbs = (  {"tvmonspeech" => $tvmonspeech,
 								"usesb" => $usesb,
 								"tvvol" => $tvvol,
@@ -1032,17 +1026,28 @@ sub save
 								"tvmonnight" => $tvmonnight,
 								"tvmonnightsub" => $tvmonnightsub,
 								"tvmonnightsublevel" => $tvmonnightsublevel
-								}					
+								},
+								$starttime,
+								$endtime
 							);
 					push @player , @sbs;
+					#my $starttime = param("pl-start-time$i");
+					#my $endtime = param("pl-end-time$i");
+					#push (@player, ($starttime, $endtime));
 				} else {
 					# if no Soundbar
-					my @sbs = ("false");
+					my @sbs = 	(  "false",
+									param("pl-start-time$i"),
+									param("pl-end-time$i"),
+								);
 					push @player , @sbs;
 				}
 			} else {
 				# TV Monitor turned off
-				my @sbs = ("false");
+				my @sbs = 	(  "false",
+								param("pl-start-time$i"),
+								param("pl-end-time$i"),
+							);
 				push @player , @sbs;
 			}
 			$cfg->{sonoszonen}->{param("zone$i")} = \@player;
@@ -1155,7 +1160,8 @@ sub save_cronjob
 	    unlink ("$lbhomedir/system/cron/cron.30min/Sonos_On_check");
 		unlink ("$lbhomedir/system/cron/cron.hourly/Sonos_On_check");
 		unlink ("$lbhomedir/system/cron/cron.daily/Sonos_On_check");
-		my $files = qx(/usr/bin/php $lbphtmldir/bin/create_player_files.php);	
+		# my $files = qx(/usr/bin/php $lbphtmldir/bin/create_player_files.php);	
+		&call_php_all;
 		LOGOK "Cronjob has been deleted";
 	  }
 		
@@ -1172,6 +1178,17 @@ sub call_php
 {
 	my $files = qx(/usr/bin/php $lbphtmldir/bin/check_on_state.php);
 	return();
+}
+
+
+#####################################################
+# Call create_player_files
+#####################################################
+
+sub call_php_all
+{
+	my $files = qx(/usr/bin/php $lbphtmldir/bin/create_player_files.php);
+	return();	
 }
 
 
@@ -1307,12 +1324,12 @@ sub volumes
 			my $error_treble_bass = $SL{'VOLUME_PROFILES.ERROR_TREBLE_BASS_PLAYER'};
 			my $error_sbass = $SL{'VOLUME_PROFILES.ERROR_SUB_LEVEL_PLAYER'};
 			$rowsvolplayer .= "<tr><div class='container'>";
-			#my $statusfile = $lbpdatadir.'/PlayerStatus/s4lox_on_'.$key.'.txt';
-			#if (-e $statusfile) {
+			my $statusfile = $lbpdatadir.'/PlayerStatus/s4lox_on_'.$key.'.txt';
+			if (-e $statusfile) {
+				$rowsvolplayer .= "<td style='height: 15px; width: 160px;'><input type='text' id='zone_$zid' name='zone_$zid' readonly='true' value='$key' style='width: 100%; background-color:#6dac20; color:white'></td>\n";	
+			} else {
 				$rowsvolplayer .= "<td style='height: 15px; width: 160px;'><input type='text' id='zone_$zid' name='zone_$zid' readonly='true' value='$key' style='width: 100%; background-color: #e6e6e6;'></td>\n";	
-			#} else {
-				#$rowsvolplayer .= "<td style='height: 15px; width: 160px;'><input type='text' id='zone_$zid' name='zone_$zid' readonly='true' value='$key' style='width: 100%; background-color: #e6e6e6;'></td>\n";	
-			#}
+			}
 			$rowsvolplayer .= "<td style='width: 45px; height: 15px;'><input type='text' class='form-validation' id='vol_$zid' name='vol_$zid' size='100' data-validation-rule='special:number-min-max-value:0:100' data-validation-error-msg='$error_volume' value='$vcfg->[$id-1]->{Player}->{$key}->[0]->{Volume}'></td>\n";
 			$rowsvolplayer .= "<td style='width: 45px; height: 15px;'><input type='text' class='form-validation' id='treble_$zid' name='treble_$zid' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='$error_treble_bass' value='$vcfg->[$id-1]->{Player}->{$key}->[0]->{Treble}'></td>\n";
 			$rowsvolplayer .= "<td style='width: 45px; height: 15px;'><input type='text' class='form-validation' id='bass_$zid' name='bass_$zid' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='$error_treble_bass' value='$vcfg->[$id-1]->{Player}->{$key}->[0]->{Bass}'></td>\n";

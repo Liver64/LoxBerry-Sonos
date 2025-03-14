@@ -70,8 +70,8 @@ function CreateStereoPair() {
 		LOGGING("grouping.php: Please specify the second zone for creating a stereopair!!", 3);
 		exit;
 	}
-	$lfbox = $config['sonoszonen'][$lf][2];
-	$rfbox = $config['sonoszonen'][$rf][2];
+	$lfbox = $sonoszone[$lf][2];
+	$rfbox = $sonoszone[$rf][2];
 	// check if zones are not doubled in syntax
 	if ($lf == $rf) {
 		LOGGING("grouping.php: The Zone ".$rf." can not be added itself to ".$lf.". Please correct!!", 3);
@@ -111,8 +111,8 @@ function CreateStereoPair() {
 		LOGGING("grouping.php: Please enter the second zone to seperate the stereopair!!", 3);
 		exit;
 	}
-	$lfbox = $config['sonoszonen'][$lf][2];
-	$rfbox = $config['sonoszonen'][$rf][2];
+	$lfbox = $sonoszone[$lf][2];
+	$rfbox = $sonoszone[$rf][2];
 	// check if zones are not doubled in syntax
 	if ($lf == $rf) {
 		LOGGING("grouping.php: The Zone ".$rf." can't remove itself. Please correct!!", 3);
@@ -216,9 +216,11 @@ function getRoomCoordinator_OLD($room){
 * @return: array of (0) IP address and (1) Rincon-ID of Master
 */
  function getRoomCoordinator($room){
+	 
 	global $sonoszonen, $zone, $debug, $master, $sonosclass, $config, $time_start;
 	
 	$coord = array($sonoszonen[$room][0], $sonoszonen[$room][1]);
+	#print_r($coord);
 	return $coord;
  }
  
@@ -266,7 +268,7 @@ function getRoomCoordinator_OLD($room){
 	if(!empty($tmp_name)) {
 		if(count($group) > 1) {
 			foreach ($group as $zone) {
-				$zone = recursive_array_search($zone, $config['sonoszonen']);
+				$zone = recursive_array_search($zone, $sonoszone);
 				array_push($grouping,$zone);
 			}
 		}
@@ -316,7 +318,7 @@ function getGroups() {
  function getZoneStatus($room) {
 	 
 	global $sonoszone, $sonos, $grouping, $debug, $config, $time_start;	
-	
+
 	if(empty($room)) {
 		$room = $_GET['zone'];
 	}
@@ -390,7 +392,7 @@ function checkDeltaArray() {
 		print_r($newMaster);
 		return $newMaster;
 		#exit;
-		$sonos->DelegateGroupCoordinationTo($config['sonoszonen'][$delta[0]][1], 1);
+		$sonos->DelegateGroupCoordinationTo($sonoszone[$delta[0]][1], 1);
 	}
 	return $newMaster;
 }
@@ -404,6 +406,7 @@ function checkDeltaArray() {
 **/
 
 function checkifmaster($master) {
+	
 	global $sonoszone, $config, $master;
 	
 	$sonos = new SonosAccess($sonoszone[$master][0]);
@@ -431,7 +434,7 @@ function group_all() {
 	foreach ($sonoszone as $zone => $ip) {
 		if($zone != $_GET['zone']) {
 			$sonos = new SonosAccess($sonoszone[$zone][0]);
-			$sonos->SetAVTransportURI("x-rincon:" . $config['sonoszonen'][$master][1]); 
+			$sonos->SetAVTransportURI("x-rincon:" . $sonoszone[$master][1]); 
 		}
 	}
 	LOGGING('grouping.php: All Sonos Player has been grouped',6);
@@ -451,62 +454,11 @@ function ungroup_all() {
 		# Alle Zonen Gruppierungen aufheben
 		foreach($sonoszone as $zone => $ip) {
 			$sonos = new SonosAccess($sonoszone[$zone][0]);
-			$sonos->SetQueue("x-rincon-queue:" . $config['sonoszonen'][$zone][1] . "#0");
+			$sonos->SetQueue("x-rincon-queue:" . $sonoszone[$zone][1] . "#0");
 		}
 	LOGGING('grouping.php: All Sonos Player has been ungrouped',6);
 }
 
-
-/**
-* OBSOLTE: (replaced by helper.php AddMemberTo()
-*
-* Funktion : 	addmember --> fügt angegebene Zone einer Gruppe hinzu
-*
-* @param: empty 
-* @return: Gruppe
-**/
-
-function addmember() {
-	
-	global $sonoszone, $master, $config;
-	
-	if(isset($_GET['member'])) {
-		$member = $_GET['member'];
-		if($member === 'all') {
-			$member = array();
-			foreach ($sonoszone as $zone => $ip) {
-				// exclude master Zone
-				if ($zone != $master) {
-					array_push($member, $zone);
-				}
-			}
-		} else {
-			$member = explode(',', $member);
-		}
-		
-		# check if member is ON and create valid array
-		$memberon = array();
-		foreach ($member as $zone) {
-			$zoneon = checkZoneOnline($zone);
-			if ($zoneon === (bool)true)   {
-				array_push($memberon, $zone);
-			}
-		}
-		$member = $memberon;
-		
-		foreach ($member as $zone) {
-			$sonos = new SonosAccess($sonoszone[$zone][0]);
-			if ($zone != $master)   {
-				try {
-					$sonos->SetAVTransportURI("x-rincon:" . trim($sonoszone[$master][1])); 
-					LOGGING("helper.php: Zone: ".$zone." has been added to master: ".$master,6);
-				} catch (Exception $e) {
-					LOGGING("helper.php: Zone: ".$zone." could not be added to master: ".$master,4);
-				}
-			}
-		}
-	}
-}
 
 
 /**
@@ -535,7 +487,7 @@ function removemember() {
 	}
 	foreach ($memberon as $value) {
 		$zoneon = checkZoneOnline($value);
-		$masterrincon = $config['sonoszonen'][$master][1];
+		$masterrincon = $sonoszone[$master][1];
 		$sonos = new SonosAccess($sonoszone[$value][0]);
 		$sonos->BecomeCoordinatorOfStandaloneGroup();
 		LOGGING("grouping.php: Player '".$value."' has been removed from Group '".$master."'",6);

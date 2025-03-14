@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	5.8.6
-# Datum: 	01.2025
+# Version: 	5.9.0
+# Datum: 	03.2025
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 #
 # http://<IP>:1400/xml/device_description.xml
@@ -70,6 +70,8 @@ $tmp_tts = "/run/shm/s4lox_tmp_tts";							// path/file for T2S functions
 $tmp_phone = "/run/shm/s4lox_tmp_phonemute.tmp";				// path/file for phonemute function
 $off_file = $lbplogdir."/s4lox_off.tmp";						// path/file for script off
 $alarm_off_file = $lbpdatadir."/s4lox_alarm_off.json";			// path/file for Alarms turned off
+$profile_selected = "/run/shm/s4lox_Profil_selected.tmp";		// path/file for Profile selection
+$memberarray = "/run/shm/s4lox_member.json";					// path/file for Member array
 $tmp_error = "/run/shm/s4lox_errorMP3Stream.json";				// path/file for error message
 $check_date = "/run/shm/s4lox_date";							// store date execution
 $configfile	= "s4lox_config.json";								// configuration file
@@ -212,38 +214,13 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 	// Übernahme und Deklaration von Variablen aus der Konfiguration
 	$sonoszonen = $config['sonoszonen'];
 
-	// check for player duplicates based on roomname once
-	/**
-	if (is_file($file))  {
-		$player = array();
-		foreach($sonoszonen as $checkzone)     {
-			array_push($player, $checkzone[0]);
-		}
-		$invalid_player = validate_player($player);
-		#print_r($invalid_player);
-		if (count($invalid_player) > 0)    {
-			LOGGING("sonos.php: Minimum ONE Player has a duplicate (Roomname), this may cause problems! Please remove them from your config, rename them in Sonos App and re-scan for the Player",3);
-		}
-	}
-	**/
-	
 	// prüft den Onlinestatus jeder Zone
-	#exec('/usr/bin/php -f bin/check_on_state.php');
-	$sonoszone = array();
-	$zonesonline = array();
-	LOGGING("sonos.php: Backup Online check for Players will be executed",7);
-	foreach($sonoszonen as $zonen => $ip) {
-		$handle = is_file($folfilePlOn."".$zonen.".txt");
-		#var_dump($handle);
-		if($handle === true) {
-			$sonoszone[$zonen] = $ip;
-			array_push($zonesonline, $zonen);
-		}
-	}
+	$sonoszone = sonoszonen_on();
+	#print_r($sonoszone);
 
 	# check if valid zone has been entered
 	if (!array_key_exists($_GET['zone'], $sonoszone))  {
-		LOGGING("sonos.php: Requested ...zone=".$_GET['zone']." seems to be Offline. Check your Power/Onlinestatus.",4);
+		LOGGING("sonos.php: Requested Master Zone '".$_GET['zone']."' seems to be Offline. Check your Power/Onlinestatus/Time restrictions.",4);
 		exit;
 	}
 	LOGGING("sonos.php: All variables has been collected",7);
@@ -256,13 +233,6 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 		}
 	}
 	
-	# check if LBPort already exist in config, if not force user to save config
-	#$checklb = explode(':', $config['SYSTEM']['httpinterface']);
-	#$checklbport = explode('/', $checklb[2]);
-	#if ($checklbport[0] <> $lbport)  {
-		#LOGGING(htmlspecialchars($L['ERRORS.ERR_CHECK_LBPORT']), 3);
-		#exit;
-	#}
 	# select language file for text-to-speech
 	$t2s_langfile = "t2s-text_".substr($config['TTS']['messageLang'],0,2).".ini";			// language file for text-speech
 
@@ -270,6 +240,19 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 	$MessageStorepath = $config['SYSTEM']['ttspath'];
 	$min_vol = $config['TTS']['phonemute'];													// min.vol as exception for current volume
 	$min_sec = $config['TTS']['waiting'];													// min. in seconds before same mp3 been played again (Statubsaustein)
+	
+	#+++++++++++++++++++++++++++++++++++++++++++++++++++
+	#  Define global Constants
+	#+++++++++++++++++++++++++++++++++++++++++++++++++++
+	define("CONFIG", $config);
+	define("SONOSZONE", $sonoszone);
+	define("SONOSZONEN", $sonoszonen);
+	define("MASTER", $_GET['zone']);
+	#define("PROFILAUDIO", "empty");
+	#define("MEMBER", "");
+	#define("GROUPMASTER", "empty");
+	#+++++++++++++++++++++++++++++++++++++++++++++++++++
+
 	create_symlinks();
 	#volume_group();
 	
@@ -290,10 +273,10 @@ if (isset($_GET['profile']) and isset($_GET['volume']))   {
 }
 
 # volume for master
-if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100 or isset($_GET['keepvolume'])) {
+if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100 or isset($_GET['keepvolume']) or isset($_GET['rampto'])) {
 	# volume get from syntax
 	$master = $_GET['zone'];
-	if (isset($_GET['volume']))  {
+	if (isset($_GET['volume']) and !isset($_GET['rampto']))  {
 		$volume = $_GET['volume'];
 		#$master = $_GET['zone'];
 		// prüft auf Max. Lautstärke und korrigiert diese ggf.
@@ -326,7 +309,6 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 				LOGGING("sonos.php: Volume for Player ".$master." is less then ".$min_vol." and has been set exceptional to Standard volume ".$config['sonoszonen'][$master][4], 7);
 			}
 		}
-	}
 } else {
 	if (!isset($_GET['volume']) && !isset($_GET['profile']))   {
 		# use standard volume from config
@@ -351,6 +333,7 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 		}
 	} elseif (isset($_GET['profile']) or isset($_GET['Profile']))   {
 		VolumeProfiles();
+	}
 	}
 }
 
@@ -379,28 +362,44 @@ if(isset($_GET['timer'])) {
 if(isset($_GET['rampto'])) {
 		switch($_GET['rampto'])	{
 			case 'sleep';
-				$config['TTS']['rampto'] = "SLEEP_TIMER_RAMP_TYPE";
+				#$config['TTS']['rampto'] = "SLEEP_TIMER_RAMP_TYPE";
 				break;
 			case 'alarm';
-				$config['TTS']['rampto'] = "ALARM_RAMP_TYPE";
+				#$config['TTS']['rampto'] = "ALARM_RAMP_TYPE";
 				break;
 			case 'auto';
-				$config['TTS']['rampto'] = "AUTOPLAY_RAMP_TYPE";
+				#$config['TTS']['rampto'] = "AUTOPLAY_RAMP_TYPE";
 				break;
 		}
 	} else {
 		switch($config['TTS']['rampto']) {
 			case 'sleep';
-				$config['TTS']['rampto'] = "SLEEP_TIMER_RAMP_TYPE";
+				#$config['TTS']['rampto'] = "SLEEP_TIMER_RAMP_TYPE";
 				break;
 			case 'alarm';
-				$config['TTS']['rampto'] = "ALARM_RAMP_TYPE";
+				#$config['TTS']['rampto'] = "ALARM_RAMP_TYPE";
 				break;
 			case 'auto';
-				$config['TTS']['rampto'] = "AUTOPLAY_RAMP_TYPE";
+				#$config['TTS']['rampto'] = "AUTOPLAY_RAMP_TYPE";
 				break;
 		}
 	}
+
+if (isset($_GET['member']) and (!isset($_GET['profile']) or $_GET['action'] == "Profile") and $_GET['action'] != "say")   {
+	CreateMember();
+}
+
+if ($_GET['action'] != "next" and $_GET['action'] != "rewind" and $_GET['action'] != "play" and $_GET['action'] != "stop"
+		and $_GET['action'] != "pause" and $_GET['action'] != "volume")   { 
+		#and $_GET['action'] != "pause" and $_GET['action'] != "volume" and $_GET['action'] != "sonosplaylist" and $_GET['action'] != "randomplaylist" 
+		#and $_GET['action'] != "pluginradio" and $_GET['action'] != "nextradio")   {
+		if (file_exists($memberarray))   {
+			@unlink($memberarray);
+			LOGGING("sonos.php: Saved Array of Member file has been deleted",6);
+		}		
+}
+
+
 
 if(array_key_exists($_GET['zone'], $sonoszone)){ 
 
@@ -799,17 +798,20 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 
 		case 'radioplaylist':
-			radio();
+			#radio();
+			LOGGING("sonos.php: function 'radioplaylist' has been depreciated due to New TuneIn", 3); 
 		break;
 		
 
 		case 'groupradioplaylist': 
-			radio();
+			#radio();
+			LOGGING("sonos.php: function 'groupradioplaylist' has been depreciated due to New TuneIn", 3); 
 		break;
 		
 		
 		case 'radio': 
-			radio();
+			#radio();
+			LOGGING("sonos.php: function 'radio' has been depreciated due to New TuneIn", 3); 
 		break;
 		
 		
@@ -1738,6 +1740,11 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			curr_volume();
 		break;
 		
+		case 'test':
+			$zone = $_GET['zone'];
+			checkOnline($zone);
+		break;
+		
 		case 'profile':
 			//VolumeProfiles();
 		break;
@@ -1907,6 +1914,7 @@ function volume_group()  {
 	$sonos = new SonosAccess($sonoszone[$master][0]);
 	#$sonos->SetMute(true);
 	if (isset($_GET['member']))  {
+		/**
 		$member = $_GET['member'];
 		if($member === 'all') {
 			$memberon = array();
@@ -1926,7 +1934,7 @@ function volume_group()  {
 				if ($zoneon === (bool)true)  {
 					array_push($memberon, $value);
 				} else {
-					LOGGING("sonos.php: Player '".$value."' could not be added to the group!!", 4);
+					#LOGGING("sonos.php: Player '".$value."' could not be added to the group!!", 4);
 				}
 			}
 			$member = $memberon;
@@ -1935,9 +1943,9 @@ function volume_group()  {
 			LOGGING("sonos.php: The zone ".$master." could not be entered as member again. Please remove from Syntax '&member=".$master."' !", 3);
 			exit;
 		}
-
-
-		foreach ($member as $memplayer => $zone2) {
+**/
+		#print_r(MEMBER);
+		foreach (MEMBER as $memplayer => $zone2) {
 			$sonos = new SonosAccess($sonoszone[$zone2][0]);
 
 			if(isset($_GET['volume']) or isset($_GET['groupvolume']) or isset($_GET['keepvolume']))  { 
@@ -1967,11 +1975,11 @@ function volume_group()  {
 							(isset($_GET['pollen'])) or (isset($_GET['warning'])) or
 							(isset($_GET['distance'])) or (isset($_GET['clock'])) or 
 							(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch"))	{
-							$volume = $config['sonoszonen'][$zone2][3];
-							LOGGING("sonos.php: T2S Volume for Member ".$zone2." is less then ".$min_vol." and has been set exceptional to Standard volume ".$config['sonoszonen'][$zone2][3], 7);
+							$volume = $sonoszone[$zone2][3];
+							LOGGING("sonos.php: T2S Volume for Member ".$zone2." is less then ".$min_vol." and has been set exceptional to Standard volume ".$sonoszone[$zone2][3], 7);
 						} else {
-							$volume = $config['sonoszonen'][$zone2][4];
-							LOGGING("sonos.php: Volume for Member ".$zone2." is less then ".$min_vol." and has been set exceptional to Standard volume ".$config['sonoszonen'][$zone2][4], 7);
+							$volume = $sonoszone[$zone2][4];
+							LOGGING("sonos.php: Volume for Member ".$zone2." is less then ".$min_vol." and has been set exceptional to Standard volume ".$sonoszone[$zone2][4], 7);
 						}
 					}
 				}
@@ -1984,14 +1992,14 @@ function volume_group()  {
 					(isset($_GET['distance'])) or (isset($_GET['clock'])) or 
 					(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch"))	{
 					# T2S Standard Volume
-					$volume = $config['sonoszonen'][$zone2][3];
+					$volume = $sonoszone[$zone2][3];
 					LOGGING("sonos.php: Standard T2S Volume for Member ".$zone2." has been set to: ".$volume, 7);
 				} else {
 					# Sonos Standard Volume
 					if (isset($_GET['profile']) or isset($_GET['Profile']))    {
 						$volume = $lookup[0]['Player'][$zone2][0]['Volume'];
 					} else {
-						$volume = $config['sonoszonen'][$zone2][4];
+						$volume = $sonoszone[$zone2][4];
 						LOGGING("sonos.php: Standard Sonos Volume for Group Member ".$zone2." has been set to: ".$volume, 7);
 					}
 				}

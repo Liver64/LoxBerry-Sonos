@@ -16,6 +16,8 @@ while [ $i -lt 6 ]; do
   /usr/bin/php REPLACELBPHTMLDIR/bin/push_maxvol.php &
   sleep 2
   /usr/bin/php REPLACELBPHTMLDIR/bin/tv_monitor.php &
-  sleep 6
+  sleep 2
+  /usr/bin/php REPLACELBPHTMLDIR/bin/on_time.php &
+  sleep 4
   i=$(( i + 1 ))
 done

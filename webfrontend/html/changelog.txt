@@ -463,3 +463,10 @@
 			[IMPROVEMENT] AudioClip ist als Gruppenfunktion verfügbar
 			[NOTE] Sonos ARC ULTRA wurde als Soundbar hinzugefügt
 			[BUGFIX] Stabilisierung der Restore Funktion bei Gruppen TTS
+ 5.8.8		[BUGFIX] Fixed doorbell
+ 5.9.0		[IMPROVEMENT] sonosplaylist, nextradio und alle Sonos Favoriten Funktionen sind auch als Gruppenfunktion verfügbar
+			[IMPROVEMENT] Sound Profile optimiert und erweitert
+			[IMPROVEMENT] zeitgesteuerte Verfügbarkeit der einzelnen Player
+			[IMPROVEMENT] Gruppierungsfunktionen optimiert
+			[NOTE] Alle Radio Funktionen basierend auf dem alten TuneIn deaktiviert
+			[BUGFIX] fixed rampto by sonosplaylist, radioplaylist und pluginradio + zusätzlicher parameter zero

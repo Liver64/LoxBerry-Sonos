@@ -379,7 +379,7 @@ function AddFavToQueue($file, $meta, $value, $stype)
 	global $sonos, $file, $meta, $stype;
 	
 	@$sonos->AddToQueue($file, $meta);
-	LOGINF ("metadata.php: : ".$stype." '".htmlspecialchars($value['title'])."' has been added1");
+	LOGINF ("metadata.php: : ".$stype." '".htmlspecialchars($value['title'])."' has been added");
 	return;
 }
 
@@ -388,7 +388,7 @@ function SetAVToQueue($file, $meta, $value, $stype)
 	global $sonos, $file, $meta, $stype;
 
 	@$sonos->SetAVTransportURI($file, $meta);
-	LOGINF ("metadata.php: : ".$stype." '".htmlspecialchars($value['title'])."' has been added2");
+	LOGINF ("metadata.php: : ".$stype." '".htmlspecialchars($value['title'])."' has been added");
 	return;
 }
 
