@@ -309,8 +309,10 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 				LOGGING("sonos.php: Volume for Player ".$master." is less then ".$min_vol." and has been set exceptional to Standard volume ".$config['sonoszonen'][$master][4], 7);
 			}
 		}
+	}
 } else {
 	if (!isset($_GET['volume']) && !isset($_GET['profile']))   {
+	#if (!isset($_GET['volume']))   {
 		# use standard volume from config
 		$master = $_GET['zone'];
 		$sonos = new SonosAccess($sonoszone[$master][0]);
@@ -333,7 +335,6 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 		}
 	} elseif (isset($_GET['profile']) or isset($_GET['Profile']))   {
 		VolumeProfiles();
-	}
 	}
 }
 

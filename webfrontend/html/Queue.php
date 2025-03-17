@@ -19,6 +19,7 @@ function zap()
 		LOGGING("queue.php: Currently a T2S is running, we skip zapzone for now. Please try again later.", 4);
 		exit;
 	}
+
 	# become single zone 1st
 	$sonos = new SonosAccess($sonoszone[$master][0]);
 	$check_stat = getZoneStatus($master);
@@ -26,6 +27,7 @@ function zap()
 		$sonos->BecomeCoordinatorOfStandaloneGroup();
 		LOGGING("queue.php: Zone ".$master." has been ungrouped.",5);
 	}
+	$sonos->SetVolume($volume);
 	# set cronjob default in case nothing has been selected
 	if ($config['VARIOUS']['cron'] == "")   {
 		system ("ln -s $lbphtmldir/bin/cronjob.sh $lbhomedir/system/cron/cron.01min/$lbpplugindir");
@@ -42,11 +44,14 @@ function zap()
 	} else {
 		$subfunction = $config['VARIOUS']['selfunction'];
 	}
-	#LOGGING("queue.php: selected Subfunction: ".$config['VARIOUS']['selfunction'], 7);
-	#LOGGING("queue.php: Cronjob: ".$config['VARIOUS']['cron']." Min.", 7);
+	
+	$value  = substr($config['VARIOUS']['selfunction'], 0, 4);
 	
 	# START ZAPZONE
+	
+	# check if ile exist
 	if (is_file($zapname) === false)  {
+		# file exists
 		LOGGING("queue.php: Start ZAPZONE", 7);
 		$runarray = array();
 		foreach ($sonoszone as $zone => $player) {
@@ -84,13 +89,14 @@ function zap()
 			}
 		}
 	} else {
+		# file does not exists
 		LOGGING("queue.php: Continue ZAPNAME", 7);
-		$file = json_decode(file_get_contents($zapname), true); 
+		$file = json_decode(file_get_contents($zapname), true);
 		$countzapfile = count($file);
-		if ($countzapfile == 0)  {
+		#print_r($file);
+		if ($countzapfile == 0 || $value == "http")  {
 			LOGGING("queue.php: Currently no zone is running or last Zone has been reached, we switch to Sub-Function",7);
 			PlayZapzoneNext();
-			LOGGING("queue.php: Sub-Function '".$subfunction."' has been called ",7);
 			exit;
 		} else {
 			# add master to zone and remove zone from array
@@ -154,15 +160,29 @@ function PlayZapzoneNext()
 	# Radio Station from Radio Favorites
 	} elseif ($value == "http")   {
 		$index = array_values($config['RADIO']['radio']);
-		foreach ($index as $key => $value)   {
-			$splitted = explode(",", $value);
-			if ($splitted[1] == $config['VARIOUS']['selfunction'])  {
-				$sonos->SetRadio('x-rincon-mp3radio://'.trim($splitted[1]), trim($splitted[0]), trim($splitted[2]));
-				return $splitted[0];
+		if (file_exists($zapname))  {
+			$savedzap = json_decode(file_get_contents($zapname), TRUE);
+			if (count($savedzap) != 0)   {
+				if ($savedzap[0] == $config['VARIOUS']['selfunction'])   {
+					LOGGING("queue.php: Configured Plugin RADIO Favorite is already streaming, nothing to do",7);
+					exit;
+				}
+			} else {
+				foreach ($index as $key => $value)   {
+					$splitted = explode(",", $value);
+					if ($splitted[1] == $config['VARIOUS']['selfunction'])  {
+						$sonos = new SonosAccess($sonoszone[$master][0]);
+						$sonos->SetRadio('x-rincon-mp3radio://'.trim($splitted[1]), trim($splitted[0]), trim($splitted[2]));
+						$sonos->SetVolume($volume);
+						$sonos->Play();
+						$empty[] = trim($splitted[1]); 
+						file_put_contents($zapname, json_encode($empty));
+					}
+				}
+				LOGGING("queue.php: Sub-Function 'Plugin RADIO Favorite' has been called ",7);
 			}
+			return "false";
 		}
-		return "false";
-		
 	} else {
 		nextradio();
 		file_put_contents($zapname, json_encode($empty));
