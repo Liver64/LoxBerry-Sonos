@@ -132,6 +132,7 @@ echo "<PRE>";
 								$dialog['Volume'] = $vol;
 								$dialog['Treble'] = $treble;
 								$dialog['Bass'] = $bass;
+								#var_dump($dialog);
 								LOGDEB("bin/tv_monitor.php: Volume for '".$key."' has been set to: ".$vol);
 								echo "Volume for '".$key."' has been set to: ".$vol.PHP_EOL;
 								# Turn Speech/Surround/Dialog Mode On and Mute Off

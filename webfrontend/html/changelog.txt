@@ -470,3 +470,5 @@
 			[IMPROVEMENT] Gruppierungsfunktionen optimiert
 			[NOTE] Alle Radio Funktionen basierend auf dem alten TuneIn deaktiviert
 			[BUGFIX] fixed rampto by sonosplaylist, radioplaylist und pluginradio + zusätzlicher parameter zero
+ 5.9.1		[BUGFIX] fixed T2S bei Nichtangabe von Volume in der Syntax
+			[BUGFIX] fixed function zapzone

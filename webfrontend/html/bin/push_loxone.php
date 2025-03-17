@@ -40,7 +40,7 @@ $mem_sendall_sec = 3600;
 
 global $mem_sendall, $mem_sendall_sec, $nextr, $sonoszone;
 
-	# Parsen der Konfigurationsdatei sonos.cfg
+	# Parsen der Konfigurationsdatei
 	if (file_exists($lbpconfigdir . "/" . $configfile))    {
 		$config = json_decode(file_get_contents($lbpconfigdir . "/" . $configfile), TRUE);
 	} else {
@@ -71,49 +71,6 @@ global $mem_sendall, $mem_sendall_sec, $nextr, $sonoszone;
 		$mqttstat = "0";
 	}
 	
-	
-	
-	/**
-	// check if zones are connected	
-	if (!isset($config['SYSTEM']['checkonline']))  {
-		$checkonline = true;
-	} else if ($config['SYSTEM']['checkonline'] == "1")  {
-		$checkonline = true;
-	} else {
-		$checkonline = false;
-	}
-	$zonesoff = "";
-	if ($checkonline === true)  {
-		// prüft den Onlinestatus jeder Zone
-		$zonesonline = array();
-		foreach($sonoszonen as $zonen => $ip) {
-			$port = 1400;
-			$timeout = 2;
-			$handle = @stream_socket_client("$ip[0]:$port", $errno, $errstr, $timeout);
-			if($handle) {
-				$sonoszone[$zonen] = $ip;
-				array_push($zonesonline, $zonen);
-				fclose($handle);
-			}
-		}
-		$zoon = implode(", ", $zonesonline);
-	#} else {
-		#$sonoszone = $sonoszonen;
-	}
-	#print_r($zonesonline);
-	
-	
-	// addded 20072022
-	$zonesonline = array();
-	foreach($sonoszonen as $zonen => $ip) {
-		$handle = is_file($folfilePlOn."".$zonen.".txt");
-		#var_dump($handle);
-		if($handle === true) {
-			$sonoszone[$zonen] = $ip;
-			array_push($zonesonline, $zonen);
-		}
-	}
-	*/
 	# get active zones
 	$sonoszone = sonoszonen_on();
 	

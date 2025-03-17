@@ -2,7 +2,7 @@
 
 # Control
 
-![](https://img.shields.io/badge/Release-v5.9.0-blue)
+![](https://img.shields.io/badge/Release-v5.9.1-blue)
 ![](https://img.shields.io/badge/PreRrelease-v5.3.9-blue)
 
 Sonos for Smart Home
@@ -14,7 +14,7 @@ wrapper to control your Sonos system from every Smart Home Environment which can
 The GUI of the Sonos Plugin, as well as Loxberry, is multilingual and could easily be translated in what ever language
 you want by using a standard widget of Loxberry. 
 
-![Plugin logo](webfrontend/html/images/SR1.png)
+![Plugin logo](webfrontend/html/images/SR1a.png)
 ![Plugin logo](webfrontend/html/images/SR2.png)
 ![Plugin logo](webfrontend/html/images/SR3.png)
 

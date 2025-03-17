@@ -755,6 +755,7 @@ sub form
 sub save_details
 {
 	my $countradios = param('countradios');
+	my $zapname = "/run/shm/s4lox_zap_zone.json";
 	
 	LOGINF "Start writing details configuration file";
 	
@@ -791,7 +792,7 @@ sub save_details
 
 	  if ($R::cron eq "1") 
 	  {
-	    system ("ln -s $lbphtmldir/bin/cronjob.sh $lbhomedir/system/cron/cron.01min/$lbpplugindir");
+	    system ("ln -s $lbphtmldir/bin/cron/cronjob.sh $lbhomedir/system/cron/cron.01min/$lbpplugindir");
 	    unlink ("$lbhomedir/system/cron/cron.03min/$lbpplugindir");
 		unlink ("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
 	    unlink ("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
@@ -834,7 +835,11 @@ sub save_details
 	    unlink ("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
 		LOGOK "Cron job 30 Minutes created";
 	  }
-		
+	  
+	if (-e $zapname)  {
+		unlink ($zapname);
+		LOGDEB "Status File for ZAPZONE has been deleted";
+	}
 	LOGOK "Detail settings has been saved successful";
 	sleep(3); 
 	$navbar{2}{active} = 1;
