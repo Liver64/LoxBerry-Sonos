@@ -25,7 +25,7 @@ $mask 				= 's4lox_TV*.*';									// mask for deletion
 $folfilePlOn 		= "$lbpdatadir/PlayerStatus/s4lox_on_";				// Folder and file name for Player Status
 $statusNight 		= "s4lox_TV_night_on";								// Folder and file name for Night Modus
 
-$Stunden 			= date("H");
+$Stunden 			= date("H:i");
 $time_start 		= microtime(true);
 #var_dump($Stunden);
 
@@ -49,8 +49,6 @@ echo "<PRE>";
 		echo "The configuration file could not be loaded, the file may be disrupted. We have to abort :-(')".PHP_EOL;
 		exit;
 	}
-	#print_r($config);
-
 	# extract all Players and identify those were Online
 	$sonoszonen = $config['sonoszonen'];
 	$sonoszone = sonoszonen_on();
@@ -61,12 +59,11 @@ echo "<PRE>";
 		#$soundbars = array_merge_recursive($soundbars, $config['SOUNDBARS']);
 		#print_r($soundbars);
 		# Start script
-		
+	
 		foreach($soundbars as $key => $value)   {
 			#********************************************
 			# If Soundbar has been configured On
 			#********************************************
-			
 			if ((bool)is_enabled($soundbars[$key][14]['usesb']))   {
 				if (file_exists("/run/shm/".$restore_file."_".$key.".json"))   {
 					unlink("/run/shm/".$restore_file."_".$key.".json");
@@ -213,7 +210,7 @@ echo "<PRE>";
 	# restore previous soundbar settings 
 	#********************************************************
 	# turn nightmode off
-	} elseif ((string)$Stunden == "4" or (string)$Stunden == "7")    {
+	} elseif ((string)$Stunden == "04:00" or (string)$Stunden == "07:00")    {
 		$soundbars = identSB($sonoszone, $folfilePlOn);
 		foreach($soundbars as $subkey => $value)   {
 			if (!file_exists("/run/shm/".$restore_file."_".$subkey.".json"))   {

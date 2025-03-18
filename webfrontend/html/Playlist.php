@@ -16,8 +16,10 @@ function playlist() {
 	
 	global $debug, $sonos, $master, $lookup, $memberarray, $samearray, $sonoszone, $config, $volume, $masterzone, $sonospltmp, $profile_selected;
 	
-	#print_r(SOUNDZONES);
-	
+	if (!defined('GROUPMASTER')) {
+		define("GROUPMASTER",$master);
+	}
+
 	if (file_exists($sonospltmp) and (!isset($_GET['load'])))  {
 		# load previously saved Sonos Playlist
 		$sonos = new SonosAccess($sonoszone[GROUPMASTER][0]);
