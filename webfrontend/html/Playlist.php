@@ -19,7 +19,7 @@ function playlist() {
 	if (!defined('GROUPMASTER')) {
 		define("GROUPMASTER",$master);
 	}
-
+	CreateMember();
 	if (file_exists($sonospltmp) and (!isset($_GET['load'])))  {
 		# load previously saved Sonos Playlist
 		$sonos = new SonosAccess($sonoszone[GROUPMASTER][0]);

@@ -36,6 +36,7 @@ function radio(){
 	#	$sonos->BecomeCoordinatorOfStandaloneGroup();
 	#	LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
 	#}
+	CreateMember();
 	$sonos = new SonosAccess($sonoszone[$master][0]);
 	$coord = $master;
 	$roomcord = getRoomCoordinator($coord);
@@ -399,11 +400,13 @@ function PluginRadio()
 			exit(1);
 		}
     }
+	CreateMember();
 	if (isset($_GET['member'])) {
 		$master = GROUPMASTER;
 	} else {
 		$master = $_GET['zone'];
 	}
+	
 	$sonos = new SonosAccess($sonoszone[$master][0]);
 	$enteredRadio = mb_strtolower($_GET['radio']);
 	$radios = $config['RADIO']['radio'];

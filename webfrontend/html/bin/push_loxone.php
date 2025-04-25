@@ -238,18 +238,20 @@ global $mem_sendall, $mem_sendall_sec, $nextr, $sonoszone;
 			#print_r($tempradio);
 			if ($gettransportinfo == 1) {
 				// Radio
+				#print_r($tempradio);
+				#print_r($temp);
 				if (substr($tempradio['UpnpClass'] ,0 ,36) == "object.item.audioItem.audioBroadcast")   {
 					$source = 1;											// Quelle Radio
 					$station = "Radio ".$tempradio["title"];				// Sender
 					$haystack = $tempradio["CurrentURI"];
-					$needleTuneIn = "tunein";								// sid=254 für TuneIn
+					$needleTuneIn = "333";									// sid=333 für TuneIn (New)
 					$containTuneIn = mb_strpos($haystack, $needleTuneIn) !== false;
 					# TuneIn Radio
 					if ($containTuneIn === true)  {	
-						$value = ' ';										// kombinierte Titel- und Interpretinfo
+						$value = $temp['streamContent'];										// kombinierte Titel- und Interpretinfo
 						$valuesplit[0] = ' ';								// Nur Titelinfo
 						$valuesplit[1] = ' ';								// Nur Interpreteninfo
-						$sid = 'TuneIn';
+						$sid = 'TuneIn (New)';
 					# Plugin Radio Stations
 					} elseif (substr($tempradio['CurrentURI'] ,0 ,17) == "x-rincon-mp3radio")    {
 						$value = '';										// kombinierte Titel- und Interpretinfo
@@ -293,6 +295,7 @@ global $mem_sendall, $mem_sendall_sec, $nextr, $sonoszone;
 					$station = ' ';
 					$source = 2;
 				}
+				
 				// Übergabe der Titelinformation an Loxone (virtueller Texteingang)
 				$sonos = new SonosAccess($sonoszone[$zone][0]);
 				$valueurl = ($value);
@@ -307,7 +310,7 @@ global $mem_sendall, $mem_sendall_sec, $nextr, $sonoszone;
 						$data['tvstate_'.$zone] = $tvstate;
 					} else {
 						$sid = "";
-						$data['tvstate_'.$zone] = "";
+						$data['tvstate_'.$zone] = " ";
 					}
 					$data['sid_'.$zone] = $sid;
 					$data['cover_'.$zone] = $cover;

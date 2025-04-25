@@ -407,35 +407,39 @@ function AddMemberTo() {
 			if ($zone != GROUPMASTER)    {
 				try {
 					$sonos->SetAVTransportURI("x-rincon:" . trim($sonoszone[GROUPMASTER][1])); 
-					LOGGING("helper.php: Zone: ".$zone." has been added to master: ".GROUPMASTER,6);
+					LOGGING("helper.php: Zone '".$zone."' has been added to Master '".GROUPMASTER."'",6);
 				} catch (Exception $e) {
-					LOGGING("helper.php: Zone: ".$zone." could not be added to master: ".GROUPMASTER,4);
+					LOGGING("helper.php: Zone '".$zone."' could not be added to Master '".GROUPMASTER."'",4);
 				}
 			}
-			usleep((int)($sleepaddmember * 1000000));
+			#usleep((int)($sleepaddmember * 1000000));
 		}
 		$sonos = new SonosAccess($sonoszone[GROUPMASTER][0]);
 		volume_group();
 	}
+	#exit;
 }
 
 
 
 /**
 *
-* Function : CreateMember --> erstellt array von member
+* Function : CreateMember --> bereitet array von member vor
 *
 * @param: 	empty
-* @return:  create Group
+* @return:  create array
 **/
 function CreateMember($member = "", $masterzone = "") { 
 
-	global $sonoszone, $master, $profile_selected, $samearray, $memberarray, $config, $sleepaddmember, $profile, $masterzone;
+	global $sonoszone, $sonoszonen, $sonos, $config, $master, $profile_selected, $samearray, $memberarray, $config, $sleepaddmember, $profile, $masterzone;
+	
+	if (isset($_GET['member']))   {	
 	
 		@unlink($profile_selected);
-		LOGGING("helper.php: Member has been entered",5);
+		
 		$member = $_GET['member'];
 		if($member === 'all') {
+			LOGGING("helper.php: Member has been entered",5);
 			$member = array();
 			foreach ($sonoszone as $zone => $ip) {
 				# exclude master Zone
@@ -443,56 +447,60 @@ function CreateMember($member = "", $masterzone = "") {
 					array_push($member, $zone);
 				}
 			}
+			LOGGING("helper.php: All Players will be added to Player: ".$master, 5);	
 		} else {
+			LOGGING("helper.php: Member has been entered",5);
 			# member from URL
 			$member = explode(',', $member);
 		}
-		#print_r($member);
-		
-		# check if array has been stored in previous call
-		if (file_exists($memberarray))   {
-			$savedmember = json_decode(file_get_contents($memberarray), true);
-			$result = array_diff_assoc($member, $savedmember);
-			$result_leaver = array_diff($savedmember, $member);
-			#print_r($result);
-			#print_r($result_leaver);
-			if (count($result) == 0)   {
-				LOGGING("helper.php: Array of Member is identical",6);
-				define("MEMBER", $member);
-				define("GROUPMASTER", $master);
-				$samearray = true;
-				return;
-			} else {
-				print_r($result_leaver);
-				if (count($result_leaver) != 0)   {
-					foreach ($result_leaver as $zone)   {
-						$sonos = new SonosAccess($sonoszone[$zone][0]);
-						@$sonos->BecomeCoordinatorOfStandaloneGroup();
-						LOGGING("helper.php: Zone '".$zone."' has left existing group",7);
-					}
-				}
-				@unlink($memberarray);
-				LOGGING("helper.php: Saved Array of Member file has been deleted",6);
-			}		
-		} 
-		# check if member is ON and create valid array
 		$memberon = array();
+		$act_time = date("H:i"); #"16:58"
 		foreach ($member as $zone) {
 			$zoneon = checkZoneOnline($zone);
 			if ($zoneon === (bool)true)   {
-				array_push($memberon, $zone);
-				LOGGING("helper.php: Zone: ".$zone." has been added to MEMBER array",6);
+				if ($config['SYSTEM']['checkonline'] != false)   {
+					# add zones having no time restrictions
+					if ($sonoszone[$zone][15] != "" and $sonoszone[$zone][16] != "")   {
+						$startime = $sonoszone[$zone][15]; #"07:15"
+						$endtime = $sonoszone[$zone][16]; #"20:32"
+						if ((string)$startime <= (string)$act_time and (string)$endtime >= (string)$act_time)   {
+							array_push($memberon, $zone);
+							LOGGING("helper.php: Member '$zone' has been prepared to Member array", 6);		
+						} else {
+							LOGGING("helper.php: Member '$zone' could not be added to Member array. Maybe Zone is Offline or Time restrictions entered!", 4);	
+						}
+					} else {
+						# add zones having no time restrictions
+						array_push($memberon, $zone);
+						LOGGING("helper.php: Member '$zone' has been prepared to Member array", 6);	
+					}
+				} else {
+					array_push($memberon, $zone);
+					LOGGING("helper.php: Member '$zone' has been prepared to Member array", 6);	
+				}
+			} else {
+				LOGGING("helper.php: Member '$zone' could not be added to Member array. Maybe Zone is Offline or Time restrictions entered!", 4);	
 			}
 		}
 		$member = $memberon;
-
-		# Define global Constante MEMBER
-		define("MEMBER", $member);
-		define("GROUPMASTER", $master);
-		file_put_contents($memberarray, json_encode($member));
-		AddMemberTo();
 		
+		# Remove master from group if not single
+		$check_stat = getZoneStatus($master);
+		if ($check_stat != (string)"single")  {
+			$sonos = new SonosAccess($sonoszone[$master][0]);
+			$sonos->BecomeCoordinatorOfStandaloneGroup();
+			LOGGING("helper.php: Zone '".$master."' has been ungrouped.",5);
+		}
+		# Define global Constante MEMBER
+		if (!defined('MEMBER')) {
+			define("MEMBER", $member);
+		}
+		if (!defined('GROUPMASTER')) {
+			define("GROUPMASTER",$master);
+		}
+		AddMemberTo();
 	}
+}
 
 
 
@@ -1298,11 +1306,10 @@ function RampTo() {
 	
 	global $sonos, $master, $sonoszone;
 	
-	if (isset($_GET['member']))	   {
-		LOGGING("helper.php: rampto parameter does not work with member, Volume for member has been set to fixed Volume. Please correct your syntax", 6);
-	}
-
 	if (isset($_GET['rampto']))	   {
+		if (isset($_GET['member']))	   {
+			LOGGING("helper.php: rampto parameter does not work for member, Volume for member has been set to fixed Volume. Please correct your syntax", 4);
+		}
 		$rampto = $_GET['rampto'];
 		$zero = isset($_GET['zero']);
 		if (isset($_GET['volume']))    {
@@ -1746,6 +1753,7 @@ function sonoszonen_on()    {
 	
 	// prüft den Onlinestatus jeder Zone
 	$sonoszone = array();
+	$memberon = array();
 	#LOGINF("sonos.php: Online check for Players will be executed");
 	$act_time = date("H:i"); #"16:58"
 	foreach($sonoszonen as $zonen => $ip) {

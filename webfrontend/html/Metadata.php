@@ -10,7 +10,7 @@
 
 function metadata($value) 
 {
-	global $sonos, $volume, $sonoszone, $master, $services, $radiofav, $radiolist, $radiofavtmp, $file, $meta, $stype;
+	global $sonos, $sid, $volume, $sonoszone, $master, $services, $radiofav, $radiolist, $radiofavtmp, $file, $meta, $stype;
 	
 	#print_r($value);
 	
@@ -187,7 +187,7 @@ function metadata($value)
 			CreateDIDL($value, $stype);
 		break;
 		
-		case "284":		// YoutTube Music
+		case "284":		// YouTube Music
 			if ($value['typ'] == "Track")    {
 				$stype = "YouTube Track Favorite";
 			} elseif ($value['typ'] == "Playlist")    {
@@ -379,7 +379,7 @@ function AddFavToQueue($file, $meta, $value, $stype)
 	global $sonos, $file, $meta, $stype;
 	
 	@$sonos->AddToQueue($file, $meta);
-	LOGINF ("metadata.php: : ".$stype." '".htmlspecialchars($value['title'])."' has been added");
+	LOGINF ("metadata.php: ".$stype." '".htmlspecialchars($value['title'])."' has been added");
 	return;
 }
 
@@ -388,7 +388,7 @@ function SetAVToQueue($file, $meta, $value, $stype)
 	global $sonos, $file, $meta, $stype;
 
 	@$sonos->SetAVTransportURI($file, $meta);
-	LOGINF ("metadata.php: : ".$stype." '".htmlspecialchars($value['title'])."' has been added");
+	LOGINF ("metadata.php: ".$stype." '".htmlspecialchars($value['title'])."' has been added");
 	return;
 }
 

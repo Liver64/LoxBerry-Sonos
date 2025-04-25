@@ -472,3 +472,7 @@
 			[BUGFIX] fixed rampto by sonosplaylist, radioplaylist und pluginradio + zusätzlicher parameter zero
  5.9.1		[BUGFIX] fixed T2S bei Nichtangabe von Volume in der Syntax
 			[BUGFIX] fixed function zapzone
+ 5.9.2		[BUGFIX] optimized T2S (not Clip)
+			[BUGFIX] optimized zapzone
+			[BUGFIX] fixed rampto funktion in Verbindung mit Gruppen
+			[BUGFIX] fixed VI_MQTT Template (IP Adresse)

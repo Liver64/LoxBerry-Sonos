@@ -21,12 +21,9 @@ function zap()
 	}
 
 	# become single zone 1st
-	$sonos = new SonosAccess($sonoszone[$master][0]);
-	$check_stat = getZoneStatus($master);
-	if ($check_stat != (string)"single")  {
-		$sonos->BecomeCoordinatorOfStandaloneGroup();
-		LOGGING("queue.php: Zone ".$master." has been ungrouped.",5);
-	}
+	#$sonos = new SonosAccess($sonoszone[$master][0]);
+	#$sonos->BecomeCoordinatorOfStandaloneGroup();
+	
 	$sonos->SetVolume($volume);
 	# set cronjob default in case nothing has been selected
 	if ($config['VARIOUS']['cron'] == "")   {
@@ -44,11 +41,10 @@ function zap()
 	} else {
 		$subfunction = $config['VARIOUS']['selfunction'];
 	}
-	
 	$value  = substr($config['VARIOUS']['selfunction'], 0, 4);
 	
 	# START ZAPZONE
-	
+
 	# check if ile exist
 	if (is_file($zapname) === false)  {
 		# file exists
@@ -57,13 +53,11 @@ function zap()
 		foreach ($sonoszone as $zone => $player) {
 			$sonos = new SonosAccess($sonoszone[$zone][0]);
 			$state = $sonos->GetTransportInfo();			// select only playing zones
-			$posinfo = $sonos->GetPositionInfo();	
-			#LOGGING("GetPositionInfo for ".$zone.": ".$posinfo['TrackURI'], 7);
-			if ($state == '1' and $sonoszone[$zone][1] != $sonoszone[$master][1] and substr($posinfo["TrackURI"], 0, 18) != "x-sonos-htastream:")   {				// except masterzone
-				$u = getZoneStatus($zone);
-				if ($u <> "member")    {
-					array_push($runarray, $zone, $sonoszone[$zone][0], $sonoszone[$zone][1]); 		// add IP-address to array
-				}
+			usleep(200000);
+			$posinfo = $sonos->GetPositionInfo();
+			#echo $zone." = ".$state."<br>";
+			if ($state == '1' and $zone != $master and substr($posinfo["TrackURI"], 0, 18) != "x-sonos-htastream:")   {				// except masterzone
+				array_push($runarray, $zone); 				// add Player to array
 			}
 		}
 		$countzones = count($runarray);
@@ -76,16 +70,14 @@ function zap()
 		} else {
 			# join zone to currently running zone
 			$sonos = new SonosAccess($sonoszone[$master][0]);
-			$sonos->SetAVTransportURI("x-rincon:" . $runarray[2]);
-			LOGGING("queue.php: Zone ".$master." has been added as member to Zone ".$runarray[0],7);
+			$sonos->SetAVTransportURI("x-rincon:" . $sonoszone[$runarray[0]][1]);
+			LOGGING("queue.php: Zone '$master' has been added as member to Zone '$runarray[0]'",5);
 			sleep(1);
-			array_shift($runarray);										// remove 1st Zone Name and re-index array
-			array_shift($runarray);										// remove 1st Zone Rincon-ID and re-index array
-			array_shift($runarray);										// remove 1st Zone IP and re-index array
+			array_shift($runarray);										// remove 1st key
 			DeleteTmpFavFiles();
 			$result = file_put_contents($zapname, json_encode($runarray));		// save file
 			if ($result === false)    {
-				LOGGING("queue.php: Writing file '".$zapname."' failed. Pls. check your Loxberry settings!", 7);
+				LOGGING("queue.php: Writing file '$zapname' failed. Pls. check your Loxberry settings!", 7);
 			}
 		}
 	} else {
@@ -93,24 +85,22 @@ function zap()
 		LOGGING("queue.php: Continue ZAPNAME", 7);
 		$file = json_decode(file_get_contents($zapname), true);
 		$countzapfile = count($file);
-		#print_r($file);
-		if ($countzapfile == 0 || $value == "http")  {
+		if ($countzapfile == 0 or $value == "http")  {
 			LOGGING("queue.php: Currently no zone is running or last Zone has been reached, we switch to Sub-Function",7);
 			PlayZapzoneNext();
+			LOGGING("queue.php: Sub-Function '".$subfunction."' has been called ",7);																
 			exit;
 		} else {
 			# add master to zone and remove zone from array
 			$sonos = new SonosAccess($sonoszone[$master][0]);
-			$sonos->SetAVTransportURI("x-rincon:" . $file[2]);
-			LOGGING("queue.php: Zone ".$master." has been added as member to Zone ".$file[0],7);
+			$sonos->SetAVTransportURI("x-rincon:" . $sonoszone[$file[0]][1]);
+			LOGGING("queue.php: Zone '$master' has been added as member to Zone '$file[0]'",5);
 			sleep(1);
-			array_shift($file);
-			array_shift($file);
 			array_shift($file);
 			# save new array again
 			$result = file_put_contents($zapname, json_encode($file));
 			if ($result === false)    {
-				LOGGING("queue.php: Writing file '".$zapname."' failed. Pls. check your Loxberry settings!", 7);
+				LOGGING("queue.php: Writing file '$zapname' failed. Pls. check your Loxberry settings!", 7);
 			}
 		}
 	}
@@ -130,6 +120,10 @@ function PlayZapzoneNext()
 	global $sonos, $config, $volume, $zapname, $queuetracktmp, $browse, $sonoszone, $re, $master, $favtmp;
 	
 	$value  = substr($config['VARIOUS']['selfunction'], 0, 4);
+	
+	$sonos = new SonosAccess($sonoszone[$master][0]);
+	$sonos->BecomeCoordinatorOfStandaloneGroup();
+	LOGGING("queue.php: '$master' has been made to Single Zone", 7);
 	
 	$empty = array();
 	if ($config['VARIOUS']['selfunction'] == "nextradio")   {
@@ -203,6 +197,9 @@ function PlayFavorite()
 {
 	global $sonos, $volume, $lookup, $browse, $sonoszone, $re, $master, $favtmp;
 	
+	CreateMember();
+	$sonos = new SonosAccess($sonoszone[$master][0]);
+	
 	# if playlist has been loaded iterate through tracks
 	if (file_exists($favtmp))  {
 		LOGINF("queue.php: Playlist file has been loaded, we start iterating through Playlist.");
@@ -246,28 +243,23 @@ function PlayFavorite()
 		LOGERR ("queue.php: Your entered favorite '".$favorite."' has more then 1 hit! Please specify more detailed.");
 		exit;
 	}
-	$check_stat = getZoneStatus($master);
-	if ($check_stat != (string)"single")  {
-		$sonos->BecomeCoordinatorOfStandaloneGroup();
-		LOGGING("queue.php: Zone ".$master." has been ungrouped.",5);
-	}
-	#if(isset($_GET['member'])) {
-	#	AddMemberTo();
-	#	LOGINF ("queue.php: Member has been added");
-	#}
 	$sonos = new SonosAccess($sonoszone[$master][0]);
 	$sonos->Stop();
 	$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
-	@$sonos->SetGroupMute(false);
+	$sonos->SetGroupMute(false);
 	$sonos->SetPlayMode('0'); // NORMAL
 	if (isset($_GET['profile']) or isset($_GET['Profile']))    {
 		$volume = $lookup[0]['Player'][$master][0]['Volume'];
 	} 
-	$sonos->SetVolume($volume);
 	$sonos->ClearQueue();
 	LOGINF("queue.php: Settings to play your favorite has been prepared!");
 	try {
 		@metadata($re[0][0]);
+		if(isset($_GET['rampto']) and !file_exists($favtmp))  {
+			RampTo();
+		} else {
+			$sonos->SetVolume($volume);
+		}
 		$sonos->Play();
 		if (count($sonos->GetCurrentPlaylist()) > 1)  {
 			file_put_contents($favtmp,"running");
@@ -314,32 +306,28 @@ function GetFavorites()
 
 function PlayAllFavorites() 
 {
+	
 	global $sonos, $volume, $value, $lookup, $sonoszone, $master, $services, $radiofav, $radiolist, $queuetmp, $radiofavtmp;
-	
-if (count($sonos->GetFavorites()) < 1)    {
-				LOGGING("sonos.php: No Sonos Favorites are maintained.", 4);
-				exit;
-			}
-			# 1st click/execution
-			if (!file_exists($queuetmp))  {
-				$check_stat = getZoneStatus($master);
-				if ($check_stat != (string)"single")  {
-					$sonos->BecomeCoordinatorOfStandaloneGroup();
-					LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
-				}
-				#if(isset($_GET['member'])) {
-				#	AddMemberTo();
-				#	$sonos = new SonosAccess($sonoszone[$master][0]);
-				#	LOGINF ("sonos.php: Member has been added");
-				#}
-				DeleteTmpFavFiles();
-				@$sonos->ClearQueue();
-				LOGGING("Queue has been deleted", 7);
-				file_put_contents($queuetmp, json_encode("cleared"));
-			}
-	
-	if (file_exists($radiofav))  {
 		
+	if (count($sonos->GetFavorites()) < 1)    {
+		LOGGING("sonos.php: No Sonos Favorites are maintained.", 4);
+		exit;
+	}
+	$save = false;
+	# 1st click/execution
+	if (!file_exists($queuetmp))  {
+		#$check_stat = getZoneStatus($master);
+		#if ($check_stat != (string)"single")  {
+			#$sonos->BecomeCoordinatorOfStandaloneGroup();
+			#LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
+		#}
+		DeleteTmpFavFiles();
+		@$sonos->ClearQueue();
+		LOGGING("Queue has been deleted", 7);
+		$save = true;
+		file_put_contents($queuetmp, json_encode("cleared"));
+	}
+	if (file_exists($radiofav))  {
 		try {
 			if (!file_exists($radiofavtmp))  {
 				# as long as we tracks iterate through
@@ -365,7 +353,11 @@ if (count($sonos->GetFavorites()) < 1)    {
 			if (isset($_GET['profile']) or isset($_GET['Profile']))    {
 				$volume = $lookup[0]['Player'][$master][0]['Volume'];
 			} 
-			$sonos->SetVolume($volume);
+			if(isset($_GET['rampto']) and $save == false)  {
+				RampTo();
+			} else {
+				$sonos->SetVolume($volume);
+			}
 			# check addionally if Radio Station has been loaded
 			$mediainfo = $sonos->GetMediaInfo();
 			if ($mediainfo['CurrentURI'] != "")  {
@@ -384,7 +376,7 @@ if (count($sonos->GetFavorites()) < 1)    {
 			if (count($value) > 0)  {
 				# save new array
 				LOGOK ("queue.php: New Radio Favorite array has been saved");
-				$radiofavarray = file_put_contents($radiofav, json_encode($value));
+				$radiofavarray = file_put_contents($radiofav, json_encode($value, JSON_PRETTY_PRINT));
 				$radiofavtmp = file_put_contents($radiofavtmp, json_encode("Radio"));
 			} else {
 				# if last element loaded delete files
@@ -501,6 +493,9 @@ function PlayTrackFavorites()
 {
 	global $sonos, $volume, $lookup, $value, $sonoszone, $master, $queuetracktmp;
 	
+	#CreateMember();
+	#$sonos = new SonosAccess($sonoszone[$master][0]);
+	
 	$browse = AddDetailsToMetadata();
 	$browseTracks = count($browse);
 		
@@ -516,11 +511,13 @@ function PlayTrackFavorites()
 	}
 	# 1st click/execution
 	if (!file_exists($queuetracktmp))  {
-		$check_stat = getZoneStatus($master);
-		if ($check_stat != (string)"single")  {
-			$sonos->BecomeCoordinatorOfStandaloneGroup();
-			LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
-		}
+		CreateMember();
+		$sonos = new SonosAccess($sonoszone[$master][0]);
+		#$check_stat = getZoneStatus($master);
+		#if ($check_stat != (string)"single")  {
+		#	$sonos->BecomeCoordinatorOfStandaloneGroup();
+		#	LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
+		#}
 		#if(isset($_GET['member'])) {
 		#	AddMemberTo();
 		#	$sonos = new SonosAccess($sonoszone[$master][0]);
@@ -564,7 +561,6 @@ function PlayTrackFavorites()
 	if (isset($_GET['profile']) or isset($_GET['Profile']))    {
 		$volume = $lookup[0]['Player'][$master][0]['Volume'];
 	} 
-	$sonos->SetVolume($volume);
 	LOGINF("queue.php: Settings to play your favorite has been prepared!");
 	$shift = false;
 	# Select 1st favorite 
@@ -586,6 +582,12 @@ function PlayTrackFavorites()
 		$shift = true;
 		if (count($sonos->GetCurrentPlaylist()) > 0 )  {
 			$sonos->Play();
+			sleep(2);
+			if(isset($_GET['rampto']) and !file_exists($queuetracktmp)) {
+				RampTo();
+			} else {
+				$sonos->SetVolume($volume);
+			}
 			LOGDEB ("queue.php: First Favorite Track is playing");
 			LOGINF ("queue.php: Currently playing Track favorite has been removed from array");
 		} else {
@@ -622,38 +624,37 @@ function PlayRadioFavorites()
 	
 	
 	$browse = AddDetailsToMetadata();
-			$browseRadio = count($browse);
-		
-			if ($browseRadio < 1)    {
-				LOGGING("sonos.php: No Sonos Favorites are maintained.", 4);
-				exit;
-			}
-			$filter = "Radio";
-			$radios = array_multi_search($filter, $browse);
-			if (count($radios) < 1)    {
-				LOGGING("sonos.php: No Sonos Radio Station Favorites are maintained.", 4);
-				exit;
-			}
-			# 1st click/execution
-			if (!file_exists($queueradiotmp))  {
-				$check_stat = getZoneStatus($master);
-				if ($check_stat != (string)"single")  {
-					$sonos->BecomeCoordinatorOfStandaloneGroup();
-					LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
-				}
-				#if(isset($_GET['member'])) {
-				#	AddMemberTo();
-				#	$sonos = new SonosAccess($sonoszone[$master][0]);
-				#	LOGINF ("sonos.php: Member has been added");
-				#}
-				LOGOK ("sonos.php: Your Radio Favorites has been identified");
-				DeleteTmpFavFiles();
-				@$sonos->ClearQueue();
-				LOGGING("sonos.php: Queue has been deleted", 7);
-				file_put_contents($queueradiotmp, json_encode($radios));
-				LOGINF ("sonos.php: File including all Radio Stations has been saved.");
-			} 
-			
+	$browseRadio = count($browse);
+	$save = false;
+	if ($browseRadio < 1)    {
+		LOGGING("sonos.php: No Sonos Favorites are maintained.", 4);
+		exit;
+	}
+	$filter = "Radio";
+	$radios = array_multi_search($filter, $browse);
+	if (count($radios) < 1)    {
+		LOGGING("sonos.php: No Sonos Radio Station Favorites are maintained.", 4);
+		exit;
+	}
+	
+	# 1st click/execution
+	if (!file_exists($queueradiotmp))  {
+		#$check_stat = getZoneStatus($master);
+		#if ($check_stat != (string)"single")  {
+			#$sonos->BecomeCoordinatorOfStandaloneGroup();
+			#LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
+		#}
+		#echo "olli";
+		CreateMember();
+		$sonos = new SonosAccess($sonoszone[$master][0]);
+		LOGOK ("sonos.php: Your Radio Favorites has been identified");
+		DeleteTmpFavFiles();
+		@$sonos->ClearQueue();
+		LOGGING("sonos.php: Queue has been deleted", 7);
+		$save = true;
+		file_put_contents($queueradiotmp, json_encode($radios, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS | JSON_PRETTY_PRINT));
+		LOGINF ("sonos.php: File including all Radio Stations has been saved.");
+	} 
 	if (file_exists($queueradiotmp))  {
 		# load previously saved radio Stations
 		$value = json_decode(file_get_contents($queueradiotmp), TRUE);
@@ -674,13 +675,17 @@ function PlayRadioFavorites()
 		if (isset($_GET['profile']) or isset($_GET['Profile']))    {
 			$volume = $lookup[0]['Player'][$master][0]['Volume'];
 		} 
-		$sonos->SetVolume($volume);
 		LOGINF("queue.php: Settings to play your favorite has been prepared!");
 		# check addionally if Radio Station has been successful loaded
 		$mediainfo = $sonos->GetMediaInfo();
 		if ($mediainfo['CurrentURI'] != "")  {
 			try {
 				@$sonos->Play();
+				if(isset($_GET['rampto']) and $save == true)  {
+					RampTo();
+				} else {
+					$sonos->SetVolume($volume);
+				}
 				# remove 1st element of array
 				array_shift($value);
 				LOGINF ("queue.php: Radio Favorite has been removed from array.");
@@ -694,7 +699,7 @@ function PlayRadioFavorites()
 		# check array if NULL
 		if (count($value) > 0)  {
 			# save new array
-			$radiofavarray = file_put_contents($queueradiotmp, json_encode($value));
+			$radiofavarray = file_put_contents($queueradiotmp, json_encode($value, JSON_PRETTY_PRINT));
 			LOGOK ("queue.php: New Radio Favorite array has been saved");
 		} else {
 			# if last element loaded delete files
@@ -708,8 +713,11 @@ function PlayRadioFavorites()
 		}
 	} else {
 		LOGWARN ("queue.php: Radio Stations File could not be loaded!");
-		exit;
+		#exit;
 	}
+	#if ($save == true)    {
+	#	file_put_contents($queueradiotmp, json_encode($radios));
+	#}
 }
 
 
@@ -740,16 +748,18 @@ function PlaySonosPlaylist()
 			
 			# 1st click/execution
 			if (!file_exists($pltmp))  {
-				$check_stat = getZoneStatus($master);
-				if ($check_stat != (string)"single")  {
-					$sonos->BecomeCoordinatorOfStandaloneGroup();
-					LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
-				}
+				#$check_stat = getZoneStatus($master);
+				#if ($check_stat != (string)"single")  {
+					#$sonos->BecomeCoordinatorOfStandaloneGroup();
+					#LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
+				#}
 				#if(isset($_GET['member'])) {
 				#	AddMemberTo();
 				#	$sonos = new SonosAccess($sonoszone[$master][0]);
 				#	LOGINF ("sonos.php: Member has been added");
 				#}
+				CreateMember();
+				$sonos = new SonosAccess($sonoszone[$master][0]);
 				LOGOK ("sonos.php: Your Radio Favorites has been identified");
 				DeleteTmpFavFiles();
 				@$sonos->ClearQueue();
@@ -780,13 +790,18 @@ function PlaySonosPlaylist()
 		if (isset($_GET['profile']) or isset($_GET['Profile']))    {
 			$volume = $lookup[0]['Player'][$master][0]['Volume'];
 		} 
-		$sonos->SetVolume($volume);
+		#$sonos->SetVolume($volume);
 		LOGINF("queue.php: Settings to play your playlist has been prepared!");
 		# check addionally if Playlist has been successful loaded
 		$mediainfo = $sonos->GetMediaInfo();
 		if ($mediainfo['CurrentURI'] != "")  {
 			try {
 				@$sonos->Play();
+				if(isset($_GET['rampto']) and !file_exists($pltmp))  {
+					RampTo();
+				} else {
+					$sonos->SetVolume($volume);
+				}
 				# remove 1st element of array
 				array_shift($value);
 				LOGINF ("queue.php: Sonos Playlist has been removed from array.");
@@ -799,7 +814,7 @@ function PlaySonosPlaylist()
 		# check array if NULL
 		if (count($value) > 0)  {
 			# save new array
-			$radiofavarray = file_put_contents($pltmp, json_encode($value));
+			$radiofavarray = file_put_contents($pltmp, json_encode($value, JSON_PRETTY_PRINT));
 			LOGOK ("queue.php: New Sonos Playlists array has been saved");
 		} else {
 			# if last element loaded delete files
@@ -818,7 +833,7 @@ function PlaySonosPlaylist()
 }
 
 /**
-* Function : PlayTuneInPlaylist --> load and play TuneIn Radio Favorites
+* Function : PlayTuneInPlaylist --> load and play TuneIn Radio Favorites - OBSOLETE -
 * 
 * 
 * @param: empty
@@ -881,13 +896,18 @@ function PlayTuneInPlaylist()
 		if (isset($_GET['profile']) or isset($_GET['Profile']))    {
 			$volume = $lookup[0]['Player'][$master][0]['Volume'];
 		} 
-		$sonos->SetVolume($volume);
+		#$sonos->SetVolume($volume);
 		LOGINF("queue.php: Settings to play your TuneIn Radio Station has been prepared!");
 		# check addionally if Radio Station has been successful loaded
 		$mediainfo = $sonos->GetMediaInfo();
 		if ($mediainfo['CurrentURI'] != "")  {
 			try {
 				@$sonos->Play();
+				if(isset($_GET['rampto']) and !file_exists($tuneinradiotmp))  {
+					RampTo();
+				} else {
+					$sonos->SetVolume($volume);
+				}
 				# remove 1st element of array
 				array_shift($value);
 				LOGINF ("queue.php: TuneIn Favorite has been removed from array.");
@@ -949,21 +969,23 @@ function PlayPlaylistFavorites()
 			#print_r($radios);
 			# 1st click/execution
 			if (!file_exists($queuepltmp))  {
-				$check_stat = getZoneStatus($master);
-				if ($check_stat != (string)"single")  {
-					$sonos->BecomeCoordinatorOfStandaloneGroup();
-					LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
-				}
+				#$check_stat = getZoneStatus($master);
+				#if ($check_stat != (string)"single")  {
+				#	$sonos->BecomeCoordinatorOfStandaloneGroup();
+				#	LOGGING("radio.php: Zone ".$master." has been ungrouped.",5);
+				#}
 				#if(isset($_GET['member'])) {
 				#	AddMemberTo();
 				#	$sonos = new SonosAccess($sonoszone[$master][0]);
 				#	LOGINF ("sonos.php: Member has been added");
 				#}
+				CreateMember();
+				$sonos = new SonosAccess($sonoszone[$master][0]);
 				LOGOK ("sonos.php: Your Radio Favorites has been identified");
 				DeleteTmpFavFiles();
 				@$sonos->ClearQueue();
 				LOGGING("sonos.php: Queue has been deleted", 7);
-				file_put_contents($queuepltmp, json_encode($radios));
+				file_put_contents($queuepltmp, json_encode($radios, JSON_PRETTY_PRINT));
 				LOGINF ("sonos.php: File including all Playlists has been saved.");
 			} 
 			#print_r($radios);
@@ -990,13 +1012,18 @@ function PlayPlaylistFavorites()
 		if (isset($_GET['profile']) or isset($_GET['Profile']))    {
 			$volume = $lookup[0]['Player'][$master][0]['Volume'];
 		} 
-		$sonos->SetVolume($volume);
+		#$sonos->SetVolume($volume);
 		LOGINF("queue.php: Settings to play your playlist has been prepared!");
 		# check addionally if Playlist has been successful loaded
 		$mediainfo = $sonos->GetMediaInfo();
 		if ($mediainfo['CurrentURI'] != "")  {
 			try {
 				@$sonos->Play();
+				if(isset($_GET['rampto']) and !file_exists($queuepltmp))  {
+					RampTo();
+				} else {
+					$sonos->SetVolume($volume);
+				}
 				# remove 1st element of array
 				array_shift($value);
 				LOGINF ("queue.php: Favorite Playlist has been removed from array.");
@@ -1009,7 +1036,7 @@ function PlayPlaylistFavorites()
 		# check array if NULL
 		if (count($value) > 0)  {
 			# save new array
-			$radiofavarray = file_put_contents($queuepltmp, json_encode($value));
+			$radiofavarray = file_put_contents($queuepltmp, json_encode($value, JSON_PRETTY_PRINT));
 			LOGOK ("queue.php: New Favorite Playlists array has been saved");
 		} else {
 			# if last element loaded delete files

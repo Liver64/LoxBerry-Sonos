@@ -54,7 +54,7 @@ class LoxoneTemplateBuilder
 			$o .= '<VirtualInHttp ';
 			$o .= 'Title="'.@htmlspecialchars($this->Title, $encflags).'" ';
 			$o .= 'Comment="'.@htmlspecialchars($this->Comment, $encflags).'" ';
-			$o .= 'Address="'.@htmlspecialchars($this->Address, $encflags).'" ';
+			$o .= 'Address="http://'.@htmlspecialchars($this->Address, $encflags).'" ';
 			$o .= 'PollingTime="'.$this->PollingTime.'"';
 			$o .= '>'.$crlf;
 		} elseif ($class = "VirtualInUdp") {

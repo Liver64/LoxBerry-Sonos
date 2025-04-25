@@ -346,8 +346,8 @@ function saveZonesStati($sonoszone) {
 		$actual[$player]['Grouping'] = getGroup($player);
 		$actual[$player]['ZoneStatus'] = getZoneStatus($player);
 		#$actual[$player]['CONNECT'] = GetVolumeModeConnect($player);
-		$posinfo = $sonos->GetPositionInfo($player);
-		$media = $sonos->GetMediaInfo($player);
+		$posinfo = $actual[$player]['PositionInfo'];
+		$media = $actual[$player]['MediaInfo'];
 		$zonestatus = getZoneStatus($player);
 		if ($zonestatus != "member")    {
 			if (substr($posinfo["TrackURI"], 0, 18) == "x-sonos-htastream:")  {

@@ -313,7 +313,6 @@ function create_tts($text ='') {
 	if(file_exists($config['SYSTEM']['ttspath']."/".$filename.".mp3") && empty($_GET['nocache'])) {
 		LOGGING("play_t2s.php: MP3 grabbed from cache: '$textstring' ", 6);
 	} else {
-		
 		t2s($textstring, $filename);
 		if (($config['TTS']['t2s_engine'] == 6001) or ($config['TTS']['t2s_engine'] == 7001) or ($config['TTS']['t2s_engine'] == 4001) or ($config['TTS']['t2s_engine'] == 8001))    {
 			// ** generiere MP3 ID3 Tags **
@@ -552,6 +551,10 @@ function play_tts($filename) {
 		// if Playlist has less than or equal 998 entries
 		}
 		#exit;
+		$time_end = microtime(true);
+		$t2s_time = $time_end - $time_start;
+		#echo "Die T2S dauerte ".round($t2s_time, 2)." Sekunden.\n";
+		LOGGING("play_t2s.php: The requested T2S tooks ".round($t2s_time, 2)." seconds to be played.", 5);	
 		LOGGING("play_t2s.php: T2S play process has been successful finished", 6);
 		return $actual;
 		
@@ -608,19 +611,9 @@ function sendmessage($errortext = "") {
 				fclose($file);
 				exit;
 			}
-			#if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100) {
-			#	$volume = $_GET['volume'];
-				#LOGGING("play_t2s.php: Volume from syntax been adopted", 7);		
-			#} else 	{
-				// übernimmt Standard Lautstärke der angegebenen Zone aus config.php
-			#	$volume = $config['sonoszonen'][$master][3];
-				#LOGGING("play_t2s.php: Standard Volume from zone ".$master."  been used", 7);		
-			#}
-			#checkaddon();
-			#checkTTSkeys();
-			$save = saveZonesStatus(); // saves all Zones Status
-			SetVolumeModeConnect($mode = '0', $master);
+			$sonos = new SonosAccess($sonoszone[$master][0]); 
 			$return = getZoneStatus($master); // get current Zone Status (Single, Member or Master)
+			$save = saveZonesStatus(); // saves all Zones Status
 			if($return == 'member') {
 				if(isset($_GET['sonos'])) { // check if Zone is Group Member, then abort
 					LOGGING("play_t2s.php: The specified zone is part of a group! There are no information available.", 4);
@@ -628,12 +621,14 @@ function sendmessage($errortext = "") {
 				}
 			}
 			create_tts($errortext);
+			$sonos = new SonosAccess($sonoszone[$master][0]);
 			// stop 1st before Song Name been played
 			$test = $sonos->GetPositionInfo();
 			if (($return == 'master') or ($return == 'member')) {
 				$sonos->BecomeCoordinatorOfStandaloneGroup();  // in case Member or Master then remove Zone from Group
-				LOGGING("play_t2s.php: Zone ".$master." has been removed from group", 6);		
+				LOGGING("play_t2s.php: Zone '$master' has been removed from group", 6);		
 			}
+			
 			if (substr($test['TrackURI'], 0, 18) == "x-sonos-htastream:") {
 				$sonos->SetQueue("x-rincon-queue:". $sonoszone[$master][1] ."#0");
 				LOGGING("play_t2s.php: Streaming/TV end successful", 7);		
@@ -643,21 +638,14 @@ function sendmessage($errortext = "") {
 				$sonos->Stop();
 				usleep(200000);
 			}
-			// get Coordinator of (maybe) pair or single player
-			$coord = getRoomCoordinator($master);
-			LOGGING("play_t2s.php: Room Coordinator has been identified", 7);		
-			$sonos = new SonosAccess($coord[0]); 
+			$sonos = new SonosAccess($sonoszone[$master][0]); 
 			$sonos->SetMute(false);
 			play_tts($messageid);
 			restoreSingleZone();
-			$mode = "";
-			$actual[$master]['CONNECT'] == 'true' ? $mode = '1' : $mode = '0';
-			SetVolumeModeConnect($mode, $master);
 			$time_end = microtime(true);
 			$t2s_time = $time_end - $time_start;
 			#echo "Die T2S dauerte ".round($t2s_time, 2)." Sekunden.\n";
-			LOGGING("play_t2s.php: The requested single T2S tooks ".round($t2s_time, 2)." seconds to be processed.", 5);	
-			#return;		
+			proccessing_time();
 	}
 	
 /**
@@ -913,8 +901,9 @@ function handle_message($zones, $source) {
 * @return: 
 **/
 			
-function sendgroupmessage() {			
-			global $coord, $sonos, $text, $sonoszone, $errortext, $member, $master, $zone, $messageid, $logging, $textstring, $voice, $config, $mute, $volume, $membermaster, $getgroup, $checkgroup, $time_start, $mode, $modeback, $actual, $errortext;
+function sendgroupmessage() {	
+		
+			global $coord, $sonos, $text, $folfilePlOn, $sonoszone, $sonoszonen, $errortext, $member, $master, $zone, $messageid, $logging, $textstring, $voice, $config, $mute, $volume, $membermaster, $getgroup, $checkgroup, $time_start, $mode, $modeback, $actual, $errortext;
 			
 			presence_detection();
 			$time_start = microtime(true);
@@ -933,89 +922,80 @@ function sendgroupmessage() {
 				LOGGING("play_t2s.php: The parameter 'sonos' couldn't be used for group T2S!", 4);
 				exit;
 			}
-			#checkaddon();
-			#checkTTSkeys();
-			#$master = $_GET['zone'];
 			$member = $_GET['member'];
 			create_tts($errortext);
-			#CreateMember();
-			// if parameter 'all' has been entered all zones were grouped
-			#if (isset($_GET['member']))   {
-				#$member = CreateMember();
-			#	$member = MEMBER;
-			#	$master = GROUPMASTER;
-			#}
-			#/**
-			
+			$save = saveZonesStatus(); // saves all Zones Status
+
 			if($member === 'all') {
 				$memberon = array();
-				foreach ($sonoszone as $zone => $ip) {
+				foreach ($sonoszonen as $zone => $ip) {
 					$zoneon = checkZoneOnline($zone);
 					// exclude master Zone
 					if ($zone != $master) {
 						if ($zoneon === (bool)true)  {
 							array_push($memberon, $zone);
+							LOGGING("play_t2s.php: Player '$zone' has been added to member array",6);
 						} else {
-							LOGGING("play_t2s.php: Player '".$zone."' could not be added to the group!!", 4);
+							LOGGING("play_t2s.php: Player '$zone' could not be added to member array! Maybe Zone is Offline or Time restrictions entered", 4);
 						}
 					}
 				}
 				$member = $memberon;
-				LOGGING("play_t2s.php: All Players has been grouped to Player ".$master, 5);	
+				LOGGING("play_t2s.php: All Players has been grouped to Player '$master'", 5);	
 			} else {
 				$member = explode(',', $member);
 				$memberon = array();
-				#print_r($member);
 				foreach ($member as $value) {
 					$zoneon = checkZoneOnline($value);
 					if ($zoneon === (bool)true)  {
 						array_push($memberon, $value);
+						LOGGING("play_t2s.php: Player '$value' has been added to member array",7);
 					} else {
-						LOGGING("play_t2s.php: Player '".$value."' could not be added to the group!!", 4);
+						LOGGING("play_t2s.php: Player '$value' could not be added to member array! Maybe Zone is Offline or Time restrictions entered", 4);
 					}
 				}
 				$member = $memberon;
 			}
-			#**/
-			define("MEMBER", $member);
+			if (!defined('MEMBER')) {
+				define("MEMBER", $member);
+			}
 			if (in_array($master, $member)) {
 				LOGGING("play_t2s.php: The zone ".$master." could not be entered as member again. Please remove from Syntax '&member=".$master."' !", 3);
 				exit;
 			}
-			// prüft alle Member ob Sie Online sind und löscht ggf. Member falls nicht Online
-			$coord = getRoomCoordinator($master);
-			LOGGING("play_t2s.php: Room Coordinator has been identified", 7);		
-			// speichern der Zonen Zustände
-			$save = saveZonesStatus(); // saves all Zones Status
-			foreach($member as $newzone) {
-				SetVolumeModeConnect($mode = '0', $newzone);
-				SetVolumeModeConnect($mode = '0', $master);
-			}
+			#exit;
 			// create Group for Announcement
-			$masterrincon = $coord[1]; 
-			$sonos = new SonosAccess($coord[0]);
-			$sonos->BecomeCoordinatorOfStandaloneGroup();
-			LOGGING("play_t2s.php: Group Coordinator has been made to single zone", 7);		
+			$masterrincon = $sonoszone[$master][1]; 
+			$sonos = new SonosAccess($sonoszone[$master][0]);
+			try {
+				$sonos->BecomeCoordinatorOfStandaloneGroup();
+				LOGGING("play_t2s.php: Group Coordinator '$master' has been made to single zone", 7);	
+			} catch (Exception $e) {
+				LOGGING("play_t2s.php: Member '$master' could not be made to Single Zone! Something went wrong, please try again", 4);	
+			}
 			// grouping
 			foreach ($member as $zone) {
-				$sonos = new SonosAccess($sonoszone[$zone][0]);
-				if ($zone != $master) {
-					$sonos->SetAVTransportURI("x-rincon:" . $masterrincon); 
-					$sonos->SetMute(false);
-					LOGGING("play_t2s.php: Member '$zone' is now connected to Master Zone", 7);		
+				$handle = is_file($folfilePlOn."".$zone.".txt");
+				if($handle === true) {
+					$sonos = new SonosAccess($sonoszone[$zone][0]);
+					if ($zone != $master) {
+						try {
+							$sonos->SetAVTransportURI("x-rincon:" . $masterrincon);
+							LOGGING("play_t2s.php: Member '$zone' is now connected to Master Zone", 6);								
+						} catch (Exception $e) {
+							LOGGING("play_t2s.php: Member '$zone' could not be added to Master Zone. Maybe Zone is Offline or Time restrictions entered!", 4);	
+						}
+						$sonos->SetMute(false);
+					}
 				}
 			}
 			#sleep($config['TTS']['sleepgroupmessage']); // warten gemäß config.php bis Gruppierung abgeschlossen ist
-			$sonos = new SonosAccess($coord[0]);
+			$sonos = new SonosAccess($sonoszone[$master][0]);
 			$sonos->SetPlayMode('0'); 
-			$sonos->SetQueue("x-rincon-queue:". $coord[1] ."#0");
+			$sonos->SetQueue("x-rincon-queue:". $masterrincon ."#0");
 			if (!isset($_GET['sonos']))  {
 				$sonos->Stop();
 			}
-			#create_tts();
-			$group = $member;
-			// master der array hinzufügen
-			array_push($group, $master);
 			// Regelung des Volumes für T2S
 			$sonos->SetVolume($volume);
 			volume_group();
@@ -1023,14 +1003,7 @@ function sendgroupmessage() {
 			// wiederherstellen der Ursprungszustände
 			LOGGING("play_t2s.php: *** Restore previous settings will be called ***", 6);	
 			restoreGroupZone();		
-			foreach($member as $newzone) {
-				$mode = "";
-				$actual[$newzone]['CONNECT'] == 'true' ? $mode = '1' : $mode = '0';
-				SetVolumeModeConnect($mode, $newzone);
-			}
-			$mode = "";
-			$actual[$master]['CONNECT'] == 'true' ? $mode = '1' : $mode = '0';
-			SetVolumeModeConnect($mode, $master);
+			LOGGING("play_t2s.php: *** Text-to-speech successful processed ***", 6);	
 			proccessing_time();
 }
 
@@ -1499,7 +1472,7 @@ function proccessing_time()
 	
 	$time_end = microtime(true);
 	$t2s_time = $time_end - $time_start;
-	LOGGING("play_t2s.php: Audioclip: The requested Notification tooks ".round($t2s_time, 2)." seconds to be processed.", 5);	
+	LOGGING("play_t2s.php: The requested T2S tooks ".round($t2s_time, 2)." seconds to be processed completly.", 5);	
 	
 }
 ?>

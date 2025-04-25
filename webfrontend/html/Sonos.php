@@ -2,7 +2,7 @@
 
 ##############################################################################################################################
 #
-# Version: 	5.9.0
+# Version: 	5.9.2
 # Datum: 	03.2025
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 #
@@ -10,6 +10,7 @@
 # http://<IP>:1400/support/review
 #
 # https://www.reddit.com/r/sonos/comments/1ggv8dk/sonos_network_troubleshooting_an_unofficial/
+# https://www.reddit.com/r/sonos/comments/t0emv0/the_definitive_sonos_vlan_segregation_post/
 # 
 ##############################################################################################################################
 
@@ -276,7 +277,8 @@ if (isset($_GET['profile']) and isset($_GET['volume']))   {
 if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0 && $_GET['volume'] <= 100 or isset($_GET['keepvolume']) or isset($_GET['rampto'])) {
 	# volume get from syntax
 	$master = $_GET['zone'];
-	if (isset($_GET['volume']) and !isset($_GET['rampto']))  {
+	#if (isset($_GET['volume']) and !isset($_GET['rampto']))  {
+	if (isset($_GET['volume']))  {
 		$volume = $_GET['volume'];
 		#$master = $_GET['zone'];
 		// prüft auf Max. Lautstärke und korrigiert diese ggf.
@@ -336,6 +338,7 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 	} elseif (isset($_GET['profile']) or isset($_GET['Profile']))   {
 		VolumeProfiles();
 	}
+	#echo "Volume: ".$volume; 
 }
 
 if(isset($_GET['playmode'])) { 
@@ -386,22 +389,6 @@ if(isset($_GET['rampto'])) {
 		}
 	}
 
-if (isset($_GET['member']) and (!isset($_GET['profile']) or $_GET['action'] == "Profile") and $_GET['action'] != "say")   {
-	CreateMember();
-}
-
-if ($_GET['action'] != "next" and $_GET['action'] != "rewind" and $_GET['action'] != "play" and $_GET['action'] != "stop"
-		and $_GET['action'] != "pause" and $_GET['action'] != "volume")   { 
-		#and $_GET['action'] != "pause" and $_GET['action'] != "volume" and $_GET['action'] != "sonosplaylist" and $_GET['action'] != "randomplaylist" 
-		#and $_GET['action'] != "pluginradio" and $_GET['action'] != "nextradio")   {
-		if (file_exists($memberarray))   {
-			@unlink($memberarray);
-			LOGGING("sonos.php: Saved Array of Member file has been deleted",6);
-		}		
-}
-
-
-
 if(array_key_exists($_GET['zone'], $sonoszone)){ 
 
 	global $json;
@@ -409,6 +396,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 	$master = $_GET['zone'];
 	$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
 	switch($_GET['action'])	{
+		
 		case 'play';
 			$posinfo = $sonos->GetPositionInfo();
 			$trackrunning = $sonos->GetTransportInfo();
@@ -735,6 +723,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		
 		case 'addmember':
+			CreateMember();
 			AddMemberTo();
 		break;
 
@@ -800,13 +789,15 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 
 		case 'radioplaylist':
 			#radio();
-			LOGGING("sonos.php: function 'radioplaylist' has been depreciated due to New TuneIn", 3); 
+			LOGGING("sonos.php: function 'radioplaylist' has been depreciated due to New TuneIn. Please save your stations in Sonos Favorites and use then playfavorite function.", 3); 
+			exit;
 		break;
 		
 
 		case 'groupradioplaylist': 
 			#radio();
-			LOGGING("sonos.php: function 'groupradioplaylist' has been depreciated due to New TuneIn", 3); 
+			LOGGING("sonos.php: function 'groupradioplaylist' has been depreciated due to New TuneIn. Please save your stations in Sonos Favorites and use then playfavorite function.", 3); 
+			exit;
 		break;
 		
 		
@@ -1947,6 +1938,7 @@ function volume_group()  {
 **/
 		#print_r(MEMBER);
 		foreach (MEMBER as $memplayer => $zone2) {
+			#echo $zone2;
 			$sonos = new SonosAccess($sonoszone[$zone2][0]);
 
 			if(isset($_GET['volume']) or isset($_GET['groupvolume']) or isset($_GET['keepvolume']))  { 
