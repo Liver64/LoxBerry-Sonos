@@ -2,7 +2,7 @@
 # One line per package, use exact packagename as you would do for apt-get.
 #
 libjson-perl
-libapache2-mod-php
+libapache2-mod-php8.2
 sox task-spooler 
 lame
 curl
