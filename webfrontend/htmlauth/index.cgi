@@ -80,6 +80,16 @@ our %navbar;
 our $mqttcred;
 our $cfgm;
 our $cgi;
+our $zone;
+our $key;
+our $vcfg;
+our @vcfg;
+our @voldet;
+our $size;
+our @voldetails;
+our $countp;
+our $sur;
+our $sub;
 
 my $helptemplatefilename		= "help/help.html";
 my $languagefile 				= "sonos.ini";
@@ -106,6 +116,13 @@ my $configfile 					= "s4lox_config.json";
 my $volumeconfigfile 			= "s4lox_vol_profiles.json";
 my $jsonobj 					= LoxBerry::JSON->new();
 our $cfg 						= $jsonobj->open(filename => $lbpconfigdir . "/" . $configfile, writeonclose => 0);
+
+our $jsonparser;
+if (-r $lbpconfigdir . "/" . $volumeconfigfile)   {
+	our $jsonparser = LoxBerry::JSON->new();
+	$vcfg = $jsonparser->open(filename => $lbpconfigdir . "/" . $volumeconfigfile);
+	$size = scalar @$vcfg;
+}
 
 # Set new config options for upgrade installations
 
@@ -405,7 +422,7 @@ if (-r $lbhomedir."/webfrontend/html/XL/" . $configfile)   {
 	my $compare = compare($lbpconfigdir . "/" . $configfile, $lbhomedir."/webfrontend/html/XL/" . $configfile);
 	# checking if the files are different
 	if ($compare == 1 && $inst eq "true")   {
-		LOGDEB("Files are not equal.");
+		LOGDEB("Main Config is not equal to Backup");
 		$template->param("CONFIG_DIFFERENT", "1");
 	}
 	if ($compare == 1 && $inst eq "false")   {
@@ -420,7 +437,7 @@ if (-r $lbhomedir."/webfrontend/html/XL/" . $volumeconfigfile)   {
 	my $compare = compare($lbpconfigdir . "/" . $volumeconfigfile, $lbhomedir."/webfrontend/html/XL/" . $volumeconfigfile);
 	# checking if the files are different
 	if ($compare == 1 && $inst eq "true")   {
-		LOGDEB("Files are not equal.");
+		LOGDEB("Volume Profil Config is not equal to Backup");
 		$template->param("CONFIG_DIFFERENT", "1");
 	}
 	if ($compare == 1 && $inst eq "false")   {
@@ -965,18 +982,31 @@ sub save
 		&error;
 	}
 	
-	# save Sonos devices
+	# save/delete Sonos devices
 	my $emergecalltts;
-	
+	my $del = "false";
+
 	for ($i = 1; $i <= $countplayers; $i++) {
-		if ( param("chkplayers$i") ) { # if player should be deleted
+		if ( param("chkplayers$i") ) { 
+			# delete selected player from config
 			delete $cfg->{sonoszonen}->{param("zone$i")};
+			my $room1 = param("zone$i");
+			LOGOK "Sonos Zone '".$room1."' has been deleted from main config";
+			# delete selected player from sound profile
+			if (-r $lbpconfigdir . "/" . $volumeconfigfile)   {
+				for (my $e = 1; $e <= $size; $e++) {
+					delete $vcfg->[$e - 1]->{Player}->{$room1};
+					$del = "true";
+				}
+				LOGOK "Sonos Zone '".$room1."' has been deleted from Volume Profiles";
+			}
 		} else { # save
 			if (param("mainchk$i") eq "on")   {
 				$emergecalltts = "on";
 			} else {
 				$emergecalltts = "off";
 			}
+			
 			my @player = (  param("ip$i"), 
 							param("rincon$i"), 
 							param("model$i"), 
@@ -991,8 +1021,6 @@ sub save
 							param("audioclip$i"), 
 							param("voice$i"),
 							param("sb$i"),
-							#param("pl-start-time$i"),
-							#param("pl-end-time$i")
 						 );
 						 
 			if ($R::tvmon eq "true")  {
@@ -1036,9 +1064,6 @@ sub save
 								$endtime
 							);
 					push @player , @sbs;
-					#my $starttime = param("pl-start-time$i");
-					#my $endtime = param("pl-end-time$i");
-					#push (@player, ($starttime, $endtime));
 				} else {
 					# if no Soundbar
 					my @sbs = 	(  "false",
@@ -1057,6 +1082,10 @@ sub save
 			}
 			$cfg->{sonoszonen}->{param("zone$i")} = \@player;
 		}
+	}
+	#LOGOK "Save: ".Dumper($vcfg);
+	if (-r $lbpconfigdir . "/" . $volumeconfigfile && $del == "true")   {
+		$jsonparser->write();
 	}
 	
 	$jsonobj->write();
@@ -1165,7 +1194,6 @@ sub save_cronjob
 	    unlink ("$lbhomedir/system/cron/cron.30min/Sonos_On_check");
 		unlink ("$lbhomedir/system/cron/cron.hourly/Sonos_On_check");
 		unlink ("$lbhomedir/system/cron/cron.daily/Sonos_On_check");
-		# my $files = qx(/usr/bin/php $lbphtmldir/bin/create_player_files.php);	
 		&call_php_all;
 		LOGOK "Cronjob has been deleted";
 	  }
@@ -1210,7 +1238,8 @@ sub scan
 	
 	# executes PHP network.php script (read existing config and add new zones)
 	my $response = qx(/usr/bin/php $lbphtmldir/system/$scanzonesfile);
-			
+	
+	
 	if ($response eq "[]") {
 		LOGINF "No new Players has been added to Plugin.";
 		return($countplayers);
@@ -1220,13 +1249,17 @@ sub scan
 	} else {
 		LOGOK "JSON data from application has been succesfully received.";
 		my $config = decode_json($response);
-	
+		#our $countp = scalar scalar keys %{@$cfg{"sonoszonen"}};
+
 		# create table of Sonos devices
-		foreach my $key (keys %{$config})
+		foreach $key (keys %{$config})
 		{
 			my $filename = $lbphtmldir.'/images/icon-'.$config->{$key}->[7].'.png';
-				
-			$countplayers++;
+			$countplayers++;	
+			# prepare for Sound profiles
+			$sur = $config->{$key}->[10];
+			$sub = $config->{$key}->[8];
+			$vcfg = save_zone($key, $sur, $sub);
 			$rowssonosplayer .= "<tr><td style='height: 25px; width: 4%;'><INPUT type='checkbox' style='width: 20px' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
 			$rowssonosplayer .= "<td style='height: 28px; width: 16%;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$key' style='width: 100%; background-color: #e6e6e6;'/></td>\n";
 			$rowssonosplayer .= "<td style='height: 25px; width: 4%;'><DIV class='chk-group'><INPUT type='checkbox' class='chk-checked' name='mainchk$countplayers' id='mainchk$countplayers' value='$config->{$key}->[6]' align='center'/></DIV></td>\n";
@@ -1266,11 +1299,60 @@ sub scan
 			$rowssonosplayer .= "<input type='hidden' id='audioclip$countplayers' name='audioclip$countplayers' value='$config->{$key}->[11]'>\n";
 			$rowssonosplayer .= "<input type='hidden' id='voice$countplayers' name='voice$countplayers' value='$config->{$key}->[12]'>\n";
 			$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' value='$config->{$key}->[1]'>\n";
+			$rowssonosplayer .= "<input type='hidden' id='countplayers$countplayers' name='countplayers$countplayers' value$countplayers'>\n";
 		}
 		$template->param("ROWSSONOSPLAYER", $rowssonosplayer);
 		LOGOK "New Players has been added to Plugin.";
-		return($countplayers);
+		
+		return($countplayers, $vcfg);
 	}
+}
+
+
+#####################################################
+# Save scanned zone to Volume Profile
+#####################################################
+
+sub save_zone
+{	
+	my $e;
+	my @voldetails;
+	my $surround;
+	my $subwoofer;
+	my $Subwoofer_level;
+	
+
+	if (-r $lbpconfigdir . "/" . $volumeconfigfile)   {
+		if ($sur eq "NOSUR")   {
+			$surround = "na";
+		} else {
+			$surround = "true";
+		}
+		if ($sub eq "NOSUB")   {
+			$subwoofer = "na";
+			$Subwoofer_level = "";
+		} else {
+			$Subwoofer_level = "";
+			$subwoofer = "true";
+		}
+		for ($e = 1; $e <= $size; $e++) {
+			@voldetails = ( {"Bass" => "",
+						"Loudness" => "true",
+						"Master" => "false",
+						"Member" => "false",
+						"Subwoofer" => $subwoofer,
+						"Subwoofer_level" => $Subwoofer_level,
+						"Surround" => $surround,
+						"Treble" => "",
+						"Volume" => "",
+						} );
+			$vcfg->[$e - 1]->{Player}->{$key} = \@voldetails;
+			}
+		}
+		if (-r $lbpconfigdir . "/" . $volumeconfigfile)   {
+			$jsonparser->write();
+		}
+	return $vcfg;
 }
 
 #####################################################
@@ -1410,7 +1492,7 @@ sub save_volume
 	my $hasMaster;
 	my $hasMember;
 	my $isGroup;
-	
+		
 	for ($i = 1; $i <= $new_id; $i++) {
 		$vcfg->[$i - 1]->{Name} = lc(param("profile$i"));
 		$_ = "$i";

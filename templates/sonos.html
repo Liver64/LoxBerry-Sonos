@@ -1623,7 +1623,7 @@ div.scrollmenu a:hover {
 							//console.log(data);
 							$.each(data, function(index, valu) {
 								if (valu[13] == 'SB')   {
-									console.log(valu);
+									//console.log(valu.length);
 									if (valu[8] == 'SUB' && valu.length == 15 || valu.length == 17) {
 										$("#tvmonnightsub_" + index).val(valu[14].tvmonnightsub).flipswitch("refresh");
 										$("#subgain_" + index).val(valu[14].tvmonnightsublevel).selectmenu("refresh");
@@ -1647,10 +1647,11 @@ div.scrollmenu a:hover {
 										$("#tvmonspeech_" + index).val(valu[14].tvmonspeech).flipswitch("refresh");
 										$("#tvmonnight_" + index).val(valu[14].tvmonnight).flipswitch("refresh");
 										$("#tvmonnightsub_" + index).val(valu[14].tvmonnightsub).flipswitch("refresh");
-										$("#fromtime_" + index).val(valu[14].fromtime).selectmenu("refresh");
+										$("#fromtime_" + index).val(valu[14].fromtime);
 										$("#tvvol_" + index).val(valu[14].tvvol).text("refresh");
 										$("#tvbass_" + index).val(valu[14].tvbass).text("refresh");
 										$("#tvtreble_" + index).val(valu[14].tvtreble).text("refresh");
+										//$("#fromtime_" + index).selectmenu("refresh");
 									}
 									var usage = document.getElementById("usesb_" + index).value;
 									if (usage == "true")   {
@@ -2253,7 +2254,6 @@ div.scrollmenu a:hover {
 					console.log(errorThrown);
 				})
 				.done(function(data, textStatus, jqXHR) {
-							//let countdata = $.map(data, function(n, i) { return i; }).length;
 							//console.log(data);
 							$.each(data, function(i, outerArray) {
 								countdata++;
@@ -2270,11 +2270,8 @@ div.scrollmenu a:hover {
 								iteration = parseInt(iteration)
 								$.each(sorted, function(j, innerArray) {
 									iteration++;
+									//console.log(j);
 									//console.log(innerArray);
-									//console.log($('#vol_' + iteration + '_' + countdata));
-									//$('#vol_' + iteration + '_' + countdata).val(innerArray[0].Volume);
-									//$('#treble_' + iteration + '_' + countdata).val(innerArray[0].Treble);
-									//$('#bass_' + iteration + '_' + countdata).val(innerArray[0].Bass);
 									if (innerArray[0].Loudness == 'true') {
 										$('#loudness_' + iteration + '_' + countdata).val("true").flipswitch("refresh");
 									} else {
@@ -2299,21 +2296,14 @@ div.scrollmenu a:hover {
 									}
 									if (innerArray[0].Master == 'true') {
 										$('#master_' + iteration + '_' + countdata).prop('checked',true).val("true").checkboxradio("refresh");
-										//document.getElementById('master_' + iteration + '_' + countdata).prop('value',true)
-										//document.getElementById('master_' + iteration + '_' + countdata).value = "true"
-										//$('#master_' + iteration + '_' + countdata).attr('disabled',false);
 									} else {
 										$('#master_' + iteration + '_' + countdata).prop('checked',false).val("false").checkboxradio("refresh");
-										//$('#master_' + iteration + '_' + countdata).attr('disabled',true);
 									}
 									if (innerArray[0].Member == 'true') {
 										$('#member_' + iteration + '_' + countdata).prop('checked',true).checkboxradio("refresh");
-										//document.getElementById('member_' + iteration + '_' + countdata).value = "true"
 									} else {
 										$('#member_' + iteration + '_' + countdata).prop('checked',false).checkboxradio("refresh");
 									}
-									//$('input:checkbox').checkboxradio('refresh');
-									//$('#sbass_' + iteration + '_' + countdata).val(innerArray[0].Subwoofer_level);
 								})
 							})
 				})
@@ -2679,7 +2669,7 @@ div.scrollmenu a:hover {
 				}
 			}
 			$('input:checkbox').checkboxradio('refresh');
-			console.log(array);
+			//console.log(array);
 			if(array.length){
 				//alert('Value of selected checkboxes are: ${array}'); 
 			} else {

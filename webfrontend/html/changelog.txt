@@ -476,3 +476,5 @@
 			[BUGFIX] optimized zapzone
 			[BUGFIX] fixed rampto funktion in Verbindung mit Gruppen
 			[BUGFIX] fixed VI_MQTT Template (IP Adresse)
+ 5.9.3		[BUGFIX] replaced libapache2-mod-php by libapache2-mod-php8.2 in apt file (Bookworm)
+ 5.9.4		[BUGFIX] Diff. kleinere Optimierungen

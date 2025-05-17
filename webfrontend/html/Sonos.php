@@ -212,6 +212,16 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 		exit;
 	}
 	#print_r($config);	
+	
+	// Laden der Konfigurationsdatei s4lox_config.json
+	#if (file_exists($lbpconfigdir . "/s4lox_vol_profiles.json"))    {
+	#	$configvol = json_decode(file_get_contents($lbpconfigdir . "/s4lox_vol_profiles.json"), TRUE);
+	#} else {
+	#	LOGGING("sonos.php: No Exception to delete TempFiles has been called", 2);
+	#	exit;
+	#}
+	#print_r($configvol);
+	#exit;	
 	// Übernahme und Deklaration von Variablen aus der Konfiguration
 	$sonoszonen = $config['sonoszonen'];
 
@@ -256,7 +266,6 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 
 	create_symlinks();
 	#volume_group();
-	
 	
 		
 #-- End Preparation ---------------------------------------------------------------------
@@ -404,12 +413,12 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				#checkifmaster($master);
 				if (substr($posinfo["UpnpClass"], 0, 32) === "object.item.audioItem.musicTrack")  {
 					if ($trackrunning != "1")   {
-						$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
-						$sonos->SetTrack($posinfo['Track']);
-						$sonos->Seek("REL_TIME", $posinfo['RelTime']);
+						#$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
+						#$sonos->SetTrack($posinfo['Track']);
+						#$sonos->Seek("REL_TIME", $posinfo['RelTime']);
 						$sonos->Play();
 					} else {
-						LOGGING("sonos.php: Current State is PLAYING. Canceled action play.", 7);
+						LOGGING("sonos.php: Zone is already playing. Canceled action play.", 7);
 						return;
 					}
 				} else {
@@ -421,12 +430,30 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			}
 		break;
 		
+		case 'stop';
+			checkifmaster($master);
+			$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
+			$sonos->Pause();
+			LOGGING("sonos.php: Stop been executed.", 7);
+		break; 
+		
 		case 'pause';
 			checkifmaster($master);
 			$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
 			$sonos->Pause();
 			LOGGING("sonos.php: Pause been executed.", 7);
 		break;
+		
+		case 'toggle':
+			checkifmaster($master);
+			$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
+			if($sonos->GetTransportInfo() == 1)  {
+				$sonos->Pause();
+			} else {
+				$sonos->Play();
+			}
+			LOGGING("sonos.php: Toggle been executed.", 7);
+		break; 
 
 		case 'next';
 			$titelgesammt = $sonos->GetPositionInfo();
@@ -507,14 +534,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		
 		
-		case 'stop';
-			checkifmaster($master);
-			$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
-			$sonos->Stop();
-			LOGGING("sonos.php: Stop been executed.", 7);
-		break; 
-		
-			
 		case 'stopall';
 			foreach ($sonoszone as $zone => $player) {
 				checkifmaster($zone);
@@ -572,18 +591,6 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			}
 		}
 		LOGGING("sonos.php: Softstopall been executed.", 7);
-		break; 
-		
-		  
-		case 'toggle':
-			checkifmaster($master);
-			$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
-			if($sonos->GetTransportInfo() == 1)  {
-				$sonos->Pause();
-			} else {
-				$sonos->Play();
-			}
-			LOGGING("sonos.php: Toggle been executed.", 7);
 		break; 
 		
 					
