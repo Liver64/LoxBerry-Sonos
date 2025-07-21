@@ -14,7 +14,7 @@
 
 function playlist() {
 	
-	global $debug, $sonos, $master, $lookup, $memberarray, $samearray, $sonoszone, $config, $volume, $masterzone, $sonospltmp, $profile_selected;
+	global $debug, $sonos, $master, $profile_details, $memberarray, $samearray, $sonoszone, $config, $volume, $masterzone, $sonospltmp, $profile_selected;
 	
 	if (!defined('GROUPMASTER')) {
 		define("GROUPMASTER",$master);
@@ -81,7 +81,7 @@ function playlist() {
 			$sonos->SetMute(false);
 			$sonos->Stop();
 			if (isset($_GET['profile']) or isset($_GET['Profile']))    {
-				$volume = $lookup[0]['Player'][GROUPMASTER][0]['Volume'];
+				$volume = $profile_details[0]['Player'][GROUPMASTER][0]['Volume'];
 			}
 			$sonos->SetVolume($volume);
 			$sonos->Play();
@@ -240,6 +240,7 @@ function next_dynamic() {
 function say_zone($zone) {
 			
 	global $master, $sonoszone, $config, $volume, $min_vol, $actual, $sonos, $coord, $messageid, $filename, $MessageStorepath, $nextZoneKey, $filenameplaysay;
+	
 	require_once("addon/sonos-to-speech.php");
 	
 	// if batch has been choosed abort

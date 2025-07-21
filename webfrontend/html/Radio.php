@@ -14,7 +14,7 @@
 
 function radio(){
 	
-	Global $sonos, $volume, $config, $sonoszone, $master;
+	global $sonos, $volume, $config, $sonoszone, $master;
 			
 	if(isset($_GET['radio'])) {
         $playlist = $_GET['radio'];		
@@ -102,7 +102,7 @@ function radio(){
 **/
 function nextradio() {
 	
-	global $sonos, $config, $lookup, $master, $debug, $min_vol, $volume, $tmp_tts, $sonoszone, $tmp_error, $stst;
+	global $sonos, $config, $profile_selected, $master, $debug, $min_vol, $volume, $tmp_tts, $sonoszone, $tmp_error, $stst, $profile_details;
 	
 	$radioanzahl_check = count($config['RADIO']);
 	if($radioanzahl_check == 0)  {
@@ -113,12 +113,17 @@ function nextradio() {
 		LOGGING("radio.php: Currently a T2S is running, we skip nextradio for now. Please try again later.",6);
 		exit;
 	}
+	VolumeProfiles();
+
 	#print_r(GROUPMASTER);
-	if (isset($_GET['member'])) {
+	if (isset($_GET['member']) && isset($_GET['profile'])) {
 		$master = GROUPMASTER;
+	} elseif (isset($_GET['profile']))   {
+		$master = GROUPMASTER;	
 	} else {
-		$master = $_GET['zone'];
+		$master = MASTER;
 	}
+	#print_r($master);
 	$textan = "0";
 	if (file_exists($tmp_error)) {
 		$err = json_decode(file_get_contents($tmp_error));
@@ -134,9 +139,10 @@ function nextradio() {
 			LOGINF("Sonos: radio.php: Info of broken Radio URL has been announced once.");
 		}
 	}
+	#print_r($sonoszone[$master][0]);
 	$sonos = new SonosAccess($sonoszone[$master][0]);
-	$sonos->ClearQueue();
-		$playstatus = $sonos->GetTransportInfo();
+	#$sonos->ClearQueue();
+	$playstatus = $sonos->GetTransportInfo();
 	$radioname = $sonos->GetMediaInfo();
 	#print_r($radioname);
 	if (!empty($radioname["title"])) {
@@ -178,12 +184,13 @@ function nextradio() {
 	$coord = getRoomCoordinator($master);
 	$sonos = new SonosAccess($coord[0]);
 	$sonos->SetMute(false);
+	
 	if (isset($_GET['profile']) or isset($_GET['Profile']))    {
-		$volume = $lookup[0]['Player'][$master][0]['Volume'];
+		$volume = $profile_details[0]['Player'][$master][0]['Volume'];
 	}
 	$sonos->SetVolume($volume);
 	$sonos->Play();
-	LOGGING("radio.php: Radio Station '".$act."' has been loaded successful by nextradio",6);
+	LOGGING("radio.php: Radio Station '".$act."' has been loaded successful by nextradio",5);
 }
 
 
@@ -195,7 +202,7 @@ function nextradio() {
 **/
 
 function random_radio() {
-	global $sonos, $lookup, $sonoszone, $master, $volume, $min_vol, $config, $tmp_tts;
+	global $sonos, $profile_selected, $sonoszone, $master, $volume, $min_vol, $config, $tmp_tts;
 	
 	if (file_exists($tmp_tts))  {
 		LOGGING("radio.php: Currently a T2S is running, we skip nextradio for now. Please try again later.",6);
@@ -233,7 +240,7 @@ function random_radio() {
 	$sonos->SetMute(false);
 	$sonos->SetRadio(urldecode($sonoslists[$random]["res"]),$sonoslists[$random]["title"]);
 	if (isset($_GET['profile']) or isset($_GET['Profile']))    {
-		$volume = $lookup[0]['Player'][$master][0]['Volume'];
+		$volume = $profile_selected[0]['Player'][$master][0]['Volume'];
 	}
 	$sonos->SetVolume($volume);
 	$sonos->Play();
@@ -392,7 +399,7 @@ function check_date_once() {
 
 function PluginRadio()   
 {
-	global $sonos, $sonoszone, $lookup, $master, $config, $volume;
+	global $sonos, $sonoszone, $profile_details, $master, $config, $volume;
 	
 	if (isset($_GET['radio'])) {
 		if (empty($_GET['radio']))    {
@@ -400,11 +407,12 @@ function PluginRadio()
 			exit(1);
 		}
     }
-	CreateMember();
-	if (isset($_GET['member'])) {
+	if (isset($_GET['member']) && isset($_GET['profile'])) {
 		$master = GROUPMASTER;
+	} elseif (isset($_GET['profile']))   {
+		$master = GROUPMASTER;	
 	} else {
-		$master = $_GET['zone'];
+		$master = MASTER;
 	}
 	
 	$sonos = new SonosAccess($sonoszone[$master][0]);
@@ -442,8 +450,9 @@ function PluginRadio()
 	try {
 		$sonos->SetRadio('x-rincon-mp3radio://'.$re[0][0][1], $re[0][0][0], $re[0][0][2]);
 		$sonos->SetGroupMute(false);
+		#print_r($profile_details);
 		if (isset($_GET['profile']) or isset($_GET['Profile']))    {
-			$volume = $lookup[0]['Player'][$master][0]['Volume'];
+			$volume = $profile_details[0]['Player'][$master][0]['Volume'];
 		}
 		
 		if(!isset($_GET['load']) and !isset($_GET['rampto'])) {

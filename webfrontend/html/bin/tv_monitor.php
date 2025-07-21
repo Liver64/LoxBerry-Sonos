@@ -99,6 +99,7 @@ echo "<PRE>";
 						if ((bool)is_enabled($soundbars[$key][14]['tvmonsurr']) === true ? $sur = "On" : $sur = "Off");
 						if ((bool)is_enabled($soundbars[$key][14]['tvmonnight']) === true ? $night = "On" : $night = "Off");
 						if ((bool)is_enabled($soundbars[$key][14]['tvmonnightsub']) === true ? $sub = "On" : $sub = "Off");
+						if ((bool)is_enabled($soundbars[$key][14]['tvsubnight']) === true ? $sub = "On" : $sub = "Off");
 						$sublevel = $soundbars[$key][14]['tvmonnightsublevel'];
 						# TV has been turned on
 						if (!file_exists("/run/shm/".$status_file."_".$key.".json"))   {
@@ -172,6 +173,9 @@ echo "<PRE>";
 										@$sonos->SetDialogLevel($soundbars[$key][14]['tvmonnightsublevel'], 'SubGain');
 										echo "Subwoofer Level for Soundbar ".$key." has been set to: ".$sublevel."".PHP_EOL;
 										LOGDEB("bin/tv_monitor.php: Subwoofer Level for Soundbar ".$key." has been set to: ".$sublevel);
+										@$sonos->SetDialogLevel(is_enabled($soundbars[$key][14]['tvsubnight']), 'SubEnable');
+										echo "Subwoofer for Soundbar ".$key." has been turned to ".$night." for night".PHP_EOL;
+										LOGDEB("bin/tv_monitor.php: Subwoofer for Soundbar ".$key." has been turned to ".$night." for night");
 										file_put_contents("/run/shm/".$statusNight."_".$key.".json",json_encode("1", JSON_PRETTY_PRINT));
 									}
 								}

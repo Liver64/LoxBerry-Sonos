@@ -396,26 +396,29 @@ function URL_Encode($string) {
 **/
 function AddMemberTo() { 
 
-	global $sonoszone, $master, $samearray, $profile_selected, $config, $memberarray, $sleepaddmember, $profile, $masterzone;
+	global $sonoszone, $master, $sleepaddmember;
 	
 	#print_r(MEMBER);
 	#print_r(GROUPMASTER);
 	
 	if(MEMBER != "empty") {
 		foreach (MEMBER as $zone)  {
-			$sonos = new SonosAccess($sonoszone[$zone][0]);
-			if ($zone != GROUPMASTER)    {
+			$master = GROUPMASTER;
+			if ($zone != $master)    {
 				try {
-					$sonos->SetAVTransportURI("x-rincon:" . trim($sonoszone[GROUPMASTER][1])); 
-					LOGGING("helper.php: Zone '".$zone."' has been added to Master '".GROUPMASTER."'",6);
+					$sonos = new SonosAccess($sonoszone[$zone][0]);
+					$sonos->BecomeCoordinatorOfStandaloneGroup();
+					$sonos->SetAVTransportURI("x-rincon:" . trim($sonoszone[$master][1])); 
+					LOGGING("helper.php: Zone '".$zone."' has been added to Master '".$master."'",6);
 				} catch (Exception $e) {
-					LOGGING("helper.php: Zone '".$zone."' could not be added to Master '".GROUPMASTER."'",4);
+					LOGGING("helper.php: Zone '".$zone."' could not be added to Master '".$master."'",4);
 				}
 			}
 			#usleep((int)($sleepaddmember * 1000000));
 		}
-		$sonos = new SonosAccess($sonoszone[GROUPMASTER][0]);
+		#$sonos = new SonosAccess($sonoszone[$master][0]);
 		volume_group();
+		$sonos = new SonosAccess($sonoszone[$master][0]);
 	}
 	#exit;
 }
@@ -431,28 +434,32 @@ function AddMemberTo() {
 **/
 function CreateMember($member = "", $masterzone = "") { 
 
-	global $sonoszone, $sonoszonen, $sonos, $config, $master, $profile_selected, $samearray, $memberarray, $config, $sleepaddmember, $profile, $masterzone;
+	global $sonoszone, $members, $sonoszonen, $sonos, $config, $master, $profile_selected, $samearray, $memberarray, $config, $sleepaddmember, $profile, $masterzone;
 	
 	if (isset($_GET['member']))   {	
 	
 		@unlink($profile_selected);
 		
-		$member = $_GET['member'];
-		if($member === 'all') {
+		$members = $_GET['member'];
+		if($members === 'all') {
 			LOGGING("helper.php: Member has been entered",5);
 			$member = array();
 			foreach ($sonoszone as $zone => $ip) {
 				# exclude master Zone
-				if ($zone != $master) {
-					array_push($member, $zone);
+				if ($zone != MASTER) {
+					array_push($members, $zone);
 				}
 			}
-			LOGGING("helper.php: All Players will be added to Player: ".$master, 5);	
+			LOGGING("helper.php: All Players will be added to Player: ".MASTER, 5);	
 		} else {
 			LOGGING("helper.php: Member has been entered",5);
 			# member from URL
-			$member = explode(',', $member);
+			$member = explode(',', $members);
 		}
+		
+		$member = member_on($members);
+		
+		/**
 		$memberon = array();
 		$act_time = date("H:i"); #"16:58"
 		foreach ($member as $zone) {
@@ -483,6 +490,7 @@ function CreateMember($member = "", $masterzone = "") {
 			}
 		}
 		$member = $memberon;
+		**/
 		
 		# Remove master from group if not single
 		$check_stat = getZoneStatus($master);
@@ -501,6 +509,94 @@ function CreateMember($member = "", $masterzone = "") {
 		AddMemberTo();
 	}
 }
+
+
+/**
+*
+* Function : AddMember --> fügt ggf. Member zu Playlist oder Radio hinzu
+*
+* @param: 	empty
+* @return:  create Group
+**/
+function AddMember() { 
+
+	global $sonoszone, $master, $config, $memberon, $sleepaddmember;
+
+	if(isset($_GET['member'])) {
+		$memberraw = $_GET['member'];
+		if($memberraw === 'all') {
+			$memberon = array();
+			foreach ($sonoszone as $zone => $ip) {
+				# exclude master Zone
+				if ($zone != $master) {
+					array_push($memberon, $zone);
+				}
+			}
+		} else {
+			$memberon = explode(',', $memberraw);
+		}
+
+		$member = member_on($memberon);
+		/**
+		# check if member is ON and create valid array
+		$memberon = array();
+		$act_time = date("H:i"); #"16:58"
+		foreach ($member as $zone) {
+			$zoneon = checkZoneOnline($zone);
+			if ($zoneon === (bool)true)   {
+				if ($config['SYSTEM']['checkonline'] != false)   {
+					# add zones having no time restrictions
+					if ($sonoszone[$zone][15] != "" and $sonoszone[$zone][16] != "")   {
+						$startime = $sonoszone[$zone][15]; #"07:15"
+						$endtime = $sonoszone[$zone][16]; #"20:32"
+						if ((string)$startime <= (string)$act_time and (string)$endtime >= (string)$act_time)   {
+							array_push($memberon, $zone);
+							LOGGING("helper.php: Member '$zone' has been prepared to Member array", 6);		
+						} else {
+							LOGGING("helper.php: Member '$zone' could not be added to Member array. Maybe Zone is Offline or Time restrictions entered!", 4);	
+						}
+					} else {
+						# add zones having no time restrictions
+						array_push($memberon, $zone);
+						LOGGING("helper.php: Member '$zone' has been prepared to Member array", 6);	
+					}
+				} else {
+					array_push($memberon, $zone);
+					LOGGING("helper.php: Member '$zone' has been prepared to Member array", 6);	
+				}
+			} else {
+				LOGGING("helper.php: Member '$zone' could not be added to Member array. Maybe Zone is Offline or Time restrictions entered!", 4);	
+			}
+		}
+		$member = $memberon;
+		**/
+		# Define global Constante MEMBER
+		if (!defined('MEMBER')) {
+			define("MEMBER", $member);
+		}
+		if (!defined('GROUPMASTER')) {
+			define("GROUPMASTER",$master);
+		}
+		if (!defined('T2SMASTER')) {
+			define("T2SMASTER",$master);
+		}
+		foreach ($member as $zone) {
+			$sonos = new SonosAccess($sonoszone[$zone][0]);
+			if ($zone != $master)    {
+				try {
+					$sonos->SetAVTransportURI("x-rincon:" . trim($sonoszone[$master][1])); 
+					LOGGING("helper.php: Zone: ".$zone." has been added to master: ".$master,6);
+				} catch (Exception $e) {
+					LOGGING("helper.php: Zone: ".$zone." could not be added to master: ".$master,4);
+				}
+			}
+			usleep((int)($sleepaddmember * 1000000));
+		}
+		volume_group();
+		$sonos = new SonosAccess($sonoszone[$master][0]);
+	}	
+}
+
 
 
 
@@ -1779,6 +1875,54 @@ function sonoszonen_on()    {
 	}
 	#print_r($sonoszone);
 	return $sonoszone;
+}
+
+
+/* Funktion :  member_on --> add member to array if valid (Online)
+/*
+/* @param: array
+/* @return: array of member
+**/
+
+function member_on($memberon)    {
+	
+	global $config, $member, $members, $master, $memberon, $sonoszonen, $folfilePlOn;
+
+	// prüft den Onlinestatus jeder Zone
+	#echo "function 'member_on()'";
+	#echo "<br>";
+	$member = array();
+	$act_time = date("H:i"); #"16:58"
+	foreach ($memberon as $zone) {
+		$zoneon = checkZoneOnline($zone);
+		if ($zone != $master) {
+			if ($zoneon === (bool)true)   {
+				if ($config['SYSTEM']['checkonline'] != false)   {
+					# add zones having no time restrictions
+					if ($sonoszonen[$zone][15] != "" and $sonoszonen[$zone][16] != "")   {
+						$startime = $sonoszonen[$zone][15]; #"07:15"
+						$endtime = $sonoszonen[$zone][16]; #"20:32"
+						if ((string)$startime <= (string)$act_time and (string)$endtime >= (string)$act_time)   {
+							array_push($member, $zone);
+							LOGGING("helper.php: Member '$zone' has been prepared to Member array", 6);		
+						} else {
+							LOGGING("helper.php: Member '$zone' could not be added to Member array. Maybe Zone is Offline or Time restrictions entered!", 4);	
+						}
+					} else {
+						# add zones having no time restrictions
+						array_push($member, $zone);
+						LOGGING("helper.php: Member '$zone' has been prepared to Member array", 6);	
+					}
+				} else {
+					array_push($member, $zone);
+					LOGGING("helper.php: Member '$zone' has been prepared to Member array", 6);	
+				}
+			} else {
+				LOGGING("helper.php: Member '$zone' could not be added to Member array. Maybe Zone is Offline or Time restrictions entered!", 4);	
+			}
+		}
+	}
+	return $member;
 }
 
 

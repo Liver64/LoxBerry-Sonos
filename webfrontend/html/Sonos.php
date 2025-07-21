@@ -33,6 +33,7 @@ include("Restore_T2S.php");
 include("Save_T2S.php");
 include("Speaker.php");
 include("follow.php");
+#include("test.php");
 include("bin/mp3/MpegAudio.php");
 include("bin/mp3/MpegAudioFrameHeader.php");
 include('system/logging.php');
@@ -263,7 +264,7 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 	#define("MEMBER", "");
 	#define("GROUPMASTER", "empty");
 	#+++++++++++++++++++++++++++++++++++++++++++++++++++
-
+	
 	create_symlinks();
 	#volume_group();
 	
@@ -344,8 +345,6 @@ if(isset($_GET['volume']) && is_numeric($_GET['volume']) && $_GET['volume'] >= 0
 			$volume = $sonoszone[$master][4];
 			LOGGING("sonos.php: Standard Sonos Volume for Player ".$master." has been set to: ".$volume, 7);
 		}
-	} elseif (isset($_GET['profile']) or isset($_GET['Profile']))   {
-		VolumeProfiles();
 	}
 	#echo "Volume: ".$volume; 
 }
@@ -403,6 +402,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 	global $json;
 	
 	$master = $_GET['zone'];
+	#check_S1_player();
 	$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
 	switch($_GET['action'])	{
 		
@@ -730,8 +730,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		
 		case 'addmember':
-			CreateMember();
-			AddMemberTo();
+			AddMember();
 		break;
 
 		
@@ -771,7 +770,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 				next_dynamic();
 			}
 			if (isset($_GET['profile']) or isset($_GET['Profile']))    {
-				$volume = $lookup[0]['Player'][$master][0]['Volume'];
+				$volume = $profile_selected[0]['Player'][$master][0]['Volume'];
 			} 
 			$sonos->SetVolume($volume);
 		break;
@@ -785,6 +784,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 							  
 		case 'sonosplaylist':
+			VolumeProfiles();
 			playlist();
 		break;
 		
@@ -815,6 +815,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		
 		case 'playlist':
+			VolumeProfiles();
 			playlist();
 		break;
 		
@@ -852,6 +853,10 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'sendgroupmessage':
 			#global $sonos, $coord, $text, $min_sec, $member, $master, $zone, $messageid, $logging, $words, $voice, $accesskey, $secretkey, $rampsleep, $config, $save_status, $mute, $membermaster, $groupvol, $checkgroup;
 			LOGGING("sonos.php: function 'action=sendgroupmessage...' has been depreciated. Please change your syntax to 'action=say...'", 6); 
+			if (isset($_GET['profile']))   {
+				LOGGING("sonos.php: Usage of Profiles in cojunction with action=sendgroupmessage is not allowed. Please use action=say and then enter your profile to be used", 3); 
+				exit;
+			}
 			$oldtext="old";
 			$newtext="new";
 			$last=time();
@@ -871,7 +876,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 					exit;
 				} else {
 					say();
-					LOGGING("sonos.php: we switch to function 'say'", 5);
+					LOGGING("sonos.php: we switched to function 'say'", 5);
 					$myfile = fopen($filenst, "w") or LOGGING('sonos.php: Unable to open file!', 4);
 					fwrite($myfile,$newtext);
 					fclose($myfile);
@@ -885,6 +890,10 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		case 'sendmessage':
 			#global $text, $coord, $master, $min_sec, $messageid, $logging, $words, $voice, $config, $actual, $player, $volume, $coord, $time_start;
 			LOGGING("sonos.php: function 'action=sendmessage...' has been depreciated. Please change your syntax to 'action=say...'", 6); 
+			if (isset($_GET['profile']))   {
+				LOGGING("sonos.php: Usage of Profiles in cojunction with action=sendmessage is not allowed. Please use action=say and then enter your profile to be used", 3); 
+				exit;
+			}
 			$oldtext="old";
 			$newtext="new";
 			$last=time();
@@ -946,6 +955,9 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			}
 		break;
 		
+		case 'say1':
+			say();
+		break;
 		
 		case 'group':
 			group_all();
@@ -1109,6 +1121,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;		
 		
 		case 'playfavorite':
+			VolumeProfiles();
 			PlayFavorite();
 		break;	
 		
@@ -1117,14 +1130,17 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 
 		case 'playtrackfavorites':
+			VolumeProfiles();
 			PlayTrackFavorites();
 		break;	
 
 		case 'playradiofavorites':
+			VolumeProfiles();
 			PlayRadioFavorites();
 		break;
 
 		case 'playsonosplaylist':
+			VolumeProfiles();
 			PlaySonosPlaylist();
 		break;	
 
@@ -1133,6 +1149,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		
 		case 'playplfavorites':
+			VolumeProfiles();
 			PlayPlaylistFavorites();
 		break;
 		
@@ -1600,10 +1617,12 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		
 		case 'randomplaylist':
+			VolumeProfiles();
 			random_playlist();
 		break;
 		
 		case 'pluginradio':
+			VolumeProfiles();
 			PluginRadio();
 		break;
 		
@@ -1907,7 +1926,7 @@ function getsonosinfo() {
 
 function volume_group()  {
 	
-	global $sonoszone, $sonos, $master, $volume, $config, $sonoszonen, $min_vol, $lookup;
+	global $sonoszone, $sonos, $master, $volume, $config, $sonoszonen, $min_vol, $profile_selected;
 
 	$master = $_GET['zone'];
 	$sonos = new SonosAccess($sonoszone[$master][0]);
@@ -1997,7 +2016,7 @@ function volume_group()  {
 				} else {
 					# Sonos Standard Volume
 					if (isset($_GET['profile']) or isset($_GET['Profile']))    {
-						$volume = $lookup[0]['Player'][$zone2][0]['Volume'];
+						$volume = $profile_selected[0]['Player'][$zone2][0]['Volume'];
 					} else {
 						$volume = $sonoszone[$zone2][4];
 						LOGGING("sonos.php: Standard Sonos Volume for Group Member ".$zone2." has been set to: ".$volume, 7);
@@ -2121,6 +2140,55 @@ function scripton()  {
 	exit;
 }
 
+
+/**
+* Funktion : presence --> Set TTS config to allow TTS only if presence detected
+*
+* @param: 	none
+* @return:  set true or false in config
+**/	
+  
+function presence()   {
+
+	global $config, $lbpconfigdir, $configfile, $master, $time_start;
+	
+	require_once "loxberry_json.php";
+	// Open json file
+	$cfg = new LBJSON($lbpconfigdir . "/" . $configfile);
+	
+	if ($_GET['action'] == "present")   {
+		$cfg->TTS->presence = "true";
+		LOGOK("play_t2s.php: Presence detection has been turned ON");
+	} 
+	if ($_GET['action'] == "absent")   {
+		$cfg->TTS->presence = "false";
+		LOGOK("play_t2s.php: Presence detection has been turned OFF");
+	}
+	$cfg->write();
+}
+
+
+/**
+* Funktion : presence_detection --> Interrupt TTS if Presence is Off
+*
+* @param: 	none
+* @return:  nothing
+**/	
+  
+function presence_detection()   {
+
+	global $config, $lbpconfigdir, $configfile, $master, $time_start;
+	
+	require_once "loxberry_json.php";
+	// Open json file
+	$cfg = new LBJSON($lbpconfigdir . "/" . $configfile);
+	
+	if ($cfg->TTS->presence == "false")   {
+		LOGINF("play_t2s.php: Presence detection is OFF, no TTS been announced!");
+		exit;
+	}
+
+}
 
 
 function shutdown()

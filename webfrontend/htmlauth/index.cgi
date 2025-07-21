@@ -111,13 +111,14 @@ my $helplink 					= "http://www.loxwiki.eu/display/LOXBERRY/Sonos4Loxone";
 our $error_message				= "";
 my $countvolprof;
 our $lbhomedir;
+our $jsonparser;
 
 my $configfile 					= "s4lox_config.json";
 my $volumeconfigfile 			= "s4lox_vol_profiles.json";
 my $jsonobj 					= LoxBerry::JSON->new();
 our $cfg 						= $jsonobj->open(filename => $lbpconfigdir . "/" . $configfile, writeonclose => 0);
 
-our $jsonparser;
+
 if (-r $lbpconfigdir . "/" . $volumeconfigfile)   {
 	our $jsonparser = LoxBerry::JSON->new();
 	$vcfg = $jsonparser->open(filename => $lbpconfigdir . "/" . $volumeconfigfile);
@@ -528,6 +529,12 @@ sub form
 	my $rmpvol	 	 = $cfg->{TTS}->{volrampto};
 	my $storepath 	 = $cfg->{SYSTEM}->{path};
 	
+	# check if voice already saved
+	my $testvoice 	 = $cfg->{TTS}->{voice};
+	if ($testvoice ne "")   {
+		$template->param("TESTVOICE", $testvoice);
+	}
+	
 	# read Radiofavorites
 	our $countradios = 0;
 	our $rowsradios;
@@ -594,13 +601,13 @@ sub form
 		$rowssonosplayer .= "<td style='height: 28px; width: 17%;'><input type='text' id='ip$countplayers' name='ip$countplayers' size='30' value='$config->{$key}->[0]' style='width: 100%; background-color: #e6e6e6;'></td>\n";
 		# Column Audioclip usage Pics green/red/yellow
 		if (exists($config->{$key}[11]) and is_enabled($config->{$key}[11]))   {
-			if (exists($config->{$key}[12]) and is_enabled($config->{$key}[12]))   {
+			if (exists($config->{$key}[12]) and is_enabled($config->{$key}[12]) and $config->{$key}[9] eq "2")   {
 				$rowssonosplayer .= "<td style='height: 30px; width: 10px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/green.png' border='0' width='26' height='28' align='center'/></div></td>\n";
-			} else {
+			} elsif (exists($config->{$key}[12]) and is_disabled($config->{$key}[12]) and $config->{$key}[9] eq "2")   { 
 				$rowssonosplayer .= "<td style='height: 30px; width: 10px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/yellow.png' border='0' width='26' height='28' align='center'/></div></td>\n";
+			} elsif ($config->{$key}[9] ne "2")   { 
+				$rowssonosplayer .= "<td style='height: 30px; width: 10px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/red.png' border='0' width='26' height='28' align='center'/></div></td>\n";
 			}
-		} else {
-			$rowssonosplayer .= "<td style='height: 30px; width: 10px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/red.png' border='0' width='26' height='28' align='center'/></div></td>\n";
 		}
 		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='$config->{$key}->[3]'></td>\n";
 		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='$config->{$key}->[4]'></td>\n";
@@ -647,6 +654,7 @@ sub form
 			$rowssoundbar .= "<td style='width: 6%; height: 28px;'><div><input class='tvbass' type='text' id='tvbass_$room' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='$error_treble_bass' name='tvbass_$room' value='$config->{$key}->[14]->{tvbass}'></div></td></div>\n";
 			$rowssoundbar .= "<td style='width: 8%; height: 28px;'><div id='tvmon_addend'><input id='fromtime_$room' type='time' name='fromtime_$room' value='$config->{$key}->[13]->{fromtime}'></div></td>\n";
 			$rowssoundbar .= "<td style='width: 8%'><fieldset align='center'><select id='tvmonnight_$room' name='tvmonnight_$room' data-role='flipswitch' style='width: 100%'><option selected='selected' value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
+			$rowssoundbar .= "<td style='width: 8%'><fieldset align='center'><select id='tvmonnightsubn_$room' name='tvmonnightsubn_$room' data-role='flipswitch' style='width: 100%'><option selected='selected' value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
 			$rowssoundbar .= "<td style='width: 8%'><div id='tvmon_addend'><fieldset align='center'>\n";
 			$rowssoundbar .= "<select id='subgain_$room' name='subgain_$room' data-mini='true' data-native-menu='true' style='width: 100%'>";
 			$rowssoundbar .= "	<option value='-15'>-15</option>
@@ -1046,6 +1054,7 @@ sub save
 					my $fromtime = param("fromtime_$room");
 					my $tvmonnight = param("tvmonnight_$room");
 					my $tvmonnightsub = param("tvmonnightsub_$room");
+					my $tvsubnight = param("tvmonnightsubn_$room");
 					my $tvmonnightsublevel = param("subgain_$room");
 					my $starttime = param("pl-start-time$i");
 					my $endtime = param("pl-end-time$i");
@@ -1058,6 +1067,7 @@ sub save
 								"fromtime" => $fromtime,
 								"tvmonnight" => $tvmonnight,
 								"tvmonnightsub" => $tvmonnightsub,
+								"tvsubnight" => $tvsubnight,
 								"tvmonnightsublevel" => $tvmonnightsublevel
 								},
 								$starttime,

@@ -124,19 +124,30 @@ div.scrollmenu a:hover {
 								<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/red.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_RED>
 							</div>
 						</TMPL_IF>
+						<br>
 						<TMPL_IF NAME="SWGEN">
 							<div class='icoclip' style='text-align: left;'>
-								&nbsp;&nbsp;&nbsp;<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/S1_high.png' border='0' width='100' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_SWGENERATION>
+								&nbsp;&nbsp;&nbsp;<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/S1_high.png' border='0' width='65' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_SWGENERATION>
 							</div>
 						</TMPL_IF>
                     </td>
+
                     <td style="height: 41px;" valign="top">
                         <a onClick="discover()" id="btnplayerscan" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="#">
                             <TMPL_VAR T2S.BUTTON_SCAN>
                         </a>
                     </td>
                 </tr>
-				
+				<TMPL_IF NAME="TESTVOICE">
+					<tr class="testtext">
+						<td style="height: 60px; width: 15%;">
+							<label id="tt"><TMPL_VAR ZONES.SONOS_LABEL_TEST_PLAYER></label>
+						</td>
+						<td style="width: 50%; height: 48px">
+							<textarea placeholder="<TMPL_VAR ZONES.SONOS_TEST_PLAYER_PH>" maxlength="500" id="testtext" name="testtext" rows="7" cols="10" style="overflow-y: scroll;"></textarea>
+						</td>
+					</tr>
+				</TMPL_IF>
 				
 	            <tr>			
 					<td style="height: 60px; width: 15%;">
@@ -265,6 +276,7 @@ div.scrollmenu a:hover {
 									<th align="middle" id="tvmtbass" name="tvmtbass"><TMPL_VAR SOUNDBARS.LABEL_TVBASS></th>
 									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_FROM_TIME></th>
 									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_NIGHT></th>
+									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_SUB></th>
 									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_SUB_GAIN></th>
 									
 								</tr>
@@ -317,7 +329,7 @@ div.scrollmenu a:hover {
 													
 													<input type="radio" name="t2s_engine" id="tts_azure" value="9001">
 													<TMPL_VAR SELECTEDINSTANZ9>
-														<label for="tts_azure">MS Azure</label>
+														<label for="tts_azure">Azure AI</label>
 
 														<input type="radio" name="t2s_engine" id="tts_google" value="7001">
 														<TMPL_VAR SELECTEDINSTANZ7>
@@ -1595,7 +1607,13 @@ div.scrollmenu a:hover {
 		$(function(){
 			$("#tblzonen").on("click", function(event){
 			   var zonetest = event.target.value
-			   //console.log("Test: "+zonetest);
+			   var texttospeech = document.getElementById('testtext').value;
+			   //console.log("Test: "+ texttospeech);
+			   if (texttospeech == "")   {
+					var text = '/plugins/<TMPL_VAR PLUGINDIR>/index.php/?zone=' + zonetest + '&action=say&text=<TMPL_VAR ZONES.SONOS_TEST_PLAYER> ' + zonetest + '&volume=35&playgong=yes';
+			   } else {
+					var text = '/plugins/<TMPL_VAR PLUGINDIR>/index.php/?zone=' + zonetest + '&action=say&text=' + texttospeech + '&volume=35&playgong=yes';
+			   }
 			   let response;
 			   $.ajax({
 					url: '/plugins/<TMPL_VAR PLUGINDIR>/bin/player_on_test.php',
@@ -1604,9 +1622,15 @@ div.scrollmenu a:hover {
 					success: function(response) {}
 				}).done(function(response) {
 					if(response == true){
-						$.post('/plugins/<TMPL_VAR PLUGINDIR>/index.php/?zone=' + zonetest + '&action=say&text=<TMPL_VAR ZONES.SONOS_TEST_PLAYER> ' + zonetest + '&volume=25&playgong=yes');
+						$.post(text);
 					}
-				});
+				})
+				.fail(function (jqXHR, response, errorThrown) {
+					console.log(errorThrown);
+				})
+				.always(function(response) {
+					console.log( "Action Test Text-to-speech" );
+				})
 			});
 		});
 
@@ -1623,14 +1647,17 @@ div.scrollmenu a:hover {
 							//console.log(data);
 							$.each(data, function(index, valu) {
 								if (valu[13] == 'SB')   {
-									//console.log(valu.length);
+									console.log(valu);
 									if (valu[8] == 'SUB' && valu.length == 15 || valu.length == 17) {
 										$("#tvmonnightsub_" + index).val(valu[14].tvmonnightsub).flipswitch("refresh");
+										$("#tvmonnightsubn_" + index).val(valu[14].tvsubnight).flipswitch("refresh");
 										$("#subgain_" + index).val(valu[14].tvmonnightsublevel).selectmenu("refresh");
 									} else if (valu[8] == 'SUB' && valu.length == 14) {
 										$("#tvmonnightsub_" + index).val("false").flipswitch("refresh");
+										$("#tvmonnightsubn_" + index).val("false").flipswitch("refresh");
 										$("#subgain_" + index).val("0").selectmenu("refresh");
 									} else {
+										$("#tvmonnightsubn_" + index).flipswitch("disable").flipswitch("refresh");
 										$("#tvmonnightsub_" + index).flipswitch("disable").flipswitch("refresh");
 										$("#subgain_" + index).val("0").selectmenu("disable").selectmenu("refresh");
 									}
@@ -1652,6 +1679,13 @@ div.scrollmenu a:hover {
 										$("#tvbass_" + index).val(valu[14].tvbass).text("refresh");
 										$("#tvtreble_" + index).val(valu[14].tvtreble).text("refresh");
 										//$("#fromtime_" + index).selectmenu("refresh");
+									}
+									if (valu[14].tvsubnight == 'true') {
+										//$("#tvmonnightsub_" + index).val("false").flipswitch("refresh");
+										//$("#subgain_" + index).val("0").selectmenu("refresh");
+									} else {
+										//$("#tvmonnightsub_" + index).flipswitch("disable").flipswitch("refresh");
+										//$("#subgain_" + index).val("0").selectmenu("disable").selectmenu("refresh");
 									}
 									var usage = document.getElementById("usesb_" + index).value;
 									if (usage == "true")   {
@@ -2078,7 +2112,7 @@ div.scrollmenu a:hover {
                     }
 				} else if (document.getElementById('tts_azure').checked == true) {
 					console.log("Azure checked");
-					if (apidata.length != 32)    {
+					if (apidata.length != 32 && apidata.length != 36 && apidata.length != 84)    {
 						dialog('<TMPL_VAR ERRORS.ERR_APIKEY32>', 'OK', 'error', 'Azure');
 						return false;
                         e.preventDefault();
