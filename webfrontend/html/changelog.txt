@@ -485,3 +485,5 @@
 			[IMPROVEMENT] Support für S1 Modelle verfügbar (TTS und Streaming)
 			[IMPROVEMENT] Möglichkeit eine Testnachricht über Plugin GUI zu generieren und auszugeben
 			[IMPROVEMENT] kleinere Optimierungen
+ 5.9.7		[BUGFIX] fixed Clip using single zone
+			[BUGFIX] fixed issue during updating/installation
