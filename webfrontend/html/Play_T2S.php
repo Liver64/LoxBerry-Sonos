@@ -720,6 +720,8 @@ function sendAudioSingleClip($errortext = "") {
 		$tmp = createArrayFromGroupProfile();
 		$zones = $sonoszone[$tmp[0]];
 		$master = $tmp[0];
+	} else {
+		$zones = $sonoszone[$master];
 	}
 	# determine if Player supports AUDIO_CLIP function
 	if(isset($zones[11]) and $zones[11] == true and $zones[9] <> "1") {

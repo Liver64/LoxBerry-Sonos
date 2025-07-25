@@ -487,3 +487,4 @@
 			[IMPROVEMENT] kleinere Optimierungen
  5.9.7		[BUGFIX] fixed Clip using single zone
 			[BUGFIX] fixed issue during updating/installation
+ 5.9.8		[BUGFIX] fixed typo in T2S

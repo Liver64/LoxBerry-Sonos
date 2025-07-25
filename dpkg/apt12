@@ -8,7 +8,7 @@ sox task-spooler
 lame
 curl
 libcurl4
-#php8.3-soap
-#php8.-cli
+#php8.2-soap
+#php8.2-cli
 libssl-dev 
 libasound2 wget
