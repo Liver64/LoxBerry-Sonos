@@ -414,7 +414,7 @@ function PluginRadio()
 	} else {
 		$master = MASTER;
 	}
-	
+	#CreateMember();
 	$sonos = new SonosAccess($sonoszone[$master][0]);
 	$enteredRadio = mb_strtolower($_GET['radio']);
 	$radios = $config['RADIO']['radio'];

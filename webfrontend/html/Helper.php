@@ -434,7 +434,7 @@ function AddMemberTo() {
 **/
 function CreateMember($member = "", $masterzone = "") { 
 
-	global $sonoszone, $members, $sonoszonen, $sonos, $config, $master, $profile_selected, $samearray, $memberarray, $config, $sleepaddmember, $profile, $masterzone;
+	global $sonoszone, $members, $sonoszonen, $sonos, $memberon, $config, $master, $profile_selected, $samearray, $memberarray, $config, $sleepaddmember, $profile, $masterzone;
 	
 	if (isset($_GET['member']))   {	
 	
@@ -443,54 +443,23 @@ function CreateMember($member = "", $masterzone = "") {
 		$members = $_GET['member'];
 		if($members === 'all') {
 			LOGGING("helper.php: Member has been entered",5);
-			$member = array();
+			$memberon = array();
 			foreach ($sonoszone as $zone => $ip) {
 				# exclude master Zone
 				if ($zone != MASTER) {
-					array_push($members, $zone);
+					array_push($memberon, $zone);
 				}
 			}
 			LOGGING("helper.php: All Players will be added to Player: ".MASTER, 5);	
 		} else {
 			LOGGING("helper.php: Member has been entered",5);
+			$memberon = array();
 			# member from URL
-			$member = explode(',', $members);
+			$memberon = explode(',', $members);
 		}
-		
-		$member = member_on($members);
-		
-		/**
-		$memberon = array();
-		$act_time = date("H:i"); #"16:58"
-		foreach ($member as $zone) {
-			$zoneon = checkZoneOnline($zone);
-			if ($zoneon === (bool)true)   {
-				if ($config['SYSTEM']['checkonline'] != false)   {
-					# add zones having no time restrictions
-					if ($sonoszone[$zone][15] != "" and $sonoszone[$zone][16] != "")   {
-						$startime = $sonoszone[$zone][15]; #"07:15"
-						$endtime = $sonoszone[$zone][16]; #"20:32"
-						if ((string)$startime <= (string)$act_time and (string)$endtime >= (string)$act_time)   {
-							array_push($memberon, $zone);
-							LOGGING("helper.php: Member '$zone' has been prepared to Member array", 6);		
-						} else {
-							LOGGING("helper.php: Member '$zone' could not be added to Member array. Maybe Zone is Offline or Time restrictions entered!", 4);	
-						}
-					} else {
-						# add zones having no time restrictions
-						array_push($memberon, $zone);
-						LOGGING("helper.php: Member '$zone' has been prepared to Member array", 6);	
-					}
-				} else {
-					array_push($memberon, $zone);
-					LOGGING("helper.php: Member '$zone' has been prepared to Member array", 6);	
-				}
-			} else {
-				LOGGING("helper.php: Member '$zone' could not be added to Member array. Maybe Zone is Offline or Time restrictions entered!", 4);	
-			}
-		}
-		$member = $memberon;
-		**/
+		#print_r($memberon);
+		$members = $memberon;
+		$member = member_on($memberon);
 		
 		# Remove master from group if not single
 		$check_stat = getZoneStatus($master);
