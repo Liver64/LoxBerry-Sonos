@@ -558,10 +558,11 @@ function AddMember() {
 				} catch (Exception $e) {
 					LOGGING("helper.php: Zone: ".$zone." could not be added to master: ".$master,4);
 				}
+				$sonos->SetMute(false);
 			}
 			usleep((int)($sleepaddmember * 1000000));
 		}
-		volume_group();
+		#volume_group();
 		$sonos = new SonosAccess($sonoszone[$master][0]);
 	}	
 }

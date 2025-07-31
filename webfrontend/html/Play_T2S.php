@@ -1031,6 +1031,7 @@ function sendgroupmessage() {
 			} catch (Exception $e) {
 				LOGGING("play_t2s.php: Member '$master' could not be made to Single Zone! Something went wrong, please try again", 4);	
 			}
+			/**
 			// grouping
 			foreach ($member as $zone) {
 				$handle = is_file($folfilePlOn."".$zone.".txt");
@@ -1047,6 +1048,7 @@ function sendgroupmessage() {
 					}
 				}
 			}
+			**/
 			#sleep($config['TTS']['sleepgroupmessage']); // warten gemäß config.php bis Gruppierung abgeschlossen ist
 			$sonos = new SonosAccess($sonoszone[$master][0]);
 			$sonos->SetPlayMode('0'); 

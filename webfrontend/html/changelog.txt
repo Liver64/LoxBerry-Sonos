@@ -489,3 +489,4 @@
 			[BUGFIX] fixed issue during updating/installation
  5.9.8		[BUGFIX] fixed typo in T2S
  5.9.9		[BUGFIX] fixed typo in member function
+			[BUGFIX] optimized grouping on T2S Groupmessage
