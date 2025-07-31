@@ -1000,9 +1000,23 @@ function sendgroupmessage() {
 				LOGGING("play_t2s.php: The parameter 'sonos' couldn't be used for group T2S!", 4);
 				exit;
 			}
+			if($sonoszone[$master][9] == "1") {
+				LOGERR("play_t2s.php: Player '". $master ."' is an Generation S1 player and can't be Master of a group! Please remove player from URL (zone=". $master ."&action= ....) or from Sound Profile marked as Master!");
+				exit;
+			}
 
 			create_tts($errortext);
 			$save = saveZonesStatus(); // saves all Zones Status
+			// create Group for Announcement
+			$masterrincon = $sonoszone[$master][1]; 
+			$sonos = new SonosAccess($sonoszone[$master][0]);
+			try {
+				$sonos->BecomeCoordinatorOfStandaloneGroup();
+				LOGGING("play_t2s.php: Group Coordinator '$master' has been made to single zone", 7);	
+			} catch (Exception $e) {
+				LOGGING("play_t2s.php: Member '$master' could not be made to Single Zone! Something went wrong, please try again", 4);	
+			}
+			
 			if (isset($_GET['profile']))    {
 				$member = createArrayFromGroupProfile();
 			} else {
@@ -1014,23 +1028,12 @@ function sendgroupmessage() {
 			if (!defined('MEMBER')) {
 				define("MEMBER", $member);
 			}
-			if($sonoszone[$master][9] == "1") {
-				LOGERR("play_t2s.php: Player '". $master ."' is an Generation S1 player and can't be Master of a group! Please remove player from URL (zone=". $master ."&action= ....) or from Sound Profile marked as Master!");
-				exit;
-			}
+			
 			#if (in_array($master, $member)) {
 				#LOGGING("play_t2s.php: The zone ".$master." could not be entered as member again. Please remove from Syntax '&member=".$master."' !", 3);
 				#exit;
 			#}
-			// create Group for Announcement
-			$masterrincon = $sonoszone[$master][1]; 
-			$sonos = new SonosAccess($sonoszone[$master][0]);
-			try {
-				$sonos->BecomeCoordinatorOfStandaloneGroup();
-				LOGGING("play_t2s.php: Group Coordinator '$master' has been made to single zone", 7);	
-			} catch (Exception $e) {
-				LOGGING("play_t2s.php: Member '$master' could not be made to Single Zone! Something went wrong, please try again", 4);	
-			}
+			
 			/**
 			// grouping
 			foreach ($member as $zone) {
