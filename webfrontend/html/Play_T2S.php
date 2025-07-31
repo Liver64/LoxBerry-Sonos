@@ -1008,20 +1008,23 @@ function sendgroupmessage() {
 			create_tts($errortext);
 			$save = saveZonesStatus(); // saves all Zones Status
 			// create Group for Announcement
-			$masterrincon = $sonoszone[$master][1]; 
-			$sonos = new SonosAccess($sonoszone[$master][0]);
-			try {
-				$sonos->BecomeCoordinatorOfStandaloneGroup();
-				LOGGING("play_t2s.php: Group Coordinator '$master' has been made to single zone", 7);	
-			} catch (Exception $e) {
-				LOGGING("play_t2s.php: Member '$master' could not be made to Single Zone! Something went wrong, please try again", 4);	
-			}
 			
 			if (isset($_GET['profile']))    {
 				$member = createArrayFromGroupProfile();
+				$masterrincon = $sonoszone[$master][1]; 
+				#$sonos = new SonosAccess($sonoszone[$master][0]);
 			} else {
+				$masterrincon = $sonoszone[$master][1]; 
+				$sonos = new SonosAccess($sonoszone[$master][0]);
+				try {
+					$sonos->BecomeCoordinatorOfStandaloneGroup();
+					LOGGING("play_t2s.php: Group Coordinator '$master' has been made to single zone", 7);	
+				} catch (Exception $e) {
+					LOGGING("play_t2s.php: Member '$master' could not be made to Single Zone! Something went wrong, please try again", 4);	
+				}
 				AddMember();
 			}
+
 			if (defined('T2SMASTER'))   {
 				$master = T2SMASTER;
 			}
@@ -1034,24 +1037,24 @@ function sendgroupmessage() {
 				#exit;
 			#}
 			
-			/**
-			// grouping
-			foreach ($member as $zone) {
-				$handle = is_file($folfilePlOn."".$zone.".txt");
-				if($handle === true) {
-					$sonos = new SonosAccess($sonoszone[$zone][0]);
-					if ($zone != $master) {
-						try {
-							$sonos->SetAVTransportURI("x-rincon:" . $masterrincon);
-							LOGGING("play_t2s.php: Member '$zone' is now connected to Master Zone '$master'", 6);								
-						} catch (Exception $e) {
-							LOGGING("play_t2s.php: Member '$zone' could not be added to Master $master. Maybe Zone is Offline or Time restrictions entered!", 4);	
+			if (isset($_GET['profile']))    {
+				// grouping
+				foreach ($member as $zone) {
+					$handle = is_file($folfilePlOn."".$zone.".txt");
+					if($handle === true) {
+						$sonos = new SonosAccess($sonoszone[$zone][0]);
+						if ($zone != $master) {
+							try {
+								$sonos->SetAVTransportURI("x-rincon:" . $masterrincon);
+								LOGGING("play_t2s.php: Member '$zone' is now connected to Master Zone '$master'", 6);								
+							} catch (Exception $e) {
+								LOGGING("play_t2s.php: Member '$zone' could not be added to Master $master. Maybe Zone is Offline or Time restrictions entered!", 4);	
+							}
+							$sonos->SetMute(false);
 						}
-						$sonos->SetMute(false);
 					}
 				}
 			}
-			**/
 			#sleep($config['TTS']['sleepgroupmessage']); // warten gemäß config.php bis Gruppierung abgeschlossen ist
 			$sonos = new SonosAccess($sonoszone[$master][0]);
 			$sonos->SetPlayMode('0'); 
@@ -1525,7 +1528,7 @@ function createArrayFromGroupProfile()   {
 	case 'Group';
 		foreach (SONOSZONE as $player => $value)   {
 			if (is_enabled($profile_details[0]['Player'][$player][0]['Master']))    {
-				$master1 = $player;
+				$master = $player;
 			}
 		}
 		$memberincl = array();
@@ -1557,7 +1560,7 @@ function createArrayFromGroupProfile()   {
 			define("MEMBER", $memberincl);
 		}
 		if (!defined('T2SMASTER')) {
-			define("T2SMASTER", $master1);
+			define("T2SMASTER", $master);
 		}
 		#print_r(MEMBER);
 		#$member = $memberincl;
