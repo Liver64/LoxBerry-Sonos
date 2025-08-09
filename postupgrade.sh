@@ -63,7 +63,7 @@ cp -v /tmp/$1\_upgrade/webfrontend/images/* $5/webfrontend/html/plugins/$3/image
 if [ -d /tmp/$1\_upgrade/webfrontend/piper-voices ]; then
 	echo "<INFO> Copy back Piper files"
 	mkdir -p $5/webfrontend/html/plugins/$3/voice_engines/piper-voices
-	cp p -v -r /tmp/$1\_upgrade/webfrontend/piper-voices/* $5/webfrontend/html/plugins/$3/voice_engines/
+	cp -p -v -r /tmp/$1\_upgrade/webfrontend/piper-voices/* $5/webfrontend/html/plugins/$3/voice_engines/
 fi
 
 echo "<INFO> Update of MP3 Files in tts/mp3"
