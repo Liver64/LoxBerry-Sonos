@@ -490,3 +490,4 @@
  5.9.8		[BUGFIX] fixed typo in T2S
  5.9.9		[BUGFIX] fixed typo in member function
 			[BUGFIX] optimized grouping on T2S Groupmessage
+ 6.0.1		[IMPROVEMENT] Neuer Offline T2S provider Piper TTS hinzugefügt und Pico herausgenommen

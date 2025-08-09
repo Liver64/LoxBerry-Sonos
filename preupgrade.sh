@@ -55,42 +55,6 @@ else
   echo "<INFO> No Backup folder exist"
 fi
 
-echo "<INFO> Creating Plugin Backup folders"
-mkdir -p $LBPDATA/$PDIR/backup
-mkdir -p $LBPDATA/$PDIR/backup/bin
-mkdir -p $LBPDATA/$PDIR/backup/templates
-mkdir -p $LBPDATA/$PDIR/backup/webfrontend
-mkdir -p $LBPDATA/$PDIR/backup/webfrontend/html
-mkdir -p $LBPDATA/$PDIR/backup/webfrontend/htmlauth
-mkdir -p $LBPDATA/$PDIR/backup/config
-mkdir -p $LBPDATA/$PDIR/backup/cron
-mkdir -p $LBPDATA/$PDIR/backup/daemon
-
-echo "<INFO> Copy existing CONFIG files to Backup folder"
-cp -p -v -r $5/config/plugins/$3/ $LBPDATA/$PDIR/backup/config
-
-echo "<INFO> Copy existing BIN files to Backup folder"
-cp -p -v -r $5/bin/plugins/$3/ $LBPDATA/$PDIR/backup/bin
-
-echo "<INFO> Copy existing TEMPLATE files to Backup folder"
-cp -p -v -r $5/templates/plugins/$3/ $LBPDATA/$PDIR/backup/templates
-
-echo "<INFO> Copy existing HMTL files to Backup folder"
-cp -p -v -r $5/webfrontend/html/plugins/$3/ $LBPDATA/$PDIR/backup/webfrontend/html
-
-echo "<INFO> Copy existing HTMLAUTH files to Backup folder"
-cp -p -v -r $5/webfrontend/htmlauth/plugins/$3/ $LBPDATA/$PDIR/backup/webfrontend/htmlauth
-
-echo "<INFO> Copy existing CRON files to Backup folder"
-cp -p -v -r $5/system/cron/cron.01min/Sonos $LBPDATA/$PDIR/backup/cron/Sonos.cron01min
-cp -p -v -r $5/system/cron/cron.03min/Sonos $LBPDATA/$PDIR/backup/cron/Sonos.cron03min
-cp -p -v -r $5/system/cron/cron.hourly/Sonos $LBPDATA/$PDIR/backup/cron/Sonos.cron.hourly
-cp -p -v -r $5/system/cron/cron.daily/Sonos $LBPDATA/$PDIR/backup/cron/Sonos.cron.daily
-cp -p -v -r $5/system/cron/cron.weekly/Sonos $LBPDATA/$PDIR/backup/cron/Sonos.cron.weekly
-
-echo "<INFO> Copy existing DAEMON file to Backup folder"
-cp -p -v -r $5/system/daemons/plugins/Sonos $LBPDATA/$PDIR/backup/daemon
-
 echo "<INFO> Creating temporary folders for upgrading"
 mkdir -p /tmp/$1\_upgrade
 mkdir -p /tmp/$1\_upgrade/config
@@ -98,12 +62,19 @@ mkdir -p /tmp/$1\_upgrade/log
 mkdir -p /tmp/$1\_upgrade/data
 mkdir -p /tmp/$1\_upgrade/templates
 mkdir -p /tmp/$1\_upgrade/webfrontend
+mkdir -p /tmp/$1\_upgrade/webfrontend/images
 
 echo "<INFO> Backing up existing config files"
 cp -p -v -r $5/config/plugins/$3/ /tmp/$1\_upgrade/config
 
 echo "<INFO> Backing up existing Sonos image files"
-cp -p -v -r $5/webfrontend/html/plugins/$3/images/icon* /tmp/$1\_upgrade/webfrontend
+cp -p -v -r $5/webfrontend/html/plugins/$3/images/icon* /tmp/$1\_upgrade/webfrontend/images
+
+if [ -d $5/webfrontend/html/plugins/$3/voice_engines/piper-voices ]; then
+	mkdir -p /tmp/$1\_upgrade/webfrontend/piper-voices
+	echo "<INFO> Backing up existing Piper files"
+	cp -p -v -r $5/webfrontend/html/plugins/$3/voice_engines/piper-voices/ /tmp/$1\_upgrade/webfrontend/piper-voices
+fi
 
 echo "<INFO> Backing up existing log files"
 cp -p -v -r $5/log/plugins/$3/ /tmp/$1\_upgrade/log

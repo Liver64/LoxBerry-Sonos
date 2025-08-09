@@ -1895,6 +1895,27 @@ function member_on($memberon)    {
 	return $member;
 }
 
+/**
+ * Eemove duplicates from array based on given key
+ *
+ * @param $array
+ * @key key to compare duplicates
+ *
+ * @return array
+ */
+ 
+// https://stackoverflow.com/questions/307674/how-to-remove-duplicate-values-from-a-multi-dimensional-array-in-php
+function remove_duplicates_array($array,$key)
+    {
+		$temp_array = [];
+		foreach ($array as &$v) {
+			if (!isset($temp_array[$v[$key]]))
+			$temp_array[$v[$key]] =& $v;
+		}
+		$array = array_values($temp_array);
+		return $array;
+    }
+	
 
 /**
  * Recursively filter an array

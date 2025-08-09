@@ -43,6 +43,7 @@ use Data::Dumper;
 use File::Compare;
 #use Config::Simple '-strict';
 no strict "refs"; # we need it for template system
+use List::MoreUtils qw(uniq);
 
 ##########################################################################
 # Generic exception handler
@@ -739,6 +740,57 @@ sub form
 	$template->param("MP3_LIST", $mp3_list);
 	LOGDEB "List of MP3 files has been successful loaded";
 	
+	#$LoxBerry::JSON::DEBUG = 1;
+	my @data_piper;
+	my @data_piper_voices;
+	my $modified_str;
+	my $new_pcfgp;
+	my $new_pcfgpv;
+	
+	# open Piper languanges
+	my $jsonobjpiper = LoxBerry::JSON->new();
+	my $pcfgp = $jsonobjpiper->open(filename => $lbphtmldir."/voice_engines/langfiles/piper.json");
+	
+	# open Piper languanges details
+	my $jsonobjpiper_voice = LoxBerry::JSON->new();
+	my $pcfgpv = $jsonobjpiper_voice->open(filename => $lbphtmldir."/voice_engines/langfiles/piper_voices.json");
+	
+	# read all JSON files from folder
+	my $directory = $lbphtmldir. "/voice_engines/piper-voices/";
+	opendir(DIR, $directory) or die $!;
+	my @pipfiles 
+        = grep { 
+            /\.json$/      		# just files ending with .json
+	    && -f "$directory/$_"   # and is a file
+	} 
+	readdir(DIR);
+    # Loop through the files adding details
+    foreach my $file (@pipfiles) {
+		my $jsonparser = LoxBerry::JSON->new();
+		my $config = $jsonparser->open(filename => $lbphtmldir."/voice_engines/piper-voices/".$file, writeonclose => 0);
+		# adding basic info to JSON object $pcfgp 
+		my @piper = (  {"country" => $config->{language}->{name_native},
+						"value" => $config->{language}->{code}
+		});
+		push @data_piper, @piper;
+		$new_pcfgp = \@data_piper; 
+
+		# adding detailes info JSON object $pcfgpv
+		my @piper_voices = (  {	"name" => $config->{dataset},
+								"language" => $config->{language}->{code},
+								"filename" => $modified_str = substr($file, 0, -5)
+		});
+		push @data_piper_voices, @piper_voices;
+		$new_pcfgpv = \@data_piper_voices;
+    } 
+	$jsonobjpiper->{jsonobj} = $new_pcfgp;
+	$jsonobjpiper_voice->{jsonobj} = $new_pcfgpv;
+	$jsonobjpiper->write();
+	$jsonobjpiper_voice->write();
+	closedir(DIR);
+	# Call PHP to remove duplicates from piper.json
+	my $tv = qx(/usr/bin/php $lbphtmldir/bin/piper_tts.php);	
+
 	# check if MQTT is installed and valid credentials received
 	if ($mqttcred)   {
 		$template->param("MQTT" => "true");
@@ -749,7 +801,6 @@ sub form
 		#$jsonobj->write();
 		LOGDEB "MQTT Gateway is not installed or wrong credentials received.";
 	}
-	
 	
 	# create list of host palyer for follow function	
 	my $rowshostplayer;
@@ -776,6 +827,7 @@ sub form
 #####################################################
 # Save_details-Sub
 #####################################################
+
 
 sub save_details
 {
@@ -1580,6 +1632,7 @@ sub save_volume
 		}
 		$vcfg->[$i - 1]->{Group} = $isGroup;
 	}
+	#LOGOK "Volume: ".Dumper($vcfg);
 	$jsonobjvol->write();
 	LOGOK "Sound Profile has been saved";
 	&volumes;

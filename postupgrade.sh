@@ -45,20 +45,26 @@ PCONFIG=$LBPCONFIG/$PDIR
 PSBIN=$LBPSBIN/$PDIR
 PBIN=$LBPBIN/$PDIR
 
-echo "<INFO> Copy back existing config files"
+echo "<INFO> Copy back config files"
 cp -p -v -r /tmp/$1\_upgrade/config/$3/* $5/config/plugins/$3/ 
 
-echo "<INFO> Copy back existing log files"
+echo "<INFO> Copy back log files"
 cp -p -v -r /tmp/$1\_upgrade/log/$3/* $5/log/plugins/$3/ 
 
-echo "<INFO> Copy back existing MP3 and Plugin Backup files"
+echo "<INFO> Copy back MP3 and Plugin Backup files"
 cp -p -v -r /tmp/$1\_upgrade/data/$3/* $5/data/plugins/$3/ 
 
-echo "<INFO> Copy back existing Text files"
+echo "<INFO> Copy back Text files"
 cp -v /tmp/$1\_upgrade/templates/* $5/templates/plugins/$3/lang/ 
 
-echo "<INFO> Copy back existing Sonos image files"
-cp -v /tmp/$1\_upgrade/webfrontend/* $5/webfrontend/html/plugins/$3/images/ 
+echo "<INFO> Copy back Sonos image files"
+cp -v /tmp/$1\_upgrade/webfrontend/images/* $5/webfrontend/html/plugins/$3/images/ 
+
+if [ -d /tmp/$1\_upgrade/webfrontend/piper-voices ]; then
+	echo "<INFO> Copy back Piper files"
+	mkdir -p $5/webfrontend/html/plugins/$3/voice_engines/piper-voices
+	cp p -v -r /tmp/$1\_upgrade/webfrontend/piper-voices/* $5/webfrontend/html/plugins/$3/voice_engines/
+fi
 
 echo "<INFO> Update of MP3 Files in tts/mp3"
 cp -v $5/data/plugins/$3/tts/mp3/update/* $5/data/plugins/$3/tts/mp3/

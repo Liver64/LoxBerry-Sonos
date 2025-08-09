@@ -315,9 +315,9 @@ div.scrollmenu a:hover {
                                     <TMPL_VAR SELECTEDINSTANZ4>
                                         <label for="tts_polly">AWS Polly</label>
 
-                                        <input type="radio" name="t2s_engine" id="tts_pico" value="5001">
+                                        <input type="radio" name="t2s_engine" id="tts_piper" value="9012">
                                         <TMPL_VAR SELECTEDINSTANZ5>
-                                            <label for="tts_pico">Pico2Wave</label>
+                                            <label for="tts_piper">Piper</label>
 
                                             <input type="radio" name="t2s_engine" id="tts_respvoice" value="6001">
                                             <TMPL_VAR SELECTEDINSTANZ6>
@@ -371,6 +371,14 @@ div.scrollmenu a:hover {
                             </font>
                         </div>
 						
+						<div class="ttsconfig piperinfo 9012">
+                             <font size="-1" align="middle">
+                                <a id="linkpiper" href="https://huggingface.co/rhasspy/piper-voices/tree/main" target="_blank">
+                                    <TMPL_VAR T2S.PIPER_LINK>
+                                </a>
+                            </font>
+                        </div>
+						
 						<div class="ttsconfig azureinfo 9001">
                              <font size="-1" align="middle">
                                 <a id="linkazureapi" href="/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/bin/Azure_Account.pdf" target="_blank">
@@ -405,7 +413,7 @@ div.scrollmenu a:hover {
                         <input id="apikey" name="apikey" type="text" class="textfield" value="<TMPL_VAR APIKEY>">
 					</td>
                     <td style="height: 48px; width: 100px;" class="auto-style4" valign="top">
-                        <div class="ttsconfig btnpopulategooglevoices 8001 9001 9011">
+                        <div class="ttsconfig btnpopulategooglevoices 8001 9001 9011 9012">
                             <a onClick="checkProvider()" data-role="button" data-inline="true" data-mini="true" href="#">
                                 <TMPL_VAR T2S.BUTTON_VOICES>
                             </a>
@@ -443,7 +451,7 @@ div.scrollmenu a:hover {
                                     <div id="loginResult" style="display:none;">
                                     </div>
                                     <div id="msg"></div>
-                                    <td style="height: 36px; width: 35%;" class="ttsconfig field-voice 4001 8001 9011" style="display:none">
+                                    <td style="height: 36px; width: 35%;" class="ttsconfig field-voice 9012 4001 8001 9011" style="display:none">
                                         <fieldset style="width: 100%">
                                             <select class="voice_select" id="voice" name="voice" data-mini="true";
 											data-validation-error-msg="<TMPL_VAR T2S.SELECT_VOICE_DROPDOWN>" 
@@ -1096,6 +1104,9 @@ div.scrollmenu a:hover {
                 $('#voice').selectmenu('refresh', true);
             } else if (document.getElementById('tts_google_cloud').checked == true) {
                 $('#voice').addClass('ui-disabled');
+			} else if (document.getElementById('tts_piper').checked == true) {
+                $('#voice').addClass('ui-disabled');
+				$('#voice').selectmenu('refresh', true);
             }
 			$('#t2slang').selectmenu('refresh', true);
 			$('#voice').selectmenu('refresh', true);
@@ -1172,7 +1183,7 @@ div.scrollmenu a:hover {
                         });
                     });
                 }
-            } else if (document.main_form.tts_google_cloud.checked == true) {
+			} else if (document.main_form.tts_google_cloud.checked == true) {
                 const currentLanguage = $("#t2slang").val();
                 var tempVal = "";
                 if ($("#voice option:selected") && $("#voice option:selected").attr('data-lang') == currentLanguage) {
@@ -1194,8 +1205,31 @@ div.scrollmenu a:hover {
                 } else {
                     $('#voice').prop('selectedIndex', 0);
                 }
-            } else {
-                $('#voice').empty();
+            //} 	
+            } else if (document.main_form.tts_piper.checked == true) {
+                var selectedlanguage = $("#t2slang option:selected").val();
+                //console.log("popvoice: " + selectedlanguage);
+                if (selectedlanguage) {
+                    $('#voice').empty();
+                    $('#voice').removeClass('ui-disabled');
+                    const url = "/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/langfiles/piper_voices.json";
+                    $.getJSON(url, function(listvoice) {
+					//console.log(listvoice);
+                        $('#voice').append('<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>');
+                        var selectedvoiceList = listvoice.filter(function(item) {
+                            return item.language === selectedlanguage;
+                        });
+						//console.log(selectedvoiceList);
+                        $.each(selectedvoiceList, function(index, value) {
+                            if (value.name == '<TMPL_VAR VOICE>') {
+                                $('#voice').append('<option selected="selected" value="' + value.name + '">' + value.name + '</option>');
+                            } else {
+                                $('#voice').append('<option value="' + value.name + '">' + value.name + '</option>');
+                            }
+                            $('#voice').selectmenu('refresh', true);
+                        });
+                    });
+                }
             }
 			if (document.main_form.tts_elevenlabs.checked == true) {
 				populateElevenlabsVoices();
@@ -1534,8 +1568,8 @@ div.scrollmenu a:hover {
                 case '4001':
                     url = url + "polly.json";
                     break;
-                case '5001':
-                    url = url + "pico.json";
+                case '9012':
+                    url = url + "piper.json";
                     break;
                 case '6001':
                     url = url + "respvoice.json";
@@ -2073,10 +2107,10 @@ div.scrollmenu a:hover {
 						return false;
                         e.preventDefault();
                     }
-                } else if (document.getElementById('tts_pico').checked == true) {
+                } else if (document.getElementById('tts_piper').checked == true) {
 					console.log("Pico checked");
                     if (selectlang == null) {
-						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'Pico');
+						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'Piper');
                         $('html, body').animate({
                             scrollTop: $("#info").offset().top
                         }, 1000);
