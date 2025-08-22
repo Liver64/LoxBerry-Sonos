@@ -21,7 +21,7 @@ $myLBip = LBSystem::get_localip();
 
 function say() {
 	
-	global $sonos, $profile, $master, $lbpconfigdir, $config, $vol_config, $group;
+	global $sonos, $profile, $master, $lbpconfigdir, $config, $vol_config, $group, $textstring, $result;
 	
 	presence_detection();
 	if ((empty($config['TTS']['t2s_engine'])) or (empty($config['TTS']['messageLang'])))  {
@@ -34,6 +34,13 @@ function say() {
 		exit();
 	}
 	check_S1_player();
+	if(isset($_GET['ic']))    {
+		$ic = true;
+		$textstring = "Hallo Oliver";
+		require_once("bin/interface.php");
+		$result = send_data_curl();
+		LOGGING("play_t2s.php: T2S Interface has been called");
+	}
 	$profile = false;
 	if(!isset($_GET['member']) && !isset($_GET['profile'])) {
 		if ((!isset($_GET['text'])) && (!isset($_GET['messageid'])) && (!isset($errortext)) && (!isset($_GET['sonos'])) &&
@@ -810,7 +817,7 @@ function sendAudioMultiClip($errortext = "") {
 
 function doorbell() {
 
-	global $config, $master, $sonos, $sonoszone, $time_start;
+	global $config, $master, $sonos, $sonoszone, $zone_volumes, $time_start;
 
 	if(isset($_GET['playgong'])) {
 		LOGERR("play_t2s.php: Audioclip: playgong could not be used im combination with function 'doorbell'");
@@ -870,6 +877,11 @@ function doorbell() {
 				LOGGING("play_t2s.php: Audioclip: Entered file '".$file."' for doorbell is not valid or nothing has been entered. Please correct your syntax", 3);
 				exit;
 			}
+		}
+		sleep(3);
+		foreach ($zone_volumes as $key => $value)   {
+			$sonos = new SonosAccess($sonoszone[$key][0]);
+			$sonos->SetVolume($value);
 		}
 	} else {
 		LOGGING("play_t2s.php: Audioclip: File for Doorbell is missing! Use even ...action=doorbell&file=chime or ...action=doorbell&file=<MP3 File from tts/mp3 Folder>", 3);
@@ -1528,7 +1540,7 @@ function checkGroupProfile()   {
 
 function createArrayFromGroupProfile()   {
 
-	global $lbpconfigdir, $profile_details, $vol_config, $zone, $master, $sonoszone, $memberincl;
+	global $lbpconfigdir, $profile_details, $vol_config, $zone, $master, $zone_volumes, $sonoszone, $memberincl;
 
 	get_profile_details();
 
@@ -1609,11 +1621,13 @@ function createArrayFromGroupProfile()   {
 
 function VolumeProfile($memberincl)   {
 	
-global $sonoszone, $profile_details, $profile_selected, $profile, $config, $memberincl;
+global $sonoszone, $profile_details, $profile_selected, $profile, $config, $memberincl, $zone_volumes;
 
+	$zone_volumes = array();
 	foreach ($memberincl as $key)  {
 		try {
-			@$sonos = new SonosAccess($sonoszone[$key][0]);
+			$sonos = new SonosAccess($sonoszone[$key][0]);
+			$zone_volumes[$key] = $sonos->GetVolume();
 			#@$sonos->SetMute(true)
 			# Set Volume	
 			if ($profile_details[0]['Player'][$key][0]['Volume'] != "")	{
@@ -1628,6 +1642,7 @@ global $sonoszone, $profile_details, $profile_selected, $profile, $config, $memb
 			continue;
 		}
 	}	
+	#print_r($zone_volumes);
 	return;
 }
 	
