@@ -60,7 +60,6 @@ mkdir -p /tmp/$1\_upgrade
 mkdir -p /tmp/$1\_upgrade/config
 mkdir -p /tmp/$1\_upgrade/log
 mkdir -p /tmp/$1\_upgrade/data
-mkdir -p /tmp/$1\_upgrade/templates
 mkdir -p /tmp/$1\_upgrade/webfrontend
 mkdir -p /tmp/$1\_upgrade/webfrontend/images
 
