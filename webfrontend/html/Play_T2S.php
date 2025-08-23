@@ -817,7 +817,7 @@ function sendAudioMultiClip($errortext = "") {
 
 function doorbell() {
 
-	global $config, $master, $sonos, $sonoszone, $zone_volumes, $time_start;
+	global $config, $master, $sonos, $sonoszone, $zone_volumes, $time_start, $masterzone;
 
 	if(isset($_GET['playgong'])) {
 		LOGERR("play_t2s.php: Audioclip: playgong could not be used im combination with function 'doorbell'");
@@ -1540,7 +1540,7 @@ function checkGroupProfile()   {
 
 function createArrayFromGroupProfile()   {
 
-	global $lbpconfigdir, $profile_details, $vol_config, $zone, $master, $zone_volumes, $sonoszone, $memberincl;
+	global $lbpconfigdir, $profile_details, $vol_config, $zone, $master, $zone_volumes, $masterzone, $sonoszone, $memberincl;
 
 	get_profile_details();
 
@@ -1621,7 +1621,7 @@ function createArrayFromGroupProfile()   {
 
 function VolumeProfile($memberincl)   {
 	
-global $sonoszone, $profile_details, $profile_selected, $profile, $config, $memberincl, $zone_volumes;
+global $sonoszone, $profile_details, $profile_selected, $profile, $config, $masterzone, $memberincl, $zone_volumes;
 
 	$zone_volumes = array();
 	foreach ($memberincl as $key)  {
@@ -1636,13 +1636,12 @@ global $sonoszone, $profile_details, $profile_selected, $profile, $config, $memb
 				LOGINF("play_t2s.php: Volume for '".$key."' has been set to: ".$profile_details[0]['Player'][$key][0]['Volume']);
 			} else {
 				LOGWARN("play_t2s.php: No Volume entered in Profile, so we could not set Volume");
-			}		
+			}
 		} catch (Exception $e) {
 			LOGERR("play_t2s.php: Player '".$key."' does not respond. Please check your settings");
 			continue;
 		}
 	}	
-	#print_r($zone_volumes);
 	return;
 }
 	
@@ -1650,7 +1649,7 @@ global $sonoszone, $profile_details, $profile_selected, $profile, $config, $memb
 
 function get_profile_details()   {
 
-	global $lbpconfigdir, $profile_details, $vol_config;
+	global $lbpconfigdir, $profile_details, $vol_config, $masterzone;
 
 	$volprofil = $_GET['profile'];
 	$volconfig = json_decode(file_get_contents($lbpconfigdir . "/" . $vol_config.".json"), TRUE);
