@@ -415,12 +415,11 @@ function AddMemberTo() {
 				}
 			}
 			#usleep((int)($sleepaddmember * 1000000));
+			usleep(200000);
 		}
-		#$sonos = new SonosAccess($sonoszone[$master][0]);
-		volume_group();
+		#volume_group();
 		$sonos = new SonosAccess($sonoszone[$master][0]);
-	}
-	#exit;
+	}	
 }
 
 
