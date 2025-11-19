@@ -2,8 +2,8 @@
 
 # Control
 
-![](https://img.shields.io/badge/Release-v5.9.9-blue)
-![](https://img.shields.io/badge/PreRrelease-v6.0.1-blue)
+![](https://img.shields.io/badge/Release-v6.0.1-blue)
+![](https://img.shields.io/badge/PreRrelease-v6.0.2-blue)
 
 Sonos for Smart Home
 ====================

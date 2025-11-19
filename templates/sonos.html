@@ -120,8 +120,8 @@ div.scrollmenu a:hover {
 						<TMPL_IF NAME="PLAYER_AVAILABLE">
 							<div class='icoclip' style='text-align: left;'>
 								&nbsp;&nbsp;&nbsp;<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/green.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_GREEN>
-								<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/yellow.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_YELLOW>
-								<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/red.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_RED>
+								<!--<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/yellow.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_YELLOW>-->
+								&nbsp;&nbsp;<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/red.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_RED>
 							</div>
 						</TMPL_IF>
 						<br>
@@ -304,40 +304,40 @@ div.scrollmenu a:hover {
                     <td style="width: 55%; height: 45px;">
                         <fieldset id="engine-selector" data-role="controlgroup" data-type="horizontal">
                             <input type="radio" name="t2s_engine" id="tts_voicerss" value="1001">
-                            <TMPL_VAR SELECTEDINSTANZ2>
-                                <label for="tts_voicerss">VoiceRSS</label>
 
-                                <input type="radio" name="t2s_engine" id="tts_mac_osx" value="3001">
-                                <TMPL_VAR SELECTEDINSTANZ3>
-                                    <label for="tts_mac_osx">OSX</label>
+                                <label for="tts_voicerss">🔊 VoiceRSS</label>
+
+                                <!--<input type="radio" name="t2s_engine" id="tts_mac_osx" value="3001">
+
+                                    <label for="tts_mac_osx">💻 OSX</label>-->
 
                                     <input type="radio" name="t2s_engine" id="tts_polly" value="4001">
-                                    <TMPL_VAR SELECTEDINSTANZ4>
-                                        <label for="tts_polly">AWS Polly</label>
+                                    
+                                        <label for="tts_polly">☁️ Polly</label>
 
                                         <input type="radio" name="t2s_engine" id="tts_piper" value="9012">
-                                        <TMPL_VAR SELECTEDINSTANZ5>
-                                            <label for="tts_piper">Piper</label>
+                                        
+                                            <label for="tts_piper">🎙️ Piper</label>
 
                                             <input type="radio" name="t2s_engine" id="tts_respvoice" value="6001">
-                                            <TMPL_VAR SELECTEDINSTANZ6>
-                                                <label for="tts_respvoice">RespVoice</label>
+                                            
+                                                <label for="tts_respvoice">🔈 RespVoice</label>
 
                                                 <input type="radio" name="t2s_engine" id="tts_google_cloud" value="8001">
-                                                <TMPL_VAR SELECTEDINSTANZ8>
-                                                    <label for="tts_google_cloud">Google Cloud</label>
+                                                
+                                                    <label for="tts_google_cloud">🌐 Google Cloud</label>
 													
 													<input type="radio" name="t2s_engine" id="tts_azure" value="9001">
-													<TMPL_VAR SELECTEDINSTANZ9>
-														<label for="tts_azure">Azure AI</label>
+													
+														<label for="tts_azure">💎 MS Azure AI</label>
 
-														<input type="radio" name="t2s_engine" id="tts_google" value="7001">
-														<TMPL_VAR SELECTEDINSTANZ7>
-															<label for="tts_google">Google</label>
+														<!--<input type="radio" name="t2s_engine" id="tts_google" value="7001">
+														
+															<label for="tts_google">🌐 Google</label>-->
 															
 																<input type="radio" name="t2s_engine" id="tts_elevenlabs" value="9011">
-																<TMPL_VAR SELECTEDINSTANZ10>
-																	<label for="tts_elevenlabs">ElevenLabs</label>
+																
+																	<label for="tts_elevenlabs">🧠 ElevenLabs</label>
 														
 															
 
@@ -418,7 +418,7 @@ div.scrollmenu a:hover {
                                 <TMPL_VAR T2S.BUTTON_VOICES>
                             </a>
                         </div>
-                    
+                    </td>
                 </tr>
                 <tr class="ttsconfig colsec 4001">
                     <td style="width: 25%; height: 48px;">
@@ -1086,7 +1086,7 @@ div.scrollmenu a:hover {
             console.log("prepareTTSConfigFields");
             const selectedEngine = $('#engine-selector input:checked');
             if (selectedEngine) {
-                var test = $('.ttsconfig').not('.' + selectedEngine.val()).not('.ttsbaseconfig').hide();
+                $('.ttsconfig').not('.' + selectedEngine.val()).not('.ttsbaseconfig').hide();
                 $('.' + selectedEngine.val() + ', .ttsbaseconfig').show();
             } else {
                 $('.ttsconfig').hide();
@@ -1208,6 +1208,7 @@ div.scrollmenu a:hover {
             //} 	
             } else if (document.main_form.tts_piper.checked == true) {
                 var selectedlanguage = $("#t2slang option:selected").val();
+				$('t2slang').selectmenu('refresh', true);
                 //console.log("popvoice: " + selectedlanguage);
                 if (selectedlanguage) {
                     $('#voice').empty();
@@ -1388,6 +1389,7 @@ div.scrollmenu a:hover {
         function populateLanguageBasedOnJSON(url) {
             console.log("populateLanguageBasedOnJSON");
             $.getJSON(url, function(listlang) {
+				$('#t2slang').append('<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>');
                 $.each(listlang, function(index, value) {
                     $('#t2slang').append('<option value="' + value.value + '">' + value.country + '</option>');
                 });
@@ -1460,7 +1462,7 @@ div.scrollmenu a:hover {
 			var key = document.getElementById('apikey').value;
 			//var key = "77ba25e2758b20cb43867c8926ef30d0";
 			const options = {method: 'GET', headers: {"xi-api-key": "" + key + ""}};
-			var url = 'https://api.elevenlabs.io/v1/voices';
+			var url = 'https://api.elevenlabs.io/v2/voices';
 			fetch(url, options)
 				.then(response => response.json())
 				.then(function(data)  {
@@ -1520,6 +1522,7 @@ div.scrollmenu a:hover {
 				let selectId;
 				const data = JSON.parse(response);
 				console.log(data);
+				$('#t2slang').append('<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>');
 				data.forEach((voice, index) => {
 					$('#t2slang').append("<option value=\"" + voice.ShortName + "\">" + voice.LocaleName + " - " + voice.DisplayName + " - " + voice.Gender + "</option>");
 					if (voice.Name.indexOf(defvoice) > 0) {
@@ -1595,7 +1598,8 @@ div.scrollmenu a:hover {
             if (url.endsWith("json")) {
                 populateLanguageBasedOnJSON(url);
             }
-
+			$('#t2slang').selectmenu('refresh', true);
+            $('#voice').selectmenu('refresh', true);
             $('select').selectmenu();
             $('select').selectmenu('refresh', true);
             // pass ISO code of selected language to field for info
@@ -1617,7 +1621,7 @@ div.scrollmenu a:hover {
 		
 		
 		
-		function checkfile(filename)   {
+		function checkfile(filename, e)   {
 			$.post("/plugins/<TMPL_VAR PLUGINDIR>/system/ms_inbound.php");
 			var url = '/plugins/<TMPL_VAR PLUGINDIR>/system/'  + filename; 
 			var http = new XMLHttpRequest(); 
@@ -1630,7 +1634,7 @@ div.scrollmenu a:hover {
 								scrollTop: $("#zone1").offset().top
 								}, 500);
 								$("#zone1").focus();
-								e.preventDefault();
+								if (e) e.preventDefault();
 			} else {
 				//console.log("Filename: " + filename);
 				downloadFile(filename);
@@ -2030,17 +2034,6 @@ div.scrollmenu a:hover {
 						return false;
                         e.preventDefault();
                     }
-                } else if (document.getElementById('tts_mac_osx').checked == true) {
-					conѕole.log("OSX checked");
-                    if (selectlang == null) {
-						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'Mac OSX');
-                        $('html, body').animate({
-                            scrollTop: $("#info").offset().top
-                        }, 1000);
-                        $("#t2slang").focus();
-						return false;
-                        e.preventDefault();
-                    }
                 } else if (document.getElementById('tts_voicerss').checked == true) {
 					console.log("VoiceRSS checked");
 					if (apidata.length != 32)    {
@@ -2133,18 +2126,7 @@ div.scrollmenu a:hover {
 						return false;
                         e.preventDefault();
                     }
-                } else if (document.getElementById('tts_google').checked == true) {
-					console.log("Google checked");
-                    if (selectlang == null) {
-						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'Google');
-                        $('html, body').animate({
-                            scrollTop: $("#info").offset().top
-                        }, 1000);
-                        $("#t2slang").focus();
-						return false;
-                        e.preventDefault();
-                    }
-				} else if (document.getElementById('tts_azure').checked == true) {
+                } else if (document.getElementById('tts_azure').checked == true) {
 					console.log("Azure checked");
 					if (apidata.length != 32 && apidata.length != 36 && apidata.length != 84)    {
 						dialog('<TMPL_VAR ERRORS.ERR_APIKEY32>', 'OK', 'error', 'Azure');

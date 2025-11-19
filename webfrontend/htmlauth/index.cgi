@@ -530,10 +530,11 @@ sub form
 	my $rmpvol	 	 = $cfg->{TTS}->{volrampto};
 	my $storepath 	 = $cfg->{SYSTEM}->{path};
 	
-	# check if voice already saved
+	# check if language/voice already been saved to display Test Message in UI
 	my $testvoice 	 = $cfg->{TTS}->{voice};
-	if ($testvoice ne "")   {
-		$template->param("TESTVOICE", $testvoice);
+	my $testlang 	 = $cfg->{TTS}->{messageLang};
+	if ($testvoice ne "" || $testlang ne "")   {
+		$template->param("TESTVOICE", 1);
 	}
 	
 	# read Radiofavorites
@@ -600,16 +601,12 @@ sub form
 			$rowssonosplayer .= "<td style='height: 28px; width: 2%;'><img src='/plugins/$lbpplugindir/images/sonos_logo_sm.png' border='0' width='50' height='50' align='middle'/></td>\n";
 		}
 		$rowssonosplayer .= "<td style='height: 28px; width: 17%;'><input type='text' id='ip$countplayers' name='ip$countplayers' size='30' value='$config->{$key}->[0]' style='width: 100%; background-color: #e6e6e6;'></td>\n";
-		# Column Audioclip usage Pics green/red/yellow
-		if (exists($config->{$key}[11]) and is_enabled($config->{$key}[11]))   {
-			if (exists($config->{$key}[12]) and is_enabled($config->{$key}[12]) and $config->{$key}[9] eq "2")   {
-				$rowssonosplayer .= "<td style='height: 30px; width: 10px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/green.png' border='0' width='26' height='28' align='center'/></div></td>\n";
-			} elsif (exists($config->{$key}[12]) and is_disabled($config->{$key}[12]) and $config->{$key}[9] eq "2")   { 
-				$rowssonosplayer .= "<td style='height: 30px; width: 10px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/yellow.png' border='0' width='26' height='28' align='center'/></div></td>\n";
-			} elsif ($config->{$key}[9] ne "2")   { 
-				$rowssonosplayer .= "<td style='height: 30px; width: 10px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/red.png' border='0' width='26' height='28' align='center'/></div></td>\n";
-			}
-		}
+		# Column Audioclip usage Pics green/red
+		if ($config->{$key}[9] ne "2" or ($config->{$key}[11] ne "1"))   {
+			$rowssonosplayer .= "<td style='height: 30px; width: 10px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/red.png' border='0' width='26' height='28' align='center'/></div></td>\n";
+		} else {
+			$rowssonosplayer .= "<td style='height: 30px; width: 10px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/green.png' border='0' width='26' height='28' align='center'/></div></td>\n";
+		}			
 		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='$config->{$key}->[3]'></td>\n";
 		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='$config->{$key}->[4]'></td>\n";
 		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$config->{$key}->[5]'></td>\n";
@@ -769,7 +766,7 @@ sub form
 		my $jsonparser = LoxBerry::JSON->new();
 		my $config = $jsonparser->open(filename => $lbphtmldir."/voice_engines/piper-voices/".$file, writeonclose => 0);
 		# adding basic info to JSON object $pcfgp 
-		my @piper = (  {"country" => $config->{language}->{name_native},
+		my @piper = (  {"country" => $config->{language}->{country_english},
 						"value" => $config->{language}->{code}
 		});
 		push @data_piper, @piper;

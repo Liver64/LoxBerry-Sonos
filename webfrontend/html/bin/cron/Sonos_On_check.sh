@@ -9,4 +9,4 @@
 
 # Will be executed as user "loxberry".
 
-/usr/bin/php /opt/loxberry/webfrontend/html/plugins/sonos4lox/bin/check_on_state.php
+/usr/bin/php REPLACELBHOMEDIR/webfrontend/html/plugins/sonos4lox/bin/check_on_state.php
