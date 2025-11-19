@@ -396,88 +396,238 @@ function URL_Encode($string) {
 **/
 function AddMemberTo() { 
 
-	global $sonoszone, $master, $sleepaddmember;
-	
-	#print_r(MEMBER);
-	#print_r(GROUPMASTER);
-	
-	if(MEMBER != "empty") {
-		foreach (MEMBER as $zone)  {
-			$master = GROUPMASTER;
-			if ($zone != $master)    {
-				try {
-					$sonos = new SonosAccess($sonoszone[$zone][0]);
-					$sonos->BecomeCoordinatorOfStandaloneGroup();
-					$sonos->SetAVTransportURI("x-rincon:" . trim($sonoszone[$master][1])); 
-					LOGGING("helper.php: Zone '".$zone."' has been added to Master '".$master."'",6);
-				} catch (Exception $e) {
-					LOGGING("helper.php: Zone '".$zone."' could not be added to Master '".$master."'",4);
-				}
-			}
-			#usleep((int)($sleepaddmember * 1000000));
-			usleep(200000);
-		}
-		#volume_group();
-		$sonos = new SonosAccess($sonoszone[$master][0]);
-	}	
-}
+    global $sonoszone, $master;
 
+    if (MEMBER == "empty") {
+        return;
+    }
+
+    $masterUID = trim($sonoszone[$master][1]);
+
+    // Array für parallele Handles
+    $requests = [];
+
+    // 1) PARALLELE JOIN-REQUESTS anstoßen
+    foreach (MEMBER as $zone) {
+
+        if ($zone == $master) {
+            continue;
+        }
+
+        try {
+
+            $endpoint = $sonoszone[$zone][0];   // IP des Mitglieds
+
+            // SOAP-Body vorbereiten
+            $body = '
+                <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+                            s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+                    <s:Body>
+                        <u:SetAVTransportURI xmlns:u="urn:schemas-upnp-org:service:AVTransport:1">
+                            <InstanceID>0</InstanceID>
+                            <CurrentURI>x-rincon:' . $masterUID . '</CurrentURI>
+                            <CurrentURIMetaData></CurrentURIMetaData>
+                        </u:SetAVTransportURI>
+                    </s:Body>
+                </s:Envelope>';
+
+            // CURL parallel vorbereiten
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, "http://".$endpoint.":1400/MediaRenderer/AVTransport/Control");
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                "Content-Type: text/xml; charset=\"utf-8\"",
+                "SOAPAction: \"urn:schemas-upnp-org:service:AVTransport:1#SetAVTransportURI\"",
+                "Connection: close"
+            ]);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 2);
+
+            $requests[] = [
+                "zone" => $zone,
+                "handle" => $ch
+            ];
+
+        } catch (Exception $e) {
+            LOGGING("helper.php: Zone '".$zone."' could not be prepared for join", 4);
+        }
+    }
+
+    // 2) Alle Requests parallel ausführen
+    $mh = curl_multi_init();
+    foreach ($requests as $req) {
+        curl_multi_add_handle($mh, $req["handle"]);
+    }
+
+    do {
+        $status = curl_multi_exec($mh, $active);
+    } while ($active && $status == CURLM_OK);
+
+    // 3) Ergebnisse prüfen
+    foreach ($requests as $req) {
+        $resp = curl_multi_getcontent($req["handle"]);
+        $code = curl_getinfo($req["handle"], CURLINFO_HTTP_CODE);
+
+        if ($code == 200) {
+            LOGGING("helper.php: Zone '".$req["zone"]."' joined '".$master."'", 6);
+        } else {
+            LOGGING("helper.php: Zone '".$req["zone"]."' JOIN FAILED (HTTP $code)", 4);
+        }
+
+        curl_multi_remove_handle($mh, $req["handle"]);
+        curl_close($req["handle"]);
+    }
+
+    curl_multi_close($mh);
+}
 
 
 /**
-*
-* Function : CreateMember --> bereitet array von member vor
-*
-* @param: 	empty
-* @return:  create array
-**/
-function CreateMember($member = "", $masterzone = "") { 
+ * CreateMember()
+ *
+ * Baut aus member=... (inkl. member=all) die Member-Liste auf,
+ * definiert die globale Konstante MEMBER (Array!),
+ * definiert GROUPMASTER,
+ * und joint alle relevanten Player zum Master.
+ *
+ * Voll kompatibel zu deiner PROD-Restore-Logik:
+ *  - restoreGroupZone() verwendet $member
+ *  - Sonos.php kann weiterhin MEMBER (Konstante) verwenden
+ */
+function CreateMember()
+{
+    global $master, $sonoszone, $member; // <-- $member jetzt explizit global
 
-	global $sonoszone, $members, $sonoszonen, $sonos, $memberon, $config, $master, $profile_selected, $samearray, $memberarray, $config, $sleepaddmember, $profile, $masterzone;
-	
-	if (isset($_GET['member']))   {	
-	
-		@unlink($profile_selected);
-		
-		$members = $_GET['member'];
-		if($members === 'all') {
-			LOGGING("helper.php: Member has been entered",5);
-			$memberon = array();
-			foreach ($sonoszone as $zone => $ip) {
-				# exclude master Zone
-				if ($zone != MASTER) {
-					array_push($memberon, $zone);
-				}
-			}
-			LOGGING("helper.php: All Players will be added to Player: ".MASTER, 5);	
-		} else {
-			LOGGING("helper.php: Member has been entered",5);
-			$memberon = array();
-			# member from URL
-			$memberon = explode(',', $members);
-		}
-		#print_r($memberon);
-		$members = $memberon;
-		$member = member_on($memberon);
-		
-		# Remove master from group if not single
-		$check_stat = getZoneStatus($master);
-		if ($check_stat != (string)"single")  {
-			$sonos = new SonosAccess($sonoszone[$master][0]);
-			$sonos->BecomeCoordinatorOfStandaloneGroup();
-			LOGGING("helper.php: Zone '".$master."' has been ungrouped.",5);
-		}
-		# Define global Constante MEMBER
-		if (!defined('MEMBER')) {
-			define("MEMBER", $member);
-		}
-		if (!defined('GROUPMASTER')) {
-			define("GROUPMASTER",$master);
-		}
-		AddMemberTo();
-	}
+    // --- Master prüfen ----------------------------------------------------
+    if (empty($master) || !isset($sonoszone[$master])) {
+        LOGERR("helper.php: CreateMember: Master is not set or unknown – aborting grouping.");
+        return;
+    }
+
+    $masterRincon = $sonoszone[$master][1];
+
+    // --- 1) member= Parameter auslesen ------------------------------------
+    if (!isset($_GET['member']) || trim($_GET['member']) === '') {
+        LOGWARN("helper.php: CreateMember: No 'member' parameter in URL – nothing to group.");
+        return;
+    }
+
+    $rawMember = trim($_GET['member']);
+    LOGOK("helper.php: Member has been entered");
+
+    $targets = [];
+
+    // --- member=all -> alle bekannten Zonen außer Master ------------------
+    if (strtolower($rawMember) === 'all') {
+        foreach ($sonoszone as $zone => $zoneData) {
+            if ($zone === $master) {
+                continue;
+            }
+            $targets[] = $zone;
+        }
+        LOGOK("helper.php: All Players will be added to Player: ".$master);
+    }
+    // --- CSV: member=zone1,zone2,... -------------------------------------
+    else {
+        $parts = explode(',', $rawMember);
+        foreach ($parts as $z) {
+            $z = trim($z);
+            if ($z === '' || $z === $master) {
+                continue;
+            }
+            if (!isset($sonoszone[$z])) {
+                LOGWARN("helper.php: CreateMember: Unknown player '".$z."' in member list – skipped.");
+                continue;
+            }
+            $targets[] = $z;
+        }
+        LOGOK("helper.php: Selected Players from URL will be added to Player: ".$master);
+    }
+
+    // Dubletten entfernen
+    $targets = array_values(array_unique($targets));
+
+    if (empty($targets)) {
+        LOGWARN("helper.php: CreateMember: No valid members found after filtering – nothing to do.");
+        return;
+    }
+
+    // --- 2) Online-State prüfen ------------------------------------------
+    $finalTargets = [];
+    foreach ($targets as $zone) {
+
+        if (function_exists('checkZoneOnline')) {
+            if (!checkZoneOnline($zone)) {
+                LOGWARN("helper.php: CreateMember: Player '".$zone."' seems to be offline – skipped.");
+                continue;
+            }
+        }
+
+        $finalTargets[] = $zone;
+        LOGOK("helper.php: Member '".$zone."' has been prepared to Member array");
+    }
+
+    if (empty($finalTargets)) {
+        LOGWARN("helper.php: CreateMember: After online check no members remain – aborting.");
+        return;
+    }
+
+    // --- 3) Globale Member-Liste + Konstante setzen ----------------------
+    // Diese Liste wird von restoreGroupZone() benutzt!
+    $member = $finalTargets;
+
+    if (!isset($member) || !is_array($member)) {
+        $member = [];
+    }
+
+    if (!defined('MEMBER')) {
+        define("MEMBER", $member);     // Single Source of Truth als Konstante
+        LOGINF("helper.php: MEMBER constant defined with ".count($member)." entries.");
+    }
+
+    if (!defined('GROUPMASTER')) {
+        define("GROUPMASTER", $master);
+    }
+
+    // --- 4) Join-Logik mit Retry -----------------------------------------
+    $maxRetries    = 2;
+    $retryDelayUs  = 200000; // 200 ms
+
+    foreach ($member as $zone) {
+        $ip = $sonoszone[$zone][0];
+
+        $attempt  = 0;
+        $success  = false;
+        $lastErr  = '';
+
+        while ($attempt < $maxRetries && !$success) {
+            $attempt++;
+
+            try {
+                $sonos = new SonosAccess($ip);
+
+                // Join der Member-Zone zum Master
+                $sonos->SetAVTransportURI("x-rincon:".$masterRincon);
+
+                LOGINF("helper.php: Zone '".$zone."' joined '".$master."' (attempt ".$attempt.")");
+                $success = true;
+
+            } catch (Exception $e) {
+                $lastErr = $e->getMessage();
+                LOGWARN("helper.php: Zone '".$zone."' JOIN FAILED on attempt ".$attempt." (".$lastErr.")");
+
+                if ($attempt < $maxRetries) {
+                    usleep($retryDelayUs);
+                }
+            }
+        }
+
+        if (!$success) {
+            LOGWARN("helper.php: Zone '".$zone."' JOIN FAILED permanently after ".$maxRetries." attempts (".$lastErr.")");
+        }
+    }
 }
-
 
 /**
 *
@@ -1571,7 +1721,7 @@ function vversion()    {
 	$url = 'https://raw.githubusercontent.com/Liver64/LoxBerry-Sonos/master/webfrontend/html/release/release.cfg';
 	$as = is_file($url);
 	var_dump($as);
-	$file = "/opt/loxberry/data/plugins/sonos4lox/plugin.cfg";
+	$file = "REPLACELBHOMEDIR/data/plugins/sonos4lox/plugin.cfg";
 	file_put_contents($file, file_get_contents($url));
 	$wq = json_decode(file_get_contents($file, TRUE));
 	#print_r($wq);
@@ -1934,6 +2084,99 @@ function array_filter_recursive( array $array, callable $callback = null ) {
 
     return $array;
 }
+
+function sonosGetZoneGroups(string $anyPlayerIp): array {
+    // 1) SOAP: GetZoneGroupState (ein Call, alle Gruppen)
+    $soap = <<<XML
+<?xml version="1.0" encoding="utf-8"?>
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+            s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+  <s:Body>
+    <u:GetZoneGroupState xmlns:u="urn:schemas-upnp-org:service:ZoneGroupTopology:1"/>
+  </s:Body>
+</s:Envelope>
+XML;
+
+    $ch = curl_init("http://{$anyPlayerIp}:1400/ZoneGroupTopology/Control");
+    curl_setopt_array($ch, [
+        CURLOPT_POST            => true,
+        CURLOPT_RETURNTRANSFER  => true,
+        CURLOPT_HTTPHEADER      => [
+            'Content-Type: text/xml; charset="utf-8"',
+            'SOAPACTION: "urn:schemas-upnp-org:service:ZoneGroupTopology:1#GetZoneGroupState"'
+        ],
+        CURLOPT_POSTFIELDS      => $soap,
+        CURLOPT_TIMEOUT         => 2,
+        CURLOPT_CONNECTTIMEOUT  => 1,
+    ]);
+    $resp = curl_exec($ch);
+    if ($resp === false) throw new RuntimeException("ZGT request failed: ".curl_error($ch));
+    curl_close($ch);
+
+    // 2) Outer SOAP → inner XML aus ZoneGroupState extrahieren
+    $dom = new DOMDocument();
+    $dom->loadXML($resp);
+    $xpath = new DOMXPath($dom);
+    $xpath->registerNamespace('s', 'http://schemas.xmlsoap.org/soap/envelope/');
+    $xpath->registerNamespace('u', 'urn:schemas-upnp-org:service:ZoneGroupTopology:1');
+
+    $stateNode = $xpath->query('//u:GetZoneGroupStateResponse/ZoneGroupState')->item(0);
+    if (!$stateNode) throw new RuntimeException("No ZoneGroupState in response");
+    $zgsXml = $stateNode->nodeValue;
+
+    // 3) Das eigentliche Topology-XML parsen
+    $zgs = new SimpleXMLElement($zgsXml);
+
+    $groups = []; // groupId => ['coordinator'=>rincon, 'members'=> [rincon => ['name'=>..., 'ip'=>..., 'location'=>...]]]
+    foreach ($zgs->ZoneGroups->ZoneGroup as $zg) {
+        $groupId    = (string)$zg['ID'];
+        $coordinator= (string)$zg['Coordinator'];
+        $groups[$groupId] = ['coordinator'=>$coordinator, 'members'=>[]];
+
+        foreach ($zg->ZoneGroupMember as $m) {
+            $uuid     = (string)$m['UUID'];                // RINCON_XXXXXXXXXXXXXX
+            $name     = (string)$m['ZoneName'];
+            $loc      = (string)$m['Location'];            // http://IP:1400/xml/...
+            // IP aus Location schneiden:
+            $ip = parse_url($loc, PHP_URL_HOST);
+
+            $groups[$groupId]['members'][$uuid] = [
+                'name'     => $name,
+                'ip'       => $ip,
+                'location' => $loc,
+                'satMap'   => (string)$m['HTSatChanMapSet'] ?? null, // nützlich bei Surrounds
+            ];
+        }
+    }
+    return $groups;
+}
+
+// Optional: IP → RINCON direkt vom Player
+function sonosGetRinconByIp(string $ip): ?string {
+    $xml = @file_get_contents("http://{$ip}:1400/xml/device_description.xml");
+    if (!$xml) return null;
+    $sx = new SimpleXMLElement($xml);
+    $udn = (string)$sx->device->UDN; // "uuid:RINCON_XXXXXXXXXX01400"
+    return preg_match('~uuid:(RINCON_[A-Z0-9]+)~', $udn, $m) ? $m[1] : null;
+}
+
+// Beispiel: Gruppe eines bestimmten Players (per IP) holen
+function getGroupMembersForPlayerIp(string $anyPlayerIp, string $targetIp): array {
+    $groups = sonosGetZoneGroups($anyPlayerIp);
+    $rincon = sonosGetRinconByIp($targetIp);
+    if (!$rincon) return [];
+
+    foreach ($groups as $g) {
+        if (isset($g['members'][$rincon])) {
+            return [
+                'coordinator' => $g['coordinator'],
+                'members'     => array_keys($g['members']) // Liste aller RINCONs
+            ];
+        }
+    }
+    return [];
+}
+
 
 
 /**

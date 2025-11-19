@@ -44,6 +44,8 @@ register_shutdown_function('shutdown');
 // setze korrekte Zeitzone
 date_default_timezone_set(date("e"));
 
+$time_start = microtime(true);
+
 # prepare variables
 $home = $lbhomedir;
 $hostname = gethostname();										// hostname LoxBerry
@@ -125,8 +127,7 @@ if (!isset($_GET['debug']))    {
 				"loglevel" => 7,
 				];
 	$level = "7";
-	$time_start = microtime(true);
-	
+		
 	#@unlink($lbplogdir."/SOAP-Log-".$heute.".log");
 }
 
@@ -1202,6 +1203,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			echo "Die Radio URL lautet: " . $GetPositionInfo["URI"];
 		break;
 		
+
 		case 'add':
 			AddDetailsToMetadata();
 		break;
