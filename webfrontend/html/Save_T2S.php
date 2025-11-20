@@ -11,9 +11,93 @@
  */
 
 /**
+ * Liefert für das aktuell ausgewählte Sound-Profil die beteiligten Zonen
+ * (Profil-Master + Member), aber OHNE Gruppen-/Lautstärke-Änderungen
+ * vorzunehmen. Wird nur für die Snapshot-Erstellung verwendet.
+ *
+ * @return array  Liste von Zonennamen
+ */
+function getZonesFromProfileForSnapshot()
+{
+    global $sonoszone, $profile_details;
+
+    // Kein Profil in der URL → nichts zu tun
+    if (empty($_GET['profile'])) {
+        return [];
+    }
+
+    // Profil-Details laden, falls noch nicht vorhanden
+    if (empty($profile_details)) {
+        if (function_exists('get_profile_details')) {
+            // get_profile_details() setzt $profile_details global
+            get_profile_details();
+        } else {
+            // Ohne Helfer können wir nichts Sinnvolles tun
+            return [];
+        }
+    }
+
+    if (!is_array($profile_details) || !isset($profile_details[0]['Group'])) {
+        return [];
+    }
+
+    $zones     = [];
+    $groupType = $profile_details[0]['Group'];
+
+    switch ($groupType) {
+
+        // Vollständige Gruppe aus Profil (Master + Member)
+        case 'Group':
+            foreach ($sonoszone as $zoneName => $_) {
+                // Master-Zone (Flag "Master" = true)
+                if (!empty($profile_details[0]['Player'][$zoneName][0]['Master']) &&
+                    is_enabled($profile_details[0]['Player'][$zoneName][0]['Master'])) {
+                    $zones[] = $zoneName;
+                }
+
+                // Member-Zonen (Flag "Member" == "true")
+                if (!empty($profile_details[0]['Player'][$zoneName][0]['Member']) &&
+                    $profile_details[0]['Player'][$zoneName][0]['Member'] === "true") {
+                    $zones[] = $zoneName;
+                }
+            }
+            break;
+
+        // Single-Profil → nur der markierte Master
+        case 'Single':
+            foreach ($sonoszone as $zoneName => $_) {
+                if (!empty($profile_details[0]['Player'][$zoneName][0]['Master']) &&
+                    is_enabled($profile_details[0]['Player'][$zoneName][0]['Master'])) {
+                    $zones[] = $zoneName;
+                }
+            }
+            break;
+
+        // NoGroup → nur der globale MASTER
+        case 'NoGroup':
+            if (defined('MASTER') && isset($sonoszone[MASTER])) {
+                $zones[] = MASTER;
+            }
+            break;
+    }
+
+    // Nur gültige Zonen, Duplikate entfernen
+    $zones = array_values(
+        array_unique(
+            array_filter($zones, function ($z) use ($sonoszone) {
+                return isset($sonoszone[$z]);
+            })
+        )
+    );
+
+    return $zones;
+}
+
+/**
  * Ermittelt die Zonen, die für den Snapshot gesichert werden sollen.
  *
  * Logik:
+ *   - Zonen aus Sound-Profil (falls profile=... gesetzt)
  *   - Master ($master) immer sichern (sofern gültig)
  *   - Wenn $_GET['member'] == 'all' → alle Zonen sichern
  *   - Sonst:
@@ -28,17 +112,27 @@ function getZonesToSaveForT2S()
 
     $zonesToSave = [];
 
+    // ------------------------------------------------------------------
+    // 0) Zonen aus Sound-Profil (Profil-Master + Member) vorab ergänzen
+    // ------------------------------------------------------------------
+    if (!empty($_GET['profile'])) {
+        $profileZones = getZonesFromProfileForSnapshot();
+        foreach ($profileZones as $z) {
+            $zonesToSave[$z] = true;
+        }
+    }
+
     // Master immer sichern, wenn vorhanden
     if (!empty($master) && isset($sonoszone[$master])) {
         $zonesToSave[$master] = true;
     }
 
     // member-Parameter aus dem Request auslesen (falls vorhanden)
-    $rawMember = isset($_GET['member']) ? trim($_GET['member']) : '';
+    $rawMember   = isset($_GET['member']) ? trim($_GET['member']) : '';
     $memberParam = strtolower($rawMember);
 
     // ------------------------------------------------------------------
-    // 1) member=all → komplette System-Sicherung (aktuelles Verhalten)
+    // 1) member=all → komplette System-Sicherung
     // ------------------------------------------------------------------
     if ($memberParam === 'all') {
         foreach ($sonoszone as $zoneName => $_) {
@@ -90,7 +184,7 @@ function getZonesToSaveForT2S()
         }
     }
 
-    // Fallback: falls am Ende immer noch nur sehr wenig drin ist, ist das ok.
+    // Fallback: was hier drin ist, wird gesichert – mehr brauchen wir nicht.
     return array_keys($zonesToSave);
 }
 
@@ -139,14 +233,14 @@ function saveZonesStatus()
         $actual[$player]['TransportSettings'] = $sonos->GetTransportSettings($player);
 
         // Koordinator bleibt wie bisher am Szenario-Master orientiert
-        $actual[$player]['Coordinator']       = $master;
+        $actual[$player]['Coordinator'] = $master;
 
         // Gruppenzugehörigkeit (bestehende Logik aus getGroup() weiterverwenden)
-        $actual[$player]['Grouping']          = getGroup($player);
+        $actual[$player]['Grouping'] = getGroup($player);
 
         // ZoneStatus (master/member/single)
-        $zonestatus                          = getZoneStatus($player);
-        $actual[$player]['ZoneStatus']       = $zonestatus;
+        $zonestatus                    = getZoneStatus($player);
+        $actual[$player]['ZoneStatus'] = $zonestatus;
 
         // Typ-Erkennung nur für Master / Single-Zonen
         if ($zonestatus != "member") {

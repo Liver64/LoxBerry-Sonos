@@ -418,6 +418,7 @@ function play_tts($filename) {
 			// Set path if T2S
 			LOGGING("play_t2s.php: Path for T2S been adopted", 7);	
 		}
+		#print_r($actual);
 		// if BEAM etc. is in Modus TV switch to Playlist 1st
 		if (substr($actual[$master]['PositionInfo']["TrackURI"], 0, 18) == "x-sonos-htastream:")  {  
 			$sonos->SetQueue("x-rincon-queue:".$coord[1]."#0");
@@ -761,20 +762,38 @@ function sendAudioMultiClip($errortext = "") {
 	
 	LOGDEB("play_t2s.php: Audioclip: Notification for Player has been called.");
 	
-	$zones    = array();
+	$zones     = array();
 	$tmp_zones = array();
 
-	if (isset($_GET['member']) and !isset($_GET['paused'])) {
+	// === NEU: Fastpath für Group T2S via Sound Profile (ohne clip-Parameter) ===
+	if (!isset($_GET['clip']) && isset($_GET['profile']) && !isset($_GET['paused']) && !isset($_GET['member'])) {
+
+		$zones = getProfileZonesForAudioclip();
+		if (empty($zones)) {
+			LOGWARN("play_t2s.php: Audioclip: No players resolved from Sound Profile '".$_GET['profile']."'. Falling back to legacy group path.");
+			return; // sendgroupmessage() fällt dann in den klassischen Pfad zurück
+		}
+		$r = implode(',', $zones);
+		LOGGING("play_t2s.php: Audioclip: Players ".$r." for audioclip retrieved from Profile (AUTO).", 7);
+
+	// === Bestehende Logik: member=... ===
+	} elseif (isset($_GET['member']) and !isset($_GET['paused'])) {
+
 		$zones_all = $_GET['member'];
 		$zones = array_merge($zones, audioclip_handle_members($zones_all));
 		$zones = array_keys($zones);
 		$r = implode(',', $zones);
 		LOGGING("play_t2s.php: Audioclip: Players ".$r." for audioclip retrieved from URL", 7);
+
+	// === Bestehende Logik: profile=... + clip (alte Multi-Clip-Profile) ===
 	} elseif (isset($_GET['profile']) and !isset($_GET['paused']))   {
+
 		$zones = createArrayFromGroupProfile();	
 		$r = implode(',', $zones);
 		LOGGING("play_t2s.php: Audioclip: Players ".$r." for audioclip retrieved from Profile", 7);
-	}
+
+	// === Bestehende Logik: paused=1 ===
+	} 
 	if (isset($_GET['paused']))    {
 		$zones = IdentPausedPlayers();
 		$zones = array_keys($zones);
@@ -782,13 +801,12 @@ function sendAudioMultiClip($errortext = "") {
 		LOGGING("play_t2s.php: Audioclip: Players ".$r." for audioclip retrieved from currently not streaming player", 7);
 	}
 
+	// Fähigkeiten prüfen + S1 rausfiltern (wie gehabt)
 	foreach ($zones as $key)   {
-		// determine if Player is fully supported/partial supported for AUDIO_CLIP
 		if(isset($sonoszone[$key][11]) && is_enabled($sonoszone[$key][11]) && $sonoszone[$key][9] <> "1") {
 			LOGDEB("play_t2s.php: Audioclip: Player '". $key ."' does support Audio Clip");
 			array_push($tmp_zones, $key);
 		} else {
-			// remove S1 player from clip
 			LOGWARN("play_t2s.php: Audioclip: Player '". $key ."' does not support Audio Clip. The Player has been removed by plugin!");
 		}
 	}
@@ -799,7 +817,7 @@ function sendAudioMultiClip($errortext = "") {
 	
 	proccessing_time();
 }
-	
+
 
 /**
 * Function : doorbell --> playing file as doorbell
@@ -985,7 +1003,7 @@ function handle_message($zones, $source) {
 /**
  * Helper : audioclip_can_handle_group
  *
- * Prüft, ob die aktuelle Anfrage (member=..., paused=..., master)
+ * Prüft, ob die aktuelle Anfrage (member=..., profile=..., paused=...)
  * komplett über AudioClip gefahren werden kann.
  *
  * Bedingungen:
@@ -996,62 +1014,85 @@ function handle_message($zones, $source) {
  */
 function audioclip_can_handle_group()
 {
-	global $sonoszone, $master;
+    global $sonoszone, $master;
 
-	$zones = array();
+    $zones = array();
 
-	// 1) member=... aus URL
-	if (isset($_GET['member']) && !isset($_GET['paused'])) {
-		$memberParam = trim($_GET['member'] ?? '');
+    // --- 1) member=... aus URL --------------------------------------------
+    if (isset($_GET['member']) && !isset($_GET['paused'])) {
 
-		if ($memberParam === 'all') {
-			// 'all' → alle bekannten Zonen (wie in audioclip_handle_members)
-			foreach (SONOSZONE as $z => $zoneData) {
-				$zones[] = $z;
-			}
-		} else {
-			$members = explode(',', $memberParam);
-			foreach ($members as $z) {
-				$z = trim($z);
-				if ($z !== '') {
-					$zones[] = $z;
-				}
-			}
-		}
+        $memberParam = trim($_GET['member'] ?? '');
 
-		// Master immer ergänzen, falls nicht explizit enthalten
-		if (!in_array($master, $zones)) {
-			$zones[] = $master;
-		}
-	}
-	// 2) paused=1 → alle pausierten Player
-	elseif (isset($_GET['paused'])) {
-		if (function_exists('IdentPausedPlayers')) {
-			$paused = IdentPausedPlayers();
-			if (!empty($paused) && is_array($paused)) {
-				$zones = array_keys($paused);
-			}
-		}
-	} else {
-		// Weder member noch paused → hier kein AudioClip-Auto-Mode
-		return array(false, array());
-	}
+        if ($memberParam === 'all') {
+            // 'all' → alle bekannten Zonen (wie in audioclip_handle_members)
+            foreach (SONOSZONE as $z => $zoneData) {
+                $zones[] = $z;
+            }
+        } else {
+            $members = explode(',', $memberParam);
+            foreach ($members as $z) {
+                $z = trim($z);
+                if ($z !== '') {
+                    $zones[] = $z;
+                }
+            }
+        }
 
-	if (empty($zones)) {
-		return array(false, array());
-	}
+        // Master immer ergänzen, falls nicht explizit enthalten
+        if (!in_array($master, $zones)) {
+            $zones[] = $master;
+        }
 
-	// Fähigkeiten prüfen: jeder Player muss AudioClip können
-	foreach ($zones as $z) {
-		if (!isset($sonoszone[$z]) && !defined('SONOSZONE')) {
-			return array(false, $zones);
-		}
-		if (!zone_supports_audioclip($z)) {
-			return array(false, $zones);
-		}
-	}
+    // --- 2) profile=... → Zonen aus Sound-Profil --------------------------
+    } elseif (isset($_GET['profile']) && !isset($_GET['paused'])) {
 
-	return array(true, $zones);
+        // NEU: Zonen aus Sound Profil lesen (ohne SOAP/Volume-Seiteneffekte)
+        $zones = getProfileZonesForAudioclip();
+
+    // --- 3) paused=1 → alle pausierten Player -----------------------------
+    } elseif (isset($_GET['paused'])) {
+
+        if (function_exists('IdentPausedPlayers')) {
+            $paused = IdentPausedPlayers();
+            if (!empty($paused) && is_array($paused)) {
+                $zones = array_keys($paused);
+            }
+        }
+
+    } else {
+        // weder member noch profile noch paused → kein AudioClip-Autopath
+        return array(false, array());
+    }
+
+    // Duplikate entfernen
+    $zones = array_values(array_unique($zones));
+
+    if (empty($zones)) {
+        return array(false, array());
+    }
+
+    // Fähigkeiten prüfen: jeder Player muss AudioClip können
+    foreach ($zones as $z) {
+
+        if (!isset($sonoszone[$z])) {
+            LOGWARN("play_t2s.php: Audioclip: Zone '".$z."' not found in sonoszone[] – forcing classic T2S path.");
+            return array(false, $zones);
+        }
+
+        if (!zone_supports_audioclip($z)) {
+
+            // Spezialfall: S1 → gewünschte Logzeile
+            if (isset($sonoszone[$z][9]) && $sonoszone[$z][9] == "1") {
+                LOGINF("play_t2s.php: Audioclip: Zone '".$z."' is S1 → forcing classic T2S path.");
+            } else {
+                LOGINF("play_t2s.php: Audioclip: Zone '".$z."' does not support Audio Clip → forcing classic T2S path.");
+            }
+
+            return array(false, $zones);
+        }
+    }
+
+    return array(true, $zones);
 }
 
 
@@ -1067,13 +1108,12 @@ function sendgroupmessage() {
 		exit;
 	}
 
-	// Volume-Handling vorziehen (wird für AudioClip ebenfalls genutzt)
+	// Volume-Handling vorziehen (wird auch für AudioClip genutzt)
 	if(isset($_GET['volume']) or isset($_GET['groupvolume']))  { 
 		isset($_GET['volume']) ? $groupvolume = $_GET['volume'] : $groupvolume = $_GET['groupvolume'];
 		if ((!is_numeric($groupvolume)) or ($groupvolume < 0) or ($groupvolume > 200)) {
 			LOGGING("play_t2s.php: The entered volume of ".$groupvolume." must be even numeric or between 0 and 200! Please correct", 4);	
 		} else {
-			// globales Volume auch für AudioClip-Pfad setzen
 			$volume = $groupvolume;
 		}
 	}
@@ -1089,12 +1129,7 @@ function sendgroupmessage() {
 	}
 
 	/**
-	 * === AUDIOCLIP AUTO-MODE (gruppiert per Sonos AudioClip) ==========================
-	 *
-	 * Wenn alle Zielplayer AUDIO_CLIP unterstützen, dann:
-	 *  - kein klassisches Gruppieren via SOAP
-	 *  - kein Queue-Gefrickel
-	 *  - stattdessen: direkter Aufruf von sendAudioMultiClip()
+	 * === AUDIOCLIP AUTO-MODE (gruppiert per AudioClip, wenn alle können) ===
 	 */
 	list($canClip, $zonesClip) = audioclip_can_handle_group();
 
@@ -1106,66 +1141,101 @@ function sendgroupmessage() {
 			LOGINF("play_t2s.php: Audioclip: All target players support Audio Clip – switching to AudioClip group mode (AUTO).");
 		}
 
-		// In diesem Pfad übernimmt sendAudioMultiClip:
-		//  - create_tts()
-		//  - Zonen-Ermittlung
-		//  - AudioClip-Aufruf (REST)
 		sendAudioMultiClip($errortext);
-		// klassischer Gruppen-T2S-Pfad wird komplett übersprungen
 		return;
 	}
 
 	/**
-	 * === Klassischer Gruppen-T2S Pfad ===============================
-	 * (fallback wenn AudioClip nicht möglich ist)
+	 * === Klassischer Gruppen-T2S Pfad (Fallback) ============================
 	 */
 
+	// TTS erzeugen (oder messageid prüfen)
 	create_tts($errortext);
+
+	// Snapshot IMMER vor dem Umbauen der Gruppen
 	$save = saveZonesStatus(); // saves all Zones Status
-	// create Group for Announcement
-            
-	if (isset($_GET['profile']))    {
-		$member = createArrayFromGroupProfile();
-		$masterrincon = $sonoszone[$master][1]; 
-	} else {
-		$masterrincon = $sonoszone[$master][1]; 
-		$sonos = new SonosAccess($sonoszone[$master][0]);
-		try {
-			$sonos->BecomeCoordinatorOfStandaloneGroup();
-			LOGGING("play_t2s.php: Group Coordinator '$master' has been made to single zone", 7);	
-		} catch (Exception $e) {
-			LOGGING("play_t2s.php: Member '$master' could not be made to Single Zone! Something went wrong, please try again", 4);	
-		}
-		#AddMember();
-		CreateMember();
+
+	// Sound-Profile können Master/Members überschreiben
+	if (isset($_GET['profile'])) {
+		// legt u.a. T2SMASTER und MEMBER fest, aber NOCH KEINE Volumes setzen
+		$member = createArrayFromGroupProfile(false);
 	}
 
-	if (defined('T2SMASTER'))   {
+	// T2SMASTER (aus Profil) übernimmt die Kontrolle über $master
+	if (defined('T2SMASTER')) {
 		$master = T2SMASTER;
 	}
-	if (!defined('MEMBER')) {
+
+	// Ab hier ist $master der finale Szenario-Master
+	$masterrincon = $sonoszone[$master][1];
+
+	if (isset($member) && !defined('MEMBER')) {
 		define("MEMBER", $member);
 	}
-            
-	if (isset($_GET['profile']))    {
-		// grouping
-		foreach ($member as $zone) {
-			$handle = is_file($folfilePlOn."".$zone.".txt");
-			if($handle === true) {
-				$sonos = new SonosAccess($sonoszone[$zone][0]);
-				if ($zone != $master) {
-					try {
-						$sonos->SetAVTransportURI("x-rincon:" . $masterrincon);
-						LOGGING("play_t2s.php: Member '$zone' is now connected to Master Zone '$master'", 6);								
-					} catch (Exception $e) {
-						LOGGING("play_t2s.php: Member '$zone' could not be added to Master $master. Maybe Zone is Offline or Time restrictions entered!", 4);	
-					}
-					$sonos->SetMute(false);
-				}
-			}
-		}
+
+	// ----------------------------------------------------------------------
+	// Master IMMER erst entgruppieren → garantiert Single-Zone
+	// ----------------------------------------------------------------------
+	try {
+		$sonos = new SonosAccess($sonoszone[$master][0]);
+		$sonos->BecomeCoordinatorOfStandaloneGroup();
+		LOGINF("play_t2s.php: Player '".$master."' has been removed from existing Group (standalone for Group T2S).");
+	} catch (Exception $e) {
+		LOGWARN("play_t2s.php: Could not prepare master '".$master."' as standalone group. Reason: ".$e->getMessage());
 	}
 
+	// ----------------------------------------------------------------------
+	// Gruppierung aufbauen
+	// ----------------------------------------------------------------------
+	if (!isset($_GET['profile'])) {
+		// Klassischer Weg (member=...)
+		CreateMember();
+	} else {
+		// Profil-basierte Gruppierung: nur Zonen mit PlayerStatus-File
+		foreach ($member as $zone) {
+			$file = $folfilePlOn . $zone . ".txt";
+
+			if (is_file($file)) {
+				#LOGDEB("play_t2s.php: Player status file '$file' found for zone '$zone'.");
+
+				// Master selbst nicht erneut umbinden
+				if ($zone != $master) {
+					try {
+						// Zone ggf. erst aus bestehender Gruppe lösen
+						$zmState = getZoneStatus($zone);
+						$zSonos  = new SonosAccess($sonoszone[$zone][0]);
+
+						if ($zmState == "master" || $zmState == "member") {
+							$zSonos->BecomeCoordinatorOfStandaloneGroup();
+							LOGINF("play_t2s.php: Player '".$zone."' has been removed from existing Group before grouping to master '".$master."'.");
+						}
+
+						// Jetzt erst an neuen Master anhängen
+						$zSonos->SetAVTransportURI("x-rincon:" . $masterrincon);
+						LOGGING("play_t2s.php: Member '$zone' is now connected to Master Zone '$master'", 6);
+						$zSonos->SetMute(false);
+
+					} catch (Exception $e) {
+						LOGWARN("play_t2s.php: Member '$zone' could not be added to Master $master. Reason: ".$e->getMessage());
+					}
+				}
+			} else {
+				LOGDEB("play_t2s.php: Player status file '$file' NOT found for zone '$zone' – skipping grouping.");
+			}
+		}
+
+		// >>> HIER: Profil-Volumes NACH dem Gruppieren anwenden <<<
+		if (!empty($member) && is_array($member)) {
+			VolumeProfile($member);
+		}
+}
+
+
+	
+
+	// ----------------------------------------------------------------------
+	// Queue vorbereiten und T2S abspielen
+	// ----------------------------------------------------------------------
 	$sonos = new SonosAccess($sonoszone[$master][0]);
 	$sonos->SetPlayMode('0'); 
 	$sonos->SetQueue("x-rincon-queue:". $masterrincon ."#0");
@@ -1173,19 +1243,21 @@ function sendgroupmessage() {
 		$sonos->Stop();
 	}
 
-	// Regelung des Volumes für T2S
+	// ggf. Gruppen-Volume setzen
 	if (isset($groupvolume))  {
 		$sonos->SetVolume($groupvolume);
 	}
 	volume_group();
+
+	// T2S spielen
 	play_tts($messageid);
 
-	// wiederherstellen der Ursprungszustände
+	// Ursprungszustände wiederherstellen
 	LOGGING("play_t2s.php: *** Restore previous settings will be called ***", 6);	
 	restoreGroupZone();		
 	LOGGING("play_t2s.php: *** Text-to-speech successful processed ***", 6);	
 	proccessing_time();
-} 
+}
 
 
 /**
@@ -1338,9 +1410,9 @@ function audioclip_handle_members($member) {
 
 function audioclip_multi_post_request($zones, $clipType="CUSTOM", $priority="LOW", $tts="") {
 
-	global $volume, $guid, $memberon, $time_start;
+	global $volume, $guid, $memberon, $time_start, $profile_zone_volumes;
 	
-	if(empty($zones)) return;
+	if (empty($zones)) return;
 
 	$headers = [
 		'Content-Type: application/json',
@@ -1352,10 +1424,34 @@ function audioclip_multi_post_request($zones, $clipType="CUSTOM", $priority="LOW
 	foreach ($zones as $zone) {
 		
 		$url = audioclip_zone_url($zone);
+		if (!$url) {
+			continue;
+		}
 
-		if (!$url) continue;
+		// ------------------------------------------------------
+		// Effektive Lautstärke bestimmen:
+		//  1) Profil-Lautstärke (falls vorhanden)
+		//  2) URL-Parameter &volume (falls gesetzt)
+		//  3) globales $volume (Fallback)
+		// ------------------------------------------------------
+		$baseVolume = null;
 
-		$jsonData = audiclip_json_data(audioclip_zone_max_volume($zone, $volume), $clipType, $priority, $tts);
+		if (isset($profile_zone_volumes[$zone]) && is_numeric($profile_zone_volumes[$zone])) {
+			$baseVolume = (int)$profile_zone_volumes[$zone];
+		} elseif (isset($_GET['volume']) && $_GET['volume'] !== '') {
+			$baseVolume = (int)$_GET['volume'];
+		} elseif (isset($volume)) {
+			$baseVolume = (int)$volume;
+		} else {
+			// Minimaler Fallback, falls nix gesetzt ist
+			$baseVolume = 20;
+		}
+
+		// Auf zonenspezifisches Max-Volume clampen
+		$volForJson = audioclip_zone_max_volume($zone, $baseVolume);
+
+		// JSON für diesen Player bauen
+		$jsonData = audiclip_json_data($volForJson, $clipType, $priority, $tts);
 
 		$worker = curl_init();
 		curl_setopt_array($worker, [
@@ -1501,10 +1597,8 @@ function audiclip_json_data($volume, $clipType="CUSTOM", $priority="LOW", $tts="
 	
 	global $time_start;
 	
-	// Get Volume (Backup)
-	if (isset($_GET['volume']))    {
-		$volume = $_GET['volume'];
-	}
+	// $volume wird vom Aufrufer (z.B. audioclip_multi_post_request)
+	// bereits passend bestimmt (Profil / URL / Fallback).
 	
 	if ($clipType == "CUSTOM") {
 		$jsonData = array(
@@ -1530,6 +1624,7 @@ function audiclip_json_data($volume, $clipType="CUSTOM", $priority="LOW", $tts="
 	return $jsonDataEncoded;
 }
 
+
 function audioclip_zone_url($zone) {
 	
 	global $sonoszone, $time_start;
@@ -1540,14 +1635,35 @@ function audioclip_zone_url($zone) {
 	return false;
 }
 
-function audioclip_zone_max_volume($zone, $volume) {
+function audioclip_zone_max_volume($zone, $requestedVolume) {
 	global $sonoszone, $time_start;
 
 	$zoneData = $sonoszone[$zone] ?? null;
-	if ($zoneData) return min($volume, $zoneData[5]);
 
-	return $volume;
+	// Zone bekannt → Max-Volume vorhanden
+	if ($zoneData) {
+		$maxVolume   = isset($zoneData[5]) ? (int)$zoneData[5] : 200;
+		$effective   = min((int)$requestedVolume, $maxVolume);
+
+		// Detail-Log pro Zone
+		LOGDEB(
+			"play_t2s.php: Audioclip: Effective volume for '".$zone.
+			"' is ".$effective." (requested=".$requestedVolume.
+			", max=".$maxVolume.")"
+		);
+
+		return $effective;
+	}
+
+	// Fallback, falls Zone nicht in sonoszone[] gefunden wird
+	LOGDEB(
+		"play_t2s.php: Audioclip: No max volume known for zone '".$zone.
+		"' – using requested volume ".$requestedVolume
+	);
+
+	return (int)$requestedVolume;
 }
+
 
 function audioclip_url($ip, $rincon) {
 	global $time_start;
@@ -1691,11 +1807,10 @@ function checkGroupProfile()   {
 /**
 * Function : createArrayFromGroupProfile --> create Array From Group Profile
 *
-* @param: 
-* @return: array
+* @param bool $applyVolume  Wenn true, werden die Profil-Volumes sofort gesetzt
+* @return array
 **/
-
-function createArrayFromGroupProfile()   {
+function createArrayFromGroupProfile($applyVolume = true)   {
 
 	global $lbpconfigdir, $profile_details, $vol_config, $zone, $master, $zone_volumes, $masterzone, $sonoszone, $memberincl;
 
@@ -1728,7 +1843,12 @@ function createArrayFromGroupProfile()   {
 				array_push($memberincl, $zone);
 			}
 		}
-		VolumeProfile($memberincl);
+
+		// VOLUMES HIER NUR NOCH WENN EXPLIZIT GEWÜNSCHT
+		if ($applyVolume) {
+			VolumeProfile($memberincl);
+		}
+
 		// in case of Group T2S remove master (1st element) from member group
 		if (!isset($_GET['clip']) && !isset($_GET['action']) == "doorbell")   {
 			array_shift($memberincl);
@@ -1750,7 +1870,11 @@ function createArrayFromGroupProfile()   {
 				$memberincl[0] = $player;
 			}
 		}
-		VolumeProfile($memberincl);
+
+		if ($applyVolume) {
+			VolumeProfile($memberincl);
+		}
+
 		if (!defined('T2SMASTER')) {
 			define("T2SMASTER", $memberincl[0]);
 		}
@@ -1759,11 +1883,16 @@ function createArrayFromGroupProfile()   {
 	
 	case 'NoGroup';
 		$memberincl[0] = MASTER;
-		VolumeProfile($memberincl);
+
+		if ($applyVolume) {
+			VolumeProfile($memberincl);
+		}
+
 		return $memberincl;
 	break;
 	}
 }
+
 
 
 /**
@@ -1814,6 +1943,78 @@ function get_profile_details()   {
 	}
 	return $profile_details;
 }
+
+/**
+ * Helper: Resolve target zones from a Sound Profile for AudioClip AUTO mode
+ *
+ * - liest das JSON wie get_profile_details()
+ * - liefert eine einfache Zoneliste (Master + Member) zurück
+ * - baut zusätzlich $profile_zone_volumes[zone] = Profil-Lautstärke
+ *   (wird NUR für AudioClip benutzt, kein SOAP-SetVolume!)
+ */
+function getProfileZonesForAudioclip()
+{
+    global $lbpconfigdir, $vol_config, $profile_zone_volumes;
+
+    $profile_zone_volumes = array();
+
+    if (!isset($_GET['profile'])) {
+        return array();
+    }
+
+    $volprofil = $_GET['profile'];
+    $volconfig = json_decode(file_get_contents($lbpconfigdir . "/" . $vol_config . ".json"), TRUE);
+    $profile_details = array_multi_search(strtolower($volprofil), $volconfig, $sKey = "");
+
+    if (!$profile_details) {
+        LOGERR("play_t2s.php: Entered Sound Profile '".$_GET['profile']."' in URL could not be found. Please check your entry!");
+        return array();
+    }
+
+    $zones      = array();
+    $masterZone = null;
+
+    // Master + Member aus dem Profil sammeln und Profil-Lautstärken merken
+    foreach (SONOSZONE as $player => $value) {
+
+        // Master?
+        if (isset($profile_details[0]['Player'][$player][0]['Master']) &&
+            is_enabled($profile_details[0]['Player'][$player][0]['Master'])) {
+
+            $masterZone = $player;
+            $zones[]    = $player;
+
+            if (isset($profile_details[0]['Player'][$player][0]['Volume']) &&
+                $profile_details[0]['Player'][$player][0]['Volume'] !== "") {
+
+                $profile_zone_volumes[$player] = (int)$profile_details[0]['Player'][$player][0]['Volume'];
+            }
+
+        // Member?
+        } elseif (isset($profile_details[0]['Player'][$player][0]['Member']) &&
+                  is_enabled($profile_details[0]['Player'][$player][0]['Member'])) {
+
+            $zones[] = $player;
+
+            if (isset($profile_details[0]['Player'][$player][0]['Volume']) &&
+                $profile_details[0]['Player'][$player][0]['Volume'] !== "") {
+
+                $profile_zone_volumes[$player] = (int)$profile_details[0]['Player'][$player][0]['Volume'];
+            }
+        }
+    }
+
+    // Fallback: Wenn im Profil kein Master markiert ist, nimm MASTER (falls definiert)
+    if (!$masterZone && defined('MASTER')) {
+        $zones[] = MASTER;
+    }
+
+    // Duplikate entfernen
+    $zones = array_values(array_unique($zones));
+
+    return $zones;
+}
+
 
 
 

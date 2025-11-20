@@ -558,7 +558,7 @@ sub form
 	$rowsradios .= "<input type='hidden' id='countradios' name='countradios' value='$countradios'>\n";
 	$template->param("ROWSRADIO", $rowsradios);
 	
-	# *******************************************************************************************************************
+		# *******************************************************************************************************************
 	# Player einlesen
 	
 	our $rowssonosplayer;
@@ -569,6 +569,10 @@ sub form
 	my $error_volume = $SL{'T2S.ERROR_VOLUME_PLAYER'};
 	my $filename;
 	my $config = $cfg->{sonoszonen};
+
+	# Neu: Zähler für Audioclip-Fähigkeit
+	my $audioclip_ok_count    = 0;   # Zonen, die Audioclip wirklich können (grün)
+	# $countplayers existiert ja schon und zählt alle Zonen (Gesamtzahl)
 	
 	use POSIX qw(strftime); 
 	$currtime = strftime("%H:%M",localtime()); 
@@ -587,6 +591,7 @@ sub form
 			$rowssonosplayer .= "<td style='height: 28px; width: 16%;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$room' style='width: 100%; background-color: #e6e6e6;'></td>\n";
 		}
 		$rowssonosplayer .= "<td style='height: 25px; width: 6px;'><input type='checkbox' class='chk-checked' name='mainchk$countplayers' id='mainchk$countplayers' value='$config->{$key}->[6]' align='center'></td>\n";
+
 		# highlight old S1 Devices red
 		if (($config->{$key}[9]) eq "1")   {
 			$rowssonosplayer .= "<td style='height: 28px; width: 15%;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='$config->{$key}->[2]' style='width: 100%; background-color: red; color:white'></td>\n";
@@ -594,6 +599,7 @@ sub form
 		} else {
 			$rowssonosplayer .= "<td style='height: 28px; width: 15%;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='$config->{$key}->[2]' style='width: 100%; background-color: #e6e6e6;'></td>\n";
 		}
+
 		# Column Sonos Player Logo
 		if (-e $filename) {
 			$rowssonosplayer .= "<td style='height: 28px; width: 2%;'><img src='/plugins/$lbpplugindir/images/icon-$config->{$key}->[7].png' border='0' width='50' height='50' align='middle'/></td>\n";
@@ -601,12 +607,17 @@ sub form
 			$rowssonosplayer .= "<td style='height: 28px; width: 2%;'><img src='/plugins/$lbpplugindir/images/sonos_logo_sm.png' border='0' width='50' height='50' align='middle'/></td>\n";
 		}
 		$rowssonosplayer .= "<td style='height: 28px; width: 17%;'><input type='text' id='ip$countplayers' name='ip$countplayers' size='30' value='$config->{$key}->[0]' style='width: 100%; background-color: #e6e6e6;'></td>\n";
+
 		# Column Audioclip usage Pics green/red
-		if ($config->{$key}[9] ne "2" or ($config->{$key}[11] ne "1"))   {
-			$rowssonosplayer .= "<td style='height: 30px; width: 10px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/red.png' border='0' width='26' height='28' align='center'/></div></td>\n";
-		} else {
+		# Bedingung für "kann Audioclip"
+		my $audioclip_ok = ($config->{$key}[9] eq "2" && $config->{$key}[11] eq "1") ? 1 : 0;
+
+		if ($audioclip_ok) {
 			$rowssonosplayer .= "<td style='height: 30px; width: 10px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/green.png' border='0' width='26' height='28' align='center'/></div></td>\n";
-		}			
+			$audioclip_ok_count++;
+		} else {
+			$rowssonosplayer .= "<td style='height: 30px; width: 10px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/red.png' border='0' width='26' height='28' align='center'/></div></td>\n";
+		}
 		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='$config->{$key}->[3]'></td>\n";
 		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='$config->{$key}->[4]'></td>\n";
 		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$config->{$key}->[5]'></td>\n";
@@ -695,7 +706,21 @@ sub form
 	}
 	$rowssonosplayer .= "<input type='hidden' id='countplayers' name='countplayers' value='$countplayers'>\n";
 	$template->param("ROWSSONOSPLAYER", $rowssonosplayer);
-	LOGDEB "Sonos Player has been loaded.";	
+
+	# Neu: Werte für das Template durchreichen
+	$template->param(
+		AUDIOCLIP_OK_COUNT    => $audioclip_ok_count,
+		AUDIOCLIP_TOTAL_COUNT => $countplayers,
+	);
+
+	if ($countplayers > 0 && $audioclip_ok_count == $countplayers) {
+		$template->param(AUDIOCLIP_ALL_SUPPORTED => 1);
+	} else {
+		$template->param(AUDIOCLIP_ALL_SUPPORTED => 0);
+	}
+
+	LOGDEB "Sonos Player has been loaded. Audioclip capability: $audioclip_ok_count of $countplayers zones support Audioclip.";
+
 	
 	if ( $countsoundbars < 1 ) {
 		$rowssoundbar .= "<tr class='tvmon_header'><td colspan=8>" . $SL{'ZONES.SONOS_EMPTY_SOUNDBARS'} . "</td></tr>\n";
@@ -1161,7 +1186,7 @@ sub save
 	&save_cronjob;
 	
 	#&print_save;
-	#my $on = qx(/usr/bin/php $lbphtmldir/bin/check_on_state.php);	
+	my $on = qx(/usr/bin/php $lbphtmldir/bin/check_on_state.php);	
 	return;
 	
 }

@@ -117,14 +117,30 @@ div.scrollmenu a:hover {
                             </tr>
                             <TMPL_VAR ROWSSONOSPLAYER>
                         </table>
-						<TMPL_IF NAME="PLAYER_AVAILABLE">
-							<div class='icoclip' style='text-align: left;'>
-								&nbsp;&nbsp;&nbsp;<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/green.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_GREEN>
-								<!--<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/yellow.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_YELLOW>-->
-								&nbsp;&nbsp;<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/red.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_RED>
-							</div>
-						</TMPL_IF>
-						<br>
+							<TMPL_IF NAME="PLAYER_AVAILABLE">
+								<div class='icoclip' style='text-align: left;'>
+									&nbsp;&nbsp;&nbsp;<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/green.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_GREEN>
+									<!--<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/yellow.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_YELLOW>-->
+									&nbsp;&nbsp;<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/red.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_RED>
+								</div>
+
+								<!-- Neue Zeile direkt darunter -->
+								<div class='icoclip' style='text-align: center; margin-top: 2px;'>
+									<TMPL_IF NAME="AUDIOCLIP_ALL_SUPPORTED">
+										<TMPL_VAR T2S.AUDIOCLIP_ALL_SUPPORTED>
+									<TMPL_ELSE>
+										<TMPL_VAR T2S.AUDIOCLIP_PARTIAL_SUPPORT>
+									</TMPL_IF>
+								</div>
+							</TMPL_IF>
+							<br>
+
+							<TMPL_IF NAME="SWGEN">
+								<div class='icoclip' style='text-align: left;'>
+									&nbsp;&nbsp;&nbsp;<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/S1_high.png' border='0' width='65' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_SWGENERATION>
+								</div>
+							</TMPL_IF>
+							<br>
 						<TMPL_IF NAME="SWGEN">
 							<div class='icoclip' style='text-align: left;'>
 								&nbsp;&nbsp;&nbsp;<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/S1_high.png' border='0' width='65' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_SWGENERATION>
