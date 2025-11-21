@@ -51,8 +51,8 @@ else
 	wget -P $5/webfrontend/html/plugins/$3/voice_engines/piper-voices https://huggingface.co/Thorsten-Voice/Hessisch/resolve/main/Thorsten-Voice_Hessisch_Piper_high-Oct2023.onnx
 	wget -P $5/webfrontend/html/plugins/$3/voice_engines/piper-voices https://huggingface.co/Thorsten-Voice/Hessisch/resolve/main/Thorsten-Voice_Hessisch_Piper_high-Oct2023.onnx.json
 	#wget -P $5/webfrontend/html/plugins/$3/voice_engines/piper-voices https://huggingface.co/rhasspy/piper-voices/resolve/main/voices.json
-	wget -P $5/webfrontend/html/plugins/$3/voice_engines/piper-voices https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/high/de_DE-thorsten-high.onnx
-	wget -P $5/webfrontend/html/plugins/$3/voice_engines/piper-voices https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/high/de_DE-thorsten-high.onnx.json
+	wget -P $5/webfrontend/html/plugins/$3/voice_engines/piper-voices https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/low/de_DE-thorsten-low.onnx
+	wget -P $5/webfrontend/html/plugins/$3/voice_engines/piper-voices https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten/low/de_DE-thorsten-low.onnx.json
 	wget -P $5/webfrontend/html/plugins/$3/voice_engines/piper-voices https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten_emotional/medium/de_DE-thorsten_emotional-medium.onnx
 	wget -P $5/webfrontend/html/plugins/$3/voice_engines/piper-voices https://huggingface.co/rhasspy/piper-voices/resolve/main/de/de_DE/thorsten_emotional/medium/de_DE-thorsten_emotional-medium.onnx.json
 	/usr/bin/php REPLACELBPHTMLDIR/bin/add_details_piper_tts.php

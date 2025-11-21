@@ -1,10 +1,6 @@
 [
     {
-        "country": "Deutsch",
+        "country": "Germany",
         "value": "de_DE"
-    },
-    {
-        "country": null,
-        "value": null
     }
 ]

@@ -1,132 +1,247 @@
 [
- {
-   "t2s": 1001,
-   "country": "Deutsch (German)",
-   "value": "de-DE"
- },
- {
-   "t2s": 1001,
-   "country": "Chinese, Mandarin (China)",
-   "value": "zh-CN"
- },
- {
-   "t2s": 1001,
-   "country": "Chinese, Mandarin (Hong Kong)",
-   "value": "zh-HK"
- },
- {
-   "t2s": 1001,
-   "country": "Chinese, Mandarin (Taiwan)",
-   "value": "zh-TW"
- },
- {
-   "t2s": 1001,
-   "country": "Danish",
-   "value": "da-DK"
- },
- {
-   "t2s": 1001,
-   "country": "Dutch",
-   "value": "nl-NL"
- },
- {
-   "t2s": 1001,
-   "country": "English (Australian)",
-   "value": "en-AU"
- },
- {
-   "t2s": 1001,
-   "country": "English (British)",
-   "value": "en-GB"
- },
- {
-   "t2s": 1001,
-   "country": "English (Canada)",
-   "value": "en-CA"
- },
- {
-   "t2s": 1001,
-   "country": "English (Indian)",
-   "value": "en-IN"
- },
- {
-   "t2s": 1001,
-   "country": "English (US)",
-   "value": "en-US"
- },
- {
-   "t2s": 1001,
-   "country": "Finnish (Finland)",
-   "value": "fi-FI"
- },
- {
-   "t2s": 1001,
-   "country": "French",
-   "value": "fr-FR"
- },
- {
-   "t2s": 1001,
-   "country": "French (Canadian)",
-   "value": "fr-CA"
- },
- {
-   "t2s": 1001,
-   "country": "Catalan (Spain)",
-   "value": "ca-ES"
- },
- {
-   "t2s": 1001,
-   "country": "Italian",
-   "value": "it-IT"
- },
- {
-   "t2s": 1001,
-   "country": "Japanese",
-   "value": "ja-JP"
- },
- {
-   "t2s": 1001,
-   "country": "Korean (South Korea)",
-   "value": "ko-KR"
- },
- {
-   "t2s": 1001,
-   "country": "Norwegian",
-   "value": "nb-NO"
- },
- {
-   "t2s": 1001,
-   "country": "Polish",
-   "value": "pl-PL"
- },
- {
-   "t2s": 1001,
-   "country": "Portuguese (Brazilian)",
-   "value": "pt-BR"
- },
- {
-   "t2s": 1001,
-   "country": "Portuguese (European)",
-   "value": "pt-PT"
- },
- {
-   "t2s": 1001,
-   "country": "Russian",
-   "value": "ru-RU"
- },
- {
-   "t2s": 1001,
-   "country": "Spanish (Castilian)",
-   "value": "es-ES"
- },
- {
-   "t2s": 1001,
-   "country": "Spanish (Mexico)",
-   "value": "es-MX"
- },
- {
-   "t2s": 1001,
-   "country": "Swedish",
-   "value": "sv-SE"
- }
+  {
+    "t2s": "1001",
+    "country": "Arabic (Egypt)",
+    "value": "ar-eg"
+  },
+  {
+    "t2s": "1001",
+    "country": "Arabic (Saudi Arabia)",
+    "value": "ar-sa"
+  },
+  {
+    "t2s": "1001",
+    "country": "Bulgarian",
+    "value": "bg-bg"
+  },
+  {
+    "t2s": "1001",
+    "country": "Catalan",
+    "value": "ca-es"
+  },
+  {
+    "t2s": "1001",
+    "country": "Chinese (China)",
+    "value": "zh-cn"
+  },
+  {
+    "t2s": "1001",
+    "country": "Chinese (Hong Kong)",
+    "value": "zh-hk"
+  },
+  {
+    "t2s": "1001",
+    "country": "Chinese (Taiwan)",
+    "value": "zh-tw"
+  },
+  {
+    "t2s": "1001",
+    "country": "Croatian",
+    "value": "hr-hr"
+  },
+  {
+    "t2s": "1001",
+    "country": "Czech",
+    "value": "cs-cz"
+  },
+  {
+    "t2s": "1001",
+    "country": "Danish",
+    "value": "da-dk"
+  },
+  {
+    "t2s": "1001",
+    "country": "Dutch (Belgium)",
+    "value": "nl-be"
+  },
+  {
+    "t2s": "1001",
+    "country": "Dutch (Netherlands)",
+    "value": "nl-nl"
+  },
+  {
+    "t2s": "1001",
+    "country": "English (Australia)",
+    "value": "en-au"
+  },
+  {
+    "t2s": "1001",
+    "country": "English (Canada)",
+    "value": "en-ca"
+  },
+  {
+    "t2s": "1001",
+    "country": "English (Great Britain)",
+    "value": "en-gb"
+  },
+  {
+    "t2s": "1001",
+    "country": "English (India)",
+    "value": "en-in"
+  },
+  {
+    "t2s": "1001",
+    "country": "English (Ireland)",
+    "value": "en-ie"
+  },
+  {
+    "t2s": "1001",
+    "country": "English (United States)",
+    "value": "en-us"
+  },
+  {
+    "t2s": "1001",
+    "country": "Finnish",
+    "value": "fi-fi"
+  },
+  {
+    "t2s": "1001",
+    "country": "French (Canada)",
+    "value": "fr-ca"
+  },
+  {
+    "t2s": "1001",
+    "country": "French (France)",
+    "value": "fr-fr"
+  },
+  {
+    "t2s": "1001",
+    "country": "French (Switzerland)",
+    "value": "fr-ch"
+  },
+  {
+    "t2s": "1001",
+    "country": "German (Austria)",
+    "value": "de-at"
+  },
+  {
+    "t2s": "1001",
+    "country": "German (Germany)",
+    "value": "de-de"
+  },
+  {
+    "t2s": "1001",
+    "country": "German (Switzerland)",
+    "value": "de-ch"
+  },
+  {
+    "t2s": "1001",
+    "country": "Greek",
+    "value": "el-gr"
+  },
+  {
+    "t2s": "1001",
+    "country": "Hebrew",
+    "value": "he-il"
+  },
+  {
+    "t2s": "1001",
+    "country": "Hindi",
+    "value": "hi-in"
+  },
+  {
+    "t2s": "1001",
+    "country": "Hungarian",
+    "value": "hu-hu"
+  },
+  {
+    "t2s": "1001",
+    "country": "Indonesian",
+    "value": "id-id"
+  },
+  {
+    "t2s": "1001",
+    "country": "Italian",
+    "value": "it-it"
+  },
+  {
+    "t2s": "1001",
+    "country": "Japanese",
+    "value": "ja-jp"
+  },
+  {
+    "t2s": "1001",
+    "country": "Korean",
+    "value": "ko-kr"
+  },
+  {
+    "t2s": "1001",
+    "country": "Malay",
+    "value": "ms-my"
+  },
+  {
+    "t2s": "1001",
+    "country": "Norwegian",
+    "value": "nb-no"
+  },
+  {
+    "t2s": "1001",
+    "country": "Polish",
+    "value": "pl-pl"
+  },
+  {
+    "t2s": "1001",
+    "country": "Portuguese (Brazil)",
+    "value": "pt-br"
+  },
+  {
+    "t2s": "1001",
+    "country": "Portuguese (Portugal)",
+    "value": "pt-pt"
+  },
+  {
+    "t2s": "1001",
+    "country": "Romanian",
+    "value": "ro-ro"
+  },
+  {
+    "t2s": "1001",
+    "country": "Russian",
+    "value": "ru-ru"
+  },
+  {
+    "t2s": "1001",
+    "country": "Slovak",
+    "value": "sk-sk"
+  },
+  {
+    "t2s": "1001",
+    "country": "Slovenian",
+    "value": "sl-si"
+  },
+  {
+    "t2s": "1001",
+    "country": "Spanish (Mexico)",
+    "value": "es-mx"
+  },
+  {
+    "t2s": "1001",
+    "country": "Spanish (Spain)",
+    "value": "es-es"
+  },
+  {
+    "t2s": "1001",
+    "country": "Swedish",
+    "value": "sv-se"
+  },
+  {
+    "t2s": "1001",
+    "country": "Tamil",
+    "value": "ta-in"
+  },
+  {
+    "t2s": "1001",
+    "country": "Thai",
+    "value": "th-th"
+  },
+  {
+    "t2s": "1001",
+    "country": "Turkish",
+    "value": "tr-tr"
+  },
+  {
+    "t2s": "1001",
+    "country": "Vietnamese",
+    "value": "vi-vn"
+  }
 ]

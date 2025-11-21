@@ -1,185 +1,100 @@
 <?php
-function t2s($textstring, $filename)
 
+/**
+ * ElevenLabs TTS Integration
+ * Uses voice_id directly to avoid "voice not found" errors
+ */
+
+function t2s(array $params): void
 {
-	
-	global $config, $voice, $urlvoice, $audio, $apikey, $filename, $textstring, $modelid, $lbpplugindir, $lbhomedir, $stability, $similarity_boost, $style, $use_speaker_boost, $jsondata;
-	
-	echo "<PRE>";
-	
-	# check if API key exists
-	if (isset($config['TTS']['apikey']))    {
-		$apikey = $config['TTS']['apikey'];
-	}
-	
-	# set Variables
-	$audio = "mp3_44100_128";
-	$modelid = "eleven_multilingual_v2";
-	$stability = "0.5";
-	$similarity_boost = "0.75";
-	$style = "0";
-	$use_speaker_boost = true;
+    global $config;
 
-	LOGOK("voice_engines/ElevenLabs.php: ElevenLabs has been selected");	
-	
-	# get voice even from config or URL
-	if (isset($_GET['voice'])) {
-		$urlvoice = $_GET['voice'];
-		$voice = getVoices($urlvoice);
-		LOGDEB("voice_engines/ElevenLabs.php: Voice '".$urlvoice."' has been adopted from URL");	
-	} else {
-		$voice = $config['TTS']['voice'];
-	}
-	//getModels();
-	text2speech();
+    $apikey   = $params['apikey'] ?? '';
+    $filename = $params['filename'] ?? 'tts_output';
+    $text     = $params['text'] ?? '';
+    $voice_id = $params['voice'] ?? ''; // Now directly the voice_id from ElevenLabs
 
+    // Default TTS settings
+    $audio_format      = "mp3_44100_128";
+    $model_id          = "eleven_multilingual_v2";
+    $stability         = 0.5;
+    $similarity_boost  = 0.75;
+    $style             = 0;
+    $use_speaker_boost = true;
+
+    // Validate parameters
+    if (!$apikey || !$text || !$voice_id) {
+        LOGERR("voice_engines/ElevenLabs.php: Missing required parameters for TTS.");
+        return;
+    }
+
+    LOGOK("voice_engines/ElevenLabs.php: ElevenLabs TTS selected");
+
+    // Generate speech directly using voice_id
+    generateSpeech($text, $voice_id, $filename, $apikey, $model_id, $audio_format, $stability, $similarity_boost, $style, $use_speaker_boost);
 }
 
 
 /**
-* Function : text2speech --> generate Text-to-speech
-*
-* @param: 
-* @return: 
-**/
+ * Generate Text-to-Speech using ElevenLabs API
+ *
+ * Steps:
+ * 1. Build JSON payload for ElevenLabs API
+ * 2. Send POST request via cURL with API key
+ * 3. Check for cURL errors and API errors
+ * 4. Save the resulting MP3 file
+ */
+function generateSpeech($text, $voice_id, $filename, $apikey, $model_id, $audio_format, $stability, $similarity_boost, $style, $use_speaker_boost)
+{
+    global $config;
 
-function text2speech()     {
-	
-	global $config, $apikey, $audio, $modelid, $voice, $textstring, $filename, $similarity_boost, $stability, $style, $use_speaker_boost, $jsondata;
-	
-	$curl = curl_init();
+    // Step 1: Prepare JSON payload
+    $payload = [
+        "model_id" => $model_id,
+        "text" => $text,
+        "voice_settings" => [
+            "stability" => $stability,
+            "similarity_boost" => $similarity_boost,
+            "style" => $style,
+            "use_speaker_boost" => $use_speaker_boost
+        ]
+    ];
 
-	curl_setopt_array($curl, [
-	  CURLOPT_URL => "https://api.elevenlabs.io/v1/text-to-speech/".$voice."?output_format=".$audio."",
-	  CURLOPT_RETURNTRANSFER => true,
-	  CURLOPT_ENCODING => "",
-	  CURLOPT_MAXREDIRS => 5,
-	  CURLOPT_TIMEOUT => 30,
-	  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-	  CURLOPT_CUSTOMREQUEST => "POST",
-	  CURLOPT_POSTFIELDS => "{\n  \"model_id\": \"".$modelid."\",
-							  \n  \"text\": \"".$textstring."\",
-							  \n  \"voice_settings\": {
-								  \n    \"similarity_boost\": ".$similarity_boost.",
-								  \n    \"stability\": ".$stability.",
-								  \n    \"style\": ".$style.",
-								  \n    \"use_speaker_boost\": ".$use_speaker_boost."
-								  \n  }
-								  \n}",
-	  CURLOPT_HTTPHEADER => ["Content-Type: application/json", "xi-api-key: ".$apikey.""],
-	]);
+    // Step 2: Send POST request to ElevenLabs TTS API
+    $ch = curl_init("https://api.elevenlabs.io/v1/text-to-speech/$voice_id?output_format=$audio_format");
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => json_encode($payload),
+        CURLOPT_HTTPHEADER => [
+            "Content-Type: application/json",
+            "xi-api-key: $apikey"
+        ],
+        CURLOPT_TIMEOUT => 30
+    ]);
 
-	$response = curl_exec($curl);
-	$err = curl_error($curl);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $err = curl_error($ch);
+    curl_close($ch);
 
-	curl_close($curl);
-	
-	$notify = json_decode($response, true);
-	
-	# check if notify exist, then exit
-	if (isset($notify['detail']))   {
-		LOGERR("voice_engines/ElevenLabs.php: Error status: ".$notify['detail']['status'].", Error message: ".$notify['detail']['message']);
-		#@unlink($config['SYSTEM']['ttspath'] ."/". $filename . ".mp3");
-		exit;
-	}
+    // Step 3: Handle errors
+    if ($err) {
+        LOGERR("voice_engines/ElevenLabs.php: cURL error: $err");
+        return;
+    }
 
-	if ($err) {
-	  #echo "cURL Error #:" . $err;
-	  LOGERR("voice_engines/ElevenLabs.php: cURL Error #:" . $err);
-	} else {
-	  $file = $config['SYSTEM']['ttspath'] ."/". $filename . ".mp3";
-	  file_put_contents($file, $response);  
-	  LOGOK("voice_engines/ElevenLabs.php: MP3 File has been successful saved.");
-	}
-}
+    $result = json_decode($response, true);
 
+    if (isset($result['detail'])) {
+        LOGERR("voice_engines/ElevenLabs.php: API error: {$result['detail']['message']} (status {$result['detail']['status']})");
+        return;
+    }
 
-	
-/**
-* Function : getVoices --> get all available voices
-*
-* @param: $voice
-* @return: voice_id
-**/	
-	
-function getVoices($urlvoice)     {	
-
-	global $apikey, $voice, $urlvoice; 
-	
-	$curl = curl_init();
-
-	curl_setopt_array($curl, [
-	  CURLOPT_URL => "https://api.elevenlabs.io/v1/voices",
-	  CURLOPT_RETURNTRANSFER => true,
-	  CURLOPT_ENCODING => "",
-	  CURLOPT_MAXREDIRS => 10,
-	  CURLOPT_TIMEOUT => 30,
-	  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-	  CURLOPT_CUSTOMREQUEST => "GET",
-	  CURLOPT_HTTPHEADER => ["xi-api-key: ".$apikey.""],
-	]);
-
-	$response = curl_exec($curl);
-	$err = curl_error($curl);
-
-	curl_close($curl);
-
-	if ($err) {
-	  LOGERR("voice_engines/ElevenLabs.php: cURL Error #:" . $err);
-	} else {
-	  $raw = json_decode($response, true);
-	  $voices = $raw['voices'];
-	  $id = array_multi_search($urlvoice, $voices, $sKey = "");
-	  if (empty($id))    {
-		//echo("voice_engines/ElevenLabs.php: Entered voice '".$urlvoice."' does not exist. Please correct your URL!");
-		LOGERR("voice_engines/ElevenLabs.php: Entered voice '".$urlvoice."' does not exist. Please correct your URL!");
-		exit;
-	  } else {
-		$voice_id = $id[0]['voice_id'];
-		return $voice_id;
-	  }
-	}
-}	
-	
-/**
-* Function : getModels --> get available languages
-*
-* @param: API key
-* @return: 
-**/
-
-function getModels()    {
-	
-	global $apikey;
-	
-	$curl = curl_init();
-
-	curl_setopt_array($curl, [
-	  CURLOPT_URL => "https://api.elevenlabs.io/v1/models",
-	  CURLOPT_RETURNTRANSFER => true,
-	  CURLOPT_ENCODING => "",
-	  CURLOPT_MAXREDIRS => 10,
-	  CURLOPT_TIMEOUT => 30,
-	  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-	  CURLOPT_CUSTOMREQUEST => "GET",
-	  CURLOPT_HTTPHEADER => ["xi-api-key: ".$apikey.""],
-	]);
-
-	$response = curl_exec($curl);
-	$err = curl_error($curl);
-
-	curl_close($curl);
-
-	if ($err) {
-	  echo "cURL Error #:" . $err;
-	  LOGERR("voice_engines/ElevenLabs.php: cURL Error #:" . $err);
-	} else {
-	  $raw = json_decode($response, true);
-	  $lang = $raw[0]['languages'];
-	  print_r($lang);
-	}
-
-	
+    // Step 4: Save MP3 file
+    $file = rtrim($config['SYSTEM']['ttspath'], '/') . "/$filename.mp3";
+    file_put_contents($file, $response);
+    LOGOK("voice_engines/ElevenLabs.php: MP3 file successfully saved to $file");
 }
 
 ?>

@@ -1,104 +1,120 @@
 <?php
-function t2s($textstring, $filename)
-
-// text-to-speech: Erstellt basierend auf Input eine TTS Nachricht, übermittelt sie an ResponsiveVoice und 
-// speichert das zurückkommende file lokal ab
-
+/**
+ * Text-to-Speech (TTS) with ResponsiveVoice
+ *
+ * This function generates an MP3 audio file from a given text using the ResponsiveVoice API
+ * and saves it locally.
+ *
+ * @param array $t2s_param [
+ *     'filename' => (string) File name without extension,
+ *     'text'     => (string) The text to be spoken,
+ *     'language' => (string) Language code, e.g. "de-de"
+ * ]
+ * @return string|false Returns the filename on success or false on failure
+ */
+function t2s($t2s_param)
 {
-	global $config, $pathlanguagefile, $filename;
-	
-	$Rkey = "WQAwyp72";		// ResponsiveVoice Key
-	$file = "respvoice.json";
-	$url = $pathlanguagefile."".$file;
-	$textstring = urlencode($textstring);
-	$valid_languages = File_Get_Array_From_JSON($url, $zip=false);
-	
-		if (isset($_GET['lang'])) {
-			$language = $_GET['lang'];
-			$isvalid = array_multi_search($language, $valid_languages, $sKey = "value");
-			if (!empty($isvalid)) {
-				$language = $_GET['lang'];
-				LOGGING('voice_engines\responsivevoice.php: T2S language has been successful entered',5);
-			} else {
-				LOGGING("voice_engines\responsivevoice.php: The entered ResponsiveVoice language key is not supported. Please correct (see Wiki)!",3);
-				exit;
-			}
-		} else {
-			$language = $config['TTS']['messageLang'];
-		}
-						
-		#####################################################################################################################
-		# zu testen da auf Google Translate basierend (urlencode)
-		# ersetzt Umlaute um die Sprachqualität zu verbessern
-		# search = array('ä','ü','ö','Ä','Ü','Ö','ß','°','%20','%C3%84','%C4','%C3%9C','%FC','%C3%96','%F6','%DF','%C3%9F');
-		# replace = array('ae','ue','oe','Ae','Ue','Oe','ss','Grad',' ','ae','ae','ue','ue','oe','oe','ss','ss');
-		# words = str_replace($search,$replace,$textstring);
-		#####################################################################################################################	
+    global $config, $pathlanguagefile;
 
-		# Speicherort der MP3 Datei
-		$file = $config['SYSTEM']['ttspath'] ."/". $filename . ".mp3";
-		
-		LOGGING("voice_engines\responsivevoice.php: ResponsiveVoice has been successful selected", 7);	
-		
-		# Übermitteln des strings an ResponsiveVoice
-		$url = 'https://code.responsivevoice.org/getvoice.php?t='.$textstring.'&tl='.$language;
-		$mp3 =  my_curl($url);
-		file_put_contents($file, $mp3);
-		LOGGING('voice_engines\responsivevoice.php: The text has been passed to Responsive Voice for MP3 creation',5);
-		return $filename;
-		
-						  	
-}
+    // === Extract parameters ===
+    $filename  = $t2s_param['filename'] ?? null;
+    $text      = $t2s_param['text'] ?? null;
+    $language  = $t2s_param['language'] ?? null;
 
-
-
-
-function my_curl($url, $timeout=2, $error_report=FALSE)
-{
-	global $Rkey; 
-		
-    $curl = curl_init();
-	// HEADERS FROM FIREFOX - APPEARS TO BE A BROWSER REFERRED BY GOOGLE
-    $header[] = "Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5";
-    $header[] = "Cache-Control: max-age=0";
-    $header[] = "Connection: keep-alive";
-    $header[] = "Keep-Alive: 300";
-    $header[] = "Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7";
-    $header[] = "Accept-Language: en-us,en;q=0.5";
-    $header[] = "Pragma: "; // browsers keep this blank.
-
-    // SET THE CURL OPTIONS - SEE http://php.net/manual/en/function.curl-setopt.php
-    curl_setopt($curl, CURLOPT_URL,            $url);
-    curl_setopt($curl, CURLOPT_USERAGENT,      'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6');
-    curl_setopt($curl, CURLOPT_HTTPHEADER,     $header);
-    curl_setopt($curl, CURLOPT_REFERER,        'https://code.responsivevoice.org/responsivevoice.js?key='.$Rkey);
-    curl_setopt($curl, CURLOPT_ENCODING,       'gzip,deflate');
-    curl_setopt($curl, CURLOPT_AUTOREFERER,    TRUE);
-    curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);
-    curl_setopt($curl, CURLOPT_TIMEOUT,        $timeout);
-
-    // RUN THE CURL REQUEST AND GET THE RESULTS
-    $htm = curl_exec($curl);
-    $err = curl_errno($curl);
-    $inf = curl_getinfo($curl);
-    curl_close($curl);
-
-    // ON FAILURE
-    if (!$htm)
-    {
-        // PROCESS ERRORS HERE
-        if ($error_report)
-        {
-			LOGGING('voice_engines\responsivevoice.php: CURL FAIL: $url TIMEOUT=$timeout, CURL_ERRNO=$err',3);
-            #echo "CURL FAIL: $url TIMEOUT=$timeout, CURL_ERRNO=$err";
-            #var_dump($inf);
-        }
-        return FALSE;
+    // === Basic validation ===
+    if (empty($filename) || empty($text) || empty($language)) {
+        LOGERR("ResponsiveVoice.php: Missing required parameters (filename, text, language).");
+        return false;
     }
 
-    // ON SUCCESS
-    return $htm;
+    // === ResponsiveVoice API key ===
+    $apiKey = "WQAwyp72"; // Your API key (should ideally be stored in config)
+
+    // === Load valid language list from JSON ===
+    $langFilePath = LBPHTMLDIR . "/voice_engines/langfiles/respvoice.json";
+    if (!file_exists($langFilePath)) {
+        LOGERR("ResponsiveVoice.php: Language file '$langFilePath' not found.");
+        return false;
+    }
+
+    $validLanguages = json_decode(file_get_contents($langFilePath), true);
+    if (!is_array($validLanguages)) {
+        LOGERR("ResponsiveVoice.php: Language file '$langFilePath' is invalid or corrupted.");
+        return false;
+    }
+
+    // === Check if provided language is supported ===
+    $allowedLanguages = array_column($validLanguages, 'value');
+    if (!in_array($language, $allowedLanguages, true)) {
+        LOGERR("ResponsiveVoice.php: Language '$language' is not supported.");
+        return false;
+    }
+
+    // === Encode text for URL ===
+    $encodedText = urlencode($text);
+
+    // === Define output path for MP3 file ===
+    $outputFile = rtrim($config['SYSTEM']['ttspath'], "/") . "/" . $filename . ".mp3";
+
+    // === Build API request URL ===
+    $apiUrl = sprintf(
+        'https://code.responsivevoice.org/getvoice.php?t=%s&tl=%s&key=%s',
+        $encodedText,
+        urlencode($language),
+        $apiKey
+    );
+
+    LOGOK("ResponsiveVoice.php: Sending TTS request to API: $apiUrl");
+
+    // === Fetch MP3 data from API ===
+    $mp3Data = my_curl($apiUrl);
+
+    // === Validate API response ===
+    if ($mp3Data === false || strlen($mp3Data) < 100) {
+        LOGERR("ResponsiveVoice.php: API request failed or returned an empty/invalid response.");
+        return false;
+    }
+
+    // === Save MP3 file ===
+    if (file_put_contents($outputFile, $mp3Data) === false) {
+        LOGERR("ResponsiveVoice.php: Failed to save MP3 file '$outputFile'.");
+        return false;
+    }
+
+    LOGOK("ResponsiveVoice.php: MP3 file successfully created: $outputFile");
+
+    return $filename;
 }
 
-?>
+/**
+ * Helper function for HTTP requests using cURL
+ *
+ * @param string $url
+ * @return string|false
+ */
+function my_curl($url)
+{
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
+    $data = curl_exec($ch);
+
+    if (curl_errno($ch)) {
+        LOGERR("cURL error: " . curl_error($ch));
+        curl_close($ch);
+        return false;
+    }
+
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode !== 200) {
+        LOGERR("ResponsiveVoice.php: HTTP error: Status code $httpCode for URL: $url");
+        return false;
+    }
+
+    return $data;
+}
+?>

@@ -1,22 +1,17 @@
 [
    {
-      "filename" : "de_DE-thorsten-high.onnx",
-      "language" : "de_DE",
-      "name" : "thorsten"
-   },
-   {
       "filename" : "de_DE-thorsten_emotional-medium.onnx",
       "language" : "de_DE",
       "name" : "thorsten_emotional"
    },
    {
-      "filename" : "voices",
-      "language" : null,
-      "name" : null
+      "filename" : "Thorsten-Voice_Hessisch_Piper_high-Oct2023.onnx",
+      "language" : "de_DE",
+      "name" : "thorsten_hessisch"
    },
    {
-      "filename" : "Thorsten-Voice_Hessisch_Piper_high-Oct2023.onnx",
-      "language" : null,
-      "name" : null
+      "filename" : "de_DE-thorsten-high.onnx",
+      "language" : "de_DE",
+      "name" : "thorsten"
    }
 ]
