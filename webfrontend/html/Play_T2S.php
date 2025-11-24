@@ -221,345 +221,380 @@ function check_file() {
 **/		
 
 function create_tts($text ='') {
-	global $sonos, $config, $dist, $filename, $MessageStorepath, $errortext, $zones, $messageid, $textstring, $home, $time_start, $tmp_batch, $MP3path, $filenameplay, $textstring, $volume, $tts_stat;
-	
-	// setze 1 für virtuellen Texteingang (T2S Start)
-	$tts_stat = 1;
-	if(!isset($_GET['clip'])) {
-		send_tts_source($tts_stat);
-	}
+    global $sonos, $config, $dist, $filename, $MessageStorepath, $errortext, $zones, $messageid, $textstring, $home, $time_start, $tmp_batch, $MP3path, $filenameplay, $textstring, $volume, $tts_stat;
+    
+    // setze 1 für virtuellen Texteingang (T2S Start)
+    $tts_stat = 1;
+    if(!isset($_GET['clip'])) {
+        send_tts_source($tts_stat);
+    }
 
-	// ----------------------------------------------------------
-	// Optional Greeting (GREETINGS.* aus T2S-Textdatei)
-	// ----------------------------------------------------------
-	if (isset($_GET['greet']))  {
-		$Stunden = intval(strftime("%H"));
-		$TL = LOAD_T2S_TEXT();
-		switch ($Stunden) {
-			// Gruß von 04:00 bis 10:00h
-			case $Stunden >=4 && $Stunden <10:
-				$greet = $TL['GREETINGS']['MORNING_'.mt_rand (1, 5)];
-			break;
-			// Gruß von 10:00 bis 17:00h
-			case $Stunden >=10 && $Stunden <17:
-				$greet = $TL['GREETINGS']['DAY_'.mt_rand (1, 5)];
-			break;
-			// Gruß von 17:00 bis 22:00h
-			case $Stunden >=17 && $Stunden <22:
-				$greet = $TL['GREETINGS']['EVENING_'.mt_rand (1, 5)];
-			break;
-			// Gruß nach 22:00h
-			case $Stunden >=22:
-				$greet = $TL['GREETINGS']['NIGHT_'.mt_rand (1, 5)];
-			break;
-			default:
-				$greet = "";
-			break;
-		}
-	} else {
-		$greet = "";
-	}
+    // ----------------------------------------------------------
+    // Optional Greeting (GREETINGS.* aus T2S-Textdatei)
+    // ----------------------------------------------------------
+    if (isset($_GET['greet']))  {
+        $Stunden = intval(strftime("%H"));
+        $TL = LOAD_T2S_TEXT();
+        switch ($Stunden) {
+            // Gruß von 04:00 bis 10:00h
+            case $Stunden >=4 && $Stunden <10:
+                $greet = $TL['GREETINGS']['MORNING_'.mt_rand (1, 5)];
+            break;
+            // Gruß von 10:00 bis 17:00h
+            case $Stunden >=10 && $Stunden <17:
+                $greet = $TL['GREETINGS']['DAY_'.mt_rand (1, 5)];
+            break;
+            // Gruß von 17:00 bis 22:00h
+            case $Stunden >=17 && $Stunden <22:
+                $greet = $TL['GREETINGS']['EVENING_'.mt_rand (1, 5)];
+            break;
+            // Gruß nach 22:00h
+            case $Stunden >=22:
+                $greet = $TL['GREETINGS']['NIGHT_'.mt_rand (1, 5)];
+            break;
+            default:
+                $greet = "";
+            break;
+        }
+    } else {
+        $greet = "";
+    }
 
-	// ----------------------------------------------------------
-	// Direktaufruf über messageid → kein TTS erzeugen
-	// ----------------------------------------------------------
-	if (isset($_GET['messageid'])) {
-		$messageid = $_GET['messageid'];
-		if (file_exists($config['SYSTEM']['mp3path']."/".$messageid.".mp3") === true)  {
-			LOGGING("play_t2s.php: Messageid '".$messageid."' has been entered", 7);
-		} else {
-			LOGGING("play_t2s.php: The corrosponding messageid file '".$messageid.".mp3' does not exist or could not be played. Please check your directory or syntax!", 3);
-			exit;
-		}	
-		return;
-	}
+    // ----------------------------------------------------------
+    // Direktaufruf über messageid → kein TTS erzeugen
+    // ----------------------------------------------------------
+    if (isset($_GET['messageid'])) {
+        $messageid = $_GET['messageid'];
+        if (file_exists($config['SYSTEM']['mp3path']."/".$messageid.".mp3") === true)  {
+            LOGGING("play_t2s.php: Messageid '".$messageid."' has been entered", 7);
+        } else {
+            LOGGING("play_t2s.php: The corrosponding messageid file '".$messageid.".mp3' does not exist or could not be played. Please check your directory or syntax!", 3);
+            exit;
+        }   
+        return;
+    }
 
-	$rampsleep = $config['TTS']['rampto'];
+    $rampsleep = $config['TTS']['rampto'];
 
-	// Basis-Textquelle bestimmen
-	if (isset($_GET['text']))   {
-		$text = $_GET['text'];
-	} elseif ($text <> '') {
-		$text;
-	} else {
-		$text = '';
-	}	
+    // Basis-Textquelle bestimmen
+    if (isset($_GET['text']))   {
+        $text = $_GET['text'];
+    } elseif ($text <> '') {
+        $text;
+    } else {
+        $text = '';
+    }   
 
-	// ----------------------------------------------------------
-	// Addon-Handler (weather, clock, pollen, ...)
-	// ----------------------------------------------------------
-	if(isset($_GET['weather'])) {
-		if(isset($_GET['lang']) and $_GET['lang'] == "nb-NO" or @$_GET['voice'] == "Liv") {
-			include_once("addon/weather-to-speech_no.php");
-		} else {
-			include_once("addon/weather-to-speech.php");
-		}
-		$textstring = substr(w2s(), 0, 500);
-		LOGGING("play_t2s.php: weather-to-speech plugin has been called", 7);
+    // ----------------------------------------------------------
+    // Addon-Handler (weather, clock, pollen, ...)
+    // ----------------------------------------------------------
+    if(isset($_GET['weather'])) {
+        if(isset($_GET['lang']) and $_GET['lang'] == "nb-NO" or @$_GET['voice'] == "Liv") {
+            include_once("addon/weather-to-speech_no.php");
+        } else {
+            include_once("addon/weather-to-speech.php");
+        }
+        $textstring = substr(w2s(), 0, 500);
+        LOGGING("play_t2s.php: weather-to-speech plugin has been called", 7);
 
-	} elseif (isset($_GET['clock'])) {
-		include_once("addon/clock-to-speech.php");
-		$textstring = c2s();
-		LOGGING("play_t2s.php: clock-to-speech plugin has been called", 7);
+    } elseif (isset($_GET['clock'])) {
+        include_once("addon/clock-to-speech.php");
+        $textstring = c2s();
+        LOGGING("play_t2s.php: clock-to-speech plugin has been called", 7);
 
-	} elseif (isset($_GET['pollen'])) {
-		include_once("addon/pollen-to-speach.php");
-		$textstring = substr(p2s(), 0, 500);
-		LOGGING("play_t2s.php: pollen-to-speech plugin has been called", 7);
+    } elseif (isset($_GET['pollen'])) {
+        include_once("addon/pollen-to-speach.php");
+        $textstring = substr(p2s(), 0, 500);
+        LOGGING("play_t2s.php: pollen-to-speech plugin has been called", 7);
 
-	} elseif (isset($_GET['warning'])) {
-		include_once("addon/weather-warning-to-speech.php");
-		$textstring = substr(ww2s(), 0, 500);
-		LOGGING("play_t2s.php: weather warning-to-speech plugin has been called", 7);
+    } elseif (isset($_GET['warning'])) {
+        include_once("addon/weather-warning-to-speech.php");
+        $textstring = substr(ww2s(), 0, 500);
+        LOGGING("play_t2s.php: weather warning-to-speech plugin has been called", 7);
 
-	} elseif (isset($_GET['distance'])) {
-		include_once("addon/time-to-destination-speech.php");
-		$textstring = substr(tt2t(), 0, 500);
-		LOGGING("play_t2s.php: time-to-distance speech plugin has been called", 7);
+    } elseif (isset($_GET['distance'])) {
+        include_once("addon/time-to-destination-speech.php");
+        $textstring = substr(tt2t(), 0, 500);
+        LOGGING("play_t2s.php: time-to-distance speech plugin has been called", 7);
 
-	} elseif (isset($_GET['abfall'])) {
-		include_once("addon/waste-calendar-to-speech.php");
-		$textstring = substr(muellkalender(), 0, 500);
-		LOGGING("play_t2s.php: waste calendar-to-speech  plugin has been called", 7);
+    } elseif (isset($_GET['abfall'])) {
+        include_once("addon/waste-calendar-to-speech.php");
+        $textstring = substr(muellkalender(), 0, 500);
+        LOGGING("play_t2s.php: waste calendar-to-speech  plugin has been called", 7);
 
-	} elseif (isset($_GET['calendar'])) {
-		include_once("addon/waste-calendar-to-speech.php");
-		$textstring = substr(calendar(), 0, 500);
-		LOGGING("play_t2s.php: calendar-to-speech plugin has been called", 7);
+    } elseif (isset($_GET['calendar'])) {
+        include_once("addon/waste-calendar-to-speech.php");
+        $textstring = substr(calendar(), 0, 500);
+        LOGGING("play_t2s.php: calendar-to-speech plugin has been called", 7);
 
-	} elseif (isset($_GET['sonos'])) {
-		include_once("addon/sonos-to-speech.php");
-		$textstring = s2s();
-		$rampsleep = false;
-		LOGGING("play_t2s.php: sonos-to-speech plugin has been called", 7);
+    } elseif (isset($_GET['sonos'])) {
+        include_once("addon/sonos-to-speech.php");
+        $textstring = s2s();
+        $rampsleep = false;
+        LOGGING("play_t2s.php: sonos-to-speech plugin has been called", 7);
 
-	} elseif ((!isset($_GET['text'])) and (isset($_GET['playbatch']))) {
-		LOGGING("play_t2s.php: no text has been entered", 3);
-		exit();
+    } elseif ((!isset($_GET['text'])) and (isset($_GET['playbatch']))) {
+        LOGGING("play_t2s.php: no text has been entered", 3);
+        exit();
 
-	} elseif ($text <> '') {
-		if (empty($greet))  {
-			$textstring = $text;
-			LOGGING("play_t2s.php: Textstring has been entered", 7);	
-		} else {
-			$textstring = $greet.". ".$text;
-			LOGGING("play_t2s.php: Greeting + Textstring has been entered", 7);		
-		}	
-	}	
-	
-	// ----------------------------------------------------------
-	// Kein Text → Ende
-	// ----------------------------------------------------------
-	if (empty($textstring)) {
-		LOGGING("play_t2s.php: No T2S text available after input processing. Aborting.", 3);
-		return;
-	}
+    } elseif ($text <> '') {
+        if (empty($greet))  {
+            $textstring = $text;
+            LOGGING("play_t2s.php: Textstring has been entered", 7); 
+        } else {
+            $textstring = $greet.". ".$text;
+            LOGGING("play_t2s.php: Greeting + Textstring has been entered", 7);      
+        }   
+    }   
+    
+    // ----------------------------------------------------------
+    // Kein Text → Ende
+    // ----------------------------------------------------------
+    if (empty($textstring)) {
+        LOGGING("play_t2s.php: No T2S text available after input processing. Aborting.", 3);
+        return;
+    }
 
-	// encrypt MP3 file as MD5 Hash
-	$filename  = md5($textstring);
-	$ttspath   = rtrim($config['SYSTEM']['ttspath'], '/');
-	$mp3_file  = $ttspath."/".$filename.".mp3";
-	$wav_file  = $ttspath."/".$filename.".wav";
-	$nocache   = !empty($_GET['nocache']);
+    // encrypt MP3 file as MD5 Hash
+    $filename  = md5($textstring);
+    $ttspath   = rtrim($config['SYSTEM']['ttspath'], '/');
+    $mp3_file  = $ttspath."/".$filename.".mp3";
+    $wav_file  = $ttspath."/".$filename.".wav";
+    $nocache   = !empty($_GET['nocache']);
 
-	// ----------------------------------------------------------
-	// Engine-Code und intelligente Defaults (voice/lang/keys/region)
-	// ----------------------------------------------------------
-	$primary_engine_code = (int) ($config['TTS']['t2s_engine'] ?? 0);
-	$messageLang         = $config['TTS']['messageLang'] ?? ''; // z.B. "de-DE-ElkeNeural"
+    // ----------------------------------------------------------
+    // Engine-Code und Defaults + GET-Overrides
+    // ----------------------------------------------------------
 
-	// Sprache: Config.language -> aus messageLang -> Default de-DE
-	$language = $config['TTS']['language'] ?? '';
-	$language = trim($language);
-	if ($language === '' && $messageLang !== '' && preg_match('/^([a-z]{2,3}-[A-Z]{2})/', $messageLang, $m)) {
-		$language = $m[1]; // z.B. "de-DE" aus "de-DE-ElkeNeural"
-	}
-	if ($language === '') {
-		$language = 'de-DE'; // letzte Stufe Default (für dein deutsches Setup sinnvoll)
-	}
+    // Primäre Engine: GET > Config
+    if (isset($_GET['t2sengine']) && $_GET['t2sengine'] !== '') {
+        $primary_engine_code = (int)$_GET['t2sengine'];
+    } else {
+        $primary_engine_code = (int) ($config['TTS']['t2s_engine'] ?? 0);
+    }
 
-	// Voice: Config.voice -> messageLang -> "<lang>-KatjaNeural"
-	$voice = $config['TTS']['voice'] ?? '';
-	$voice = trim($voice);
-	if ($voice === '' && $messageLang !== '') {
-		$voice = $messageLang; // z.B. "de-DE-ElkeNeural"
-	}
-	if ($voice === '') {
-		$voice = $language . '-KatjaNeural';
-	}
+    $messageLang = $config['TTS']['messageLang'] ?? ''; // z.B. "de-DE-ElkeNeural"
 
-	// API-Key: per-Engine -> global
-	$apikey = $config['TTS']['apikey'] ?? '';
-	if (!empty($config['TTS']['apikeys'][$primary_engine_code])) {
-		$apikey = $config['TTS']['apikeys'][$primary_engine_code];
-	}
-	$apikey = trim($apikey);
+    // Sprache: GET.language > Config.language -> aus messageLang -> Default de-DE
+    if (isset($_GET['language']) && $_GET['language'] !== '') {
+        $language = trim($_GET['language']);
+    } else {
+        $language = $config['TTS']['language'] ?? '';
+        $language = trim($language);
+        if ($language === '' && $messageLang !== '' && preg_match('/^([a-z]{2,3}-[A-Z]{2})/', $messageLang, $m)) {
+            $language = $m[1]; // z.B. "de-DE" aus "de-DE-ElkeNeural"
+        }
+        if ($language === '') {
+            $language = 'de-DE'; // Default
+        }
+    }
 
-	// SecretKey (z.B. für Polly): per-Engine -> global
-	$secretkey = $config['TTS']['secretkey'] ?? '';
-	if (!empty($config['TTS']['secretkeys'][$primary_engine_code])) {
-		$secretkey = $config['TTS']['secretkeys'][$primary_engine_code];
-	}
-	$secretkey = trim($secretkey);
+    // Voice: GET.voice > Config.voice -> messageLang -> "<lang>-KatjaNeural"
+    if (isset($_GET['voice']) && $_GET['voice'] !== '') {
+        $voice = trim($_GET['voice']);
+    } else {
+        $voice = $config['TTS']['voice'] ?? '';
+        $voice = trim($voice);
+        if ($voice === '' && $messageLang !== '') {
+            $voice = $messageLang; // z.B. "de-DE-ElkeNeural"
+        }
+        if ($voice === '') {
+            $voice = $language . '-KatjaNeural';
+        }
+    }
 
-	// Region: Config.region -> regionms (Azure) -> leer
-	$region = $config['TTS']['region'] ?? '';
-	if ($region === '' && !empty($config['TTS']['regionms'])) {
-		$region = $config['TTS']['regionms'];
-	}
-	$region = trim($region);
+    // API-Key: GET.apikey > per-Engine > global
+    if (isset($_GET['apikey']) && $_GET['apikey'] !== '') {
+        $apikey = trim($_GET['apikey']);
+    } else {
+        $apikey = $config['TTS']['apikey'] ?? '';
+        if (!empty($config['TTS']['apikeys'][$primary_engine_code])) {
+            $apikey = $config['TTS']['apikeys'][$primary_engine_code];
+        }
+        $apikey = trim($apikey);
+    }
 
-	// ----------------------------------------------------------
-	// Einheitliches Parameter-Array für alle TTS-Engines
-	// ----------------------------------------------------------
-	$t2s_param = [
-		'filename'   => $filename,
-		'text'       => $textstring,
-		't2sengine'  => $primary_engine_code,
-		'voice'      => $voice,
-		'language'   => $language,
-		'apikey'     => $apikey,
-		'secretkey'  => $secretkey,
-		'region'     => $region,
-	];
+    // SecretKey (z.B. für Polly): GET.secretkey > per-Engine > global
+    if (isset($_GET['secretkey']) && $_GET['secretkey'] !== '') {
+        $secretkey = trim($_GET['secretkey']);
+    } else {
+        $secretkey = $config['TTS']['secretkey'] ?? '';
+        if (!empty($config['TTS']['secretkeys'][$primary_engine_code])) {
+            $secretkey = $config['TTS']['secretkeys'][$primary_engine_code];
+        }
+        $secretkey = trim($secretkey);
+    }
 
-	// ----------------------------------------------------------
-	// Cache-Check
-	// ----------------------------------------------------------
-	if (file_exists($mp3_file) && !$nocache) {
+    // Region: GET.region > Config.region > regionms (Azure) -> leer
+    if (isset($_GET['region']) && $_GET['region'] !== '') {
+        $region = trim($_GET['region']);
+    } else {
+        $region = $config['TTS']['region'] ?? '';
+        if ($region === '' && !empty($config['TTS']['regionms'])) {
+            $region = $config['TTS']['regionms'];
+        }
+        $region = trim($region);
+    }
 
-		LOGGING("play_t2s.php: MP3 grabbed from cache: '$textstring' ", 6);
+    // Einziger Debug-Eintrag, der bleibt:
+    LOGGING(
+        "play_t2s.php: create_tts(): Effective TTS params: engine=".$primary_engine_code.
+        ", lang=".$language.", voice=".$voice,
+        7
+    );
 
-	} elseif (file_exists($wav_file) && !$nocache) {
+    // ----------------------------------------------------------
+    // Einheitliches Parameter-Array für alle TTS-Engines
+    // ----------------------------------------------------------
+    $t2s_param = [
+        'filename'   => $filename,
+        'text'       => $textstring,
+        't2sengine'  => $primary_engine_code,
+        'voice'      => $voice,
+        'language'   => $language,
+        'apikey'     => $apikey,
+        'secretkey'  => $secretkey,
+        'region'     => $region,
+    ];
 
-		LOGGING("play_t2s.php: WAV grabbed from cache: '$textstring' ", 6);
+    // ----------------------------------------------------------
+    // Cache-Check
+    // ----------------------------------------------------------
+    if (file_exists($mp3_file) && !$nocache) {
 
-	} else {
+        LOGGING("play_t2s.php: MP3 grabbed from cache: '$textstring' ", 6);
 
-		// ======================================================
-		// 1. Primäre TTS-Engine
-		// ======================================================
-		LOGGING("play_t2s.php: Primary TTS engine '$primary_engine_code' will be used for '$textstring'.", 6);
+    } elseif (file_exists($wav_file) && !$nocache) {
 
-		switch ($primary_engine_code) {
+        LOGGING("play_t2s.php: WAV grabbed from cache: '$textstring' ", 6);
 
-			case 1001: // VoiceRSS
-				include_once("voice_engines/VoiceRSS.php");
-				t2s($t2s_param);
-				break;
+    } else {
 
-			case 3001: // MAC_OSX (falls du die noch nutzt)
-				include_once("voice_engines/MAC_OSX.php");
-				t2s($textstring, $filename); // Legacy-Interface
-				break;
+        // ======================================================
+        // 1. Primäre TTS-Engine
+        // ======================================================
+        LOGGING("play_t2s.php: Primary TTS engine '$primary_engine_code' will be used for '$textstring'.", 6);
 
-			case 4001: // Polly
-				include_once("voice_engines/Polly.php");
-				t2s($t2s_param);
-				break;
+        switch ($primary_engine_code) {
 
-			case 5001: // Pico_tts (Legacy)
-				include_once("voice_engines/Pico_tts.php");
-				t2s($textstring, $filename);
-				break;
+            case 1001: // VoiceRSS
+                include_once("voice_engines/VoiceRSS.php");
+                t2s($t2s_param);
+                break;
 
-			case 6001: // ResponsiveVoice
-				include_once("voice_engines/ResponsiveVoice.php");
-				t2s($t2s_param);
-				break;
+            case 3001: // MAC_OSX (falls du die noch nutzt)
+                include_once("voice_engines/MAC_OSX.php");
+                t2s($textstring, $filename); // Legacy-Interface
+                break;
 
-			case 7001: // Google (Legacy)
-				include_once("voice_engines/Google.php");
-				t2s($textstring, $filename);
-				break;
+            case 4001: // Polly
+                include_once("voice_engines/Polly.php");
+                t2s($t2s_param);
+                break;
 
-			case 8001: // GoogleCloud
-				include_once("voice_engines/GoogleCloud.php");
-				t2s($t2s_param);
-				break;
+            case 5001: // Pico_tts (Legacy)
+                include_once("voice_engines/Pico_tts.php");
+                t2s($textstring, $filename);
+                break;
 
-			case 9001: // MS_Azure
-				include_once("voice_engines/MS_Azure.php");
-				t2s($t2s_param);
-				break;
+            case 6001: // ResponsiveVoice
+                include_once("voice_engines/ResponsiveVoice.php");
+                t2s($t2s_param);
+                break;
 
-			case 9011: // ElevenLabs
-				include_once("voice_engines/ElevenLabs.php");
-				t2s($t2s_param);
-				break;
+            case 7001: // Google (Legacy)
+                include_once("voice_engines/Google.php");
+                t2s($textstring, $filename);
+                break;
 
-			case 9012: // Piper als primäre Engine (Optional)
-				include_once("voice_engines/Piper.php");
-				t2s($t2s_param);
-				break;
+            case 8001: // GoogleCloud
+                include_once("voice_engines/GoogleCloud.php");
+                t2s($t2s_param);
+                break;
 
-			default:
-				LOGERR("play_t2s.php: Unknown or unsupported TTS engine code '$primary_engine_code'.");
-				break;
-		}
+            case 9001: // MS_Azure
+                include_once("voice_engines/MS_Azure.php");
+                t2s($t2s_param);
+                break;
 
-		// ======================================================
-		// 2. Prüfung Primär-Engine → Fallback auf Piper
-		// ======================================================
-		clearstatcache(false, $mp3_file);
+            case 9011: // ElevenLabs
+                include_once("voice_engines/ElevenLabs.php");
+                t2s($t2s_param);
+                break;
 
-		if (!file_exists($mp3_file) || filesize($mp3_file) < 1) {
+            case 9012: // Piper als primäre Engine (Optional)
+                include_once("voice_engines/Piper.php");
+                t2s($t2s_param);
+                break;
 
-			if (file_exists($mp3_file)) {
-				$heute      = date("Y-m-d"); 
-				$time       = date("His"); 
-				$failedname = $ttspath."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3";
-				rename($mp3_file, $failedname);
-				LOGERR("play_t2s.php: Primary TTS engine failed, bad file has been renamed to: ".$failedname);	
-			} else {
-				LOGERR("play_t2s.php: Primary TTS engine failed, no MP3 file has been created at all.");
-			}
+            default:
+                LOGERR("play_t2s.php: Unknown or unsupported TTS engine code '$primary_engine_code'.");
+                break;
+        }
 
-			// --------------------------------------------------
-			// 3. Piper-Fallback (Offline) – Code 9012
-			// --------------------------------------------------
-			$fallback_filename = $filename . "_piper";
-			$fallback_mp3      = $ttspath."/".$fallback_filename.".mp3";
+        // ======================================================
+        // 2. Prüfung Primär-Engine → Fallback auf Piper
+        // ======================================================
+        clearstatcache(false, $mp3_file);
 
-			LOGGING("play_t2s.php: Trying local Piper fallback engine (code 9012)...", 5);
+        if (!file_exists($mp3_file) || filesize($mp3_file) < 1) {
 
-			if (file_exists($fallback_mp3)) {
-				@unlink($fallback_mp3);
-			}
+            if (file_exists($mp3_file)) {
+                $heute      = date("Y-m-d"); 
+                $time       = date("His"); 
+                $failedname = $ttspath."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3";
+                rename($mp3_file, $failedname);
+                LOGERR("play_t2s.php: Primary TTS engine failed, bad file has been renamed to: ".$failedname);  
+            } else {
+                LOGERR("play_t2s.php: Primary TTS engine failed, no MP3 file has been created at all.");
+            }
 
-			include_once("voice_engines/Piper.php");
-			t2s_piper($textstring, $fallback_filename);
+            // --------------------------------------------------
+            // 3. Piper-Fallback (Offline) – Code 9012
+            // --------------------------------------------------
+            $fallback_filename = $filename . "_piper";
+            $fallback_mp3      = $ttspath."/".$fallback_filename.".mp3";
 
-			clearstatcache(false, $fallback_mp3);
+            LOGGING("play_t2s.php: Trying local Piper fallback engine (code 9012)...", 5);
 
-			if (file_exists($fallback_mp3) && filesize($fallback_mp3) > 0) {
+            if (file_exists($fallback_mp3)) {
+                @unlink($fallback_mp3);
+            }
 
-				LOGOK("play_t2s.php: Piper fallback succeeded, using offline file '".$fallback_filename.".mp3'.");
-				$filename = $fallback_filename;
+            include_once("voice_engines/Piper.php");
+            t2s_piper($textstring, $fallback_filename);
 
-			} else {
+            clearstatcache(false, $fallback_mp3);
 
-				LOGERR("play_t2s.php: All TTS engines failed (primary + Piper). Using fallback file 't2s_not_available.mp3' if available.");
+            if (file_exists($fallback_mp3) && filesize($fallback_mp3) > 0) {
 
-				$filename = "t2s_not_available";
-				$src      = $config['SYSTEM']['mp3path']."/t2s_not_available.mp3";
-				$dst      = $ttspath."/t2s_not_available.mp3";
+                LOGOK("play_t2s.php: Piper fallback succeeded, using offline file '".$fallback_filename.".mp3'.");
+                $filename = $fallback_filename;
 
-				if (file_exists($src)) {
-					@copy($src, $dst);
-					LOGINF("play_t2s.php: Fallback file 't2s_not_available.mp3' has been copied to TTS path.");
-				} else {
-					LOGERR("play_t2s.php: Fallback file 't2s_not_available.mp3' not found. No audio will be played.");
-				}
-			}
-		}
+            } else {
 
-		echo $textstring;
-		echo "<br>";
-	}
+                LOGERR("play_t2s.php: All TTS engines failed (primary + Piper). Using fallback file 't2s_not_available.mp3' if available.");
 
-	return $filename;
+                $filename = "t2s_not_available";
+                $src      = $config['SYSTEM']['mp3path']."/t2s_not_available.mp3";
+                $dst      = $ttspath."/t2s_not_available.mp3";
+
+                if (file_exists($src)) {
+                    @copy($src, $dst);
+                    LOGINF("play_t2s.php: Fallback file 't2s_not_available.mp3' has been copied to TTS path.");
+                } else {
+                    LOGERR("play_t2s.php: Fallback file 't2s_not_available.mp3' not found. No audio will be played.");
+                }
+            }
+        }
+
+        echo $textstring;
+        echo "<br>";
+    }
+
+    return $filename;
 }
+
 
 /**
 * Function : play_tts --> play T2S or MP3 File

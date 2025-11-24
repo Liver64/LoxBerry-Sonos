@@ -491,13 +491,40 @@ function AddMemberTo() {
  * definiert GROUPMASTER,
  * und joint alle relevanten Player zum Master.
  *
- * Voll kompatibel zu deiner PROD-Restore-Logik:
- *  - restoreGroupZone() verwendet $member
- *  - Sonos.php kann weiterhin MEMBER (Konstante) verwenden
+ * Erweiterungen:
+ *  - Nutzt getGroup($master), um die echte Sonos-Topologie zu prüfen.
+ *  - Wenn Master + Member bereits exakt als Gruppe existieren (Master ist Koordinator),
+ *    werden keine JOIN-Kommandos mehr gesendet.
+ *  - Wenn nur einzelne gewünschte Member fehlen, werden nur diese gejoint.
+ *  - Schutz: Mehrfachaufrufe mit identischem master/member in *einem* Request
+ *    werden erkannt und übersprungen (idempotent).
  */
 function CreateMember()
 {
-    global $master, $sonoszone, $member; // <-- $member jetzt explizit global
+    global $master, $sonoszone, $member; // <-- $member explizit global
+
+    // ---------------------------------------------------------------------
+    // GUARD: Mehrfachaufrufe im selben Request mit identischem master/member
+    //        vermeiden doppelte Verarbeitung und doppeltes Logging.
+    // ---------------------------------------------------------------------
+    static $alreadyRun       = false;
+    static $lastMaster       = null;
+    static $lastMemberParam  = null;
+
+    $currentMemberParam = $_GET['member'] ?? '';
+
+    if (
+        $alreadyRun === true &&
+        $lastMaster === $master &&
+        $lastMemberParam === $currentMemberParam
+    ) {
+        LOGINF("helper.php: CreateMember: Called again with same master/member within one request – skipping (idempotent).");
+        return;
+    }
+
+    $alreadyRun      = true;
+    $lastMaster      = $master;
+    $lastMemberParam = $currentMemberParam;
 
     // --- Master prüfen ----------------------------------------------------
     if (empty($master) || !isset($sonoszone[$master])) {
@@ -590,11 +617,92 @@ function CreateMember()
         define("GROUPMASTER", $master);
     }
 
+    // ---------------------------------------------------------------------
+    // 3b) Topologie-Check mit getGroup(), um unnötiges Re-Gruppieren
+    //     zu vermeiden.
+    // ---------------------------------------------------------------------
+    $zonesToJoin = $member; // Default: alle Member joinen (altes Verhalten)
+
+    if (function_exists('getGroup')) {
+        try {
+            $rawGroup = getGroup($master); // [0] => Koordinator, [1..] => weitere Member
+        } catch (Exception $e) {
+            $rawGroup = [];
+        }
+
+        if (!empty($rawGroup)) {
+
+            // Koordinator-Name lt. Topologie (kann vom URL-Master abweichen)
+            $coordinatorName = strtolower($rawGroup[0]);
+
+            // Aktuelle Gruppen-Mitglieder normalisieren und auf bekannte Zonen filtern
+            $currentGroupNorm = [];
+            foreach ($rawGroup as $z) {
+                $zLower = strtolower($z);
+                if (isset($sonoszone[$zLower])) {
+                    $currentGroupNorm[] = $zLower;
+                }
+            }
+
+            // Gewünschte Konstellation = Master + Member
+            $wanted     = array_merge([$master], $member);
+            $wantedNorm = array_values(array_unique(array_map('strtolower', $wanted)));
+
+            $sortedCurrent = $currentGroupNorm;
+            $sortedWanted  = $wantedNorm;
+            sort($sortedCurrent);
+            sort($sortedWanted);
+
+            // Logging der aktuellen vs. gewünschten Gruppe
+            LOGINF(
+                "helper.php: CreateMember: Current group (topology) for '".$master."' = [".
+                implode(", ", $currentGroupNorm)."], requested = [".
+                implode(", ", $wantedNorm)."]"
+            );
+
+            // Nur dann optimieren, wenn unser $master auch wirklich Koordinator ist
+            if ($coordinatorName === strtolower($master)) {
+
+                // 3b-1) Perfektes Match: Gruppe ist bereits exakt wie gewünscht
+                if ($sortedCurrent === $sortedWanted) {
+                    LOGINF("helper.php: CreateMember: Sonos group already matches requested constellation (master + members) – skipping JOIN.");
+                    return;
+                }
+
+                // 3b-2) Teil-Match: einige Member fehlen noch -> nur fehlende joinen
+                $zonesToJoin = [];
+                foreach ($member as $z) {
+                    if (!in_array(strtolower($z), $currentGroupNorm, true)) {
+                        $zonesToJoin[] = $z;
+                    }
+                }
+
+                if (empty($zonesToJoin)) {
+                    LOGINF("helper.php: CreateMember: All requested members are already part of master's group (extra members present) – skipping JOIN.");
+                    return;
+                }
+
+                LOGINF(
+                    "helper.php: CreateMember: Existing group partially matches – will JOIN only missing members: ".
+                    implode(", ", $zonesToJoin)
+                );
+            } else {
+                // Master ist aktuell nur Mitglied in einer fremd-koordinierten Gruppe
+                LOGINF(
+                    "helper.php: CreateMember: Master '".$master.
+                    "' is currently member in group of '".$coordinatorName.
+                    "' – re-grouping to make '".$master."' master."
+                );
+                // $zonesToJoin bleibt = $member
+            }
+        }
+    }
+
     // --- 4) Join-Logik mit Retry -----------------------------------------
     $maxRetries    = 2;
     $retryDelayUs  = 200000; // 200 ms
 
-    foreach ($member as $zone) {
+    foreach ($zonesToJoin as $zone) {
         $ip = $sonoszone[$zone][0];
 
         $attempt  = 0;
@@ -628,6 +736,7 @@ function CreateMember()
         }
     }
 }
+
 
 /**
 *
@@ -1721,7 +1830,7 @@ function vversion()    {
 	$url = 'https://raw.githubusercontent.com/Liver64/LoxBerry-Sonos/master/webfrontend/html/release/release.cfg';
 	$as = is_file($url);
 	var_dump($as);
-	$file = "REPLACELBHOMEDIR/data/plugins/sonos4lox/plugin.cfg";
+	$file = "/opt/loxberry/data/plugins/sonos4lox/plugin.cfg";
 	file_put_contents($file, file_get_contents($url));
 	$wq = json_decode(file_get_contents($file, TRUE));
 	#print_r($wq);
