@@ -344,7 +344,7 @@ div.scrollmenu a:hover {
 															
 
                         </fieldset>
-			<script>
+			<!--<script>
 				$('#engine-selector input').change(function() {
 					var t2sengine = $('input[name=t2s_engine]:checked').val();
 					$.ajax({url: "./index.cgi?getkeys=1&t2s_engine="+t2sengine, type: 'GET', dataType: 'json', success: function(result){
@@ -352,7 +352,7 @@ div.scrollmenu a:hover {
 						$("#seckey").val(result.seckey);
 					}});
 				});
-			</script>
+			</script>-->
                         <div class="ttsconfig googleinfo 7001">
                             <label align="middle"><FONT size="-1" COLOR="#0000CD"><TMPL_VAR T2S.GOOGLE_INFO></FONT></label>
                         </div>
@@ -459,11 +459,11 @@ div.scrollmenu a:hover {
 											data-validation-error-msg="<TMPL_VAR T2S.SELECT_VOICE_DROPDOWN>" 
 											data-validation-rule="^([A-Za-z0-9]){4,10}$">
 										</select>
-								<div class="ttsconfig field-voice 9011">
+								<!--<div class="ttsconfig field-voice 9011">
 									<td class="ttsconfig field-voice 9011" style="height: 36px; width: 8%; text-align: left;">
 										<img onclick="playprev()" src='/plugins/<TMPL_VAR PLUGINDIR>/images/play-button.png'>
 									</td>
-								</div>
+								</div>-->
                                         </fieldset>
                                         <td style="height: 36px; width: 32%; text-align: right;">
                                             <fieldset style="width: 15%">
@@ -1000,12 +1000,12 @@ div.scrollmenu a:hover {
 			var tvmonerr = "true";		
 		
 		// play test soundfile when Elevenlabs used
-		function playprev()    {
-		    var selectElement = document.getElementById("voice");
-			var file = (selectElement.options[selectElement.selectedIndex].id);
-			let beat = new Audio(file);
-			beat.play();
-		};
+		//function playprev()    {
+		//    var selectElement = document.getElementById("voice");
+		//	var file = (selectElement.options[selectElement.selectedIndex].id);
+		//	let beat = new Audio(file);
+		//	beat.play();
+		//};
 		
 		function checkboxes() {
 			//console.log('checkboxes');
@@ -1164,9 +1164,20 @@ div.scrollmenu a:hover {
 		
 		
 	// prepare the voice list dependend on language list
-    function populateVoice() {
+	function populateVoice() {
 		console.log("populateVoice");
 		$('#voice').selectmenu('refresh', true);
+
+		// === SPEZIALFALL ELEVENLABS ==========================================
+		// ElevenLabs wird komplett über populateElevenlabsLang()/Voices behandelt.
+		// Das verhindert doppelte Aufrufe, vor allem weil #t2slang noch
+		// ein onchange="populateVoice()" aus der Historie hat.
+		if (document.main_form.tts_elevenlabs &&
+			document.main_form.tts_elevenlabs.checked === true) {
+
+			console.log("populateVoice: ElevenLabs active → handled separately, skipping.");
+			return;
+		}
 
 		// ==== VoiceRSS ====
 		if (document.getElementById('tts_voicerss').checked == true) {
@@ -1237,7 +1248,7 @@ div.scrollmenu a:hover {
 				});
 			}
 
-		// ==== Google Cloud (Filter nach Sprache, Voices schon geladen) ====
+		// ==== Google Cloud (Voices werden in populateGoogleCloudVoices() gebaut) ====
 		} else if (document.main_form.tts_google_cloud.checked == true) {
 			return;
 
@@ -1275,11 +1286,6 @@ div.scrollmenu a:hover {
 			}
 		}
 
-		// ==== ElevenLabs (separat) ====
-		if (document.main_form.tts_elevenlabs.checked == true) {
-			populateElevenlabsVoices();
-		}
-
 		$('#voice').selectmenu('refresh', true);
 		$('#t2slang').selectmenu('refresh', true);
 
@@ -1306,14 +1312,14 @@ div.scrollmenu a:hover {
  * Funktion : populateGoogleCloudVoices --> Populates voices from Google Cloud into Dropdown
  * @param:   none
  *
- * @return:  Sprach- und Stimmen-Dropdown gefüllt oder, im Fehlerfall, Platzhalter + Dialog
+ * @return:  Sprach- und Stimmen-Dropdown gefüllt oder, im Fehlerfall, nur Platzhalter + Console-Warnung
  *************************************************************************************************************/
 function populateGoogleCloudVoices() {
     console.log("populateGoogleCloudVoices");
 
     var apikey = $('#apikey').val().trim();
     if (!apikey) {
-        console.log("No API key set, aborting Google Cloud voice load.");
+        console.log("Google Cloud Voice: No API key set, aborting voices load.");
         return;
     }
 
@@ -1322,18 +1328,15 @@ function populateGoogleCloudVoices() {
     fetch(url)
         .then(function (response) {
 
-            // === HTTP-Fehler wie bei Azure behandeln ===
+            // === HTTP-Fehler wie bei Azure behandeln – aber ohne Dialog ===
             if (!response.ok) {
-                console.log('Google Cloud Voice HTTP error:', response.status);
-
-                dialog(
-                    '<TMPL_VAR T2S.VOICE_ERROR1>: ' + response.status +
-                    '. <TMPL_VAR T2S.VOICE_ERROR2>: ' + apikey +
-                    ' <TMPL_VAR T2S.VOICE_ERROR3>',
-                    'OK', 'error', 'Google Cloud Voice'
+                console.warn(
+                    "Google Cloud Voice HTTP error:",
+                    response.status,
+                    response.status === 401 ? "(possibly invalid API key)" : ""
                 );
 
-                // Dropdowns in definierten Zustand zurücksetzen
+                // Dropdowns in einen definierten Zustand zurücksetzen
                 $('#t2slang').empty().append(
                     '<option selected disabled value=""><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>'
                 ).selectmenu('refresh', true);
@@ -1458,17 +1461,12 @@ function populateGoogleCloudVoices() {
             });
         })
         .catch(function (err) {
-            // HTTP-Fehler haben wir oben schon behandelt
+            // HTTP-Fehler wurden oben schon geloggt
             if (String(err.message || "").startsWith("HTTP ")) {
                 return;
             }
 
-            console.log("Google Cloud Voice: connection error", err);
-
-            dialog(
-                '<TMPL_VAR T2S.VOICE_ERROR1>: Connection error.',
-                'OK', 'error', 'Google Cloud Voice'
-            );
+            console.warn("Google Cloud Voice: connection error", err);
 
             $('#t2slang').empty().append(
                 '<option selected disabled value=""><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>'
@@ -1629,97 +1627,208 @@ function populateGoogleCloudVoices() {
 
 		
 		function checkProvider() {
-			if (document.main_form.tts_google_cloud.checked == true) {
-				populateGoogleCloudVoices();
-			}
-			if (document.main_form.tts_azure.checked == true) {
-				populateAzureVoices();
-			}
-			if (document.main_form.tts_elevenlabs.checked == true) {
-				populateElevenlabsLang();
-			}
+			// Immer zuerst die Keys für die aktuell gewählte Engine aktualisieren
+			refreshApiKeysForCurrentEngine(function () {
+
+				// **erst jetzt** ist #apikey / #seckey sicher korrekt gesetzt
+				if (document.main_form.tts_google_cloud.checked == true) {
+					populateGoogleCloudVoices();
+				} 
+				else if (document.main_form.tts_azure.checked == true) {
+					populateAzureVoices();
+				} 
+				else if (document.main_form.tts_elevenlabs.checked == true) {
+					populateElevenlabsLang();
+				} 
+				else {
+					// alle "lokalen" Engines (VoiceRSS, Polly, Piper, ResponsiveVoice …)
+					// bleiben wie bisher über die JSON-Listen
+					populateLanguageAndVoiceFields();
+				}
+			});
 		}
+		
+		// ---------------------------------------------------------------------
+		// Zentrale Helper-Funktion: API-/Secret-Key für aktuell gewählten
+		// T2S-Engine vom Backend holen und danach optional Callback ausführen
+		// ---------------------------------------------------------------------
+		function refreshApiKeysForCurrentEngine(callback) {
+			var t2sengine = $('input[name=t2s_engine]:checked').val();
+
+			if (!t2sengine) {
+				if (typeof callback === 'function') {
+					callback();
+				}
+				return;
+			}
+
+			$.ajax({
+				url: "./index.cgi",
+				type: "GET",
+				dataType: "json",
+				data: {
+					getkeys   : 1,
+					t2s_engine: t2sengine
+				}
+			})
+			.done(function (result) {
+				if (result) {
+					$("#apikey").val(result.apikey || "");
+					$("#seckey").val(result.seckey || "");
+				}
+			})
+			.fail(function (jqXHR, textStatus, errorThrown) {
+				console.log("refreshApiKeysForCurrentEngine failed:", textStatus, errorThrown);
+			})
+			.always(function () {
+				if (typeof callback === 'function') {
+					callback();
+				}
+			});
+		}
+
+		// ---------------------------------------------------------------------
+		// Radio-Buttons für T2S-Engine: erst Keys nachladen, dann UI anpassen
+		// ---------------------------------------------------------------------
+		$('#engine-selector input')
+			.off('change.apikey')
+			.on('change.apikey', function () {
+				refreshApiKeysForCurrentEngine(function () {
+					// deine bestehende Logik für Sichtbarkeit etc.
+					prepareTTSConfigFields();
+				});
+			});
+
+
 		
 
 //************************ Prepare Elevenlabs ********************************	
 	
-		function populateElevenlabsLang()   {
-			console.log("populateElevenlabsLang");
-			if (document.main_form.tts_elevenlabs.checked == true) {
-				var url = 'https://api.elevenlabs.io/v1/models';
-				$('#t2slang').empty();
-				var key = document.getElementById('apikey').value;
-				//var key = "77ba25e2758b20cb43867c8926ef30d0";
-				const options = {method: 'GET', headers: {"xi-api-key": "" + key + ""}};
-				fetch(url, options)
-					.then(response => response.json())
-					.then(function(data)  {
-						//console.log("Daten: " + data[0]);
-						if (data[0] === undefined) {
-							text = ("Elevenlabs Error: " + data.detail.message);
-							//message(text);
-							dialog(text, 'OK', 'error', 'Elevenlabs language');
-							return false;
-						} else {
-							let lang = data[0]['languages'];
-							$('#t2slang').append('<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>');
-							lang.forEach((lang, index) => {
-								if (lang.language_id == "<TMPL_VAR TTS.messageLang>")   {
-									$('#t2slang').append("<option selected='selected' value=\"" + lang.language_id + "\">&nbsp;" + lang.name + "</option>");
-								} else {
-									$('#t2slang').append("<option value=\"" + lang.language_id + "\">&nbsp;" + lang.name + "</option>");
-								}
-							})
-							$('#t2slang').selectmenu('refresh', true);
-						}
-					})
-					.catch(err => (err));
-					//dialog(err, 'OK', 'error', 'Elevenlabs language');
-					populateElevenlabsVoices();
-				};
-			};
-		
-		
-		function populateElevenlabsVoices()   {
-			console.log("populateElevenlabsVoices");
-			$('#voice').empty();
-			var key = document.getElementById('apikey').value;
-			//var key = "77ba25e2758b20cb43867c8926ef30d0";
-			const options = {method: 'GET', headers: {"xi-api-key": "" + key + ""}};
-			var url = 'https://api.elevenlabs.io/v2/voices';
-			fetch(url, options)
-				.then(response => response.json())
-				.then(function(data)  {
-					let voice = data['voices'];
-					//console.log("Daten: " + voice);
-					if (voice === undefined) {
-						text = ("Elevenlabs Error: " + data.detail.message);
-						//message(text);
-						dialog(text, 'OK', 'error', 'Elevenlabs Voice');
-						return false;
-					} else {
-						//console.log(voice);
-						$('#voice').append('<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>');
-						voice.forEach((voice, index) => {
-							if (voice.voice_id == "<TMPL_VAR TTS.voice>")   {
-								$('#voice').append("<option selected='selected' id=\"" + voice.preview_url + "\" value=\"" + voice.voice_id + "\">&nbsp;" + voice.name + " - " + voice.labels.age + ", " + voice.labels.description + "</option>");
-							} else {
-								$('#voice').append("<option id=\"" + voice.preview_url + "\" value=\"" + voice.voice_id + "\">&nbsp;" + voice.name + " - " + voice.labels.age + ", " + voice.labels.description + "</option>");
-								//console.log((voice.preview_url));
-							}
-						})
-						$('#voice').selectmenu('refresh', true);
-					}
-				})
-				.catch(err => (err));
-				//dialog(err, 'OK', 'error', 'Elevenlabs Voice');
-				return;
-		};
+function populateElevenlabsLang() {
+    console.log("populateElevenlabsLang");
+
+    if (!document.main_form.tts_elevenlabs ||
+        document.main_form.tts_elevenlabs.checked !== true) {
+        return;
+    }
+
+    const url = 'https://api.elevenlabs.io/v1/models';
+    $('#t2slang').empty();
+
+    const key = document.getElementById('apikey').value.trim();
+    if (!key) {
+        console.warn("ElevenLabs language error: no API key set.");
+        return;
+    }
+
+    const options = { method: 'GET', headers: { "xi-api-key": key } };
+
+    fetch(url, options)
+        .then(response => response.json())
+        .then(function (data) {
+
+            if (data[0] === undefined) {
+                console.warn("ElevenLabs language error:", data.detail ? data.detail.message : "Unknown error");
+                return false;
+            }
+
+            let lang = data[0]['languages'];
+
+            $('#t2slang').append(
+                '<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>'
+            );
+
+            lang.forEach((lang, index) => {
+                if (lang.language_id == "<TMPL_VAR TTS.messageLang>") {
+                    $('#t2slang').append(
+                        "<option selected='selected' value=\"" + lang.language_id + "\">&nbsp;" +
+                        lang.name + "</option>"
+                    );
+                } else {
+                    $('#t2slang').append(
+                        "<option value=\"" + lang.language_id + "\">&nbsp;" +
+                        lang.name + "</option>"
+                    );
+                }
+            });
+
+            $('#t2slang').selectmenu('refresh', true);
+
+            // Alte Handler weg, eigenen ElevenLabs-Handler setzen
+            $('#t2slang').off('change.elevenlabs').on('change.elevenlabs', function () {
+                // Nur Voiceliste aktualisieren – Sprache selbst bleibt unverändert
+                populateElevenlabsVoices();
+            });
+
+            // Direkt initiale Voiceliste laden
+            populateElevenlabsVoices();
+        })
+        .catch(function (err) {
+            console.warn("ElevenLabs language error:", err);
+        });
+}
+
+
+function populateElevenlabsVoices() {
+    console.log("populateElevenlabsVoices");
+
+    $('#voice').empty();
+
+    const key = document.getElementById('apikey').value.trim();
+    if (!key) {
+        console.warn("ElevenLabs voice error: no API key set.");
+        return;
+    }
+
+    const options = { method: 'GET', headers: { "xi-api-key": key } };
+    const url = 'https://api.elevenlabs.io/v2/voices';
+
+    fetch(url, options)
+        .then(response => response.json())
+        .then(function (data) {
+            let voice = data['voices'];
+
+            if (voice === undefined) {
+                console.warn("ElevenLabs voice error:", data.detail ? data.detail.message : "Unknown error");
+                return false;
+            }
+
+            $('#voice').append(
+                '<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>'
+            );
+
+            voice.forEach((voice, index) => {
+                if (voice.voice_id == "<TMPL_VAR TTS.voice>") {
+                    $('#voice').append(
+                        "<option selected='selected' id=\"" + voice.preview_url +
+                        "\" value=\"" + voice.voice_id + "\">&nbsp;" +
+                        voice.name + " - " + voice.labels.age + ", " +
+                        voice.labels.description + "</option>"
+                    );
+                } else {
+                    $('#voice').append(
+                        "<option id=\"" + voice.preview_url +
+                        "\" value=\"" + voice.voice_id + "\">&nbsp;" +
+                        voice.name + " - " + voice.labels.age + ", " +
+                        voice.labels.description + "</option>"
+                    );
+                }
+            });
+
+            $('#voice').selectmenu('refresh', true);
+        })
+        .catch(function (err) {
+            console.warn("ElevenLabs voice error:", err);
+        });
+
+    return;
+}
+
 		
 //************************ End of Prepare Elevenlabs ********************************	
 			
 //************************ Prepare MS Azure ********************************
-	  
+
 var regionOptions = document.getElementById("regionOptions");
 
 /**
@@ -1733,10 +1842,10 @@ function populateAzureVoices() {
 
     var apikey = $('#apikey').val();
     if (!apikey) {
-        console.log("No API key set, aborting voice load.");
+        console.log("Azure Voice: No API key set, aborting voice load.");
         return;
     }
-    console.log("Actual API-Key: " + apikey);
+    console.log("Azure Voice: Actual API-Key:", apikey);
 
     // Felder leeren
     $('#t2slang').empty();
@@ -1826,33 +1935,38 @@ function populateAzureVoices() {
             }
 
         } else {
-            // HTTP-Fehler
-            console.log('Error Code: ' + this.status);
-
-            dialog(
-                '<TMPL_VAR T2S.VOICE_ERROR1>: ' + this.status +
-                '. <TMPL_VAR T2S.VOICE_ERROR2>: ' + apikey +
-                ' <TMPL_VAR T2S.VOICE_ERROR3>',
-                'OK', 'error', 'Azure Voice'
+            // HTTP-Fehler → nur noch Console, kein Dialog
+            console.warn(
+                "Azure Voice HTTP error:",
+                request.status,
+                request.status === 401 ? "(possibly invalid API key)" : ""
             );
 
-            $('#t2slang').empty();
-            $('#voice').empty();
-            $('#t2slang').selectmenu('refresh', true);
-            $('#voice').selectmenu('refresh', true);
+            $('#t2slang').empty().append(
+                '<option selected disabled value=""><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>'
+            ).selectmenu('refresh', true);
+
+            $('#voice').empty().append(
+                '<option selected disabled value=""><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>'
+            ).selectmenu('refresh', true);
         }
     };
 
     request.onerror = function () {
-        console.log('Connection error while loading Azure voices');
-        dialog(
-            '<TMPL_VAR T2S.VOICE_ERROR1>: Connection error.',
-            'OK', 'error', 'Azure Voice'
-        );
+        console.warn('Azure Voice: connection error while loading voices');
+
+        $('#t2slang').empty().append(
+            '<option selected disabled value=""><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>'
+        ).selectmenu('refresh', true);
+
+        $('#voice').empty().append(
+            '<option selected disabled value=""><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>'
+        ).selectmenu('refresh', true);
     };
 
     request.send();
 }
+//************************ finished MS Azure ********************************
 
 
 //************************ finished MS Azure ********************************	 
