@@ -247,7 +247,7 @@ function getRoomCoordinator_OLD($room){
 /**
  * Neue getGroup() — nutzt die echte Sonos ZoneGroupTopology
  * Rückgabe:
- *   [0] => master
+ *   [0] => master (Zonenname, lowercase)
  *   [1] => member1
  *   [2] => member2
  *   ...
@@ -256,47 +256,56 @@ function getGroup(string $zonename)
 {
     global $sonoszone;
 
+    // Zone bekannt?
     if (!isset($sonoszone[$zonename])) {
         return [];
     }
 
-    // 1) IP & UUID des angesprochenen Players
-    $playerIp  = $sonoszone[$zonename][0];
+    // 1) IP & UUID (RINCON) des angesprochenen Players
+    $playerIp    = $sonoszone[$zonename][0];
     $playerRincon = $sonoszone[$zonename][1];
 
-    // 2) Topologie abrufen über irgendeinen Player (wir nehmen denselben)
+    // 2) Topologie abrufen
     try {
         $groups = sonosGetZoneGroups($playerIp);
     } catch (Exception $e) {
-        // Fallback: alte Logik
+        // Fallback: Single-Zone
+        LOGWARN("helper.php: getGroup: sonosGetZoneGroups failed for '".$zonename."' (".$e->getMessage().") – fallback to single zone.");
         return [$zonename];
     }
 
-    // 3) Gruppe suchen, in der der Player Member ist
+    // 3) Mapping-Tabelle RINCON -> Zonename aufbauen
+    $rinconToZone = [];
+    foreach ($sonoszone as $name => $data) {
+        // $data[1] = RINCON
+        $rinconToZone[$data[1]] = $name;
+    }
+
+    // 4) Gruppe suchen, in der der Player Member ist
     foreach ($groups as $groupId => $g) {
 
         if (!isset($g['members'][$playerRincon])) {
             continue;
         }
 
-        // 4) Master der Gruppe → RINCON zu Zonename mappen
+        // Koordinator-RINCON -> Zonename
         $masterRincon = $g['coordinator'];
-        $masterName   = array_search($masterRincon, array_column($sonoszone, 1), true);
+        $masterName   = $rinconToZone[$masterRincon] ?? $zonename;
 
-        if ($masterName === false) {
-            $masterName = $zonename; // fallback
-        }
-
-        $result = [$masterName]; // erstes Element: master
+        $masterName = strtolower($masterName);
+        $result     = [$masterName]; // erstes Element: master
 
         // 5) Alle Mitglieder in Zonennamen umwandeln
         foreach ($g['members'] as $rincon => $info) {
 
-            $mName = array_search($rincon, array_column($sonoszone, 1), true);
-            if ($mName === false) continue;
+            if (!isset($rinconToZone[$rincon])) {
+                continue; // unbekannte Zone, z.B. alte Konfigreste
+            }
 
-            if ($mName !== $masterName) {
-                $result[] = strtolower($mName);
+            $mName = strtolower($rinconToZone[$rincon]);
+
+            if ($mName !== $masterName && !in_array($mName, $result, true)) {
+                $result[] = $mName;
             }
         }
 

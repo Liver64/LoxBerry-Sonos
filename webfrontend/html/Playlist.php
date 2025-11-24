@@ -82,7 +82,10 @@ function playlist() {
 			$sonos->Stop();
 			if (isset($_GET['profile']) or isset($_GET['Profile']))    {
 				$volume = $profile_details[0]['Player'][GROUPMASTER][0]['Volume'];
+			} else {
+				volume_group();
 			}
+			$sonos = new SonosAccess($sonoszone[GROUPMASTER][0]);
 			$sonos->SetVolume($volume);
 			$sonos->Play();
 		} else {

@@ -453,8 +453,10 @@ function PluginRadio()
 		#print_r($profile_details);
 		if (isset($_GET['profile']) or isset($_GET['Profile']))    {
 			$volume = $profile_details[0]['Player'][$master][0]['Volume'];
+		} elseif (isset($_GET['member'])) {
+			volume_group();
+			$sonos = new SonosAccess($sonoszone[GROUPMASTER][0]);
 		}
-		
 		if(!isset($_GET['load']) and !isset($_GET['rampto'])) {
 			$sonos->SetMute(false);
 			$sonos->Stop();

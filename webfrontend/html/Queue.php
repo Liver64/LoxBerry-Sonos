@@ -45,7 +45,7 @@ function zap()
 	
 	# START ZAPZONE
 
-	# check if ile exist
+	# check if file exist
 	if (is_file($zapname) === false)  {
 		# file exists
 		LOGGING("queue.php: Start ZAPZONE", 7);
@@ -257,7 +257,10 @@ function PlayFavorite()
 	$sonos->SetPlayMode('0'); // NORMAL
 	if (isset($_GET['profile']) or isset($_GET['Profile']))    {
 		$volume = $profile_details[0]['Player'][$master][0]['Volume'];
-	} 
+	} elseif (isset($_GET['member'])) {
+		volume_group();
+		$sonos = new SonosAccess($sonoszone[$master][0]);
+	}
 	$sonos->ClearQueue();
 	LOGINF("queue.php: Settings to play your favorite has been prepared!");
 	try {
@@ -267,6 +270,7 @@ function PlayFavorite()
 		} else {
 			$sonos->SetVolume($volume);
 		}
+		$sonos->SetVolume($volume);
 		$sonos->Play();
 		if (count($sonos->GetCurrentPlaylist()) > 1)  {
 			file_put_contents($favtmp,"running");
@@ -359,7 +363,10 @@ function PlayAllFavorites()
 			}
 			if (isset($_GET['profile']) or isset($_GET['Profile']))    {
 				$volume = $profile_details[0]['Player'][$master][0]['Volume'];
-			} 
+			} elseif (isset($_GET['member'])) {
+				volume_group();
+				$sonos = new SonosAccess($sonoszone[$master][0]);
+			}
 			if(isset($_GET['rampto']) and $save == false)  {
 				RampTo();
 			} else {
@@ -574,7 +581,10 @@ function PlayTrackFavorites()
 	$sonos->SetPlayMode('0'); // NORMAL
 	if (isset($_GET['profile']) or isset($_GET['Profile']))    {
 		$volume = $profile_details[0]['Player'][$master][0]['Volume'];
-	} 
+	} elseif (isset($_GET['member'])) {
+		volume_group();
+		$sonos = new SonosAccess($sonoszone[$master][0]);
+	}
 	LOGINF("queue.php: Settings to play your favorite has been prepared!");
 	$shift = false;
 	# Select 1st favorite 
@@ -695,7 +705,10 @@ function PlayRadioFavorites()
 		@$sonos->SetGroupMute(false);
 		if (isset($_GET['profile']) or isset($_GET['Profile']))    {
 			$volume = $profile_details[0]['Player'][$master][0]['Volume'];
-		} 
+		} elseif (isset($_GET['member'])) {
+			volume_group();
+			$sonos = new SonosAccess($sonoszone[$master][0]);
+		}
 		LOGINF("queue.php: Settings to play your favorite has been prepared!");
 		# check addionally if Radio Station has been successful loaded
 		$mediainfo = $sonos->GetMediaInfo();
@@ -817,7 +830,10 @@ function PlaySonosPlaylist()
 		@$sonos->SetGroupMute(false);
 		if (isset($_GET['profile']) or isset($_GET['Profile']))    {
 			$volume = $profile_details[0]['Player'][$master][0]['Volume'];
-		} 
+		} elseif (isset($_GET['member'])) {
+			volume_group();
+			$sonos = new SonosAccess($sonoszone[$master][0]);
+		}
 		#$sonos->SetVolume($volume);
 		LOGINF("queue.php: Settings to play your playlist has been prepared!");
 		# check addionally if Playlist has been successful loaded
@@ -1047,7 +1063,10 @@ function PlayPlaylistFavorites()
 		@$sonos->SetGroupMute(false);
 		if (isset($_GET['profile']) or isset($_GET['Profile']))    {
 			$volume = $profile_details[0]['Player'][$master][0]['Volume'];
-		} 
+		} elseif (isset($_GET['member'])) {
+			volume_group();
+			$sonos = new SonosAccess($sonoszone[$master][0]);
+		}
 		#$sonos->SetVolume($volume);
 		LOGINF("queue.php: Settings to play your playlist has been prepared!");
 		# check addionally if Playlist has been successful loaded
