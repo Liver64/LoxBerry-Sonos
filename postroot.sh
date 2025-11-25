@@ -161,6 +161,45 @@ install_piper() {
     return 0
 }
 
+# -------------------------------------------------------------------
+# Sonos Event Listener systemd-Service installieren/aktivieren
+# -------------------------------------------------------------------
+install_sonos_event_listener_service() {
+    SERVICE_SRC="/opt/loxberry/webfrontend/html/plugins/sonos4lox/bin/cron/sonos_event_listener.service"
+    SERVICE_DEST="/etc/systemd/system/sonos_event_listener.service"
+
+    if [ ! -f "$SERVICE_SRC" ]; then
+        log "<WARNING> Sonos Event Listener service file not found at $SERVICE_SRC – skipping service install."
+        return 0
+    fi
+
+    # Prüfen, ob systemctl verfügbar ist
+    if ! command -v systemctl >/dev/null 2>&1; then
+        log "<WARNING> systemctl not found – cannot install sonos_event_listener.service."
+        return 0
+    fi
+
+    log "<INFO> Installing Sonos Event Listener systemd service…"
+
+    # Service-Datei nach /etc/systemd/system kopieren
+    cp "$SERVICE_SRC" "$SERVICE_DEST"
+    chmod 644 "$SERVICE_DEST"
+
+    # systemd einlesen
+    if systemctl daemon-reload >/dev/null 2>&1; then
+        log "<INFO> systemd daemon reloaded."
+    else
+        log "<WARNING> Failed to reload systemd daemon (daemon-reload)."
+    fi
+
+    # Service aktivieren & starten
+    if systemctl enable --now sonos_event_listener.service >/dev/null 2>&1; then
+        log "<OK> sonos_event_listener.service has been enabled and started."
+    else
+        log "<WARNING> Failed to enable/start sonos_event_listener.service. Please check 'systemctl status sonos_event_listener.service'."
+    fi
+}
+
 # ===== Aufruf gleich zu Beginn von postroot.sh =====
 install_piper
 
@@ -176,5 +215,8 @@ if [ -x "$PIPER_BIN" ]; then
 else
     log "<WARNING> Piper binary not found at $PIPER_BIN – cannot create symlink."
 fi
+
+# ---- Sonos Event Listener systemd-Service installieren ----
+install_sonos_event_listener_service
 
 exit 0

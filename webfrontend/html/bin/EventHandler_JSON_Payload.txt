@@ -1,0 +1,78 @@
+state-Event (AVTransport)
+{
+  "type": "state",
+  "state": "PLAYING",
+  "room": "badezimmer",
+  "ip": "192.168.50.20",
+  "rincon": "RINCON_000E5872D8AC01400",
+  "model": "PLAY:3",
+  "service": "AVTransport",
+  "ts": 1764087775
+}
+volume-Event (RenderingControl, Einzelplayer-Volume)
+{
+  "type": "volume",
+  "volume": 22,
+  "room": "badezimmer",
+  "ip": "192.168.50.20",
+  "rincon": "RINCON_000E5872D8AC01400",
+  "model": "PLAY:3",
+  "service": "RenderingControl",
+  "ts": 1764087756
+}
+track-Event (aktueller Titel, z.B. Sonos Radio)
+{
+  "type": "track",
+  "title": "SWANK WHITE",
+  "artist": "Joey Bada",
+  "album": "",
+  "albumArtUri": "https://sonosradio.imgix.net/station-images/4c6f6439-fc95-4460-8f20-b1e471babe1b.jpeg?w=200&auto=format,compress?w=200&mark-scale=93&mark-align=center,middle&mark=https%3A%2F%2Fcdn-images.dzcdn.net%2Fimages%2Fcover%2F35b38d413278dbc48cc098ea333a1d73%2F1000x1000-000000-80-0-0.jpg&auto=format,compress",
+  "room": "badezimmer",
+  "ip": "192.168.50.20",
+  "rincon": "RINCON_000E5872D8AC01400",
+  "model": "PLAY:3",
+  "service": "AVTransport",
+  "ts": 1764087786
+}
+nexttrack-Event (Nächster Titel in der Queue)
+{
+  "type": "nexttrack",
+  "title": "Down Under",
+  "artist": "Men At Work",
+  "album": "Business as Usual",
+  "albumArtUri": "https://e-cdns-images.dzcdn.net/images/cover/d2b29dc2818c950c42bcdc221dcf9f0b/1000x1000-000000-80-0-0.jpg",
+  "room": "badezimmer",
+  "ip": "192.168.50.20",
+  "rincon": "RINCON_000E5872D8AC01400",
+  "model": "PLAY:3",
+  "service": "AVTransport",
+  "ts": 1764088000
+}
+group-Event (ZoneGroupTopology, Gruppe mit z.B. duschbad)
+{
+  "type": "group",
+  "group_id": "RINCON_347E5C31C4A401400:1656907279",
+  "is_coordinator": true,
+  "coordinator_room": "badezimmer",
+  "members": [
+    {
+      "room": "duschbad",
+      "rincon": "RINCON_347E5C31C4A401400",
+      "ip": "192.168.50.34"
+    },
+    {
+      "room": "badezimmer",
+      "rincon": "RINCON_000E5872D8AC01400",
+      "ip": "192.168.50.20"
+    }
+  ],
+  "room": "badezimmer",
+  "ip": "192.168.50.20",
+  "rincon": "RINCON_000E5872D8AC01400",
+  "model": "PLAY:3",
+  "service": "ZoneGroupTopology",
+  "ts": 1764087775
+}
+
+
+
