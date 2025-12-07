@@ -55,14 +55,20 @@ function say() {
 			LOGGING("play_t2s.php: Wrong Syntax, please correct! Even 'say&text=' or 'say&messageid=' in combination with &clip are necessary to play an anouncement. (check Wiki)", 3);	
 			exit;
 		}
-		if(isset($_GET['clip']))  {
-			$tocall = "Single Clip";
-			LOGGING("play_t2s.php: 'Single Clip' has been identified", 6);	
-			sendAudioSingleClip();
+		if (isset($_GET['playbatch'])) {
+			$tocall = "Playbatch T2S";
+			LOGGING("play_t2s.php: 'Playbatch T2S' has been identified", 6);
+			sendmessage();
 		} else {
-			$tocall = "Single T2S";
-			LOGGING("play_t2s.php: 'Single T2S' has been identified", 6);
-			sendmessage();			
+			if(isset($_GET['clip']))  {
+				$tocall = "Single Clip";
+				LOGGING("play_t2s.php: 'Single Clip' has been identified", 6);	
+				sendAudioSingleClip();
+			} else {
+				$tocall = "Single T2S";
+				LOGGING("play_t2s.php: 'Single T2S' has been identified", 6);
+				sendmessage();			
+			}
 		}
 	} else {
 		if(isset($_GET['clip']) and !isset($_GET['profile']) and isset($_GET['member']))  {
