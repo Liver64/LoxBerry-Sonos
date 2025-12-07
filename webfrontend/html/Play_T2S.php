@@ -10,6 +10,10 @@ require_once "loxberry_system.php";
 $lbhostname = lbhostname();
 $lbwebport  = lbwebserverport();
 $myLBip     = LBSystem::get_localip();
+if (!defined('T2S_BATCHFILE')) {
+    // Batch-Datei im RAM (/dev/shm) pro Plugin
+    define('T2S_BATCHFILE', "/dev/shm/".LBPPLUGINDIR."/t2s_batch.txt");
+}
 
 
 /**
@@ -46,7 +50,7 @@ function say() {
 		if ((!isset($_GET['text'])) && (!isset($_GET['messageid'])) && (!isset($errortext)) && (!isset($_GET['sonos'])) &&
 			(!isset($_GET['text'])) && (!isset($_GET['weather'])) && (!isset($_GET['abfall'])) && (!isset($_GET['pollen'])) && (!isset($_GET['warning'])) &&
 			(!isset($_GET['distance'])) && (!isset($_GET['clock'])) && 
-			(!isset($_GET['calendar'])) && (!isset($_GET['playbatch']))) {
+			(!isset($_GET['calendar'])) && (!$_GET['action'] == "playbatch")) {
 			$tocall = "Error!! Data/Input is missing";
 			LOGGING("play_t2s.php: Wrong Syntax, please correct! Even 'say&text=' or 'say&messageid=' in combination with &clip are necessary to play an anouncement. (check Wiki)", 3);	
 			exit;
@@ -331,9 +335,10 @@ function create_tts($text ='') {
         $rampsleep = false;
         LOGGING("play_t2s.php: sonos-to-speech plugin has been called", 7);
 
-    } elseif ((!isset($_GET['text'])) and (isset($_GET['playbatch']))) {
-        LOGGING("play_t2s.php: no text has been entered", 3);
-        exit();
+	} elseif ((!isset($_GET['text'])) && isset($_GET['playbatch'])) {
+		// Batch-Playback: es sollen nur vorhandene MP3s aus der Batchdatei gespielt werden
+		LOGGING("play_t2s.php: create_tts(): Skipping TTS generation for playbatch – using batch file only.", 7);
+		return;
 
     } elseif ($text <> '') {
         if (empty($greet))  {
@@ -611,7 +616,7 @@ function create_tts($text ='') {
 **/		
 
 function play_tts($filename) {
-	global $volume, $config, $dist, $messageid, $sonos, $text, $errortext, $lbphtmldir, $messageid, $sleeptimegong, $sonoszone, $sonoszonen, $master, $coord, $actual, $textstring, $zones, $time_start, $t2s_batch, $filename, $textstring, $home, $MP3path, $lbpplugindir, $logpath, $try_play, $MessageStorepath, $filename, $tts_stat;
+	global $volume, $config, $dist, $messageid, $sonos, $text, $errortext, $lbphtmldir, $messageid, $sleeptimegong, $sonoszone, $sonoszonen, $master, $coord, $actual, $textstring, $zones, $time_start, $t2s_batch, $filename, $textstring, $home, $MP3path, $logpath, $try_play, $MessageStorepath, $filename, $tts_stat;
 		
 		if (defined('T2SMASTER'))   {
 			$master = T2SMASTER;
@@ -683,13 +688,19 @@ function play_tts($filename) {
 		}
 
 		// if batch has been created add all T2S
-		$filenamebatch = "t2s_batch.txt";
-		if ((file_exists($filenamebatch)) and (!isset($_GET['playbatch']))){
-			$t2s_batch = file($filenamebatch, FILE_IGNORE_NEW_LINES);
-			foreach ($t2s_batch as $t2s => $t2s_value) {
-				$sonos->AddToQueue($t2s_value.".mp3");
+		$filenamebatch = "/dev/shm/".LBPPLUGINDIR."/t2s_batch.txt";
+
+		if (file_exists($filenamebatch) && isset($_GET['playbatch'])) {
+
+			$t2s_batch = file($filenamebatch, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+			foreach ($t2s_batch as $t2s_value) {
+				// Jede Zeile ist ein x-file-cifs://... Pfad ohne ".mp3"
+				$sonos->AddToQueue($t2s_value . ".mp3");
 			}
-			LOGGING("play_t2s.php: Messages from batch has been added to Queue", 7);	
+
+			LOGGING("play_t2s.php: Messages from batch file '".$filenamebatch."' have been added to Queue", 7);
+
 		} else {
 			// if no batch has been created add single T2S
 			$t2s_file = file_exists($config['SYSTEM']['ttspath']."/".$filename.".mp3");
@@ -753,7 +764,7 @@ function play_tts($filename) {
 		} catch (Exception $e) {
 			LOGGING("play_t2s.php: The requested T2S message ".trim($messageid).".mp3 could not be played!", 3);
 			$notification = array(
-				"PACKAGE"  => $lbpplugindir,
+				"PACKAGE"  => LBPPLUGINDIR,
 				"NAME"     => "Sonos",
 				"MESSAGE"  => "The requested T2S message could not be played!",
 				"SEVERITY" => 3,
@@ -826,8 +837,9 @@ function sendmessage($errortext = "") {
 
 	// ----------------------------------------------------------------------
 	// AUTO-MODE: Prefer AudioClip for single T2S if possible
+	//     → NICHT bei batch und NICHT bei playbatch
 	// ----------------------------------------------------------------------
-	if (!isset($_GET['batch']) && !isset($_GET['sonos'])) {
+	if (!isset($_GET['batch']) && !isset($_GET['sonos']) && !isset($_GET['playbatch'])) {
 		// Determine effective master (T2SMASTER overrides $master)
 		$autoMaster = $master;
 		if (defined('T2SMASTER')) {
@@ -845,6 +857,7 @@ function sendmessage($errortext = "") {
 			return;
 		}
 	}
+
 	// ----------------------------------------------------------------------
 	// Ende AUTO-MODE Single
 	// ----------------------------------------------------------------------
@@ -861,8 +874,10 @@ function sendmessage($errortext = "") {
 			create_tts();
 		}
 		// creates file to store T2S filenames
-		$filenamebatch = "t2s_batch.txt";
+		@mkdir(dirname(T2S_BATCHFILE), 0775, true);
+		$filenamebatch = T2S_BATCHFILE;
 		$file = fopen($filenamebatch, "a+");
+
 		if($file == false ) {
 			LOGGING("play_t2s.php: There is no T2S batch file to be written!", 3);
 			exit();
@@ -1477,16 +1492,22 @@ function sendgroupmessage() {
 * @return: T2S
 **/
 function t2s_playbatch() {
-	global $textstring, $time_start;
-			
-	$textstring = true;
-	$filenamebatch = "t2s_batch.txt";
-	if (!file_exists($filenamebatch)) {
-		LOGGING("play_t2s.php: There is no T2S batch file to be played!", 4);
-		exit();
-	}
-	say();
+    global $time_start;
+
+    $filenamebatch = "/dev/shm/".LBPPLUGINDIR."/t2s_batch.txt";
+
+    if (!file_exists($filenamebatch)) {
+        LOGGING("play_t2s.php: There is no T2S batch file to be played! (".$filenamebatch.")", 4);
+        exit();
+    }
+
+    // Kennzeichnen: das ist ein reiner Batch-Playback-Aufruf
+    $_GET['playbatch'] = 1;
+
+    say();
 }
+
+
 
 
 
