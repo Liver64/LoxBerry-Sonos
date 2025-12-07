@@ -1930,107 +1930,115 @@ function volume_group()  {
 	
 	global $sonoszone, $sonos, $master, $volume, $config, $sonoszonen, $min_vol, $profile_selected;
 
-	$master = $_GET['zone'];
-	$sonos = new SonosAccess($sonoszone[$master][0]);
-	#$sonos->SetMute(true);
-	if (isset($_GET['member']))  {
-		/**
-		$member = $_GET['member'];
-		if($member === 'all') {
-			$memberon = array();
-			foreach ($sonoszone as $zone => $ip) {
-				$zoneon = checkZoneOnline($zone);
-				if ($zoneon === (bool)true and $zone != $master)  {
-					array_push($memberon, $zone);
-				}
-			}
-			$member = $memberon;
-			LOGGING("sonos.php: Players has been grouped to Player ".$master, 5);	
-		} else {
-			$member = explode(',', $member);
-			$memberon = array();
-			foreach ($member as $value) {
-				$zoneon = checkZoneOnline($value);
-				if ($zoneon === (bool)true)  {
-					array_push($memberon, $value);
-				} else {
-					#LOGGING("sonos.php: Player '".$value."' could not be added to the group!!", 4);
-				}
-			}
-			$member = $memberon;
-		}
-		if (in_array($master, $member)) {
-			LOGGING("sonos.php: The zone ".$master." could not be entered as member again. Please remove from Syntax '&member=".$master."' !", 3);
-			exit;
-		}
-**/
-		#print_r(MEMBER);
-		foreach (MEMBER as $memplayer => $zone2) {
-			#echo $zone2;
-			$sonos = new SonosAccess($sonoszone[$zone2][0]);
+	// Master aus URL übernehmen, falls vorhanden
+	if (isset($_GET['zone']) && $_GET['zone'] !== '') {
+		$master = $_GET['zone'];
+	}
 
-			if(isset($_GET['volume']) or isset($_GET['groupvolume']) or isset($_GET['keepvolume']))  { 
-				//isset($_GET['volume']) ? $groupvolume = $_GET['volume'] : $groupvolume = $_GET['groupvolume'];
-				if(isset($_GET['volume'])) {
-					# Volume from Syntax/URL
-					$volume = $_GET['volume'];
-					LOGGING("sonos.php: Volume for Group Member ".$zone2." has been set to: ".$volume, 7);
-				} elseif (isset($_GET['groupvolume'])) {
-					# Groupvolume from Syntax/URL
-					$newvolume = $sonos->GetVolume();
-					$volume = $newvolume + ($newvolume * ($groupvolume / 100));  // multiplizieren
-					// prüfen ob errechnete Volume > 100 ist, falls ja max. auf 100 setzen
-					$volume > 100 ? $volume = 100 : $volume;
-					LOGGING("sonos.php: Group Volume for Member ".$zone2." has been set to: ".$volume, 7);
-				} elseif (isset($_GET['keepvolume'])) {
-					# current volume from Syntax/URL
-					$tmg_volume = $sonos->GetVolume();
-					# if current volume is less then treshold then take standard from config
-					if ($tmg_volume >= $min_vol)  {
-						$volume = $tmg_volume;
-						LOGGING("sonos.php: Volume for Member ".$zone2." has been set to current volume", 7);
-					} else {
-						if (isset($_GET['text']) or isset($_GET['messageid']) or
-							(isset($_GET['sonos'])) or (isset($_GET['weather'])) or 
-							(isset($_GET['abfall'])) or (isset($_GET['witz'])) or 
-							(isset($_GET['pollen'])) or (isset($_GET['warning'])) or
-							(isset($_GET['distance'])) or (isset($_GET['clock'])) or 
-							(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch"))	{
-							$volume = $sonoszone[$zone2][3];
-							LOGGING("sonos.php: T2S Volume for Member ".$zone2." is less then ".$min_vol." and has been set exceptional to Standard volume ".$sonoszone[$zone2][3], 7);
-						} else {
-							$volume = $sonoszone[$zone2][4];
-							LOGGING("sonos.php: Volume for Member ".$zone2." is less then ".$min_vol." and has been set exceptional to Standard volume ".$sonoszone[$zone2][4], 7);
-						}
-					}
+	// ---------------------------------------------------------------------
+	// GUARD: Nur ausführen, wenn MEMBER definiert, Array und nicht leer ist
+	// ---------------------------------------------------------------------
+	if (!defined('MEMBER') || !is_array(MEMBER) || count(MEMBER) === 0) {
+		// Typischer Fall: CreateMember() hat keine gültigen Member gefunden
+		// (alle offline / unbekannt) und hat daher MEMBER nicht definiert.
+		LOGGING("sonos.php: volume_group(): MEMBER is undefined or empty... skipping group volume (master only).",4);
+		return;
+	}
+
+	// Sicherheit: Master existiert?
+	if (empty($master) || !isset($sonoszone[$master])) {
+		LOGGING("sonos.php: volume_group(): Master zone '$master' is not set or unknown – aborting group volume.",3);
+		return;
+	}
+
+	// Sonos-Objekt initialisieren (Master, wird für einige Pfade genutzt)
+	$sonos = new SonosAccess($sonoszone[$master][0]);
+	// $sonos->SetMute(true); // war auskommentiert, lasse ich so
+
+	// member-Parameter in der URL ist hier nicht mehr kritisch, da
+	// die tatsächlichen Member bereits durch CreateMember() in MEMBER
+	// hinterlegt wurden. Wir iterieren einfach über MEMBER.
+	// ---------------------------------------------------------------------
+	foreach (MEMBER as $memplayer => $zone2) {
+
+		// Sicherheit: Zone muss bekannt sein
+		if (!isset($sonoszone[$zone2])) {
+			LOGGING("sonos.php: volume_group(): Unknown member zone '$zone2' – skipped in volume_group.", 4);
+			continue;
+		}
+
+		$sonos = new SonosAccess($sonoszone[$zone2][0]);
+
+		if (isset($_GET['volume']) || isset($_GET['groupvolume']) || isset($_GET['keepvolume']))  { 
+
+			if (isset($_GET['volume'])) {
+				// Volume from Syntax/URL
+				$volume = $_GET['volume'];
+				LOGGING("sonos.php: Volume for Group Member ".$zone2." has been set to: ".$volume, 7);
+
+			} elseif (isset($_GET['groupvolume'])) {
+				// Groupvolume from Syntax/URL
+				// Achtung: $groupvolume muss global oder vorher gesetzt sein!
+				$newvolume = $sonos->GetVolume();
+				$volume    = $newvolume + ($newvolume * ($groupvolume / 100));  // multiplizieren
+				// prüfen ob errechnete Volume > 100 ist, falls ja max. auf 100 setzen
+				if ($volume > 100) {
+					$volume = 100;
 				}
-			} else {
-				# No volume from Syntax/URL
-				if (isset($_GET['text']) or isset($_GET['messageid']) or
-					(isset($_GET['sonos'])) or (isset($_GET['weather'])) or 
-					(isset($_GET['abfall'])) or (isset($_GET['witz'])) or 
-					(isset($_GET['pollen'])) or (isset($_GET['warning'])) or
-					(isset($_GET['distance'])) or (isset($_GET['clock'])) or 
-					(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch"))	{
-					# T2S Standard Volume
-					$volume = $sonoszone[$zone2][3];
-					LOGGING("sonos.php: Standard T2S Volume for Member ".$zone2." has been set to: ".$volume, 7);
+				LOGGING("sonos.php: Group Volume for Member ".$zone2." has been set to: ".$volume, 7);
+
+			} elseif (isset($_GET['keepvolume'])) {
+				// current volume from Syntax/URL
+				$tmg_volume = $sonos->GetVolume();
+				// if current volume is less then treshold then take standard from config
+				if ($tmg_volume >= $min_vol)  {
+					$volume = $tmg_volume;
+					LOGGING("sonos.php: Volume for Member ".$zone2." has been set to current volume", 7);
 				} else {
-					# Sonos Standard Volume
-					if (isset($_GET['profile']) or isset($_GET['Profile']))    {
-						$volume = $profile_selected[0]['Player'][$zone2][0]['Volume'];
+					if (isset($_GET['text']) or isset($_GET['messageid']) or
+						(isset($_GET['sonos'])) or (isset($_GET['weather'])) or 
+						(isset($_GET['abfall'])) or (isset($_GET['witz'])) or 
+						(isset($_GET['pollen'])) or (isset($_GET['warning'])) or
+						(isset($_GET['distance'])) or (isset($_GET['clock'])) or 
+						(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch"))	{
+						$volume = $sonoszone[$zone2][3];
+						LOGGING("sonos.php: T2S Volume for Member ".$zone2." is less then ".$min_vol." and has been set exceptional to Standard volume ".$sonoszone[$zone2][3], 7);
 					} else {
 						$volume = $sonoszone[$zone2][4];
-						LOGGING("sonos.php: Standard Sonos Volume for Group Member ".$zone2." has been set to: ".$volume, 7);
+						LOGGING("sonos.php: Volume for Member ".$zone2." is less then ".$min_vol." and has been set exceptional to Standard volume ".$sonoszone[$zone2][4], 7);
 					}
 				}
 			}
-			@$sonos->SetMute(false);
-			$sonos->SetVolume($volume);
+
+		} else {
+			// No volume from Syntax/URL
+			if (isset($_GET['text']) or isset($_GET['messageid']) or
+				(isset($_GET['sonos'])) or (isset($_GET['weather'])) or 
+				(isset($_GET['abfall'])) or (isset($_GET['witz'])) or 
+				(isset($_GET['pollen'])) or (isset($_GET['warning'])) or
+				(isset($_GET['distance'])) or (isset($_GET['clock'])) or 
+				(isset($_GET['calendar'])) or ($_GET['action'] == "playbatch"))	{
+				// T2S Standard Volume
+				$volume = $sonoszone[$zone2][3];
+				LOGGING("sonos.php: Standard T2S Volume for Member ".$zone2." has been set to: ".$volume, 7);
+			} else {
+				// Sonos Standard Volume
+				if (isset($_GET['profile']) or isset($_GET['Profile'])) {
+					$volume = $profile_selected[0]['Player'][$zone2][0]['Volume'];
+				} else {
+					$volume = $sonoszone[$zone2][4];
+					LOGGING("sonos.php: Standard Sonos Volume for Group Member ".$zone2." has been set to: ".$volume, 7);
+				}
+			}
 		}
+
+		@$sonos->SetMute(false);
+		$sonos->SetVolume($volume);
 	}
+
 	return;
 }
+
 
 
 

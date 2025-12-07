@@ -3,11 +3,13 @@
 #
 libjson-perl
 libapache2-mod-php
-sox task-spooler 
+sox 
+task-spooler 
 lame
 curl
 libcurl4
 php-soap
 php-cli
 libssl-dev 
-libasound2 wget
+libasound2 
+wget

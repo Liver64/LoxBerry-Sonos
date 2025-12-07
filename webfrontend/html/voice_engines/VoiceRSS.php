@@ -106,43 +106,15 @@ function t2s($t2s_param)
     }
 
     // =========================
-    // 3.5 Pre-API-check (connectivity & key validation)
-    // =========================
-    $pingUrl = "https://api.voicerss.org/?key=" . urlencode($apikey) . "&hl=en-us&src=ping";
-    $ctxPing = stream_context_create([
-        'http' => [
-            'method'  => 'GET',
-            'header'  => "User-Agent: LoxBerry-T2S/1.0\r\n",
-            'timeout' => 8,
-        ],
-        'ssl' => [
-            'verify_peer'      => true,
-            'verify_peer_name' => true,
-        ]
-    ]);
-
-    $pingResult = @file_get_contents($pingUrl, false, $ctxPing);
-    if ($pingResult === false) {
-        LOGERR("voice_engines/VoiceRSS.php: Pre-check failed — cannot reach VoiceRSS API endpoint.");
-        return false;
-    }
-
-    if (stripos($pingResult, 'ERROR') !== false) {
-        LOGERR("voice_engines/VoiceRSS.php: Pre-check response indicates an error from API: " . trim($pingResult));
-        return false;
-    }
-
-    LOGDEB("voice_engines/VoiceRSS.php: Pre-check successful — VoiceRSS API reachable and key seems valid.");
-
-    // =========================
     // 4. Prepare API request (force MP3!)
     // =========================
     $query = [
         'key' => $apikey,
         'src' => $text,
         'hl'  => $language,
-        'c'   => 'MP3'
+        'c'   => 'MP3',
     ];
+
     // Stimme nur setzen, wenn wir eine haben – sonst nimmt VoiceRSS die Standard-Voice
     if ($voiceName !== '') {
         $query['v'] = $voiceName;

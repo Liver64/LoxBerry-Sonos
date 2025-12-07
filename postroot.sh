@@ -1,222 +1,129 @@
 #!/bin/sh
-# postroot.sh — finalize Sonos4Lox Piper installation (root)
+# Will be executed as user "root".
 
-# /bin/sh (dash) kann kein -o pipefail, daher nur -eu
-set -eu
+PIPER_TARGET_DIR="$5/bin/plugins/sonos4lox"
+PIPER_BINARY="$PIPER_TARGET_DIR/piper/piper"
 
-# Piper Release-Version (bei Bedarf anpassbar)
-PIPER_VERSION="2023.11.14-2"
-PIPER_RELEASE_BASE="${PIPER_BASE_URL:-https://github.com/rhasspy/piper/releases/download/$PIPER_VERSION}"
+# ---------------------------------------------------------
+# Piper Installation
+# ---------------------------------------------------------
 
-# Globale Pfade/Flags
-PIPER_ROOT="/usr/local/bin/piper"
-PIPER_BIN="$PIPER_ROOT/piper"
-SYM="/usr/bin/piper"
-INST="false"
+if [ ! -e "$PIPER_BINARY" ]; then
 
-log() {
-    # Einfaches Logging, damit die Ausgabe einheitlich ist
-    echo "$1"
-}
+    echo "<INFO> Piper TTS binary not found at $PIPER_BINARY – starting installation."
+    mkdir -p "$PIPER_TARGET_DIR"
 
-install_piper() {
-    piper_root="$PIPER_ROOT"
-    piper_bin="$PIPER_BIN"
-    expected_arch=""
-    archive=""
-    url=""
+    TARBALL=""
+    URL=""
 
-    # ---- Architektur ermitteln (uname) ----
-    uname_arch="$(uname -m 2>/dev/null || echo unknown)"
+    # Architektur-Erkennung
+    if [ -e "$LBSCONFIG/is_arch_armv7l.cfg" ]; then
+        echo "<INFO> Detected Raspberry Pi (32-bit, armv7l)"
+        TARBALL="piper_linux_armv7l.tar.gz"
+        URL="https://github.com/rhasspy/piper/releases/download/2023.11.14-2/$TARBALL"
 
-    case "$uname_arch" in
-        x86_64)
-            expected_arch="x86_64"
-            log "<INFO> Piper install: Detected x86_64 via uname."
-            ;;
-        aarch64|arm64)
-            expected_arch="aarch64"
-            log "<INFO> Piper install: Detected aarch64 via uname."
-            ;;
-        armv7l|armv7)
-            expected_arch="armv7l"
-            log "<INFO> Piper install: Detected armv7l via uname."
-            ;;
-        *)
-            log "<WARNING> Piper install: Unsupported uname architecture '$uname_arch'."
-            # Wir versuchen später einen generischen Namen
-            expected_arch=""
-            ;;
-    esac
+    elif [ -e "$LBSCONFIG/is_arch_aarch64.cfg" ]; then
+        echo "<INFO> Detected Raspberry Pi / ARM device (64-bit, aarch64)"
+        TARBALL="piper_linux_aarch64.tar.gz"
+        URL="https://github.com/rhasspy/piper/releases/download/2023.11.14-2/$TARBALL"
 
-    # ---- Bereits existierendes Piper prüfen ----
-    if [ -x "$piper_bin" ]; then
-        file_out="$(file -b "$piper_bin" 2>/dev/null || echo "")"
-        current_arch="unknown"
+    elif [ -e "$LBSCONFIG/is_raspberry.cfg" ]; then
+        # Fallback: Raspberry, aber kein expliziter Arch-Marker
+        echo "<INFO> Detected Raspberry Pi (no explicit arch marker) – assuming 64-bit aarch64"
+        TARBALL="piper_linux_aarch64.tar.gz"
+        URL="https://github.com/rhasspy/piper/releases/download/2023.11.14-2/$TARBALL"
 
-        echo "$file_out" | grep -qi "x86-64" && current_arch="x86_64"
-        echo "$file_out" | grep -qi "aarch64" && current_arch="aarch64"
-        echo "$file_out" | grep -qi "ARM" && current_arch="armv7l"
+    elif [ -e "$LBSCONFIG/is_x86.cfg" ] || [ -e "$LBSCONFIG/is_x64.cfg" ]; then
+        echo "<INFO> Detected x86_64 system"
+        TARBALL="piper_linux_x86_64.tar.gz"
+        URL="https://github.com/rhasspy/piper/releases/download/2023.11.14-2/$TARBALL"
 
-        if [ -n "$expected_arch" ] && [ "$current_arch" = "$expected_arch" ]; then
-            log "<OK> Piper binary already present with matching architecture ($expected_arch) – nothing to do."
-            INST="true"
-            return 0
-        elif [ "$current_arch" != "unknown" ]; then
-            log "<WARNING> Piper binary architecture mismatch (have: $current_arch, need: ${expected_arch:-unknown}) – removing old install."
-            rm -rf "$piper_root"
-        else
-            log "<INFO> Piper binary present but architecture could not be detected – removing old install as precaution."
-            rm -rf "$piper_root"
-        fi
+    else
+        echo "<WARNING> Unknown hardware/architecture – skipping automatic Piper installation."
     fi
 
-    # ---- Download-Archiv anhand der erwarteten Architektur setzen ----
-    case "$expected_arch" in
-        aarch64)
-            archive="piper_linux_aarch64.tar.gz"
-            ;;
-        x86_64)
-            archive="piper_linux_x86_64.tar.gz"
-            ;;
-        armv7l)
-            archive="piper_linux_armv7l.tar.gz"
-            ;;
-        "")
-            # Fallback: generischer Name
-            archive="piper_linux_${uname_arch}.tar.gz"
-            log "<WARNING> Piper install: No known mapping for '$uname_arch'. Trying generic archive name '$archive'."
-            ;;
-        *)
-            log "<ERROR> Piper install: No download mapping for arch '$expected_arch'. Skipping automatic Piper install."
-            return 1
-            ;;
-    esac
+    if [ -n "$URL" ] && [ -n "$TARBALL" ]; then
+        echo "<INFO> Downloading Piper from $URL"
+        if wget -O "$PIPER_TARGET_DIR/$TARBALL" "$URL"; then
+            cd "$PIPER_TARGET_DIR" || {
+                echo "<ERROR> Cannot change directory to $PIPER_TARGET_DIR"
+                exit 1
+            }
 
-    url="$PIPER_RELEASE_BASE/$archive"
-
-    attempts=0
-    max_attempts=2
-
-    mkdir -p /usr/local/bin
-    cd /usr/local/bin
-
-    while [ "$attempts" -lt "$max_attempts" ]; do
-        attempts=$((attempts + 1))
-        log "<INFO> Piper install: Download attempt $attempts of $max_attempts..."
-        log "<INFO>   URL: $url"
-
-        # Alte Reste entfernen, falls vorher was schiefging
-        rm -rf "$piper_root"
-
-        if wget -q "$url" -O "$archive"; then
-            if tar -xzf "$archive"; then
-                rm -f "$archive"
-
-                if [ -x "$piper_bin" ]; then
-                    # Architektur der extrahierten Binary überprüfen
-                    file_out="$(file -b "$piper_bin" 2>/dev/null || echo "")"
-                    extracted_arch="unknown"
-                    echo "$file_out" | grep -qi "x86-64" && extracted_arch="x86_64"
-                    echo "$file_out" | grep -qi "aarch64" && extracted_arch="aarch64"
-                    echo "$file_out" | grep -qi "ARM" && extracted_arch="armv7l"
-
-                    if [ -n "$expected_arch" ] && [ "$extracted_arch" != "unknown" ] && [ "$extracted_arch" != "$expected_arch" ]; then
-                        log "<ERROR> Piper install: Extracted binary architecture '$extracted_arch' does not match expected '$expected_arch'. Removing and retrying."
-                        rm -rf "$piper_root"
-                        continue
-                    fi
-
-                    # Kurzer Runtime-Test (Exec-Format etc. abfangen)
-                    if "$piper_bin" --help >/dev/null 2>&1; then
-                        log "<OK> Piper successfully installed at $piper_bin"
-                        INST="true"
-                        break
-                    else
-                        rc=$?
-                        log "<ERROR> Piper test run failed with exit code $rc. Removing broken binary and retrying."
-                        rm -rf "$piper_root"
-                        continue
-                    fi
-                else
-                    log "<ERROR> Piper archive extracted, but '$piper_bin' not found or not executable."
-                    rm -rf "$piper_root"
-                fi
+            if tar -xvzf "$TARBALL"; then
+                echo "<OK> Piper archive $TARBALL extracted successfully."
+                rm "$TARBALL"
             else
-                log "<ERROR> Piper install: Failed to extract archive '$archive'."
-                rm -f "$archive"
-                rm -rf "$piper_root"
+                echo "<ERROR> Failed to extract $TARBALL"
+                exit 1
             fi
         else
-            log "<ERROR> Piper download failed from $url"
-            rm -f "$archive" 2>/dev/null || true
+            echo "<ERROR> Failed to download Piper from $URL"
+            exit 1
         fi
-    done
-
-    if [ "$INST" != "true" ]; then
-        log "<ERROR> Piper installation failed after $max_attempts attempts. Please install Piper manually or check architecture mapping."
-        return 1
+    else
+        echo "<WARNING> No valid Piper download URL determined – installation skipped."
     fi
+else
+    echo "<INFO> Piper TTS is already installed at $PIPER_BINARY – nothing to do."
+fi
 
-    return 0
-}
+# Make sure binary is executable
+if [ -e "$PIPER_BINARY" ]; then
+    chmod +x "$PIPER_BINARY"
+    # Add to PATH for this script run
+    export PATH="$PIPER_TARGET_DIR/piper:$PATH"
+else
+    echo "<WARNING> Piper binary not found after installation attempt."
+fi
 
-# -------------------------------------------------------------------
-# Sonos Event Listener systemd-Service installieren/aktivieren
-# -------------------------------------------------------------------
+# Create /usr/bin/piper symlink for convenience
+piper="/usr/bin/piper"
+if [ -L "$piper" ]; then
+    echo "<INFO> Symlink 'piper' is already available in /usr/bin"
+elif [ -x "$PIPER_BINARY" ]; then
+    ln -s "$PIPER_BINARY" "$piper"
+    echo "<INFO> Symlink 'piper' has been created in /usr/bin"
+else
+    echo "<WARNING> No executable Piper binary to link in /usr/bin"
+fi
+
+# ---------------------------------------------------------
+# Sonos Event Listener systemd-Service
+# ---------------------------------------------------------
 install_sonos_event_listener_service() {
-    SERVICE_SRC="/opt/loxberry/webfrontend/html/plugins/sonos4lox/bin/cron/sonos_event_listener.service"
+    SERVICE_SRC="REPLACELBHOMEDIR/webfrontend/html/plugins/sonos4lox/bin/cron/sonos_event_listener.service"
     SERVICE_DEST="/etc/systemd/system/sonos_event_listener.service"
 
     if [ ! -f "$SERVICE_SRC" ]; then
-        log "<WARNING> Sonos Event Listener service file not found at $SERVICE_SRC – skipping service install."
+        echo "<WARNING> Sonos Event Listener service file not found at $SERVICE_SRC – skipping service install."
         return 0
     fi
 
-    # Prüfen, ob systemctl verfügbar ist
     if ! command -v systemctl >/dev/null 2>&1; then
-        log "<WARNING> systemctl not found – cannot install sonos_event_listener.service."
+        echo "<WARNING> systemctl not found – cannot install sonos_event_listener.service."
         return 0
     fi
 
-    log "<INFO> Installing Sonos Event Listener systemd service…"
+    echo "<INFO> Installing Sonos Event Listener systemd service…"
 
-    # Service-Datei nach /etc/systemd/system kopieren
     cp "$SERVICE_SRC" "$SERVICE_DEST"
     chmod 644 "$SERVICE_DEST"
 
-    # systemd einlesen
     if systemctl daemon-reload >/dev/null 2>&1; then
-        log "<INFO> systemd daemon reloaded."
+        echo "<INFO> systemd daemon reloaded."
     else
-        log "<WARNING> Failed to reload systemd daemon (daemon-reload)."
+        echo "<WARNING> Failed to reload systemd daemon (daemon-reload)."
     fi
 
-    # Service aktivieren & starten
     if systemctl enable --now sonos_event_listener.service >/dev/null 2>&1; then
-        log "<OK> sonos_event_listener.service has been enabled and started."
+        echo "<OK> sonos_event_listener.service has been enabled and started."
     else
-        log "<WARNING> Failed to enable/start sonos_event_listener.service. Please check 'systemctl status sonos_event_listener.service'."
+        echo "<WARNING> Failed to enable/start sonos_event_listener.service. Please check 'systemctl status sonos_event_listener.service'."
     fi
 }
 
-# ===== Aufruf gleich zu Beginn von postroot.sh =====
-install_piper
-
-# ---- Symlink /usr/bin/piper anlegen ----
-if [ -x "$PIPER_BIN" ]; then
-    chmod +x "$PIPER_BIN"
-    # vorhandenen Symlink/Datei ggf. entfernen
-    if [ -L "$SYM" ] || [ -e "$SYM" ]; then
-        rm -f "$SYM"
-    fi
-    ln -s "$PIPER_BIN" "$SYM"
-    log "<INFO> Symlink 'piper' has been created in /usr/bin"
-else
-    log "<WARNING> Piper binary not found at $PIPER_BIN – cannot create symlink."
-fi
-
-# ---- Sonos Event Listener systemd-Service installieren ----
+# ===== Sonos Event Listener systemd-Service installieren =====
 install_sonos_event_listener_service
 
 exit 0

@@ -2286,6 +2286,133 @@ function getGroupMembersForPlayerIp(string $anyPlayerIp, string $targetIp): arra
     return [];
 }
 
+/**
+ * Update Sonos Event Listener health.json
+ *
+ * @param array $allRooms      Liste ALLER bekannten Räume (Keys aus $sonoszone z.B.)
+ * @param array $onlineRooms   Liste der aktuell online erreichbaren Räume
+ * @param array $lastEvents    Assoziatives Array mit Zeitstempeln der letzten Events:
+ *                             [
+ *                               'avtransport'        => <unix-ts> | null,
+ *                               'renderingcontrol'   => <unix-ts> | null,
+ *                               'zonegrouptopology'  => <unix-ts> | null,
+ *                             ]
+ *
+ * Aufruf idealerweise NACH einem erfolgreich verarbeiteten Sonos-Event.
+ */
+
+if (!function_exists('update_sonos_health')) {
+    /**
+     * Schreibt eine "leichte" health.json für die Sonos4lox-Web-UI
+     * - players.online / players.total
+     * - rooms_flags["raum"] => ["Online" => 0|1]
+     * - events (AVT/RC/ZGT Timestamps als ISO)
+     * KEINE online_rooms/offline_rooms Arrays, KEIN EQ.
+     */
+    function update_sonos_health(
+        array $allRooms,
+        array $onlineRooms,
+        array $lastEvents = []
+    )
+    {
+        global $lbpconfigdir;
+
+        // Fallback, falls $lbpconfigdir nicht gesetzt ist
+        if (empty($lbpconfigdir)) {
+            $lbpconfigdir = '/opt/loxberry/config/plugins/sonos4lox';
+        }
+
+        $healthFile = $lbpconfigdir . '/health.json';
+
+        $hostname   = trim(`hostname 2>/dev/null`) ?: 'unknown';
+        $now        = time();
+        $iso        = date('c', $now);
+        $pid        = function_exists('getmypid') ? getmypid() : null;
+
+        $total_rooms   = count($allRooms);
+        $online_unique = array_values(array_unique($onlineRooms));
+
+        // --- pro Raum Online-Flag aufbauen ---
+        $roomsFlags = [];
+        foreach ($allRooms as $roomName) {
+            $roomsFlags[$roomName] = [
+                'Online' => in_array($roomName, $online_unique, true) ? 1 : 0,
+            ];
+        }
+
+        // Event-Timestamps in ISO wandeln (falls vorhanden)
+        $eventsIso = [
+            'last_avtransport'       => isset($lastEvents['avtransport']) && $lastEvents['avtransport'] > 0
+                ? date('c', (int)$lastEvents['avtransport'])
+                : null,
+            'last_renderingcontrol'  => isset($lastEvents['renderingcontrol']) && $lastEvents['renderingcontrol'] > 0
+                ? date('c', (int)$lastEvents['renderingcontrol'])
+                : null,
+            'last_zonegrouptopology' => isset($lastEvents['zonegrouptopology']) && $lastEvents['zonegrouptopology'] > 0
+                ? date('c', (int)$lastEvents['zonegrouptopology'])
+                : null,
+        ];
+
+        $data = [
+            'sonos-event-listener' => [
+                'service'   => 'sonos_event_listener',
+                'hostname'  => $hostname,
+                'pid'       => $pid,
+                'timestamp' => $now,
+                'iso_time'  => $iso,
+                'players'   => [
+                    'online' => count($online_unique),
+                    'total'  => $total_rooms,
+                ],
+                // wichtig für deine UI: rooms_RAUM_Online
+                'rooms_flags' => $roomsFlags,
+                'events'      => $eventsIso,
+            ],
+        ];
+
+        $json = json_encode(
+            $data,
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+        );
+
+        if ($json === false) {
+            if (function_exists('LOGGING')) {
+                LOGGING("helper.php: Failed to encode health.json: " . json_last_error_msg(), 4);
+            }
+            return;
+        }
+
+        if (!is_dir($lbpconfigdir)) {
+            @mkdir($lbpconfigdir, 0775, true);
+        }
+
+        $tempFile = $healthFile . '.tmp';
+
+        if (file_put_contents($tempFile, $json) === false) {
+            if (function_exists('LOGGING')) {
+                LOGGING("helper.php: Failed to write temporary health file '$tempFile'", 4);
+            }
+            return;
+        }
+
+        if (!@rename($tempFile, $healthFile)) {
+            if (function_exists('LOGGING')) {
+                LOGGING(
+                    "helper.php: Failed to move temporary health file to '$healthFile'", 4);
+            }
+            return;
+        }
+
+        @chmod($healthFile, 0664);
+
+        if (function_exists('LOGGING')) {
+            $onlineCnt = $data['sonos-event-listener']['players']['online'];
+            LOGGING("helper.php: Updated Sonos Event Listener health.json (pid $pid, online $onlineCnt/$total_rooms)",6);
+        }
+    }
+}
+
+
 
 
 /**

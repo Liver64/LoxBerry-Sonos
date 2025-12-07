@@ -206,9 +206,7 @@ function check_file() {
 		// Optional: hier könntest du noch $filename auf 't2s_not_available' umbiegen
 		// oder die Notification ganz abbrechen
 	}
-
 	return;
-
 }
 
 	
@@ -549,36 +547,35 @@ function create_tts($text ='') {
                 LOGERR("play_t2s.php: Primary TTS engine failed, no MP3 file has been created at all.");
             }
 
-            // --------------------------------------------------
-            // 3. Piper-Fallback (Offline) – Code 9012
-            // --------------------------------------------------
-            $fallback_filename = $filename . "_piper";
-            $fallback_mp3      = $ttspath."/".$fallback_filename.".mp3";
+        // --------------------------------------------------
+        // 3. Piper-Fallback (Offline) – Code 9012
+        // --------------------------------------------------
+        $fallback_filename = $filename . "_piper";
+        $fallback_mp3      = $ttspath."/".$fallback_filename.".mp3";
+        $piperBinary       = '/usr/bin/piper';
 
+        // Piper nur versuchen, wenn das Binary auch wirklich existiert
+        if (is_executable($piperBinary)) {
             LOGGING("play_t2s.php: Trying local Piper fallback engine (code 9012)...", 5);
-
             if (file_exists($fallback_mp3)) {
                 @unlink($fallback_mp3);
             }
-
             include_once("voice_engines/Piper.php");
-            t2s_piper($textstring, $fallback_filename);
-
+            if (function_exists('t2s_piper')) {
+                t2s_piper($textstring, $fallback_filename);
+            } else {
+                LOGERR("play_t2s.php: Piper fallback requested but function t2s_piper() is not available in voice_engines/Piper.php.");
+            }
             clearstatcache(false, $fallback_mp3);
 
             if (file_exists($fallback_mp3) && filesize($fallback_mp3) > 0) {
-
                 LOGOK("play_t2s.php: Piper fallback succeeded, using offline file '".$fallback_filename.".mp3'.");
                 $filename = $fallback_filename;
-
             } else {
-
-                LOGERR("play_t2s.php: All TTS engines failed (primary + Piper). Using fallback file 't2s_not_available.mp3' if available.");
-
+                LOGERR("play_t2s.php: Piper fallback failed (no valid MP3). Using fallback file 't2s_not_available.mp3' if available.");
                 $filename = "t2s_not_available";
                 $src      = $config['SYSTEM']['mp3path']."/t2s_not_available.mp3";
                 $dst      = $ttspath."/t2s_not_available.mp3";
-
                 if (file_exists($src)) {
                     @copy($src, $dst);
                     LOGINF("play_t2s.php: Fallback file 't2s_not_available.mp3' has been copied to TTS path.");
@@ -586,12 +583,21 @@ function create_tts($text ='') {
                     LOGERR("play_t2s.php: Fallback file 't2s_not_available.mp3' not found. No audio will be played.");
                 }
             }
+        } else {
+            LOGWARN("play_t2s.php: Piper fallback skipped – binary '$piperBinary' not found or not executable. Using fallback file 't2s_not_available.mp3' if available.");
+            $filename = "t2s_not_available";
+            $src      = $config['SYSTEM']['mp3path']."/t2s_not_available.mp3";
+            $dst      = $ttspath."/t2s_not_available.mp3";
+            if (file_exists($src)) {
+                @copy($src, $dst);
+                LOGINF("play_t2s.php: Fallback file 't2s_not_available.mp3' has been copied to TTS path.");
+            } else {
+                LOGERR("play_t2s.php: Fallback file 't2s_not_available.mp3' not found. No audio will be played.");
+            }
         }
-
         echo $textstring;
         echo "<br>";
     }
-
     return $filename;
 }
 
@@ -1443,6 +1449,7 @@ function sendgroupmessage() {
 	$sonos->SetQueue("x-rincon-queue:". $masterrincon ."#0");
 	if (!isset($_GET['sonos']))  {
 		$sonos->Stop();
+		$sonos->SetVolume($volume);
 	}
 
 	// ggf. Gruppen-Volume setzen

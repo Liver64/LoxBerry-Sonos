@@ -11,7 +11,6 @@
 function t2s(array $t2s_param): void
 {
     global $config;
-	print_r($t2s_param);
 
     // --- Extract parameters with defaults ---
     $region      = $t2s_param['region']
