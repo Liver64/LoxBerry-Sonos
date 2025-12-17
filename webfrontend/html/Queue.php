@@ -205,6 +205,11 @@ function PlayFavorite()
 		$master = MASTER;
 	}
 	
+	if (isset($_GET['member']) && trim($_GET['member']) !== '') {
+        // CreateMember wurde i.d.R. schon in sonos.php aufgerufen – ist idempotent
+        SyncGroupForPlaybackToMember();
+    }
+	
 	$sonos = new SonosAccess($sonoszone[$master][0]);
 	
 	# if playlist has been loaded iterate through tracks
@@ -281,7 +286,6 @@ function PlayFavorite()
 		LOGERR("queue.php: Your entered favorite '".($favorite)."' seems not to be valid!");
 		exit;
 	}
-	
 }
 
 
@@ -325,6 +329,10 @@ function PlayAllFavorites()
 		exit;
 	}
 	$save = false;
+	if (isset($_GET['member']) && trim($_GET['member']) !== '') {
+        // CreateMember wurde i.d.R. schon in sonos.php aufgerufen – ist idempotent
+        SyncGroupForPlaybackToMember();
+    }
 	# 1st click/execution
 	if (!file_exists($queuetmp))  {
 		#$check_stat = getZoneStatus($master);
@@ -532,6 +540,10 @@ function PlayTrackFavorites()
 		} else {
 			$master = MASTER;
 		}
+		if (isset($_GET['member']) && trim($_GET['member']) !== '') {
+			// CreateMember wurde i.d.R. schon in sonos.php aufgerufen – ist idempotent
+			SyncGroupForPlaybackToMember();
+		}
 		#CreateMember();
 		$sonos = new SonosAccess($sonoszone[$master][0]);
 		#$check_stat = getZoneStatus($master);
@@ -670,6 +682,10 @@ function PlayRadioFavorites()
 		} else {
 			$master = MASTER;
 		}
+		if (isset($_GET['member']) && trim($_GET['member']) !== '') {
+			// CreateMember wurde i.d.R. schon in sonos.php aufgerufen – ist idempotent
+			SyncGroupForPlaybackToMember();
+		}
 		#$check_stat = getZoneStatus($master);
 		#if ($check_stat != (string)"single")  {
 			#$sonos->BecomeCoordinatorOfStandaloneGroup();
@@ -798,6 +814,10 @@ function PlaySonosPlaylist()
 					$master = GROUPMASTER;	
 				} else {
 					$master = MASTER;
+				}
+				if (isset($_GET['member']) && trim($_GET['member']) !== '') {
+					// CreateMember wurde i.d.R. schon in sonos.php aufgerufen – ist idempotent
+					SyncGroupForPlaybackToMember();
 				}
 				#CreateMember();
 				$sonos = new SonosAccess($sonoszone[$master][0]);
@@ -1019,6 +1039,10 @@ function PlayPlaylistFavorites()
 					$master = GROUPMASTER;	
 				} else {
 					$master = MASTER;
+				}
+				if (isset($_GET['member']) && trim($_GET['member']) !== '') {
+					// CreateMember wurde i.d.R. schon in sonos.php aufgerufen – ist idempotent
+					SyncGroupForPlaybackToMember();
 				}
 				#$check_stat = getZoneStatus($master);
 				#if ($check_stat != (string)"single")  {

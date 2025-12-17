@@ -491,3 +491,17 @@
  5.9.9		[BUGFIX] fixed typo in member function
 			[BUGFIX] optimized grouping on T2S Groupmessage
  6.0.1		[IMPROVEMENT] Neuer Offline T2S provider Piper TTS hinzugefügt und Pico herausgenommen
+ 6.0.2		[IMPROVEMENT] Sound Profile optimiert
+			[IMPROVEMENT] Signifikante Performance Verbesserungen bei herkömmlichen Text-2-speech (synchrones Gruppieren, optimierte Voice Engines, beschleunigtes Sichern und Restore)
+			[IMPROVEMENT] Gruppenhandling optimiert (gilt auch für Audio Profile)
+			[IMPROVEMENT] sämtliche TTS Provider optimiert und mit Fallback Szenarien versehen
+			[IMPROVEMENT] Automatische Erkennung ob Player AudioClip kompatibel sind (S2 Player)
+			[IMPROVEMENT] Automatische Nutzung der AudioClip Funktion wenn alle beteiligte Player (member und master) kompatibel sind, Fallback normale TTS
+			[IMPROVEMENT] Fallback Voice zu Piper wenn Online Engine keine MP3 zurückgibt
+ 6.1.0		[IMPROVEMENT] Gruppenhandling Playlisten/Favoriten optmiert
+			[IMPROVEMENT] Automatisches laden Sprache/Stimme nach Enginewechsel
+			[IMPROVEMENT] Test Sprachausgabe on-the-fly (ohne speichern) zwischen Engines/Sprache/Stimme
+			[IMPROVEMENT] Optimierte Installation von Piper mit Fallback
+			[IMPROVEMENT] Auto discovery der Player
+			[BUGFIX] minimized VoiceRSS handling
+			[BUGFIX] Abfallkalender gefixed

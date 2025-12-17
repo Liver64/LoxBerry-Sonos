@@ -41,6 +41,8 @@ use warnings;
 use strict;
 use Data::Dumper;
 use File::Compare;
+use JSON::PP;
+use Time::HiRes qw(time);
 #use Config::Simple '-strict';
 no strict "refs"; # we need it for template system
 use List::MoreUtils qw(uniq);
@@ -116,9 +118,12 @@ our $jsonparser;
 
 my $configfile 					= "s4lox_config.json";
 my $volumeconfigfile 			= "s4lox_vol_profiles.json";
-my $jsonobj 					= LoxBerry::JSON->new();
+our $jsonobj 					= LoxBerry::JSON->new();
 our $cfg 						= $jsonobj->open(filename => $lbpconfigdir . "/" . $configfile, writeonclose => 0);
+my $cache_dir  = "/dev/shm/sonos4lox";
+our $cache_file = $cache_dir . "/discovery_cache.json";
 
+my $t0=time();
 
 if (-r $lbpconfigdir . "/" . $volumeconfigfile)   {
 	our $jsonparser = LoxBerry::JSON->new();
@@ -127,68 +132,83 @@ if (-r $lbpconfigdir . "/" . $volumeconfigfile)   {
 }
 
 # Set new config options for upgrade installations
+my $defaultSave = "false";
 
 # add new parameter for cachesize
 if (!defined $cfg->{"MP3"}->{cachesize}) {
 	$cfg->{MP3}->{cachesize} = "100";
+	$defaultSave = "true";
 } 
 # Rampto Volume
 if ($cfg->{TTS}->{volrampto} eq '')  {
 	$cfg->{TTS}->{volrampto} = "25";
+	$defaultSave = "true";
 }
 # Rampto type
 if ($cfg->{TTS}->{rampto} eq '')  {
 	$cfg->{TTS}->{rampto} = "auto";
+	$defaultSave = "true";
 }
 # add new parameter for Volume correction
 if (!defined $cfg->{TTS}->{correction})  {
 	$cfg->{TTS}->{correction} = "8";
+	$defaultSave = "true";
 }
 # add new parameter for Azure TTS"
 if (!defined $cfg->{TTS}->{regionms})  {
 	$cfg->{TTS}->{regionms} = $azureregion;
-	#$jsonobj->write();
+	$defaultSave = "true";
 }
 # add new parameter for Volume phonemute
 if (!defined $cfg->{TTS}->{phonemute})  {
 	$cfg->{TTS}->{phonemute} = "8";
+	$defaultSave = "true";
 }
 # add new parameter for waiting time in sec.
 if (!defined $cfg->{TTS}->{waiting})  {
 	$cfg->{TTS}->{waiting} = "10";
+	$defaultSave = "true";
 }
 # add new parameter for phonestop
 if (!defined $cfg->{VARIOUS}->{phonestop})  {
 	$cfg->{VARIOUS}->{phonestop} = "0";
+	$defaultSave = "true";
 }
 # Reset Time for zapzone
 if (!defined $cfg->{VARIOUS}->{cron})  {
 	$cfg->{VARIOUS}->{cron} = "1";
+	$defaultSave = "true";
 }
 # checkonline
 if (!defined $cfg->{SYSTEM}->{checkonline})  {
 #if ($cfg->{SYSTEM}->{checkonline} eq '')  {
 	$cfg->{SYSTEM}->{checkonline} = 3;
+	$defaultSave = "true";
 }
 # maxVolume
 if (!defined $cfg->{VARIOUS}->{volmax})  {
 	$cfg->{VARIOUS}->{volmax} = "0";
+	$defaultSave = "true";
 }
 # Loxdaten an MQTT
 if (!defined $cfg->{LOXONE}->{LoxDatenMQTT})  {
 	$cfg->{LOXONE}->{LoxDatenMQTT} = "false";
+	$defaultSave = "true";
 }
 # text-to-speech Status
 if (!defined $cfg->{TTS}->{t2son})  {
 	$cfg->{TTS}->{t2son} = "true";
+	$defaultSave = "true";
 }
 # Starttime TV Monitoring
 if (!defined $cfg->{VARIOUS}->{starttime})  {
 	$cfg->{VARIOUS}->{starttime} = "10";
+	$defaultSave = "true";
 }
 # Endtime TV Monitoring
 if (!defined $cfg->{VARIOUS}->{endtime})  {
 	$cfg->{VARIOUS}->{endtime} = "22";
+	$defaultSave = "true";
 }
 # copy old API-key value to apikey
 if (defined $cfg->{TTS}->{'API-key'})  {
@@ -211,21 +231,31 @@ if (!defined $cfg->{TTS}->{secretkeys}) {
 # Follow host
 if (!defined $cfg->{VARIOUS}->{follow_host})  {
 	$cfg->{VARIOUS}->{follow_host} = "false";
+	$defaultSave = "true";
 }
 # Leave/follow host
 if (!defined $cfg->{VARIOUS}->{follow_wait})  {
 	$cfg->{VARIOUS}->{follow_wait} = "false";
+	$defaultSave = "true";
 }
 # TTS Presence
 if (!defined $cfg->{TTS}->{presence})  {
 	$cfg->{TTS}->{presence} = "true";
+	$defaultSave = "true";
 }
 # host or ip for cifs
 if (!defined $cfg->{TTS}->{hostip})  {
 	$cfg->{TTS}->{hostip} = "host";
+	$defaultSave = "true";
 }
-#$jsonobj->write();
-
+# switch to MQTT
+if (is_disabled($cfg->{LOXONE}->{LoxDatenMQTT}) &&
+	is_enabled($cfg->{LOXONE}->{LoxDaten}))  {
+	$cfg->{LOXONE}->{LoxDatenMQTT} = "true";
+	$defaultSave = "true";
+}
+if (is_enabled($defaultSave))  {   $jsonobj->write();   }
+#LOGDEB sprintf("PERF: block NEW DEFAULTS %.3fs", time()-$t0); $t0=time();
 
 ##########################################################################
 # Read Settings
@@ -246,61 +276,82 @@ my $lbversion = LoxBerry::System::lbversion();
 $cgi = CGI->new;
 $cgi->import_names('R');
 
+
 # Get MQTT Credentials
 $mqttcred = LoxBerry::IO::mqtt_connectiondetails();
 
 
-##########################################################################
-# Init Main Template
-##########################################################################
-
-inittemplate();
-LOGSTART "Plugin GUI";
-
 #########################################################################
-## Handle ajax requests 
+## Handle ajax requests
 #########################################################################
 
 our $q = $cgi->Vars;
+our $IS_AJAX_REQUEST = 0;
+our $AJAX_ACTION     = '';
 
-if( $q->{action} )
+# Early exit for AJAX/getkeys (no template, no LOGSTART/LOGEND task wrapper)
+if ($q->{action}) {
+    $IS_AJAX_REQUEST = 1;
+    $AJAX_ACTION     = $q->{action} // '';
 
-{
-	#LOGSTART "Plugin GUI";
-	print "Content-type: application/json\n\n";
-	if( $q->{action} eq "soundbars" ) {
-		print JSON::encode_json($cfg->{sonoszonen});
-		exit;
-	}
+    print "Content-type: application/json\n\n";
 
-	if( $q->{action} eq "profiles" ) {
-		our $vcfg = $jsonobj->open(filename => $lbpconfigdir . "/s4lox_vol_profiles.json", writeonclose => 0);
-		print JSON::encode_json($vcfg);
-		exit;
-	}	
+    if ($AJAX_ACTION eq "soundbars") {
+        print JSON::encode_json($cfg->{sonoszonen});
+        exit;
+    }
 
-	if( $q->{action} eq "getradio" ) {
-		print JSON::encode_json($cfg->{RADIO}->{radio});
-		exit;
-	}
-	
-	if( $q->{action} eq "saveconfig" ) {
-		use LoxBerry::System;
-		print saveconfig();
-		exit;
-	}
-	
-	if( $q->{action} eq "restoreconfig" ) {
-		use LoxBerry::System;
-		print restoreconfig();
-		exit;
-	}
+    if ($AJAX_ACTION eq "profiles") {
+        our $vcfg = $jsonobj->open(
+            filename     => $lbpconfigdir . "/s4lox_vol_profiles.json",
+            writeonclose => 0
+        );
+        print JSON::encode_json($vcfg);
+        exit;
+    }
+
+    if ($AJAX_ACTION eq "getradio") {
+        print JSON::encode_json($cfg->{RADIO}->{radio});
+        exit;
+    }
+
+    if ($AJAX_ACTION eq "saveconfig") {
+        print saveconfig();
+        exit;
+    }
+
+    if ($AJAX_ACTION eq "restoreconfig") {
+        print restoreconfig();
+        exit;
+    }
+
+    if ($AJAX_ACTION eq "restart_listener") {
+        # No INFO logging for actions; log only on error via $error_message/END handler
+        my $rc = system('sudo', 'systemctl', 'restart', 'sonos_event_listener');
+        if ($rc != 0) {
+            $error_message = "AJAX restart_listener failed (rc=$rc)";
+            print JSON::encode_json({ success => JSON::false, error => $error_message });
+            exit;
+        }
+        print JSON::encode_json({ success => JSON::true });
+        exit;
+    }
+
+    # Unknown action -> treat as error (will be logged by END handler)
+    $error_message = "Unknown AJAX action: $AJAX_ACTION";
+    print JSON::encode_json({ success => JSON::false, error => $error_message });
+    exit;
 }
 
-if ($R::getkeys)
-{
-	getkeys();
+if ($R::getkeys) {
+    $IS_AJAX_REQUEST = 1;
+    $AJAX_ACTION     = 'getkeys';
+    getkeys(); # exits
 }
+
+# Only the real page render comes here:
+inittemplate();
+LOGSTART "Plugin GUI";
 
 
 
@@ -311,6 +362,9 @@ if ($R::getkeys)
 #$saveformdata = defined $R::saveformdata ? $R::saveformdata : undef;
 #$do = defined $R::do ? $R::do : "form";
 
+if (is_enabled($defaultSave))  {
+	LOGOK("index.cgi: Missing defaults has been saved");
+}
 
 ##########################################################################
 # Set LoxBerry SDK to debug in plugin if in debug
@@ -405,7 +459,6 @@ if ($R::saveformdata3) {
 	&save_volume;
 }
 
-
 # check if config already saved, if not highlight header text in RED
 our $countplayer;
 my $inst;
@@ -449,8 +502,7 @@ if (-r $lbhomedir."/webfrontend/html/XL/" . $volumeconfigfile)   {
 	$template->param("CONFIG_DIFFERENT", "1");
 }
 
-
-
+#LOGDEB sprintf("PERF: block MAIN IN TOTAL %.3fs", time()-$t0); $t0=time();
 if(!defined $R::do or $R::do eq "form") {
 	$navbar{1}{active} = 1;
 	$template->param("SETTINGS", "1");
@@ -491,6 +543,8 @@ sub form
 {
 	$template->param(FORMNO => 'SETTINGS' );
 	
+	$t0=time();
+	
 	# check if path exist (upgrade from v3.5.1)
 	if ($cfg->{SYSTEM}->{path} eq "")   {
 		$cfg->{SYSTEM}->{path} = "$lbpdatadir";
@@ -498,21 +552,69 @@ sub form
 		LOGINF("default path has been added to config");
 	}
 	
-	# prepare Storage
-	my $storage = LoxBerry::Storage::get_storage_html(
-					formid => 'STORAGEPATH', 
-					currentpath => $jsonobj->param("SYSTEM.path"),
-					custom_folder => 1,
-					type_all => 1, 
-					readwriteonly => 1, 
-					data_mini => 1,
-					label => "$SL{'T2S.SAFE_DETAILS'}");
-					
-	$template->param("STORAGEPATH", $storage);
+	# -------------------------------------------------------------------------
+	# Storage HTML (CACHED): get_storage_html is expensive → cache in /dev/shm
+	# -------------------------------------------------------------------------
+	my $cache_dir  = "/dev/shm/$lbpplugindir";
+	my $cache_file = "$cache_dir/storage_html.cache";
+	my $cache_ttl  = 300;  # seconds (5 min)
+
+	if (!-d $cache_dir) {
+		mkdir($cache_dir, 0775);
+	}
+
+	my $currentpath = $jsonobj->param("SYSTEM.path") // "";
+	my $cache_key   = "PATH=$currentpath";
+
+	my $storage;
+
+	my $use_cache = 0;
+	if (-r $cache_file) {
+		my @st = stat($cache_file);
+		my $age = @st ? (time() - ($st[9] // 0)) : 999999;
+
+		if ($age <= $cache_ttl) {
+			if (open(my $fh, '<', $cache_file)) {
+				my $first = <$fh>;
+				chomp($first) if defined $first;
+
+				if (defined $first && $first eq $cache_key) {
+					local $/ = undef;
+					$storage = <$fh>;
+					$use_cache = 1 if defined $storage && $storage ne '';
+				}
+				close($fh);
+			}
+		}
+	}
+
+	if ($use_cache) {
+		LOGDEB("PERF: Storage HTML loaded from cache (ttl=${cache_ttl}s)");
+	} else {
+		$storage = LoxBerry::Storage::get_storage_html(
+			formid        => 'STORAGEPATH',
+			currentpath   => $currentpath,
+			custom_folder => 1,
+			type_all      => 1,
+			readwriteonly => 1,
+			data_mini     => 1,
+			label         => "$SL{'T2S.SAFE_DETAILS'}"
+		);
+
+		if (open(my $fh, '>', $cache_file)) {
+			print $fh $cache_key . "\n";
+			print $fh $storage // '';
+			close($fh);
+		}
+	}
+
+	$template->param("STORAGEPATH", $storage // '');
+
+	#LOGDEB sprintf("PERF: block Storage %.3fs", time()-$t0); $t0=time();
 	
-	# read info file from Github and save in $info
-	my $info = get($urlfile);
-	$template->param("INFO" 			=> "$info");
+	# read info file from Github and save in $info - OBSOLETE -
+	#my $info = get($urlfile);
+	#$template->param("INFO" 			=> "$info");
 	
 	# fill saved values into form
 	$template->param("SELFURL", $SL{REQUEST_URI});
@@ -558,7 +660,8 @@ sub form
 	$rowsradios .= "<input type='hidden' id='countradios' name='countradios' value='$countradios'>\n";
 	$template->param("ROWSRADIO", $rowsradios);
 	
-		# *******************************************************************************************************************
+	scan();
+	# *******************************************************************************************************************
 	# Player einlesen
 	
 	our $rowssonosplayer;
@@ -610,7 +713,7 @@ sub form
 
 		# Column Audioclip usage Pics green/red
 		# Bedingung für "kann Audioclip"
-		my $audioclip_ok = ($config->{$key}[9] eq "2" && $config->{$key}[11] eq "1") ? 1 : 0;
+		my $audioclip_ok = ($config->{$key}[11]) ? 1 : 0;
 
 		if ($audioclip_ok) {
 			$rowssonosplayer .= "<td style='height: 30px; width: 10px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/green.png' border='0' width='26' height='28' align='center'/></div></td>\n";
@@ -728,6 +831,7 @@ sub form
 	$rowssoundbar .= "<input type='hidden' id='countsoundbars' name='countsoundbars' value='$countsoundbars'>\n";
 	$template->param("ROWSOUNDBARS", $rowssoundbar);
 	LOGDEB "Sonos Soundbars has been discovered.";
+	#LOGDEB sprintf("PERF: block RADIO/PLAYER/TV MONITOR %.3fs", time()-$t0); $t0=time();
 	
 	# *******************************************************************************************************************
 	# Get Miniserver
@@ -740,6 +844,7 @@ sub form
 	$template->param('MS', $mshtml);
 		
 	LOGDEB "List of available Miniserver(s) has been successful loaded";
+	#LOGDEB sprintf("PERF: block MINISERVER %.3fs", time()-$t0); $t0=time();
 	# *******************************************************************************************************************
 		
 	# fill dropdown with list of files from tts/mp3 folder
@@ -761,57 +866,153 @@ sub form
 	closedir(DIR);
 	$template->param("MP3_LIST", $mp3_list);
 	LOGDEB "List of MP3 files has been successful loaded";
+	#LOGDEB sprintf("PERF: block MP3 DROPDOWN %.3fs", time()-$t0); $t0=time();
 	
-	#$LoxBerry::JSON::DEBUG = 1;
-	my @data_piper;
-	my @data_piper_voices;
-	my $modified_str;
-	my $new_pcfgp;
-	my $new_pcfgpv;
-	
-	# open Piper languanges
-	my $jsonobjpiper = LoxBerry::JSON->new();
-	my $pcfgp = $jsonobjpiper->open(filename => $lbphtmldir."/voice_engines/langfiles/piper.json");
-	
-	# open Piper languanges details
-	my $jsonobjpiper_voice = LoxBerry::JSON->new();
-	my $pcfgpv = $jsonobjpiper_voice->open(filename => $lbphtmldir."/voice_engines/langfiles/piper_voices.json");
-	
-	# read all JSON files from folder
-	my $directory = $lbphtmldir. "/voice_engines/piper-voices/";
-	opendir(DIR, $directory) or die $!;
-	my @pipfiles 
-        = grep { 
-            /\.json$/      		# just files ending with .json
-	    && -f "$directory/$_"   # and is a file
-	} 
-	readdir(DIR);
-    # Loop through the files adding details
-    foreach my $file (@pipfiles) {
-		my $jsonparser = LoxBerry::JSON->new();
-		my $config = $jsonparser->open(filename => $lbphtmldir."/voice_engines/piper-voices/".$file, writeonclose => 0);
-		# adding basic info to JSON object $pcfgp 
-		my @piper = (  {"country" => $config->{language}->{country_english},
-						"value" => $config->{language}->{code}
-		});
-		push @data_piper, @piper;
-		$new_pcfgp = \@data_piper; 
+	# -------------------------------------------------------------------------
+	# Piper voice index (FAST): rebuild only if piper-voices/*.json changed
+	# - avoids parsing + writing on every UI request
+	# - removes duplicates in Perl (no PHP call needed)
+	# -------------------------------------------------------------------------
 
-		# adding detailes info JSON object $pcfgpv
-		my @piper_voices = (  {	"name" => $config->{dataset},
-								"language" => $config->{language}->{code},
-								"filename" => $modified_str = substr($file, 0, -5)
-		});
-		push @data_piper_voices, @piper_voices;
-		$new_pcfgpv = \@data_piper_voices;
-    } 
-	$jsonobjpiper->{jsonobj} = $new_pcfgp;
-	$jsonobjpiper_voice->{jsonobj} = $new_pcfgpv;
-	$jsonobjpiper->write();
-	$jsonobjpiper_voice->write();
-	closedir(DIR);
+	my $piper_dir        = $lbphtmldir . "/voice_engines/piper-voices/";
+	my $piper_out_lang   = $lbphtmldir . "/voice_engines/langfiles/piper.json";
+	my $piper_out_voices = $lbphtmldir . "/voice_engines/langfiles/piper_voices.json";
+
+	my $cache_dir  = "/dev/shm/$lbpplugindir";
+	my $cache_meta = $cache_dir . "/piper_voices_cache.meta";
+
+	# Ensure cache dir exists (RAM)
+	if (!-d $cache_dir) {
+		mkdir($cache_dir, 0775);
+	}
+
+	# 1) Cheap change detection: max mtime + file count of *.json in piper-voices/
+	my $max_mtime  = 0;
+	my $file_count = 0;
+
+	if (-d $piper_dir) {
+		if (opendir(my $dh, $piper_dir)) {
+			while (my $f = readdir($dh)) {
+				next if $f eq '.' || $f eq '..';
+				next if $f !~ /\.json$/i;
+				my $full = $piper_dir . $f;
+				next if !-f $full;
+
+				$file_count++;
+				my @st = stat($full);
+				if (@st && $st[9] && $st[9] > $max_mtime) {
+					$max_mtime = $st[9];
+				}
+			}
+			closedir($dh);
+		}
+	}
+
+	# Read previous signature
+	my $cached_sig = "";
+	if (-r $cache_meta) {
+		if (open(my $cfh, '<', $cache_meta)) {
+			chomp($cached_sig = <$cfh> // "");
+			close($cfh);
+		}
+	}
+	my $current_sig = $max_mtime . ";" . $file_count;
+
+	my $need_rebuild = 1;
+	if ($cached_sig ne "" && $cached_sig eq $current_sig && -r $piper_out_lang && -r $piper_out_voices) {
+		$need_rebuild = 0;
+		LOGDEB("Piper: voices cache valid ($current_sig) – skipping rebuild");
+	}
+
+	if ($need_rebuild) {
+		LOGINF("Piper: rebuilding voice index (changed voices detected: $current_sig)");
+
+		my @data_piper;
+		my @data_piper_voices;
+
+		# Dedup languages (piper.json) by language code
+		my %seen_lang;
+
+		if (opendir(my $dh2, $piper_dir)) {
+			while (my $file = readdir($dh2)) {
+				next if $file eq '.' || $file eq '..';
+				next if $file !~ /\.json$/i;
+
+				my $full = $piper_dir . $file;
+				next if !-f $full;
+
+				# Parse voice descriptor JSON
+				my $jsonparser = LoxBerry::JSON->new();
+				my $config;
+				eval {
+					$config = $jsonparser->open(filename => $full, writeonclose => 0);
+					1;
+				} or do {
+					LOGERR("Piper: Could not parse $full – skipping");
+					next;
+				};
+
+				next if !$config || ref($config) ne 'HASH';
+				next if !$config->{language} || ref($config->{language}) ne 'HASH';
+
+				my $country = $config->{language}->{country_english} // '';
+				my $code    = $config->{language}->{code}            // '';
+				my $dataset = $config->{dataset}                     // '';
+
+				next if $code eq '';
+
+				# piper.json: languages unique by code
+				if (!$seen_lang{$code}++) {
+					push @data_piper, { "country" => $country, "value" => $code };
+				}
+
+				# piper_voices.json: one entry per voice file
+				(my $fname = $file) =~ s/\.json$//i;
+				push @data_piper_voices, {
+					"name"     => $dataset,
+					"language" => $code,
+					"filename" => $fname
+				};
+			}
+			closedir($dh2);
+		}
+
+		# Optional: stable ordering (nice for diffs + UI determinism)
+		@data_piper = sort {
+			(lc($a->{country} // '') cmp lc($b->{country} // ''))
+			|| (lc($a->{value} // '') cmp lc($b->{value} // ''))
+		} @data_piper;
+
+		@data_piper_voices = sort {
+			(lc($a->{language} // '') cmp lc($b->{language} // ''))
+			|| (lc($a->{name} // '') cmp lc($b->{name} // ''))
+		} @data_piper_voices;
+
+		# Write piper.json
+		my $jsonobjpiper = LoxBerry::JSON->new();
+		$jsonobjpiper->{jsonobj} = \@data_piper;
+		$jsonobjpiper->write($piper_out_lang);
+
+		# Write piper_voices.json
+		my $jsonobjpiper_voice = LoxBerry::JSON->new();
+		$jsonobjpiper_voice->{jsonobj} = \@data_piper_voices;
+		$jsonobjpiper_voice->write($piper_out_voices);
+
+		# Update cache signature
+		if (open(my $wfh, '>', $cache_meta)) {
+			print $wfh $current_sig;
+			close($wfh);
+		}
+
+		LOGOK("Piper: voice index rebuilt (" . scalar(@data_piper) . " languages, " . scalar(@data_piper_voices) . " voices)");
+	}
+	#LOGDEB sprintf("PERF: block PIPER %.3fs", time()-$t0); $t0=time();
+
+	# (Removed) PHP call for dedup:
+	# my $tv = qx(/usr/bin/php $lbphtmldir/bin/piper_tts.php);
+
 	# Call PHP to remove duplicates from piper.json
-	my $tv = qx(/usr/bin/php $lbphtmldir/bin/piper_tts.php);	
+	#my $tv = qx(/usr/bin/php $lbphtmldir/bin/piper_tts.php);	
 
 	# check if MQTT is installed and valid credentials received
 	if ($mqttcred)   {
@@ -824,6 +1025,25 @@ sub form
 		LOGDEB "MQTT Gateway is not installed or wrong credentials received.";
 	}
 	
+	# handover data for event listener service status
+	my $sonos_health = get_sonos_health();
+
+	$template->param(
+		SONOS_HEALTH_PID            => $sonos_health->{pid},
+		SONOS_HEALTH_STATUS         => $sonos_health->{status},
+		SONOS_HEALTH_STATUS_CLASS   => $sonos_health->{status_class},
+		SONOS_HEALTH_FORMATTED_TIME => $sonos_health->{formatted_time},
+		SONOS_HEALTH_ONLINE         => $sonos_health->{players_online},
+		SONOS_HEALTH_TOTAL          => $sonos_health->{players_total},
+
+		# Neues Flag für Template: 1 = Fehlerstatus
+		SONOS_HEALTH_IS_ERROR       => (
+			defined $sonos_health->{status_class}
+			&& $sonos_health->{status_class} eq 'error'
+		) ? 1 : 0,
+	);
+
+	
 	# create list of host palyer for follow function	
 	my $rowshostplayer;
 	foreach my $key (keys %{$config}) {
@@ -833,13 +1053,14 @@ sub form
 	$template->param("ROWSHOSTPLAYER", $rowshostplayer);
 	
 	LOGOK "Sonos Plugin has been successfully loaded.";
-	
+
 	# Donation
 	if (is_enabled($cfg->{VARIOUS}->{donate})) {
 		$template->param("DONATE", 'checked="checked"');
 	} else {
 		$template->param("DONATE", '');
 	}
+	#LOGDEB sprintf("PERF: block REST UNTIL PRINT TEMPLATE %.3fs", time()-$t0); $t0=time();
 	printtemplate();
 	exit;
 }
@@ -982,13 +1203,13 @@ sub save
 	$cfg->{LOXONE}->{Loxone} = "$sel_ms";
 	$cfg->{LOXONE}->{LoxDaten} = "$R::sendlox";
 	$cfg->{LOXONE}->{LoxDatenMQTT} = "$R::sendloxMQTT";
-	if ($R::sendlox eq "true")   {
-		if ($R::sendloxMQTT eq "false")  {
-			$cfg->{LOXONE}->{LoxPort} = "$R::udpport";
-		} else {
-			$cfg->{LOXONE}->{LoxPort} = "";
-		}
-	}
+	#if ($R::sendlox eq "true")   {
+	#	if ($R::sendloxMQTT eq "false")  {
+	#		$cfg->{LOXONE}->{LoxPort} = "$R::udpport";
+	#	} else {
+	#		$cfg->{LOXONE}->{LoxPort} = "";
+	#	}
+	#}
 	$cfg->{TTS}->{t2s_engine} = "$R::t2s_engine";
 	$cfg->{TTS}->{messageLang} = "$R::t2slang";
 	$cfg->{TTS}->{apikey} = "$R::apikey";
@@ -1079,6 +1300,7 @@ sub save
 				for (my $e = 1; $e <= $size; $e++) {
 					delete $vcfg->[$e - 1]->{Player}->{$room1};
 					$del = "true";
+					unlink($cache_file);
 				}
 				LOGOK "Sonos Zone '".$room1."' has been deleted from Volume Profiles";
 			}
@@ -1175,6 +1397,28 @@ sub save
 	$jsonobj->write();
 	LOGDEB "Sonos Zones has been saved.";
 	
+	# ----------------------------------------------------
+	# Sonos Event Listener Service steuern (MQTT On/Off)
+	# ----------------------------------------------------
+	my $service = 'sonos_event_listener.service';
+	if ($R::sendloxMQTT eq "true") {
+		LOGINF "MQTT data for Loxone is enabled – starting $service";
+		my $rc = system("sudo /bin/systemctl start $service >/dev/null 2>&1");
+		if ($rc != 0) {
+			LOGERR "Could not start $service (rc=$rc)";
+		} else {
+			LOGOK "$service has been started";
+		}
+	} else {
+		LOGINF "MQTT data for Loxone is disabled – stopping $service";
+		my $rc = system("sudo /bin/systemctl stop $service >/dev/null 2>&1");
+		if ($rc != 0) {
+			LOGERR "Could not stop $service (rc=$rc)";
+		} else {
+			LOGOK "$service has been stopped";
+		}
+	}
+	
 	# call to prepare XML Template during saving
 	if ($R::sendlox eq "true") {
 		&prep_XML;
@@ -1183,17 +1427,17 @@ sub save
 	my $tv = qx(/usr/bin/php $lbphtmldir/bin/tv_monitor_conf.php);	
 	LOGOK "Main settings has been saved successful";
 	
-	&save_cronjob;
+	#&save_cronjob;
 	
 	#&print_save;
-	my $on = qx(/usr/bin/php $lbphtmldir/bin/check_on_state.php);	
+	#my $on = qx(/usr/bin/php $lbphtmldir/bin/check_on_state.php);	
 	return;
 	
 }
 
 
 #####################################################
-# Save Cronjob for Onlinecheck
+# Save Cronjob for Onlinecheck - OBSOLTE -
 #####################################################
 
 sub save_cronjob
@@ -1315,81 +1559,78 @@ sub call_php_all
 
 sub scan
 {
+	#our $cfg;
+	#our $jsonobj;
 
-	my $error_volume = $SL{'T2S.ERROR_VOLUME_PLAYER'};
-	
-	LOGINF "Scan for Sonos Zones has been executed.";
-	
-	# executes PHP network.php script (read existing config and add new zones)
-	my $response = qx(/usr/bin/php $lbphtmldir/system/$scanzonesfile);
-	
-	
-	if ($response eq "[]") {
-		LOGINF "No new Players has been added to Plugin.";
-		return($countplayers);
-	} elsif ($response eq "")  {
+	LOGINF "Auto-Discovery: Scan for Sonos Zones has been executed.";
+
+	# Always scan on plugin load, but keep it fast via TTL cache
+	my $ttl = 120;
+
+	my $cmd = "/usr/bin/php $lbphtmldir/system/$scanzonesfile --ttl=$ttl";
+	my $response = qx($cmd);
+
+	$response =~ s/^\s+|\s+$//g;
+
+	if ($response eq "") {
 		$error_message = $SL{'ERRORS.ERR_SCAN'};
 		&error;
-	} else {
-		LOGOK "JSON data from application has been succesfully received.";
-		my $config = decode_json($response);
-		#our $countp = scalar scalar keys %{@$cfg{"sonoszonen"}};
-
-		# create table of Sonos devices
-		foreach $key (keys %{$config})
-		{
-			my $filename = $lbphtmldir.'/images/icon-'.$config->{$key}->[7].'.png';
-			$countplayers++;	
-			# prepare for Sound profiles
-			$sur = $config->{$key}->[10];
-			$sub = $config->{$key}->[8];
-			$vcfg = save_zone($key, $sur, $sub);
-			$rowssonosplayer .= "<tr><td style='height: 25px; width: 4%;'><INPUT type='checkbox' style='width: 20px' name='chkplayers$countplayers' id='chkplayers$countplayers' align='center'/></td>\n";
-			$rowssonosplayer .= "<td style='height: 28px; width: 16%;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$key' style='width: 100%; background-color: #e6e6e6;'/></td>\n";
-			$rowssonosplayer .= "<td style='height: 25px; width: 4%;'><DIV class='chk-group'><INPUT type='checkbox' class='chk-checked' name='mainchk$countplayers' id='mainchk$countplayers' value='$config->{$key}->[6]' align='center'/></DIV></td>\n";
-			$rowssonosplayer .= "<td style='height: 28px; width: 15%;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='$config->{$key}->[2]' style='width: 100%; background-color: #e6e6e6;'/></td>\n";
-			# Column Sonos Player Logo
-			if (-e $filename) {
-				$rowssonosplayer .= "<td style='height: 28px; width: 2%;'><img src='/plugins/$lbpplugindir/images/icon-$config->{$key}->[7].png' border='0' width='50' height='50' align='middle'/></td>\n";
-			} else {
-				$rowssonosplayer .= "<td style='height: 28px; width: 2%;'><img src='/plugins/$lbpplugindir/images/sonos_logo_sm.png' border='0' width='50' height='50' align='middle'/></td>\n";
-			}
-			$rowssonosplayer .= "<td style='height: 28px; width: 17%;'><input type='text' id='ip$countplayers' name='ip$countplayers' size='30' value='$config->{$key}->[0]' style='width: 100%; background-color: #e6e6e6;'/></td>\n";
-			# Column Clip Pic green/yellow/red
-			if ($config->{$key}->[11] and is_enabled($config->{$key}->[11]))   {
-				if ($config->{$key}->[12] and is_enabled($config->{$key}->[12]))   {
-					$rowssonosplayer .= "<td style='height: 30px; width: 30px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/green.png' border='0' width='26' height='28' align='center'/></div></td>\n";
-				} else {
-					$rowssonosplayer .= "<td style='height: 30px; width: 30px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/yellow.png' border='0' width='26' height='28' align='center'/></div></td>\n";
-				}
-			} else {
-				$rowssonosplayer .= "<td style='height: 30px; width: 30px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/red.png' border='0' width='26' height='28' align='center'/></div></td>\n";
-			}
-			$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='$config->{$key}->[3]'' /></td>\n";
-			$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='$config->{$key}->[4]'' /></td>\n";
-			$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$config->{$key}->[5]'' /></td>\n";
-			# Column Soundbar Volume
-			if (($config->{$key}[13]) eq "SB")   {
-				$rowssonosplayer .= "<input type='hidden' id='sb$countplayers' size='100' name='sb$countplayers' value='$config->{$key}->[13]'>\n";
-			} else {
-				$rowssonosplayer .= "<input type='hidden' id='sb$countplayers' size='100' name='sb$countplayers' value='NOSB'>\n";
-			}
-			$rowssonosplayer .= "<td style='width: 9%; height: 28px;'><input id='pl-start-time$countplayers' type='time' name='pl-start-time$countplayers' value='$config->{$key}->[15]'></td>\n";
-			$rowssonosplayer .= "<td style='width: 9%; height: 28px;'><input id='pl-end-time$countplayers' type='time' name='pl-end-time$countplayers' value='$config->{$key}->[16]'></td></tr>\n";
-			$rowssonosplayer .= "<input type='hidden' id='models$countplayers' name='models$countplayers' value='$config->{$key}->[7]'>\n";
-			$rowssonosplayer .= "<input type='hidden' id='sub$countplayers' name='sub$countplayers' value='$config->{$key}->[8]'>\n";
-			$rowssonosplayer .= "<input type='hidden' id='householdId$countplayers' name='householdId$countplayers' value='$config->{$key}->[9]'>\n";
-			$rowssonosplayer .= "<input type='hidden' id='sur$countplayers' name='sur$countplayers' value='$config->{$key}->[10]'>\n";
-			$rowssonosplayer .= "<input type='hidden' id='audioclip$countplayers' name='audioclip$countplayers' value='$config->{$key}->[11]'>\n";
-			$rowssonosplayer .= "<input type='hidden' id='voice$countplayers' name='voice$countplayers' value='$config->{$key}->[12]'>\n";
-			$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' value='$config->{$key}->[1]'>\n";
-			$rowssonosplayer .= "<input type='hidden' id='countplayers$countplayers' name='countplayers$countplayers' value$countplayers'>\n";
-		}
-		$template->param("ROWSSONOSPLAYER", $rowssonosplayer);
-		LOGOK "New Players has been added to Plugin.";
-		
-		return($countplayers, $vcfg);
+		return($countplayers);
 	}
+
+	# No new players
+	if ($response =~ /^\[\s*\]$/ || $response =~ /^\{\s*\}$/) {
+		LOGINF "Auto-Discovery: No new Players found.";
+		return($countplayers);
+	}
+
+	LOGOK "Auto-Discovery: JSON data received from network.php.";
+
+	my $newzones;
+	eval { $newzones = decode_json($response); 1; } or do {
+		LOGERR "Auto-Discovery: Invalid JSON from network.php: $@";
+		$error_message = $SL{'ERRORS.ERR_SCAN'};
+		&error;
+		return($countplayers);
+	};
+
+	if (ref($newzones) ne 'HASH') {
+		LOGERR "Auto-Discovery: Unexpected JSON structure (not a HASH).";
+		$error_message = $SL{'ERRORS.ERR_SCAN'};
+		&error;
+		return($countplayers);
+	}
+
+	# Ensure structure exists
+	$cfg->{sonoszonen} = {} if ref($cfg->{sonoszonen}) ne 'HASH';
+
+	my $added = 0;
+
+	foreach my $room (keys %{$newzones}) {
+
+		# Never overwrite existing zones (prevents wiping volumes/limits)
+		next if exists $cfg->{sonoszonen}->{$room};
+
+		# Merge new zone into in-memory config (THIS is what makes it show in UI)
+		$cfg->{sonoszonen}->{$room} = $newzones->{$room};
+
+		# Keep existing behavior for profiles (if needed)
+		my $sur = $newzones->{$room}->[10];
+		my $sub = $newzones->{$room}->[8];
+		save_zone($room, $sur, $sub);
+
+		$added++;
+	}
+
+	if ($added > 0) {
+		# Persist config to disk
+		$jsonobj->write();
+		LOGOK "Auto-Discovery: $added new Player(s) added to config.";
+	} else {
+		LOGINF "Auto-Discovery: Scan returned players, but all already exist in config.";
+	}
+
+	return($countplayers);
 }
 
 
@@ -1698,6 +1939,90 @@ sub restoreconfig
 	return "true";
 }
 
+####################################################################
+# prepare event listenr health data to be displayed in UI
+####################################################################
+sub get_sonos_health {
+
+    my $healthfile = "/dev/shm/$lbpplugindir/health.json";
+
+    my %fallback = (
+        service        => 'sonos_event_listener',
+        hostname       => 'unknown',
+        pid            => undef,
+        timestamp      => 0,
+        iso_time       => '',
+        formatted_time => '',
+        players_online => 0,
+        players_total  => 0,
+        status         => 'unknown',
+        status_class   => 'status-unknown',   # z.B. für Ampel-Farbe in CSS
+        age_sec        => 0,
+    );
+
+    return \%fallback if !-e $healthfile;
+
+    my $json_text;
+    if (open(my $fh, '<', $healthfile)) {
+        local $/ = undef;
+        $json_text = <$fh>;
+        close($fh);
+    } else {
+        return \%fallback;
+    }
+
+    my $decoded;
+    eval {
+        $decoded = decode_json($json_text);
+        1;
+    } or do {
+        return \%fallback;
+    };
+
+    # health.json ist flach → direkt das Root-Hash nehmen
+    my $root = $decoded;
+    return \%fallback if !$root || ref $root ne 'HASH';
+
+    my $ts  = $root->{timestamp} // 0;
+    my $now = time();
+    my $age = $ts ? ($now - $ts) : 999999;
+
+    # Zeit so verwenden, wie sie der Event Listener geliefert hat
+    my $formatted_time = $root->{ts_formatted} // '';
+
+    # Status-Logik (kannst du jederzeit anpassen)
+    my ($status, $status_class);
+    if ($age <= 60) {
+        $status       = $SL{'TEMPLATE.TXT_PLAYER_GREEN'};
+        $status_class = 'ok';
+    } elsif ($age <= 300) {
+        $status       = $SL{'TEMPLATE.TXT_PLAYER_YELLOW'};;
+        $status_class = 'warn';
+    } else {
+        $status       = $SL{'TEMPLATE.TXT_PLAYER_RED'};;
+        $status_class = 'error';
+    }
+
+    my $players_online = $root->{online_players} // 0;
+    my $players_total  = $root->{total_players}  // 0;
+
+    my %out = (
+        service        => $root->{source}      // 'sonos_event_listener',
+        hostname       => $root->{hostname}    // 'unknown',
+        pid            => $root->{pid},
+        timestamp      => $ts,
+        iso_time       => $root->{iso_time}    // '',
+        formatted_time => $formatted_time,
+        players_online => $players_online,
+        players_total  => $players_total,
+        status         => $status,
+        status_class   => $status_class,
+        age_sec        => int($age),
+    );
+
+    return \%out;
+}
+
 #####################################################
 # Get Engine keys (AJAX)
 #####################################################
@@ -1760,8 +2085,8 @@ sub inittemplate
 				loop_context_vars => 1,
 				die_on_bad_params=> 0,
 				associate => $jsonobj,
-				%htmltemplate_options,
-				debug => 1
+				%htmltemplate_options
+				#debug => 1
 				);
 	%SL = LoxBerry::System::readlanguage($template, $languagefile);			
 
@@ -1787,22 +2112,33 @@ sub printtemplate
 ##########################################################################
 # END routine - is called on every exit (also on exceptions)
 ##########################################################################
-sub END 
-{	
-	our @reason;
-	
-	if ($log) {
-		if (@reason) {
-			#$template->param("SETTINGS", "1");
-			#$template->param('ERR_MESSAGE', "Unhandled exception catched: ".@reason);
-			LOGCRIT "Unhandled exception catched: ";
-			LOGERR @reason;
-			LOGEND "Finished with an exception";
-			#&form;
-		} elsif ($error_message) {
-			LOGEND "Finished with error: ".$error_message;
-		} else {
-			LOGEND "Finished successful";
-		}
-	}
+sub END
+{
+    our @reason;
+    our $IS_AJAX_REQUEST;
+    our $AJAX_ACTION;
+
+    return if !$log;
+
+    # For AJAX requests: log only errors/exceptions, but suppress LOGEND/Finished successful
+    if ($IS_AJAX_REQUEST) {
+        if (@reason) {
+            LOGCRIT "Unhandled exception in AJAX request" . ($AJAX_ACTION ? " ($AJAX_ACTION)" : "") . ":";
+            LOGERR @reason;
+        } elsif ($error_message) {
+            LOGERR "AJAX error" . ($AJAX_ACTION ? " ($AJAX_ACTION)" : "") . ": " . $error_message;
+        }
+        return;
+    }
+
+    # Normal page render: keep original behaviour
+    if (@reason) {
+        LOGCRIT "Unhandled exception catched: ";
+        LOGERR @reason;
+        LOGEND "Finished with an exception";
+    } elsif ($error_message) {
+        LOGEND "Finished with error: " . $error_message;
+    } else {
+        LOGEND "Finished successful";
+    }
 }

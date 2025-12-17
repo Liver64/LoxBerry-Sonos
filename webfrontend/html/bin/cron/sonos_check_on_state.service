@@ -1,0 +1,21 @@
+[Unit]
+Description=Sonos4Lox - Online check (device_description.xml)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=loxberry
+Group=loxberry
+ExecStart=/usr/bin/php /opt/loxberry/webfrontend/html/plugins/sonos4lox/bin/check_on_state.php
+WorkingDirectory=/opt/loxberry/libs/phplib
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=6
+
+# Hardening (safe defaults)
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/loxberry/data/plugins/sonos4lox /opt/loxberry/webfrontend/html/plugins/sonos4lox /run/shm/sonos4lox

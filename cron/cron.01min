@@ -11,7 +11,7 @@
 
 i=0
 while [ $i -lt 6 ]; do
-  /usr/bin/php REPLACELBPHTMLDIR/bin/push_loxone.php &
+  #/usr/bin/php REPLACELBPHTMLDIR/bin/push_loxone.php &
   sleep 2
   /usr/bin/php REPLACELBPHTMLDIR/bin/push_maxvol.php &
   sleep 2

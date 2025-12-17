@@ -1,19 +1,4 @@
 <style type="text/css">
-
-.custom-mscom-flipswitch.ui-flipswitch.ui-bar-inherit {
-	background-color: #EEEEEE !important;
-	color:black !important;
-	text-shadow: none !important;
-}
-
-.custom-mscom-flipswitch.ui-flipswitch .ui-btn.ui-flipswitch-on {
-	background-color: #6dac20 !important;
-	color:black !important;
-	text-indent: -3.5em !important;
-	text-shadow: none !important;
-}
-
-
 td input[type="checkbox"] {
 	float: center;
     width: 70%;
@@ -35,7 +20,6 @@ div.scrollmenu a {
 div.scrollmenu a:hover {
   background-color: #777;
 }
-
 </style>
 
 <TMPL_IF SETTINGS>
@@ -143,9 +127,9 @@ div.scrollmenu a:hover {
                     </td>
 
                     <td style="height: 41px;" valign="top">
-                        <a onClick="discover()" id="btnplayerscan" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="#">
+                        <!--<a onClick="discover()" id="btnplayerscan" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="#">
                             <TMPL_VAR T2S.BUTTON_SCAN>
-                        </a>
+                        </a>-->
                     </td>
                 </tr>
 				<TMPL_IF NAME="TESTVOICE">
@@ -176,7 +160,7 @@ div.scrollmenu a:hover {
 										$('#t2son').val('<TMPL_VAR TTS.t2son>')
 									</script>
 								</td>
-								<td style="height: 60px; width: 12%;">
+								<!--<td style="height: 60px; width: 12%;">
 									<label id="lcheckonline">Player Online check:</label>
 								</td>
 								<td width="10%">
@@ -192,7 +176,7 @@ div.scrollmenu a:hover {
                                     <script>
                                         $('#checkonline option[value="<TMPL_VAR SYSTEM.checkonline>"').prop('selected', 'selected');
                                     </script>
-                                </td>
+                                </td>-->
 								
 								<td style="height: 60px; width: 25%">
 								<TMPL_IF NAME="RESTORE_POSSIBLE">
@@ -566,72 +550,75 @@ div.scrollmenu a:hover {
                 </tr>
 
                 <tr class="ttsconfig ttsbaseconfig">
-                    <td style="height: 60px; width: 25%;">
-                        <label id="lsendlox"><TMPL_VAR T2S.DATA_TRANSFER_MINISERVER></label>
-                    </td>
-                    <td width="5%" style="height: 60px">
-                        <table border=0 width="100%">
-                            <tr>
-                                <td style="width: 6%">
-                                    <fieldset>
-                                        <select onchange="selection()" id="sendlox" name="sendlox" data-role="flipswitch" style="width: 104px">
-										<option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
-										<option value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
-										</select>
-                                    </fieldset>
-                                    <script>
-                                        $('#sendlox').val('<TMPL_VAR LOXONE.LoxDaten>')
-                                    </script>
-                                </td>
-                                <td style="width: 23px; text-align: center;">
-                                    &nbsp;</td>
-                                <td>
-                                    <table border=0 style="width: 95%">
-                                        <tr>
-                                            <td class="field_ms" align="left" style="width: 50%">
-                                                <TMPL_VAR MS>
-											<td class="field_ms" style="width: 84px;">
-													<fieldset>
-														<div id="add">
-												
-														</div>
-													</fieldset>
-												<script>
-												if ('<TMPL_VAR MQTT>' == 'true')   {
-													document.getElementById("add").innerHTML += '<select onchange="selection()" id="sendloxMQTT" name="sendloxMQTT" data-role="flipswitch" data-wrapper-class="custom-mscom-flipswitch"><option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON_MS></option><option value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF_MS></option></select>';
-													$('#sendloxMQTT').val('<TMPL_VAR LOXONE.LoxDatenMQTT>');
-												} else {
-													document.getElementById("add").innerHTML += '<input id="sendloxMQTT" name="sendloxMQTT" type="hidden" value="false">';
-												}
-												</script>
-											</td>
-                                            </td>
-											
-                                            <td class="field_lab_udp" align="right" style="width: 30%">
-                                                <TMPL_VAR T2S.LABEL_UDP_PORT>
-                                            </td>
-                                            <td class="field_udp" style="width: 20px">
-                                                <input id="udpport" name="udpport" type="text" value="<TMPL_VAR LOXONE.LoxPort>" align="left" style="width: 71px;">
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                    <td class="empty_template" style="height: 30px; width: 201px;">
-                        <font size="-1">
-                            <TMPL_VAR T2S.LABEL_SONOS_DATA_TRANSFER>
-                        </font>
-                    </td>
-                    <td class="empty_template" style="height: 30px; width: 24px;">
-                        <font size="-1">
-                            <div id="testurl">
-                            </div>
-                        </font>
+					<!-- Linke Spalte: Label -->
+					<td style="height: 60px; width: 25%;">
+						<label id="lsendlox"><TMPL_VAR T2S.DATA_TRANSFER_MINISERVER></label>
+					</td>
 
-                    </td>
-                </tr>
+				<td width="5%" style="height: 60px">
+						<table border="0" width="100%">
+							<tr>
+								<td style="width: 6%; vertical-align: middle;">
+									<fieldset>
+										<select onchange="selection()" id="sendlox" name="sendlox"
+												data-role="flipswitch" style="width: 104px">
+											<option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
+											<option value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
+										</select>
+									</fieldset>
+									<script>
+										$('#sendlox').val('<TMPL_VAR LOXONE.LoxDaten>');
+									</script>
+								</td>
+
+								<td style="width: 20px;">&nbsp;</td>
+								<td class="empty_template" style="width: 30%; vertical-align: middle;">
+									<div style="display: inline-block; min-width: 220px; max-width: 260px;">
+										<TMPL_VAR MS>
+									</div>
+									<input id="sendloxMQTT" name="sendloxMQTT" type="hidden" value="false">
+								</td>
+								<td class="empty_template"
+									style="vertical-align: middle; text-align: left; white-space: nowrap; padding-left: 10px;">
+									<div class="sonos-health-box" style="display: inline-block; text-align: left;">
+										<div class="lbgreen" style="text-align: left;">
+											Event Listener running (PID <TMPL_VAR SONOS_HEALTH_PID>)
+										</div>
+										<div style="font-size: 0.85em; margin-top: 2px; text-align: left;">
+											<span class="health-indicator <TMPL_VAR SONOS_HEALTH_STATUS_CLASS>"></span>
+											Event-Listener State: <TMPL_VAR SONOS_HEALTH_STATUS>
+											<TMPL_IF SONOS_HEALTH_FORMATTED_TIME>
+												<TMPL_VAR SONOS_HEALTH_FORMATTED_TIME>
+											</TMPL_IF>
+											<br>
+											Player <TMPL_VAR SONOS_HEALTH_ONLINE>/<TMPL_VAR SONOS_HEALTH_TOTAL> online.
+										</div>
+									</div>
+								</td>
+							</tr>
+						</table>
+					</td>
+
+					<td class="empty_template" style="height: 30px; width: 201px;">
+						<TMPL_IF SONOS_HEALTH_IS_ERROR>
+							<button type="button"
+									class="ui-btn ui-mini ui-btn-inline ui-btn-icon-left ui-icon-refresh"
+									onclick="restartSonosListener();">
+								Restart Listener
+							</button>
+						<TMPL_ELSE>
+							<font size="-1">
+								<TMPL_VAR T2S.LABEL_SONOS_DATA_TRANSFER>
+							</font>
+						</TMPL_IF>
+					</td>
+
+					<td class="empty_template" style="height: 30px; width: 24px;">
+						<font size="-1">
+							<div id="testurl"></div>
+						</font>
+					</td>
+				</tr>
 				
                 <tr class="empty_template">
                     <td class="empty_template" style="height: 60px; width: 25%;">
@@ -642,10 +629,9 @@ div.scrollmenu a:hover {
                         <table border=0 width="100%">
                             <tr>
                                 <td class="empty_template" style="width: 5%">
-								    <div class="btn">
+								    <!--<div class="btn">
 										<input type="button" onclick="checkfile('VI_UDP_Sonos.xml')" id="btn1" data-mini="true" value="VI_UDP_Sonos.xml" />
-									</div>								
-								
+									</div>-->								
 									<div class="btnc">
                                         <input type="button" onclick="checkfile('VI_MQTT_UDP_Sonos.xml')" id="btn2" data-mini="true" value="VI_MQTT_UDP_Sonos.xml" />
 									</div>
@@ -1075,13 +1061,23 @@ div.scrollmenu a:hover {
                 $("#coll_donate").show();
             }
         }
+		
+		function restartSonosListener() {
+			//if (!confirm('Sonos Event Listener jetzt neu starten?')) {
+				//return;
+			//}
 
-
+			$.get('index.cgi', { action: 'restart_listener' })
+				.done(function (data) {
+					console.log('Restart command sent to Sonos Event Listener.');
+					location.reload();
+				})
+				.fail(function () {
+					console.log('Failed to restart Sonos Event Listener.');
+				});
+		}
 
         //**************************** Block for Layout control ************************************
-
-
-
 
         // function to disable/enable some fields on click depending on selected value
         function prepareTTSConfigFields() {
@@ -1123,39 +1119,17 @@ div.scrollmenu a:hover {
         function selection() {
 			console.log("Selection");
             var cat = document.getElementById('sendlox').value;
-			var mqtt = document.getElementById('sendloxMQTT').value;
 			if (cat == "true") {
 				console.log("Communication to Loxone turned on");
-                $('#udpport').removeClass('ui-disabled');
                 $('.field_ms').show();
-                $('.label_template').show();
-                $('.template').show();
+                //$('.label_template').show();
+                //$('.template').show();
                 $('.empty_template').show();
-				if (mqtt == "true") {
-					console.log("MQTT selected");
-					$('.field_lab_udp').hide();
-					$('.field_udp').hide();
-					$('.btn').hide();
-					$('.btnc').show();
-					$('.btnd').show();
-				} else {
-					console.log("UDP selected");
-					$('.field_lab_udp').show();
-					$('.field_udp').show();
-					$('.btnc').hide();
-					$('.btnd').hide();
-					$('.btn').show();
-					//validate_enable('#udpport');
-					//validate_chk_object(['#udpport']);
-				}
             } else {
 				console.log("Communication to Loxone turned off");
-                $('#udpport').addClass('ui-disabled');
                 $('.field_ms').hide();
-                $('.field_udp').hide();
-                $('.field_lab_udp').hide();
-                $('.label_template').hide();
-                $('.template').hide();
+                //$('.label_template').hide();
+                //$('.template').hide();
                 $('.empty_template').hide();
             }
             $("#sendlox").flipswitch("refresh");
@@ -2669,24 +2643,24 @@ $(function () {
 				
 				
 				// validate UDP Port entered if UDP selected
-				console.log("validate UDP");
-				var cat = document.getElementById('sendlox').value;
-				var mqtt = document.getElementById('sendloxMQTT').value;
-				var udp = document.getElementById('udpport').value;
-				$('#udpport').removeClass('ui-disabled');
-				if (cat == "true" && mqtt == "false") {
-					if (udp.length < 4) {
-						$('html, body').animate({
-							scrollTop: $("#udpport").offset().top
-						}, 1000);
-						$("#udpport").focus();
-						dialog('<TMPL_VAR ERRORS.ERR_UDP_MISSING>', 'OK', 'error', 'UPD Port');
-						//return false;
-						e.preventDefault();
+				//console.log("validate UDP");
+				//var cat = document.getElementById('sendlox').value;
+				//var mqtt = document.getElementById('sendloxMQTT').value;
+				//var udp = document.getElementById('udpport').value;
+				//$('#udpport').removeClass('ui-disabled');
+				//if (cat == "true" && mqtt == "false") {
+				//	if (udp.length < 4) {
+				//		$('html, body').animate({
+				//			scrollTop: $("#udpport").offset().top
+				//		}, 1000);
+				//		$("#udpport").focus();
+				//		dialog('<TMPL_VAR ERRORS.ERR_UDP_MISSING>', 'OK', 'error', 'UPD Port');
+				//		//return false;
+				//		e.preventDefault();
 						
-					}
-				}
-				$("#sendlox").flipswitch("refresh");
+				//	}
+				//}
+				//$("#sendlox").flipswitch("refresh");
 				// show Save message 
 				timeout('<TMPL_VAR SAVE.SAVE_MESSAGE>', 'OK', 'info', '<TMPL_VAR SAVE.SAVE_ALL_OK>', '3500');
             });

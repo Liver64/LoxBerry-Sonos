@@ -1,0 +1,12 @@
+# Sonos4Lox Watchdog (run as user loxberry)
+loxberry ALL=(ALL) NOPASSWD: /bin/systemctl list-unit-files
+
+loxberry ALL=(ALL) NOPASSWD: /bin/systemctl is-active sonos_event_listener.service
+loxberry ALL=(ALL) NOPASSWD: /bin/systemctl is-failed sonos_event_listener.service
+loxberry ALL=(ALL) NOPASSWD: /bin/systemctl restart sonos_event_listener.service
+loxberry ALL=(ALL) NOPASSWD: /bin/systemctl start sonos_event_listener.service
+
+loxberry ALL=(ALL) NOPASSWD: /bin/systemctl is-active sonos_check_on_state.service
+loxberry ALL=(ALL) NOPASSWD: /bin/systemctl is-failed sonos_check_on_state.service
+loxberry ALL=(ALL) NOPASSWD: /bin/systemctl start sonos_check_on_state.service
+

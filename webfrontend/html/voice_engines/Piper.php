@@ -115,7 +115,7 @@ if (!function_exists('piper_core')) {
         // ----------------------------------------------------------------------
         // 1) Piper erzeugt WAV-Datei
         // ----------------------------------------------------------------------
-        $piperBin = '/usr/bin/piper'; // Symlink vom Plugin-Binary (…/bin/plugins/sonos4lox/piper/piper)
+        $piperBin = 'REPLACELBHOMEDIR/bin/plugins/sonos4lox/piper/piper';
 
         if (!is_executable($piperBin)) {
             LOGERR("voice_engines/Piper.php: Piper binary not executable or not found at $piperBin");

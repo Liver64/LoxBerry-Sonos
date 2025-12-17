@@ -98,99 +98,136 @@ function radio(){
 * Function: nextradio --> iterate through Radio Favorites (endless)
 *
 * @param: empty
-* @return: 
+* @return:
 **/
 function nextradio() {
-	
-	global $sonos, $config, $profile_selected, $master, $debug, $min_vol, $volume, $tmp_tts, $sonoszone, $tmp_error, $stst, $profile_details;
-	
-	$radioanzahl_check = count($config['RADIO']);
-	if($radioanzahl_check == 0)  {
-		LOGGING("radio.php: There are no Radio Stations maintained in the config. Pls update before using function NEXTRADIO or ZAPZONE!", 3);
-		exit;
-	}
-	if (file_exists($tmp_tts))  {
-		LOGGING("radio.php: Currently a T2S is running, we skip nextradio for now. Please try again later.",6);
-		exit;
-	}
-	VolumeProfiles();
 
-	#print_r(GROUPMASTER);
-	if (isset($_GET['member']) && isset($_GET['profile'])) {
-		$master = GROUPMASTER;
-	} elseif (isset($_GET['profile']))   {
-		$master = GROUPMASTER;	
-	} else {
-		$master = MASTER;
-	}
-	#print_r($master);
-	$textan = "0";
-	if (file_exists($tmp_error)) {
-		$err = json_decode(file_get_contents($tmp_error));
-		foreach ($err as $key => $value) {
-			LOGWARN("Sonos: radio.php: ".$value);
-		}
-		check_date_once();
-		if ($stst == "true") {
-			select_error_lang();
-			$errortext = "Placeholder";
-			say_radio_station($errortext);
-			$textan = "1";
-			LOGINF("Sonos: radio.php: Info of broken Radio URL has been announced once.");
-		}
-	}
-	#print_r($sonoszone[$master][0]);
-	$sonos = new SonosAccess($sonoszone[$master][0]);
-	#$sonos->ClearQueue();
-	$playstatus = $sonos->GetTransportInfo();
-	$radioname = $sonos->GetMediaInfo();
-	#print_r($radioname);
-	if (!empty($radioname["title"])) {
-		$senderuri = $radioname["title"];
-	} else {
-		$senderuri = "";
-	}
-	$radio = $config['RADIO']['radio'];
-	ksort($radio);
-	#print_r($radio);
-	$radioanzahl = count($config['RADIO']['radio']);
-	$radio_name = array();
-	$radio_adresse = array();
-	$radio_coverurl = array();
-	foreach ($radio as $key) {
-		$radiosplit = explode(',',$key);
-		array_push($radio_name, $radiosplit[0]);
-		array_push($radio_adresse, $radiosplit[1]);
-		if (array_key_exists("2", $radiosplit)) {
-			array_push($radio_coverurl, $radiosplit[2]);
-		} else {
-			array_push($radio_coverurl, "");
-		}
-	}
-	#print_r($radio_coverurl);
-	$senderaktuell = array_search($senderuri, $radio_name);
-	if ($senderaktuell < ($radioanzahl) - 1 ) {
-		$sonos->SetRadio('x-rincon-mp3radio://'.trim($radio_adresse[$senderaktuell + 1]), trim($radio_name[$senderaktuell + 1]), trim($radio_coverurl[$senderaktuell + 1]));
-		$act = $radio_name[$senderaktuell + 1];
-	}
-    if ($senderaktuell == $radioanzahl - 1) {
-	    $sonos->SetRadio('x-rincon-mp3radio://'.trim($radio_adresse[0]), trim($radio_name[0]), trim($radio_coverurl[0]));
-		$act = $radio_name[0];
-	}
-	if ($config['VARIOUS']['announceradio'] == 1 and $textan == "0") {
-		#$check_stat = getZoneStatus($master);
-		say_radio_station();
-	}
-	$coord = getRoomCoordinator($master);
-	$sonos = new SonosAccess($coord[0]);
-	$sonos->SetMute(false);
-	
-	if (isset($_GET['profile']) or isset($_GET['Profile']))    {
-		$volume = $profile_details[0]['Player'][$master][0]['Volume'];
-	}
-	$sonos->SetVolume($volume);
-	$sonos->Play();
-	LOGGING("radio.php: Radio Station '".$act."' has been loaded successful by nextradio",5);
+    global $sonos, $config, $profile_selected, $master, $debug, $min_vol, $volume,
+           $tmp_tts, $sonoszone, $tmp_error, $stst, $profile_details;
+
+    $radioanzahl_check = count($config['RADIO']);
+    if ($radioanzahl_check == 0) {
+        LOGGING("radio.php: There are no Radio Stations maintained in the config. Pls update before using function NEXTRADIO or ZAPZONE!", 3);
+        exit;
+    }
+    if (file_exists($tmp_tts)) {
+        LOGGING("radio.php: Currently a T2S is running, we skip nextradio for now. Please try again later.", 6);
+        exit;
+    }
+    VolumeProfiles();
+
+    if (isset($_GET['member']) && isset($_GET['profile'])) {
+        $master = GROUPMASTER;
+    } elseif (isset($_GET['profile'])) {
+        $master = GROUPMASTER;
+    } else {
+        $master = MASTER;
+    }
+	if (isset($_GET['member']) && trim($_GET['member']) !== '') {
+        // CreateMember wurde i.d.R. schon in sonos.php aufgerufen – ist idempotent
+        SyncGroupForPlaybackToMember();
+    }
+
+    $textan = "0";
+
+    // -----------------------------
+    // Fehler-Info aus error.json einmal am Tag ansagen
+    // -----------------------------
+    if (file_exists($tmp_error)) {
+        $err = json_decode(file_get_contents($tmp_error));
+        foreach ($err as $key => $value) {
+            LOGWARN("Sonos: radio.php: " . $value);
+        }
+        check_date_once();
+        if ($stst == "true") {
+            select_error_lang();
+            // HIER: echten Fehlertext aus select_error_lang() nutzen (global $errortext)
+            global $errortext;
+            say_radio_station($errortext);
+            $textan = "1";
+            LOGINF("Sonos: radio.php: Info of broken Radio URL has been announced once.");
+        }
+    }
+
+    // Grundlegende Sonos-Infos
+    $sonos = new SonosAccess($sonoszone[$master][0]);
+    $playstatus = $sonos->GetTransportInfo();
+    $radioname  = $sonos->GetMediaInfo();
+
+    if (!empty($radioname["title"])) {
+        $senderuri = $radioname["title"];
+    } else {
+        $senderuri = "";
+    }
+
+    $radio       = $config['RADIO']['radio'];
+    ksort($radio);
+    $radioanzahl = count($config['RADIO']['radio']);
+
+    $radio_name     = [];
+    $radio_adresse  = [];
+    $radio_coverurl = [];
+
+    foreach ($radio as $key) {
+        $radiosplit = explode(',', $key);
+        $radio_name[]    = $radiosplit[0];
+        $radio_adresse[] = $radiosplit[1];
+        if (array_key_exists(2, $radiosplit)) {
+            $radio_coverurl[] = $radiosplit[2];
+        } else {
+            $radio_coverurl[] = "";
+        }
+    }
+
+    // Aktuelle Position im Radio-Array
+    $senderaktuell = array_search($senderuri, $radio_name);
+
+    // Nächsten Sender bestimmen (Name, URL, Cover), aber NOCH NICHT laden
+    if ($senderaktuell < ($radioanzahl) - 1) {
+        $next_index = $senderaktuell + 1;
+    } else {
+        // Letzter Sender -> zurück zum ersten
+        $next_index = 0;
+    }
+
+    $next_name  = $radio_name[$next_index];
+    $next_url   = 'x-rincon-mp3radio://' . trim($radio_adresse[$next_index]);
+    $next_cover = trim($radio_coverurl[$next_index]);
+
+    // -----------------------------
+    // Optional: Radio-Ansage vor dem Senderwechsel
+    // -----------------------------
+    $ann_volume = null;
+    if ($config['VARIOUS']['announceradio'] == 1 && $textan == "0") {
+        // Ansage "Radio <NextName>" mit Lautstärke-Logik aus say_radio_station()
+        $ann_volume = say_radio_station('', $next_name);
+    }
+
+    // -----------------------------
+    // Jetzt neuen Sender laden und starten
+    // -----------------------------
+    $coord = getRoomCoordinator($master);
+    $sonos = new SonosAccess($coord[0]);
+    $sonos->SetMute(false);
+
+    // Lautstärke für den neuen Sender:
+    if (isset($_GET['profile']) or isset($_GET['Profile'])) {
+        // Profil-Lautstärke gewinnt
+        $volume = $profile_details[0]['Player'][$master][0]['Volume'];
+    } elseif ($ann_volume !== null) {
+        // Wenn Ansage gelaufen ist, deren berechnete Lautstärke verwenden
+        $volume = $ann_volume;
+    } else {
+        // Standard aus Config / sonoszone
+        $volume = $sonoszone[$master][4];
+    }
+
+    // Jetzt neuen Sender setzen und starten
+    $sonos->SetRadio($next_url, $next_name, $next_cover);
+    $sonos->SetVolume($volume);
+    $sonos->Play();
+
+    LOGGING("radio.php: Radio Station '" . $next_name . "' has been loaded successful by nextradio", 5);
 }
 
 
@@ -250,86 +287,132 @@ function random_radio() {
 
 
 /**
-* Function : say_radio_station --> announce radio station before playing Station
-*
-* @param: 
-* @return: 
-**/
+ * Function : say_radio_station --> announce radio station before playing Station
+ *
+ * @param string $errortext    Optional: Fehler-/Infotext (z.B. aus error.json)
+ * @param string $stationTitle Optional: Name des kommenden Senders (z.B. "hr3")
+ * @return int                 Lautstärke, die nach der Ansage für den neuen Sender genutzt werden soll
+ **/
+function say_radio_station($errortext = '', $stationTitle = '')
+{
+    global $master, $sonoszone, $config, $min_vol, $volume,
+           $sonos, $coord, $errorvoice, $errorlang;
 
-function say_radio_station($errortext ='') {
-			
-	global $master, $sonoszone, $config, $min_vol, $volume, $actual, $sonos, $coord, $messageid, $filename, $MessageStorepath, $nextZoneKey, $member, $errortext, $errorvoice, $errorlang;
-	require_once("addon/sonos-to-speech.php");
-	
-	// if batch has been choosed abort
-	if(isset($_GET['batch'])) {
-		LOGGING("radio.php: The parameter batch could not be used to announce the radio station!", 4);
-		exit;
-	}
-	$sonos->Stop();
-	saveZonesStatus(); // saves all Zones Status
-	$coord = getRoomCoordinator($master);
-	LOGGING("radio.php: Room Coordinator been identified", 7);		
-	$sonos = new SonosAccess($coord[0]); 
-	$temp_radio = $sonos->GetMediaInfo();
-	#********************** NEW get text variables **********************
-	$TL = LOAD_T2S_TEXT();
-	if ($TL != "") {
-		$play_stat = $TL['SONOS-TO-SPEECH']['ANNOUNCE_RADIO'] ; 
-	} else {
-		$play_stat = 'Placeholder';
-	}
-	#$play_stat = $TL['SONOS-TO-SPEECH']['ANNOUNCE_RADIO'] ; 
-	#********************************************************************
-	# Generiert und kodiert Ansage des laufenden Senders
-	if (strncmp($temp_radio['title'], $play_stat, strlen($play_stat))===0 or empty($indtext)) {
-    	# Nur Titel des Senders ansagen, falls Titel mit dem Announce-Radio Text übereinstimmt
-	    $text = $temp_radio['title'];
-	} else {
-	    # Ansage von 'Radio' gefolgt vom Titel des Senders
-	    $text = ($play_stat.' '.$temp_radio['title']);
-	}
-	if ($errortext != '')  {
-		$text = $errortext;
-		$textstring = ($text);
-		$rawtext = md5($textstring);
-		$filename = "$rawtext";
-		include_once("voice_engines/GoogleCloud.php");
-	} else {
-		$textstring = ($text);
-		$rawtext = md5($textstring);
-		$filename = "$rawtext";
-		select_t2s_engine();
-		t2s($textstring, $filename);
-	}
-	t2s($textstring, $filename);
-	$sonos->SetMute(false);
-	$tmp_volume = $sonos->GetVolume();
-	$volume = $volume + $config['TTS']['correction'];
-	LOGGING("radio.php: Radio Station Announcement has been announced", 6);		
-	play_tts($filename);
-	if(isset($_GET['member'])) {
-	    // TODO should this be loaded by a helper function? or already be loaded before calling say_radio_station() 
-	    // Or should say_radio_station() use sendgroupmessage() to play T2S if zones are grouped?
-	    $member = $_GET['member'];
-	    $member = explode(',', $member);
-	    restoreGroupZone();
-	} else {
-	    restoreSingleZone();
-	}
-	if(isset($_GET['volume'])) {
-		$volume = $_GET['volume'];
-	} elseif (isset($_GET['keepvolume'])) {
-		if ($tmp_volume >= $min_vol)  {
-			$volume = $tmp_volume;
-		} else {
-			$volume = $sonoszone[$master][4];
-		}
-	} else {
-		$volume = $sonoszone[$master][4];
-	}
-	return $volume;
+    // batch-Modus darf hier NICHT verwendet werden
+    if (isset($_GET['batch'])) {
+        LOGGING("radio.php: The parameter 'batch' could not be used to announce the radio station!", 4);
+        exit;
+    }
+
+    // Raum-Koordinator ermitteln und Sonos-Objekt initialisieren
+    $coord = getRoomCoordinator($master);
+    LOGGING("radio.php: Room Coordinator been identified", 7);
+    $sonos = new SonosAccess($coord[0]);
+
+    // Aktuelle Lautstärke merken (für keepvolume-Logik / Rückgabewert)
+    $tmp_volume = $sonos->GetVolume();
+
+    // Vor der Ansage erstmal muten
+    #$sonos->SetMute(true);
+
+    // Aktuelle Radio-Infos holen (falls wir keinen stationTitle übergeben bekommen)
+    $temp_radio = $sonos->GetMediaInfo();
+
+    // ********************** T2S-Text-Baustein laden **********************
+    $TL = load_t2s_text();
+    if (!empty($TL) && !empty($TL['SONOS-TO-SPEECH']['ANNOUNCE_RADIO'])) {
+        // z.B. "Radio" oder "Sie hören"
+        $play_stat = $TL['SONOS-TO-SPEECH']['ANNOUNCE_RADIO'];
+    } else {
+        $play_stat = 'Radio';
+    }
+    // ********************************************************************
+
+    // -----------------------------
+    // Ansagetext bestimmen
+    // -----------------------------
+    if ($errortext !== '') {
+        // Fehlerfall: expliziter Fehler-/Infotext
+        $textstring = $errortext;
+
+    } elseif ($stationTitle !== '') {
+        // Normalfall: kommender Sender wurde explizit übergeben
+        $textstring = $play_stat . ' ' . $stationTitle;
+
+    } else {
+        // Fallback: Radio-Infos aus Sonos (aktueller Sender)
+        $title = $temp_radio['title'] ?? '';
+
+        if ($title === '') {
+            // Wenn Sonos keinen Titel liefert, nur den Announce-Text sagen
+            $textstring = $play_stat;
+        } elseif (strncmp($title, $play_stat, strlen($play_stat)) === 0) {
+            // Wenn Titel schon mit Announce-Text beginnt, nur den Titel sprechen
+            $textstring = $title;
+        } else {
+            // Ansonsten: Announce-Text + Sendername
+            $textstring = $play_stat . ' ' . $title;
+        }
+    }
+
+    // Sicherheit: Niemals mit leerem Text ins TTS laufen
+    if (trim($textstring) === '') {
+        LOGWARN("radio.php: Empty announcement text – skipping TTS.");
+        return $tmp_volume;
+    }
+
+    // -----------------------------
+    // TTS-Overrides für Fehlerfall
+    // -----------------------------
+    $override    = [];
+    $log_context = 'radio.php: ';
+
+    if ($errortext !== '') {
+        // Im Fehlerfall:
+        //  - GET-Parameter ignorieren (stabile Systemansage)
+        //  - Sprache/Voice aus error.json verwenden, wenn gesetzt
+        $override['ignore_get'] = true;
+
+        if (!empty($errorvoice)) {
+            $override['voice'] = $errorvoice;
+        }
+
+        if (!empty($errorlang)) {
+            $override['language'] = $errorlang;
+        }
+
+        #$log_context .= ' [error]';
+    }
+
+    // -----------------------------
+    // Gewünschte Lautstärke bestimmen (für Ansage + folgenden Sender)
+    // -----------------------------
+    if (isset($_GET['volume'])) {
+        // Feste Lautstärke aus URL
+        $volume = (int)$_GET['volume'];
+
+    } elseif (isset($_GET['keepvolume'])) {
+        // Bisherige Lautstärke beibehalten, Mindestlautstärke beachten
+        if ($tmp_volume >= $min_vol) {
+            $volume = $tmp_volume;
+        } else {
+            $volume = $sonoszone[$master][4];
+        }
+
+    } else {
+        // Standardlautstärke aus Config
+        $volume = $sonoszone[$master][4];
+    }
+
+    // -----------------------------
+    // Einfache TTS-Ansage ohne Snapshot/Restore (wartet bis fertig)
+    // -----------------------------
+    t2s_basic_say($textstring, $override);
+    LOGGING("radio.php: Radio Station Announcement has been announced", 6);
+
+    return $volume;
 }
+
 
 
 /**
@@ -399,79 +482,116 @@ function check_date_once() {
 
 function PluginRadio()   
 {
-	global $sonos, $sonoszone, $profile_details, $master, $config, $volume;
-	
-	if (isset($_GET['radio'])) {
-		if (empty($_GET['radio']))    {
-			LOGGING("radio.php: No radio station been entered. Please use ...action=pluginradio&radio=<STATION>", 4);
-			exit(1);
-		}
+    global $sonos, $sonoszone, $profile_details, $master, $config, $volume;
+    
+    if (isset($_GET['radio'])) {
+        if (empty($_GET['radio']))    {
+            LOGGING("radio.php: No radio station been entered. Please use ...action=pluginradio&radio=<STATION>", 4);
+            exit(1);
+        }
     }
-	if (isset($_GET['member']) && isset($_GET['profile'])) {
-		$master = GROUPMASTER;
-	} elseif (isset($_GET['profile']))   {
-		$master = GROUPMASTER;	
-	} else {
-		$master = MASTER;
-	}
-	#CreateMember();
-	$sonos = new SonosAccess($sonoszone[$master][0]);
-	$enteredRadio = mb_strtolower($_GET['radio']);
-	$radios = $config['RADIO']['radio'];
-	$valid = array();
-	# pepare array and add details
-	foreach ($radios as $val => $item)  {
-		$split = explode(',' , $item);
-		$split['lower'] = mb_strtolower($split[0]);
-		#print_r($split);
-		array_push($valid, $split);
-	}
-	$re = array();
-	# iterate through array ans search
-	foreach ($valid as $item)  {
-		$radiocheck = contains($item['lower'], $enteredRadio);
-		if ($radiocheck === true)   {
-			$favorite = $item['lower'];
-			array_push($re, array_multi_search($favorite, $valid));
-		}
-	}
-	# if more then ONE Station been found
-	if (count($re) > 1)  {
-		LOGERR ("radio.php: Your entered favorite/keyword '".$enteredRadio."' has more then 1 hit! Please specify more detailed.");
-		exit;
-	}
-	# if no match has been found
-	if (count($re) < 1)  {
-		LOGERR ("radio.php: Your entered favorite/keyword '".$enteredRadio."' could not be found! Please specify more detailed.");
-		exit;
-	}
-	#print_r($re);
-	$sonos = new SonosAccess($sonoszone[$master][0]);
-	try {
-		$sonos->SetRadio('x-rincon-mp3radio://'.$re[0][0][1], $re[0][0][0], $re[0][0][2]);
-		$sonos->SetGroupMute(false);
-		#print_r($profile_details);
-		if (isset($_GET['profile']) or isset($_GET['Profile']))    {
-			$volume = $profile_details[0]['Player'][$master][0]['Volume'];
-		} elseif (isset($_GET['member'])) {
-			volume_group();
-			$sonos = new SonosAccess($sonoszone[GROUPMASTER][0]);
-		}
-		if(!isset($_GET['load']) and !isset($_GET['rampto'])) {
-			$sonos->SetMute(false);
-			$sonos->Stop();
-			$sonos->SetVolume($volume);
-			$sonos->Play();
-			LOGOK("radio.php: Your Plugin Radio '".$re[0][0][0]."' has been successful loaded and is playing!");
-		}
-		RampTo();
-	} catch (Exception $e) {
-		LOGERR("radio.php: Something went unexpected wrong! Please check your URL/entry and try again!");
-		exit;
-	}	
-}
-	
 
+    // Master bestimmen
+    if (isset($_GET['member']) && isset($_GET['profile']) && defined('GROUPMASTER')) {
+        $master = GROUPMASTER;
+    } elseif (isset($_GET['profile']) && defined('GROUPMASTER')) {
+        $master = GROUPMASTER;
+    } else {
+        // Fallback: ganz normal MASTER benutzen
+        $master = MASTER;
+    }
+	
+	if (isset($_GET['member']) && trim($_GET['member']) !== '') {
+        // CreateMember wurde i.d.R. schon in sonos.php aufgerufen – ist idempotent
+        SyncGroupForPlaybackToMember();
+    }
+
+    $sonos = new SonosAccess($sonoszone[$master][0]);
+	
+    $enteredRadio = mb_strtolower($_GET['radio']);
+    $radios       = $config['RADIO']['radio'];
+    $valid        = array();
+
+    // Array vorbereiten und Details hinzufügen
+    foreach ($radios as $val => $item)  {
+        $split = explode(',' , $item);
+        $split['lower'] = mb_strtolower($split[0]);
+        array_push($valid, $split);
+    }
+
+    $re = array();
+    // durchsuchen
+    foreach ($valid as $item)  {
+        $radiocheck = contains($item['lower'], $enteredRadio);
+        if ($radiocheck === true)   {
+            $favorite = $item['lower'];
+            array_push($re, array_multi_search($favorite, $valid));
+        }
+    }
+
+    // mehr als 1 Treffer?
+    if (count($re) > 1)  {
+        LOGERR ("radio.php: Your entered favorite/keyword '".$enteredRadio."' has more then 1 hit! Please specify more detailed.");
+        exit;
+    }
+    // kein Treffer?
+    if (count($re) < 1)  {
+        LOGERR ("radio.php: Your entered favorite/keyword '".$enteredRadio."' could not be found! Please specify more detailed.");
+        exit;
+    }
+
+    // Ab hier wissen wir: genau ein passender Eintrag
+    $stationName = $re[0][0][0]; // z.B. "Top 100"
+    $stationUrl  = $re[0][0][1]; // Stream-URL
+    $stationMeta = $re[0][0][2]; // Metadaten
+
+    // ------------------------------------------------------------
+    // 1) SENDER-ANSAGE (separat, darf Radio NICHT beeinflussen)
+    //    → Wenn hier was schiefgeht, trotzdem Radio starten.
+    // ------------------------------------------------------------
+    try {
+        say_radio_station('', $stationName);
+		$sonos->ClearQueue();
+    } catch (Exception $e) {
+        LOGWARN("radio.php: failed: ".$e->getMessage());
+    }
+
+    // ------------------------------------------------------------
+    // 2) RADIO LADEN & STARTEN (eigener try/catch)
+    //    → Endzustand soll IMMER: Radiosender spielt
+    // ------------------------------------------------------------
+    try {
+        $sonos = new SonosAccess($sonoszone[$master][0]);
+
+        // Sender setzen
+        $uri = 'x-rincon-mp3radio://' . $stationUrl;
+        $sonos->SetRadio($uri, $stationName, $stationMeta);
+        $sonos->SetGroupMute(false);
+
+        // Lautstärke anhand Profil/Member
+        if (isset($_GET['profile']) or isset($_GET['Profile'])) {
+            $volume = $profile_details[0]['Player'][$master][0]['Volume'];
+        } elseif (isset($_GET['member'])) {
+            volume_group();
+            $sonos = new SonosAccess($sonoszone[$master][0]);
+        }
+
+        if (!isset($_GET['load']) && !isset($_GET['rampto'])) {
+            $sonos->SetMute(false);
+            $sonos->Stop();
+            $sonos->SetVolume($volume);
+            $sonos->Play();
+            LOGOK("radio.php: Your Plugin Radio '".$stationName."' has been successful loaded and is playing!");
+        }
+
+        // Rampto nur für Lautstärke, darf ruhig nach dem Start kommen
+        RampTo();
+
+    } catch (Exception $e) {
+        LOGERR("radio.php: Something went unexpected wrong while loading radio '".$enteredRadio."': ".$e->getMessage());
+        return;
+    }
+}
 
 
 ?>

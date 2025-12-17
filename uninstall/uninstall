@@ -1,13 +1,59 @@
 #!/bin/sh
 
 echo "<INFO> Creating Plugin Backup folder 'webfrontend/html/XL/sonos4lox_backup'"
-mkdir -p $5/webfrontend/html/XL/sonos4lox_backup
+mkdir -p "$5/webfrontend/html/XL/sonos4lox_backup"
 
 echo "<INFO> Copy existing CONFIG files to 'webfrontend/html/XL' folder for further installations"
-cp -p -v -r $5/config/plugins/$3/ $5/webfrontend/html/XL/sonos4lox_backup
+cp -p -v -r "$5/config/plugins/$3/" "$5/webfrontend/html/XL/sonos4lox_backup" 2>/dev/null || true
 
-echo "<INFO> Delete symlink from '/usr/bin'"
+echo "<INFO> Delete Piper symlink from '/usr/bin'"
 piper='/usr/bin/piper'
-if [ -L $piper ]; then
-	rm $piper
+if [ -L "$piper" ]; then
+	rm -f "$piper"
+fi
+
+echo "<INFO> Stopping and removing systemd units (service+timer) if present"
+
+# Prüfen, ob systemctl verfügbar ist
+if command -v systemctl >/dev/null 2>&1; then
+
+	# ---- Units to remove (EXACT names) ----
+	UNITS="sonos_check_on_state.service sonos_check_on_state.timer sonos_event_listener.service"
+
+	# Stop + disable units if systemd knows them
+	for unit in $UNITS; do
+		if systemctl list-unit-files 2>/dev/null | grep -q "^${unit}"; then
+			echo "<INFO> Stopping '${unit}' (if active)"
+			systemctl stop "$unit" 2>/dev/null || true
+
+			echo "<INFO> Disabling '${unit}' (if enabled)"
+			systemctl disable "$unit" 2>/dev/null || true
+		else
+			echo "<INFO> Unit '${unit}' not registered – skipping stop/disable"
+		fi
+	done
+
+	# Remove unit files (cover /etc + /lib)
+	REMOVED_ANY=false
+	for unit in $UNITS; do
+		for path in "/etc/systemd/system/$unit" "/lib/systemd/system/$unit"; do
+			if [ -f "$path" ]; then
+				echo "<INFO> Removing unit file '$path'"
+				rm -f "$path"
+				REMOVED_ANY=true
+			fi
+		done
+	done
+
+	# Reload daemon only if something changed
+	if [ "$REMOVED_ANY" = "true" ]; then
+		echo "<INFO> Reloading systemd daemon"
+		systemctl daemon-reload 2>/dev/null || true
+		echo "<OK> Systemd units removed: $UNITS"
+	else
+		echo "<INFO> No unit files found to remove – nothing to do"
+	fi
+
+else
+	echo "<WARNING> 'systemctl' not found – skipping removal of systemd units"
 fi

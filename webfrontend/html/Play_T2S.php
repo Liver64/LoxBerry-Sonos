@@ -146,6 +146,193 @@ function playAudioClip() {
 	handle_message($zones, $source);
 }
 
+if (!function_exists('t2s_basic_say')) {
+    /**
+     * t2s_basic_say
+     *
+     * Einfacher Wrapper für:
+     *   - TTS-Parameter aus Config/GET/Overrides bauen
+     *   - MP3 erzeugen (t2s)
+     *   - per eigener Queue abspielen und WARTEN bis fertig
+     *
+     * KEIN Snapshot/Restore der Sonos-Zonen!
+     * KEINE Abhängigkeit von $actual / play_tts()
+     *
+     * @param string $textstring  Text, der gesprochen werden soll
+     * @param array  $override    Optionale Overrides (wie bei create_t2s_param):
+     *                             - 't2sengine' : int
+     *                             - 'language'  : string
+     *                             - 'voice'     : string
+     *                             - 'apikey'    : string
+     *                             - 'secretkey' : string
+     *                             - 'region'    : string
+     *                             - 'ignore_get': bool
+     * @param string $log_context  (wird nur aus Kompatibilitätsgründen akzeptiert,
+     *                             für Logging aber NICHT verwendet)
+     */
+    function t2s_basic_say(
+        string $textstring,
+        array $override = [],
+        string $log_context = 'helper.php:'
+    ): array {
+        global $config, $sonos, $master, $sonoszone, $volume;
+
+        // Sicherstellen, dass wir überhaupt etwas zu sagen haben
+        $textstring = trim($textstring);
+        if ($textstring === '') {
+            LOGWARN("helper.php: Empty text received – skipping TTS.");
+            return [];
+        }
+
+        // Dateiname deterministisch aus Text
+        $filename = md5($textstring);
+
+        // Zentrales T2S-Parameter-Array baut alles (Engine-Code, Sprache, Voice, ttspath, usw.)
+        // Für die interne Engine-Logik geben wir einen statischen Kontext-String mit.
+        $t2s_param = create_t2s_param(
+            $textstring,
+            $filename,
+            $override,
+            #'helper.php: t2s_basic_say()'
+        );
+
+        // Engine-Datei einbinden, damit t2s() existiert
+        select_t2s_engine();
+
+        if (!function_exists('t2s')) {
+            LOGERR("helper.php: t2s() is not defined after select_t2s_engine().");
+            return $t2s_param;
+        }
+
+        // MP3 erzeugen
+        LOGDEB("helper.php: Generating TTS file '$filename.mp3'.");
+        t2s($t2s_param);
+
+        // Pfad zum MP3, wie in create_tts/create_t2s_param verwendet
+        $ttspath  = rtrim($config['SYSTEM']['ttspath'] ?? '/tmp', '/');
+        $mp3_file = $ttspath . "/" . $filename . ".mp3";
+
+        if (!is_file($mp3_file) || filesize($mp3_file) === 0) {
+            LOGERR("helper.php: TTS MP3 file '$mp3_file' does not exist or is empty.");
+            return $t2s_param;
+        }
+
+        // ===========================
+        // Schlankes Abspielen auf Sonos per Queue
+        // ===========================
+        if (!isset($sonoszone[$master])) {
+            LOGERR("helper.php: Master zone '$master' not found in \$sonoszone.");
+            return $t2s_param;
+        }
+
+        // Koordinator-IP & RINCON der Master-Zone
+        $coord_ip   = $sonoszone[$master][0];
+        $coord_rinc = $sonoszone[$master][1];
+
+        try {
+            $sonos = new SonosAccess($coord_ip);
+        } catch (Exception $e) {
+            LOGERR("helper.php: Could not create SonosAccess for '$coord_ip': " . $e->getMessage());
+            return $t2s_param;
+        }
+
+        try {
+            // Queue leeren, nur unsere TTS-Nachricht rein
+            $sonos->ClearQueue();
+
+            // MP3 aus CIFS-Share hinzufügen (für Sonos erreichbar!)
+            // Beispiel: \\LOXBERRY\sonos4lox\tts\<filename>.mp3
+            $cifs_mp3 = rtrim($config['SYSTEM']['cifsinterface'], '/') . "/" . $t2s_param['filename'] . ".mp3";
+            LOGDEB("helper.php: Adding TTS file to queue: " . $cifs_mp3);
+            $sonos->AddToQueue($cifs_mp3);
+
+            // Queue der Zone setzen
+            $sonos->SetQueue("x-rincon-queue:" . trim($coord_rinc) . "#0");
+            $sonos->SetPlayMode('0');
+            LOGGING("helper.php: Playmode has been set to NORMAL", 7);
+
+            // Unsere Nachricht ist das erste (und einzige) Element
+            $message_pos = 1;
+            $sonos->SetTrack($message_pos);
+            LOGGING("helper.php: Message has been set to position '$message_pos' in current queue", 7);
+
+            // Mute aus, Lautstärke setzen (kommt von außen, z.B. aus say_radio_station())
+            $sonos->SetMute(false);
+            if (!isset($_GET['member']) && !isset($_GET['profile'])) {
+                $sonos->SetVolume((int)$volume);
+            }
+            LOGGING("helper.php:  Mute for relevant player(s) has been turned off", 7);
+
+            // Abspielen starten
+            try {
+                $sonos->Play();
+                LOGOK("helper.php: TTS playback started successfully.");
+            } catch (Exception $e) {
+                LOGERR("helper.php: Failed to start TTS playback: " . $e->getMessage());
+                return $t2s_param;
+            }
+
+            // ===========================
+            // WARTEN, bis die Ansage fertig ist
+            // ===========================
+            // Max. Wartezeit heuristisch aus Textlänge ableiten
+            // (ca. 12 Zeichen ~ 1 Sekunde, plus Puffer, begrenzt auf 2–30s)
+            $approxSeconds = max(2, min(30, (int)ceil(strlen($textstring) / 12) + 1));
+            $max_wait      = $approxSeconds;
+            $start         = microtime(true);
+
+            LOGDEB("helper.php: Waiting up to {$max_wait}s for TTS playback to finish.");
+
+            while (true) {
+                usleep(200000); // alle 200ms prüfen
+
+                // Timeout-Schutz
+                $elapsed = microtime(true) - $start;
+                if ($elapsed > $max_wait) {
+                    LOGWARN("helper.php: Wait timeout ({$max_wait}s) reached while TTS was playing – continuing.");
+                    break;
+                }
+
+                try {
+                    $state = $sonos->GetTransportInfo();
+                } catch (Exception $e) {
+                    LOGERR("helper.php: GetTransportInfo() failed during wait loop: " . $e->getMessage());
+                    break;
+                }
+
+                $playing = false;
+
+                if (is_array($state)) {
+                    // Typischer Rückgabewert:
+                    // ['CurrentTransportState' => 'PLAYING'|'STOPPED'|'PAUSED_PLAYBACK'|'TRANSITIONING', ...]
+                    $cur = strtoupper($state['CurrentTransportState'] ?? '');
+                    if ($cur === 'PLAYING' || $cur === 'TRANSITIONING') {
+                        $playing = true;
+                    }
+                } else {
+                    // Fallback: alte Implementierung, z.B. int oder string
+                    if ($state === 1 || $state === '1' || strtoupper((string)$state) === 'PLAYING') {
+                        $playing = true;
+                    }
+                }
+
+                if (!$playing) {
+                    LOGDEB("helper.php: Transport state no longer PLAYING – TTS finished or stopped.");
+                    $sonos->ClearQueue();
+                    break;
+                }
+            }
+
+            LOGOK("helper.php: TTS playback finished (or timeout reached).");
+
+        } catch (Exception $e) {
+            LOGERR("helper.php: Error while preparing/playing TTS queue: " . $e->getMessage());
+        }
+
+        return $t2s_param;
+    }
+}
+
 
 
 /**
@@ -178,20 +365,32 @@ function handle_prio() {
 **/
 
 function check_file() {
-	 
-	global $sonos, $config, $filename, $messageid, $time_start;
-	
-	// pre check for MP3 Stream
-	if (isset($_GET['messageid']))  {
-		$messageid = $_GET['messageid'];
-		$filenamecheck = $config['SYSTEM']['ttspath']."/mp3/".$messageid.".mp3";
-	} else {
-		$filenamecheck = $config['SYSTEM']['ttspath']."/".$filename.".mp3";
-	}
+     
+    global $sonos, $config, $filename, $messageid, $time_start;
+    
+    // Für playbatch gibt es keine einzelne TTS-Datei – Batch wird später über Queue abgearbeitet
+    if (isset($_GET['playbatch'])) {
+        LOGDEB("play_t2s.php: Audioclip: check_file() skipped for playbatch – batch entries will be used directly.");
+        return;
+    }
 
-	// check if T2S file has been successfully created, if not wait until finished (max ~20s)
-	$wait_loops = 0;
-	$max_loops  = 100; // 100 * 200ms = 20 Sekunden
+    // pre check for MP3 Stream
+    if (isset($_GET['messageid']))  {
+        $messageid     = $_GET['messageid'];
+        $filenamecheck = $config['SYSTEM']['ttspath']."/mp3/".$messageid.".mp3";
+    } else {
+        $filenamecheck = $config['SYSTEM']['ttspath']."/".$filename.".mp3";
+    }
+
+    // Schutz: Wenn kein sinnvoller Dateiname vorhanden ist, nicht stumpf auf '.mp3' warten
+    if (!isset($_GET['messageid']) && (empty($filename) || $filename === '')) {
+        LOGDEB("play_t2s.php: Audioclip: check_file() called without filename and no messageid – skipping wait loop.");
+        return;
+    }
+
+    // check if T2S file has been successfully created, if not wait until finished (max ~20s)
+    $wait_loops = 0;
+    $max_loops  = 100; // 100 * 200ms = 20 Sekunden
 
 	while ($wait_loops < $max_loops):
 
@@ -221,16 +420,11 @@ function check_file() {
 
 	
 	
-/**
-* Function : create_tts --> creates an MP3 File based on Text Input
-*
-* @param: 	Text of Messasge ID
-* @return: 	MP3 File
-**/		
-
 function create_tts($text ='') {
-    global $sonos, $config, $dist, $filename, $MessageStorepath, $errortext, $zones, $messageid, $textstring, $home, $time_start, $tmp_batch, $MP3path, $filenameplay, $textstring, $volume, $tts_stat;
-    
+    global $sonos, $config, $dist, $filename, $MessageStorepath, $errortext, $zones, $messageid,
+           $textstring, $home, $time_start, $tmp_batch, $MP3path, $filenameplay, $textstring,
+           $volume, $tts_stat;
+
     // setze 1 für virtuellen Texteingang (T2S Start)
     $tts_stat = 1;
     if(!isset($_GET['clip'])) {
@@ -278,7 +472,7 @@ function create_tts($text ='') {
         } else {
             LOGGING("play_t2s.php: The corrosponding messageid file '".$messageid.".mp3' does not exist or could not be played. Please check your directory or syntax!", 3);
             exit;
-        }   
+        }
         return;
     }
 
@@ -291,7 +485,7 @@ function create_tts($text ='') {
         $text;
     } else {
         $text = '';
-    }   
+    }
 
     // ----------------------------------------------------------
     // Addon-Handler (weather, clock, pollen, ...)
@@ -341,21 +535,21 @@ function create_tts($text ='') {
         $rampsleep = false;
         LOGGING("play_t2s.php: sonos-to-speech plugin has been called", 7);
 
-	} elseif ((!isset($_GET['text'])) && isset($_GET['playbatch'])) {
-		// Batch-Playback: es sollen nur vorhandene MP3s aus der Batchdatei gespielt werden
-		LOGGING("play_t2s.php: create_tts(): Skipping TTS generation for playbatch – using batch file only.", 7);
-		return;
+    } elseif ((!isset($_GET['text'])) && isset($_GET['playbatch'])) {
+        // Batch-Playback: es sollen nur vorhandene MP3s aus der Batchdatei gespielt werden
+        LOGGING("play_t2s.php: create_tts(): Skipping TTS generation for playbatch – using batch file only.", 7);
+        return;
 
     } elseif ($text <> '') {
         if (empty($greet))  {
             $textstring = $text;
-            LOGGING("play_t2s.php: Textstring has been entered", 7); 
+            LOGGING("play_t2s.php: Textstring has been entered", 7);
         } else {
             $textstring = $greet.". ".$text;
-            LOGGING("play_t2s.php: Greeting + Textstring has been entered", 7);      
-        }   
-    }   
-    
+            LOGGING("play_t2s.php: Greeting + Textstring has been entered", 7);
+        }
+    }
+
     // ----------------------------------------------------------
     // Kein Text → Ende
     // ----------------------------------------------------------
@@ -372,99 +566,19 @@ function create_tts($text ='') {
     $nocache   = !empty($_GET['nocache']);
 
     // ----------------------------------------------------------
-    // Engine-Code und Defaults + GET-Overrides
+    // TTS-Parameter zentral bauen (inkl. GET-Overrides)
     // ----------------------------------------------------------
-
-    // Primäre Engine: GET > Config
-    if (isset($_GET['t2sengine']) && $_GET['t2sengine'] !== '') {
-        $primary_engine_code = (int)$_GET['t2sengine'];
-    } else {
-        $primary_engine_code = (int) ($config['TTS']['t2s_engine'] ?? 0);
-    }
-
-    $messageLang = $config['TTS']['messageLang'] ?? ''; // z.B. "de-DE-ElkeNeural"
-
-    // Sprache: GET.language > Config.language -> aus messageLang -> Default de-DE
-    if (isset($_GET['language']) && $_GET['language'] !== '') {
-        $language = trim($_GET['language']);
-    } else {
-        $language = $config['TTS']['language'] ?? '';
-        $language = trim($language);
-        if ($language === '' && $messageLang !== '' && preg_match('/^([a-z]{2,3}-[A-Z]{2})/', $messageLang, $m)) {
-            $language = $m[1]; // z.B. "de-DE" aus "de-DE-ElkeNeural"
-        }
-        if ($language === '') {
-            $language = 'de-DE'; // Default
-        }
-    }
-
-    // Voice: GET.voice > Config.voice -> messageLang -> "<lang>-KatjaNeural"
-    if (isset($_GET['voice']) && $_GET['voice'] !== '') {
-        $voice = trim($_GET['voice']);
-    } else {
-        $voice = $config['TTS']['voice'] ?? '';
-        $voice = trim($voice);
-        if ($voice === '' && $messageLang !== '') {
-            $voice = $messageLang; // z.B. "de-DE-ElkeNeural"
-        }
-        if ($voice === '') {
-            $voice = $language . '-KatjaNeural';
-        }
-    }
-
-    // API-Key: GET.apikey > per-Engine > global
-    if (isset($_GET['apikey']) && $_GET['apikey'] !== '') {
-        $apikey = trim($_GET['apikey']);
-    } else {
-        $apikey = $config['TTS']['apikey'] ?? '';
-        if (!empty($config['TTS']['apikeys'][$primary_engine_code])) {
-            $apikey = $config['TTS']['apikeys'][$primary_engine_code];
-        }
-        $apikey = trim($apikey);
-    }
-
-    // SecretKey (z.B. für Polly): GET.secretkey > per-Engine > global
-    if (isset($_GET['secretkey']) && $_GET['secretkey'] !== '') {
-        $secretkey = trim($_GET['secretkey']);
-    } else {
-        $secretkey = $config['TTS']['secretkey'] ?? '';
-        if (!empty($config['TTS']['secretkeys'][$primary_engine_code])) {
-            $secretkey = $config['TTS']['secretkeys'][$primary_engine_code];
-        }
-        $secretkey = trim($secretkey);
-    }
-
-    // Region: GET.region > Config.region > regionms (Azure) -> leer
-    if (isset($_GET['region']) && $_GET['region'] !== '') {
-        $region = trim($_GET['region']);
-    } else {
-        $region = $config['TTS']['region'] ?? '';
-        if ($region === '' && !empty($config['TTS']['regionms'])) {
-            $region = $config['TTS']['regionms'];
-        }
-        $region = trim($region);
-    }
-
-    // Einziger Debug-Eintrag, der bleibt:
-    LOGGING(
-        "play_t2s.php: create_tts(): Effective TTS params: engine=".$primary_engine_code.
-        ", lang=".$language.", voice=".$voice,
-        7
+    $t2s_param = create_t2s_param(
+        $textstring,
+        $filename,
+        [], // keine Overrides
+        'play_t2s.php: create_tts()'
     );
 
-    // ----------------------------------------------------------
-    // Einheitliches Parameter-Array für alle TTS-Engines
-    // ----------------------------------------------------------
-    $t2s_param = [
-        'filename'   => $filename,
-        'text'       => $textstring,
-        't2sengine'  => $primary_engine_code,
-        'voice'      => $voice,
-        'language'   => $language,
-        'apikey'     => $apikey,
-        'secretkey'  => $secretkey,
-        'region'     => $region,
-    ];
+    $primary_engine_code = (int)($t2s_param['t2sengine'] ?? ($config['TTS']['t2s_engine'] ?? 0));
+
+    // Engine-Datei einbinden
+    $primary_engine_code = select_t2s_engine($primary_engine_code);
 
     // ----------------------------------------------------------
     // Cache-Check
@@ -480,65 +594,15 @@ function create_tts($text ='') {
     } else {
 
         // ======================================================
-        // 1. Primäre TTS-Engine
+        // 1. Primäre TTS-Engine ausführen
         // ======================================================
         LOGGING("play_t2s.php: Primary TTS engine '$primary_engine_code' will be used for '$textstring'.", 6);
 
-        switch ($primary_engine_code) {
-
-            case 1001: // VoiceRSS
-                include_once("voice_engines/VoiceRSS.php");
-                t2s($t2s_param);
-                break;
-
-            case 3001: // MAC_OSX (falls du die noch nutzt)
-                include_once("voice_engines/MAC_OSX.php");
-                t2s($textstring, $filename); // Legacy-Interface
-                break;
-
-            case 4001: // Polly
-                include_once("voice_engines/Polly.php");
-                t2s($t2s_param);
-                break;
-
-            case 5001: // Pico_tts (Legacy)
-                include_once("voice_engines/Pico_tts.php");
-                t2s($textstring, $filename);
-                break;
-
-            case 6001: // ResponsiveVoice
-                include_once("voice_engines/ResponsiveVoice.php");
-                t2s($t2s_param);
-                break;
-
-            case 7001: // Google (Legacy)
-                include_once("voice_engines/Google.php");
-                t2s($textstring, $filename);
-                break;
-
-            case 8001: // GoogleCloud
-                include_once("voice_engines/GoogleCloud.php");
-                t2s($t2s_param);
-                break;
-
-            case 9001: // MS_Azure
-                include_once("voice_engines/MS_Azure.php");
-                t2s($t2s_param);
-                break;
-
-            case 9011: // ElevenLabs
-                include_once("voice_engines/ElevenLabs.php");
-                t2s($t2s_param);
-                break;
-
-            case 9012: // Piper als primäre Engine (Optional)
-                include_once("voice_engines/Piper.php");
-                t2s($t2s_param);
-                break;
-
-            default:
-                LOGERR("play_t2s.php: Unknown or unsupported TTS engine code '$primary_engine_code'.");
-                break;
+        if (function_exists('t2s')) {
+            // Für ALLE Engines (inkl. Piper) gilt: t2s($t2s_param)
+            t2s($t2s_param);
+        } else {
+            LOGERR("play_t2s.php: t2s() is not defined for engine '$primary_engine_code'. Did you include the correct voice_engines file?");
         }
 
         // ======================================================
@@ -549,11 +613,11 @@ function create_tts($text ='') {
         if (!file_exists($mp3_file) || filesize($mp3_file) < 1) {
 
             if (file_exists($mp3_file)) {
-                $heute      = date("Y-m-d"); 
-                $time       = date("His"); 
+                $heute      = date("Y-m-d");
+                $time       = date("His");
                 $failedname = $ttspath."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3";
                 rename($mp3_file, $failedname);
-                LOGERR("play_t2s.php: Primary TTS engine failed, bad file has been renamed to: ".$failedname);  
+                LOGERR("play_t2s.php: Primary TTS engine failed, bad file has been renamed to: ".$failedname);
             } else {
                 LOGERR("play_t2s.php: Primary TTS engine failed, no MP3 file has been created at all.");
             }
@@ -572,11 +636,14 @@ function create_tts($text ='') {
                     @unlink($fallback_mp3);
                 }
                 include_once("voice_engines/Piper.php");
+
                 if (function_exists('t2s_piper')) {
                     t2s_piper($textstring, $fallback_filename);
                 } else {
-                    LOGERR("play_t2s.php: Piper fallback requested but function t2s_piper() is not available in voice_engines/Piper.php.");
+                    // Fallback auf die Legacy-Signatur t2s($text,$filename) aus deinem Piper.php
+                    t2s($textstring, $fallback_filename);
                 }
+
                 clearstatcache(false, $fallback_mp3);
 
                 if (file_exists($fallback_mp3) && filesize($fallback_mp3) > 0) {
@@ -606,10 +673,12 @@ function create_tts($text ='') {
                     LOGERR("play_t2s.php: Fallback file 't2s_not_available.mp3' not found. No audio will be played.");
                 }
             }
-        } 
+        }
+
         echo $textstring;
         echo "<br>";
     }
+
     return $filename;
 }
 
@@ -916,8 +985,8 @@ function sendmessage($errortext = "") {
 	$sonos = new SonosAccess($sonoszone[$master][0]);
 	// stop 1st before Song Name been played
 	$test = $sonos->GetPositionInfo();
-	if (($return == 'master') or ($return == 'member')) {
-		$sonos->BecomeCoordinatorOfStandaloneGroup();  // in case Member or Master then remove Zone from Group
+	if ($return == 'member') {
+		$sonos->BecomeCoordinatorOfStandaloneGroup();  // in case Member then remove Zone from Group
 		LOGGING("play_t2s.php: Zone '$master' has been removed from group", 6);		
 	}
 			
@@ -1246,6 +1315,12 @@ function audioclip_can_handle_group()
 {
     global $sonoszone, $master;
 
+    // Batch- und Playbatch-Aufrufe NICHT per AudioClip abwickeln
+    if (isset($_GET['batch']) || isset($_GET['playbatch'])) {
+        LOGDEB("play_t2s.php: Audioclip: batch/playbatch detected – falling back to classic T2S queue path.");
+        return array(false, array());
+    }
+
     $zones = array();
 
     // --- 1) member=... aus URL --------------------------------------------
@@ -1513,8 +1588,170 @@ function t2s_playbatch() {
     say();
 }
 
+if (!function_exists('create_t2s_param')) {
+    /**
+     * create_t2s_param
+     *
+     * Zentraler Builder für das TTS-Parameter-Array, wie bisher in play_t2s.php.
+     *
+     * Priorität (pro Feld):
+     *   1. $override[...] (explizit vom Aufrufer)
+     *   2. $_GET[...] (wenn ignore_get = false)
+     *   3. $config['TTS'][...] inkl. messageLang Fallback-Logik
+     *   4. Defaults (z.B. Sprache de-DE)
+     *
+     * @param string $textstring   Text, der gesprochen werden soll
+     * @param string $filename     Zieldateiname (ohne Extension)
+     * @param array  $override     Optionale Overrides:
+     *                              - 't2sengine' : int
+     *                              - 'language'  : string
+     *                              - 'voice'     : string
+     *                              - 'apikey'    : string
+     *                              - 'secretkey' : string
+     *                              - 'region'    : string
+     *                              - 'ignore_get': bool (default false → GET darf überschreiben)
+     * @param string $log_context  Kontext-String für LOGGING (z.B. "play_t2s.php: create_tts()")
+     *
+     * @return array $t2s_param
+     */
+    function create_t2s_param(
+        string $textstring,
+        string $filename,
+        array $override = [],
+        string $log_context = 'T2S Helper'
+    ): array {
+        global $config;
 
+        $ignore_get = !empty($override['ignore_get']);
 
+        // messageLang für Fallbacks (z.B. "de-DE-ElkeNeural")
+        $messageLang = $config['TTS']['messageLang'] ?? '';
+
+        // ----------------------------------------------------------
+        // 1) Engine-Code (numerisch, wie bisher)
+        // ----------------------------------------------------------
+        if (array_key_exists('t2sengine', $override)) {
+            $primary_engine_code = (int)$override['t2sengine'];
+        } elseif (!$ignore_get && isset($_GET['t2sengine']) && $_GET['t2sengine'] !== '') {
+            $primary_engine_code = (int)$_GET['t2sengine'];
+        } else {
+            $primary_engine_code = (int)($config['TTS']['t2s_engine'] ?? 0);
+        }
+
+        // ----------------------------------------------------------
+        // 2) Sprache
+        //    override.language > GET.language > Config.language > aus messageLang > "de-DE"
+        // ----------------------------------------------------------
+        if (isset($override['language']) && $override['language'] !== '') {
+            $language = trim($override['language']);
+        } elseif (!$ignore_get && isset($_GET['language']) && $_GET['language'] !== '') {
+            $language = trim($_GET['language']);
+        } else {
+            $language = $config['TTS']['language'] ?? '';
+            $language = trim($language);
+
+            if ($language === '' && $messageLang !== '' && preg_match('/^([a-z]{2,3}-[A-Z]{2})/', $messageLang, $m)) {
+                $language = $m[1]; // z.B. "de-DE" aus "de-DE-ElkeNeural"
+            }
+            if ($language === '') {
+                $language = 'de-DE'; // Default
+            }
+        }
+
+        // ----------------------------------------------------------
+        // 3) Voice
+        //    override.voice > GET.voice > Config.voice > messageLang > "<lang>-KatjaNeural"
+        // ----------------------------------------------------------
+        if (isset($override['voice']) && $override['voice'] !== '') {
+            $voice = trim($override['voice']);
+        } elseif (!$ignore_get && isset($_GET['voice']) && $_GET['voice'] !== '') {
+            $voice = trim($_GET['voice']);
+        } else {
+            $voice = $config['TTS']['voice'] ?? '';
+            $voice = trim($voice);
+
+            if ($voice === '' && $messageLang !== '') {
+                $voice = $messageLang; // z.B. "de-DE-ElkeNeural"
+            }
+            if ($voice === '') {
+                $voice = $language . '-KatjaNeural';
+            }
+        }
+
+        // ----------------------------------------------------------
+        // 4) API-Key
+        //    override.apikey > GET.apikey > per-Engine > global
+        // ----------------------------------------------------------
+        if (isset($override['apikey']) && $override['apikey'] !== '') {
+            $apikey = trim($override['apikey']);
+        } elseif (!$ignore_get && isset($_GET['apikey']) && $_GET['apikey'] !== '') {
+            $apikey = trim($_GET['apikey']);
+        } else {
+            $apikey = $config['TTS']['apikey'] ?? '';
+            if (!empty($config['TTS']['apikeys'][$primary_engine_code])) {
+                $apikey = $config['TTS']['apikeys'][$primary_engine_code];
+            }
+            $apikey = trim($apikey);
+        }
+
+        // ----------------------------------------------------------
+        // 5) SecretKey
+        //    override.secretkey > GET.secretkey > per-Engine > global
+        // ----------------------------------------------------------
+        if (isset($override['secretkey']) && $override['secretkey'] !== '') {
+            $secretkey = trim($override['secretkey']);
+        } elseif (!$ignore_get && isset($_GET['secretkey']) && $_GET['secretkey'] !== '') {
+            $secretkey = trim($_GET['secretkey']);
+        } else {
+            $secretkey = $config['TTS']['secretkey'] ?? '';
+            if (!empty($config['TTS']['secretkeys'][$primary_engine_code])) {
+                $secretkey = $config['TTS']['secretkeys'][$primary_engine_code];
+            }
+            $secretkey = trim($secretkey);
+        }
+
+        // ----------------------------------------------------------
+        // 6) Region
+        //    override.region > GET.region > Config.region > regionms > ""
+        // ----------------------------------------------------------
+        if (isset($override['region']) && $override['region'] !== '') {
+            $region = trim($override['region']);
+        } elseif (!$ignore_get && isset($_GET['region']) && $_GET['region'] !== '') {
+            $region = trim($_GET['region']);
+        } else {
+            $region = $config['TTS']['region'] ?? '';
+            if ($region === '' && !empty($config['TTS']['regionms'])) {
+                $region = $config['TTS']['regionms'];
+            }
+            $region = trim($region);
+        }
+
+        // ----------------------------------------------------------
+        // Debug-Log (konfigurierbarer Kontext)
+        // ----------------------------------------------------------
+        LOGGING(
+            $log_context . ": Effective TTS params: engine=" . $primary_engine_code .
+            ", lang=" . $language . ", voice=" . $voice,
+            7
+        );
+
+        // ------------------
+        // Rückgabe-Array 
+        // ------------------
+        $t2s_param = [
+            'filename'   => $filename,
+            'text'       => $textstring,
+            't2sengine'  => $primary_engine_code,
+            'voice'      => $voice,
+            'language'   => $language,
+            'apikey'     => $apikey,
+            'secretkey'  => $secretkey,
+            'region'     => $region,
+        ];
+
+        return $t2s_param;
+    }
+}
 
 
 /**

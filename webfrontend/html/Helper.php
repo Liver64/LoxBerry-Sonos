@@ -1183,42 +1183,57 @@ function AudioTypeIsSupported($type) {
 
 
 /**
-* Function : select_t2s_engine --> selects the configured t2s engine for speech creation
-*
-* @param: empty
-* @return: 
-**/
+ * Function : select_t2s_engine --> includes the configured t2s engine file
+ *
+ * @param int|null $engineCode  Optional explicit engine code
+ *                              (falls null, wird Config-Wert verwendet)
+ * @return int  Effektiv verwendeter Engine-Code
+ */
+function select_t2s_engine(int $engineCode = null): int
+{
+    global $config;
 
-function select_t2s_engine()  {
-	global $config;
-	
-	if ($config['TTS']['t2s_engine'] == 1001) {
-		include_once("voice_engines/VoiceRSS.php");
-	}
-	if ($config['TTS']['t2s_engine'] == 3001) {
-		include_once("voice_engines/MAC_OSX.php");
-	}
-	if ($config['TTS']['t2s_engine'] == 6001) {
-		include_once("voice_engines/ResponsiveVoice.php");
-	}
-	if ($config['TTS']['t2s_engine'] == 7001) {
-		include_once("voice_engines/Google.php");
-	}
-	if ($config['TTS']['t2s_engine'] == 5001) {
-		include_once("voice_engines/Pico_tts.php");
-	}
-	if ($config['TTS']['t2s_engine'] == 4001) {
-		include_once("voice_engines/Polly.php");
-	}
-	if ($config['TTS']['t2s_engine'] == 9001) {
-		include_once("voice_engines/MS_Azure.php");
-	}
-	if ($config['TTS']['t2s_engine'] == 9011) {
-		include_once("voice_engines/ElevenLabs.php");
-	}
-	if ($config['TTS']['t2s_engine'] == 8001) {
-		include_once("voice_engines/GoogleCloud.php");
-	}
+    if ($engineCode === null || $engineCode === 0) {
+        $engineCode = (int)($config['TTS']['t2s_engine'] ?? 0);
+    }
+
+    switch ($engineCode) {
+        case 1001: // VoiceRSS
+            include_once("voice_engines/VoiceRSS.php");
+            break;
+
+        case 6001: // ResponsiveVoice
+            include_once("voice_engines/ResponsiveVoice.php");
+            break;
+
+        case 9012: // Piper
+            include_once("voice_engines/Piper.php");
+            break;
+
+        case 4001: // Polly
+            include_once("voice_engines/Polly.php");
+            break;
+
+        case 9001: // MS_Azure
+            include_once("voice_engines/MS_Azure.php");
+            break;
+
+        case 9011: // ElevenLabs
+            include_once("voice_engines/ElevenLabs.php");
+            break;
+
+        case 8001: // GoogleCloud
+            include_once("voice_engines/GoogleCloud.php");
+            break;
+
+        default:
+            if (function_exists('LOGERR')) {
+                LOGERR("helper.php: select_t2s_engine(): Unknown TTS engine code '$engineCode'.");
+            }
+            break;
+    }
+
+    return $engineCode;
 }
 
 
@@ -1830,7 +1845,7 @@ function vversion()    {
 	$url = 'https://raw.githubusercontent.com/Liver64/LoxBerry-Sonos/master/webfrontend/html/release/release.cfg';
 	$as = is_file($url);
 	var_dump($as);
-	$file = "/opt/loxberry/data/plugins/sonos4lox/plugin.cfg";
+	$file = "REPLACELBHOMEDIR/data/plugins/sonos4lox/plugin.cfg";
 	file_put_contents($file, file_get_contents($url));
 	$wq = json_decode(file_get_contents($file, TRUE));
 	#print_r($wq);
@@ -2319,7 +2334,7 @@ if (!function_exists('update_sonos_health')) {
 
         // Fallback, falls $lbpconfigdir nicht gesetzt ist
         if (empty($lbpconfigdir)) {
-            $lbpconfigdir = '/opt/loxberry/config/plugins/sonos4lox';
+            $lbpconfigdir = 'REPLACELBHOMEDIR/config/plugins/sonos4lox';
         }
 
         $healthFile = $lbpconfigdir . '/health.json';
@@ -2413,6 +2428,113 @@ if (!function_exists('update_sonos_health')) {
 }
 
 
+/**
+ * SyncGroupForPlaybackToMember()
+ *
+ * Wird für persistente Playback-Aktionen (pluginradio, playfavorite, …) verwendet.
+ *
+ * - Liest $_GET['member'] und den globalen $master
+ * - Bildet die gewünschte Gruppe: master + member-Zonen
+ * - Entfernt Zonen, die aktuell in der Gruppe sind, aber NICHT gewünscht sind
+ * - joint fehlende gewünschte Member zum Master
+ *
+ * T2S bleibt unberührt, solange diese Funktion dort NICHT aufgerufen wird.
+ */
+function SyncGroupForPlaybackToMember()
+{
+    global $master, $sonoszone, $member;
+
+    // 1) member= vorhanden?
+    if (!isset($_GET['member']) || trim($_GET['member']) === '') {
+        // kein member-Parameter → nichts zu tun
+        return;
+    }
+
+    if (empty($master) || !isset($sonoszone[$master])) {
+        LOGERR("helper.php: Master is not set or unknown – aborting.");
+        return;
+    }
+
+    // 2) Gewünschte Member-Liste aus member=... bauen
+    $wantedMembers = array();
+    $rawMember     = trim($_GET['member']);
+
+    if (strtolower($rawMember) === 'all') {
+        // alle bekannten Zonen außer Master
+        foreach ($sonoszone as $zone => $data) {
+            if (strcasecmp($zone, $master) === 0) {
+                continue;
+            }
+            $wantedMembers[] = $zone;
+        }
+    } else {
+        $parts = explode(',', $rawMember);
+        foreach ($parts as $z) {
+            $z = trim($z);
+            if ($z === '') {
+                continue;
+            }
+            if (!isset($sonoszone[$z])) {
+                LOGWARN("helper.php: Unknown zone '$z' in member list – skipped.");
+                continue;
+            }
+            if (strcasecmp($z, $master) === 0) {
+                // Master nicht als Member führen
+                continue;
+            }
+            $wantedMembers[] = $z;
+        }
+    }
+
+    // Duplikate entfernen
+    $wantedMembers = array_values(array_unique($wantedMembers));
+
+    if (empty($wantedMembers)) {
+        LOGINF("helper.php: Only master requested – nothing to group.");
+        // Trotzdem MEMBER leeren, damit volume_group() nichts versucht
+        $member = array();
+        if (!defined('MEMBER')) {
+            define('MEMBER', $member);
+        }
+        return;
+    }
+
+    // 3) Master aus seiner bisherigen Gruppe lösen
+    try {
+        $sMaster = new SonosAccess($sonoszone[$master][0]);
+        $sMaster->BecomeCoordinatorOfStandaloneGroup();
+        LOGINF("helper.php: Master '$master' became standalone group.");
+    } catch (Exception $e) {
+        LOGWARN("helper.php: Could not set master '$master' standalone: ".$e->getMessage());
+    }
+
+    // 4) Gewünschte Member zum Master joinen
+    $masterRincon = $sonoszone[$master][1];
+
+    foreach ($wantedMembers as $zone) {
+
+        if (!isset($sonoszone[$zone])) {
+            continue;
+        }
+
+        try {
+            $zSonos = new SonosAccess($sonoszone[$zone][0]);
+            $zSonos->SetAVTransportURI("x-rincon:" . $masterRincon);
+            LOGINF("helper.php: Zone '$zone' joined master '$master'.");
+        } catch (Exception $e) {
+            LOGWARN("helper.php: Failed to join '$zone' to '$master': ".$e->getMessage());
+        }
+    }
+
+    // 5) MEMBER-Array + Konstante setzen (für volume_group())
+    $member = $wantedMembers;
+
+    if (!defined('MEMBER')) {
+        define('MEMBER', $member);
+    }
+
+    LOGINF("helper.php: MEMBER set to [".implode(', ', $member)."].");
+}
 
 
 /**

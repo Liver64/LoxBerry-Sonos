@@ -1624,7 +1624,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		
 		case 'pluginradio':
-			VolumeProfiles();
+			//VolumeProfiles();
 			PluginRadio();
 		break;
 		

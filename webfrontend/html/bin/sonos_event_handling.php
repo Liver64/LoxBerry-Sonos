@@ -13,7 +13,41 @@ declare(strict_types=1);
  *     track       (CurrentTrackMetaData inkl. albumArtUri) (QoS1)
  *     nexttrack   (NextTrackMetaData/NextAVTransportURIMetaData inkl. albumArtUri; Fallback: URI) (QoS1)
  *     group       (Gruppen- & Koordinator-Infos aus ZGT) (QoS1)
+ *     eq          (Bass/Treble/Loudness) (QoS1)
+ *     playmode    (Shuffle/Repeat/Crossfade) (QoS1)
  * - Payload IMMER: type, room, ip, rincon, model, service, ts
+ *
+ * Zusätzliche Felder für Loxone-Kompatibilität:
+ *   state:
+ *     - state_code (int)  1=PLAYING, 2=PAUSED, 3=STOPPED, 4=TRANSITIONING, 0=unknown
+ *   volume:
+ *     - vol (Alias zu volume)
+ *   mute:
+ *     - mute_int (0/1)
+ *   group:
+ *     - role_name ("single"|"master"|"member")
+ *     - role_code (1/2/3)
+ *   track:
+ *     - source_text ("Radio"|"TV"|"Track"|"LineIn"|"Nothing")
+ *     - source      (int) 0=Nothing,1=Radio,2=Track,3=TV,4=LineIn
+ *     - tit         (Titel)
+ *     - int         (Interpret)
+ *     - titint      ("Artist - Title")
+ *     - radio       (Sendername, wenn Radio)
+ *     - sid         ("TV"|"Radio"|"Music")
+ *     - cover       (AlbumArtUri)
+ *     - tvstate     (z.Zt. 0 – Platzhalter)
+ *   eq:
+ *     - bass        (int)
+ *     - treble      (int)
+ *     - loudness    (0/1)
+ *     - loudness_int(0/1)
+ *   playmode:
+ *     - mode_raw    (z.B. "NORMAL","REPEAT_ALL","SHUFFLE_NOREPEAT",…)
+ *     - shuffle     (0/1)
+ *     - repeat      (0/1)
+ *     - repeat_one  (0/1)
+ *     - crossfade   (0/1)
  *
  * MQTT:
  * - interner MQTT-Client "SonosMqttClient" (TCP + MQTT v3.1.1, QoS 0/1)
@@ -25,14 +59,17 @@ declare(strict_types=1);
 require_once "/opt/loxberry/libs/phplib/loxberry_system.php";
 require_once "/opt/loxberry/libs/phplib/loxberry_io.php";
 require_once __DIR__ . '/../system/SonosMqttClient.php';
+require_once "$lbphtmldir/system/sonosAccess.php";
 
 date_default_timezone_set('Europe/Berlin');
 pcntl_async_signals(true);
 
 // --------------------------------- Pfade ---------------------------------
-const S4L_CFG 	= "/opt/loxberry/config/plugins/sonos4lox/s4lox_config.json";
-$ramLogDir 		= '/run/shm/sonos4lox';
-$LogFile 		= 'sonos_events.log';
+const S4L_CFG     = "/opt/loxberry/config/plugins/sonos4lox/s4lox_config.json";
+$ramLogDir        = '/run/shm/sonos4lox';
+$LogFile          = 'sonos_events.log';
+$loglevel 	  	  = LBSystem::pluginloglevel();
+$presenceEnabled  = null;
 
 // --------------------------------- Basis-Config ---------------------------------
 $LISTEN_HOST   = '0.0.0.0';
@@ -42,6 +79,18 @@ $TIMEOUT_SEC   = 300;
 $RENEW_MARGIN  = 60;
 $TOPIC_PREFIX  = 's4lox/sonos';
 $MQTT_QOS      = 1;            // global QoS (1 wie gewünscht)
+
+// --------------------------------- Health-Monitor ---------------------------------
+$startTs              = time();
+$lastNotifyTs         = time();  // wird bei jedem NOTIFY aktualisiert
+$lastHealthPublish    = 0;
+$NO_NOTIFY_WARN_AFTER = 600;     // 10 Minuten
+$HEALTH_INTERVAL      = 60;      // 1 Minute
+$healthRoomsFlags 	  = []; 	 // room => ['Online' => 0/1]
+// Zeitstempel der letzten Events pro Service
+$lastAvtEventTs 	  = 0;  // AVTransport
+$lastRcEventTs  	  = 0;  // RenderingControl
+$lastZgtEventTs 	  = 0;  // ZoneGroupTopology
 
 // --------------------------------- Logging-Konfiguration ---------------------------------
 $LOG_MAX_BYTES = 150 * 1024; // 150 KB
@@ -69,34 +118,46 @@ if ($LOGFILE !== $diskLog && @is_writable(dirname($diskLog))) {
         @symlink($LOGFILE, $diskLog);
     }
 }
+// falls File zu groß direkt löschen
+if (is_file($LOGFILE) && filesize($LOGFILE) > $LOG_MAX_BYTES) {
+    @unlink($LOGFILE);
+}
+
 // --------------------------------- Logging ---------------------------------
 function logln(string $lvl, string $msg): void {
-    global $LOGFILE, $LOG_MAX_BYTES;
+    global $LOGFILE, $LOG_MAX_BYTES, $loglevel, $sonosLogEnabled;
 
+    // 1) Logfile rotation – immer prüfen, unabhängig von Debug-Level
+    if (!empty($LOGFILE) && is_file($LOGFILE) && filesize($LOGFILE) >= $LOG_MAX_BYTES) {
+        @unlink($LOGFILE);
+    }
+
+    // 2) Logging nur, wenn Debuglevel 7 ODER presence==true
+    #if ($loglevel != 7 && $sonosLogEnabled) {
+    #    return;
+    #}
+
+    // 3) Zeile schreiben
     $line = sprintf("[%s] %-5s %s\n", date('Y-m-d H:i:s'), strtoupper($lvl), $msg);
 
     if (!empty($LOGFILE)) {
-        // Simple Logrotation: Wenn größer als Limit → löschen
-        if (is_file($LOGFILE) && filesize($LOGFILE) > $LOG_MAX_BYTES) {
-            @unlink($LOGFILE);
-        }
-
         @file_put_contents($LOGFILE, $line, FILE_APPEND);
     }
 
-    // Zusätzlich immer auf STDOUT, damit systemd/journalctl es auch sieht
+    // immer auch nach STDOUT für journalctl
     echo $line;
 }
 
 // --------------------------------- Helpers ---------------------------------
+
+require_once "/opt/loxberry/webfrontend/html/plugins/sonos4lox/Helper.php";
 
 /**
  * Decide if we should publish a nexttrack MQTT event.
  * - suppress if title/artist/album are all empty
  * - suppress if nexttrack is effectively identical to current track
  */
-function should_publish_nexttrack($track, $nexttrack)
-{
+function should_publish_nexttrack($track, $nexttrack) {
     if (empty($nexttrack) || !is_array($nexttrack)) {
         return false;
     }
@@ -135,16 +196,6 @@ function should_publish_nexttrack($track, $nexttrack)
     return true;
 }
 
-function getLocalIpGuess(): string {
-    $s = @stream_socket_client("udp://8.8.8.8:53", $errno, $err, 1);
-    if ($s) {
-        $name = stream_socket_get_name($s, true);
-        fclose($s);
-        if ($name && strpos($name, ':') !== false) return explode(':', $name)[0];
-    }
-    return '127.0.0.1';
-}
-
 function http_get(string $url, int $timeout=4): ?string {
     $ctx = stream_context_create(['http' => [
         'timeout'       => $timeout,
@@ -166,6 +217,83 @@ function http_req(string $method, string $url, array $headers): array {
     return [($http_response_header ?? []), ($body === false ? '' : $body)];
 }
 
+/**
+ * Refresh missing Sonos event URLs for rooms where $rooms[$room]['events'] is empty.
+ * Keeps rooms, just tries to (re)load device_description.xml and fill events.
+ */
+function refresh_event_urls_for_missing_rooms(array &$rooms): void
+{
+    foreach ($rooms as $room => &$meta) {
+
+        // only refresh if events missing/empty
+        if (!empty($meta['events']) && is_array($meta['events'])) {
+            continue;
+        }
+
+        $base = $meta['base'] ?? ("http://" . ($meta['ip'] ?? '') . ":1400");
+        if (empty($base)) {
+            continue;
+        }
+
+        $desc = null;
+        for ($try = 1; $try <= 3; $try++) {
+            $desc = http_get(rtrim($base, '/') . "/xml/device_description.xml", 6);
+            if ($desc) {
+                break;
+            }
+            logln('warn', "Event URL refresh: device_description.xml fetch failed for {$meta['ip']} ($room) try {$try}/3");
+            usleep(250000);
+        }
+
+        if (!$desc) {
+            logln('warn', "Event URL refresh: still no device_description.xml for {$meta['ip']} ($room) – keeping room without events");
+            $meta['events'] = [];
+            continue;
+        }
+
+        libxml_use_internal_errors(true);
+        $sx = @simplexml_load_string($desc);
+        if (!$sx) {
+            logln('warn', "Event URL refresh: XML parse failed for {$meta['ip']} ($room) – keeping room without events");
+            $meta['events'] = [];
+            continue;
+        }
+
+        $sx->registerXPathNamespace('d', 'urn:schemas-upnp-org:device-1-0');
+        $svcs = $sx->xpath('//d:serviceList/d:service') ?: [];
+
+        $evs  = [];
+        foreach ($svcs as $svc) {
+            $sid = (string)$svc->serviceId;
+            $ev  = (string)$svc->eventSubURL;
+            if (!$ev) continue;
+
+            $full = (strpos($ev, 'http') === 0)
+                ? $ev
+                : rtrim($base, '/') . '/' . ltrim($ev, '/');
+
+            if (stripos($sid, 'AVTransport') !== false) {
+                $evs['AVTransport'] = $full;
+            } elseif (stripos($sid, 'GroupRenderingControl') !== false) {
+                $evs['GroupRenderingControl'] = $full;
+            } elseif (stripos($sid, 'RenderingControl') !== false) {
+                $evs['RenderingControl'] = $full;
+            } elseif (stripos($sid, 'ZoneGroupTopology') !== false) {
+                $evs['ZoneGroupTopology'] = $full;
+            }
+        }
+
+        $meta['events'] = $evs;
+
+        if (!empty($evs)) {
+            logln('ok', "Event URL refresh: {$meta['ip']} ($room): " . implode(', ', array_keys($evs)));
+        } else {
+            logln('warn', "Event URL refresh: {$meta['ip']} ($room): no event URLs found – keeping room without events");
+        }
+    }
+    unset($meta);
+}
+
 function header_value(array $headers, string $name): ?string {
     foreach ($headers as $h) {
         if (stripos($h, $name . ':') === 0) return trim(substr($h, strlen($name) + 1));
@@ -182,25 +310,103 @@ function absolutize_art(?string $art, string $playerBase): ?string {
     return rtrim($playerBase, '/') . '/' . ltrim($art, '/');
 }
 
+// "HH:MM:SS" nach Sekunden umwandeln
+function hms_to_seconds(?string $str): ?int {
+    $str = trim((string)$str);
+    if ($str === '') {
+        return null;
+    }
+    if (!preg_match('/^(\d+):([0-5]?\d):([0-5]?\d)$/', $str, $m)) {
+        return null;
+    }
+    $h = (int)$m[1];
+    $m2 = (int)$m[2];
+    $s = (int)$m[3];
+    return $h * 3600 + $m2 * 60 + $s;
+}
+
+// -------------------------------------------------------------
+// Source-Erkennung (TV / Radio / LineIn / Track / Nothing)
+// -------------------------------------------------------------
+
+// Einfacher Classifier basierend auf GetPositionInfo()-Array
+function classify_source_from_posinfo(array $posinfo): string {
+    $uri       = (string)($posinfo['TrackURI']          ?? $posinfo['URI'] ?? '');
+    $upnpClass = (string)($posinfo['UpnpClass']         ?? '');
+    $meta      = (string)($posinfo['CurrentURIMetaData']?? '');
+    $protocol  = (string)($posinfo['ProtocolInfo']      ?? '');
+
+    $uri_l       = strtolower($uri);
+    $upnpClass_l = strtolower($upnpClass);
+    $protocol_l  = strtolower($protocol);
+
+    // TV (Sonos HT-Stream)
+    if (strpos($uri_l, 'x-sonos-htastream:') === 0) {
+        return 'TV';
+    }
+
+    // Line-In (Analog / Digital-In)
+    if (strpos($uri_l, 'x-rincon-stream') === 0) {
+        return 'LineIn';
+    }
+
+    // Radio / Stream (TuneIn, Sonos Radio, etc.)
+    if (
+        strpos($uri_l, 'x-rincon-mp3radio') === 0 ||
+        strpos($protocol_l, 'x-rincon-mp3radio') === 0 ||
+        strpos($upnpClass_l, 'object.item.audioitem.audiobroadcast') === 0
+    ) {
+        return 'Radio';
+    }
+
+    // Nichts / Idle
+    if ($uri === '' && $meta === '') {
+        return 'Nothing';
+    }
+
+    // Default: normale Track-/Playlist-Wiedergabe
+    return 'Track';
+}
+
+// Cache für SonosAccess-Objekte pro Raum
+$__sonos_clients = [];
+
+/**
+ * Liefert 'source' (TV/Radio/LineIn/Track/Nothing) für einen Raum.
+ * Holt sich intern über SonosAccess->GetPositionInfo() die Daten.
+ */
+function get_source_for_room(string $room, array $rooms): ?string {
+    global $__sonos_clients;
+
+    if (empty($rooms[$room]['ip'])) {
+        return null;
+    }
+    $ip = $rooms[$room]['ip'];
+
+    try {
+        if (!isset($__sonos_clients[$room])) {
+            $__sonos_clients[$room] = new SonosAccess($ip);
+        }
+        $sonos    = $__sonos_clients[$room];
+        $posinfo  = $sonos->GetPositionInfo();
+        if (!is_array($posinfo)) {
+            return null;
+        }
+        return classify_source_from_posinfo($posinfo);
+    } catch (Exception $e) {
+        logln('warn', "get_source_for_room($room): " . $e->getMessage());
+        return null;
+    }
+}
 // ---------- Parser: LastChange für AVT/RC ----------
 function parse_lastchange(string $xml, string $playerBase): array {
     $events = [];
 
-    // 1) Problemkind EnqueuedTransportURIMetaData komplett entfernen
-    $xmlStripped = preg_replace(
-        '~<EnqueuedTransportURIMetaData[^>]*>.*?</EnqueuedTransportURIMetaData>~si',
-        '',
-        $xml
-    );
-    if ($xmlStripped !== $xml) {
-        logln('dbg', 'LastChange: stripped EnqueuedTransportURIMetaData before XML parse');
-    }
-
-    // 2) Nackte '&' in '&amp;' wandeln (URLs, Querystrings etc.)
+    // 1) Nackte '&' in '&amp;' wandeln (URLs, Querystrings etc.)
     $xmlSanitized = preg_replace(
         '/&(?![a-zA-Z0-9#]+;)/',
         '&amp;',
-        $xmlStripped
+        $xml
     );
 
     libxml_use_internal_errors(true);
@@ -230,6 +436,33 @@ function parse_lastchange(string $xml, string $playerBase): array {
         return $events;
     }
 
+    // -------------------------------------------------
+    // TransportStatus und PlaybackStorageMedium (für state-Extras)
+    // -------------------------------------------------
+    $transportStatus = null;
+    foreach ($sx->xpath('//*[local-name()="TransportStatus"]') as $n) {
+        $val = (string)$n['val'];
+        if ($val === '') {
+            $val = trim((string)$n);
+        }
+        if ($val !== '') {
+            $transportStatus = $val;
+            break;
+        }
+    }
+
+    $playbackStorage = null;
+    foreach ($sx->xpath('//*[local-name()="PlaybackStorageMedium"]') as $n) {
+        $val = (string)$n['val'];
+        if ($val === '') {
+            $val = trim((string)$n);
+        }
+        if ($val !== '') {
+            $playbackStorage = $val;
+            break;
+        }
+    }
+
     // --- TransportState (PLAYING / PAUSED_PLAYBACK / STOPPED / TRANSITIONING) ---
     foreach ($sx->xpath('//*[local-name()="TransportState"]') as $n) {
         $state = (string)$n['val'];
@@ -237,20 +470,30 @@ function parse_lastchange(string $xml, string $playerBase): array {
             $state = trim((string)$n);
         }
         if ($state !== '') {
-            $events[] = [
+            $ev = [
                 'type'  => 'state',
                 'state' => $state,
             ];
+            if ($transportStatus !== null) {
+                $ev['transport_status'] = $transportStatus;
+            }
+            if ($playbackStorage !== null) {
+                $ev['playback_storage'] = $playbackStorage;
+            }
+            $events[] = $ev;
         }
     }
 
-    // Hilfsfunktion: DIDL -> (title, artist, album, albumArtUri)
+    // -------------------------------------------------
+    // Hilfsfunktion: DIDL -> (title, artist, album, albumArtUri, upnp:class)
+    // -------------------------------------------------
     $extractFromDidl = function (string $didlXml) use ($playerBase): array {
         $out = [
-            'title'       => '',
-            'artist'      => '',
-            'album'       => '',
-            'albumArtUri' => null,
+            'title'        => '',
+            'artist'       => '',
+            'album'        => '',
+            'albumArtUri'  => null,
+            '__upnp_class' => '',
         ];
 
         $d = @simplexml_load_string($didlXml);
@@ -262,11 +505,13 @@ function parse_lastchange(string $xml, string $playerBase): array {
             $artist = (string)($d->xpath('//dc:creator')[0]      ?? '');
             $album  = (string)($d->xpath('//upnp:album')[0]      ?? '');
             $art    = (string)($d->xpath('//upnp:albumArtURI')[0]?? '');
+            $class  = (string)($d->xpath('//upnp:class')[0]      ?? '');
 
-            $out['title']       = $title;
-            $out['artist']      = $artist;
-            $out['album']       = $album;
-            $out['albumArtUri'] = absolutize_art($art, $playerBase);
+            $out['title']        = $title;
+            $out['artist']       = $artist;
+            $out['album']        = $album;
+            $out['albumArtUri']  = absolutize_art($art, $playerBase);
+            $out['__upnp_class'] = $class;
         }
 
         return $out;
@@ -295,42 +540,96 @@ function parse_lastchange(string $xml, string $playerBase): array {
         return $extractFromDidl($raw);
     };
 
-    // --- CurrentTrackMetaData → track ---
+    // -------------------------------------------------
+    // CurrentTrackMetaData → track
+    // -------------------------------------------------
     foreach ($sx->xpath('//*[local-name()="CurrentTrackMetaData"]') as $n) {
         $meta = $decodeMetaNode($n);
         if ($meta !== null) {
+            unset($meta['__upnp_class']);
             $events[] = ['type' => 'track'] + $meta;
         }
     }
 
-    // --- NextTrackMetaData → nexttrack ---
+    // -------------------------------------------------
+    // NextTrack: wir wollen GENAU EIN Event pro LastChange.
+    // Priorität:
+    //   1) NextTrackMetaData
+    //   2) NextAVTransportURIMetaData
+    //   3) EnqueuedTransportURIMetaData (nur item.*, keine container.*)
+    //   4) NextTrackURI / NextAVTransportURI (nur URI)
+    // -------------------------------------------------
+    $nextTrackEvent = null;
+
+    // 1) NextTrackMetaData
     foreach ($sx->xpath('//*[local-name()="NextTrackMetaData"]') as $n) {
         $meta = $decodeMetaNode($n);
         if ($meta !== null) {
-            $events[] = ['type' => 'nexttrack'] + $meta;
+            unset($meta['__upnp_class']);
+            $nextTrackEvent = ['type' => 'nexttrack'] + $meta;
+            break;
         }
     }
 
-    // --- Alternative: NextAVTransportURIMetaData (z.B. bei Streams) ---
-    foreach ($sx->xpath('//*[local-name()="NextAVTransportURIMetaData"]') as $n) {
-        $meta = $decodeMetaNode($n);
-        if ($meta !== null) {
-            $events[] = ['type' => 'nexttrack'] + $meta;
+    // 2) NextAVTransportURIMetaData (nur wenn noch nichts da)
+    if ($nextTrackEvent === null) {
+        foreach ($sx->xpath('//*[local-name()="NextAVTransportURIMetaData"]') as $n) {
+            $meta = $decodeMetaNode($n);
+            if ($meta !== null) {
+                unset($meta['__upnp_class']);
+                $nextTrackEvent = ['type' => 'nexttrack'] + $meta;
+                break;
+            }
         }
     }
 
-    // --- Fallback: NextTrackURI / NextAVTransportURI → nur URI ---
-    foreach ($sx->xpath('//*[local-name()="NextTrackURI"] | //*[local-name()="NextAVTransportURI"]') as $n) {
-        $uri = trim((string)$n);
-        if ($uri !== '') {
-            $events[] = [
-                'type' => 'nexttrack',
-                'uri'  => $uri,
-            ];
+    // 3) EnqueuedTransportURIMetaData (Playlist / Queue etc.) → nur items, keine container.*
+    if ($nextTrackEvent === null) {
+        foreach ($sx->xpath('//*[local-name()="EnqueuedTransportURIMetaData"]') as $n) {
+            $meta = $decodeMetaNode($n);
+            if ($meta !== null) {
+                $cls = strtolower($meta['__upnp_class'] ?? '');
+                unset($meta['__upnp_class']);
+
+                // Container (Playlist, Bibliothek etc.) ignorieren – das ist genau dein "Hot Country / Spotify"-Fall
+                if ($cls !== '' && strpos($cls, 'object.container') === 0) {
+                    logln('dbg', "parse_lastchange: skip EnqueuedTransportURIMetaData with container class '$cls' for nexttrack");
+                    continue;
+                }
+
+                logln(
+                    'dbg',
+                    "parse_lastchange: EnqueuedTransportURIMetaData → nexttrack: "
+                    . ($meta['title'] ?? '') . " — " . ($meta['artist'] ?? '')
+                );
+
+                $nextTrackEvent = ['type' => 'nexttrack'] + $meta;
+                break;
+            }
         }
     }
 
-    // --- Volume/Mute (Master-Level, nicht GroupVolume) ---
+    // 4) Fallback: NextTrackURI / NextAVTransportURI → nur URI
+    if ($nextTrackEvent === null) {
+        foreach ($sx->xpath('//*[local-name()="NextTrackURI"] | //*[local-name()="NextAVTransportURI"]') as $n) {
+            $uri = trim((string)$n);
+            if ($uri !== '') {
+                $nextTrackEvent = [
+                    'type' => 'nexttrack',
+                    'uri'  => $uri,
+                ];
+                break;
+            }
+        }
+    }
+
+    if ($nextTrackEvent !== null) {
+        $events[] = $nextTrackEvent;
+    }
+
+    // -------------------------------------------------
+    // Volume/Mute (Master-Level, nicht GroupVolume)
+    // -------------------------------------------------
     foreach ($sx->xpath('//*[local-name()="Volume"][@channel="Master"]') as $n) {
         $val = (string)$n['val'];
         if ($val === '') {
@@ -355,6 +654,180 @@ function parse_lastchange(string $xml, string $playerBase): array {
                 'mute' => ($val === '1'),
             ];
         }
+    }
+
+    // -------------------------------------------------
+    // EQ (Bass/Treble/Loudness, Master) + weitere Felder
+    // -------------------------------------------------
+    $eq = [];
+
+    foreach ($sx->xpath('//*[local-name()="Bass"][@channel="Master"]') as $n) {
+        $val = (string)$n['val'];
+        if ($val === '') {
+            $val = (string)$n;
+        }
+        if ($val !== '') {
+            $eq['bass'] = (int)$val;
+        }
+    }
+
+    foreach ($sx->xpath('//*[local-name()="Treble"][@channel="Master"]') as $n) {
+        $val = (string)$n['val'];
+        if ($val === '') {
+            $val = (string)$n;
+        }
+        if ($val !== '') {
+            $eq['treble'] = (int)$val;
+        }
+    }
+
+    foreach ($sx->xpath('//*[local-name()="Loudness"][@channel="Master"]') as $n) {
+        $val = (string)$n['val'];
+        if ($val === '') {
+            $val = (string)$n;
+        }
+        if ($val !== '') {
+            $eq['loudness'] = ($val === '1') ? 1 : 0;
+        }
+    }
+
+    foreach ($sx->xpath('//*[local-name()="Balance"][@channel="Master"]') as $n) {
+        $val = (string)$n['val'];
+        if ($val === '') {
+            $val = (string)$n;
+        }
+        if ($val !== '') {
+            $eq['balance'] = (int)$val;
+        }
+    }
+
+    foreach ($sx->xpath('//*[local-name()="SubGain"]') as $n) {
+        $val = (string)$n['val'];
+        if ($val === '') {
+            $val = (string)$n;
+        }
+        if ($val !== '') {
+            $eq['subgain'] = (int)$val;
+        }
+    }
+
+    foreach ($sx->xpath('//*[local-name()="NightMode"]') as $n) {
+        $val = (string)$n['val'];
+        if ($val === '') {
+            $val = (string)$n;
+        }
+        if ($val !== '') {
+            $eq['nightmode'] = ($val === '1') ? 1 : 0;
+        }
+    }
+
+    foreach ($sx->xpath('//*[local-name()="DialogLevel"]') as $n) {
+        $val = (string)$n['val'];
+        if ($val === '') {
+            $val = (string)$n;
+        }
+        if ($val !== '' && is_numeric($val)) {
+            $eq['dialoglevel'] = (int)$val;
+        }
+    }
+
+    if (!empty($eq)) {
+        $events[] = ['type' => 'eq'] + $eq;
+    }
+
+    // -------------------------------------------------
+    // Playmode (CurrentPlayMode / CurrentCrossfadeMode)
+    // -------------------------------------------------
+    $pm = [];
+
+    foreach ($sx->xpath('//*[local-name()="CurrentPlayMode"]') as $n) {
+        $val = (string)$n['val'];
+        if ($val === '') {
+            $val = trim((string)$n);
+        }
+        if ($val !== '') {
+            $pm['mode_raw'] = $val;
+        }
+    }
+
+    foreach ($sx->xpath('//*[local-name()="CurrentCrossfadeMode"]') as $n) {
+        $val = (string)$n['val'];
+        if ($val === '') {
+            $val = trim((string)$n);
+        }
+        if ($val !== '') {
+            $pm['crossfade'] = ($val === '1') ? 1 : 0;
+        }
+    }
+
+    if (!empty($pm)) {
+        $events[] = ['type' => 'playmode'] + $pm;
+    }
+
+    // -------------------------------------------------
+    // Position/Progress
+    // -------------------------------------------------
+    $position = [];
+
+    foreach ($sx->xpath('//*[local-name()="CurrentTrackDuration"]') as $n) {
+        $val = (string)$n['val'];
+        if ($val === '') {
+            $val = trim((string)$n);
+        }
+        $sec = hms_to_seconds($val);
+        if ($sec !== null) {
+            $position['duration_sec'] = $sec;
+            break;
+        }
+    }
+
+    foreach ($sx->xpath('//*[local-name()="RelTime"] | //*[local-name()="RelativeTimePosition"]') as $n) {
+        $val = (string)$n['val'];
+        if ($val === '') {
+            $val = trim((string)$n);
+        }
+        $sec = hms_to_seconds($val);
+        if ($sec !== null) {
+            $position['position_sec'] = $sec;
+            break;
+        }
+    }
+
+    foreach ($sx->xpath('//*[local-name()="CurrentTrack"]') as $n) {
+        $val = trim((string)$n['val'] !== '' ? (string)$n['val'] : (string)$n);
+        if ($val !== '' && ctype_digit($val)) {
+            $position['track_no'] = (int)$val;
+            break;
+        }
+    }
+
+    foreach ($sx->xpath('//*[local-name()="NumberOfTracks"]') as $n) {
+        $val = trim((string)$n['val'] !== '' ? (string)$n['val'] : (string)$n);
+        if ($val !== '' && ctype_digit($val)) {
+            $position['track_count'] = (int)$val;
+            break;
+        }
+    }
+
+    foreach ($sx->xpath('//*[local-name()="AVTransportURI"]') as $n) {
+        $val = trim((string)$n);
+        if ($val !== '') {
+            $position['av_uri'] = $val;
+            break;
+        }
+    }
+
+    if (!empty($position['duration_sec']) && isset($position['position_sec'])) {
+        $dur = max(1, (int)$position['duration_sec']);
+        $pos = max(0, (int)$position['position_sec']);
+        $pct = (int)round($pos * 100 / $dur);
+        if ($pct < 0) $pct = 0;
+        if ($pct > 100) $pct = 100;
+        $position['progress_pct'] = $pct;
+    }
+
+    if (!empty($position)) {
+        $events[] = ['type' => 'position'] + $position;
     }
 
     return $events;
@@ -385,10 +858,85 @@ function parse_topology(string $zoneGroupState): array {
     return $groups;
 }
 
-// ------- Publish Helper: raum-zentriert & vollständige Payload -------
+/**
+ * Kompletten Satz an Sonos SUBSCRIPTIONS neu aufbauen.
+ * - Alle bestehenden SIDs werden UNSUBSCRIBE'd
+ * - Danach wie beim Start für alle Räume AVTransport/RenderingControl/ZGT neu SUBSCRIBE
+ */
+function rebuild_all_subscriptions(
+    array &$subs,
+    array $rooms,
+    string $CALLBACK_URL,
+    int $TIMEOUT_SEC,
+    int $RENEW_MARGIN
+): void {
+    logln('info', 'Rebuilding all Sonos SUBSCRIPTIONS (full resubscribe) …');
 
+    // 1) Alte Subscriptions abräumen
+    foreach ($subs as $sid => $s) {
+        if (empty($s['eventUrl'])) {
+            continue;
+        }
+        $host = parse_url($s['eventUrl'], PHP_URL_HOST);
+        $port = parse_url($s['eventUrl'], PHP_URL_PORT);
+        http_req('UNSUBSCRIBE', $s['eventUrl'], [
+            "HOST: $host:$port",
+            "SID: " . $sid,
+            "Connection: close",
+        ]);
+    }
+    $subs = [];
+	
+	// try to repopulate missing event URLs before resubscribe
+	refresh_event_urls_for_missing_rooms($rooms);
+
+    // 2) Neu SUBSCRIBE für alle Räume und Services
+	foreach ($rooms as $room => $meta) {
+		foreach (['AVTransport', 'RenderingControl', 'GroupRenderingControl', 'ZoneGroupTopology'] as $svc) {
+            if (empty($meta['events'][$svc])) {
+                continue;
+            }
+            $evUrl = $meta['events'][$svc];
+
+            $host = parse_url($evUrl, PHP_URL_HOST);
+            $port = parse_url($evUrl, PHP_URL_PORT);
+
+            [$resH, ] = http_req('SUBSCRIBE', $evUrl, [
+                "HOST: $host:$port",
+                "CALLBACK: <{$CALLBACK_URL}>",
+                "NT: upnp:event",
+                "TIMEOUT: Second-{$TIMEOUT_SEC}",
+                "Connection: close",
+            ]);
+
+            $sid  = header_value($resH, 'SID') ?: header_value($resH, 'Sid');
+            $tout = header_value($resH, 'TIMEOUT') ?: header_value($resH, 'Timeout');
+
+            if ($sid) {
+                $ttl = (preg_match('~Second-(\d+)~i', (string)$tout, $m) ? (int)$m[1] : $TIMEOUT_SEC);
+                $renewAt = time() + max(60, $ttl) - $RENEW_MARGIN;
+                $subs[$sid] = [
+                    'service'  => $svc,
+                    'eventUrl' => $evUrl,
+                    'room'     => $room,
+                    'renewAt'  => $renewAt,
+                ];
+                logln('ok', "SUBSCRIBE $svc @ {$meta['ip']} ($room) -> SID=$sid (rebuild)");
+            } else {
+                logln('warn', "SUBSCRIBE $svc @ {$meta['ip']} ($room) FAILED during rebuild");
+            }
+
+            usleep(100000);
+        }
+    }
+}
+
+
+// ------- Publish Helper: raum-zentriert & vollständige Payload -------
 // global cache to deduplicate group events: room|group_id => signature
-$lastGroupState = [];
+$lastGroupState 	= [];
+$lastEqByRoom 		= [];
+
 
 function publish_room_event(
     string $room,
@@ -401,10 +949,12 @@ function publish_room_event(
     int $qos
 ): void {
 
+    global $lastEqByRoom;
+
     // Typ ins Payload schreiben
     $data['type'] = $type;
 
-    // --- State-Normalisierung (z.B. PAUSED_PLAYBACK -> PAUSED) ---
+    // --- State-Normalisierung + state_code (für Loxone) ---
     if ($type === 'state' && isset($data['state'])) {
         $raw = (string)$data['state'];
         switch ($raw) {
@@ -417,10 +967,171 @@ function publish_room_event(
                 $data['state'] = $raw;
                 break;
             default:
-                // Unbekannt? Dann einfach roh durchreichen
                 $data['state'] = $raw;
                 break;
         }
+
+        // numerischer Code wie GetTransportInfo()
+        $map = [
+            'PLAYING'       => 1,
+            'PAUSED'        => 2,
+            'STOPPED'       => 3,
+            'TRANSITIONING' => 4,
+        ];
+        $data['state_code'] = $map[$data['state']] ?? 0;
+    }
+
+    // --- Volume-Alias ---
+    if ($type === 'volume' && isset($data['volume'])) {
+        $data['vol'] = (int)$data['volume'];
+    }
+
+    // --- Mute-Alias ---
+    if ($type === 'mute' && array_key_exists('mute', $data)) {
+        $data['mute_int'] = !empty($data['mute']) ? 1 : 0;
+    }
+
+    // --- EQ: loudness_int + Snapshot für _health ---
+    if ($type === 'eq') {
+        if (isset($data['bass'])) {
+            $data['bass'] = (int)$data['bass'];
+        }
+        if (isset($data['treble'])) {
+            $data['treble'] = (int)$data['treble'];
+        }
+        if (isset($data['loudness'])) {
+            $data['loudness']     = (int)$data['loudness'] ? 1 : 0;
+            $data['loudness_int'] = $data['loudness'];
+        }
+
+        // EQ-Snapshot je Raum, wie in der Doku
+        $lastEqByRoom[$room] = [
+            'bass'         => (int)($data['bass']         ?? 0),
+            'treble'       => (int)($data['treble']       ?? 0),
+            'loudness'     => (int)($data['loudness']     ?? 0),
+            'loudness_int' => (int)($data['loudness_int'] ?? 0),
+            'balance'      => (int)($data['balance']      ?? 0),
+            'subgain'      => (int)($data['subgain']      ?? 0),
+            'nightmode'    => (int)($data['nightmode']    ?? 0),
+            'dialoglevel'  => (int)($data['dialoglevel']  ?? 0),
+            'ts'           => time(),
+        ];
+    }
+
+    // --- Playmode: Shuffle/Repeat/Crossfade ---
+    if ($type === 'playmode') {
+        $raw = strtoupper((string)($data['mode_raw'] ?? $data['playmode'] ?? ''));
+
+        $shuffle    = 0;
+        $repeat     = 0;
+        $repeat_one = 0;
+
+        if ($raw !== '') {
+            if (strpos($raw, 'SHUFFLE') !== false) {
+                $shuffle = 1;
+            }
+
+            if (strpos($raw, 'REPEAT') !== false) {
+                $repeat = 1;
+            }
+
+            if ($raw === 'REPEAT_ONE' || strpos($raw, 'REPEAT_ONE') !== false) {
+                $repeat_one = 1;
+                $repeat     = 1;
+            }
+        }
+
+        if (!isset($data['mode_raw'])) {
+            $data['mode_raw'] = $raw;
+        }
+
+        if (isset($data['crossfade'])) {
+            $data['crossfade'] = (int)$data['crossfade'] ? 1 : 0;
+        }
+
+        $data['shuffle']    = $shuffle;
+        $data['repeat']     = $repeat;
+        $data['repeat_one'] = $repeat_one;
+    }
+
+    // --- Source-Erkennung + alte Sonos4lox-Kompatibilität (track) ---
+    if ($type === 'track') {
+        // Source erkennen (TV / Radio / Track / LineIn / Nothing)
+        $src = get_source_for_room($room, $rooms);
+        if ($src !== null) {
+            $data['source_text'] = $src;
+            $map = [
+                'Nothing' => 0,
+                'Radio'   => 1,
+                'Track'   => 2,
+                'TV'      => 3,
+                'LineIn'  => 4,
+            ];
+            $data['source'] = $map[$src] ?? 0; // wie früher source_<room>
+        }
+
+        $title  = (string)($data['title']  ?? '');
+        $artist = (string)($data['artist'] ?? '');
+        $album  = (string)($data['album']  ?? '');
+
+        // tit / int / titint
+        if (($data['source_text'] ?? '') === 'TV') {
+            $data['tit']    = 'TV';
+            $data['int']    = 'TV';
+            $data['titint'] = 'TV';
+        } else {
+            $data['tit'] = $title;
+            $data['int'] = $artist;
+            if ($artist !== '' && $title !== '') {
+                $data['titint'] = $artist . ' - ' . $title;
+            } else {
+                $data['titint'] = $title;
+            }
+        }
+
+        // Radio-Sender
+        if (($data['source_text'] ?? '') === 'Radio') {
+            // Best guess: Station meist im Album, sonst im Title
+            $station = $album !== '' ? $album : $title;
+            $data['radio'] = $station;
+        } else {
+            $data['radio'] = '';
+        }
+
+        // Cover / SID / TV-State
+        $data['cover'] = $data['albumArtUri'] ?? null;
+
+        if (($data['source_text'] ?? '') === 'TV') {
+            $data['sid'] = 'TV';
+        } elseif (($data['source_text'] ?? '') === 'Radio') {
+            $data['sid'] = 'Radio';
+        } else {
+            $data['sid'] = 'Music';
+        }
+
+        // Platzhalter (0) – könnte später mit echtem HTAudioIn ersetzt werden
+        $data['tvstate'] = 0;
+    }
+
+    // --- Group-Rolle (single/master/member) ---
+    if ($type === 'group') {
+        $members  = $data['members'] ?? [];
+        $isCoord  = !empty($data['is_coordinator']);
+        $roleName = 'single';
+        $roleCode = 1;
+
+        if (count($members) > 1) {
+            if ($isCoord) {
+                $roleName = 'master';
+                $roleCode = 2;
+            } else {
+                $roleName = 'member';
+                $roleCode = 3;
+            }
+        }
+
+        $data['role_name'] = $roleName;
+        $data['role_code'] = $roleCode; // wie früher grp_<room>
     }
 
     // Geräte-Metadaten
@@ -435,9 +1146,10 @@ function publish_room_event(
         'service' => $service,
         'ts'      => time(),
     ];
-
+	
     $topic  = rtrim($prefix, '/') . "/{$room}/{$type}";
-    $retain = in_array($type, ['state', 'volume'], true);
+    // track/nexttrack auch retainen, damit Loxone sie zuverlässig abholen kann
+    $retain = in_array($type, ['state', 'volume', 'track', 'nexttrack'], true);
 
     // -------- Group-Events entdünnen (ohne Logspam) --------
     if ($type === 'group') {
@@ -463,20 +1175,145 @@ function publish_room_event(
         return;
     }
 
-    $ok = $mqttClient->publish($topic, $json, $retain, $qos);
+        $ok = $mqttClient->publish($topic, $json, $retain, $qos);
     if (!$ok) {
         logln('warn', "MQTT publish failed: $topic");
+    }
+
+    // ----------------------------------------------------
+    // Legacy-Kompatibilität: alte Sonos4lox-Topics weiter bedienen
+    // ----------------------------------------------------
+    $legacyPrefix = 'Sonos4lox';
+
+    try {
+        // 1) Volume -> Sonos4lox/vol/<room>
+        if ($type === 'volume' && isset($payload['volume'])) {
+            $mqttClient->publish(
+                $legacyPrefix . '/vol/' . $room,
+                (string)$payload['volume'],
+                true,   // retain wie früher
+                0       // QoS 0 wie im alten push_loxone.php
+            );
+        }
+
+        // 2) State -> Sonos4lox/stat/<room> (GetTransportInfo-Code)
+        if ($type === 'state' && isset($payload['state_code'])) {
+            $mqttClient->publish(
+                $legacyPrefix . '/stat/' . $room,
+                (string)$payload['state_code'],
+                true,
+                0
+            );
+        }
+
+        // 3) Group-Role -> Sonos4lox/grp/<room> (1=single,2=master,3=member)
+        if ($type === 'group' && isset($payload['role_code'])) {
+            $mqttClient->publish(
+                $legacyPrefix . '/grp/' . $room,
+                (string)$payload['role_code'],
+                true,
+                0
+            );
+        }
+
+        // 4) Mute -> Sonos4lox/mute/<room> (0/1)
+        if ($type === 'mute' && array_key_exists('mute_int', $payload)) {
+            $mqttClient->publish(
+                $legacyPrefix . '/mute/' . $room,
+                (string)$payload['mute_int'],
+                true,
+                0
+            );
+        }
+
+        // 5) Track-Infos -> Sonos4lox/tit*, /radio, /source, /sid, /cover, /tvstate
+        if ($type === 'track') {
+            $mqttClient->publish(
+                $legacyPrefix . '/titint/' . $room,
+                (string)($payload['titint'] ?? ''),
+                true,
+                0
+            );
+            $mqttClient->publish(
+                $legacyPrefix . '/tit/' . $room,
+                (string)($payload['tit'] ?? ''),
+                true,
+                0
+            );
+            $mqttClient->publish(
+                $legacyPrefix . '/int/' . $room,
+                (string)($payload['int'] ?? ''),
+                true,
+                0
+            );
+            $mqttClient->publish(
+                $legacyPrefix . '/radio/' . $room,
+                (string)($payload['radio'] ?? ''),
+                true,
+                0
+            );
+
+            if (isset($payload['source'])) {
+                $mqttClient->publish(
+                    $legacyPrefix . '/source/' . $room,
+                    (string)$payload['source'],   // 0..4 wie früher
+                    true,
+                    0
+                );
+            }
+
+            $mqttClient->publish(
+                $legacyPrefix . '/sid/' . $room,
+                (string)($payload['sid'] ?? ''),
+                true,
+                0
+            );
+            $mqttClient->publish(
+                $legacyPrefix . '/cover/' . $room,
+                (string)($payload['cover'] ?? ''),
+                true,
+                0
+            );
+
+            if (isset($payload['tvstate'])) {
+                $mqttClient->publish(
+                    $legacyPrefix . '/tvstate/' . $room,
+                    (string)$payload['tvstate'],
+                    true,
+                    0
+                );
+            }
+        }
+
+    } catch (Throwable $e) {
+        logln('warn', "Legacy MQTT publish failed for $room/$type: " . $e->getMessage());
     }
 
     // Log kompakt
     if     ($type === 'track')     logln('evnt', "$room track: " . ($payload['title'] ?? '') . " — " . ($payload['artist'] ?? '') . " [" . ($payload['album'] ?? '') . "]");
     elseif ($type === 'nexttrack') logln('evnt', "$room next: " . ($payload['title'] ?? ($payload['uri'] ?? '')));
-    elseif ($type === 'state')     logln('evnt', "$room state: {$payload['state']}");
+    elseif ($type === 'state')     logln('evnt', "$room state: {$payload['state']} ({$payload['state_code']})");
     elseif ($type === 'volume')    logln('evnt', "$room volume: {$payload['volume']}");
     elseif ($type === 'mute')      logln('evnt', "$room mute: " . (!empty($payload['mute']) ? 'on' : 'off'));
-    elseif ($type === 'group')     logln('evnt', "$room group: gid={$payload['group_id']} coord=" . (!empty($payload['is_coordinator']) ? 'yes' : 'no'));
+    elseif ($type === 'group')     logln('evnt', "$room group: gid={$payload['group_id']} coord=" . (!empty($payload['is_coordinator']) ? 'yes' : 'no') . " role={$payload['role_name']}");
+	    elseif ($type === 'position') {
+        $pos = $payload['position_sec'] ?? null;
+        $dur = $payload['duration_sec'] ?? null;
+        $pct = $payload['progress_pct'] ?? null;
+        logln(
+            'evnt',
+            sprintf(
+                "%s position: %s/%s s (%s%%)",
+                $room,
+                $pos !== null ? $pos : '-',
+                $dur !== null ? $dur : '-',
+                $pct !== null ? $pct : '-'
+            )
+        );
+    }
+    elseif ($type === 'eq')        logln('evnt', "$room eq: bass=" . ($payload['bass'] ?? '-') . " treble=" . ($payload['treble'] ?? '-') . " loudness=" . ($payload['loudness'] ?? '-'));
+    elseif ($type === 'playmode')  logln('evnt', "$room playmode: {$payload['mode_raw']} shuffle={$payload['shuffle']} repeat={$payload['repeat']} crossfade=" . ($payload['crossfade'] ?? '-'));
 }
-
 
 // --------------------------------- HTTP Request Processing ---------------------------------
 function process_sonos_http_request(
@@ -488,12 +1325,17 @@ function process_sonos_http_request(
     string $TOPIC_PREFIX,
     int $MQTT_QOS
 ): void {
+    global $lastNotifyTs;
+
     // 200 OK antworten
     @fwrite($sock, "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n");
 
     if ($raw === '') {
         return;
     }
+
+    // Wir haben einen NOTIFY gesehen
+    $lastNotifyTs = time();
 
     // SID und Service/Raum ermitteln
     $sid = '';
@@ -545,6 +1387,7 @@ function process_sonos_http_request(
         $sx->registerXPathNamespace('e', 'urn:schemas-upnp-org:event-1-0');
 
         // --- LastChange (AVTransport / RenderingControl / GroupRenderingControl) ---
+        $hadLastChange = false;
         foreach ($sx->xpath('//*[local-name()="LastChange"]') as $lc) {
             // Wichtig: kein html_entity_decode auf dem kompletten LastChange!
             $inner = (string)$lc;
@@ -552,6 +1395,8 @@ function process_sonos_http_request(
             logln('dbg', "LastChange inner XML START: " . substr($inner, 0, 200));
 
             foreach (parse_lastchange($inner, $rooms[$room]['base'] ?? '') as $ev) {
+                $hadLastChange = true;
+
                 publish_room_event(
                     $room,
                     $ev['type'],
@@ -565,20 +1410,55 @@ function process_sonos_http_request(
             }
         }
 
-        // --- ZoneGroupTopology: ZoneGroupState ---
+        // Wenn wir einen LastChange hatten → passenden Service-Timestamp setzen
+        if ($hadLastChange) {
+            global $lastAvtEventTs, $lastRcEventTs;
+            if ($svc === 'AVTransport') {
+                $lastAvtEventTs = time();
+            } elseif ($svc === 'RenderingControl' || $svc === 'GroupRenderingControl') {
+                $lastRcEventTs = time();
+            }
+        }
+
+
         foreach ($sx->xpath('//*[local-name()="ZoneGroupState"]') as $zgs) {
+            global $lastZgtEventTs;
+            $lastZgtEventTs = time();
+
             $state  = html_entity_decode((string)$zgs, ENT_QUOTES | ENT_XML1, 'UTF-8');
             logln('dbg', "ZoneGroupState inner XML START: " . substr($state, 0, 200));
             $groups = parse_topology($state);
 
-            // reverse index: rincon -> room (aus $rooms)
+            // --- Health-Flags aus Topologie ableiten ---
+            global $zones, $healthRoomsFlags;
+
+            // Map: RINCON (UUID) -> Raumname aus der *Config* (sonoszonen)
             $rin2room = [];
-            foreach ($rooms as $r => $mta) {
-                if (!empty($mta['rincon'])) {
-                    $rin2room[$mta['rincon']] = $r;
+            foreach ($zones as $roomName => $cfgArr) {
+                if (!empty($cfgArr[1])) {           // [1] = RINCON aus s4lox_config.json
+                    $rin2room[$cfgArr[1]] = $roomName;
                 }
             }
 
+            // welche konfigurierten Räume sind laut aktueller Topologie präsent?
+            $presentRooms = []; // room => true
+            foreach ($groups as $gid => $g) {
+                foreach ($g['members'] as $rin => $mi) {
+                    if (isset($rin2room[$rin])) {
+                        // immer auf den CONFIG-Namen (z.B. "badezimmer") mappen
+                        $presentRooms[$rin2room[$rin]] = true;
+                    }
+                }
+            }
+
+            // Flags für alle konfigurierten Räume setzen (1 = in Topologie, 0 = fehlt)
+            foreach (array_keys($zones) as $roomName) {
+                $healthRoomsFlags[$roomName] = [
+                    'Online' => isset($presentRooms[$roomName]) ? 1 : 0,
+                ];
+            }
+
+            // ab hier bleibt dein bestehender Gruppen-Code unverändert
             foreach ($groups as $gid => $g) {
                 $coordRincon = $g['coordinator'];
                 $coordRoom   = $rin2room[$coordRincon] ?? null;
@@ -625,6 +1505,7 @@ function process_sonos_http_request(
             }
         }
 
+
         // --- GroupRenderingControl: GroupVolume / GroupMute ---
         foreach ($sx->xpath('//*[local-name()="GroupVolume"]') as $gv) {
             $vol = (int)$gv;
@@ -640,7 +1521,7 @@ function process_sonos_http_request(
             );
         }
 
-        foreach ($sx->xpath('//*[local-name()="GroupMute"]') as $gm) {
+		foreach ($sx->xpath('//*[local-name()="GroupMute"]') as $gm) {
             $mute = ((string)$gm === '1');
             publish_room_event(
                 $room,
@@ -649,7 +1530,7 @@ function process_sonos_http_request(
                 $rooms,
                 $mqttClient,
                 $TOPIC_PREFIX,
-                $svc,
+                $svc,          // <--- Service-Name ergänzen
                 $MQTT_QOS
             );
         }
@@ -688,12 +1569,28 @@ $mqttUser = $mqttconf['brokeruser'] ?? '';
 $mqttPass = $mqttconf['brokerpass'] ?? '';
 
 $mqttClientId = 'sonos_events_' . gethostname() . '_' . uniqid();
-$mqttClient = new SonosMqttClient($mqttHost, $mqttPort, $mqttClientId, $mqttUser ?: null, $mqttPass ?: null);
+$mqttClient   = new SonosMqttClient($mqttHost, $mqttPort, $mqttClientId, $mqttUser ?: null, $mqttPass ?: null);
+
+// Health-Topic
+$healthTopic = rtrim($TOPIC_PREFIX, '/') . '/_health';
 
 // --------------------------------- Räume/Player laden ---------------------------------
 if (!file_exists(S4L_CFG)) { logln('error', "Config missing: " . S4L_CFG); exit(1); }
 $cfg = json_decode(file_get_contents(S4L_CFG), true);
 if (!is_array($cfg)) { logln('error', "Invalid JSON in " . S4L_CFG); exit(1); }
+
+// presence-Flag aus der Config
+$ttsCfg          = $cfg['TTS'] ?? [];
+$sonosLogEnabled = is_enabled($ttsCfg['presence']);
+
+// LoxDatenMQTT-Schalter wie bisher …
+$loxCfg       = $cfg['LOXONE'] ?? [];
+$LoxDatenMQTT = strtolower((string)($loxCfg['LoxDatenMQTT'] ?? 'false'));
+if ($LoxDatenMQTT !== 'true') {
+    // hier gerne noch ein einfaches echo, falls du willst
+    exit(0);
+}
+
 $zones = $cfg['sonoszonen'] ?? [];
 if (!$zones) { logln('error', "Block 'sonoszonen' missing/empty"); exit(1); }
 
@@ -712,38 +1609,81 @@ foreach ($zones as $room => $arr) {
 
 // Event-URLs pro Raum ermitteln
 foreach ($rooms as $room => &$meta) {
-    $desc = http_get($meta['base'] . "/xml/device_description.xml");
-    if (!$desc) { logln('warn', "No device_description from {$meta['ip']} ($room)"); unset($rooms[$room]); continue; }
+
+    $desc = null;
+    for ($try = 1; $try <= 3; $try++) {
+        $desc = http_get($meta['base'] . "/xml/device_description.xml", 6);
+        if ($desc) break;
+
+        logln('warn', "device_description.xml fetch failed for {$meta['ip']} ($room) try {$try}/3");
+        usleep(250000);
+    }
+
+    if (!$desc) {
+        logln('warn', "No device_description from {$meta['ip']} ($room) – keeping room, will retry later");
+        $meta['events'] = [];     // bleibt leer, wird später erneut versucht
+        continue;
+    }
+
     libxml_use_internal_errors(true);
     $sx = @simplexml_load_string($desc);
-    if (!$sx) { logln('warn', "XML error for {$meta['ip']} ($room)"); unset($rooms[$room]); continue; }
+    if (!$sx) {
+        logln('warn', "XML error for {$meta['ip']} ($room) – keeping room, will retry later");
+        $meta['events'] = [];
+        continue;
+    }
+
     $sx->registerXPathNamespace('d', 'urn:schemas-upnp-org:device-1-0');
     $svcs = $sx->xpath('//d:serviceList/d:service') ?: [];
+
     $evs  = [];
     foreach ($svcs as $svc) {
         $sid = (string)$svc->serviceId;
         $ev  = (string)$svc->eventSubURL;
         if (!$ev) continue;
-        $full = (strpos($ev, 'http') === 0) ? $ev : rtrim($meta['base'], '/') . '/' . ltrim($ev, '/');
-        if     (stripos($sid, 'AVTransport')        !== false) $evs['AVTransport']      = $full;
-        elseif (stripos($sid, 'RenderingControl')   !== false) $evs['RenderingControl'] = $full;
-        elseif (stripos($sid, 'ZoneGroupTopology')  !== false) $evs['ZoneGroupTopology']= $full;
+
+        $full = (strpos($ev, 'http') === 0)
+            ? $ev
+            : rtrim($meta['base'], '/') . '/' . ltrim($ev, '/');
+
+        if (stripos($sid, 'AVTransport') !== false) {
+            $evs['AVTransport'] = $full;
+        } elseif (stripos($sid, 'GroupRenderingControl') !== false) {
+            $evs['GroupRenderingControl'] = $full;
+        } elseif (stripos($sid, 'RenderingControl') !== false) {
+            $evs['RenderingControl'] = $full;
+        } elseif (stripos($sid, 'ZoneGroupTopology') !== false) {
+            $evs['ZoneGroupTopology'] = $full;
+        }
     }
+
     $meta['events'] = $evs;
-    logln('ok', "Device {$meta['ip']} ($room): " . implode(', ', array_keys($evs)));
+
+    if (!empty($evs)) {
+        logln('ok', "Device {$meta['ip']} ($room): " . implode(', ', array_keys($evs)));
+    } else {
+        logln('warn', "Device {$meta['ip']} ($room): no event URLs found – will retry later");
+    }
 }
 unset($meta);
 
-if (!$rooms) { logln('error', 'No usable Sonos devices – exiting.'); exit(1); }
+$hasAnyEvents = false;
+foreach ($rooms as $r => $m) {
+    if (!empty($m['events'])) { $hasAnyEvents = true; break; }
+}
+if (!$hasAnyEvents) {
+    logln('error', 'No usable Sonos devices (no event URLs) – exiting.');
+    exit(1);
+}
 
-// --------------------------------- SUBSCRIBE ---------------------------------
 $subs = []; // SID -> ['service','eventUrl','room','renewAt']
 foreach ($rooms as $room => $meta) {
-    foreach (['AVTransport', 'RenderingControl', 'ZoneGroupTopology'] as $svc) {
+    foreach (['AVTransport', 'RenderingControl', 'GroupRenderingControl', 'ZoneGroupTopology'] as $svc) {
         if (empty($meta['events'][$svc])) continue;
         $evUrl = $meta['events'][$svc];
         $host  = parse_url($evUrl, PHP_URL_HOST);
         $port  = parse_url($evUrl, PHP_URL_PORT);
+
         [$resH, ] = http_req('SUBSCRIBE', $evUrl, [
             "HOST: $host:$port",
             "CALLBACK: <{$CALLBACK_URL}>",
@@ -751,16 +1691,24 @@ foreach ($rooms as $room => $meta) {
             "TIMEOUT: Second-{$TIMEOUT_SEC}",
             "Connection: close",
         ]);
+
         $sid  = header_value($resH, 'SID') ?: header_value($resH, 'Sid');
         $tout = header_value($resH, 'TIMEOUT') ?: header_value($resH, 'Timeout');
+
         if ($sid) {
-            $ttl = (preg_match('~Second-(\d+)~i', (string)$tout, $m) ? (int)$m[1] : $TIMEOUT_SEC);
+            $ttl     = (preg_match('~Second-(\d+)~i', (string)$tout, $m) ? (int)$m[1] : $TIMEOUT_SEC);
             $renewAt = time() + max(60, $ttl) - $RENEW_MARGIN;
-            $subs[$sid] = ['service' => $svc, 'eventUrl' => $evUrl, 'room' => $room, 'renewAt' => $renewAt];
+            $subs[$sid] = [
+                'service'  => $svc,
+                'eventUrl' => $evUrl,
+                'room'     => $room,
+                'renewAt'  => $renewAt,
+            ];
             logln('ok', "SUBSCRIBE $svc @ {$meta['ip']} ($room) -> SID=$sid");
         } else {
             logln('warn', "SUBSCRIBE $svc @ {$meta['ip']} ($room) failed");
         }
+
         usleep(100000);
     }
 }
@@ -888,18 +1836,196 @@ while (true) {
     // MQTT Housekeeping (KeepAlive/Reconnect)
     $mqttClient->loop();
 
-    // SUBS erneuern
+        // --------------------------------- Health-Publish ---------------------------------
     $now = time();
+    if ($now - $lastHealthPublish >= $HEALTH_INTERVAL) {
+        $lastHealthPublish = $now;
+
+        global $zones, $healthRoomsFlags, $lastAvtEventTs, $lastRcEventTs, $lastZgtEventTs, $lastEqByRoom;
+
+        // 1) Alle Räume aus der CONFIG
+        $allRooms = array_keys($zones);
+
+        // Flags 0/1 pro Raum aus letzter Topologie; Fallback: Subscriptions
+        $roomsFlags = []; // room => ['Online' => 0/1]
+        foreach ($allRooms as $roomName) {
+            if (isset($healthRoomsFlags[$roomName])) {
+                // Wert aus letzter ZoneGroupTopology
+                $roomsFlags[$roomName] = $healthRoomsFlags[$roomName];
+            } else {
+                // Noch keine Topologie gesehen → Fallback: gibt es überhaupt eine Subscription?
+                $hasSub = false;
+                foreach ($subs as $sid => $s) {
+                    if ($s['room'] === $roomName) {
+                        $hasSub = true;
+                        break;
+                    }
+                }
+                $roomsFlags[$roomName] = [ 'Online' => $hasSub ? 1 : 0 ];
+            }
+        }
+
+        // Online-/Offline-Listen bauen
+        $onlineRooms  = [];
+        $offlineRooms = [];
+        foreach ($roomsFlags as $roomName => $flagArr) {
+            if (!empty($flagArr['Online'])) {
+                $onlineRooms[] = $roomName;
+            } else {
+                $offlineRooms[] = $roomName;
+            }
+        }
+
+        $age    = $now - $lastNotifyTs;
+        $uptime = $now - $startTs;
+
+        // 2) Health-JSON im Plugin-Config-Verzeichnis via Helper schreiben
+                $lastEvents = [
+            'avtransport'       => $lastAvtEventTs,
+            'renderingcontrol'  => $lastRcEventTs,
+            'zonegrouptopology' => $lastZgtEventTs,
+        ];
+
+        // Health auch in die Plugin-Config schreiben – aber nur, wenn Helper-Funktion existiert
+        if (function_exists('update_sonos_health')) {
+            update_sonos_health($allRooms, $onlineRooms, $lastEvents);
+        } else {
+            logln('warn', 'update_sonos_health() not found – skipping config health update');
+        }
+
+        // 3) MQTT-Health-Payload NUR Health (ohne eq, ohne verschachteltes "health")
+        // flache ROOM_Online-Felder für Loxone
+        $roomOnlineFlat = [];
+        foreach ($roomsFlags as $roomName => $flagArr) {
+            $roomOnlineFlat[$roomName . '_Online'] = (int)($flagArr['Online'] ?? 0);
+        }
+
+        $healthPayload = [
+            'source'              => 'sonos_event_listener',
+            'type'                => 'health',
+            'timestamp'           => $now,
+            'iso_time'            => date('c', $now),
+            'ts_formatted'        => date('[d.m.Y] H:i\h', $now),
+			'pid'                 => function_exists('getmypid') ? getmypid() : null,
+            'uptime_sec'          => $uptime,
+            'last_notify_ts'      => $lastNotifyTs,
+            'last_notify_age_sec' => $age,
+            'online_players'      => count($onlineRooms),
+            'offline_players'     => count($offlineRooms),
+            'total_players'       => count($allRooms),
+        ] + $roomOnlineFlat;
+
+        $healthJson = json_encode($healthPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($healthJson !== false) {
+            // Topic bleibt: s4lox/sonos/_health
+            $ok = $mqttClient->publish($healthTopic, $healthJson, true, $MQTT_QOS);
+            if (!$ok) {
+                logln('warn', "MQTT publish failed: $healthTopic");
+            }
+
+            // Health-JSON zusätzlich im RAM-FS für die UI ablegen
+            $healthFile = '/dev/shm/sonos4lox/health.json';
+            @mkdir(dirname($healthFile), 0775, true);
+            $bytes = @file_put_contents($healthFile, $healthJson);
+
+            if ($bytes === false) {
+                logln('warn', "Failed to write health.json to $healthFile");
+            } else {
+                logln('dbg', "Updated health.json ($bytes bytes) at $healthFile");
+            }
+        } else {
+            logln('warn', "JSON encode failed for health payload");
+        }
+
+        // 4) EQ-Snapshot je Raum als eigenes Topic: s4lox/sonos/<room>/eq
+		if (!empty($lastEqByRoom)) {
+			foreach ($lastEqByRoom as $roomName => $eqData) {
+				$eqTopic = rtrim($TOPIC_PREFIX, '/') . '/' . $roomName . '/eq';
+
+				$eqPayload = [
+					'source'    => 'sonos_event_listener',
+					'type'      => 'eq',
+					'room'      => $roomName,
+					'timestamp' => $now,
+					'iso_time'  => date('c', $now),
+				] + $eqData;
+
+				$eqJson = json_encode($eqPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+				if ($eqJson !== false) {
+					$ok = $mqttClient->publish($eqTopic, $eqJson, true, $MQTT_QOS);
+					if (!$ok) {
+						logln('warn', "MQTT publish failed: $eqTopic");
+					}
+				} else {
+					logln('warn', "JSON encode failed for eq payload (room $roomName)");
+				}
+			}
+		}
+
+        // 5) Warnen, wenn schon lange kein NOTIFY mehr
+        if ($age > $NO_NOTIFY_WARN_AFTER) {
+            logln(
+                'warn',
+                sprintf(
+                    "No NOTIFY received since %d seconds (last at %s)",
+                    $age,
+                    date('Y-m-d H:i:s', $lastNotifyTs)
+                )
+            );
+
+            // → einmal kompletten Resubscribe anstoßen
+            rebuild_all_subscriptions(
+                $subs,
+                $rooms,
+                $CALLBACK_URL,
+                $TIMEOUT_SEC,
+                $RENEW_MARGIN
+            );
+        }
+    }
+
+    // --------------------------------- SUBS erneuern ---------------------------------
     foreach ($subs as $sid => &$s) {
         if ($now >= $s['renewAt']) {
             $host = parse_url($s['eventUrl'], PHP_URL_HOST);
             $port = parse_url($s['eventUrl'], PHP_URL_PORT);
+
             [$resH, ] = http_req('SUBSCRIBE', $s['eventUrl'], [
                 "HOST: $host:$port",
                 "SID: " . $sid,
                 "TIMEOUT: Second-{$TIMEOUT_SEC}",
                 "Connection: close",
             ]);
+
+            // HTTP-Status aus erster Headerzeile extrahieren
+            $statusLine = $resH[0] ?? '';
+            $isOk       = false;
+            if ($statusLine !== '' && preg_match('~HTTP/\d\.\d\s+(\d+)~', $statusLine, $mm)) {
+                $code = (int)$mm[1];
+                if ($code >= 200 && $code < 300) {
+                    $isOk = true;
+                }
+            }
+
+            if (!$isOk) {
+                logln(
+                    'warn',
+                    "RENEW {$s['service']} @ {$s['room']} FAILED (SID $sid, status='{$statusLine}') → rebuilding all subscriptions"
+                );
+
+                // Bei RENEW-Fehlern nicht weiter rumdoktern, sondern einmal hart alles neu aufbauen
+                rebuild_all_subscriptions(
+                    $subs,
+                    $rooms,
+                    $CALLBACK_URL,
+                    $TIMEOUT_SEC,
+                    $RENEW_MARGIN
+                );
+                // Da rebuild_all_subscriptions $subs komplett neu setzt, kann der foreach abgebrochen werden
+                break;
+            }
+
+            // Nur bei erfolgreichem 2xx-RESPONSE TTL aktualisieren
             $tout = header_value($resH, 'TIMEOUT') ?: header_value($resH, 'Timeout');
             $ttl  = (preg_match('~Second-(\d+)~i', (string)$tout, $m) ? (int)$m[1] : $TIMEOUT_SEC);
             $s['renewAt'] = time() + max(60, $ttl) - $RENEW_MARGIN;

@@ -1,0 +1,12 @@
+[Unit]
+Description=Sonos4Lox - Online check timer (every minute)
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=60s
+AccuracySec=5s
+Unit=sonos_check_on_state.service
+Persistent=true
+
+[Install]
+WantedBy=timers.target

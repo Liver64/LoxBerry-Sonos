@@ -1,77 +1,190 @@
-state-Event (AVTransport)
+Topic: "s4lox/sonos/room/Subtopic"
+SubTopics:
+- state
+- mute
+- track
+- nexttrack
+- eq
+- group
+- playmode
+- _health
+
+
+SubTopic "state" (PLAYING/PAUSED/STOPPED/TRANSITIONING)
 {
   "type": "state",
-  "state": "PLAYING",
-  "room": "badezimmer",
-  "ip": "192.168.50.20",
-  "rincon": "RINCON_000E5872D8AC01400",
-  "model": "PLAY:3",
+  "room": "wohnzimmer",
+  "ip": "192.168.50.xxx",
+  "rincon": "RINCON_000E58A1XXXXX1400",
+  "model": "Sonos One",
   "service": "AVTransport",
-  "ts": 1764087775
+  "ts": 1733220000,
+  "state": "PLAYING",
+  "state_code": 1
 }
-volume-Event (RenderingControl, Einzelplayer-Volume)
+SubTopic "mute" (MUTE/UNMUTE)
 {
-  "type": "volume",
-  "volume": 22,
-  "room": "badezimmer",
-  "ip": "192.168.50.20",
-  "rincon": "RINCON_000E5872D8AC01400",
-  "model": "PLAY:3",
+  "type": "mute",
+  "room": "wohnzimmer",
+  "ip": "192.168.50.xxx",
+  "rincon": "RINCON_000E58AXXXXX1400",
+  "model": "Sonos One",
   "service": "RenderingControl",
-  "ts": 1764087756
+  "ts": 1733220010,
+  "mute": false,
+  "mute_int": 0
 }
-track-Event (aktueller Titel, z.B. Sonos Radio)
+SubTopic "track" – Playlist / Musikdienst
 {
   "type": "track",
-  "title": "SWANK WHITE",
-  "artist": "Joey Bada",
-  "album": "",
-  "albumArtUri": "https://sonosradio.imgix.net/station-images/4c6f6439-fc95-4460-8f20-b1e471babe1b.jpeg?w=200&auto=format,compress?w=200&mark-scale=93&mark-align=center,middle&mark=https%3A%2F%2Fcdn-images.dzcdn.net%2Fimages%2Fcover%2F35b38d413278dbc48cc098ea333a1d73%2F1000x1000-000000-80-0-0.jpg&auto=format,compress",
-  "room": "badezimmer",
-  "ip": "192.168.50.20",
-  "rincon": "RINCON_000E5872D8AC01400",
-  "model": "PLAY:3",
+  "room": "wohnzimmer",
+  "ip": "192.168.50.xxx",
+  "rincon": "RINCON_000E58A1XXXXX1400",
+  "model": "Sonos One",
   "service": "AVTransport",
-  "ts": 1764087786
+  "ts": 1733220020,
+  "title": "Yellow",
+  "artist": "Coldplay",
+  "album": "Parachutes",
+  "albumArtUri": "http://192.168.50.xxx:1400/getaa?s=1&u=x-sonos-spotify%3aspotify%253atrack%253a1mea3bSkSGXuIRvnydlB5b",
+  "source_text": "Track",
+  "source": 2,
+  "tit": "Yellow",
+  "int": "Coldplay",
+  "titint": "Coldplay - Yellow",
+  "radio": "",
+  "cover": "http://192.168.50.xxx:1400/getaa?s=1&u=x-sonos-spotify%3aspotify%253atrack%253a1mea3bSkSGXuIRvnydlB5b",
+  "sid": "Music",
+  "tvstate": 0
 }
-nexttrack-Event (Nächster Titel in der Queue)
+SubTopic "track" – Radio
+{
+  "type": "track",
+  "room": "kueche",
+  "ip": "192.168.50.121",
+  "rincon": "RINCON_000E58A1B2C401400",
+  "model": "Sonos One SL",
+  "service": "AVTransport",
+  "ts": 1733220030,
+  "title": "Coldplay - Yellow",
+  "artist": "",
+  "album": "hr3",
+  "albumArtUri": "http://192.168.50.xxx:1400/img/hr3.png",
+  "source_text": "Radio",
+  "source": 1,
+  "tit": "Coldplay - Yellow",
+  "int": "",
+  "titint": "Coldplay - Yellow",
+  "radio": "hr3",
+  "cover": "http://192.168.50.xxx:1400/img/hr3.png",
+  "sid": "Radio",
+  "tvstate": 0
+}
+SubTopic "track" – TV
+{
+  "type": "track",
+  "room": "wohnzimmer_tv",
+  "ip": "192.168.50.xxx",
+  "rincon": "RINCON_000E58A1B2C501400",
+  "model": "Sonos Beam",
+  "service": "AVTransport",
+  "ts": 1733220040,
+  "title": "",
+  "artist": "",
+  "album": "",
+  "albumArtUri": null,
+  "source_text": "TV",
+  "source": 3,
+  "tit": "TV",
+  "int": "TV",
+  "titint": "TV",
+  "radio": "",
+  "cover": null,
+  "sid": "TV",
+  "tvstate": 0
+}
+SubTopic "nexttrack"
 {
   "type": "nexttrack",
-  "title": "Down Under",
-  "artist": "Men At Work",
-  "album": "Business as Usual",
-  "albumArtUri": "https://e-cdns-images.dzcdn.net/images/cover/d2b29dc2818c950c42bcdc221dcf9f0b/1000x1000-000000-80-0-0.jpg",
-  "room": "badezimmer",
-  "ip": "192.168.50.20",
-  "rincon": "RINCON_000E5872D8AC01400",
-  "model": "PLAY:3",
+  "room": "wohnzimmer",
+  "ip": "192.168.50.xxx",
+  "rincon": "RINCON_000E58AXXXXXX1400",
+  "model": "Sonos One",
   "service": "AVTransport",
-  "ts": 1764088000
+  "ts": 1733220050,
+  "title": "Clocks",
+  "artist": "Coldplay",
+  "album": "A Rush of Blood to the Head",
+  "albumArtUri": "http://192.168.50.xxx:1400/getaa?s=1&u=x-sonos-spotify%3aspotify%253atrack%253a0BCPKOYdS2jbQ8iyB56ZPo"
 }
-group-Event (ZoneGroupTopology, Gruppe mit z.B. duschbad)
+SubTopic "group"
 {
   "type": "group",
-  "group_id": "RINCON_347E5C31C4A401400:1656907279",
+  "room": "wohnzimmer",
+  "ip": "192.168.50.xxx",
+  "rincon": "RINCON_000E58AXXXXXX1400",
+  "model": "Sonos One",
+  "service": "ZoneGroupTopology",
+  "ts": 1733220060,
+  "group_id": "RINCON_000E58AXXXXXX1400:48",
   "is_coordinator": true,
-  "coordinator_room": "badezimmer",
+  "coordinator_room": "wohnzimmer",
   "members": [
     {
-      "room": "duschbad",
-      "rincon": "RINCON_347E5C31C4A401400",
-      "ip": "192.168.50.34"
+      "room": "wohnzimmer",
+      "rincon": "RINCON_000E58AXXXXXX1400",
+      "ip": "192.168.50.xxx"
     },
     {
-      "room": "badezimmer",
-      "rincon": "RINCON_000E5872D8AC01400",
-      "ip": "192.168.50.20"
+      "room": "kueche",
+      "rincon": "RINCON_000E58A1B2C401400",
+      "ip": "192.168.50.xxx"
     }
   ],
-  "room": "badezimmer",
-  "ip": "192.168.50.20",
-  "rincon": "RINCON_000E5872D8AC01400",
-  "model": "PLAY:3",
-  "service": "ZoneGroupTopology",
-  "ts": 1764087775
+  "role_name": "master",
+  "role_code": 2
+}
+SubTopic "eq" (Bass/Treble/Loudness)
+{
+  "type": "eq",
+  "room": "wohnzimmer",
+  "ip": "192.168.50.xxx",
+  "rincon": "RINCON_000E58AXXXXXX1400",
+  "model": "Sonos One",
+  "service": "RenderingControl",
+  "ts": 1733220070,
+  "bass": 2,
+  "treble": -1,
+  "loudness": 1,
+  "loudness_int": 1
+}
+SubTopic "playmode" (Shuffle/Repeat/Crossfade)
+{
+  "type": "playmode",
+  "room": "wohnzimmer",
+  "ip": "192.168.50.xxx",
+  "rincon": "RINCON_000E58AXXXXXX1400",
+  "model": "Sonos One",
+  "service": "AVTransport",
+  "ts": 1733220080,
+  "mode_raw": "SHUFFLE_NOREPEAT",
+  "shuffle": 1,
+  "repeat": 0,
+  "repeat_one": 0,
+  "crossfade": 0
+}
+SubTopic "_health"
+{
+  "source": "sonos_event_listener",
+  "timestamp": 1764863556,
+  "iso_time": "2025-12-04T16:32:36+01:00",
+  "ts_formatted": "[04.12.2025] 16:32h",
+  "uptime_sec": 16278,
+  "last_notify_ts": 1764862347,
+  "last_notify_age_sec": 9,
+  "online_players": 5,
+  "offline_players": 1,
+  "total_players": 6
 }
 
 

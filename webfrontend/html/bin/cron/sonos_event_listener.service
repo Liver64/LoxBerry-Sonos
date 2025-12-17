@@ -17,7 +17,7 @@ Group=loxberry
 WorkingDirectory=/opt/loxberry/webfrontend/html/plugins/sonos4lox/bin
 
 # Dein Event-Handler (mit Shebang #!/usr/bin/php am Anfang)
-ExecStart=/opt/loxberry/webfrontend/html/plugins/sonos4lox/bin/sonos_event_handler.php
+ExecStart=/usr/bin/php /opt/loxberry/webfrontend/html/plugins/sonos4lox/bin/sonos_event_handling.php
 
 # Automatisch neu starten, wenn das Script abstürzt
 Restart=always

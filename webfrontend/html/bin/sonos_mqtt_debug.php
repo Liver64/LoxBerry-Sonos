@@ -19,13 +19,13 @@ declare(strict_types=1);
  *   { "type": "...", "room": "...", "ip": "...", "rincon": "...", "model": "...", "service": "...", "ts": ... }
  */
 
-require_once "/opt/loxberry/libs/phplib/loxberry_system.php";
-require_once "/opt/loxberry/libs/phplib/loxberry_io.php";
+require_once "REPLACELBHOMEDIR/libs/phplib/loxberry_system.php";
+require_once "REPLACELBHOMEDIR/libs/phplib/loxberry_io.php";
 require_once __DIR__ . '/../system/SonosMqttClient.php';
 
 date_default_timezone_set('Europe/Berlin');
 
-const S4L_CFG      = "/opt/loxberry/config/plugins/sonos4lox/s4lox_config.json";
+const S4L_CFG      = "REPLACELBHOMEDIR/config/plugins/sonos4lox/s4lox_config.json";
 const TOPIC_PREFIX = "lox/sonos";
 
 // -------------------------------------------------------------

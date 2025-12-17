@@ -65,8 +65,8 @@ echo "<PRE>";
 			# If Soundbar has been configured On
 			#********************************************
 			if ((bool)is_enabled($soundbars[$key][14]['usesb']))   {
-				if (file_exists("/run/shm/".$restore_file."_".$key.".json"))   {
-					unlink("/run/shm/".$restore_file."_".$key.".json");
+				if (file_exists("/run/shm/".$lbpplugindir."/".$restore_file."_".$key.".json"))   {
+					unlink("/run/shm/".$lbpplugindir."/".$restore_file."_".$key.".json");
 				}
 				try {
 					$sonos = new SonosAccess($soundbars[$key][0]); //Sonos IP Adresse
@@ -82,12 +82,12 @@ echo "<PRE>";
 					if ($tvmodi['HTAudioIn'] == 0)  {				// Zeitbegrenzung einbauen
 						echo "Soundbar TV Mode for ".$key." has been turned off".PHP_EOL;
 						# TV has been turned off
-						if (file_exists("/run/shm/".$TV_safe_file."_".$key.".json"))   {
-							$actual = json_decode(file_get_contents("/run/shm/".$TV_safe_file."_".$key.".json"), true);
+						if (file_exists("/run/shm/".$lbpplugindir."/".$TV_safe_file."_".$key.".json"))   {
+							$actual = json_decode(file_get_contents("/run/shm/".$lbpplugindir."/".$TV_safe_file."_".$key.".json"), true);
 							startlog();
 							# Restore previous Zone settings
 							restoreSingleZone($sonoszone, $master);
-							@array_map('unlink', glob('/run/shm/s4lox_TV*'.$key.'*.*'));
+							@array_map('unlink', glob('/run/shm/'.$lbpplugindir.'/s4lox_TV*'.$key.'*.*'));
 							LOGDEB("bin/tv_monitor.php: Soundbar TV Mode for ".$key." has been turned off and previous settings has been restored.");
 						}
 						#***********************************************
@@ -102,7 +102,7 @@ echo "<PRE>";
 						if ((bool)is_enabled($soundbars[$key][14]['tvsubnight']) === true ? $sub = "On" : $sub = "Off");
 						$sublevel = $soundbars[$key][14]['tvmonnightsublevel'];
 						# TV has been turned on
-						if (!file_exists("/run/shm/".$status_file."_".$key.".json"))   {
+						if (!file_exists("/run/shm/".$lbpplugindir."/".$status_file."_".$key.".json"))   {
 							echo "TV Mode for Soundbar '".$key."' has been turned On".PHP_EOL;
 							startlog();
 							$sonos->SetAVTransportURI("x-sonos-htastream:".$soundbars[$key][1].":spdif");
@@ -145,7 +145,7 @@ echo "<PRE>";
 								LOGDEB("bin/tv_monitor.php: Subwoofer for Soundbar ".$key." has been turned ".$sub);
 								@$sonos->SetMute(false);
 								# Save Original settings
-								file_put_contents("/run/shm/".$status_file."_".$key.".json", json_encode($dialog, JSON_PRETTY_PRINT));
+								file_put_contents("/run/shm/".$lbpplugindir."/".$status_file."_".$key.".json", json_encode($dialog, JSON_PRETTY_PRINT));
 							} catch (Exception $e) {
 								echo "Speech/Surround/Night Mode/Subwoofer could'nt been turned On for: ".$key."".PHP_EOL;
 								LOGWARN("bin/tv_monitor.php: Speech/Surround/Night Mode/Subwoofer could'nt been turned On for: ".$key);
@@ -163,7 +163,7 @@ echo "<PRE>";
 							# set Nightmode and Subgain
 							if ($soundbars[$key][14]['fromtime'] != "false")    {
 								if ((string)$Stunden >= (string)$soundbars[$key][14]['fromtime'])   { 
-									if (!file_exists("/run/shm/".$statusNight."_".$key.".json"))   {
+									if (!file_exists("/run/shm/".$lbpplugindir."/".$statusNight."_".$key.".json"))   {
 										# Turn Night Mode On/Off
 										startlog();										
 										$sonos->SetDialogLevel(is_enabled($soundbars[$key][14]['tvmonnight']), 'NightMode');
@@ -176,7 +176,7 @@ echo "<PRE>";
 										@$sonos->SetDialogLevel(is_enabled($soundbars[$key][14]['tvsubnight']), 'SubEnable');
 										echo "Subwoofer for Soundbar ".$key." has been turned to ".$night." for night".PHP_EOL;
 										LOGDEB("bin/tv_monitor.php: Subwoofer for Soundbar ".$key." has been turned to ".$night." for night");
-										file_put_contents("/run/shm/".$statusNight."_".$key.".json",json_encode("1", JSON_PRETTY_PRINT));
+										file_put_contents("/run/shm/".$lbpplugindir."/".$statusNight."_".$key.".json",json_encode("1", JSON_PRETTY_PRINT));
 									}
 								}
 							echo "Soundbar ".$key." is On and in TV Mode, all settings has been set previously".PHP_EOL;
@@ -188,7 +188,7 @@ echo "<PRE>";
 					} else {
 						echo "Music on ".$key." is loaded...".PHP_EOL;
 						$actual = PrepSaveZonesStati();
-						@file_put_contents("/run/shm/".$TV_safe_file."_".$key.".json",json_encode($actual, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS | JSON_PRETTY_PRINT));
+						@file_put_contents("/run/shm/".$lbpplugindir."/".$TV_safe_file."_".$key.".json",json_encode($actual, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS | JSON_PRETTY_PRINT));
 						if ($state == 1)   {	
 							echo "...and streaming".PHP_EOL;
 						} else {
@@ -206,7 +206,7 @@ echo "<PRE>";
 			#********************************************
 			} else {
 				#DelFiles($mask);
-				@array_map('unlink', glob('/run/shm/s4lox_TV*'.$key.'*.*'));				
+				@array_map('unlink', glob('/run/shm/'.$lbpplugindir.'/s4lox_TV*'.$key.'*.*'));				
 				echo "TV Monitor for Soundbar '".$key."' is turned off in Plugin Config".PHP_EOL;
 			}
 		}
@@ -217,10 +217,10 @@ echo "<PRE>";
 	} elseif ((string)$Stunden == "04:00" or (string)$Stunden == "07:00")    {
 		$soundbars = identSB($sonoszone, $folfilePlOn);
 		foreach($soundbars as $subkey => $value)   {
-			if (!file_exists("/run/shm/".$restore_file."_".$subkey.".json"))   {
+			if (!file_exists("/run/shm/".$lbpplugindir."/".$restore_file."_".$subkey.".json"))   {
 				RestorePrevSBsettings($soundbars);
 				DelFiles($mask);
-				file_put_contents("/run/shm/".$restore_file."_".$subkey.".json",json_encode("1", JSON_PRETTY_PRINT));
+				file_put_contents("/run/shm/".$lbpplugindir."/".$restore_file."_".$subkey.".json",json_encode("1", JSON_PRETTY_PRINT));
 			}
 		}
 	} else {
@@ -259,7 +259,7 @@ function DelFiles($mask)    {
 	
 	global $mask;
 	
-	array_map('unlink', glob("/run/shm/".$mask));
+	array_map('unlink', glob("/run/shm/".$lbpplugindir."/".$mask));
 }
 
 
@@ -277,7 +277,7 @@ function RestorePrevSBsettings($soundbars)    {
 	
 	startlog();
 	foreach($soundbars as $key => $value)   {
-		$restorelevel = json_decode(file_get_contents("/run/shm/".$status_file."_".$key.".json"), true);
+		$restorelevel = json_decode(file_get_contents("/run/shm/".$lbpplugindir."/".$status_file."_".$key.".json"), true);
 		$sonos = new SonosAccess($soundbars[$key][0]); //Sonos IP Adresse
 		$sonos->SetAVTransportURI("x-sonos-htastream:".$soundbars[$key][1].":spdif");
 		$sonos->SetDialogLevel(is_enabled(json_encode($restorelevel['NightMode'])), 'NightMode');
