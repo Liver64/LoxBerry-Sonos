@@ -639,6 +639,14 @@ sub form
 		$template->param("TESTVOICE", 1);
 	}
 	
+	# --- Guard: RADIO can be broken (e.g. "RADIO": []), normalize to HASH ---
+	if (ref($cfg->{RADIO}) ne 'HASH') {
+		$cfg->{RADIO} = {};
+	}
+	if (ref($cfg->{RADIO}->{radio}) ne 'HASH') {
+		$cfg->{RADIO}->{radio} = {};
+	}
+	
 	# read Radiofavorites
 	our $countradios = 0;
 	our $rowsradios;
