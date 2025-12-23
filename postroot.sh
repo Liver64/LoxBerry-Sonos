@@ -172,7 +172,7 @@ INSTALL_ANY_UNIT=0
 # - If config missing or jq missing -> treat as disabled (safe default)
 # ---------------------------------------------------------
 LOXDATEN_ENABLED=0
-CFG_S4LOX="/opt/loxberry/config/plugins/sonos4lox/s4lox_config.json"
+CFG_S4LOX="REPLACELBHOMEDIR/config/plugins/sonos4lox/s4lox_config.json"
 
 detect_loxdaten_enabled() {
     if [ "$SYSTEMD_OK" -ne 1 ]; then

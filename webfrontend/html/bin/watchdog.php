@@ -2,13 +2,13 @@
 <?php
 declare(strict_types=1);
 
-require_once "/opt/loxberry/libs/phplib/loxberry_system.php";
-require_once "/opt/loxberry/libs/phplib/loxberry_log.php";
+require_once "REPLACELBHOMEDIR/libs/phplib/loxberry_system.php";
+require_once "REPLACELBHOMEDIR/libs/phplib/loxberry_log.php";
 
 /* === Settings === */
 $ramdir   = "/dev/shm/sonos4lox";
 $ramlog   = "$ramdir/sonos_watchdog.log";
-$stdfile  = "/opt/loxberry/log/plugins/sonos4lox/sonos_watchdog.log"; // symlink target
+$stdfile  = "REPLACELBHOMEDIR/log/plugins/sonos4lox/sonos_watchdog.log"; // symlink target
 $marker   = "/run/shm/sonos4lox.watchdog.started";
 
 const MAX_LOG_BYTES        = 81920; // 80 KB

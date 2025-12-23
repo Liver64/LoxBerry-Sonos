@@ -61,7 +61,7 @@ if (empty($config['sonoszonen']) || !is_array($config['sonoszonen']) || count($c
 }
 
 // ------------------------ Read UDP port from mqttgateway.json ------------------------
-$mqttGwFile = "/opt/loxberry/config/system/mqttgateway.json";
+$mqttGwFile = "REPLACELBHOMEDIR/config/system/mqttgateway.json";
 if (!is_file($mqttGwFile)) {
     LOGERR("system/ms_inbound.php: mqttgateway.json not found: $mqttGwFile (cannot determine UDP port).");
     exit(1);
