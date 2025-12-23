@@ -502,7 +502,7 @@
 			[IMPROVEMENT] Automatisches laden Sprache/Stimme nach Enginewechsel
 			[IMPROVEMENT] Test Sprachausgabe on-the-fly (ohne speichern) zwischen Engines/Sprache/Stimme
 			[IMPROVEMENT] Optimierte Installation von Piper mit Fallback
-			[IMPROVEMENT] Auto discovery der Player (kein Scan mehr notwendig)
+			[IMPROVEMENT] Auto discover der Player (kein Scan mehr notwendig)
 			[IMPROVEMENT] Event listener per MQTT implementiert (real Time max. Latenz: 2 Sek.)
 			[IMPROVEMENT] Player Online check als Service implementiert
 			[IMPROVEMENT] VLAN Support optimiert

@@ -14,15 +14,15 @@ fi
 
 echo "<INFO> Stopping and removing systemd units (service+timer) if present"
 
-# Prüfen, ob systemctl verfügbar ist
+# Check if systemctl exists
 if command -v systemctl >/dev/null 2>&1; then
 
 	# ---- Units to remove (EXACT names) ----
-	UNITS="sonos_check_on_state.service sonos_check_on_state.timer sonos_event_listener.service"
+	UNITS="sonos_check_on_state.service sonos_check_on_state.timer sonos_event_listener.service sonos_watchdog.service sonos_watchdog.timer"
 
 	# Stop + disable units if systemd knows them
 	for unit in $UNITS; do
-		if systemctl list-unit-files 2>/dev/null | grep -q "^${unit}"; then
+		if systemctl list-unit-files "$unit" --no-legend 2>/dev/null | grep -q "^${unit}[[:space:]]"; then
 			echo "<INFO> Stopping '${unit}' (if active)"
 			systemctl stop "$unit" 2>/dev/null || true
 
@@ -33,10 +33,10 @@ if command -v systemctl >/dev/null 2>&1; then
 		fi
 	done
 
-	# Remove unit files (cover /etc + /lib)
+	# Remove unit files (cover common locations)
 	REMOVED_ANY=false
 	for unit in $UNITS; do
-		for path in "/etc/systemd/system/$unit" "/lib/systemd/system/$unit"; do
+		for path in "/etc/systemd/system/$unit" "/lib/systemd/system/$unit" "/usr/lib/systemd/system/$unit"; do
 			if [ -f "$path" ]; then
 				echo "<INFO> Removing unit file '$path'"
 				rm -f "$path"
@@ -49,6 +49,12 @@ if command -v systemctl >/dev/null 2>&1; then
 	if [ "$REMOVED_ANY" = "true" ]; then
 		echo "<INFO> Reloading systemd daemon"
 		systemctl daemon-reload 2>/dev/null || true
+
+		# Optional cleanup: clear failed state for removed units
+		for unit in $UNITS; do
+			systemctl reset-failed "$unit" 2>/dev/null || true
+		done
+
 		echo "<OK> Systemd units removed: $UNITS"
 	else
 		echo "<INFO> No unit files found to remove – nothing to do"
