@@ -1,12 +1,26 @@
-# Sonos4Lox Watchdog (run as user loxberry)
-loxberry ALL=(ALL) NOPASSWD: /bin/systemctl list-unit-files
+# Sonos4Lox Watchdog + UI (run as user loxberry)
 
+# --- watchdog.php needs: list units (with args!) ---
+loxberry ALL=(ALL) NOPASSWD: /bin/systemctl list-unit-files --type=service --type=timer --no-legend --no-pager
+
+# --- watchdog.php controls/queries listener ---
 loxberry ALL=(ALL) NOPASSWD: /bin/systemctl is-active sonos_event_listener.service
 loxberry ALL=(ALL) NOPASSWD: /bin/systemctl is-failed sonos_event_listener.service
-loxberry ALL=(ALL) NOPASSWD: /bin/systemctl restart sonos_event_listener.service
 loxberry ALL=(ALL) NOPASSWD: /bin/systemctl start sonos_event_listener.service
+loxberry ALL=(ALL) NOPASSWD: /bin/systemctl restart sonos_event_listener.service
 
+# --- watchdog.php controls/queries check-on-state (oneshot) ---
 loxberry ALL=(ALL) NOPASSWD: /bin/systemctl is-active sonos_check_on_state.service
 loxberry ALL=(ALL) NOPASSWD: /bin/systemctl is-failed sonos_check_on_state.service
 loxberry ALL=(ALL) NOPASSWD: /bin/systemctl start sonos_check_on_state.service
 
+# --- index.cgi toggles feature: enable/disable + start/stop in one step ---
+loxberry ALL=(ALL) NOPASSWD: /bin/systemctl enable --now sonos_event_listener.service
+loxberry ALL=(ALL) NOPASSWD: /bin/systemctl disable --now sonos_event_listener.service
+loxberry ALL=(ALL) NOPASSWD: /bin/systemctl enable --now sonos_check_on_state.timer
+loxberry ALL=(ALL) NOPASSWD: /bin/systemctl disable --now sonos_check_on_state.timer
+loxberry ALL=(ALL) NOPASSWD: /bin/systemctl enable --now sonos_watchdog.timer
+loxberry ALL=(ALL) NOPASSWD: /bin/systemctl disable --now sonos_watchdog.timer
+
+# --- optional safety (only if you still use stop somewhere) ---
+loxberry ALL=(ALL) NOPASSWD: /bin/systemctl stop sonos_event_listener.service

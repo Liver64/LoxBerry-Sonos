@@ -301,6 +301,175 @@ function header_value(array $headers, string $name): ?string {
     return null;
 }
 
+// -------------------------------------------------------------
+// Loxone target resolver (cached general.json by mtime)
+// -------------------------------------------------------------
+function get_miniserver_target_from_general_cached(string $msId): ?array
+{
+    static $cache = [
+        'mtime'   => 0,
+        'general' => null,
+    ];
+
+    $path  = '/opt/loxberry/config/system/general.json';
+    $mtime = @filemtime($path) ?: 0;
+
+    // Reload only if changed (or first time)
+    if (!$cache['general'] || $mtime !== $cache['mtime']) {
+
+        if (!is_file($path)) {
+            logln('warn', "general.json not found at $path");
+            $cache['general'] = null;
+            $cache['mtime']   = $mtime;
+            return null;
+        }
+
+        $raw = @file_get_contents($path);
+        if ($raw === false || trim($raw) === '') {
+            logln('warn', "general.json unreadable/empty at $path");
+            $cache['general'] = null;
+            $cache['mtime']   = $mtime;
+            return null;
+        }
+
+        $j = json_decode($raw, true);
+        if (!is_array($j)) {
+            logln('warn', "general.json invalid JSON at $path");
+            $cache['general'] = null;
+            $cache['mtime']   = $mtime;
+            return null;
+        }
+
+        $cache['general'] = $j;
+        $cache['mtime']   = $mtime;
+
+        logln('info', "general.json reloaded (mtime=$mtime)");
+    }
+
+    $general = $cache['general'];
+    $minis   = $general['Miniserver'] ?? null;
+    if (!is_array($minis)) {
+        logln('warn', "general.json: Miniserver block missing");
+        return null;
+    }
+
+    // Prefer configured id, else fallback to first
+    $ms     = $minis[$msId] ?? null;
+    $usedId = $msId;
+
+    if (!is_array($ms)) {
+        $firstKey = array_key_first($minis);
+        if ($firstKey !== null && is_array($minis[$firstKey] ?? null)) {
+            $usedId = (string)$firstKey;
+            $ms     = $minis[$firstKey];
+            logln('warn', "Miniserver id '$msId' not found, falling back to first entry '$usedId'");
+        } else {
+            logln('warn', "general.json: no usable Miniserver entries");
+            return null;
+        }
+    }
+
+    $user = (string)($ms['Admin_raw'] ?? $ms['Admin'] ?? '');
+    $pass = (string)($ms['Pass_raw']  ?? $ms['Pass']  ?? '');
+    $ip   = (string)($ms['Ipaddress'] ?? '');
+
+    $portHttp    = (string)($ms['Port'] ?? '80');
+    $portHttps   = (string)($ms['Porthttps'] ?? '');
+    $preferHttps = (string)($ms['Preferhttps'] ?? '0');
+
+    if ($user === '' || $pass === '' || $ip === '') {
+        logln('warn', "general.json: Miniserver '$usedId' missing user/pass/ip");
+        return null;
+    }
+
+    $scheme = ($preferHttps === '1' || strtolower((string)($ms['Transport'] ?? 'http')) === 'https')
+        ? 'https'
+        : 'http';
+
+    $port = ($scheme === 'https')
+        ? ($portHttps !== '' ? $portHttps : '443')
+        : ($portHttp  !== '' ? $portHttp  : '80');
+
+    return [
+        'baseUrl' => $scheme . '://' . $ip . ':' . $port,
+        'user'    => $user,
+        'pass'    => $pass,
+        'msId'    => $usedId,
+        'name'    => (string)($ms['Name'] ?? ''),
+    ];
+}
+
+// -------------------------------------------------------------
+// Loxone HTTP publish helpers
+// -------------------------------------------------------------
+function loxone_http_set_io(array $loxTarget, string $input, string $value, int $timeout = 3): bool
+{
+    // Loxone API: /dev/sps/io/<input>/<value>
+    $base = rtrim((string)$loxTarget['baseUrl'], '/');
+    $url  = $base . '/dev/sps/io/' . rawurlencode($input) . '/' . rawurlencode($value);
+
+    $auth = base64_encode((string)$loxTarget['user'] . ':' . (string)$loxTarget['pass']);
+
+    $ctx = stream_context_create([
+        'http' => [
+            'method'        => 'GET',
+            'timeout'       => $timeout,
+            'ignore_errors' => true,
+            'header'        => "Authorization: Basic {$auth}\r\nConnection: close\r\n",
+        ],
+        // If you use https with self-signed certs and it fails, you could add ssl options here.
+    ]);
+
+    $res = @file_get_contents($url, false, $ctx);
+    if ($res === false) {
+        return false;
+    }
+
+    // Optional: you can inspect $http_response_header for status, but keep it simple for now.
+    return true;
+}
+
+function loxone_apply_placeholders(string $tpl, array $payload): string
+{
+    // add a few common aliases/normalizations
+    $p = $payload;
+    if (!isset($p['uri']) && isset($p['av_uri'])) $p['uri'] = $p['av_uri'];
+
+    return preg_replace_callback('/\{([a-zA-Z0-9_]+)\}/', function($m) use ($p) {
+        $k = $m[1];
+        return isset($p[$k]) && $p[$k] !== null ? (string)$p[$k] : '';
+    }, $tpl);
+}
+
+function loxone_publish_for_event(string $type, array $payload, ?array $loxTarget, array $map): void
+{
+    static $lastSent = []; // input => last value (dedup)
+
+    if (!$loxTarget) return;
+    if (empty($map[$type]) || !is_array($map[$type])) return;
+
+    foreach ($map[$type] as $rule) {
+        $inTpl  = (string)($rule['input'] ?? '');
+        $valTpl = (string)($rule['value'] ?? '');
+        if ($inTpl === '') continue;
+
+        $input = loxone_apply_placeholders($inTpl, $payload);
+        $value = loxone_apply_placeholders($valTpl, $payload);
+
+        // Dedup: don't spam unchanged values
+        $key = $input;
+        if (isset($lastSent[$key]) && $lastSent[$key] === $value) {
+            continue;
+        }
+        $lastSent[$key] = $value;
+
+        $ok = loxone_http_set_io($loxTarget, $input, $value, 3);
+        if (!$ok) {
+            logln('warn', "Loxone HTTP set failed: input='$input'");
+        }
+    }
+}
+
 // AlbumArt-URL absolut machen (falls relativ/leer)
 function absolutize_art(?string $art, string $playerBase): ?string {
     $art = trim((string)$art);
@@ -398,6 +567,49 @@ function get_source_for_room(string $room, array $rooms): ?string {
         return null;
     }
 }
+
+function get_radio_station_for_room(string $room, array $rooms): ?string
+{
+    global $__sonos_clients;
+
+    if (empty($rooms[$room]['ip'])) return null;
+
+    try {
+        if (!isset($__sonos_clients[$room])) {
+            $__sonos_clients[$room] = new SonosAccess($rooms[$room]['ip']);
+        }
+        $sonos = $__sonos_clients[$room];
+
+        // WICHTIG: GetMediaInfo liefert CurrentURIMetaData inkl. dc:title = Sender
+        $mi = $sonos->GetMediaInfo();
+        if (!is_array($mi)) return null;
+
+        // Viele SonosAccess-Versionen parsen bereits "title" aus CurrentURIMetaData
+        $t = trim((string)($mi['title'] ?? ''));
+        if ($t !== '') return $t;
+
+        // Fallback: raw DIDL aus CurrentURIMetaData parsen
+        $raw = (string)($mi['CurrentURIMetaData'] ?? '');
+        $raw = html_entity_decode($raw, ENT_QUOTES | ENT_XML1, 'UTF-8');
+        $raw = preg_replace('/&(?![a-zA-Z0-9#]+;)/', '&amp;', $raw);
+
+        libxml_use_internal_errors(true);
+        $d = @simplexml_load_string($raw);
+        if ($d) {
+            $d->registerXPathNamespace('dc', 'http://purl.org/dc/elements/1.1/');
+            $st = trim((string)($d->xpath('//dc:title')[0] ?? ''));
+            if ($st !== '') return $st;
+        }
+        libxml_clear_errors();
+
+    } catch (Exception $e) {
+        logln('warn', "get_radio_station_for_room($room): " . $e->getMessage());
+    }
+
+    return null;
+}
+
+
 // ---------- Parser: LastChange für AVT/RC ----------
 function parse_lastchange(string $xml, string $playerBase): array {
     $events = [];
@@ -489,17 +701,21 @@ function parse_lastchange(string $xml, string $playerBase): array {
     // -------------------------------------------------
     $extractFromDidl = function (string $didlXml) use ($playerBase): array {
         $out = [
-            'title'        => '',
-            'artist'       => '',
-            'album'        => '',
-            'albumArtUri'  => null,
-            '__upnp_class' => '',
+            'title'            => '',
+            'artist'           => '',
+            'album'            => '',
+            'albumArtUri'      => null,
+            'streamContent'    => '',   // Sonos: aktueller Inhalt (Song/Info) bei Radio
+            'radioStationName' => '',   // Sonos: Sendername (wenn vorhanden)
+            '__upnp_class'     => '',
         ];
 
         $d = @simplexml_load_string($didlXml);
         if ($d) {
             $d->registerXPathNamespace('dc',   'http://purl.org/dc/elements/1.1/');
             $d->registerXPathNamespace('upnp', 'urn:schemas-upnp-org:metadata-1-0/upnp/');
+            // Sonos / Rincon namespace (Radio/Stream Metadata)
+            $d->registerXPathNamespace('r', 'urn:schemas-rinconnetworks-com:metadata-1-0/');
 
             $title  = (string)($d->xpath('//dc:title')[0]        ?? '');
             $artist = (string)($d->xpath('//dc:creator')[0]      ?? '');
@@ -507,11 +723,17 @@ function parse_lastchange(string $xml, string $playerBase): array {
             $art    = (string)($d->xpath('//upnp:albumArtURI')[0]?? '');
             $class  = (string)($d->xpath('//upnp:class')[0]      ?? '');
 
-            $out['title']        = $title;
-            $out['artist']       = $artist;
-            $out['album']        = $album;
-            $out['albumArtUri']  = absolutize_art($art, $playerBase);
-            $out['__upnp_class'] = $class;
+            // Sonos Radio Felder
+            $streamContent    = (string)($d->xpath('//r:streamContent')[0] ?? '');
+            $radioStationName = (string)($d->xpath('//r:radioStationName')[0] ?? '');
+
+            $out['title']            = $title;
+            $out['artist']           = $artist;
+            $out['album']            = $album;
+            $out['albumArtUri']      = absolutize_art($art, $playerBase);
+            $out['streamContent']    = $streamContent;
+            $out['radioStationName'] = $radioStationName;
+            $out['__upnp_class']     = $class;
         }
 
         return $out;
@@ -628,19 +850,31 @@ function parse_lastchange(string $xml, string $playerBase): array {
     }
 
     // -------------------------------------------------
-    // Volume/Mute (Master-Level, nicht GroupVolume)
+    // Volume (Master + LF/RF) – Balance wird oft über LF/RF umgesetzt
     // -------------------------------------------------
-    foreach ($sx->xpath('//*[local-name()="Volume"][@channel="Master"]') as $n) {
-        $val = (string)$n['val'];
+    $volByChan = []; // e.g. ['Master'=>20,'LF'=>18,'RF'=>22]
+
+    foreach ($sx->xpath('//*[local-name()="Volume"]') as $n) {
+        $ch  = (string)($n['channel'] ?? $n['Channel'] ?? '');
+        $ch  = $ch !== '' ? $ch : 'Master';
+
+        $val = (string)($n['val'] ?? '');
         if ($val === '') {
             $val = (string)$n;
         }
-        if ($val !== '') {
-            $events[] = [
-                'type'   => 'volume',
-                'volume' => (int)$val,
-            ];
+        $val = trim($val);
+
+        if ($val !== '' && is_numeric($val)) {
+            $volByChan[$ch] = (int)$val;
         }
+    }
+
+    // Master publishen wie bisher
+    if (isset($volByChan['Master'])) {
+        $events[] = [
+            'type'   => 'volume',
+            'volume' => (int)$volByChan['Master'],
+        ];
     }
 
     foreach ($sx->xpath('//*[local-name()="Mute"][@channel="Master"]') as $n) {
@@ -657,78 +891,78 @@ function parse_lastchange(string $xml, string $playerBase): array {
     }
 
     // -------------------------------------------------
-    // EQ (Bass/Treble/Loudness, Master) + weitere Felder
+    // EQ (Bass/Treble/Loudness, Balance, etc.)
+    // Sonos liefert Bass/Treble/Balance teils OHNE channel="Master".
+    // Daher: zuerst Master versuchen, sonst ohne channel, sonst "irgendeins".
     // -------------------------------------------------
     $eq = [];
 
-    foreach ($sx->xpath('//*[local-name()="Bass"][@channel="Master"]') as $n) {
-        $val = (string)$n['val'];
-        if ($val === '') {
-            $val = (string)$n;
+    // helper: first matching node value (prefer Master channel, then no channel, then any)
+    $first_val = function(array $xp) use ($sx): ?string {
+        foreach ($xp as $expr) {
+            $nodes = $sx->xpath($expr) ?: [];
+            foreach ($nodes as $n) {
+                // Prefer attribute val, else element text
+                $val = (string)($n['val'] ?? '');
+                if ($val === '') $val = trim((string)$n);
+                // allow "0" and negative values
+                if ($val !== '' && is_numeric($val)) {
+                    return $val;
+                }
+            }
         }
-        if ($val !== '') {
-            $eq['bass'] = (int)$val;
-        }
-    }
+        return null;
+    };
 
-    foreach ($sx->xpath('//*[local-name()="Treble"][@channel="Master"]') as $n) {
-        $val = (string)$n['val'];
-        if ($val === '') {
-            $val = (string)$n;
-        }
-        if ($val !== '') {
-            $eq['treble'] = (int)$val;
-        }
-    }
+    // Bass
+    $val = $first_val([
+        '//*[local-name()="Bass"][@channel="Master"]',
+        '//*[local-name()="Bass"][not(@channel)]',
+        '//*[local-name()="Bass"]',
+    ]);
+    if ($val !== null) $eq['bass'] = (int)$val;
 
-    foreach ($sx->xpath('//*[local-name()="Loudness"][@channel="Master"]') as $n) {
-        $val = (string)$n['val'];
-        if ($val === '') {
-            $val = (string)$n;
-        }
-        if ($val !== '') {
-            $eq['loudness'] = ($val === '1') ? 1 : 0;
-        }
-    }
+    // Treble
+    $val = $first_val([
+        '//*[local-name()="Treble"][@channel="Master"]',
+        '//*[local-name()="Treble"][not(@channel)]',
+        '//*[local-name()="Treble"]',
+    ]);
+    if ($val !== null) $eq['treble'] = (int)$val;
 
-    foreach ($sx->xpath('//*[local-name()="Balance"][@channel="Master"]') as $n) {
-        $val = (string)$n['val'];
-        if ($val === '') {
-            $val = (string)$n;
-        }
-        if ($val !== '') {
-            $eq['balance'] = (int)$val;
-        }
-    }
+    // Loudness (meist channel="Master", aber sicher ist sicher)
+    $val = $first_val([
+        '//*[local-name()="Loudness"][@channel="Master"]',
+        '//*[local-name()="Loudness"][not(@channel)]',
+        '//*[local-name()="Loudness"]',
+    ]);
+    if ($val !== null) $eq['loudness'] = ((int)$val === 1) ? 1 : 0;
 
-    foreach ($sx->xpath('//*[local-name()="SubGain"]') as $n) {
-        $val = (string)$n['val'];
-        if ($val === '') {
-            $val = (string)$n;
-        }
-        if ($val !== '') {
-            $eq['subgain'] = (int)$val;
-        }
-    }
+    // Balance (oft ohne channel)
+    $val = $first_val([
+        '//*[local-name()="Balance"][@channel="Master"]',
+        '//*[local-name()="Balance"][not(@channel)]',
+        '//*[local-name()="Balance"]',
+    ]);
+    if ($val !== null) $eq['balance'] = (int)$val;
 
-    foreach ($sx->xpath('//*[local-name()="NightMode"]') as $n) {
-        $val = (string)$n['val'];
-        if ($val === '') {
-            $val = (string)$n;
-        }
-        if ($val !== '') {
-            $eq['nightmode'] = ($val === '1') ? 1 : 0;
-        }
-    }
+    // SubGain / NightMode / DialogLevel (unverändert, aber numeric-safe)
+    $val = $first_val(['//*[local-name()="SubGain"]']);
+    if ($val !== null) $eq['subgain'] = (int)$val;
 
-    foreach ($sx->xpath('//*[local-name()="DialogLevel"]') as $n) {
-        $val = (string)$n['val'];
-        if ($val === '') {
-            $val = (string)$n;
-        }
-        if ($val !== '' && is_numeric($val)) {
-            $eq['dialoglevel'] = (int)$val;
-        }
+    $val = $first_val(['//*[local-name()="NightMode"]']);
+    if ($val !== null) $eq['nightmode'] = ((int)$val === 1) ? 1 : 0;
+
+    $val = $first_val(['//*[local-name()="DialogLevel"]']);
+    if ($val !== null) $eq['dialoglevel'] = (int)$val;
+
+    if (!isset($eq['balance']) && isset($volByChan['LF'], $volByChan['RF'])) {
+        // einfache, robuste Ableitung: Differenz (rechts - links)
+        $eq['balance'] = (int)$volByChan['RF'] - (int)$volByChan['LF'];
+
+        // optional: clamp, falls du keine Ausreißer willst
+        if ($eq['balance'] < -100) $eq['balance'] = -100;
+        if ($eq['balance'] >  100) $eq['balance'] =  100;
     }
 
     if (!empty($eq)) {
@@ -758,6 +992,28 @@ function parse_lastchange(string $xml, string $playerBase): array {
         if ($val !== '') {
             $pm['crossfade'] = ($val === '1') ? 1 : 0;
         }
+    }
+
+    // --- Playmode fixed numeric code (based on mode_raw) ---
+    if (!empty($pm['mode_raw'])) {
+        $rawU = strtoupper((string)$pm['mode_raw']);
+
+        // normalize a few common variants
+        if ($rawU === 'SHUFFLE') $rawU = 'SHUFFLE_NOREPEAT';
+        if ($rawU === 'REPEAT')  $rawU = 'REPEAT_ALL';
+
+        $modeCodeMap = [
+            'NORMAL'             => 0,
+            'REPEAT_ALL'         => 1,
+            'REPEAT_ONE'         => 2,
+            'SHUFFLE_NOREPEAT'   => 3,
+            'SHUFFLE_REPEAT_ALL' => 4,
+            'SHUFFLE_REPEAT_ONE' => 5,
+        ];
+
+        $pm['code'] = $modeCodeMap[$rawU] ?? 99;
+    } else {
+        $pm['code'] = 99;
     }
 
     if (!empty($pm)) {
@@ -936,6 +1192,9 @@ function rebuild_all_subscriptions(
 // global cache to deduplicate group events: room|group_id => signature
 $lastGroupState 	= [];
 $lastEqByRoom 		= [];
+// group cache: room => ['group_id'=>..., 'members'=>[...], 'is_coordinator'=>0/1, 'ts'=>...]
+$groupByRoom 		= [];
+
 
 
 function publish_room_event(
@@ -949,7 +1208,28 @@ function publish_room_event(
     int $qos
 ): void {
 
-    global $lastEqByRoom;
+    global $lastEqByRoom, $groupByRoom;
+
+    // CENTRAL: always lowercase room everywhere downstream
+    $room = strtolower($room);
+
+    // Default: publish only for this room
+    $targetRooms = [$room];
+
+    // For track/nexttrack: if we know the group and THIS room is coordinator, publish for all members
+    if (($type === 'track' || $type === 'nexttrack') && !empty($groupByRoom[$room])) {
+        $g = $groupByRoom[$room];
+
+        $members = $g['members'] ?? [];
+        $isCoord = !empty($g['is_coordinator']);
+
+        if ($isCoord && is_array($members) && count($members) > 1) {
+            // normalize members to lowercase and ensure coordinator room included
+            $members = array_map('strtolower', $members);
+            $members[] = $room;
+            $targetRooms = array_values(array_unique(array_filter($members)));
+        }
+    }
 
     // Typ ins Payload schreiben
     $data['type'] = $type;
@@ -1004,18 +1284,31 @@ function publish_room_event(
             $data['loudness_int'] = $data['loudness'];
         }
 
-        // EQ-Snapshot je Raum, wie in der Doku
-        $lastEqByRoom[$room] = [
-            'bass'         => (int)($data['bass']         ?? 0),
-            'treble'       => (int)($data['treble']       ?? 0),
-            'loudness'     => (int)($data['loudness']     ?? 0),
-            'loudness_int' => (int)($data['loudness_int'] ?? 0),
-            'balance'      => (int)($data['balance']      ?? 0),
-            'subgain'      => (int)($data['subgain']      ?? 0),
-            'nightmode'    => (int)($data['nightmode']    ?? 0),
-            'dialoglevel'  => (int)($data['dialoglevel']  ?? 0),
-            'ts'           => time(),
-        ];
+        // EQ-Snapshot je Raum: MERGE (fehlende Werte beibehalten)
+		$prev = $lastEqByRoom[$room] ?? [];
+
+		$merged = $prev;
+
+		// ints
+		foreach (['bass','treble','balance','subgain','dialoglevel'] as $k) {
+			if (array_key_exists($k, $data)) {
+				$merged[$k] = (int)$data[$k];
+			} elseif (!array_key_exists($k, $merged)) {
+				$merged[$k] = 0;
+			}
+		}
+
+		// bool-ish ints
+		foreach (['loudness','loudness_int','nightmode'] as $k) {
+			if (array_key_exists($k, $data)) {
+				$merged[$k] = (int)$data[$k] ? 1 : 0;
+			} elseif (!array_key_exists($k, $merged)) {
+				$merged[$k] = 0;
+			}
+		}
+
+		$merged['ts'] = time();
+		$lastEqByRoom[$room] = $merged;
     }
 
     // --- Playmode: Shuffle/Repeat/Crossfade ---
@@ -1089,14 +1382,31 @@ function publish_room_event(
             }
         }
 
-        // Radio-Sender
-        if (($data['source_text'] ?? '') === 'Radio') {
-            // Best guess: Station meist im Album, sonst im Title
-            $station = $album !== '' ? $album : $title;
-            $data['radio'] = $station;
-        } else {
-            $data['radio'] = '';
-        }
+		// Radio-Sender + Song sauber trennen
+		if (($data['source_text'] ?? '') === 'Radio') {
+
+			// 1) Sender IMMER aus CurrentURIMetaData (GetMediaInfo)
+			$station = get_radio_station_for_room($room, $rooms);
+			$station = trim((string)($station ?? ''));
+
+			// 2) Song/NowPlaying: bevorzugt streamContent, sonst Artist-Title, sonst title
+			$song = trim((string)($data['streamContent'] ?? ''));
+			if ($song === '') {
+				$t = trim((string)($data['title'] ?? ''));
+				$a = trim((string)($data['artist'] ?? ''));
+				if ($a !== '' && $t !== '') $song = $a . ' - ' . $t;
+				else $song = $t;
+			}
+
+			// 3) MQTT Felder
+			$data['radio'] = $station;              // Sendername
+			$data['streamContent'] = $song;    		// NowPlaying
+
+		} else {
+
+			$data['radio'] = '';
+		}
+
 
         // Cover / SID / TV-State
         $data['cover'] = $data['albumArtUri'] ?? null;
@@ -1132,7 +1442,24 @@ function publish_room_event(
 
         $data['role_name'] = $roleName;
         $data['role_code'] = $roleCode; // wie früher grp_<room>
-    }
+		// Update group cache for replication of track/nexttrack
+		$memRooms = [];
+		if (!empty($data['members']) && is_array($data['members'])) {
+			foreach ($data['members'] as $mm) {
+				$rn = strtolower((string)($mm['room'] ?? ''));
+				if ($rn !== '') $memRooms[] = $rn;
+			}
+		}
+		$memRooms[] = $room;
+		$memRooms = array_values(array_unique($memRooms));
+
+		$groupByRoom[$room] = [
+			'group_id'        => (string)($data['group_id'] ?? ''),
+			'members'         => $memRooms,
+			'is_coordinator'  => !empty($data['is_coordinator']) ? 1 : 0,
+			'ts'              => time(),
+		];
+	}
 
     // Geräte-Metadaten
     $meta = $rooms[$room] ?? ['ip' => '', 'rincon' => '', 'model' => ''];
@@ -1169,16 +1496,93 @@ function publish_room_event(
         $lastGroupHash[$room] = $hash;
     }
 
-    $json = json_encode($payload, JSON_UNESCAPED_UNICODE);
-    if ($json === false) {
-        logln('warn', "JSON encode failed for $room/$type");
-        return;
+    // --- publish for one or multiple target rooms (group replication for track/nexttrack) ---
+    $published = 0;
+
+    foreach ($targetRooms as $tr) {
+        $tr = strtolower((string)$tr);
+        if ($tr === '') continue;
+
+        $metaT = $rooms[$tr] ?? $meta;
+
+        $payloadT = $payload;
+        $payloadT['room']   = $tr;
+        $payloadT['ip']     = $metaT['ip']     ?? ($payload['ip'] ?? '');
+        $payloadT['rincon'] = $metaT['rincon'] ?? ($payload['rincon'] ?? '');
+        $payloadT['model']  = $metaT['model']  ?? ($payload['model'] ?? '');
+
+        $topicT = rtrim($prefix, '/') . "/{$tr}/{$type}";
+
+        $jsonT = json_encode($payloadT, JSON_UNESCAPED_UNICODE);
+        if ($jsonT === false) {
+            logln('warn', "JSON encode failed for $tr/$type");
+            continue;
+        }
+
+        $ok = $mqttClient->publish($topicT, $jsonT, $retain, $qos);
+        if (!$ok) {
+            logln('warn', "MQTT publish failed: $topicT");
+        } else {
+            $published++;
+        }
+
+        // ----------------------------------------------------
+        // Legacy-Kompatibilität: alte Sonos4lox-Topics weiter bedienen
+        // (nur das, was du ohnehin publizierst; für track replizieren wir das genauso)
+        // ----------------------------------------------------
+        $legacyPrefix = 'Sonos4lox';
+
+        try {
+            if ($type === 'volume' && isset($payloadT['volume'])) {
+                $mqttClient->publish($legacyPrefix . '/vol/' . $tr, (string)$payloadT['volume'], true, 0);
+            }
+
+            if ($type === 'state' && isset($payloadT['state_code'])) {
+                $mqttClient->publish($legacyPrefix . '/stat/' . $tr, (string)$payloadT['state_code'], true, 0);
+            }
+
+            if ($type === 'group' && isset($payloadT['role_code'])) {
+                $mqttClient->publish($legacyPrefix . '/grp/' . $tr, (string)$payloadT['role_code'], true, 0);
+            }
+
+            if ($type === 'mute' && array_key_exists('mute_int', $payloadT)) {
+                $mqttClient->publish($legacyPrefix . '/mute/' . $tr, (string)$payloadT['mute_int'], true, 0);
+            }
+
+            if ($type === 'track') {
+                $mqttClient->publish($legacyPrefix . '/titint/' . $tr, (string)($payloadT['titint'] ?? ''), true, 0);
+                $mqttClient->publish($legacyPrefix . '/tit/'    . $tr, (string)($payloadT['tit']    ?? ''), true, 0);
+                $mqttClient->publish($legacyPrefix . '/int/'    . $tr, (string)($payloadT['int']    ?? ''), true, 0);
+                $mqttClient->publish($legacyPrefix . '/radio/'  . $tr, (string)($payloadT['radio']  ?? ''), true, 0);
+
+                if (isset($payloadT['source'])) {
+                    $mqttClient->publish($legacyPrefix . '/source/' . $tr, (string)$payloadT['source'], true, 0);
+                }
+
+                $mqttClient->publish($legacyPrefix . '/sid/'   . $tr, (string)($payloadT['sid']   ?? ''), true, 0);
+                $mqttClient->publish($legacyPrefix . '/cover/' . $tr, (string)($payloadT['cover'] ?? ''), true, 0);
+
+                if (isset($payloadT['tvstate'])) {
+                    $mqttClient->publish($legacyPrefix . '/tvstate/' . $tr, (string)$payloadT['tvstate'], true, 0);
+                }
+            }
+
+        } catch (Throwable $e) {
+            logln('warn', "Legacy MQTT publish failed for $tr/$type: " . $e->getMessage());
+        }
+
+        // ----------------------------------------------------
+        // Loxone HTTP push (optional) - pro Zielraum
+        // ----------------------------------------------------
+        global $loxTarget, $LOXONE_HTTP_PUBLISH;
+        loxone_publish_for_event($type, $payloadT, $loxTarget, $LOXONE_HTTP_PUBLISH);
     }
 
-        $ok = $mqttClient->publish($topic, $json, $retain, $qos);
-    if (!$ok) {
-        logln('warn', "MQTT publish failed: $topic");
+    // Optional: einmaliger Debug-Hinweis bei Replikation (ohne Spam)
+    if (($type === 'track' || $type === 'nexttrack') && count($targetRooms) > 1) {
+        logln('dbg', "$room $type replicated to members: " . implode(',', $targetRooms));
     }
+
 
     // ----------------------------------------------------
     // Legacy-Kompatibilität: alte Sonos4lox-Topics weiter bedienen
@@ -1288,6 +1692,13 @@ function publish_room_event(
     } catch (Throwable $e) {
         logln('warn', "Legacy MQTT publish failed for $room/$type: " . $e->getMessage());
     }
+	
+	// ----------------------------------------------------
+    // Loxone HTTP push (optional)
+    // ----------------------------------------------------
+    global $loxTarget, $LOXONE_HTTP_PUBLISH;
+    loxone_publish_for_event($type, $payload, $loxTarget, $LOXONE_HTTP_PUBLISH);
+
 
     // Log kompakt
     if     ($type === 'track')     logln('evnt', "$room track: " . ($payload['title'] ?? '') . " — " . ($payload['artist'] ?? '') . " [" . ($payload['album'] ?? '') . "]");
@@ -1579,12 +1990,62 @@ if (!file_exists(S4L_CFG)) { logln('error', "Config missing: " . S4L_CFG); exit(
 $cfg = json_decode(file_get_contents(S4L_CFG), true);
 if (!is_array($cfg)) { logln('error', "Invalid JSON in " . S4L_CFG); exit(1); }
 
-// presence-Flag aus der Config
-$ttsCfg          = $cfg['TTS'] ?? [];
-$sonosLogEnabled = is_enabled($ttsCfg['presence']);
-
-// LoxDatenMQTT-Schalter wie bisher …
+// --- Loxone Miniserver Target einmalig auflösen (optional) ---
 $loxCfg       = $cfg['LOXONE'] ?? [];
+$LoxDaten     = strtolower((string)($loxCfg['LoxDaten'] ?? 'false')) === 'true';
+$loxMsId      = (string)($loxCfg['Loxone'] ?? '1');
+$LoxDatenMQTT = strtolower((string)($loxCfg['LoxDatenMQTT'] ?? 'false'));
+
+// --- Loxone Miniserver Target einmalig auflösen (optional) ---
+$loxTarget = null;
+if ($LoxDaten) {
+    $loxTarget = get_miniserver_target_from_general_cached($loxMsId);
+    if (!$loxTarget) {
+        logln('warn', "LoxDaten=true but could not resolve Miniserver target from general.json (LOXONE.Loxone='$loxMsId')");
+    } else {
+        logln('ok', "Loxone target resolved: msId={$loxTarget['msId']} baseUrl={$loxTarget['baseUrl']}");
+    }
+}
+// -------------------------------------------------------------
+// Loxone HTTP push mapping (easy to extend)
+// - Input names are YOUR Loxone Virtual Input names
+// - Prefix here is NOT MQTT. It's only for your Loxone input naming.
+// -------------------------------------------------------------
+$LOXONE_HTTP_PREFIX = 's4lox';   // <-- das meint "s4lox_" vor deinen Loxone Inputs
+
+$LOXONE_HTTP_PUBLISH = [
+    // publish current track meta
+    'track' => [
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_current_title',  'value' => '{title}'],
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_current_artist', 'value' => '{artist}'],
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_current_album',  'value' => '{album}'],
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_current_titint', 'value' => '{titint}'],
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_current_radio',  'value' => '{radio}'],
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_current_cover',  'value' => '{cover}'],
+    ],
+
+    // publish next track meta
+    'nexttrack' => [
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_next_title',  'value' => '{title}'],
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_next_artist', 'value' => '{artist}'],
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_next_album',  'value' => '{album}'],
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_next_cover',  'value' => '{albumArtUri}'],
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_next_uri',    'value' => '{uri}'],
+    ],
+
+    // examples for numeric events (optional)
+    'volume' => [
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_volume', 'value' => '{volume}'],
+    ],
+    'mute' => [
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_mute', 'value' => '{mute_int}'],
+    ],
+    'state' => [
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_state_code', 'value' => '{state_code}'],
+    ],
+];
+
+
 $LoxDatenMQTT = strtolower((string)($loxCfg['LoxDatenMQTT'] ?? 'false'));
 if ($LoxDatenMQTT !== 'true') {
     // hier gerne noch ein einfaches echo, falls du willst

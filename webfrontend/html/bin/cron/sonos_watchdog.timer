@@ -1,0 +1,12 @@
+[Unit]
+Description=Sonos Watchdog Timer (every 5 minutes)
+
+[Timer]
+OnBootSec=90s
+OnCalendar=*:0/5
+AccuracySec=30s
+Persistent=true
+Unit=sonos_watchdog.service
+
+[Install]
+WantedBy=timers.target

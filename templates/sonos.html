@@ -20,6 +20,28 @@ div.scrollmenu a {
 div.scrollmenu a:hover {
   background-color: #777;
 }
+
+# Ab hier für Calendar Validation
+/* nur optik für die zwei felder */
+.textfield.valid {
+  background-color: #f3f4f6;      /* zart grün */
+  border-color:    #2e7d32;
+}
+.textfield.invalid {
+  background-color: #fe4746;      /* zart rot */
+  color: #fff;                 /* Text weiß */
+  border-color:    #c62828;
+}
+
+/* kleine Zeile unter dem Feld */
+.calmsg{
+  margin-top:4px;
+  font-size:12px;
+  line-height:1.35;
+  color:#6b7280;     /* grau für "Prüfe..." */
+}
+.calmsg.error{ color:#c62828; } /* rot bei Fehler */
+.hidden{ display:none; }
 </style>
 
 <TMPL_IF SETTINGS>
@@ -534,7 +556,7 @@ div.scrollmenu a:hover {
                                 <TMPL_VAR DATADIR>/tts/</font>
                     </td>
                     <td style="height: 60px; width: 201px;">
-                        <font size="-1">
+                        <!--<font size="-1">
                             <TMPL_VAR T2S.LABEL_SONOS_FOLDER1>
                         </font>
                         <font size="-1" color="blue"><b><TMPL_VAR T2S.LABEL_SONOS_FOLDER2></b></font>
@@ -544,7 +566,7 @@ div.scrollmenu a:hover {
                         <font size="-1" color="blue"><b><TMPL_VAR T2S.LABEL_SONOS_FOLDER4></b></font>
                         <font size="-1">
                             <TMPL_VAR T2S.LABEL_SONOS_FOLDER5>
-                        </font>
+                        </font>-->
                     </td>
                     
                 </tr>
@@ -607,9 +629,9 @@ div.scrollmenu a:hover {
 								Restart Listener
 							</button>
 						<TMPL_ELSE>
-							<font size="-1">
+							<!--<font size="-1">
 								<TMPL_VAR T2S.LABEL_SONOS_DATA_TRANSFER>
-							</font>
+							</font>-->
 						</TMPL_IF>
 					</td>
 
@@ -636,21 +658,21 @@ div.scrollmenu a:hover {
                                         <input type="button" onclick="checkfile('VI_MQTT_UDP_Sonos.xml')" id="btn2" data-mini="true" value="VI_MQTT_UDP_Sonos.xml" />
 									</div>
 									<td style="width: 5%">
-										<div class="btnd">
+										<!--<div class="btnd">
 											<input type="button" onclick="checkfile('VI_MQTT_HTTP_Sonos.xml')" id="btn3" data-mini="true" value="VI_MQTT_HTTP_Sonos.xml" />
-										</div>
+										</div>-->
 									</td>
 								</td>
                                 <td class="empty_template" style="width: 25%"></td>
                             </tr>
                         </table>
 						<td class="empty_template" style="width: 50%; height: 60px;">
-                            <font size="-1">
+                            <!--<font size="-1">
                                 <TMPL_VAR T2S.HELP_TEMPLATE>
 								<a id="lwiki" target="_blank">
 									<TMPL_VAR T2S.HELP_TEMPLATE_END>
 								</a>
-                            </font>
+                            </font>-->
                         </td>
 					</td>
                         <td class="empty_template" style="height: 30px; width: 201px;">
@@ -848,6 +870,141 @@ div.scrollmenu a:hover {
                                 </tr>
 
                                 <!-- Ende Kalender-->
+								
+								
+								<script>
+									(function($){
+									  const TAG = '[caldav-validate]';
+
+									  function endpoint(){
+										try { return location.pathname.replace(/[^/]+$/, 'index.cgi') || 'index.cgi'; }
+										catch { return 'index.cgi'; }
+									  }
+
+									  // helpers for the inline status/error row placed right after the input
+									  function ensureMsg($in){
+										let $m = $in.next('.calmsg');
+										if (!$m.length) {
+										  $m = $('<div class="calmsg hidden" aria-live="polite" aria-atomic="true"></div>');
+										  $in.after($m);
+										}
+										return $m;
+									  }
+									  function showPending($in){
+										const $m = ensureMsg($in);
+										$m.removeClass('error').text('Checking…').removeClass('hidden');
+									  }
+									  function showError($in, msg){
+										const $m = ensureMsg($in);
+										$m.addClass('error').text(msg).removeClass('hidden');
+									  }
+									  function clearMsg($in){
+										const $m = ensureMsg($in);
+										$m.addClass('hidden').text('');
+									  }
+
+									  // -> always returns { ok:boolean, error?:string, status?, raw? }
+									  async function validateUrl(url, mode){
+										const qs   = new URLSearchParams({ action:'validate_ics', url, mode });
+										const href = endpoint() + '?' + qs.toString();
+
+										const t0 = performance.now();
+										console.log(TAG, 'start', { mode, url, href });
+
+										try {
+										  const r = await fetch(href, {
+											method: 'GET',
+											headers: { 'Accept': 'application/json' },
+											cache: 'no-store',
+											credentials: 'same-origin'
+										  });
+
+										  const ct = (r.headers.get('content-type') || '').toLowerCase();
+										  const dt = Math.round(performance.now() - t0);
+										  console.log(TAG, 'response', { status: r.status, ok: r.ok, contentType: ct, timeMs: dt });
+
+										  if (!r.ok) {
+											let snippet = '';
+											try { snippet = (await r.text()).slice(0, 200); } catch {}
+											return { ok:false, error:`HTTP ${r.status}`, status:r.status, raw:snippet };
+										  }
+
+										  let data = {};
+										  try { data = await r.json(); }
+										  catch (e) {
+											console.warn(TAG, 'JSON parse failed:', e);
+											return { ok:false, error:'Invalid server response (not valid JSON)' };
+										  }
+
+										  // Expected backend shape: { ok: true|false, msg?: string }
+										  if (data && data.ok === true) {
+											return { ok:true, raw:data };
+										  } else {
+											const serverMsg = (data && (data.msg || data.error)) || 'Invalid response';
+											return { ok:false, error: serverMsg, raw:data };
+										  }
+
+										} catch (e) {
+										  console.error(TAG, 'network error:', e);
+										  return { ok:false, error:'Network error (server not reachable)', raw:String(e) };
+										}
+									  }
+
+									  // UI: only mark red on error, otherwise neutral
+									  function mark($in, state){
+										$in.removeClass('valid invalid');
+										if (state === 'err') $in.addClass('invalid');
+									  }
+
+									  async function run(sel, mode){
+										const $in = $(sel);
+										const url = ($in.val() || '').trim();
+
+										if (!url){
+										  console.log(TAG, 'empty -> neutral', sel);
+										  clearMsg($in);
+										  mark($in, null);
+										  return;
+										}
+
+										showPending($in);
+										const res = await validateUrl(url, mode);
+
+										if (res.ok){
+										  console.log(TAG, 'ok', sel, res.raw);
+										  clearMsg($in);         // success -> hide row
+										  mark($in, null);       // keep neutral
+										} else {
+										  // friendly messages by error type
+										  let msg = res.error || 'Unknown error';
+										  const lower = msg.toLowerCase();
+
+										  if (lower.includes('json')) {
+											msg = 'Invalid JSON response – please check your URL/parameters.';
+										  } else if (/^http\s*\d+/.test(msg)) {
+											msg = `Server error (${msg}).`;
+										  } else if (lower.includes('network')) {
+											msg = 'Network error – server not reachable.';
+										  }
+
+										  showError($in, msg);
+										  mark($in, 'err');
+										  console.warn(TAG, 'invalid', { field: sel, mode, reason: res.error, status: res.status, raw: res.raw });
+										}
+									  }
+
+									  // Validate on blur/change only
+									  $(document)
+										.on('blur change', '#wastecal', function(){ run('#wastecal', 'json'); })
+										.on('blur change', '#cal',      function(){ run('#cal',      'ics');  });
+
+									  // Optionally validate prefilled values on load
+									  $(function(){
+										if ($('#wastecal').val()) run('#wastecal','json');
+										if ($('#cal').val())      run('#cal','ics');
+									  });
+									})(jQuery);
+									</script>
 
                                 <!-- Start Weather-->
                                 <tr class="weatherdet">
@@ -2628,20 +2785,19 @@ $(function () {
 
 				
 				// validate jingle file selection
-                var selectjingle = document.getElementById("file_gong").value;
-                var selectt2s = $("input[name=t2s_engine]:checked").val();
-				//console.log(selectjingle);
-				//console.log(selectt2s);
-                if ((selectjingle == '') && (selectt2s !== "")) {
-                    $('html, body').animate({
-                        scrollTop: $("#info").offset().top
-                    }, 1000);
+				var selectjingle = document.getElementById("file_gong").value;
+				var selectt2s     = $("input[name=t2s_engine]:checked").val();
+
+				if (!selectjingle && selectt2s) {
+					$('html, body').animate({
+						scrollTop: $("#info").offset().top
+					}, 1000);
+
 					dialog('<TMPL_VAR T2S.VALIDATE_JINGLE>', 'SELECT', 'error', 'T2S Jingle');
-                    $("#file_gong").focus();
-					e.preventDefault();
-                }
-				
-				
+					$("#file_gong").focus();
+					return false; // stops submit reliably
+				}
+
 				// validate UDP Port entered if UDP selected
 				//console.log("validate UDP");
 				//var cat = document.getElementById('sendlox').value;

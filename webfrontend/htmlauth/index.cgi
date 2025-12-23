@@ -54,7 +54,11 @@ use List::MoreUtils qw(uniq);
 # Every non-handled exceptions sets the @reason variable that can
 # be written to the logfile in the END function
 
-$SIG{__DIE__} = sub { our @reason = @_ };
+$SIG{__DIE__} = sub {
+    return if $^S;     # <-- inside eval: ignore (it's handled)
+    our @reason = @_;
+};
+
 
 ##########################################################################
 # Variables
@@ -289,6 +293,28 @@ our $q = $cgi->Vars;
 our $IS_AJAX_REQUEST = 0;
 our $AJAX_ACTION     = '';
 
+# ------------------------------------------------------------
+# AJAX: Validator for ICS/JSON  (called via ?action=validate_ics)
+# ------------------------------------------------------------
+if (defined $q->{action} && $q->{action} eq 'validate_ics') {
+
+    my $url  = defined $q->{url}  ? $q->{url}  : '';
+    my $mode = defined $q->{mode} ? $q->{mode} : 'ics';
+
+    my ($ok, $msg, $events) = _validate_url($url, $mode);
+
+    print "Content-Type: application/json; charset=utf-8\n";
+    print "Cache-Control: no-store, no-cache, must-revalidate\n\n";
+
+    print encode_json({
+        ok     => $ok ? JSON::PP::true : JSON::PP::false,
+        msg    => $ok ? undef : $msg,
+        events => $ok ? ($events // 0) : undef,
+    });
+
+    exit;
+}
+
 # Early exit for AJAX/getkeys (no template, no LOGSTART/LOGEND task wrapper)
 if ($q->{action}) {
     $IS_AJAX_REQUEST = 1;
@@ -352,7 +378,6 @@ if ($R::getkeys) {
 # Only the real page render comes here:
 inittemplate();
 LOGSTART "Plugin GUI";
-
 
 
 #########################################################################
@@ -1405,27 +1430,8 @@ sub save
 	$jsonobj->write();
 	LOGDEB "Sonos Zones has been saved.";
 	
-	# ----------------------------------------------------
-	# Sonos Event Listener Service steuern (MQTT On/Off)
-	# ----------------------------------------------------
-	my $service = 'sonos_event_listener.service';
-	if ($R::sendloxMQTT eq "true") {
-		LOGINF "MQTT data for Loxone is enabled – starting $service";
-		my $rc = system("sudo /bin/systemctl start $service >/dev/null 2>&1");
-		if ($rc != 0) {
-			LOGERR "Could not start $service (rc=$rc)";
-		} else {
-			LOGOK "$service has been started";
-		}
-	} else {
-		LOGINF "MQTT data for Loxone is disabled – stopping $service";
-		my $rc = system("sudo /bin/systemctl stop $service >/dev/null 2>&1");
-		if ($rc != 0) {
-			LOGERR "Could not stop $service (rc=$rc)";
-		} else {
-			LOGOK "$service has been stopped";
-		}
-	}
+	# Sonos Services steuern (LoxDaten On/Off)
+	&services;
 	
 	# call to prepare XML Template during saving
 	if ($R::sendlox eq "true") {
@@ -1435,131 +1441,10 @@ sub save
 	my $tv = qx(/usr/bin/php $lbphtmldir/bin/tv_monitor_conf.php);	
 	LOGOK "Main settings has been saved successful";
 	
-	#&save_cronjob;
-	
-	#&print_save;
 	#my $on = qx(/usr/bin/php $lbphtmldir/bin/check_on_state.php);	
 	return;
 	
 }
-
-
-#####################################################
-# Save Cronjob for Onlinecheck - OBSOLTE -
-#####################################################
-
-sub save_cronjob
-{
-	if (-r $lbhomedir."/system/cron/cron.03min/Sonos") 
-	{
-		unlink ("$lbhomedir/system/cron/cron.03min/Sonos");
-		LOGINF "Previous file for Online check has been deleted.";
-	}
-
-	if ($R::checkonline eq "3") 
-	  {
-	    system ("ln -s $lbphtmldir/bin/cron/Sonos_On_check.sh $lbhomedir/system/cron/cron.03min/Sonos_On_check");
-		unlink ("$lbhomedir/system/cron/cron.05min/Sonos_On_check");
-	    unlink ("$lbhomedir/system/cron/cron.15min/Sonos_On_check");
-	    unlink ("$lbhomedir/system/cron/cron.30min/Sonos_On_check");
-		unlink ("$lbhomedir/system/cron/cron.hourly/Sonos_On_check");
-		unlink ("$lbhomedir/system/cron/cron.daily/Sonos_On_check");
-		&call_php;
-		LOGOK "Cronjob 3 Minutes prepared";
-	  }
-	  if ($R::checkonline eq "5") 
-	 {
-	    system ("ln -s $lbphtmldir/bin/cron/Sonos_On_check.sh $lbhomedir/system/cron/cron.05min/Sonos_On_check");
-	    unlink ("$lbhomedir/system/cron/cron.03min/Sonos_On_check");
-	    unlink ("$lbhomedir/system/cron/cron.15min/Sonos_On_check");
-	    unlink ("$lbhomedir/system/cron/cron.30min/Sonos_On_check");
-		unlink ("$lbhomedir/system/cron/cron.hourly/Sonos_On_check");
-		unlink ("$lbhomedir/system/cron/cron.daily/Sonos_On_check");
-		&call_php;	
-		LOGOK "Cronjob 5 Minutes prepared";
-	  }
-	  if ($R::checkonline eq "15") 
-	  {
-	    system ("ln -s $lbphtmldir/bin/cron/Sonos_On_check.sh $lbhomedir/system/cron/cron.15min/Sonos_On_check");
-	    unlink ("$lbhomedir/system/cron/cron.03min/Sonos_On_check");
-		unlink ("$lbhomedir/system/cron/cron.05min/Sonos_On_check");
-	    unlink ("$lbhomedir/system/cron/cron.30min/Sonos_On_check");
-		unlink ("$lbhomedir/system/cron/cron.hourly/Sonos_On_check");
-		unlink ("$lbhomedir/system/cron/cron.daily/Sonos_On_check");
-		&call_php;
-		LOGOK "Cronjob 15 Minutes prepared";
-	  }
-	  if ($R::checkonline eq "30") 
-	  {
-	    system ("ln -s $lbphtmldir/bin/cron/Sonos_On_check.sh $lbhomedir/system/cron/cron.30min/Sonos_On_check");
-	    unlink ("$lbhomedir/system/cron/cron.03min/Sonos_On_check");
-		unlink ("$lbhomedir/system/cron/cron.05min/Sonos_On_check");
-	    unlink ("$lbhomedir/system/cron/cron.15min/Sonos_On_check");
-		unlink ("$lbhomedir/system/cron/cron.hourly/Sonos_On_check");
-		unlink ("$lbhomedir/system/cron/cron.daily/Sonos_On_check");
-		&call_php;	
-		LOGOK "Cronjob 30 Minutes prepared";
-	  }
-	  if ($R::checkonline eq "hourly") 
-	  {
-	    system ("ln -s $lbphtmldir/bin/cron/Sonos_On_check.sh $lbhomedir/system/cron/cron.hourly/Sonos_On_check");
-	    unlink ("$lbhomedir/system/cron/cron.03min/Sonos_On_check");
-		unlink ("$lbhomedir/system/cron/cron.05min/Sonos_On_check");
-	    unlink ("$lbhomedir/system/cron/cron.15min/Sonos_On_check");
-	    unlink ("$lbhomedir/system/cron/cron.30min/Sonos_On_check");
-		unlink ("$lbhomedir/system/cron/cron.daily/Sonos_On_check");
-		&call_php;
-		LOGOK "Cronjob hourly prepared";
-	  }
-	  if ($R::checkonline eq "daily") 
-	  {
-	    system ("ln -s $lbphtmldir/bin/cron/Sonos_On_check.sh $lbhomedir/system/cron/cron.daily/Sonos_On_check");
-	    unlink ("$lbhomedir/system/cron/cron.03min/Sonos_On_check");
-		unlink ("$lbhomedir/system/cron/cron.05min/Sonos_On_check");
-	    unlink ("$lbhomedir/system/cron/cron.15min/Sonos_On_check");
-	    unlink ("$lbhomedir/system/cron/cron.30min/Sonos_On_check");
-		unlink ("$lbhomedir/system/cron/cron.hourly/Sonos_On_check");
-		&call_php;
-		LOGOK "Cronjob daily prepared";
-	  }
-	  if ($R::checkonline eq "false") 
-	  {
-	    unlink ("$lbhomedir/system/cron/cron.03min/Sonos_On_check");
-		unlink ("$lbhomedir/system/cron/cron.05min/Sonos_On_check");
-	    unlink ("$lbhomedir/system/cron/cron.15min/Sonos_On_check");
-	    unlink ("$lbhomedir/system/cron/cron.30min/Sonos_On_check");
-		unlink ("$lbhomedir/system/cron/cron.hourly/Sonos_On_check");
-		unlink ("$lbhomedir/system/cron/cron.daily/Sonos_On_check");
-		&call_php_all;
-		LOGOK "Cronjob has been deleted";
-	  }
-		
-	LOGOK "Cronjob for Onlinecheck has been created successful";
-	return();
-}
-
-
-#####################################################
-# Call check_on_state
-#####################################################
-
-sub call_php
-{
-	my $files = qx(/usr/bin/php $lbphtmldir/bin/check_on_state.php);
-	return();
-}
-
-
-#####################################################
-# Call create_player_files
-#####################################################
-
-sub call_php_all
-{
-	my $files = qx(/usr/bin/php $lbphtmldir/bin/create_player_files.php);
-	return();	
-}
-
 
 #####################################################
 # Scan Sonos Player - Sub
@@ -1567,9 +1452,6 @@ sub call_php_all
 
 sub scan
 {
-	#our $cfg;
-	#our $jsonobj;
-
 	LOGINF "Auto-Discovery: Scan for Sonos Zones has been executed.";
 
 	# Always scan on plugin load, but keep it fast via TTL cache
@@ -1913,6 +1795,136 @@ sub save_volume
 }
 
 
+######################################################################
+# --- Helpers for CalDAV validation ---
+######################################################################
+
+sub _mask_url 
+{
+    my ($u) = @_;
+    return '' unless defined $u;
+    $u =~ s/(pass=)([^&]+)/$1***MASKED***/ig;
+    $u =~ s{(https?://)([^:/\s]+):([^@/]+)\@}{$1$2:***MASKED***@}ig;
+    return $u;
+}
+
+sub _validate_url {
+    my ($url, $mode) = @_;
+    $mode ||= 'ics';
+
+    return (0, "No URL entered") unless defined $url && $url ne '';
+
+    # --- Resolve actual target for ICS: take calURL=... if present ---
+    my $target_url = $url;
+    if ($mode eq 'ics') {
+        if ($url =~ /(?:^|[?&])calURL=([^&]+)/i) {
+            my $enc = $1;
+            my $dec = uri_unescape($enc);          # e.g. https%3A// -> https://
+            $dec =~ s/^webcal:\/\//https:\/\//i;   # normalize webcal://
+            $target_url = $dec if $dec =~ m{^https?://}i;
+        }
+    }
+
+    # --- HTTP client ---
+    my $ua = LWP::UserAgent->new(
+        timeout      => 12,
+        max_size     => 512 * 1024,   # up to ~512 KB
+        max_redirect => 5,
+        env_proxy    => 1,
+        agent        => "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                      . "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+    );
+
+    # --- Build request (no Range on first try) ---
+    my $req = HTTP::Request->new(GET => $target_url);
+    if ($mode eq 'ics') {
+        $req->header('Accept' => 'text/calendar, text/plain, application/octet-stream');
+    } else { # json
+        $req->header('Accept' => 'application/json, text/plain');
+    }
+    $req->header('Connection' => 'close');
+
+    my $res = $ua->request($req);
+    return (0, sprintf("HTTP error %s at %s", $res->status_line, _mask_url($target_url)))
+        unless $res->is_success;
+
+    my $ct_header = $res->header('Content-Type') // '';
+    my $ct        = lc $ct_header;
+
+    # Prefer raw content; normalize BOM/encodings
+    my $bytes = $res->content // '';
+    my $body  = $bytes;
+    $body =~ s/^\xEF\xBB\xBF//;   # UTF-8 BOM
+
+    # Detect UTF-16/32 BOMs and decode
+    if ($body =~ /^\xFF\xFE\x00\x00/) {              # UTF-32 LE with BOM
+        $body = Encode::decode('UTF-32LE', $body);
+    } elsif ($body =~ /^\x00\x00\xFE\xFF/) {         # UTF-32 BE with BOM
+        $body = Encode::decode('UTF-32BE', $body);
+    } elsif ($body =~ /^\xFF\xFE/) {                 # UTF-16 LE
+        $body = Encode::decode('UTF-16LE', $body);
+    } elsif ($body =~ /^\xFE\xFF/) {                 # UTF-16 BE
+        $body = Encode::decode('UTF-16BE', $body);
+    }
+
+    # Trim leading whitespace/newlines that might precede VCALENDAR
+    $body =~ s/^\s+//;
+
+    if ($mode eq 'ics') {
+        my $has_vcal = ($body =~ /BEGIN:VCALENDAR/i) ? 1 : 0;
+
+        # If server clearly returned JSON, tell the user
+        if ($ct =~ /json/) {
+            return (0, sprintf("Got JSON instead of ICS (Content-Type: %s)", $ct_header));
+        }
+        # If HTML and no VCALENDAR → likely error/login page
+        if ($ct =~ /html/ && !$has_vcal) {
+            my $snip = substr($body, 0, 200); $snip =~ s/\s+/ /g;
+            return (0, sprintf("Got HTML instead of ICS (Content-Type: %s): %s", $ct_header, $snip));
+        }
+
+        # Accept ICS if VCALENDAR marker is present (even with wrong Content-Type)
+        unless ($has_vcal) {
+            my $snip = substr($body, 0, 200); $snip =~ s/\s+/ /g;
+            return (0, sprintf(
+                "No iCalendar (BEGIN:VCALENDAR missing). Content-Type: %s. Snippet: %s",
+                $ct_header, $snip
+            ));
+        }
+
+        my $events = () = ($body =~ /BEGIN:VEVENT/ig);
+        return (0, "No events found") if $events < 1;
+        return (1, "OK", $events);
+    }
+    elsif ($mode eq 'json') {
+        # Wrong type for JSON?
+        if ($ct =~ /calendar|ics/) {
+            return (0, sprintf("Got ICS instead of JSON (Content-Type: %s)", $ct_header));
+        }
+
+        my $data;
+        eval { $data = decode_json($body) };
+        if ($@ || !defined $data) {
+            my $snip = substr($body, 0, 200); $snip =~ s/\s+/ /g;
+            return (0, sprintf("Invalid JSON. Snippet: %s", $snip));
+        }
+
+        # Count appointment-like objects (ignore 'now')
+        my $count = 0;
+        if (ref $data eq 'HASH') {
+            for my $k (keys %$data) {
+                next if lc($k) eq 'now';
+                $count++ if ref $data->{$k} eq 'HASH';
+            }
+        }
+        return (0, "No appointments found in JSON") if $count < 1;
+
+        return (1, "OK", $count);
+    }
+
+    return (0, "Unknown mode");
+}
+
 #####################################################
 # Save config file (AJAX)
 #####################################################
@@ -1945,6 +1957,62 @@ sub restoreconfig
 	chmod 0500, $lbhomedir."/webfrontend/html/XL";
 	LOGOK "Plugin Config has been restored";
 	return "true";
+}
+
+
+#######################################################################
+# Sonos systemd units steuern (Loxone Datentransfer On/Off)
+# - enable/disable + start/stop
+#######################################################################
+sub services
+{
+	my @enable_units  = (
+		'sonos_event_listener.service',
+		'sonos_check_on_state.timer',
+		'sonos_watchdog.timer',
+	);
+
+	sub sysd {
+		my (@args) = @_;
+		my $rc = system('sudo', '-n', '/bin/systemctl', @args);
+		# system() returns raw status; shift right for exit code
+		return ($rc >> 8);
+	}
+
+	if ($R::sendlox eq "true") {
+
+		LOGINF "MQTT data for Loxone is enabled – enabling and starting systemd units";
+
+		for my $u (@enable_units) {
+			my $rc = sysd('enable', '--now', $u);
+			if ($rc != 0) {
+				LOGERR "Could not enable/start $u (rc=$rc)";
+			} else {
+				LOGOK "$u has been enabled and started";
+			}
+		}
+
+	} else {
+
+		LOGINF "MQTT data for Loxone is disabled – disabling and stopping systemd units";
+
+		# disable/stop timers first, then service
+		my @disable_units = (
+			'sonos_watchdog.timer',
+			'sonos_check_on_state.timer',
+			'sonos_event_listener.service',
+		);
+
+		for my $u (@disable_units) {
+			my $rc = sysd('disable', '--now', $u);
+			if ($rc != 0) {
+				LOGERR "Could not disable/stop $u (rc=$rc)";
+			} else {
+				LOGOK "$u has been disabled and stopped";
+			}
+		}
+	}
+	return;
 }
 
 ####################################################################

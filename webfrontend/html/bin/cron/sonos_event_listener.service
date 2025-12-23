@@ -2,32 +2,19 @@
 
 [Unit]
 Description=LoxBerry Sonos Event Listener (Sonos → MQTT)
+StartLimitIntervalSec=60
+StartLimitBurst=10
 After=network-online.target mosquitto.service
 Wants=network-online.target
 
 [Service]
 Type=simple
-
-# Unter welchem User laufen lassen (LoxBerry-Standard)
 User=loxberry
 Group=loxberry
-
-# Wichtig: ins Plugin-Bin-Verzeichnis wechseln,
-# damit die require_once "loxberry_system.php"; etc. funktionieren
 WorkingDirectory=/opt/loxberry/webfrontend/html/plugins/sonos4lox/bin
-
-# Dein Event-Handler (mit Shebang #!/usr/bin/php am Anfang)
 ExecStart=/usr/bin/php /opt/loxberry/webfrontend/html/plugins/sonos4lox/bin/sonos_event_handling.php
-
-# Automatisch neu starten, wenn das Script abstürzt
 Restart=always
 RestartSec=5
-
-# Optional: ein paar Limits etwas „entschärfen“
-StartLimitIntervalSec=60
-StartLimitBurst=10
-
-# Logs gehen ins LoxBerry-Logfile (sonos_events.log) + journalctl
 StandardOutput=journal
 StandardError=journal
 

@@ -2,7 +2,7 @@
 
 class LoxoneTemplateBuilder 
 { 
-	public $VERSION = "2.0.0.2";
+	public $VERSION = "2.0.0.3";
 	public $DEBUG = 0;
 
 	function __construct( $params ) {
@@ -57,14 +57,14 @@ class LoxoneTemplateBuilder
 			$o .= 'Address="http://'.@htmlspecialchars($this->Address, $encflags).'" ';
 			$o .= 'PollingTime="'.$this->PollingTime.'"';
 			$o .= '>'.$crlf;
-		} elseif ($class = "VirtualInUdp") {
+		} elseif ($class == "VirtualInUdp") {
 			$o .= '<VirtualInUdp ';
 			$o .= 'Title="'.@htmlspecialchars($this->Title, $encflags).'" ';
 			$o .= 'Comment="'.@htmlspecialchars($this->Comment, $encflags).'" ';
 			$o .= 'Address="'.@htmlspecialchars($this->Address, $encflags).'" ';
 			$o .= 'Port="'.@htmlspecialchars($this->Port, $encflags).'"';
 			$o .= '>'.$crlf;
-		} elseif ($class = "VirtualOut") {
+		} elseif ($class == "VirtualOut") {
 			$o .= '<VirtualOut ';
 			$o .= 'Title="'.@htmlspecialchars($this->Title, $encflags).'" ';
 			$o .= 'Comment="'.@htmlspecialchars($this->Comment, $encflags).'" ';
@@ -82,9 +82,9 @@ class LoxoneTemplateBuilder
 		
 		if ($class == "VirtualInHttp") {
 			$o .= '</VirtualInHttp>'.$crlf;
-		} elseif ($class = "VirtualInUdp") {
+		} elseif ($class == "VirtualInUdp") {
 			$o .= '</VirtualInUdp>'.$crlf;
-		} elseif ($class = "VirtualOut") {
+		} elseif ($class == "VirtualOut") {
 			$o .= '</VirtualOut>'.$crlf;
 		}
 		return $o;
@@ -172,7 +172,7 @@ class IOCmd
 			$o .= '/>'.$crlf;	
 		}
 		
-		elseif ($this->_type == "VirtualOutCmd") {
+		elseif ($this->_type == "VirtualOut") {
 			$o .= "\t".'<VirtualOutCmd ';
 			
 			if(isset($xmlSetID)) {

@@ -152,10 +152,10 @@ fi
 
 
 # ---------------------------------------------------------
-# Systemd units: Sonos Check-On-State (service+timer) + Event Listener service
+# Systemd units: Sonos Check-On-State (service+timer) + Event Listener service + Watchdog (service+timer)
 # - copy units
-# - ONE daemon-reload at the end
-# - enable/start timer + service
+# - ONE daemon-reload at the end (only if we actually copied units)
+# - enable/start OR disable/stop depending on config LOXONE.LoxDaten
 # ---------------------------------------------------------
 
 SYSTEMD_OK=0
@@ -166,6 +166,46 @@ else
 fi
 
 INSTALL_ANY_UNIT=0
+
+# ---------------------------------------------------------
+# Decide if Loxone Datentransfer is enabled (LOXONE.LoxDaten)
+# - If config missing or jq missing -> treat as disabled (safe default)
+# ---------------------------------------------------------
+LOXDATEN_ENABLED=0
+CFG_S4LOX="/opt/loxberry/config/plugins/sonos4lox/s4lox_config.json"
+
+detect_loxdaten_enabled() {
+    if [ "$SYSTEMD_OK" -ne 1 ]; then
+        LOXDATEN_ENABLED=0
+        return 0
+    fi
+
+    if [ ! -f "$CFG_S4LOX" ]; then
+        echo "<INFO> Config not found ($CFG_S4LOX) – services/timers will be DISABLED."
+        LOXDATEN_ENABLED=0
+        return 0
+    fi
+
+    if ! command -v jq >/dev/null 2>&1; then
+        echo "<WARNING> jq not found – cannot parse config. Services/timers will be DISABLED (safe default)."
+        LOXDATEN_ENABLED=0
+        return 0
+    fi
+
+    # Works for boolean true/false AND for strings "true"/"false"
+    local v
+    v="$(jq -r '(.LOXONE.LoxDaten // "false") | tostring | ascii_downcase' "$CFG_S4LOX" 2>/dev/null || echo "false")"
+
+    if [ "$v" = "true" ]; then
+        LOXDATEN_ENABLED=1
+        echo "<INFO> Config: LOXONE.LoxDaten = true – services/timers will be ENABLED."
+    else
+        LOXDATEN_ENABLED=0
+        echo "<INFO> Config: LOXONE.LoxDaten != true – services/timers will be DISABLED."
+    fi
+
+    return 0
+}
 
 install_sonos_event_listener_service() {
     SERVICE_SRC="$LBHOME/webfrontend/html/plugins/sonos4lox/bin/cron/sonos_event_listener.service"
@@ -219,6 +259,38 @@ install_sonos_check_on_state_units() {
     fi
 }
 
+install_sonos_watchdog_units() {
+    SERVICE_SRC_WD="$LBHOME/webfrontend/html/plugins/sonos4lox/bin/cron/sonos_watchdog.service"
+    TIMER_SRC_WD="$LBHOME/webfrontend/html/plugins/sonos4lox/bin/cron/sonos_watchdog.timer"
+
+    SERVICE_DEST_WD="/etc/systemd/system/sonos_watchdog.service"
+    TIMER_DEST_WD="/etc/systemd/system/sonos_watchdog.timer"
+
+    if [ "$SYSTEMD_OK" -ne 1 ]; then
+        return 0
+    fi
+
+    if [ -f "$SERVICE_SRC_WD" ]; then
+        echo "<INFO> Installing Sonos Watchdog systemd service…"
+        cp "$SERVICE_SRC_WD" "$SERVICE_DEST_WD"
+        chmod 644 "$SERVICE_DEST_WD"
+        echo "<OK> sonos_watchdog.service installed."
+        INSTALL_ANY_UNIT=1
+    else
+        echo "<WARNING> Sonos Watchdog service file not found at $SERVICE_SRC_WD – skipping."
+    fi
+
+    if [ -f "$TIMER_SRC_WD" ]; then
+        echo "<INFO> Installing Sonos Watchdog systemd timer…"
+        cp "$TIMER_SRC_WD" "$TIMER_DEST_WD"
+        chmod 644 "$TIMER_DEST_WD"
+        echo "<OK> sonos_watchdog.timer installed."
+        INSTALL_ANY_UNIT=1
+    else
+        echo "<WARNING> Sonos Watchdog timer file not found at $TIMER_SRC_WD – skipping."
+    fi
+}
+
 # ---------------------------------------------------------
 # Protection against 203/EXEC:
 # - If the PHP script loses its +x bit (e.g., update/copy), systemd ExecStart fails.
@@ -243,7 +315,6 @@ protect_check_on_state_execstart() {
             echo "<INFO> Protection: sonos_check_on_state.service already uses $PHP."
         else
             echo "<INFO> Protection: Patching ExecStart to use $PHP (prevents 203/EXEC if +x gets lost)."
-            # Replace ExecStart line completely
             sed -i "s|^ExecStart=.*check_on_state\.php.*$|ExecStart=$PHP $TARGET|" "$SERVICE_DEST"
             INSTALL_ANY_UNIT=1
             echo "<OK> Protection: ExecStart patched in /etc/systemd/system/sonos_check_on_state.service"
@@ -255,13 +326,11 @@ protect_check_on_state_execstart() {
 
 # ---------------------------------------------------------
 # Optional: keep certain scripts executable for manual runs
-# (Service will work even without +x after patch above, but this helps CLI usage.)
 # ---------------------------------------------------------
 protect_exec_bits() {
     for f in \
         "$LBHOME/webfrontend/html/plugins/sonos4lox/bin/check_on_state.php" \
-        "$LBHOME/webfrontend/html/plugins/sonos4lox/bin/cron/watchdog.php" \
-        "$LBHOME/webfrontend/html/plugins/sonos4lox/bin/cron/watchdog.sh"
+        "$LBHOME/webfrontend/html/plugins/sonos4lox/watchdog.php"
     do
         if [ -f "$f" ]; then
             chmod +x "$f" 2>/dev/null || true
@@ -277,7 +346,7 @@ protect_exec_bits() {
 # ---------------------------------------------------------
 remove_sonos_on_check_cronfiles() {
 
-    CRONROOT="$5/system/cron"
+    CRONROOT="$LBHOME/system/cron"
 
     echo "<INFO> Cron cleanup: Searching for 'Sonos_On_check' under: $CRONROOT"
 
@@ -306,37 +375,71 @@ remove_sonos_on_check_cronfiles() {
     return 0
 }
 
+# --- install units ---
 install_sonos_check_on_state_units
 install_sonos_event_listener_service
+install_sonos_watchdog_units
 
-# Protection steps (run AFTER units are copied)
+# --- protection steps (after units copied) ---
 protect_check_on_state_execstart
 protect_exec_bits
 
 remove_sonos_on_check_cronfiles
 
+# --- decide desired state from config ---
+detect_loxdaten_enabled
+
+# --- reload systemd only if we copied something ---
 if [ "$SYSTEMD_OK" -eq 1 ] && [ "$INSTALL_ANY_UNIT" -eq 1 ]; then
     if systemctl daemon-reload >/dev/null 2>&1; then
         echo "<INFO> systemd daemon reloaded."
     else
         echo "<WARNING> Failed to reload systemd daemon (daemon-reload)."
     fi
+fi
+
+# --- apply state ALWAYS (stable across updates), if units exist ---
+if [ "$SYSTEMD_OK" -eq 1 ]; then
 
     if [ -f /etc/systemd/system/sonos_check_on_state.timer ]; then
-        if systemctl enable --now sonos_check_on_state.timer >/dev/null 2>&1; then
-            echo "<OK> sonos_check_on_state.timer has been enabled and started."
+        if [ "$LOXDATEN_ENABLED" -eq 1 ]; then
+            if systemctl enable --now sonos_check_on_state.timer >/dev/null 2>&1; then
+                echo "<OK> sonos_check_on_state.timer has been enabled and started."
+            else
+                echo "<WARNING> Failed to enable/start sonos_check_on_state.timer. Please check 'systemctl status sonos_check_on_state.timer'."
+            fi
         else
-            echo "<WARNING> Failed to enable/start sonos_check_on_state.timer. Please check 'systemctl status sonos_check_on_state.timer'."
+            systemctl disable --now sonos_check_on_state.timer >/dev/null 2>&1 || true
+            echo "<OK> sonos_check_on_state.timer has been disabled and stopped."
         fi
     fi
 
     if [ -f /etc/systemd/system/sonos_event_listener.service ]; then
-        if systemctl enable --now sonos_event_listener.service >/dev/null 2>&1; then
-            echo "<OK> sonos_event_listener.service has been enabled and started."
+        if [ "$LOXDATEN_ENABLED" -eq 1 ]; then
+            if systemctl enable --now sonos_event_listener.service >/dev/null 2>&1; then
+                echo "<OK> sonos_event_listener.service has been enabled and started."
+            else
+                echo "<WARNING> Failed to enable/start sonos_event_listener.service. Please check 'systemctl status sonos_event_listener.service'."
+            fi
         else
-            echo "<WARNING> Failed to enable/start sonos_event_listener.service. Please check 'systemctl status sonos_event_listener.service'."
+            systemctl disable --now sonos_event_listener.service >/dev/null 2>&1 || true
+            echo "<OK> sonos_event_listener.service has been disabled and stopped."
         fi
     fi
+
+    if [ -f /etc/systemd/system/sonos_watchdog.timer ]; then
+        if [ "$LOXDATEN_ENABLED" -eq 1 ]; then
+            if systemctl enable --now sonos_watchdog.timer >/dev/null 2>&1; then
+                echo "<OK> sonos_watchdog.timer has been enabled and started."
+            else
+                echo "<WARNING> Failed to enable/start sonos_watchdog.timer. Please check 'systemctl status sonos_watchdog.timer'."
+            fi
+        else
+            systemctl disable --now sonos_watchdog.timer >/dev/null 2>&1 || true
+            echo "<OK> sonos_watchdog.timer has been disabled and stopped."
+        fi
+    fi
+
 fi
 
 exit 0

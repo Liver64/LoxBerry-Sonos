@@ -1,0 +1,16 @@
+[Unit]
+Description=Sonos4Lox Watchdog (oneshot)
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/opt/loxberry/webfrontend/html/plugins/sonos4lox/bin/watchdog.php
+
+[Service]
+Type=oneshot
+User=loxberry
+Group=loxberry
+ExecStart=/usr/bin/php /opt/loxberry/webfrontend/html/plugins/sonos4lox/bin/watchdog.php
+SuccessExitStatus=0 1
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

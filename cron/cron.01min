@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This is a sample cron file. According to it's name it will go to
 # ~/system/cron/cron.hourly. You may also let your Pluginscript create a
@@ -8,10 +8,28 @@
 # cron script will not be uninstalled cleanly.
 
 # Will be executed as user "loxberry".
+set -euo pipefail
 
+#---- BACKUP FALLS VERBINDUNG ZU LOXONE AUS IST ---
+CFG="REPLACELBPCONFIGDIR/s4lox_config.json"
+
+# Falls Config fehlt: abbrechen oder Default setzen
+if [[ ! -f "$CFG" ]]; then
+  echo "Config not found: $CFG" >&2
+  exit 0
+fi
+
+LOXONE="$(jq -r '.LOXONE.LoxDaten // "false"' "$CFG")"
+
+# Wenn LoxDaten == "false" -> check_on_state ausführen
+if [[ "$LOXONE" == "false" ]]; then
+  /usr/bin/php REPLACELBPHTMLDIR/bin/check_on_state.php
+fi
+
+#---- AUSFÜHRUNG ALLE 10 SEKUNDEN ----
 i=0
-while [ $i -lt 6 ]; do
-  #/usr/bin/php REPLACELBPHTMLDIR/bin/push_loxone.php &
+while [[ $i -lt 6 ]]; do
+  # /usr/bin/php REPLACELBPHTMLDIR/bin/push_loxone.php &
   sleep 2
   /usr/bin/php REPLACELBPHTMLDIR/bin/push_maxvol.php &
   sleep 2
@@ -21,3 +39,4 @@ while [ $i -lt 6 ]; do
   sleep 4
   i=$(( i + 1 ))
 done
+

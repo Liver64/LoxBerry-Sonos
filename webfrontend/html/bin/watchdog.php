@@ -197,7 +197,7 @@ if (!unit_exists($checkSvc)) {
         }
     } else {
         // not failed => OK (inactive is expected)
-        LOGOK("[$checkSvc] OK (oneshot state='$active').");
+        LOGOK("[$checkSvc] OK (oneshot; last run finished, not failed).");
     }
 }
 
