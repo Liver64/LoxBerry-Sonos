@@ -550,8 +550,10 @@ function PluginRadio()
     //    → Wenn hier was schiefgeht, trotzdem Radio starten.
     // ------------------------------------------------------------
     try {
-        say_radio_station('', $stationName);
-		$sonos->ClearQueue();
+		if (is_enabled($config['VARIOUS']['announceradio'])) {
+			say_radio_station('', $stationName);
+			$sonos->ClearQueue();
+		}
     } catch (Exception $e) {
         LOGWARN("radio.php: failed: ".$e->getMessage());
     }
