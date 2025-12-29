@@ -22,9 +22,10 @@ fi
 LOXONE="$(jq -r '.LOXONE.LoxDaten // "false"' "$CFG")"
 
 # Wenn LoxDaten == "false" -> check_on_state ausführen
-if [[ "$LOXONE" == "false" ]]; then
-  /usr/bin/php REPLACELBPHTMLDIR/bin/check_on_state.php
+if [[ -z "$LOXONE" || "$LOXONE" == "false" ]]; then
+  /usr/bin/php /opt/loxberry/webfrontend/html/plugins/sonos4lox/bin/check_on_state.php
 fi
+
 
 #---- AUSFÜHRUNG ALLE 10 SEKUNDEN ----
 i=0
