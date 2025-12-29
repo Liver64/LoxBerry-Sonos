@@ -257,7 +257,7 @@ echo "<PRE>";
 
 function DelFiles($mask)    {
 	
-	global $mask;
+	global $mask,$lbpplugindir;
 	
 	array_map('unlink', glob("/run/shm/".$lbpplugindir."/".$mask));
 }
@@ -273,7 +273,7 @@ function DelFiles($mask)    {
 
 function RestorePrevSBsettings($soundbars)    {
 	
-	global $status_file, $logname;
+	global $status_file, $logname, $lbpplugindir;
 	
 	startlog();
 	foreach($soundbars as $key => $value)   {
