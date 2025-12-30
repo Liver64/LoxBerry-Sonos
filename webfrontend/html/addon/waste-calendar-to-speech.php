@@ -22,7 +22,10 @@ function muellkalender() {
 	}
 
 	// URL from Config
-	$url = $config['VARIOUS']['CALDavMuell'];
+	if ($url === '') {
+		lLOGGING("waste-calendar-to-speech.php: Config for waste calendar is empty – aborting.");
+		exit(0); // or exit(1) if you want it to be treated as an error
+	}
 
 	$checkdebug = strpos($url, "&debug");
 	if ($checkdebug !== false) {

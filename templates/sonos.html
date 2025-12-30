@@ -1,9 +1,15 @@
 <style type="text/css">
+/* =========================================================
+   Basic UI tweaks
+   ========================================================= */
+
 td input[type="checkbox"] {
-	float: center;
-    width: 70%;
+  /* float:center is invalid; keep it simple + stable */
+  display: inline-block;
+  width: 70%;
 }
 
+/* Horizontal scroll menu (if used somewhere else) */
 div.scrollmenu {
   overflow: auto;
   white-space: nowrap;
@@ -21,34 +27,43 @@ div.scrollmenu a:hover {
   background-color: #777;
 }
 
-# Ab hier für Calendar Validation
-/* nur optik für die zwei felder */
+/* =========================================================
+   Calendar validation styles (only optics)
+   ========================================================= */
+
 .textfield.valid {
-  background-color: #f3f4f6;      /* zart grün */
-  border-color:    #2e7d32;
-}
-.textfield.invalid {
-  background-color: #fe4746;      /* zart rot */
-  color: #fff;                 /* Text weiß */
-  border-color:    #c62828;
+  background-color: #f3f4f6; /* light green-ish */
+  border-color: #2e7d32;
 }
 
-/* kleine Zeile unter dem Feld */
-.calmsg{
-  margin-top:4px;
-  font-size:12px;
-  line-height:1.35;
-  color:#6b7280;     /* grau für "Prüfe..." */
+.textfield.invalid {
+  background-color: #fe4746; /* light red */
+  color: #fff;
+  border-color: #c62828;
 }
-.calmsg.error{ color:#c62828; } /* rot bei Fehler */
-.hidden{ display:none; }
+
+/* Small line under the field */
+.calmsg {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: #6b7280; /* gray for "checking..." */
+}
+
+.calmsg.error {
+  color: #c62828; /* red on error */
+}
+
+.hidden {
+  display: none;
+}
 </style>
+
 
 <TMPL_IF SETTINGS>
     <!-- form 'FORM' START -->
-	
+
     <form method="post" data-ajax="false" accept-charset="utf-8" name="main_form" id="main_form" action="./index.cgi?form">
-		<!--<div class="scrollmenu">-->
         <input type="hidden" name="saveformdata1" value="1">
 		<input type="hidden" name="regionOptions" id="regionOptions" value="<TMPL_VAR TTS.regionms>">
 		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table.css"/>
@@ -56,7 +71,7 @@ div.scrollmenu a:hover {
 		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.css"/>
 		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.min.js"></script>
 		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.js"></script>
-	
+
         <div class="form-group">
             <font COLOR="blue">
                 <TMPL_VAR SAVE>
@@ -64,7 +79,7 @@ div.scrollmenu a:hover {
 
             <table class="formtable" border="0" width="100%" cellpadding="10">
                 <tr>
-				
+
 				<TMPL_IF NAME="PLAYER_AVAILABLE">
                     <td valign="middle" style="height: 33px; width: 25%; text-align: center; color:black">
 				<TMPL_ELSE>
@@ -126,7 +141,6 @@ div.scrollmenu a:hover {
 							<TMPL_IF NAME="PLAYER_AVAILABLE">
 								<div class='icoclip' style='text-align: left;'>
 									&nbsp;&nbsp;&nbsp;<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/green.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_GREEN>
-									<!--<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/yellow.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_YELLOW>-->
 									&nbsp;&nbsp;<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/red.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_RED>
 								</div>
 
@@ -164,8 +178,8 @@ div.scrollmenu a:hover {
 						</td>
 					</tr>
 				</TMPL_IF>
-				
-	            <tr>			
+
+	            <tr>
 					<td style="height: 60px; width: 15%;">
 						<label id="lt2son"><TMPL_VAR T2S.LABEL_T2SON></label>
 					</td>
@@ -182,24 +196,6 @@ div.scrollmenu a:hover {
 										$('#t2son').val('<TMPL_VAR TTS.t2son>')
 									</script>
 								</td>
-								<!--<td style="height: 60px; width: 12%;">
-									<label id="lcheckonline">Player Online check:</label>
-								</td>
-								<td width="10%">
-                                    <select id="checkonline" name="checkonline" data-mini="true" data-native-menu="false" width="100%">
-										<option value="false">Off</option>
-										<option value="3">3 Min.</option>
-										<option value="5">5 Min.</option>
-										<option value="15">15 Min.</option>
-										<option value="30">30 Min.</option>
-										<option value="hourly">hourly</option>
-										<option value="daily">daily</option>
-									</select>
-                                    <script>
-                                        $('#checkonline option[value="<TMPL_VAR SYSTEM.checkonline>"').prop('selected', 'selected');
-                                    </script>
-                                </td>-->
-								
 								<td style="height: 60px; width: 25%">
 								<TMPL_IF NAME="RESTORE_POSSIBLE">
 									<label id="lt2son" align="right"><TMPL_VAR BASIS.PLUGIN_RESTORE></label>
@@ -209,19 +205,19 @@ div.scrollmenu a:hover {
 									</TMPL_IF>
 								</TMPL_IF>
 									<td style="height: 60px; width: 1%">
-									<TMPL_IF NAME="CONFIG_DIFFERENT">									
+									<TMPL_IF NAME="CONFIG_DIFFERENT">
 										<a id="savec" name="savec" data-role="button" data-inline="true" data-mini="true" data-icon="check">Backup</a>
-									</TMPL_IF>										
+									</TMPL_IF>
 									<TMPL_IF NAME="RESTORE_POSSIBLE">
 										<a id="restorec" name="restorec" data-role="button" data-inline="true" data-mini="true" data-icon="refresh">Restore</a>
 									</TMPL_IF>
 									</td>
 								</td>
-								
+
 						</table>
-					</td>		
+					</td>
 				</tr>
-				
+
 				<tr class="tvmon_switch">
 					<td class="tvmon_switch" style="height: 60px; width: 25%;">
                         <label align="left" id="lfunc_list"><TMPL_VAR ZONES.SONOS_LABEL_TV-VOL></label>
@@ -238,7 +234,7 @@ div.scrollmenu a:hover {
                                     </fieldset>
 									<script>
 										$('#tvmon').val('<TMPL_VAR VARIOUS.tvmon>');
-									</script>	
+									</script>
                                 </td>
                                 <td class="tvmon_header" style="width: 23px; text-align: center;">
                                     &nbsp;</td>
@@ -273,7 +269,7 @@ div.scrollmenu a:hover {
                 </tr>
             </table>
         </td>
-        
+
 		</tr>
 				<tr class="tvmon_header">
 					<td style="width: 15%; height: 20px;" valign="top">
@@ -294,7 +290,7 @@ div.scrollmenu a:hover {
 									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_NIGHT></th>
 									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_SUB></th>
 									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_SUB_GAIN></th>
-									
+
 								</tr>
 								<TMPL_VAR ROWSOUNDBARS>
 							</table>
@@ -312,7 +308,7 @@ div.scrollmenu a:hover {
                         </font>
                     </td>
 				</tr>
-				
+
                 <tr>
                     <td style="width: 20%; height: 45px;">
                         <label id="ltts_instanz"><TMPL_VAR T2S.TTS_INSTANZ></label>
@@ -320,57 +316,28 @@ div.scrollmenu a:hover {
                     <td style="width: 55%; height: 45px;">
                         <fieldset id="engine-selector" data-role="controlgroup" data-type="horizontal">
                             <input type="radio" name="t2s_engine" id="tts_voicerss" value="1001">
-
-                                <label for="tts_voicerss">🔊 VoiceRSS</label>
-
-                                   <input type="radio" name="t2s_engine" id="tts_polly" value="4001">
-                                    
-                                        <label for="tts_polly">☁️ Polly</label>
-
-                                        <input type="radio" name="t2s_engine" id="tts_piper" value="9012">
-                                        
-                                            <label for="tts_piper">🎙️ Piper</label>
-
-                                            <input type="radio" name="t2s_engine" id="tts_respvoice" value="6001">
-                                            
-                                                <label for="tts_respvoice">🔈 RespVoice</label>
-
-                                                <input type="radio" name="t2s_engine" id="tts_google_cloud" value="8001">
-                                                
-                                                    <label for="tts_google_cloud">🌐 Google Cloud</label>
-													
-													<input type="radio" name="t2s_engine" id="tts_azure" value="9001">
-													
-														<label for="tts_azure">💎 MS Azure AI</label>
-
-																<input type="radio" name="t2s_engine" id="tts_elevenlabs" value="9011">
-																
-																	<label for="tts_elevenlabs">🧠 ElevenLabs</label>
-														
-															
-
+                            <label for="tts_voicerss">🔊 VoiceRSS</label>
+                            <input type="radio" name="t2s_engine" id="tts_polly" value="4001">
+                            <label for="tts_polly">☁️ Polly</label>
+                            <input type="radio" name="t2s_engine" id="tts_piper" value="9012">
+                            <label for="tts_piper">🎙️ Piper</label>
+                            <input type="radio" name="t2s_engine" id="tts_respvoice" value="6001">
+                            <label for="tts_respvoice">🔈 RespVoice</label>
+                            <input type="radio" name="t2s_engine" id="tts_google_cloud" value="8001">
+                            <label for="tts_google_cloud">🌐 Google Cloud</label>
+							<input type="radio" name="t2s_engine" id="tts_azure" value="9001">
+							<label for="tts_azure">💎 MS Azure AI</label>
+							<input type="radio" name="t2s_engine" id="tts_elevenlabs" value="9011">
+							<label for="tts_elevenlabs">🧠 ElevenLabs</label>
                         </fieldset>
-			<!--<script>
-				$('#engine-selector input').change(function() {
-					var t2sengine = $('input[name=t2s_engine]:checked').val();
-					$.ajax({url: "./index.cgi?getkeys=1&t2s_engine="+t2sengine, type: 'GET', dataType: 'json', success: function(result){
-						$("#apikey").val(result.apikey);
-						$("#seckey").val(result.seckey);
-					}});
-				});
-			</script>-->
-                        <div class="ttsconfig googleinfo 7001">
-                            <label align="middle"><FONT size="-1" COLOR="#0000CD"><TMPL_VAR T2S.GOOGLE_INFO></FONT></label>
-                        </div>
-                        <div class="ttsconfig googlecloudinfo 8001">
-                            <label align="middle"><FONT size="-1" COLOR="#0000CD"><TMPL_VAR T2S.GOOGLE_CLOUD_INFO></FONT></label><br>
+                         <div class="ttsconfig googlecloudinfo 8001">
                             <font size="-1" align="middle">
                                 <a id="linkgoogleapi" href="https://www.youtube.com/watch?v=1n8xlVNWEZ0" target="_blank">
                                     <TMPL_VAR T2S.GOOGLE_CLOUD_API_LINK>
                                 </a>
                             </font>
                         </div>
-						
+
 						<div class="ttsconfig elevenlabsinfo 9011">
                              <font size="-1" align="middle">
                                 <a id="linkazureapi" href="https://elevenlabs.io/" target="_blank">
@@ -378,7 +345,7 @@ div.scrollmenu a:hover {
                                 </a>
                             </font>
                         </div>
-						
+
 						<div class="ttsconfig piperinfo 9012">
                              <font size="-1" align="middle">
                                 <a id="linkpiper" href="https://huggingface.co/rhasspy/piper-voices/tree/main" target="_blank">
@@ -386,7 +353,7 @@ div.scrollmenu a:hover {
                                 </a>
                             </font>
                         </div>
-						
+
 						<div class="ttsconfig azureinfo 9001">
                              <font size="-1" align="middle">
                                 <a id="linkazureapi" href="/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/bin/Azure_Account.pdf" target="_blank">
@@ -410,7 +377,7 @@ div.scrollmenu a:hover {
                         </font>
                         <font size="-1"><span><TMPL_VAR T2S.LABEL_CLOUDSERVICE_PRICING></span></font>
                     </td>
-                    
+
                 </tr>
 
                 <tr class="ttsconfig colapi 1001 4001 8001 9001 9011">
@@ -422,9 +389,9 @@ div.scrollmenu a:hover {
 					</td>
                     <td style="height: 48px; width: 100px;" class="auto-style4" valign="top">
                         <div class="ttsconfig btnpopulategooglevoices 8001 9001 9011 9012">
-                            <a onClick="checkProvider()" data-role="button" data-inline="true" data-mini="true" href="#">
-                                <TMPL_VAR T2S.BUTTON_VOICES>
-                            </a>
+                            <a onclick="checkProvider(); return false;" data-role="button" data-inline="true" data-mini="true" href="#">
+								<TMPL_VAR T2S.BUTTON_VOICES>
+							</a>
                         </div>
                     </td>
                 </tr>
@@ -437,7 +404,7 @@ div.scrollmenu a:hover {
 
                         <td style="width: 201px; height: 48px;">
                         </td>
-                        
+
                 </tr>
 				<p id="errorinfo"></p>
                 <tr class="ttsconfig ttsbaseconfig collang">
@@ -450,8 +417,8 @@ div.scrollmenu a:hover {
                                 <div data-role="collapsible">
                                     <td style="height: 36px; width:25%; text-align: left;">
                                         <fieldset style="width: 100%">
-                                            <select id="t2slang" name="t2slang" data-mini="true"; 
-												data-validation-error-msg="<TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN>" 
+                                            <select id="t2slang" name="t2slang" data-mini="true";
+												data-validation-error-msg="<TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN>"
 												data-validation-rule="^([A-Za-z0-9]){4,10}$">
 											</select>
                                         </fieldset>
@@ -462,14 +429,9 @@ div.scrollmenu a:hover {
                                     <td style="height: 36px; width: 35%;" class="ttsconfig field-voice 1001 9012 4001 8001 9001 9011" style="display:none">
                                         <fieldset style="width: 100%">
                                             <select class="voice_select" id="voice" name="voice" data-mini="true";
-											data-validation-error-msg="<TMPL_VAR T2S.SELECT_VOICE_DROPDOWN>" 
+											data-validation-error-msg="<TMPL_VAR T2S.SELECT_VOICE_DROPDOWN>"
 											data-validation-rule="^([A-Za-z0-9]){4,10}$">
-										</select>
-								<!--<div class="ttsconfig field-voice 9011">
-									<td class="ttsconfig field-voice 9011" style="height: 36px; width: 8%; text-align: left;">
-										<img onclick="playprev()" src='/plugins/<TMPL_VAR PLUGINDIR>/images/play-button.png'>
-									</td>
-								</div>-->
+											</select>
                                         </fieldset>
                                         <td style="height: 36px; width: 32%; text-align: right;">
                                             <fieldset style="width: 15%">
@@ -509,9 +471,9 @@ div.scrollmenu a:hover {
                                                 <label id="lfile_gong"><TMPL_VAR T2S.LABEL_MP3_FILE></label>
                                             </td>
                                             <td style="height: 30px">
-                                                <select id='file_gong' name='file_gong' data-mini='true' 
-													data-validation-error-msg="<TMPL_VAR T2S.SELECT_JINGLE_DROPDOWN>" 
-													data-validation-rule="^([A-Za-z0-9]){4,10}$" style="width: 244px">
+                                                <select id='file_gong' name='file_gong' data-mini='true'
+													data-validation-error-msg="<TMPL_VAR T2S.SELECT_JINGLE_DROPDOWN>"
+													data-validation-rule="^([A-Za-z0-9]){4,10}$" style="width: 100%">
 													<option selected='true' value='' disabled><TMPL_VAR T2S.SELECT_JINGLE_DROPDOWN></option>
 													<TMPL_VAR MP3_LIST>
 												</select>
@@ -528,7 +490,7 @@ div.scrollmenu a:hover {
                         <td valign="middle" style="height: 60px; width: 100px;">
                             &nbsp;
                         </td>
-                        
+
                 </tr>
 
                 <tr class="ttsconfig ttsbaseconfig colcachesize">
@@ -540,7 +502,7 @@ div.scrollmenu a:hover {
                     </td>
                     <td style="height: 30px; width: 201px;">
                     </td>
-                    
+
                 </tr>
 
                 <tr class="ttsconfig ttsbaseconfig colmp3path">
@@ -556,23 +518,12 @@ div.scrollmenu a:hover {
                                 <TMPL_VAR DATADIR>/tts/</font>
                     </td>
                     <td style="height: 60px; width: 201px;">
-                        <!--<font size="-1">
-                            <TMPL_VAR T2S.LABEL_SONOS_FOLDER1>
-                        </font>
-                        <font size="-1" color="blue"><b><TMPL_VAR T2S.LABEL_SONOS_FOLDER2></b></font>
-                        <font size="-1">
-                            <TMPL_VAR T2S.LABEL_SONOS_FOLDER3>
-                        </font>
-                        <font size="-1" color="blue"><b><TMPL_VAR T2S.LABEL_SONOS_FOLDER4></b></font>
-                        <font size="-1">
-                            <TMPL_VAR T2S.LABEL_SONOS_FOLDER5>
-                        </font>-->
+
                     </td>
-                    
+
                 </tr>
 
                 <tr class="ttsconfig ttsbaseconfig">
-					<!-- Linke Spalte: Label -->
 					<td style="height: 60px; width: 25%;">
 						<label id="lsendlox"><TMPL_VAR T2S.DATA_TRANSFER_MINISERVER></label>
 					</td>
@@ -641,7 +592,7 @@ div.scrollmenu a:hover {
 						</font>
 					</td>
 				</tr>
-				
+
                 <tr class="empty_template">
                     <td class="empty_template" style="height: 60px; width: 25%;">
                         <label id="ltemplate"><TMPL_VAR T2S.LABEL_TEMPLATE></label>
@@ -651,9 +602,6 @@ div.scrollmenu a:hover {
                         <table border=0 width="100%">
                             <tr>
                                 <td class="empty_template" style="width: 5%">
-								    <!--<div class="btn">
-										<input type="button" onclick="checkfile('VI_UDP_Sonos.xml')" id="btn1" data-mini="true" value="VI_UDP_Sonos.xml" />
-									</div>-->								
 									<div class="btnc">
                                         <input type="button" onclick="checkfile('VI_MQTT_UDP_Sonos.xml')" id="btn2" data-mini="true" value="VI_MQTT_UDP_Sonos.xml" />
 									</div>
@@ -667,13 +615,7 @@ div.scrollmenu a:hover {
                             </tr>
                         </table>
 						<td class="empty_template" style="width: 50%; height: 60px;">
-                            <!--<font size="-1">
-                                <TMPL_VAR T2S.HELP_TEMPLATE>
-								<a id="lwiki" target="_blank">
-									<TMPL_VAR T2S.HELP_TEMPLATE_END>
-								</a>
-                            </font>-->
-                        </td>
+                          </td>
 					</td>
                         <td class="empty_template" style="height: 30px; width: 201px;">
                         </td>
@@ -684,9 +626,6 @@ div.scrollmenu a:hover {
                             </font>
                         </td>
                 </tr>
-
-
-
 
                 <!-- Options-->
                 <tr>
@@ -737,7 +676,7 @@ div.scrollmenu a:hover {
                     </td>
                     <td style="height: 33px; width: 24px;"></td>
                     <tr class="radiodet">
-                        <td colspan=3 valign="middle" style="height: 36px"> 
+                        <td colspan=3 valign="middle" style="height: 36px">
                             <font size="-1">
                                 <TMPL_VAR RADIO.NOTE_RADIO>
                             </font>
@@ -870,141 +809,9 @@ div.scrollmenu a:hover {
                                 </tr>
 
                                 <!-- Ende Kalender-->
-								
-								
-								<script>
-									(function($){
-									  const TAG = '[caldav-validate]';
 
-									  function endpoint(){
-										try { return location.pathname.replace(/[^/]+$/, 'index.cgi') || 'index.cgi'; }
-										catch { return 'index.cgi'; }
-									  }
 
-									  // helpers for the inline status/error row placed right after the input
-									  function ensureMsg($in){
-										let $m = $in.next('.calmsg');
-										if (!$m.length) {
-										  $m = $('<div class="calmsg hidden" aria-live="polite" aria-atomic="true"></div>');
-										  $in.after($m);
-										}
-										return $m;
-									  }
-									  function showPending($in){
-										const $m = ensureMsg($in);
-										$m.removeClass('error').text('Checking…').removeClass('hidden');
-									  }
-									  function showError($in, msg){
-										const $m = ensureMsg($in);
-										$m.addClass('error').text(msg).removeClass('hidden');
-									  }
-									  function clearMsg($in){
-										const $m = ensureMsg($in);
-										$m.addClass('hidden').text('');
-									  }
 
-									  // -> always returns { ok:boolean, error?:string, status?, raw? }
-									  async function validateUrl(url, mode){
-										const qs   = new URLSearchParams({ action:'validate_ics', url, mode });
-										const href = endpoint() + '?' + qs.toString();
-
-										const t0 = performance.now();
-										console.log(TAG, 'start', { mode, url, href });
-
-										try {
-										  const r = await fetch(href, {
-											method: 'GET',
-											headers: { 'Accept': 'application/json' },
-											cache: 'no-store',
-											credentials: 'same-origin'
-										  });
-
-										  const ct = (r.headers.get('content-type') || '').toLowerCase();
-										  const dt = Math.round(performance.now() - t0);
-										  console.log(TAG, 'response', { status: r.status, ok: r.ok, contentType: ct, timeMs: dt });
-
-										  if (!r.ok) {
-											let snippet = '';
-											try { snippet = (await r.text()).slice(0, 200); } catch {}
-											return { ok:false, error:`HTTP ${r.status}`, status:r.status, raw:snippet };
-										  }
-
-										  let data = {};
-										  try { data = await r.json(); }
-										  catch (e) {
-											console.warn(TAG, 'JSON parse failed:', e);
-											return { ok:false, error:'Invalid server response (not valid JSON)' };
-										  }
-
-										  // Expected backend shape: { ok: true|false, msg?: string }
-										  if (data && data.ok === true) {
-											return { ok:true, raw:data };
-										  } else {
-											const serverMsg = (data && (data.msg || data.error)) || 'Invalid response';
-											return { ok:false, error: serverMsg, raw:data };
-										  }
-
-										} catch (e) {
-										  console.error(TAG, 'network error:', e);
-										  return { ok:false, error:'Network error (server not reachable)', raw:String(e) };
-										}
-									  }
-
-									  // UI: only mark red on error, otherwise neutral
-									  function mark($in, state){
-										$in.removeClass('valid invalid');
-										if (state === 'err') $in.addClass('invalid');
-									  }
-
-									  async function run(sel, mode){
-										const $in = $(sel);
-										const url = ($in.val() || '').trim();
-
-										if (!url){
-										  console.log(TAG, 'empty -> neutral', sel);
-										  clearMsg($in);
-										  mark($in, null);
-										  return;
-										}
-
-										showPending($in);
-										const res = await validateUrl(url, mode);
-
-										if (res.ok){
-										  console.log(TAG, 'ok', sel, res.raw);
-										  clearMsg($in);         // success -> hide row
-										  mark($in, null);       // keep neutral
-										} else {
-										  // friendly messages by error type
-										  let msg = res.error || 'Unknown error';
-										  const lower = msg.toLowerCase();
-
-										  if (lower.includes('json')) {
-											msg = 'Invalid JSON response – please check your URL/parameters.';
-										  } else if (/^http\s*\d+/.test(msg)) {
-											msg = `Server error (${msg}).`;
-										  } else if (lower.includes('network')) {
-											msg = 'Network error – server not reachable.';
-										  }
-
-										  showError($in, msg);
-										  mark($in, 'err');
-										  console.warn(TAG, 'invalid', { field: sel, mode, reason: res.error, status: res.status, raw: res.raw });
-										}
-									  }
-
-									  // Validate on blur/change only
-									  $(document)
-										.on('blur change', '#wastecal', function(){ run('#wastecal', 'json'); })
-										.on('blur change', '#cal',      function(){ run('#cal',      'ics');  });
-
-									  // Optionally validate prefilled values on load
-									  $(function(){
-										if ($('#wastecal').val()) run('#wastecal','json');
-										if ($('#cal').val())      run('#cal','ics');
-									  });
-									})(jQuery);
-									</script>
 
                                 <!-- Start Weather-->
                                 <tr class="weatherdet">
@@ -1081,11 +888,11 @@ div.scrollmenu a:hover {
                     <button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SAVE.SAVE_BUTTON></button>
 				</center>
 				<script>
-				
+
 				</script>
             </p>
         </div>
-		
+
 		<!-- Donation -->
         <div data-role='collapsible' id='coll_donate' data-content-theme='true' data-collapsed='true' data-collapsed-icon='carat-d' data-expanded-icon='carat-u' data-iconpos='right'>
             <h2 class='ui-bar ui-bar-a ui-corner-all' id='head_donate'>
@@ -1120,1708 +927,12 @@ div.scrollmenu a:hover {
         <!-- Ende Donation -->
     <!--</div>-->
 	</form>
-	
-	
 
-	<!-- Speech SDK reference sdk. -->
-	
-	<script src="/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/bin/Microsoft/microsoft.cognitiveservices.speech.sdk.bundle.js"></script>
-	<script>
-        //***************** Functions to be executed during loading the page **********************
-		
-		//console.log(config);
-        $(document).on('pageinit', function() {
-				selection();
-				callayout();
-				destlayout();
-				radlayout();
-				weatherlayout();
-				donation();
-				//getsbconfig();
-				//getradio();
-			});
-			var tvmonerr = "true";		
-		
-		// play test soundfile when Elevenlabs used
-		//function playprev()    {
-		//    var selectElement = document.getElementById("voice");
-		//	var file = (selectElement.options[selectElement.selectedIndex].id);
-		//	let beat = new Audio(file);
-		//	beat.play();
-		//};
-		
-		function checkboxes() {
-			//console.log('checkboxes');
-			// get count of players for iteration
-			var iteration = document.getElementById('countplayers').value;
-            iteration = parseInt(iteration)
-            iteration += 1;
-			// loop through players
-			for (i = 1; i < iteration; ++i) {
-				if (document.getElementById('mainchk' + i).value == "on") {
-					document.getElementById('mainchk' + i).checked = true;
-					$('input:checkbox').checkboxradio('refresh');
-				} else {
-					document.getElementById('mainchk' + i).checked = false;
-					$('input:checkbox').checkboxradio('refresh');
-				}
-			}
-			return;
-		}
-		
 
-		
-		function t2slayout() {
-            if (document.main_form.t2s_det.checked == true) {
-                $(".t2sdet").show();
-            } else {
-                $(".t2sdet").hide();
-            }
-        }
 
-        function callayout() {
-            if (document.main_form.cal_det.checked == true) {
-                $(".caldet").show();
-            } else {
-                $(".caldet").hide();
-            }
-        }
-
-        function destlayout() {
-            if (document.main_form.dest_det.checked == true) {
-                $(".destdet").show();
-            } else {
-                $(".destdet").hide();
-            }
-        }
-
-        function radlayout() {
-            if (document.main_form.radio_det.checked == true) {
-                $(".radiodet").show();
-            } else {
-                $(".radiodet").hide();
-            }
-        }
-
-        function weatherlayout() {
-            if (document.main_form.weather_det.checked == true) {
-                $(".weatherdet").show();
-            } else {
-                $(".weatherdet").hide();
-            }
-        }
-
-        function donation() {
-            if (document.getElementById('donate').checked) {
-                $("#coll_donate").hide();
-            } else {
-                $("#coll_donate").show();
-            }
-        }
-		
-		function restartSonosListener() {
-			//if (!confirm('Sonos Event Listener jetzt neu starten?')) {
-				//return;
-			//}
-
-			$.get('index.cgi', { action: 'restart_listener' })
-				.done(function (data) {
-					console.log('Restart command sent to Sonos Event Listener.');
-					location.reload();
-				})
-				.fail(function () {
-					console.log('Failed to restart Sonos Event Listener.');
-				});
-		}
-
-        //**************************** Block for Layout control ************************************
-
-        // function to disable/enable some fields on click depending on selected value
-        function prepareTTSConfigFields() {
-            console.log("prepareTTSConfigFields");
-            const selectedEngine = $('#engine-selector input:checked');
-            if (selectedEngine) {
-                $('.ttsconfig').not('.' + selectedEngine.val()).not('.ttsbaseconfig').hide();
-                $('.' + selectedEngine.val() + ', .ttsbaseconfig').show();
-            } else {
-                $('.ttsconfig').hide();
-            }
-			 // T2S INSTANZ
-            if (document.getElementById('tts_voicerss').checked == true) {
-                $('#voice').removeClass('ui-disabled');
-                $('#voice').selectmenu('refresh', true);
-            } else if (document.getElementById('tts_azure').checked == true) {
-                $('#voice').removeClass('ui-disabled');
-                $('#voice').selectmenu('refresh', true);
-            } else if (document.getElementById('tts_elevenlabs').checked == true) {
-                $('#voice').removeClass('ui-disabled');
-                $('#voice').selectmenu('refresh', true);
-            } else if (document.getElementById('tts_polly').checked == true) {
-                $('#voice').removeClass('ui-disabled');
-                $('#voice').selectmenu('refresh', true);
-            } else if (document.getElementById('tts_google_cloud').checked == true) {
-                $('#voice').removeClass('ui-disabled');
-                $('#voice').selectmenu('refresh', true);
-			} else if (document.getElementById('tts_piper').checked == true) {
-                $('#voice').removeClass('ui-disabled');
-				$('#voice').selectmenu('refresh', true);
-            }
-			$('#t2slang').selectmenu('refresh', true);
-			$('#voice').selectmenu('refresh', true);
-            populateLanguageAndVoiceFields();
-        }
-
-        
-		// make fields visible in case flipswitch value is true/false
-        function selection() {
-			console.log("Selection");
-            var cat = document.getElementById('sendlox').value;
-			if (cat == "true") {
-				console.log("Communication to Loxone turned on");
-                $('.field_ms').show();
-                //$('.label_template').show();
-                //$('.template').show();
-                $('.empty_template').show();
-            } else {
-				console.log("Communication to Loxone turned off");
-                $('.field_ms').hide();
-                //$('.label_template').hide();
-                //$('.template').hide();
-                $('.empty_template').hide();
-            }
-            $("#sendlox").flipswitch("refresh");
-            $('#miniserver').selectmenu('refresh', true);
-        }
-		
-		
-	// prepare the voice list dependend on language list
-	function populateVoice() {
-		console.log("populateVoice");
-		$('#voice').selectmenu('refresh', true);
-
-		// === SPEZIALFALL ELEVENLABS ==========================================
-		// ElevenLabs wird komplett über populateElevenlabsLang()/Voices behandelt.
-		// Das verhindert doppelte Aufrufe, vor allem weil #t2slang noch
-		// ein onchange="populateVoice()" aus der Historie hat.
-		if (document.main_form.tts_elevenlabs &&
-			document.main_form.tts_elevenlabs.checked === true) {
-
-			console.log("populateVoice: ElevenLabs active → handled separately, skipping.");
-			return;
-		}
-
-		// ==== VoiceRSS ====
-		if (document.getElementById('tts_voicerss').checked == true) {
-			var selectedlanguage = $("#t2slang").val();
-			console.log("VoiceRSS selectedlanguage:", selectedlanguage);
-
-			if (selectedlanguage) {
-				$('#voice').empty();
-				$('#voice').removeClass('ui-disabled');
-
-				const url = "/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/langfiles/voicerss_voices.json";
-				$.getJSON(url, function(listvoice) {
-					$('#voice').append(
-						'<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>'
-					);
-
-					// Stimmen nach Sprache filtern (language in JSON = value in voicerss.json)
-					var selectedvoiceList = listvoice.filter(function(item) {
-						return item.language === selectedlanguage;
-					});
-
-					$.each(selectedvoiceList, function(index, value) {
-						if (value.name == '<TMPL_VAR VOICE>') {
-							$('#voice').append(
-								'<option selected="selected" value="' + value.name + '">' +
-								value.name + '</option>'
-							);
-						} else {
-							$('#voice').append(
-								'<option value="' + value.name + '">' +
-								value.name + '</option>'
-							);
-						}
-					});
-
-					$('#voice').selectmenu('refresh', true);
-				});
-			}
-
-		// ==== Polly ====
-		} else if (document.main_form.tts_polly.checked == true) {
-			var selectedlanguage = $("#t2slang option:selected").val();
-			if (selectedlanguage) {
-				$('#voice').empty();
-				$('#voice').removeClass('ui-disabled');
-				const url = "/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/langfiles/polly_voices.json";
-				$.getJSON(url, function(listvoice) {
-					$('#voice').append(
-						'<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>'
-					);
-					var selectedvoiceList = listvoice.filter(function(item) {
-						return item.language === selectedlanguage;
-					});
-					$.each(selectedvoiceList, function(index, value) {
-						if (value.name == '<TMPL_VAR VOICE>') {
-							$('#voice').append(
-								'<option selected="selected" value="' + value.name + '">' +
-								value.name + '</option>'
-							);
-						} else {
-							$('#voice').append(
-								'<option value="' + value.name + '">' +
-								value.name + '</option>'
-							);
-						}
-						$('#voice').selectmenu('refresh', true);
-					});
-				});
-			}
-
-		// ==== Google Cloud (Voices werden in populateGoogleCloudVoices() gebaut) ====
-		} else if (document.main_form.tts_google_cloud.checked == true) {
-			return;
-
-		// ==== Piper ====
-		} else if (document.main_form.tts_piper.checked == true) {
-			var selectedlanguage = $("#t2slang option:selected").val();
-			$('#t2slang').selectmenu('refresh', true);
-			console.log("popvoice (Piper): " + selectedlanguage);
-			if (selectedlanguage) {
-				$('#voice').empty();
-				$('#voice').removeClass('ui-disabled');
-				const url = "/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/langfiles/piper_voices.json";
-				$.getJSON(url, function(listvoice) {
-					$('#voice').append(
-						'<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>'
-					);
-					var selectedvoiceList = listvoice.filter(function(item) {
-						return item.language === selectedlanguage;
-					});
-					$.each(selectedvoiceList, function(index, value) {
-						if (value.name == '<TMPL_VAR VOICE>') {
-							$('#voice').append(
-								'<option selected="selected" value="' + value.name + '">' +
-								value.name + '</option>'
-							);
-						} else {
-							$('#voice').append(
-								'<option value="' + value.name + '">' +
-								value.name + '</option>'
-							);
-						}
-						$('#voice').selectmenu('refresh', true);
-					});
-				});
-			}
-		}
-
-		$('#voice').selectmenu('refresh', true);
-		$('#t2slang').selectmenu('refresh', true);
-
-		// generate language ISO Code (zweistellig) ins Infofeld
-		var isocode = '<TMPL_VAR CODE>'.substr(0, 2);
-		$('#langiso').val(isocode);
-		$("#langiso").textinput("refresh");
-	}
-
-
-    // Sets correct language if voice gets selected before language
-    function setCorrectLang() {
-		console.log('setCorrectLang');
-        if (document.main_form.tts_google_cloud.checked == true) {
-            var selectedlanguage = $("#t2slang").val();
-            if ($("#voice").find("option:selected").attr('data-lang') != selectedlanguage) {
-                $('#t2slang option[value="' + $("#voice").find("option:selected").attr('data-lang') + '"]').attr("selected", "selected");
-				$('#t2slang').selectmenu('refresh', true);
-			}
-        }
-    }
-
- /*************************************************************************************************************
- * Funktion : populateGoogleCloudVoices --> Populates voices from Google Cloud into Dropdown
- * @param:   none
- *
- * @return:  Sprach- und Stimmen-Dropdown gefüllt oder, im Fehlerfall, nur Platzhalter + Console-Warnung
- *************************************************************************************************************/
-function populateGoogleCloudVoices() {
-    console.log("populateGoogleCloudVoices");
-
-    var apikey = $('#apikey').val().trim();
-    if (!apikey) {
-        console.log("Google Cloud Voice: No API key set, aborting voices load.");
-        return;
-    }
-
-    const url = "https://texttospeech.googleapis.com/v1/voices?key=" + apikey;
-
-    fetch(url)
-        .then(function (response) {
-
-            // === HTTP-Fehler wie bei Azure behandeln – aber ohne Dialog ===
-            if (!response.ok) {
-                console.warn(
-                    "Google Cloud Voice HTTP error:",
-                    response.status,
-                    response.status === 401 ? "(possibly invalid API key)" : ""
-                );
-
-                // Dropdowns in einen definierten Zustand zurücksetzen
-                $('#t2slang').empty().append(
-                    '<option selected disabled value=""><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>'
-                ).selectmenu('refresh', true);
-
-                $('#voice').empty().append(
-                    '<option selected disabled value=""><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>'
-                ).selectmenu('refresh', true);
-
-                // Fehler weiterwerfen, damit der nächste then-Block übersprungen wird
-                throw new Error("HTTP " + response.status);
-            }
-
-            return response.json();
-        })
-        .then(function (data) {
-            if (!data || !data.voices) {
-                console.log("Google Cloud Voice: no voices in response");
-                return;
-            }
-
-            const langs        = new Map(); // langCode -> Label
-            const voicesByLang = new Map(); // langCode -> [{key,value,display}]
-
-            // === Nur Chirp3-Stimmen vorbereiten ===
-            data.voices.forEach(function (v) {
-
-                if (!v.name.includes("Chirp3")) return;
-
-                const codes = v.languageCodes || [];
-                if (!codes.length) return;
-
-                const parts  = v.name.split("-");
-                const short  = parts[parts.length - 1];              // z.B. "Achernar"
-                const gender = v.ssmlGender ? v.ssmlGender.toLowerCase() : "";
-                const disp   = gender ? (short + " (" + gender + ")") : short;
-
-                codes.forEach(function (code) {
-
-                    // Sprache merken
-                    if (!langs.has(code)) {
-                        langs.set(code, prettyLang(code));
-                    }
-
-                    // Voice-Liste je Sprache
-                    let list = voicesByLang.get(code);
-                    if (!list) {
-                        list = [];
-                        voicesByLang.set(code, list);
-                    }
-
-                    // Duplikate (gleiches short+gender) verhindern
-                    const key = short + "|" + gender;
-                    if (!list.some(function (item) { return item.key === key; })) {
-                        list.push({
-                            key:     key,
-                            value:   v.name,   // technischer Voice-Name
-                            display: disp      // „Achernar (female)“
-                        });
-                    }
-                });
-            });
-
-            // === Sprachen-Dropdown befüllen (alphabetisch) ===
-            const sortedLangs = Array.from(langs.entries())
-                .sort(function (a, b) {
-                    return a[1].localeCompare(b[1], 'de', { sensitivity: 'base' });
-                });
-
-            $('#t2slang').empty().append(
-                '<option selected disabled value=""><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>'
-            );
-
-            sortedLangs.forEach(function ([code, label]) {
-                $('#t2slang').append('<option value="' + code + '">' + label + '</option>');
-            });
-
-            const savedLanguage = "<TMPL_VAR CODE>";
-            let initialLang = (savedLanguage && langs.has(savedLanguage))
-                ? savedLanguage
-                : (sortedLangs[0] ? sortedLangs[0][0] : "");
-
-            if (initialLang) {
-                $('#t2slang').val(initialLang);
-            }
-            $('#t2slang').selectmenu('refresh', true);
-
-            // === Helper: Stimmen für eine Sprache füllen ===
-            function fillVoicesForLanguage(langCode) {
-                $('#voice').empty().append(
-                    '<option selected disabled value=""><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>'
-                );
-
-                const list = voicesByLang.get(langCode) || [];
-
-                list.sort(function (a, b) {
-                    return a.display.localeCompare(b.display, 'de', { sensitivity: 'base' });
-                });
-
-                list.forEach(function (item) {
-                    $('#voice').append(
-                        '<option value="' + item.value + '">' + item.display + '</option>'
-                    );
-                });
-
-                const savedVoice = "<TMPL_VAR VOICE>";
-                if (savedVoice && list.some(function (i) { return i.value === savedVoice; })) {
-                    $('#voice').val(savedVoice);
-                }
-
-                $('#voice').selectmenu('refresh', true);
-            }
-
-            // Initial: aktuelle Sprache
-            const currentLang = $('#t2slang').val();
-            if (currentLang) {
-                fillVoicesForLanguage(currentLang);
-            }
-
-            // Bei Sprachwechsel neu filtern
-            $('#t2slang').off('change.googlevoices').on('change.googlevoices', function () {
-                fillVoicesForLanguage(this.value);
-            });
-        })
-        .catch(function (err) {
-            // HTTP-Fehler wurden oben schon geloggt
-            if (String(err.message || "").startsWith("HTTP ")) {
-                return;
-            }
-
-            console.warn("Google Cloud Voice: connection error", err);
-
-            $('#t2slang').empty().append(
-                '<option selected disabled value=""><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>'
-            ).selectmenu('refresh', true);
-
-            $('#voice').empty().append(
-                '<option selected disabled value=""><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>'
-            ).selectmenu('refresh', true);
-        });
-	}
-
-	// Helper wie in T2S
-	function prettyLang(code) {
-		try {
-			const langIso = code.split("-")[0];
-			const langName = new Intl.DisplayNames(
-				[navigator.language || navigator.userLanguage],
-				{ type: "language" }
-			).of(langIso);
-
-			const region = code.split("-")[1]?.toUpperCase();
-
-			if (langName && region) return langName + " (" + region + ")";
-			if (langName) return langName;
-		} catch (e) {
-			console.warn("prettyLang failed for", code, e);
-		}
-		return code;
-	}
-
-
-
-        //*************************End Block for Layout control ************************************
-
-        // Function to add new radiostations to config
-        function AddRadio() {
-
-            // Total number of Radios
-            var iteration = document.getElementById('countradios').value;
-            iteration = parseInt(iteration)
-
-            var tbl = document.getElementById('tblBasic2');
-
-            // Del 1. row if there where no radios
-            if (iteration < 1) {
-                var row = tbl.deleteRow(-1);
-            }
-
-            var lastRow = tbl.rows.length;
-            iteration += 1;
-            document.getElementById("countradios").value = iteration;
-
-            // Add cells
-            var row = tbl.insertRow(lastRow);
-            var cellRight = row.insertCell(0);
-            cellRight.innerHTML = '<tr><td style="height: 25px; width: 43px; text-align: center;"><INPUT type="checkbox" style="width: 20px" name="chkradios' + iteration + '" id="chkradios' + iteration + '" align="center"/></td>'
-            var cellRight = row.insertCell(1);
-            cellRight.innerHTML = '<td style="height: 28px"><input type="text" id="radioname' + iteration + '" name="radioname' + iteration + '" size="20" value="" /> </td>'
-            var cellRight = row.insertCell(2);
-            cellRight.innerHTML = '<td style="width: 600px; height: 28px"><input type="text" id="radiourl' + iteration + '" name="radiourl' + iteration + '" size="100" value="" style="width: 100%" /> </td>'
-			var cellRight = row.insertCell(3);
-            cellRight.innerHTML = '<td style="width: 600px; height: 28px"><input type="text" id="coverurl' + iteration + '" name="coverurl' + iteration + '" size="100" value="" style="width: 100%" /> </td></tr>'
-            // Recreate JQUERY styles
-            $("#main_form").trigger('create');
-
-        }
-
-        //******************************* Scan for Players *****************************************
-        function Scan() {
-
-            url = './index.cgi?do=scan';
-            document.location.href = url;
-
-        }
-		
-		
-        //************************ Prepare screen during initial load*** *****************************
-        function initial_lang_voice_load() {
-            console.log("initial_lang_voice_load");
-            // if screen is initial, no T2S engine selected
-            if (!$('#val_t2s').val()) {
-                $('.ttsconfig').hide();
-            } else {
-                console.log("selecting engine: " + $('#val_t2s').val());
-                $('#engine-selector input[value="' + $('#val_t2s').val() + '"]').prop('checked', true).checkboxradio("refresh");
-				$('#t2slang').selectmenu('refresh', true);
-				$('#voice').selectmenu('refresh', true);
-                prepareTTSConfigFields();
-            }
-        };
-
-        //************************ Prepare Document ready layout ********************************
-
-        function populateLanguageBasedOnJSON(url) {
-			console.log("populateLanguageBasedOnJSON", url);
-
-			$.getJSON(url, function(listlang) {
-				$('#t2slang').empty();
-				// Placeholder
-				$('#t2slang').append(
-					'<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>'
-				);
-				// Sprachen aus JSON einfüllen
-				$.each(listlang, function(index, value) {
-					$('#t2slang').append(
-						'<option value="' + value.value + '">' + value.country + '</option>'
-					);
-				});
-				// Gespeicherter CODE aus Template (z.B. "de-DE" oder "de_DE")
-				var savedCode = '<TMPL_VAR CODE>';
-				var chosenVal = "";
-				if (savedCode) {
-					console.log("Selecting CODE (raw):", savedCode);
-
-					// 1) exakter Treffer
-					if ($("#t2slang option[value='" + savedCode + "']").length > 0) {
-						chosenVal = savedCode;
-					} else {
-						// 2) Versuch mit Unterstrich statt Bindestrich (de-DE -> de_DE)
-						var alt1 = savedCode.replace('-', '_');
-						if ($("#t2slang option[value='" + alt1 + "']").length > 0) {
-							chosenVal = alt1;
-						} else {
-							// 3) Versuch mit Bindestrich statt Unterstrich (de_DE -> de-DE)
-							var alt2 = savedCode.replace('_', '-');
-							if ($("#t2slang option[value='" + alt2 + "']").length > 0) {
-								chosenVal = alt2;
-							} else {
-								// 4) Fallback: 2-Buchstaben Code (de)
-								var shortCode = savedCode.substr(0, 2);
-								$("#t2slang option").each(function() {
-									var v = this.value;
-									if (!chosenVal && v && v.substr(0, 2) === shortCode) {
-										chosenVal = v; // z.B. de_DE
-									}
-								});
-							}
-						}
-					}
-				}
-
-				// 5) Falls immer noch nichts gefunden: nimm den ersten Eintrag aus JSON
-				if (!chosenVal && listlang.length > 0) {
-					chosenVal = listlang[0].value;
-				}
-
-				if (chosenVal) {
-					console.log("Selecting CODE (resolved):", chosenVal);
-					$('#t2slang').val(chosenVal);
-				}
-
-				$('#t2slang').selectmenu('refresh', true);
-
-				// Jetzt ist immer eine gültige Sprache gesetzt
-				populateVoice();
-			});
-		}
-
-		
-		function checkProvider() {
-			// Immer zuerst die Keys für die aktuell gewählte Engine aktualisieren
-			refreshApiKeysForCurrentEngine(function () {
-
-				// **erst jetzt** ist #apikey / #seckey sicher korrekt gesetzt
-				if (document.main_form.tts_google_cloud.checked == true) {
-					populateGoogleCloudVoices();
-				} 
-				else if (document.main_form.tts_azure.checked == true) {
-					populateAzureVoices();
-				} 
-				else if (document.main_form.tts_elevenlabs.checked == true) {
-					populateElevenlabsLang();
-				} 
-				else {
-					// alle "lokalen" Engines (VoiceRSS, Polly, Piper, ResponsiveVoice …)
-					// bleiben wie bisher über die JSON-Listen
-					populateLanguageAndVoiceFields();
-				}
-			});
-		}
-		
-		// ---------------------------------------------------------------------
-		// Zentrale Helper-Funktion: API-/Secret-Key für aktuell gewählten
-		// T2S-Engine vom Backend holen und danach optional Callback ausführen
-		// ---------------------------------------------------------------------
-		function refreshApiKeysForCurrentEngine(callback) {
-			var t2sengine = $('input[name=t2s_engine]:checked').val();
-
-			if (!t2sengine) {
-				if (typeof callback === 'function') {
-					callback();
-				}
-				return;
-			}
-
-			$.ajax({
-				url: "./index.cgi",
-				type: "GET",
-				dataType: "json",
-				data: {
-					getkeys   : 1,
-					t2s_engine: t2sengine
-				}
-			})
-			.done(function (result) {
-				if (result) {
-					$("#apikey").val(result.apikey || "");
-					$("#seckey").val(result.seckey || "");
-				}
-			})
-			.fail(function (jqXHR, textStatus, errorThrown) {
-				console.log("refreshApiKeysForCurrentEngine failed:", textStatus, errorThrown);
-			})
-			.always(function () {
-				if (typeof callback === 'function') {
-					callback();
-				}
-			});
-		}
-
-		// ---------------------------------------------------------------------
-		// Radio-Buttons für T2S-Engine: erst Keys nachladen, dann UI anpassen
-		// ---------------------------------------------------------------------
-		$('#engine-selector input')
-			.off('change.apikey')
-			.on('change.apikey', function () {
-				refreshApiKeysForCurrentEngine(function () {
-					// deine bestehende Logik für Sichtbarkeit etc.
-					prepareTTSConfigFields();
-				});
-			});
-
-
-		
-
-//************************ Prepare Elevenlabs ********************************	
-	
-function populateElevenlabsLang() {
-    console.log("populateElevenlabsLang");
-
-    if (!document.main_form.tts_elevenlabs ||
-        document.main_form.tts_elevenlabs.checked !== true) {
-        return;
-    }
-
-    const url = 'https://api.elevenlabs.io/v1/models';
-    $('#t2slang').empty();
-
-    const key = document.getElementById('apikey').value.trim();
-    if (!key) {
-        console.warn("ElevenLabs language error: no API key set.");
-        return;
-    }
-
-    const options = { method: 'GET', headers: { "xi-api-key": key } };
-
-    fetch(url, options)
-        .then(response => response.json())
-        .then(function (data) {
-
-            if (data[0] === undefined) {
-                console.warn("ElevenLabs language error:", data.detail ? data.detail.message : "Unknown error");
-                return false;
-            }
-
-            let lang = data[0]['languages'];
-
-            $('#t2slang').append(
-                '<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>'
-            );
-
-            lang.forEach((lang, index) => {
-                if (lang.language_id == "<TMPL_VAR TTS.messageLang>") {
-                    $('#t2slang').append(
-                        "<option selected='selected' value=\"" + lang.language_id + "\">&nbsp;" +
-                        lang.name + "</option>"
-                    );
-                } else {
-                    $('#t2slang').append(
-                        "<option value=\"" + lang.language_id + "\">&nbsp;" +
-                        lang.name + "</option>"
-                    );
-                }
-            });
-
-            $('#t2slang').selectmenu('refresh', true);
-
-            // Alte Handler weg, eigenen ElevenLabs-Handler setzen
-            $('#t2slang').off('change.elevenlabs').on('change.elevenlabs', function () {
-                // Nur Voiceliste aktualisieren – Sprache selbst bleibt unverändert
-                populateElevenlabsVoices();
-            });
-
-            // Direkt initiale Voiceliste laden
-            populateElevenlabsVoices();
-        })
-        .catch(function (err) {
-            console.warn("ElevenLabs language error:", err);
-        });
-}
-
-
-function populateElevenlabsVoices() {
-    console.log("populateElevenlabsVoices");
-
-    $('#voice').empty();
-
-    const key = document.getElementById('apikey').value.trim();
-    if (!key) {
-        console.warn("ElevenLabs voice error: no API key set.");
-        return;
-    }
-
-    const options = { method: 'GET', headers: { "xi-api-key": key } };
-    const url = 'https://api.elevenlabs.io/v2/voices';
-
-    fetch(url, options)
-        .then(response => response.json())
-        .then(function (data) {
-            let voice = data['voices'];
-
-            if (voice === undefined) {
-                console.warn("ElevenLabs voice error:", data.detail ? data.detail.message : "Unknown error");
-                return false;
-            }
-
-            $('#voice').append(
-                '<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>'
-            );
-
-            voice.forEach((voice, index) => {
-                if (voice.voice_id == "<TMPL_VAR TTS.voice>") {
-                    $('#voice').append(
-                        "<option selected='selected' id=\"" + voice.preview_url +
-                        "\" value=\"" + voice.voice_id + "\">&nbsp;" +
-                        voice.name + " - " + voice.labels.age + ", " +
-                        voice.labels.description + "</option>"
-                    );
-                } else {
-                    $('#voice').append(
-                        "<option id=\"" + voice.preview_url +
-                        "\" value=\"" + voice.voice_id + "\">&nbsp;" +
-                        voice.name + " - " + voice.labels.age + ", " +
-                        voice.labels.description + "</option>"
-                    );
-                }
-            });
-
-            $('#voice').selectmenu('refresh', true);
-        })
-        .catch(function (err) {
-            console.warn("ElevenLabs voice error:", err);
-        });
-
-    return;
-}
-
-		
-//************************ End of Prepare Elevenlabs ********************************	
-			
-//************************ Prepare MS Azure ********************************
-
-var regionOptions = document.getElementById("regionOptions");
-
-/**
- * populateAzureVoices
- * - Holt alle Stimmen von Azure
- * - Füllt Dropdown #t2slang mit Sprachen (Locale)
- * - Füllt Dropdown #voice mit Stimmen zur gewählten Sprache
- */
-function populateAzureVoices() {
-    console.log("populateAzureVoices");
-
-    var apikey = $('#apikey').val();
-    if (!apikey) {
-        console.log("Azure Voice: No API key set, aborting voice load.");
-        return;
-    }
-    console.log("Azure Voice: Actual API-Key:", apikey);
-
-    // Felder leeren
-    $('#t2slang').empty();
-    $('#voice').empty();
-    $("#info").empty(); // falls nicht vorhanden, ist das trotzdem harmlos
-
-    var request = new XMLHttpRequest();
-    request.open(
-        'GET',
-        'https://' + regionOptions.value + ".tts.speech." +
-        (regionOptions.value.startsWith("china") ? "azure.cn" : "microsoft.com") +
-        "/cognitiveservices/voices/list",
-        true
-    );
-    request.setRequestHeader("Ocp-Apim-Subscription-Key", apikey);
-
-    request.onload = function () {
-        if (request.status >= 200 && request.status < 400) {
-            const data = JSON.parse(this.response);
-
-            // --- Eindeutige Sprachen sammeln (Locale -> LocaleName) ---
-            let langMap = {};
-            data.forEach(function (v) {
-                if (!langMap[v.Locale]) {
-                    langMap[v.Locale] = v.LocaleName;
-                }
-            });
-
-            // --- Language Dropdown (#t2slang) ---
-            $('#t2slang').append(
-                '<option selected disabled value=""><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>'
-            );
-            Object.keys(langMap).forEach(function (language) {
-                $('#t2slang').append(
-                    '<option value="' + language + '">' + langMap[language] + '</option>'
-                );
-            });
-
-            // --- Voice Dropdown Dummy (#voice) ---
-            $('#voice').append(
-                '<option selected disabled value=""><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>'
-            );
-
-            $('#t2slang').selectmenu('refresh', true);
-            $('#voice').selectmenu('refresh', true);
-
-            // --- Stimmen für eine gewählte Sprache laden ---
-            function loadVoices(selectedLang) {
-                $('#voice').empty();
-                $('#voice').append(
-                    '<option selected disabled value=""><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>'
-                );
-
-                const voices = data.filter(function (v) { return v.Locale === selectedLang; });
-                voices.forEach(function (voice) {
-                    // Vorauswahl anhand gespeicherter Stimme
-                    if (voice.ShortName == '<TMPL_VAR VOICE>') {
-                        $('#voice').append(
-                            '<option selected="selected" value="' + voice.ShortName + '">' +
-                            voice.DisplayName + " (" + voice.Gender + ")" +
-                            '</option>'
-                        );
-                    } else {
-                        $('#voice').append(
-                            '<option value="' + voice.ShortName + '">' +
-                            voice.DisplayName + " (" + voice.Gender + ")" +
-                            '</option>'
-                        );
-                    }
-                });
-
-                $('#voice').selectmenu('refresh', true);
-            }
-
-            // --- OnChange: Sprache gewählt -> Stimmen nachladen ---
-            $('#t2slang').off('change').on('change', function () {
-                var selectedLang = $(this).val();
-                $('#t2slang').val(selectedLang).selectmenu('refresh', true);
-                loadVoices(selectedLang);
-            });
-
-            // --- Initial: vorausgewählte Sprache aus Template (CODE) ---
-            var defaultLang = '<TMPL_VAR CODE>';
-            if (defaultLang && langMap[defaultLang]) {
-                $('#t2slang').val(defaultLang).selectmenu('refresh', true);
-                loadVoices(defaultLang);
-            }
-
-        } else {
-            // HTTP-Fehler → nur noch Console, kein Dialog
-            console.warn(
-                "Azure Voice HTTP error:",
-                request.status,
-                request.status === 401 ? "(possibly invalid API key)" : ""
-            );
-
-            $('#t2slang').empty().append(
-                '<option selected disabled value=""><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>'
-            ).selectmenu('refresh', true);
-
-            $('#voice').empty().append(
-                '<option selected disabled value=""><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>'
-            ).selectmenu('refresh', true);
-        }
-    };
-
-    request.onerror = function () {
-        console.warn('Azure Voice: connection error while loading voices');
-
-        $('#t2slang').empty().append(
-            '<option selected disabled value=""><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>'
-        ).selectmenu('refresh', true);
-
-        $('#voice').empty().append(
-            '<option selected disabled value=""><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>'
-        ).selectmenu('refresh', true);
-    };
-
-    request.send();
-}
-//************************ finished MS Azure ********************************
-
-
-//************************ finished MS Azure ********************************	 
-		
-    function populateLanguageAndVoiceFields() {
-		console.log("populateLanguageAndVoiceFields");
-		const selectedEngine = $('#engine-selector input:checked');
-		$('#t2slang').empty();
-		$('#voice').empty();
-		var url = "/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/langfiles/";
-		switch (selectedEngine.val()) {
-			case '1001':
-				url = url + "voicerss.json";
-				break;
-			case '4001':
-				url = url + "polly.json";
-				break;
-			case '9012':
-				url = url + "piper.json";
-				break;
-			case '6001':
-				url = url + "respvoice.json";
-				break;
-			case '8001':
-				url = null;
-				populateGoogleCloudVoices();
-				break;
-			case '9001':
-				url = null;
-				populateAzureVoices();
-				break;
-			case '9011':
-				url = null;
-				populateElevenlabsLang();
-				break;
-			default:
-				$('#t2slang').append('<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>');
-				$('#t2slang').prop('selectedIndex', 0);
-				break;
-		}
-
-		// *** hier die Absicherung ***
-		if (url && url.endsWith("json")) {
-			populateLanguageBasedOnJSON(url);
-		}
-
-		$('#t2slang').selectmenu('refresh', true);
-		$('#voice').selectmenu('refresh', true);
-		$('select').selectmenu();
-		$('select').selectmenu('refresh', true);
-
-		var isocode = '<TMPL_VAR CODE>'.substr(0, 2);
-		$('#langiso').val(isocode);
-		$("#langiso").textinput("refresh");
-	}
-
-
-		
-		
-		// function to download XML Files to Import in Loxone
-		function downloadFile(filename) {
-			var element = document.createElement('a');
-			element.setAttribute('href','/plugins/<TMPL_VAR PLUGINDIR>/system/'  + filename);
-			element.setAttribute('download', filename);
-			document.body.appendChild(element);
-			element.click();
-			return;
-		}
-		
-		
-		
-		function checkfile(filename, e)   {
-			$.post("/plugins/<TMPL_VAR PLUGINDIR>/system/ms_inbound.php");
-			var url = '/plugins/<TMPL_VAR PLUGINDIR>/system/'  + filename; 
-			var http = new XMLHttpRequest(); 
-			http.open('GET', url, false); 
-			http.send(); 
-			//console.log("http status: " + http.status);
-			if (http.status !== 200)  {
-				dialog('<TMPL_VAR ERRORS.ERR_XM_TEMP>', 'OK', 'error', 'Check filename');
-				$('html, body').animate({
-								scrollTop: $("#zone1").offset().top
-								}, 500);
-								$("#zone1").focus();
-								if (e) e.preventDefault();
-			} else {
-				//console.log("Filename: " + filename);
-				downloadFile(filename);
-			}
-		}
-		
-
-$(function () {
-
-    $("#tblzonen").on("click", function (event) {
-
-        var zonetest = event.target.value;
-
-        // Wenn kein value gefunden wurde (z.B. Klick auf leere Zelle oder Text), abbrechen
-        if (!zonetest) {
-            return;
-        }
-
-        var texttospeech = document.getElementById('testtext').value;
-
-        if (texttospeech === "") {
-            // Fallback-Text wie bisher
-            texttospeech = '<TMPL_VAR ZONES.SONOS_TEST_PLAYER> ' + zonetest;
-        }
-
-        // Feste Test-Lautstärke (wie bisher 35) – kann später dynamisch aus Tabelle kommen
-        var testvolume = 35;
-
-        // --- NEU: T2S-Parameter aus dem UI auslesen (wie im T2S-Plugin) ---
-        var t2sengine  = $("input[name=t2s_engine]:checked").val() || "";
-        var language   = $("#t2slang").val()   || "";
-        var voice      = $("#voice").val()     || "";
-        var apikey     = $("#apikey").val()    || "";
-        var secretkey  = $("#seckey").val()    || "";
-
-        $.ajax({
-            url: '/plugins/<TMPL_VAR PLUGINDIR>/bin/player_on_test.php',
-            type: 'post',
-            dataType: 'json',
-            data: {
-                room:       zonetest,
-                text:       texttospeech,
-                volume:     testvolume,
-                t2sengine:  t2sengine,
-                language:   language,
-                voice:      voice,
-                apikey:     apikey,
-                secretkey:  secretkey
-            }
-        })
-        .done(function (response) {
-            if (response && response.success) {
-                console.log("Action Test Text-to-speech OK:", response.message);
-            } else {
-                console.log("Action Test Text-to-speech failed:", response ? response.message : "No response");
-                console.warn(response && response.message ? response.message : "Fehler beim Starten der Testausgabe.");
-            }
-        })
-        .fail(function (jqXHR, textStatus, errorThrown) {
-            console.log("AJAX error:", textStatus, errorThrown);
-            console.warn("Fehler beim Aufruf von player_on_test.php: " + textStatus);
-        })
-        .always(function () {
-            console.log("Action Test Text-to-speech finished");
-        });
-    });
-
-});
-
-
-
-
-		// get soundbar config
-		function getsbconfig()   {
-
-			$.ajax({
-					url: 'index.cgi',
-					type: 'post',
-					data: { action: 'soundbars'},
-					dataType: 'json',
-					async: false,
-						success: function(data, textStatus, jqXHR )   {
-							//console.log(data);
-							$.each(data, function(index, valu) {
-								if (valu[13] == 'SB')   {
-									console.log(valu);
-									if (valu[8] == 'SUB' && valu.length == 15 || valu.length == 17) {
-										$("#tvmonnightsub_" + index).val(valu[14].tvmonnightsub).flipswitch("refresh");
-										$("#tvmonnightsubn_" + index).val(valu[14].tvsubnight).flipswitch("refresh");
-										$("#subgain_" + index).val(valu[14].tvmonnightsublevel).selectmenu("refresh");
-									} else if (valu[8] == 'SUB' && valu.length == 14) {
-										$("#tvmonnightsub_" + index).val("false").flipswitch("refresh");
-										$("#tvmonnightsubn_" + index).val("false").flipswitch("refresh");
-										$("#subgain_" + index).val("0").selectmenu("refresh");
-									} else {
-										$("#tvmonnightsubn_" + index).flipswitch("disable").flipswitch("refresh");
-										$("#tvmonnightsub_" + index).flipswitch("disable").flipswitch("refresh");
-										$("#subgain_" + index).val("0").selectmenu("disable").selectmenu("refresh");
-									}
-									if (valu[10] == 'SUR' && valu.length == 15 || valu.length == 17) {
-										$("#tvmonsurr_" + index).val(valu[14].tvmonsurr).flipswitch("refresh");
-									} else if (valu[10] == 'SUR' && valu.length == 14) {
-										$("#tvmonsurr_" + index).val("false").flipswitch("refresh");
-									} else {
-										$("#tvmonsurr_" + index).val('false').flipswitch("disable").flipswitch("refresh");
-									}
-									if (valu.length == 15 || valu.length == 17)   {
-										$("#sbzone_" + index).val(index).text("refresh");
-										$("#usesb_" + index).val(valu[14].usesb).flipswitch("refresh");
-										$("#tvmonspeech_" + index).val(valu[14].tvmonspeech).flipswitch("refresh");
-										$("#tvmonnight_" + index).val(valu[14].tvmonnight).flipswitch("refresh");
-										$("#tvmonnightsub_" + index).val(valu[14].tvmonnightsub).flipswitch("refresh");
-										$("#fromtime_" + index).val(valu[14].fromtime);
-										$("#tvvol_" + index).val(valu[14].tvvol).text("refresh");
-										$("#tvbass_" + index).val(valu[14].tvbass).text("refresh");
-										$("#tvtreble_" + index).val(valu[14].tvtreble).text("refresh");
-										//$("#fromtime_" + index).selectmenu("refresh");
-									}
-									if (valu[14].tvsubnight == 'true') {
-										//$("#tvmonnightsub_" + index).val("false").flipswitch("refresh");
-										//$("#subgain_" + index).val("0").selectmenu("refresh");
-									} else {
-										//$("#tvmonnightsub_" + index).flipswitch("disable").flipswitch("refresh");
-										//$("#subgain_" + index).val("0").selectmenu("disable").selectmenu("refresh");
-									}
-									var usage = document.getElementById("usesb_" + index).value;
-									if (usage == "true")   {
-										var tvmonvol = document.getElementById("tvvol_" + index).value;
-										var tvmontreble = document.getElementById("tvtreble_" + index).value;
-										var tvmonbass = document.getElementById("tvbass_" + index).value;
-										//console.log("Länge: " + tvmonvol.length);
-										if (tvmonvol.length == 0)    {
-											tvmonerr = "false";
-										}
-										if (tvmontreble.length == 0)    {
-											tvmonerr = "false";
-										}
-										if (tvmonbass.length == 0)    {
-											tvmonerr = "false";
-										}
-										//callback(tvmonerr);
-										validate_enable("#tvvol_" + index);
-										validate_enable("#tvtreble_" + index);
-										validate_enable("#tvbass_" + index);
-									}
-									
-								}
-							});
-						}
-					})
-				.fail(function (jqXHR, textStatus, errorThrown) {
-					console.log(errorThrown);
-				})
-				.always(function(data) {
-					console.log( "Action get Soundbars Config executed" );
-				})
-		};
-		
-		
-		// check if Soundbar(s) exist and activate template settings
-		function validateSB()   {
-			var iteration = document.getElementById('countplayers').value;
-			var sbyes = "0";
-			iteration = parseInt(iteration)
-			iteration += 1;
-			for (i = 1; i < iteration; ++i) {
-				if($('#sb' + i + '').length)   {
-					var sbyes = "1";
-				}
-			}
-			//console.log("sbyes: " + sbyes);
-			if (sbyes == "1")   {
-				$('.tvmon_header').show();
-				$('.tvmon_switch').show();
-			} else {
-				$('.tvmon_header').hide();
-				$('.tvmon_switch').hide();
-			}
-			$("#tvmon").flipswitch("refresh");
-		}
-		
-		// if TV Monitor been used show info   
-		function validateTVMon()   {
-			var tvmonitor = document.getElementById('tvmon').value;
-			if (tvmonitor == "true")   {
-				$('.tvmon_header').show();
-				$('.tvmon_body').show();
-				console.log("TV Monitor On");
-			} else {
-				$('.tvmon_header').hide();
-				$('.tvmon_body').hide();
-                console.log("TV Monitor Off");
-			}
-			$("#tvmon").flipswitch("refresh");
-		}
-		
-		
-		// OnChange function for TV Monitor
-		$("#tvmon").on("change", function(e){
-			var tvmonitor = document.getElementById('tvmon').value;
-			if (tvmonitor == "true")   {
-				timeout('<TMPL_VAR TEMPLATE.TV_MONITOR_ON>', 'OK', 'info', 'TV Monitor', '4000');
-			} else {
-				timeout('<TMPL_VAR TEMPLATE.TV_MONITOR_OFF>', 'OK', 'info', 'TV Monitor', '4000');
-			}
-		});
-		
-		
-		// Save config file extern
-		$(function() {
-			$("#savec").click(function(){
-				console.log("Save pressed");
-				$("#savec").attr("disabled", true);
-				$.ajax({
-						url: 'index.cgi',
-						type: 'post',
-						data: { action: 'saveconfig'},
-							success: function( response, textStatus, jqXHR )  {
-							if(response == true)	{
-								//For wait 3 seconds
-								setTimeout(function()  {
-									location.reload();  //Refresh page
-								}, 3000);
-							}
-							console.log( "Action file saved" );
-							//dialog('<TMPL_VAR BASIS.PLUGIN_BACKUP_SUCCESS>', 'OK', 'success', 'Backup Config');
-							timeout('<TMPL_VAR BASIS.PLUGIN_BACKUP_SUCCESS>', 'OK', 'success', 'Backup Config', '3000');
-							}
-						})
-						.fail(function (jqXHR, textStatus, errorThrown) {
-							dialog('<TMPL_VAR BASIS.PLUGIN_BACKUP_FAIL> Error: ' + errorThrown, '<TMPL_VAR BASIS.PLUGIN_BUTTON>', 'error', 'Backup Config');
-							console.log(errorThrown);
-						})
-						.always(function(response) {
-							console.log( "Action save file executed" );
-						})
-			});
-		});
-		
-		// Save config file extern
-		$(function() {
-			$("#restorec").click(function(){
-				console.log("Restore pressed");
-				$("#restorec").attr("disabled", true);
-				$.ajax({
-						url: 'index.cgi',
-						type: 'post',
-						data: { action: 'restoreconfig'},
-							success: function( response, textStatus, jqXHR )  {
-							if(response == true)	{
-								//For wait 3 seconds
-								setTimeout(function()  {
-									location.reload();  //Refresh page
-								}, 3000);
-							}
-							console.log( "Action file restored" );
-							//dialog('<TMPL_VAR BASIS.PLUGIN_RESTORE_SUCCESS>', 'OK', 'success', 'Restore Config');
-							timeout('<TMPL_VAR BASIS.PLUGIN_RESTORE_SUCCESS>', 'OK', 'success', 'Restore Config', '3000');
-							}
-						})
-						.fail(function (jqXHR, textStatus, errorThrown) {
-							dialog('<TMPL_VAR BASIS.PLUGIN_RESTORE_FAIL> Error: ' + errorThrown, '<TMPL_VAR BASIS.PLUGIN_BUTTON>', 'error', 'Restore Config');
-							console.log(errorThrown);
-						})
-						.always(function(response) {
-							console.log( "Action restore file executed" );
-						})
-			});
-			
-			//location.reload();
-			$('#main_form').trigger('create');
-		});
-		
-		// pop-up Dailog Box
-		function dialog(text, ButtonText, Icon='', Title)    {
-			// https://silverboxjs.ir/documentation/?v=latest
-			silverBox({
-				alertIcon: Icon,
-				text: text,
-				centerContent: true,
-				title: {
-						text: Title
-						},
-				confirmButton: {
-								bgColor: "#6dac20",
-								border: "10px",
-								borderColor: "#6dac20",
-								textColor: "#fff",
-								text: ButtonText,
-								closeOnClick: true,
-								onClick: () => {$("button").button(); 
-												$("restorec").button("enable"); 
-												},
-								}
-				});
-		}
-		
-		
-		// pop-up Timeout Dailog Box
-		function timeout(text, ButtonText, Icon='', Title, timeout)    {
-			// https://silverboxjs.ir/documentation/?v=latest
-			silverBox({
-				timer: timeout,
-				//alertIcon: Icon,
-				customIcon: "/plugins/<TMPL_VAR PLUGINDIR>/web/images/info.svg",
-				text: text,
-				centerContent: true,
-				title: {
-						text: Title
-						},
-				});
-		}
-		
-		// pop-up Dailog Box für Discover Sonos devices
-		function discover()    {
-			// https://silverboxjs.ir/documentation/?v=latest
-			silverBox({
-				alertIcon: 'warning',
-				text: '<TMPL_VAR ZONES.SONOS_SCAN_TEXT>',
-				footer: "<a href='#'>Auto Discover Sonos</a>",
-				centerContent: true,
-				title: {
-						text: '<TMPL_VAR ZONES.SONOS_SCAN_HEADER>'
-						},
-				confirmButton: {
-								bgColor: "#6dac20",
-								border: "10px",
-								borderColor: "#6dac20",
-								textColor: "#fff",
-								text: '<TMPL_VAR ZONES.BUTTON_NEXT>',
-								iconStart: "/plugins/<TMPL_VAR PLUGINDIR>/web/images/confirm.svg",
-								closeOnClick: false,
-								onClick: () => {url = './index.cgi?do=scanning';
-												document.location.href = url;
-												},
-								},
-				cancelButton: {
-								bgColor: "#6dac20",
-								border: "10px",
-								borderColor: "#6dac20",
-								textColor: "#fff",
-								text: '<TMPL_VAR ZONES.BUTTON_BACK>',
-								iconStart: "/plugins/<TMPL_VAR PLUGINDIR>/web/images/cancel.svg",
-								closeOnClick: true
-								},
-				});
-		}
-
-		
-		function message()   {
-			//console.log("MESSAGE");
-			timeout('<TMPL_VAR SAVE.SAVE_MESSAGE>', 'OK', 'info', '<TMPL_VAR SAVE.SAVE_ALL_OK>', '3500');
-		}
-		
-		
-
-		function refresh()   {
-			$("#langiso").textinput("refresh");
-			$('#t2slang').selectmenu('refresh');
-			$('#voice').selectmenu('refresh');
-			//$("#t2slang").html(optionList).selectmenu('refresh', true);
-			//$("#voice").html(optionList).selectmenu('refresh', true);
-		}
-		
-		
-		// document ready
-        $(document).ready(function(e) {
-			console.log("documentreadyfunction");
-            $('#engine-selector input').change(prepareTTSConfigFields);
-            $('#t2slang').change(populateVoice);
-
-			//$('#t2slang').selectmenu('refresh', true);
-			//$('#voice').selectmenu('refresh', true);
-			
-            // various validations
-            initial_lang_voice_load();
-			checkboxes();
-			validateSB();
-			validateTVMon();
-			getsbconfig();
-		
-			// validate Volume entries per player
-            var iteration = document.getElementById('countplayers').value;
-            iteration = parseInt(iteration)
-            iteration += 1;
-            for (i = 1; i < iteration; ++i) {
-                validate_enable('#t2svol' + i + '');
-                validate_enable('#sonosvol' + i + '');
-                validate_enable('#maxvol' + i + '');
-                validate_chk_object(['#t2svol' + i + '', '#sonosvol' + i + '', '#maxvol' + i + '']);
-            }
-			
-				
-            // Function to control saving, main_form is submitted    
-            $("form#main_form").submit(function(e) {
-				console.log("submit");
-				
-				var selectlang = document.getElementById('t2slang').value;
-				var selectvoice = document.getElementById('voice').value;
-				console.log("selectlang: " + selectlang);
-				console.log("selectvoice: " + selectvoice);
-				
-				var apidata = document.getElementById('apikey').value;
-                if (document.getElementById('tts_polly').checked == true) {
-					console.log("Polly checked");
-					var seckeydata = document.getElementById('seckey').value;
-					if (apidata.length != 20)    {
-						dialog('<TMPL_VAR ERRORS.ERR_APIKEY20>', 'OK', 'error', 'Polly');
-						return false;
-                        e.preventDefault();
-					}
-					if (seckeydata.length != 40)    {
-						dialog('<TMPL_VAR ERRORS.ERR_SECRETKEY>', 'OK', 'error', 'Polly');
-						return false;
-                        e.preventDefault();
-					}
-                    if (selectlang == null) {
- 						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'Polly');
-                        $('html, body').animate({
-                            scrollTop: $("#info").offset().top
-                        }, 1000);
-                        $("#t2slang").focus();
-						return false;
-                        e.preventDefault();
-                    }
-                    if (selectvoice == null) {
-						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'Polly');
-                        $('html, body').animate({
-                            scrollTop: $("#info").offset().top
-                        }, 1000);
-                        $("#voice").focus();
-						return false;
-                        e.preventDefault();
-                    }
-                } else if (document.getElementById('tts_voicerss').checked == true) {
-					console.log("VoiceRSS checked");
-
-					if (apidata.length != 32) {
-						dialog('<TMPL_VAR ERRORS.ERR_APIKEY32>', 'OK', 'error', 'Voice RSS');
-						return false;
-						e.preventDefault();
-					}
-
-					if (!selectlang) {
-						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'Voice RSS');
-						$('html, body').animate({
-							scrollTop: $("#info").offset().top
-						}, 1000);
-						$("#t2slang").focus();
-						return false;
-						e.preventDefault();
-					}
-
-					if (!selectvoice) {
-						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'Voice RSS');
-						$('html, body').animate({
-							scrollTop: $("#info").offset().top
-						}, 1000);
-						$("#voice").focus();
-						return false;
-						e.preventDefault();
-					}
-				} else if (document.getElementById('tts_google_cloud').checked == true) {
-					console.log("Google Cloud checked");
-					if (apidata.length != 39)    {
-						dialog('<TMPL_VAR ERRORS.ERR_APIKEY39>', 'OK', 'error', 'Google Cloud');
-						return false;
-                        e.preventDefault();
-					}
-                    if (selectlang == null) {
-						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'Google Cloud');
-                        $('html, body').animate({
-                            scrollTop: $("#info").offset().top
-                        }, 1000);
-                        $("#t2slang").focus();
-						return false;
-                        e.preventDefault();
-                    }
-					if (selectvoice == null) {
-						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'Google Cloud');
-                        $('html, body').animate({
-                            scrollTop: $("#info").offset().top
-                        }, 1000);
-                        $("#voice").focus();
-						return false;
-                        e.preventDefault();
-                    }
-				} else if (document.getElementById('tts_elevenlabs').checked == true) {
-					console.log("Elevenlabs checked");
-					if (apidata.length != 32 && apidata.length != 51)    {
-						dialog('<TMPL_VAR ERRORS.ERR_APIKEY32>', 'OK', 'error', 'ElevenLabs');
-						return false;
-                        e.preventDefault();
-					}
-                    if (selectlang == null) {
-						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'ElevenLabs');
-                        $('html, body').animate({
-                            scrollTop: $("#info").offset().top
-                        }, 1000);
-                        $("#t2slang").focus();
-						return false;
-                        e.preventDefault();
-                    }
-					if (selectvoice == null) {
-						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'ElevenLabs');
-                        $('html, body').animate({
-                            scrollTop: $("#info").offset().top
-                        }, 1000);
-                        $("#voice").focus();
-						return false;
-                        e.preventDefault();
-                    }
-                } else if (document.getElementById('tts_piper').checked == true) {
-					console.log("Pico checked");
-                    if (selectlang == null) {
-						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'Piper');
-                        $('html, body').animate({
-                            scrollTop: $("#info").offset().top
-                        }, 1000);
-                        $("#t2slang").focus();
-						return false;
-                        e.preventDefault();
-                    }
-
-                //} else if (document.main_form.tts_respvoice.checked == true) {
-				} else if (document.getElementById('tts_respvoice').checked == true) {
-					console.log("RespVoice checked");
-					console.log(selectlang);
-                    if (selectlang == null) {
-						//console.log("TEST");
-						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'Responsive Voice');
-                        $('html, body').animate({
-                            scrollTop: $("#info").offset().top
-                        }, 1000);
-                        $("#t2slang").focus();
-						return false;
-                        e.preventDefault();
-                    }
-                } else if (document.getElementById('tts_azure').checked == true) {
-					console.log("Azure checked");
-					if (apidata.length != 32 && apidata.length != 36 && apidata.length != 84)    {
-						dialog('<TMPL_VAR ERRORS.ERR_APIKEY32>', 'OK', 'error', 'Azure');
-						return false;
-                        e.preventDefault();
-					}
-                    if (selectlang == null) {
-						dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'Azure');
-                        $('html, body').animate({
-                            scrollTop: $("#info").offset().top
-                        }, 1000);
-                        $("#t2slang").focus();
-						return false;
-                        e.preventDefault();
-                    }
-                } else {
-					dialog('<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'OK', 'error', 'T2S Engine');
-                    $('html, body').animate({
-                        scrollTop: $("#info").offset().top
-                    }, 1000);
-                    $("#tts_voicerss").focus();
-					console.log("No T2S Engine");
-					return false;
-					e.preventDefault();
-				}
-                $("#langiso").textinput("refresh");
-				$("#info").trigger('create');
-			
-				// Save checkbox values
-				var iteration = document.getElementById('countplayers').value;
-				iteration = parseInt(iteration)
-				iteration += 1;
-				
-				// loop through players
-				for (i = 1; i < iteration; ++i) {
-					if (document.getElementById('mainchk' + i).checked == true) {
-						document.getElementById('mainchk' + i).value = "on";
-					} else {
-						document.getElementById('mainchk' + i).value = "off";
-					}
-					$('input:checkbox').checkboxradio('refresh');
-				}
-				
-				
-				// validate if at least one checkbox is checked
-				var isChecked;
-				var checkBoxes = document.getElementsByClassName('chk-checked');
-				isChecked = false;
-				for (var i = 0; i < checkBoxes.length; i++) {
-					if ( checkBoxes[i].checked ) {
-						isChecked = true;
-					};
-				};
-				if (isChecked == false) {
-					$('html, body').animate({
-                        scrollTop: $("#mainchk1").offset().top
-                    }, 1000);
-					dialog('<TMPL_VAR ERRORS.ERR_CHECKBOX>', 'OK', 'error', 'T2S Emergency');
-					return false;
-				} 
-
-				
-				// validate jingle file selection
-				var selectjingle = document.getElementById("file_gong").value;
-				var selectt2s     = $("input[name=t2s_engine]:checked").val();
-
-				if (!selectjingle && selectt2s) {
-					$('html, body').animate({
-						scrollTop: $("#info").offset().top
-					}, 1000);
-
-					dialog('<TMPL_VAR T2S.VALIDATE_JINGLE>', 'SELECT', 'error', 'T2S Jingle');
-					$("#file_gong").focus();
-					return false; // stops submit reliably
-				}
-
-				// validate UDP Port entered if UDP selected
-				//console.log("validate UDP");
-				//var cat = document.getElementById('sendlox').value;
-				//var mqtt = document.getElementById('sendloxMQTT').value;
-				//var udp = document.getElementById('udpport').value;
-				//$('#udpport').removeClass('ui-disabled');
-				//if (cat == "true" && mqtt == "false") {
-				//	if (udp.length < 4) {
-				//		$('html, body').animate({
-				//			scrollTop: $("#udpport").offset().top
-				//		}, 1000);
-				//		$("#udpport").focus();
-				//		dialog('<TMPL_VAR ERRORS.ERR_UDP_MISSING>', 'OK', 'error', 'UPD Port');
-				//		//return false;
-				//		e.preventDefault();
-						
-				//	}
-				//}
-				//$("#sendlox").flipswitch("refresh");
-				// show Save message 
-				timeout('<TMPL_VAR SAVE.SAVE_MESSAGE>', 'OK', 'info', '<TMPL_VAR SAVE.SAVE_ALL_OK>', '3500');
-            });
-        });
-    </script>
+<!-- Speech SDK reference sdk. -->
+<script src="/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/bin/Microsoft/microsoft.cognitiveservices.speech.sdk.bundle.js"></script>
+<TMPL_INCLUDE NAME="main.js">
 </TMPL_IF>
 
 
@@ -2835,7 +946,7 @@ $(function () {
 		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.css"/>
 		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.min.js"></script>
 		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.js"></script>
-		
+
         <div class="form-group">
 		<tbody>
             <table class="formtable-container" id="vol" border="0" width="80%" cellpadding="10">
@@ -2846,9 +957,9 @@ $(function () {
                         <img class='ico_sonos' src='/plugins/<TMPL_VAR PLUGINDIR>/images/sonos_logo.png' border='0' width='186' height='125' align="absmiddle">
 					</th>
 				</tr>
-				
+
 				<tr>
-				<td valign="left" style="height: 33px; width: 25%; text-align: left;"></td>	
+				<td valign="left" style="height: 33px; width: 25%; text-align: left;"></td>
 					<td valign="left">
 						<table class='formtable' id='formtable' style='width:900px; background: rgba(192,192,192, 0.2); border-radius: 20px; border: 1px solid #7e7e7e; padding: 0px'>
 							<td valign="left">
@@ -2863,592 +974,14 @@ $(function () {
 			</table>
 		</tbody>
 		</div>
-		
+
         <p>
             <center>
                 <button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SAVE.SAVE_BUTTON></button>
             </center>
         </p>
-			
-		<script>
-					
-			
-			
-			$(document).on('pageinit', function() {
-				//getvolprofiles();
-				//$('#main_form').trigger('create');
-			});
-			
-			
-								
-			
-			// add values to Profile and set all flipswitch and radios
-			function getvolprofiles()   {
-				let countdata = 0;
-				var data;
-				
-				$.ajax({
-						url: 'index.cgi',
-						type: 'post',
-						data: { action: 'profiles'},
-						dataType: 'json',
-				})
-					
-				.fail(function (jqXHR, textStatus, errorThrown) {
-					console.log(errorThrown);
-				})
-				.done(function(data, textStatus, jqXHR) {
-							//console.log(data);
-							$.each(data, function(i, outerArray) {
-								countdata++;
-								$('#profile' + countdata).val(data[parseInt(countdata) - 1].Name);
-								unsorted = outerArray.Player
-								const sorted = Object.keys(unsorted).sort().reduce(
-									(obj, key) => { 
-											obj[key] = unsorted[key]; 
-											return obj;
-											}, 
-									{}
-								);
-								var iteration = 0;
-								iteration = parseInt(iteration)
-								$.each(sorted, function(j, innerArray) {
-									iteration++;
-									//console.log(j);
-									//console.log(innerArray);
-									if (innerArray[0].Loudness == 'true') {
-										$('#loudness_' + iteration + '_' + countdata).val("true").flipswitch("refresh");
-									} else {
-										$('#loudness_' + iteration + '_' + countdata).val("false").flipswitch("refresh");
-									}
-									if (innerArray[0].Surround == 'na') {
-										$('#surround_' + iteration + '_' + countdata).flipswitch("disable");
-										$('#surround_' + iteration + '_' + countdata).val("false").flipswitch("refresh");
-									} else if (innerArray[0].Surround == 'true') {
-										$('#surround_' + iteration + '_' + countdata).val("true").flipswitch("refresh");
-									} else {
-										$('#surround_' + iteration + '_' + countdata).val("false").flipswitch("refresh");
-									}
-									if (innerArray[0].Subwoofer == 'na') {
-										$('#subwoofer_' + iteration + '_' + countdata).flipswitch("disable");
-										$('#sbass_' + iteration + '_' + countdata).attr("disabled", "disabled").css("background", "rgba(192,192,192, 0.2)").textinput("refresh");
-										$('#subwoofer_' + iteration + '_' + countdata).val("false").flipswitch("refresh");
-									} else if (innerArray[0].Subwoofer == 'true') {
-										$('#subwoofer_' + iteration + '_' + countdata).val("true").flipswitch("refresh");
-									} else {
-										$('#subwoofer_' + iteration + '_' + countdata).val("false").flipswitch("refresh");
-									}
-									if (innerArray[0].Master == 'true') {
-										$('#master_' + iteration + '_' + countdata).prop('checked',true).val("true").checkboxradio("refresh");
-									} else {
-										$('#master_' + iteration + '_' + countdata).prop('checked',false).val("false").checkboxradio("refresh");
-									}
-									if (innerArray[0].Member == 'true') {
-										$('#member_' + iteration + '_' + countdata).prop('checked',true).checkboxradio("refresh");
-									} else {
-										$('#member_' + iteration + '_' + countdata).prop('checked',false).checkboxradio("refresh");
-									}
-								})
-							})
-				})
-				.always(function(data) {
-					$('#main_table').trigger('create').trigger('refresh');
-					console.log( "Action get Volume Profiles executed", data );
-				})
-				
-			};
-			
-		// add dynamically new profile	
-		function create_new_profile()   {
-			
-			let count = 0;
-			last_id = parseInt(document.getElementById('last_id').value);
-			new_id = last_id + 1;
-			
-			var iteration = 0;
-            iteration = parseInt(iteration)
-			var trHTML = '';
-			
-			$.ajax({
-					url: 'index.cgi',
-					type: 'post',
-					data: { action: 'soundbars'},
-					dataType: 'json',
-					async: false,
-						success: function(data, textStatus, jqXHR)   {
-							//console.log(new_id);
-							trHTML += "<div class=" + new_id +">";
-							trHTML += "<table class='tables' style='width:100%' id='tblvol_prof" + new_id +"' name='tblvol_prof" + new_id +"'>\n";
-							trHTML += "<th align='left' style='height: 25px; width:150px'>&nbsp;Profile #" + new_id +"</th>\n";
-							trHTML += "<th align='middle' colspan='8'><div style='width: 180px; align: left'>\n";
-							trHTML += "<input class='textfield' type='text' style='align: middle; width: 100%' id='profile" + new_id +"' name='profile" + new_id +"' value='' placeholder='Volume Profile Name'/>\n";
-							trHTML += "<td valign='left'>";
-							trHTML += "<img onclick='NewSonosData()' title='Load current values from Sonos devices' value='" + new_id +"' id='btnload" + new_id +"' name='btnload" + new_id +"' src='/plugins/<TMPL_VAR PLUGINDIR>/images/musik-note.png' border='0' width='28' height='28'>\n";
-							trHTML += "<img title='Clone values from last Profile' onclick='cloneprofile()' value='new_id' id='btnclone" + new_id +"' name='btnclone" + new_id +"' class='ico_clone' src='/plugins/<TMPL_VAR PLUGINDIR>/images/clone.svg' border='0' width='33' height='33'></td>\n";
-							trHTML += "</th><tr><th style='background-color: #6dac20;' align='left'>&nbsp;Rooms</th><div class='form-group col-7'>\n";
-							trHTML += "<th class='form-control' style='background-color: #6dac20; align: center'>V</th>\n";
-							trHTML += "<th class='form-control' style='background-color: #6dac20; align: center'>T</th>\n";
-							trHTML += "<th class='form-control' style='background-color: #6dac20; align: center'>B</th>\n";
-							trHTML += "<th class='form-control' style='background-color: #6dac20; align: center'>L</th>\n";
-							trHTML += "<th class='form-control' style='background-color: #6dac20; align: center'>SR</th>\n";
-							trHTML += "<th class='form-control' style='background-color: #6dac20; align: center'>SW</th>\n";
-							trHTML += "<th class='form-control' style='background-color: #6dac20; align: center'>SWL</th>\n";
-							trHTML += "<th class='form-control' style='background-color: #6dac20; align: center'>MA</th>\n";
-							trHTML += "<th class='form-control' style='background-color: #6dac20; align: center'>ME</th>\n";
-							trHTML += "</div></tr>";
-							// sort table
-							const sorted = Object.keys(data).sort().reduce(
-								(obj, key) => { 
-									obj[key] = data[key];;											
-									return obj;
-									}, 
-								{}
-							);
-							$.each(sorted, function(j, value) {
-								iteration++;
-								//console.log(j);		
-								//console.log(value);										
-								trHTML += "<tr>";
-								trHTML += "<td style='height: 25px; width: 160px;'><input type='text' id='zone_"+ iteration + "_" + new_id +"' name='zone_"+ iteration + "_" + new_id +"' readonly='true' value='" + j +"' style='width: 100%; background-color: #e6e6e6;'></td>";	
-								trHTML += "<td style='width: 45px; height: 15px;'><input type='text' id='vol_"+ iteration + "_" + new_id +"' name='vol_"+ iteration + "_" + new_id +"' size='100' data-validation-rule='special:number-min-max-value:0:100' data-validation-error-msg='<TMPL_VAR T2S.ERROR_VOLUME_PLAYER>' value=''></td>";
-								trHTML += "<td style='width: 45px; height: 15px;'><input type='text' id='treble_"+ iteration + "_" + new_id +"' name='treble_"+ iteration + "_" + new_id +"' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='<TMPL_VAR VOLUME_PROFILES.ERROR_TREBLE_BASS_PLAYER>' value=''></td>\n";
-								trHTML += "<td style='width: 45px; height: 15px;'><input type='text' id='bass_"+ iteration + "_" + new_id +"' name='bass_"+ iteration + "_" + new_id +"' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='<TMPL_VAR VOLUME_PROFILES.ERROR_TREBLE_BASS_PLAYER>' value=''></td>\n";
-								trHTML += "<td style='height: 10px; width: 5px; align: middle'>";
-								trHTML += "<fieldset><select id='loudness_"+ iteration + "_" + new_id +"' name='loudness_"+ iteration + "_" + new_id +"' data-role='flipswitch' style='width: 5%'>\n";
-								trHTML += "<option value='false'><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option><option value='true'><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>";
-								trHTML += "</select></fieldset></td>\n";
-								trHTML += "<td style='height: 10px; width: 25px; align: middle'>";
-								if (value[10] == 'NOSUR') {
-									trHTML += "<fieldset><select disabled id='surround_"+ iteration + "_" + new_id +"' name='surround_"+ iteration + "_" + new_id +"' data-role='flipswitch' style='width: 5%'>\n";
-								} else {
-									trHTML += "<fieldset><select id='surround_"+ iteration + "_" + new_id +"' name='surround_"+ iteration + "_" + new_id +"' data-role='flipswitch' style='width: 5%'>\n";
-								}
-								trHTML += "<option value='false'><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option><option value='true'><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>";
-								trHTML += "</select></fieldset></td>\n";
-								trHTML += "<td style='height: 10px; width: 25px; align: middle'>";
-								if (value[8] == 'NOSUB') {
-									trHTML += "<fieldset><select disabled id='subwoofer_"+ iteration + "_" + new_id +"' name='subwoofer_"+ iteration + "_" + new_id +"' data-role='flipswitch' style='width: 5%'>\n";
-								} else {
-									trHTML += "<fieldset><select id='subwoofer_"+ iteration + "_" + new_id +"' name='subwoofer_"+ iteration + "_" + new_id +"' data-role='flipswitch' style='width: 5%'>\n";
-								}
-								trHTML += "<option value='false'><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option><option value='true'><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>";
-								trHTML += "</select></fieldset></td>\n";
-								if (value[8] == 'NOSUB') {
-									trHTML += "<td style='width: 55px; height: 15px;'><input disabled type='text' id='sbass_"+ iteration + "_" + new_id +"' name='sbass_"+ iteration + "_" + new_id +"' size='100' value=''></td>\n";
-								} else {
-									trHTML += "<td style='width: 55px; height: 15px;'><input type='text' id='sbass_"+ iteration + "_" + new_id +"' name='sbass_"+ iteration + "_" + new_id +"' size='100' data-validation-rule='special:number-min-max-value:-15:15' data-validation-error-msg='<TMPL_VAR VOLUME_PROFILES.ERROR_SUB_LEVEL_PLAYER>' value=''></td>\n";
-								}
-								trHTML += "<td style='width: 60px; height: 15px'><input type='checkbox' id='master_"+ iteration + "_" + new_id +"' name='master_"+ iteration + "_" + new_id +"' class="+ new_id +"></td>\n";
-								trHTML += "<td style='width: 60px; height: 15px'><input type='checkbox' id='member_"+ iteration + "_" + new_id +"' name='member_"+ iteration + "_" + new_id +"' class='member_"+ new_id +"'></td>\n";
-								trHTML += "</tr>";
-							})
-							trHTML += "</table></div>";
-							//$('input:checkbox').checkboxradio('refresh');
-							$('#btnscan').hide();
-							$('.ico_delete').hide();
-							$('#new_id').val(new_id);
-							$('#formtable').append(trHTML);
-							$('#tblvol_prof' + new_id +'').trigger('create');
-							$('#main_table').trigger('create');
-							$("#btnsubmit").focus();
-							$("#profile" + new_id +"").focus();							
-						}
-					})
-					
-				.fail(function (jqXHR, textStatus, errorThrown) {
-					console.log(errorThrown);
-				})
-				.always(function(data) {
-					console.log( "Action New Volume Profile executed", data );
-				})
-			};
-		
-			// clone data from last saved profile
-			function cloneprofile()   {
-				var data;
-				
-				var last_id = parseInt(document.getElementById('last_id').value);
-				var new_id = last_id + 1;
-				//console.log(last_id);
-				$.ajax({
-						url: 'index.cgi',
-						type: 'post',
-						data: { action: 'profiles'},
-						dataType: 'json',
-						async: false,
-				})
-					
-				.fail(function (jqXHR, textStatus, errorThrown) {
-					console.log(errorThrown);
-				})
-				.done(function(data, textStatus, jqXHR) {
-							$.each(data, function(i, outerArray) {
-								unsorted = outerArray.Player
-								const sorted = Object.keys(unsorted).sort().reduce(
-									(obj, key) => { 
-											obj[key] = unsorted[key]; 
-											return obj;
-											}, 
-									{}
-								);
-								var iteration = 0;
-								iteration = parseInt(iteration)
-								$.each(sorted, function(j, innerArray) {
-									iteration++;
-									//console.log(j);
-									//console.log(innerArray);
-									$('#vol_' + iteration + '_' + new_id).val(innerArray[0].Volume);
-									$('#treble_' + iteration + '_' + new_id).val(innerArray[0].Treble);
-									$('#bass_' + iteration + '_' + new_id).val(innerArray[0].Bass);
-									if (innerArray[0].Loudness == 'true') {
-										$('#loudness_' + iteration + '_' + new_id).val("true").flipswitch("refresh");
-									} else {
-										$('#loudness_' + iteration + '_' + new_id).val("false").flipswitch("refresh");
-									}
-									if (innerArray[0].Surround == 'na') {
-										$('#surround_' + iteration + '_' + new_id).flipswitch("disable");
-										$('#surround_' + iteration + '_' + new_id).val("false").flipswitch("refresh");
-									} else if (innerArray[0].Surround == 'true') {
-										$('#surround_' + iteration + '_' + new_id).val("true").flipswitch("refresh");
-									} else {
-										$('#surround_' + iteration + '_' + new_id).val("false").flipswitch("refresh");
-									}
-									if (innerArray[0].Subwoofer == 'na') {
-										$('#subwoofer_' + iteration + '_' + new_id).flipswitch("disable");
-										$('#sbass_' + iteration + '_' + new_id).attr("disabled", "disabled").css("background", "rgba(192,192,192, 0.2)").textinput("refresh");
-										$('#subwoofer_' + iteration + '_' + new_id).val("false").flipswitch("refresh");
-									} else if (innerArray[0].Subwoofer == 'true') {
-										$('#subwoofer_' + iteration + '_' + new_id).val("true").flipswitch("refresh");
-									} else {
-										$('#subwoofer_' + iteration + '_' + new_id).val("false").flipswitch("refresh");
-									}
-									$('#sbass_' + iteration + '_' + new_id).val(innerArray[0].Subwoofer_level);
-									if (innerArray[0].Master == 'true') {
-										$('#master_' + iteration + '_' + new_id).prop('checked',true).checkboxradio("refresh");
-									} else {
-										$('#master_' + iteration + '_' + new_id).prop('checked',false).checkboxradio("refresh");
-									}
-									if (innerArray[0].Member == 'true') {
-										$('#member_' + iteration + '_' + new_id).prop('checked',true).checkboxradio("refresh");
-									} else {
-										$('#member_' + iteration + '_' + new_id).prop('checked',false).checkboxradio("refresh");
-									}
-								})
-							})
-				})
-				.always(function(data) {
-					console.log( "Action Clone Profile executed", data );
-				})
-				
-			};
-		
-			// Sub Fucntion for new added Profile
-			function NewSonosData()   {
-				var last_id = parseInt(document.getElementById('last_id').value);
-				var load = last_id + 1;
-				obtainSonosData(load);
-			}
-			
-			// get actual data from all Player
-			function obtainSonosData(load)   {
-				var arrkey = parseInt(load) - 1;
-				var new_id = load;
-
-			    $.ajax({
-					url: '/plugins/<TMPL_VAR PLUGINDIR>/bin/vol_prof_ini.php',
-					type: 'post',
-					dataType: "json",
-					data: { 'new_id': 'true'}
-				})	
-				.fail(function (jqXHR, textStatus, errorThrown) {
-					console.log(errorThrown);
-				})
-				.done(function(data, textStatus, jqXHR) {
-							//console.log(data);
-							$.each(data, function(i, outerArray) {
-								//console.log(outerArray);
-								//$('#profile' + new_id).val("");
-								unsorted = outerArray.Player
-								const sorted = Object.keys(unsorted).sort().reduce(
-									(obj, key) => { 
-											obj[key] = unsorted[key]; 
-											return obj;
-											}, 
-									{}
-								);
-								var iteration = 0;
-								iteration = parseInt(iteration)
-								$.each(sorted, function(j, innerArray) {
-									iteration++;
-									//console.log(sorted);
-									//console.log(innerArray);
-									$('#vol_' + iteration + '_' + new_id).val(innerArray[0].Volume);
-									$('#treble_' + iteration + '_' + new_id).val(innerArray[0].Treble);
-									$('#bass_' + iteration + '_' + new_id).val(innerArray[0].Bass);
-									if (innerArray[0].Loudness == 'true') {
-										$('#loudness_' + iteration + '_' + new_id).val("true").flipswitch("refresh");
-									} else {
-										$('#loudness_' + iteration + '_' + new_id).val("false").flipswitch("refresh");
-									}
-									if (innerArray[0].Surround == 'na') {
-										$('#surround_' + iteration + '_' + new_id).flipswitch("disable");
-										$('#surround_' + iteration + '_' + new_id).val("false").flipswitch("refresh");
-									} else if (innerArray[0].Surround == 'true') {
-										$('#surround_' + iteration + '_' + new_id).val("true").flipswitch("refresh");
-									} else {
-										$('#surround_' + iteration + '_' + new_id).val("false").flipswitch("refresh");
-									}
-									if (innerArray[0].Subwoofer == 'na') {
-										$('#subwoofer_' + iteration + '_' + new_id).flipswitch("disable");
-										$('#sbass_' + iteration + '_' + new_id).attr("disabled", "disabled").css("background", "rgba(192,192,192, 0.2)").textinput("refresh");
-										$('#subwoofer_' + iteration + '_' + new_id).val("false").flipswitch("refresh");
-									} else if (innerArray[0].Subwoofer == 'true') {
-										$('#subwoofer_' + iteration + '_' + new_id).val("true").flipswitch("refresh");
-									} else {
-										$('#subwoofer_' + iteration + '_' + new_id).val("false").flipswitch("refresh");
-									}
-									$('#master_' + iteration + '_' + new_id).prop('checked',false).val("false").checkboxradio("refresh");
-									$('#member_' + iteration + '_' + new_id).prop('checked',false).val("false").checkboxradio("refresh");
-									$('#sbass_' + iteration + '_' + new_id).val(innerArray[0].Subwoofer_level);
-								})
-							})
-				})
-				.always(function(data) {
-					console.log( "Action load Sonos Data executed", data );
-				})
-				
-			};
-			
-			
-		// iniciate deleting profile
-		$(".ico-delete").on("click", function() {
-			$('#delprofil').val(0);
-			var del = ($(this).attr('value'));
-			deletedialog('<TMPL_VAR VOLUME_PROFILES.DIALOG_DELETE>', '<TMPL_VAR VOLUME_PROFILES.DIALOG_BUTTON_DELETE>', 'question', 'Volume Profile', del);
-		});
-		
-		// iniciate loading actual data
-		$(".ico-load").on("click", function() {
-			var load = ($(this).attr('value'));
-			obtainSonosData(load);
-		});
-		
-		// pop-up Dailog Box for Profil deletion
-		function deletedialog(text, ButtonText, Icon='', Title, del)    {
-			// https://silverboxjs.ir/documentation/?v=latest
-			silverBox({
-				alertIcon: Icon,
-				text: text,
-				centerContent: true,
-				title: {
-						text: Title
-						},
-				confirmButton: {
-								bgColor: "#6dac20",
-								border: "10px",
-								borderColor: "#6dac20",
-								textColor: "#fff",
-								text: ButtonText,
-								closeOnClick: true,
-								iconStart: "/plugins/<TMPL_VAR PLUGINDIR>/images/recycle-bin.png",
-								onClick: () => { deleteProfile(del)	},
-								},
-				cancelButton: {
-								text: "<TMPL_VAR SAVE.CANCEL_BUTTON>",
-								iconStart: "/plugins/<TMPL_VAR PLUGINDIR>/web/images/cancel.svg",
-								onClick: () => {return;
-												},
-								},
-				});
-		}
-			
-			
-		// pop-up Message during saving	
-		function message()   {
-			console.log("Save data");
-			timeout('<TMPL_VAR SAVE.SAVE_MESSAGE>', 'OK', 'info', '<TMPL_VAR SAVE.SAVE_ALL_OK>', '3000');
-		}
-		
-		// pop-up Timeout Dailog Box
-		function timeout(text, ButtonText, Icon='', Title, timeout)    {
-			// https://silverboxjs.ir/documentation/?v=latest
-			silverBox({
-				timer: timeout,
-				//alertIcon: Icon,
-				customIcon: "/plugins/<TMPL_VAR PLUGINDIR>/web/images/info.svg",
-				text: text,
-				centerContent: true,
-				title: {
-						text: Title
-						},
-				});
-		}
-			
-		// delete Profile	
-		function deleteProfile(del)   {
-			$('#delprofil').val(del);
-			$('#main_form').trigger('submit').trigger('create');
-		}
-		
-		//document ready
-		function checkboxes()   {
-			var iteration = document.getElementById('countplayers').value;
-			var iterate_id = document.getElementById('new_id').value;
-			iteration = parseInt(iteration)
-			iterate_id = parseInt(iterate_id)
-			iteration += 1;
-			iterate_id += 1;
-			let array =[];
-			for (i = 1; i < iteration; ++i) {
-				for (e = 1; e < iterate_id; ++e) {
-					if (document.getElementById('master_' + i + '_' + e).value == "true") {
-						document.getElementById('master_' + i + '_' + e).checked = true;
-						document.getElementById('member_' + i + '_' + e).checked = false;
-						$('#master_' + i + '_' + e).attr('disabled',false);
-						//array.push($('#member_' + i + '_' + e).val()); 
-					} else {
-						document.getElementById('master_' + i + '_' + e).checked = false;
-						array.push($('#member_' + i + '_' + e).val()); 
-					}
-				}
-			}
-			$('input:checkbox').checkboxradio('refresh');
-			//console.log(array);
-			if(array.length){
-				//alert('Value of selected checkboxes are: ${array}'); 
-			} else {
-				alert("Checkbox is not selected, Please select one!"); 
-			}
-		}
-		
-		
-		function ProfilNameDialog(text, ButtonText, Icon='', Title)    {		
-			// https://silverboxjs.ir/documentation/?v=latest
-			silverBox({
-				alertIcon: 'warning',
-				text: text,
-				centerContent: true,
-				title: {
-						text: Title
-						},
-				confirmButton: {
-								bgColor: "#6dac20",
-								border: "10px",
-								borderColor: "#6dac20",
-								textColor: "#fff",
-								text: ButtonText,
-								closeOnClick: true
-								}
-				});
-		}
-			
-		
-        $(document).ready(function(e) {
-			getvolprofiles();
-			checkboxes();
-			//validateProfiles();	
-			
-			// check/uncheck if Master has been clicked
-			$(document.body).on('click','input[name^="master"]',function(event)  {
-				var id = ($(this).attr('class'));
-				if($(this).is(':checked'))  {
-					$('input[class='+ id +']').not(this).attr('disabled',true);
-				} else {
-					$('input[class='+ id +']').attr('disabled',false);
-				}
-				$('input:checkbox').checkboxradio('refresh');
-			});
-			
-					
-			
-			$("form#main_form").submit(function(e) {
-				console.log("Submit");
-				// validate if Profile Name has been entered
-				var iterate = document.getElementById('new_id').value;
-				iterate = parseInt(iterate)
-				iterate += 1;
-				for (i = 1; i < iterate; ++i) {
-					if($('#profile' + i + '').val() == "")   {
-						$('#profile' + i + '').focus();	
-						ProfilNameDialog("<TMPL_VAR VOLUME_PROFILES.DIALOG_PROFILE_NAME>", "OK", Icon='', "Name");	
-						return false;
-					}
-				};
-				var validationFailed = false;
-				var hasMaster;
-				var hasMember;
-				var isGroup;
-
-				var iteration = document.getElementById('countplayers').value;
-				var iterate_id = document.getElementById('new_id').value;
-				iteration = parseInt(iteration)
-				iterate_id = parseInt(iterate_id)
-				iteration += 1;
-				iterate_id += 1;
-				$('input:checkbox').checkboxradio('refresh');
-				for (i = 1; i < iteration; ++i) {
-					hasMaster = false;
-					hasMember = false;
-					for (j = 1; j < iterate_id; ++j) {
-						if (document.getElementById('master_' + i + '_' + j).checked) {
-							document.getElementById('master_' + i + '_' + j).value = "true";
-							document.getElementById('member_' + i + '_' + j).value = "false";
-							hasMaster = true;
-						}
-						if (document.getElementById('member_' + i + '_' + j).checked)   {
-							document.getElementById('member_' + i + '_' + j).value = "true";
-							hasMember = true;
-						}
-						volume = $('#vol_' + i + '_' + j + '').val();
-						treble = $('#treble_' + i + '_' + j + '').val();
-						bass = $('#bass_' + i + '_' + j + '').val();
-						sbass = $('#sbass_' + i + '_' + j + '').val();
-						master = document.getElementById('master_' + i + '_' + j + '').value;
-						if (volume.length != 0)  {
-							validate_enable('#vol_' + i + '_' + j);
-							validate_chk_object(['#vol_' + i + '_' + j]);
-						}
-						if (treble.length != 0)  {
-							validate_enable('#treble_' + i + '_' + j);
-							validate_chk_object(['#treble_' + i + '_' + j]);
-						}
-						if (bass.length != 0)  {
-							validate_enable('#bass_' + i + '_' + j);
-							validate_chk_object(['#bass_' + i + '_' + j]);
-						}
-						if (sbass.length != 0)  {
-							validate_enable('#sbass_' + i + '_' + j);
-							validate_chk_object(['#sbass_' + i + '_' + j]);
-						}
-						if (master == "true")   {
-							$('#member_' + i + '_' + j).val("false");
-						}
-					}
-					//console.log(hasMaster);
-					//console.log(hasMember);
-					if (hasMaster == false && hasMember == true)   {
-						//$('#profile1').focus();	
-						//ProfilNameDialog("Bitte einen Master Player markieren!", "Error", Icon='', "Grouping");
-						//e.preventDefault();						
-						//return false;
-					}
-				}
-				
-				if (validationFailed) {
-					e.preventDefault();
-					return false;
-				} else {
-					message();
-				}
-				$('#main_table').trigger('create').trigger('refresh');
-			});
-		});
-		
-
-		</script>
-	<!--</div>-->
-</form>	
-		
+</form>
+<TMPL_INCLUDE NAME="profiles.js">
 </TMPL_IF>
 
 
@@ -3461,7 +994,7 @@ $(function () {
 
 <TMPL_IF DETAILS>
     <!-- form 'FORM' DETAILS -->
-    <form method="post" data-ajax="false" accept-charset="utf-8" name="main_form" id="main_form" action="./index.cgi?do=details">
+    <form method="post" data-ajax="false" accept-charset="utf-8" name="detail_form" id="detail_form" action="./index.cgi?do=details">
         <input type="hidden" name="saveformdata2" value="1">
 		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.min.css"/>
 		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.css"/>
@@ -3481,7 +1014,6 @@ $(function () {
 
                 <tr>
                     <td style="height: 60px; width: 15%;">
-                        <!--<a id="lcheckonline" <TMPL_VAR T2S.ONLINECHECK_LINK> target="_blank"><TMPL_VAR T2S.ONLINECHECK></a>-->
                         <label id="lcheckonline"><TMPL_VAR T2S.ONLINECHECK></label>
                     </td>
                     <td style="height: 60px; width: 800px;">
@@ -3489,11 +1021,10 @@ $(function () {
                             <tr>
                                 <td style="width: 5%">
                                     <fieldset>
-                                        <!--<select onchange="cronjob()" id="checkonline" name="checkonline" data-role="flipswitch" style="width: 104px">-->
-                                    <select id="checkt2s" name="checkt2s" data-role="flipswitch" style="width: 5%">
-										<option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
-										<option selected="selected" value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
-									</select>
+										<select id="checkt2s" name="checkt2s" data-role="flipswitch" style="width: 5%">
+											<option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
+											<option selected="selected" value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
+										</select>
                                     </fieldset>
                                     <script>
                                         $('#checkt2s').val('<TMPL_VAR SYSTEM.checkt2s>')
@@ -3504,15 +1035,17 @@ $(function () {
                                     <label align="right" id="lfunc_list"><TMPL_VAR T2S_DETAILS.LABEL_ZAPZONE></label>
 								</td>
                                 <td style="width: 30%">
-                                    <!--<table class="cronjob" border=0 style="width: 91%">-->
-                                        	<select id="func_list" name="func_list" data-mini="true" data-native-menu="true">
-												<option selected="selected" disabled value="" >*** Select Function ***</option>
-												<option value="nextradio" >Nextradio</option>
-												<option value="trackfavorites" >Track Favorites</option>
-												<option value="playlistfavorites" >Playlist Favorites</option>
-												<option value="radiofavorites" >Radio Favorites</option>
-											</select>
-                                    <!--</table>-->
+										<select id="func_list" name="func_list" data-mini="true" data-native-menu="true">
+											<option selected="selected" disabled value="" >*** Select Function ***</option>
+											<option value="" >None</option>
+											<option value="nextradio" >Nextradio</option>
+											<option value="trackfavorites" >Track Favorites</option>
+											<option value="playlistfavorites" >Playlist Favorites</option>
+											<option value="radiofavorites" >Radio Favorites</option>
+										</select>
+										<script>
+											$('#func_list').val('<TMPL_VAR VARIOUS.selfunction>')
+										</script>
                                 </td>
 									<td style="width: 20%; height: 60px;">
                                         <label align="right" id="lcron"><TMPL_VAR T2S_DETAILS.LABEL_ZAPZONE_RESET></label>
@@ -3532,18 +1065,13 @@ $(function () {
                             </tr>
                         </table>
                     </td>
-                    <!--<td style="height: 30px; width: 201px;"></td>
-			<td style="height: 30px; width: 24px;">
-				<font size="-1">
-					<div id="testurl"></div>
-				</font>
-			</td>-->
                 </tr>
+
                 <tr>
                     <td style="height: 60px; width: 25%;">
                         <label id="lvolume"><TMPL_VAR T2S_DETAILS.LABEL_T2S_VOLUME_CHANGE></label>
                     </td>
-					
+
                     <td style="width: 20%">
                         <select id="volume" name="volume" data-mini="true" data-native-menu="true" style="width: 100%">
 							<option value="3">3 %</option>
@@ -3555,7 +1083,7 @@ $(function () {
                             $('#volume').val('<TMPL_VAR MP3.volumedown>');
                         </script>
 					</td>
-                   
+
 
                 </tr>
                 <td style="width: 27%">
@@ -3574,6 +1102,7 @@ $(function () {
                     </fieldset>
                     <input id="maxzap" name="maxzap" type="hidden" class="textfield" value="<TMPL_VAR MAXZAP>">
                 </td>
+
                 <tr>
                     <td style="width: 27%">
                         <TMPL_VAR RADIO.LABEL_RADIO_ANNOUNCE_ALWAYS>
@@ -3590,8 +1119,8 @@ $(function () {
                             <span class="auto-style4"><TMPL_VAR RADIO.NOTE_RADIO_ANNOUNCE_ALWAYS></span>
                         </fieldset>
                     </td>
-
                 </tr>
+
                 <tr class="radioannounce">
                     <td style="height: 60px; width: 25%;">
                         <label id="lcorrection"><TMPL_VAR T2S.LABEL_CORRECTION></label>
@@ -3599,7 +1128,6 @@ $(function () {
                     <td style="height: 60px; width: 800px;">
                         <input type="range" name="correction" id="correction" value="<TMPL_VAR TTS.correction>" min="0" max="20" step="2">
                     </td>
-                    
                 </tr>
 
                 <tr class="t2sdet">
@@ -3628,16 +1156,15 @@ $(function () {
                                             <label id="lrmpvol"><TMPL_VAR T2S_DETAILS.LABEL_RAMPTO_VOLUME></label>
                                         </td>
                                         <td style="text-align: right;">
-                                            <input id="rmpvol" name="rmpvol" type="text" data-validation="number" class="textfield" value="<TMPL_VAR TTS.volrampto>" 
-											data-validation-allowing="special:number-min-max-value:1:100" 
+                                            <input id="rmpvol" name="rmpvol" type="text" data-validation="number" class="textfield" value="<TMPL_VAR TTS.volrampto>"
+											data-validation-allowing="special:number-min-max-value:1:100"
 											data-validation-error-msg="<TMPL_VAR T2S_DETAILS.ERROR_RAMPTO>">
                                         </td>
                                     </tr>
                                 </table>
                             </td>
                         </table>
-                        
-                </tr>
+                 </tr>
 
                 <tr>
                     <td style="height: 60px; width: 25%;">
@@ -3646,10 +1173,8 @@ $(function () {
                     <td style="height: 60px; width: 800px;">
                         <input type="range" name="phonemute" id="phonemute" value="<TMPL_VAR VARIOUS.phonemute>" min="0" max="16" step="2">
                     </td>
-                    
-                    
-                </tr>
-				
+                 </tr>
+
 				<tr>
                     <td style="height: 60px; width: 15%; text-align: left;">
                         <label id="lcheckonline"><TMPL_VAR ZONES.FOLLOW_LABEL></label>
@@ -3667,7 +1192,7 @@ $(function () {
 								</select>
 								<script>
 								$('#follow_host').val('<TMPL_VAR VARIOUS.follow_host>');
-								</script>	
+								</script>
                             </td>
 
 								<td style="width: 11%; text-align: left;">
@@ -3685,14 +1210,14 @@ $(function () {
 											</select>
 										<script>
 											$('#follow_wait').val('<TMPL_VAR VARIOUS.follow_wait>');
-										</script>	
+										</script>
                                     <!--</table>-->
-                                
+
                             </tr>
                         </table>
                     </td>
                 </tr>
-				
+
 				<tr>
                     <td style="height: 60px; width: 15%; text-align: left;">
                         <label id="lswupdate"><TMPL_VAR ZONES.SONOS_LABEL_UPDATE_FIRMWARE></label>
@@ -3766,7 +1291,7 @@ $(function () {
 											$('#hw_update_time').val('<TMPL_VAR SYSTEM.hw_update_time>');
 										</script>
                                </td>
-								
+
 								<td class="update" style="width: 17%; text-align: left;">
                                     <label align="right" id="lupdatepower">Power On:</label>
 								</td>
@@ -3786,7 +1311,7 @@ $(function () {
                         </table>
                     </td>
                 </tr>
-				
+
 
                 <tr>
                     <td style="width: 27%">
@@ -3841,137 +1366,14 @@ $(function () {
                         <input type="range" name="waiting" id="waiting" value="<TMPL_VAR MP3.waiting>" min="0" max="10" step="1">
                     </td>
 					</tr>
-					<!--<tr>
-                    <!--Start *** HIDDEN Workaround Felder um 3 Felder zu escapen
-                    <td style="height: 30px; width: 50px;">
-                        <input id="wastecal" name="wastecal" type="hidden" class="textfield" value="<TMPL_VAR VARIOUS.CALDavMuell>">
-                    </td>
-                    <td style="height: 30px; width: 50px;">
-                        <input id="cal" name="cal" type="hidden" class="textfield" value="<TMPL_VAR VARIOUS.CALDav2>">
-                    </td>
-                    <!--<td style="height: 30px; width: 50px;">
-						<input id="town" name="town" type="text" class="textfield" value="<TMPL_VAR LOCATION.town>">
-					</td>
-                    <table id="divCheckbox" style="display:none">
-                        <TMPL_VAR ROWSRADIO>
-                    </table>
-                    
-                    <!--Ende *** HIDDEN Workaround Felder um 3 Felder zu escapen
-                </tr>-->
-
             </table>
             <td></td>
             <p>
                 <center>
-                    <!--<a id="btncancel" data-role="button" data-inline="true" data-mini="true" data-icon="delete" href="/admin/index.cgi"><TMPL_VAR SAVE.CANCEL_BUTTON></a>-->
-                    <button onclick="message()" type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SAVE.SAVE_BUTTON></button>
+                    <button onclick="message()" type="submit" form="detail_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SAVE.SAVE_BUTTON></button>
                 </center>
             </p>
-
-            <script>
-                $(document).on('pageinit', function() {
-                    select();
-					select_update();
-                    //select_always();
-                    //cronjob();
-
-                });
-
-                function select() {
-                    var rad = document.getElementById('announceradio').value;
-                    var rad1 = document.getElementById('announceradio_always').value;
-                    if (rad == true || rad1 == true) {
-                        $('.radioannounce').show();
-                    } else {
-                        $('.radioannounce').hide();
-                    }
-                }
-
-                function select_always() {
-                    var rad1 = document.getElementById('announceradio_always').value;
-                    if (rad1 == true) {
-                        $('.radioannounce').show();
-                    } else {
-                        $('.radioannounce').hide();
-                    }
-                }
-				
-				function select_update() {
-                    var up = document.getElementById('hw_update').value;
-					//console.log(up);
-                    if (up == 'true') {
-                        $('.update').show();
-                    } else {
-                        $('.update').hide();
-                    }
-                }
-				
-								
-				function message()   {
-					console.log("Save");
-					timeout('<TMPL_VAR SAVE.SAVE_MESSAGE>', 'OK', 'info', '<TMPL_VAR SAVE.SAVE_ALL_OK>', '3000');
-				}
-				
-				// pop-up Timeout Dailog Box
-				function timeout(text, ButtonText, Icon='', Title, timeout)    {
-					// https://silverboxjs.ir/documentation/?v=latest
-					silverBox({
-						timer: timeout,
-						//alertIcon: Icon,
-						customIcon: "/plugins/<TMPL_VAR PLUGINDIR>/web/images/info.svg",
-						text: text,
-						centerContent: true,
-						title: {
-								text: Title
-								},
-						});
-				}
-				
-				// pop-up Dailog Box
-				function dialog(text, ButtonText, Icon='', Title)    {
-					// https://silverboxjs.ir/documentation/?v=latest
-					silverBox({
-						alertIcon: Icon,
-						text: text,
-						centerContent: true,
-						title: {
-								text: Title
-								},
-						confirmButton: {
-										bgColor: "#6dac20",
-										border: "10px",
-										borderColor: "#6dac20",
-										textColor: "#fff",
-										text: ButtonText,
-										closeOnClick: true
-										}
-						});
-				}
-				
-				// get Radio favorites
-				$.ajax({
-						url: 'index.cgi',
-						type: 'post',
-						data: { action: 'getradio'},
-						dataType: 'json',
-						async: false,
-							success: function( response, textStatus, jqXHR )  {
-							//$('#func_list').append('<option value="" disabled>** only for FOLLOW function***</option>');
-								$.each(response, function(index, value) {
-									result = value.split(',');
-									$('#func_list').append('<option value="' + result[1] + '">Plugin Radio: ' + result[0] + '</option>');
-								});
-							}
-						})
-						.fail(function (jqXHR, textStatus, errorThrown) {
-							console.log(errorThrown);
-						})
-						.always(function(response) {
-							$('#func_list').val('<TMPL_VAR VARIOUS.selfunction>');
-							console.log( "Action get Radio Favorites executed" );
-						})
-			
-				</script>
         </div>
     </form>
+<TMPL_INCLUDE NAME="details.js">
 </TMPL_IF>

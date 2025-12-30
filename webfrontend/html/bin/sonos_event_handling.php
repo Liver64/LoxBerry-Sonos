@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 /**
  * Sonos Event Listener (raum-zentriert, vollständig)
- * - liest Räume/Player aus REPLACELBHOMEDIR/config/plugins/sonos4lox/s4lox_config.json
+ * - liest Räume/Player aus /opt/loxberry/config/plugins/sonos4lox/s4lox_config.json
  * - SUBSCRIBE: AVTransport, RenderingControl, ZoneGroupTopology
  * - NOTIFY -> MQTT je Raum:
  *     state   (retain, QoS1)
@@ -56,8 +56,8 @@ declare(strict_types=1);
  * - verbose Logging
  */
 
-require_once "REPLACELBHOMEDIR/libs/phplib/loxberry_system.php";
-require_once "REPLACELBHOMEDIR/libs/phplib/loxberry_io.php";
+require_once "/opt/loxberry/libs/phplib/loxberry_system.php";
+require_once "/opt/loxberry/libs/phplib/loxberry_io.php";
 require_once __DIR__ . '/../system/SonosMqttClient.php';
 require_once "$lbphtmldir/system/sonosAccess.php";
 
@@ -65,7 +65,7 @@ date_default_timezone_set('Europe/Berlin');
 pcntl_async_signals(true);
 
 // --------------------------------- Pfade ---------------------------------
-const S4L_CFG     = "REPLACELBHOMEDIR/config/plugins/sonos4lox/s4lox_config.json";
+const S4L_CFG     = "/opt/loxberry/config/plugins/sonos4lox/s4lox_config.json";
 $ramLogDir        = '/run/shm/sonos4lox';
 $LogFile          = 'sonos_events.log';
 $loglevel 	  	  = LBSystem::pluginloglevel();
@@ -150,7 +150,7 @@ function logln(string $lvl, string $msg): void {
 
 // --------------------------------- Helpers ---------------------------------
 
-require_once "REPLACELBHOMEDIR/webfrontend/html/plugins/sonos4lox/Helper.php";
+require_once "/opt/loxberry/webfrontend/html/plugins/sonos4lox/Helper.php";
 
 /**
  * Decide if we should publish a nexttrack MQTT event.
@@ -247,16 +247,18 @@ function refresh_event_urls_for_missing_rooms(array &$rooms): void
 
         if (!$desc) {
             logln('warn', "Event URL refresh: still no device_description.xml for {$meta['ip']} ($room) – keeping room without events");
-            $meta['events'] = [];
-            continue;
+            $meta['events'] = default_event_urls($base);
+			logln('warn', "Event URL refresh: still no device_description.xml for {$meta['ip']} ($room) – using default event URLs");
+			continue;
         }
 
         libxml_use_internal_errors(true);
         $sx = @simplexml_load_string($desc);
         if (!$sx) {
             logln('warn', "Event URL refresh: XML parse failed for {$meta['ip']} ($room) – keeping room without events");
-            $meta['events'] = [];
-            continue;
+            $meta['events'] = default_event_urls($base);
+			logln('warn', "Event URL refresh: XML parse failed for {$meta['ip']} ($room) – using default event URLs");
+			continue;
         }
 
         $sx->registerXPathNamespace('d', 'urn:schemas-upnp-org:device-1-0');
@@ -288,7 +290,8 @@ function refresh_event_urls_for_missing_rooms(array &$rooms): void
         if (!empty($evs)) {
             logln('ok', "Event URL refresh: {$meta['ip']} ($room): " . implode(', ', array_keys($evs)));
         } else {
-            logln('warn', "Event URL refresh: {$meta['ip']} ($room): no event URLs found – keeping room without events");
+            $meta['events'] = default_event_urls($base);
+			logln('warn', "Event URL refresh: {$meta['ip']} ($room): no event URLs found – using default event URLs");
         }
     }
     unset($meta);
@@ -301,6 +304,18 @@ function header_value(array $headers, string $name): ?string {
     return null;
 }
 
+function default_event_urls(string $base): array
+{
+    $b = rtrim($base, '/');
+    return [
+        'AVTransport'           => $b . '/MediaRenderer/AVTransport/Event',
+        'RenderingControl'      => $b . '/MediaRenderer/RenderingControl/Event',
+        'GroupRenderingControl' => $b . '/MediaRenderer/GroupRenderingControl/Event',
+        'ZoneGroupTopology'     => $b . '/ZoneGroupTopology/Event',
+    ];
+}
+
+
 // -------------------------------------------------------------
 // Loxone target resolver (cached general.json by mtime)
 // -------------------------------------------------------------
@@ -311,7 +326,7 @@ function get_miniserver_target_from_general_cached(string $msId): ?array
         'general' => null,
     ];
 
-    $path  = 'REPLACELBHOMEDIR/config/system/general.json';
+    $path  = '/opt/loxberry/config/system/general.json';
     $mtime = @filemtime($path) ?: 0;
 
     // Reload only if changed (or first time)
@@ -1121,7 +1136,7 @@ function parse_topology(string $zoneGroupState): array {
  */
 function rebuild_all_subscriptions(
     array &$subs,
-    array $rooms,
+    array &$rooms,
     string $CALLBACK_URL,
     int $TIMEOUT_SEC,
     int $RENEW_MARGIN
@@ -2082,16 +2097,18 @@ foreach ($rooms as $room => &$meta) {
 
     if (!$desc) {
         logln('warn', "No device_description from {$meta['ip']} ($room) – keeping room, will retry later");
-        $meta['events'] = [];     // bleibt leer, wird später erneut versucht
-        continue;
+        $meta['events'] = default_event_urls($meta['base']);
+		logln('warn', "No device_description from {$meta['ip']} ($room) – using default event URLs");
+		continue;
     }
 
     libxml_use_internal_errors(true);
     $sx = @simplexml_load_string($desc);
     if (!$sx) {
         logln('warn', "XML error for {$meta['ip']} ($room) – keeping room, will retry later");
-        $meta['events'] = [];
-        continue;
+        $meta['events'] = default_event_urls($meta['base']);
+		logln('warn', "No device_description from {$meta['ip']} ($room) – using default event URLs");
+		continue;
     }
 
     $sx->registerXPathNamespace('d', 'urn:schemas-upnp-org:device-1-0');
@@ -2123,7 +2140,9 @@ foreach ($rooms as $room => &$meta) {
     if (!empty($evs)) {
         logln('ok', "Device {$meta['ip']} ($room): " . implode(', ', array_keys($evs)));
     } else {
-        logln('warn', "Device {$meta['ip']} ($room): no event URLs found – will retry later");
+        logln('warn', "Device {$meta['ip']} ($room): no event URLs found – will retry later");	
+		$meta['events'] = default_event_urls($meta['base']);
+		logln('warn', "Device {$meta['ip']} ($room): using default event URLs");
     }
 }
 unset($meta);
@@ -2258,39 +2277,49 @@ while (true) {
             }
 
             // Content-Length aus Header ziehen
-            $headerPart = substr($raw, 0, $headerEndPos);
-            $lines      = preg_split("/\r\n|\n/", $headerPart);
-            $contentLen = 0;
-            foreach ($lines as $line) {
-                if (stripos($line, 'Content-Length:') === 0) {
-                    $contentLen = (int)trim(substr($line, 15));
-                    break;
-                }
-            }
+			$headerPart = substr($raw, 0, $headerEndPos);
+			$lines      = preg_split("/\r\n|\n/", $headerPart);
 
-            $bodyStart = $headerEndPos + $headerEndLen;
-            if (strlen($raw) < $bodyStart + $contentLen) {
-                // Body noch nicht komplett
-                continue;
-            }
+			// ---- Content-Length robust: null = unbekannt (chunked / close-delimited) ----
+			$contentLen = null;
+			foreach ($lines as $line) {
+				if (stripos($line, 'Content-Length:') === 0) {
+					$contentLen = (int)trim(substr($line, 15));
+					break;
+				}
+			}
 
-            // Wir haben einen vollständigen NOTIFY-Request im Buffer
-            $oneRequest = substr($raw, 0, $bodyStart + $contentLen);
-            $bufs[$id]  = substr($raw, $bodyStart + $contentLen);
+			$bodyStart = $headerEndPos + $headerEndLen;
 
-            process_sonos_http_request(
-                $sock,
-                $oneRequest,
-                $subs,
-                $rooms,
-                $mqttClient,
-                $TOPIC_PREFIX,
-                $MQTT_QOS
-            );
+			// Wenn KEIN Content-Length vorhanden ist:
+			// -> warten bis der Client die Verbindung schließt.
+			// Dann wird oben im Branch ($chunk === '' || $chunk === false) der komplette Buffer verarbeitet.
+			if ($contentLen === null) {
+				continue;
+			}
 
-            // Einfach: nach jedem NOTIFY die Verbindung schließen, Sonos öffnet neu
-            @fclose($sock);
-            unset($clients[$id], $bufs[$id]);
+			// Wenn Content-Length da ist: warten bis Body komplett
+			if (strlen($raw) < $bodyStart + $contentLen) {
+				continue;
+			}
+
+			// Wir haben einen vollständigen NOTIFY-Request im Buffer
+			$oneRequest = substr($raw, 0, $bodyStart + $contentLen);
+			$bufs[$id]  = substr($raw, $bodyStart + $contentLen);
+
+			process_sonos_http_request(
+				$sock,
+				$oneRequest,
+				$subs,
+				$rooms,
+				$mqttClient,
+				$TOPIC_PREFIX,
+				$MQTT_QOS
+			);
+
+			// Nach jedem NOTIFY Verbindung schließen, Sonos öffnet neu
+			@fclose($sock);
+			unset($clients[$id], $bufs[$id]);
         }
     }
 

@@ -1404,39 +1404,83 @@ function check_rampto() {
 **/
 
 function create_symlinks()  {
-	
+
 	global $config, $ttsfolder, $mp3folder, $myFolder, $lbphtmldir, $myip;
-	
+
 	$symcurr_path = $config['SYSTEM']['path'];
 	$symttsfolder = $config['SYSTEM']['ttspath'];
 	$symmp3folder = $config['SYSTEM']['mp3path'];
-	
+
 	$copy = false;
 	if (!is_dir($symmp3folder)) {
 		$copy = true;
 	}
-	LOGGING("helper.php: check if folder/symlinks exists, if not create", 5);
+
+	/* --- Create folders (logging only on WARNING/ERROR) --- */
+
 	if (!is_dir($symttsfolder)) {
-		mkdir($symttsfolder, 0755);
-		LOGGING("helper.php: Folder: '".$symttsfolder."' has been created", 7);
+		$ok = @mkdir($symttsfolder, 0755, true);
+		if (!$ok && !is_dir($symttsfolder)) {
+			$err = error_get_last();
+			$msg = $err['message'] ?? 'unknown error';
+			LOGGING("helper.php: ERROR creating folder '".$symttsfolder."': ".$msg, 3);
+		}
 	}
+
 	if (!is_dir($symmp3folder)) {
-		mkdir($symmp3folder, 0755);
-		LOGGING("helper.php: Folder: '".$symmp3folder."' has been created", 7);
+		$ok = @mkdir($symmp3folder, 0755, true);
+		if (!$ok && !is_dir($symmp3folder)) {
+			$err = error_get_last();
+			$msg = $err['message'] ?? 'unknown error';
+			LOGGING("helper.php: ERROR creating folder '".$symmp3folder."': ".$msg, 3);
+		}
 	}
-	if (!is_link($myFolder."/interfacedownload")) {
-		symlink($symttsfolder, $myFolder."/interfacedownload");
-		LOGGING("helper.php: Symlink: '".$myFolder.'/interfacedownload'."' has been created", 7);
+
+	/* --- Symlinks (logging only on WARNING/ERROR) --- */
+
+	$link1 = $myFolder . "/interfacedownload";
+	if (!is_link($link1)) {
+		$ok = @symlink($symttsfolder, $link1);
+		if (!$ok && !is_link($link1)) {
+			$err = error_get_last();
+			$msg = $err['message'] ?? 'unknown error';
+			LOGGING("helper.php: ERROR creating symlink '".$link1."' -> '".$symttsfolder."': ".$msg, 3);
+		}
 	}
-	if (!is_link($lbphtmldir."/interfacedownload")) {
-		symlink($symttsfolder, $lbphtmldir."/interfacedownload");
-		LOGGING("helper.php: Symlink: '".$lbphtmldir.'/interfacedownload'."' has been created", 7);
+
+	$link2 = $lbphtmldir . "/interfacedownload";
+	if (!is_link($link2)) {
+		$ok = @symlink($symttsfolder, $link2);
+		if (!$ok && !is_link($link2)) {
+			$err = error_get_last();
+			$msg = $err['message'] ?? 'unknown error';
+			LOGGING("helper.php: ERROR creating symlink '".$link2."' -> '".$symttsfolder."': ".$msg, 3);
+		}
 	}
+
+	/* --- Copy MP3 folder on first install (log only on WARNING/ERROR) --- */
+
 	if ($copy === true) {
-		xcopy($myFolder."/".$mp3folder, $symcurr_path."/".$mp3folder);
-		LOGGING("helper.php: All files has been copied from: '".$myFolder."/".$mp3folder."' to: '".$symcurr_path."/".$mp3folder."'", 5);
+		$src = $myFolder . "/" . $mp3folder;
+		$dst = $symcurr_path . "/" . $mp3folder;
+
+		$ok = true;
+		try {
+			xcopy($src, $dst);
+		} catch (Throwable $e) {
+			$ok = false;
+			LOGGING("helper.php: ERROR copying files from '".$src."' to '".$dst."': ".$e->getMessage(), 3);
+		}
+
+		// If xcopy() doesn't throw, but still failed silently:
+		if ($ok === false) {
+			// already logged above
+		} else {
+			// no success logging (per your request)
+		}
 	}
 }
+
 
 
 /**

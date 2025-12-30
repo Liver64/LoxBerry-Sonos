@@ -498,7 +498,7 @@
 			[IMPROVEMENT] Automatische Erkennung ob Player AudioClip kompatibel sind (S2 Player)
 			[IMPROVEMENT] Automatische Nutzung der AudioClip Funktion wenn alle beteiligte Player (member und master) kompatibel sind, Fallback normale TTS
 			[IMPROVEMENT] Fallback Voice zu Piper wenn Online Engine keine MP3 zurückgibt
- 6.1.0		[IMPROVEMENT] Gruppenhandling Playlisten/Favoriten optmiert
+ 6.1.1		[IMPROVEMENT] Gruppenhandling Playlisten/Favoriten optmiert
 			[IMPROVEMENT] Automatisches laden Sprache/Stimme nach Enginewechsel
 			[IMPROVEMENT] Test Sprachausgabe on-the-fly (ohne speichern) zwischen Engines/Sprache/Stimme
 			[IMPROVEMENT] Optimierte Installation von Piper mit Fallback
