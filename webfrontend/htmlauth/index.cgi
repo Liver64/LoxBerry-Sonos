@@ -1958,7 +1958,7 @@ sub saveconfig
 }
 
 #####################################################
-# Restore config file (AJAX)
+# Restore config file (AJAX) called from Cronjob
 #####################################################
 
 sub restoreconfig
