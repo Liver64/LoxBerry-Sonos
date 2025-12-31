@@ -62,7 +62,7 @@ div.scrollmenu a:hover {
 
 <TMPL_IF SETTINGS>
     <!-- form 'FORM' START -->
-
+	
     <form method="post" data-ajax="false" accept-charset="utf-8" name="main_form" id="main_form" action="./index.cgi?form">
         <input type="hidden" name="saveformdata1" value="1">
 		<input type="hidden" name="regionOptions" id="regionOptions" value="<TMPL_VAR TTS.regionms>">
@@ -71,7 +71,7 @@ div.scrollmenu a:hover {
 		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.css"/>
 		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.min.js"></script>
 		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.js"></script>
-
+	
         <div class="form-group">
             <font COLOR="blue">
                 <TMPL_VAR SAVE>
@@ -79,7 +79,7 @@ div.scrollmenu a:hover {
 
             <table class="formtable" border="0" width="100%" cellpadding="10">
                 <tr>
-
+				
 				<TMPL_IF NAME="PLAYER_AVAILABLE">
                     <td valign="middle" style="height: 33px; width: 25%; text-align: center; color:black">
 				<TMPL_ELSE>
@@ -178,8 +178,8 @@ div.scrollmenu a:hover {
 						</td>
 					</tr>
 				</TMPL_IF>
-
-	            <tr>
+				
+	            <tr>			
 					<td style="height: 60px; width: 15%;">
 						<label id="lt2son"><TMPL_VAR T2S.LABEL_T2SON></label>
 					</td>
@@ -197,27 +197,24 @@ div.scrollmenu a:hover {
 									</script>
 								</td>
 								<td style="height: 60px; width: 25%">
-								<TMPL_IF NAME="RESTORE_POSSIBLE">
-									<label id="lt2son" align="right"><TMPL_VAR BASIS.PLUGIN_RESTORE></label>
-								<TMPL_ELSE>
-									<TMPL_IF NAME="CONFIG_DIFFERENT">
-										<label id="lt2son" align="right"><TMPL_VAR BASIS.PLUGIN_BACKUP></label>
-									</TMPL_IF>
-								</TMPL_IF>
-									<td style="height: 60px; width: 1%">
-									<TMPL_IF NAME="CONFIG_DIFFERENT">
-										<a id="savec" name="savec" data-role="button" data-inline="true" data-mini="true" data-icon="check">Backup</a>
-									</TMPL_IF>
 									<TMPL_IF NAME="RESTORE_POSSIBLE">
-										<a id="restorec" name="restorec" data-role="button" data-inline="true" data-mini="true" data-icon="refresh">Restore</a>
+										<label id="lt2son" align="right"><TMPL_VAR BASIS.PLUGIN_RESTORE></label>
 									</TMPL_IF>
-									</td>
+								</td>
+
+								<td style="height: 60px; width: 1%">
+									<TMPL_IF NAME="RESTORE_POSSIBLE">
+										<a id="restorec" name="restorec"
+										   data-role="button" data-inline="true" data-mini="true" data-icon="refresh">
+										   Restore
+										</a>
+									</TMPL_IF>
 								</td>
 
 						</table>
-					</td>
+					</td>		
 				</tr>
-
+				
 				<tr class="tvmon_switch">
 					<td class="tvmon_switch" style="height: 60px; width: 25%;">
                         <label align="left" id="lfunc_list"><TMPL_VAR ZONES.SONOS_LABEL_TV-VOL></label>
@@ -234,7 +231,7 @@ div.scrollmenu a:hover {
                                     </fieldset>
 									<script>
 										$('#tvmon').val('<TMPL_VAR VARIOUS.tvmon>');
-									</script>
+									</script>	
                                 </td>
                                 <td class="tvmon_header" style="width: 23px; text-align: center;">
                                     &nbsp;</td>
@@ -269,7 +266,7 @@ div.scrollmenu a:hover {
                 </tr>
             </table>
         </td>
-
+        
 		</tr>
 				<tr class="tvmon_header">
 					<td style="width: 15%; height: 20px;" valign="top">
@@ -290,7 +287,7 @@ div.scrollmenu a:hover {
 									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_NIGHT></th>
 									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_SUB></th>
 									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_SUB_GAIN></th>
-
+									
 								</tr>
 								<TMPL_VAR ROWSOUNDBARS>
 							</table>
@@ -308,7 +305,7 @@ div.scrollmenu a:hover {
                         </font>
                     </td>
 				</tr>
-
+				
                 <tr>
                     <td style="width: 20%; height: 45px;">
                         <label id="ltts_instanz"><TMPL_VAR T2S.TTS_INSTANZ></label>
@@ -337,7 +334,7 @@ div.scrollmenu a:hover {
                                 </a>
                             </font>
                         </div>
-
+						
 						<div class="ttsconfig elevenlabsinfo 9011">
                              <font size="-1" align="middle">
                                 <a id="linkazureapi" href="https://elevenlabs.io/" target="_blank">
@@ -345,7 +342,7 @@ div.scrollmenu a:hover {
                                 </a>
                             </font>
                         </div>
-
+						
 						<div class="ttsconfig piperinfo 9012">
                              <font size="-1" align="middle">
                                 <a id="linkpiper" href="https://huggingface.co/rhasspy/piper-voices/tree/main" target="_blank">
@@ -353,7 +350,7 @@ div.scrollmenu a:hover {
                                 </a>
                             </font>
                         </div>
-
+						
 						<div class="ttsconfig azureinfo 9001">
                              <font size="-1" align="middle">
                                 <a id="linkazureapi" href="/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/bin/Azure_Account.pdf" target="_blank">
@@ -377,7 +374,7 @@ div.scrollmenu a:hover {
                         </font>
                         <font size="-1"><span><TMPL_VAR T2S.LABEL_CLOUDSERVICE_PRICING></span></font>
                     </td>
-
+                    
                 </tr>
 
                 <tr class="ttsconfig colapi 1001 4001 8001 9001 9011">
@@ -404,7 +401,7 @@ div.scrollmenu a:hover {
 
                         <td style="width: 201px; height: 48px;">
                         </td>
-
+                        
                 </tr>
 				<p id="errorinfo"></p>
                 <tr class="ttsconfig ttsbaseconfig collang">
@@ -417,8 +414,8 @@ div.scrollmenu a:hover {
                                 <div data-role="collapsible">
                                     <td style="height: 36px; width:25%; text-align: left;">
                                         <fieldset style="width: 100%">
-                                            <select id="t2slang" name="t2slang" data-mini="true";
-												data-validation-error-msg="<TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN>"
+                                            <select id="t2slang" name="t2slang" data-mini="true"; 
+												data-validation-error-msg="<TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN>" 
 												data-validation-rule="^([A-Za-z0-9]){4,10}$">
 											</select>
                                         </fieldset>
@@ -429,7 +426,7 @@ div.scrollmenu a:hover {
                                     <td style="height: 36px; width: 35%;" class="ttsconfig field-voice 1001 9012 4001 8001 9001 9011" style="display:none">
                                         <fieldset style="width: 100%">
                                             <select class="voice_select" id="voice" name="voice" data-mini="true";
-											data-validation-error-msg="<TMPL_VAR T2S.SELECT_VOICE_DROPDOWN>"
+											data-validation-error-msg="<TMPL_VAR T2S.SELECT_VOICE_DROPDOWN>" 
 											data-validation-rule="^([A-Za-z0-9]){4,10}$">
 											</select>
                                         </fieldset>
@@ -471,8 +468,8 @@ div.scrollmenu a:hover {
                                                 <label id="lfile_gong"><TMPL_VAR T2S.LABEL_MP3_FILE></label>
                                             </td>
                                             <td style="height: 30px">
-                                                <select id='file_gong' name='file_gong' data-mini='true'
-													data-validation-error-msg="<TMPL_VAR T2S.SELECT_JINGLE_DROPDOWN>"
+                                                <select id='file_gong' name='file_gong' data-mini='true' 
+													data-validation-error-msg="<TMPL_VAR T2S.SELECT_JINGLE_DROPDOWN>" 
 													data-validation-rule="^([A-Za-z0-9]){4,10}$" style="width: 100%">
 													<option selected='true' value='' disabled><TMPL_VAR T2S.SELECT_JINGLE_DROPDOWN></option>
 													<TMPL_VAR MP3_LIST>
@@ -490,7 +487,7 @@ div.scrollmenu a:hover {
                         <td valign="middle" style="height: 60px; width: 100px;">
                             &nbsp;
                         </td>
-
+                        
                 </tr>
 
                 <tr class="ttsconfig ttsbaseconfig colcachesize">
@@ -502,7 +499,7 @@ div.scrollmenu a:hover {
                     </td>
                     <td style="height: 30px; width: 201px;">
                     </td>
-
+                    
                 </tr>
 
                 <tr class="ttsconfig ttsbaseconfig colmp3path">
@@ -518,9 +515,9 @@ div.scrollmenu a:hover {
                                 <TMPL_VAR DATADIR>/tts/</font>
                     </td>
                     <td style="height: 60px; width: 201px;">
-
+ 
                     </td>
-
+                    
                 </tr>
 
                 <tr class="ttsconfig ttsbaseconfig">
@@ -592,7 +589,7 @@ div.scrollmenu a:hover {
 						</font>
 					</td>
 				</tr>
-
+				
                 <tr class="empty_template">
                     <td class="empty_template" style="height: 60px; width: 25%;">
                         <label id="ltemplate"><TMPL_VAR T2S.LABEL_TEMPLATE></label>
@@ -676,7 +673,7 @@ div.scrollmenu a:hover {
                     </td>
                     <td style="height: 33px; width: 24px;"></td>
                     <tr class="radiodet">
-                        <td colspan=3 valign="middle" style="height: 36px">
+                        <td colspan=3 valign="middle" style="height: 36px"> 
                             <font size="-1">
                                 <TMPL_VAR RADIO.NOTE_RADIO>
                             </font>
@@ -809,9 +806,9 @@ div.scrollmenu a:hover {
                                 </tr>
 
                                 <!-- Ende Kalender-->
-
-
-
+								
+								
+								
 
                                 <!-- Start Weather-->
                                 <tr class="weatherdet">
@@ -888,11 +885,11 @@ div.scrollmenu a:hover {
                     <button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SAVE.SAVE_BUTTON></button>
 				</center>
 				<script>
-
+				
 				</script>
             </p>
         </div>
-
+		
 		<!-- Donation -->
         <div data-role='collapsible' id='coll_donate' data-content-theme='true' data-collapsed='true' data-collapsed-icon='carat-d' data-expanded-icon='carat-u' data-iconpos='right'>
             <h2 class='ui-bar ui-bar-a ui-corner-all' id='head_donate'>
@@ -927,8 +924,8 @@ div.scrollmenu a:hover {
         <!-- Ende Donation -->
     <!--</div>-->
 	</form>
-
-
+	
+	
 
 <!-- Speech SDK reference sdk. -->
 <script src="/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/bin/Microsoft/microsoft.cognitiveservices.speech.sdk.bundle.js"></script>
@@ -946,7 +943,7 @@ div.scrollmenu a:hover {
 		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.css"/>
 		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.min.js"></script>
 		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.js"></script>
-
+		
         <div class="form-group">
 		<tbody>
             <table class="formtable-container" id="vol" border="0" width="80%" cellpadding="10">
@@ -957,9 +954,9 @@ div.scrollmenu a:hover {
                         <img class='ico_sonos' src='/plugins/<TMPL_VAR PLUGINDIR>/images/sonos_logo.png' border='0' width='186' height='125' align="absmiddle">
 					</th>
 				</tr>
-
+				
 				<tr>
-				<td valign="left" style="height: 33px; width: 25%; text-align: left;"></td>
+				<td valign="left" style="height: 33px; width: 25%; text-align: left;"></td>	
 					<td valign="left">
 						<table class='formtable' id='formtable' style='width:900px; background: rgba(192,192,192, 0.2); border-radius: 20px; border: 1px solid #7e7e7e; padding: 0px'>
 							<td valign="left">
@@ -974,14 +971,14 @@ div.scrollmenu a:hover {
 			</table>
 		</tbody>
 		</div>
-
+		
         <p>
             <center>
                 <button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SAVE.SAVE_BUTTON></button>
             </center>
         </p>
-</form>
-<TMPL_INCLUDE NAME="profiles.js">
+</form>	
+<TMPL_INCLUDE NAME="profiles.js">		
 </TMPL_IF>
 
 
@@ -1066,12 +1063,12 @@ div.scrollmenu a:hover {
                         </table>
                     </td>
                 </tr>
-
+				
                 <tr>
                     <td style="height: 60px; width: 25%;">
                         <label id="lvolume"><TMPL_VAR T2S_DETAILS.LABEL_T2S_VOLUME_CHANGE></label>
                     </td>
-
+					
                     <td style="width: 20%">
                         <select id="volume" name="volume" data-mini="true" data-native-menu="true" style="width: 100%">
 							<option value="3">3 %</option>
@@ -1083,7 +1080,7 @@ div.scrollmenu a:hover {
                             $('#volume').val('<TMPL_VAR MP3.volumedown>');
                         </script>
 					</td>
-
+                   
 
                 </tr>
                 <td style="width: 27%">
@@ -1102,7 +1099,7 @@ div.scrollmenu a:hover {
                     </fieldset>
                     <input id="maxzap" name="maxzap" type="hidden" class="textfield" value="<TMPL_VAR MAXZAP>">
                 </td>
-
+				
                 <tr>
                     <td style="width: 27%">
                         <TMPL_VAR RADIO.LABEL_RADIO_ANNOUNCE_ALWAYS>
@@ -1120,7 +1117,7 @@ div.scrollmenu a:hover {
                         </fieldset>
                     </td>
                 </tr>
-
+				
                 <tr class="radioannounce">
                     <td style="height: 60px; width: 25%;">
                         <label id="lcorrection"><TMPL_VAR T2S.LABEL_CORRECTION></label>
@@ -1156,8 +1153,8 @@ div.scrollmenu a:hover {
                                             <label id="lrmpvol"><TMPL_VAR T2S_DETAILS.LABEL_RAMPTO_VOLUME></label>
                                         </td>
                                         <td style="text-align: right;">
-                                            <input id="rmpvol" name="rmpvol" type="text" data-validation="number" class="textfield" value="<TMPL_VAR TTS.volrampto>"
-											data-validation-allowing="special:number-min-max-value:1:100"
+                                            <input id="rmpvol" name="rmpvol" type="text" data-validation="number" class="textfield" value="<TMPL_VAR TTS.volrampto>" 
+											data-validation-allowing="special:number-min-max-value:1:100" 
 											data-validation-error-msg="<TMPL_VAR T2S_DETAILS.ERROR_RAMPTO>">
                                         </td>
                                     </tr>
@@ -1174,7 +1171,7 @@ div.scrollmenu a:hover {
                         <input type="range" name="phonemute" id="phonemute" value="<TMPL_VAR VARIOUS.phonemute>" min="0" max="16" step="2">
                     </td>
                  </tr>
-
+				
 				<tr>
                     <td style="height: 60px; width: 15%; text-align: left;">
                         <label id="lcheckonline"><TMPL_VAR ZONES.FOLLOW_LABEL></label>
@@ -1192,7 +1189,7 @@ div.scrollmenu a:hover {
 								</select>
 								<script>
 								$('#follow_host').val('<TMPL_VAR VARIOUS.follow_host>');
-								</script>
+								</script>	
                             </td>
 
 								<td style="width: 11%; text-align: left;">
@@ -1210,14 +1207,14 @@ div.scrollmenu a:hover {
 											</select>
 										<script>
 											$('#follow_wait').val('<TMPL_VAR VARIOUS.follow_wait>');
-										</script>
+										</script>	
                                     <!--</table>-->
-
+                                
                             </tr>
                         </table>
                     </td>
                 </tr>
-
+				
 				<tr>
                     <td style="height: 60px; width: 15%; text-align: left;">
                         <label id="lswupdate"><TMPL_VAR ZONES.SONOS_LABEL_UPDATE_FIRMWARE></label>
@@ -1291,7 +1288,7 @@ div.scrollmenu a:hover {
 											$('#hw_update_time').val('<TMPL_VAR SYSTEM.hw_update_time>');
 										</script>
                                </td>
-
+								
 								<td class="update" style="width: 17%; text-align: left;">
                                     <label align="right" id="lupdatepower">Power On:</label>
 								</td>
@@ -1311,7 +1308,7 @@ div.scrollmenu a:hover {
                         </table>
                     </td>
                 </tr>
-
+				
 
                 <tr>
                     <td style="width: 27%">
@@ -1375,5 +1372,5 @@ div.scrollmenu a:hover {
             </p>
         </div>
     </form>
-<TMPL_INCLUDE NAME="details.js">
+<TMPL_INCLUDE NAME="main.js">
 </TMPL_IF>

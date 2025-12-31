@@ -8,7 +8,7 @@
 # cron script will not be uninstalled cleanly.
 
 # Will be executed as user "loxberry".
-
+perl REPLACELBPHTMLAUTHDIR/index.cgi action=saveconfig
 /usr/bin/php REPLACELBPHTMLDIR/bin/cleanup_sonos.php
 /usr/bin/php REPLACELBPHTMLDIR/bin/push_alarm.php
 rm /run/shm/s4lox_date

@@ -25,17 +25,33 @@
  * ================================================================================================ */
 
 //console.log(config);
-$(document).on('pageinit', function() {
-	selection();
-	callayout();
-	destlayout();
-	radlayout();
-	weatherlayout();
-	donation();
-	//getsbconfig();
-	//getradio();
-});
+$(document).on('pageinit', function () {
 
+	// SETTINGS page init (only if the related controls exist)
+	if (document.getElementById('sendlox')) {
+		selection();
+	}
+	if (document.getElementById('cal_det')) {
+		callayout();
+	}
+	if (document.getElementById('dest_det')) {
+		destlayout();
+	}
+	if (document.getElementById('radio_det')) {
+		radlayout();
+	}
+	if (document.getElementById('weather_det')) {
+		weatherlayout();
+	}
+	if (document.getElementById('donate')) {
+		donation();
+	}
+
+	// DETAILS page init
+	if (document.getElementById('detail_form')) {
+		details_init();
+	}
+});
 var tvmonerr = "true";
 
 
@@ -1205,28 +1221,6 @@ function AddRadio() {
 	$("#main_form").trigger('create');
 }
 
-$.ajax({
-	url: 'index.cgi',
-	type: 'post',
-	data: { action: 'getradio'},
-	dataType: 'json',
-		async: false,
-		success: function( response, textStatus, jqXHR )  {
-			//$('#func_list').append('<option value="" disabled>** only for FOLLOW function***</option>');
-			$.each(response, function(index, value) {
-				result = value.split(',');
-				$('#func_list').append('<option value="' + result[1] + '">Plugin Radio: ' + result[0] + '</option>');
-			});
-		}
-	})
-	.fail(function (jqXHR, textStatus, errorThrown) {
-		console.log(errorThrown);
-	})
-	.always(function(response) {
-		$('#func_list').val('<TMPL_VAR VARIOUS.selfunction>');
-		console.log( "Action get Radio Favorites executed" );
-	})
-
 /**
  * Scan()
  * - Redirects to index.cgi?do=scan
@@ -1605,8 +1599,10 @@ function discover() {
  * - Shows save message popup (kept as-is)
  */
 function message() {
-	console.log("MESSAGE");
-	timeout('<TMPL_VAR SAVE.SAVE_MESSAGE>', 'OK', 'info', '<TMPL_VAR SAVE.SAVE_ALL_OK>', '3500');
+	// SETTINGS uses 3.5s, DETAILS uses 3.0s
+	var isDetails = !!document.getElementById('detail_form');
+	console.log(isDetails ? "Save" : "MESSAGE");
+	timeout('<TMPL_VAR SAVE.SAVE_MESSAGE>', 'OK', 'info', '<TMPL_VAR SAVE.SAVE_ALL_OK>', isDetails ? '3000' : '3500');
 }
 
 function refresh() {
@@ -1926,6 +1922,11 @@ function getSelectedEngine() {
 $(document).ready(function(e) {
 	console.log("documentreadyfunction");
 
+	// IMPORTANT: This block belongs to the SETTINGS page (TTS config). If that page
+	// isn't active (e.g., DETAILS), we must not run the heavy init to avoid JS errors.
+	if (!document.getElementById('engine-selector')) {
+		return;
+	}
 	// Engine selection changes
 	//$('#engine-selector input').change(prepareTTSConfigFields);
 
@@ -2046,4 +2047,79 @@ $(document).ready(function(e) {
 		return true;
 	});
 });
+
+
+/* ================================================================================================
+ * DETAILS page helpers (safe, only used if #detail_form exists)
+ * ================================================================================================ */
+
+function details_init() {
+	select();
+	select_update();
+	load_radio_favorites_into_func_list();
+}
+
+function select() {
+	var el  = document.getElementById('announceradio');
+	var el1 = document.getElementById('announceradio_always');
+	if (!el || !el1) return;
+
+	var rad  = el.value;
+	var rad1 = el1.value;
+
+	if (rad == true || rad1 == true) {
+		$('.radioannounce').show();
+	} else {
+		$('.radioannounce').hide();
+	}
+}
+
+function select_always() {
+	var el1 = document.getElementById('announceradio_always');
+	if (!el1) return;
+
+	var rad1 = el1.value;
+	if (rad1 == true) {
+		$('.radioannounce').show();
+	} else {
+		$('.radioannounce').hide();
+	}
+}
+
+function select_update() {
+	var upEl = document.getElementById('hw_update');
+	if (!upEl) return;
+
+	if (upEl.value == 'true') {
+		$('.update').show();
+	} else {
+		$('.update').hide();
+	}
+}
+
+function load_radio_favorites_into_func_list() {
+	if (!document.getElementById('func_list')) return;
+
+	$.ajax({
+		url: 'index.cgi',
+		type: 'post',
+		data: { action: 'getradio' },
+		dataType: 'json',
+		async: false,
+		success: function (response) {
+			$.each(response, function (index, value) {
+				var result = value.split(',');
+				$('#func_list').append('<option value="' + result[1] + '">Plugin Radio: ' + result[0] + '</option>');
+			});
+		}
+	})
+	.fail(function (jqXHR, textStatus, errorThrown) {
+		console.log(errorThrown);
+	})
+	.always(function () {
+		$('#func_list').val('<TMPL_VAR VARIOUS.selfunction>');
+		console.log("Action get Radio Favorites executed");
+	});
+}
+
 </script>

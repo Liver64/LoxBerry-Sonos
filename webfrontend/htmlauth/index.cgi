@@ -542,36 +542,30 @@ if (exists($cfg->{sonoszonen})) {
 }
 $template->param("PLAYER_AVAILABLE", $countplayer);
 
-# Check if basic plugin backup config exists
-if (-r $lbhomedir . "/webfrontend/html/XL/" . $configfile) {
-    my $compare = compare($lbpconfigdir . "/" . $configfile, $lbhomedir . "/webfrontend/html/XL/" . $configfile);
-
-    # If different
-    if ($compare == 1 && $inst eq "true") {
-        LOGDEB("Main Config is not equal to Backup");
-        $template->param("CONFIG_DIFFERENT", "1");
+# Check if main config backup exists and is different from the current config
+if (-r "$lbhomedir/webfrontend/html/XL/$configfile" && -r "$lbpconfigdir/$configfile") {
+    # If both files exist and differ, allow restore
+    if (compare("$lbpconfigdir/$configfile", "$lbhomedir/webfrontend/html/XL/$configfile") == 1) {
+        $template->param("RESTORE_POSSIBLE", 1);
     }
-    if ($compare == 1 && $inst eq "false") {
-        $template->param("RESTORE_POSSIBLE", "1");
-    }
-} else {
-    $template->param("CONFIG_DIFFERENT", "1");
+}
+# If original config is missing but a backup exists, allow restore
+elsif (-r "$lbhomedir/webfrontend/html/XL/$configfile") {
+    $template->param("RESTORE_POSSIBLE", 1);
 }
 
-# Check if sound profile backup config exists
-if (-r $lbhomedir . "/webfrontend/html/XL/" . $volumeconfigfile) {
-    my $compare = compare($lbpconfigdir . "/" . $volumeconfigfile, $lbhomedir . "/webfrontend/html/XL/" . $volumeconfigfile);
-
-    if ($compare == 1 && $inst eq "true") {
-        LOGDEB("Volume Profile Config is not equal to Backup");
-        $template->param("CONFIG_DIFFERENT", "1");
+# Check if volume profile backup exists and is different from the current version
+if (-r "$lbhomedir/webfrontend/html/XL/$volumeconfigfile" && -r "$lbpconfigdir/$volumeconfigfile") {
+    # If both files exist and differ, allow restore
+    if (compare("$lbpconfigdir/$volumeconfigfile", "$lbhomedir/webfrontend/html/XL/$volumeconfigfile") == 1) {
+        $template->param("RESTORE_POSSIBLE", 1);
     }
-    if ($compare == 1 && $inst eq "false") {
-        $template->param("RESTORE_POSSIBLE", "1");
-    }
-} else {
-    $template->param("CONFIG_DIFFERENT", "1");
 }
+# If original volume profile is missing but a backup exists, allow restore
+elsif (-r "$lbhomedir/webfrontend/html/XL/$volumeconfigfile") {
+    $template->param("RESTORE_POSSIBLE", 1);
+}
+
 
 ##########################################################################
 # Main dispatch
