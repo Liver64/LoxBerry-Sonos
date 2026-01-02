@@ -327,7 +327,7 @@ div.scrollmenu a:hover {
 							<input type="radio" name="t2s_engine" id="tts_elevenlabs" value="9011">
 							<label for="tts_elevenlabs">🧠 ElevenLabs</label>
                         </fieldset>
-                         <div class="ttsconfig googlecloudinfo 8001">
+                        <div class="ttsconfig googlecloudinfo 8001">
                             <font size="-1" align="middle">
                                 <a id="linkgoogleapi" href="https://www.youtube.com/watch?v=1n8xlVNWEZ0" target="_blank">
                                     <TMPL_VAR T2S.GOOGLE_CLOUD_API_LINK>
@@ -358,21 +358,27 @@ div.scrollmenu a:hover {
                                 </a>
                             </font>
                         </div>
-
+						
+						<div class="ttsconfig 1001">
+                             <font size="-1">
+								<a class="ttsconfig 1001" id="linkvoicerss" target="_blank">
+									<TMPL_VAR T2S.LABEL_API_KEY_VOICESS>
+								</a>
+							</font>
+							<font size="-1"><span><TMPL_VAR T2S.LABEL_CLOUDSERVICE_PRICING></span></font>
+						</div>
+						
+						<div class="ttsconfig 4001">
+							<font size="-1">
+								<a class="ttsconfig 4001" id="linkpolly" target="_blank">
+									<TMPL_VAR T2S.LABEL_API_KEY_POLLY>
+								</a>
+							</font>
+							<font size="-1"><span><TMPL_VAR T2S.LABEL_CLOUDSERVICE_PRICING></span></font>
+                        </div>
                     </td>
                     <td valign="middle" style="height: 45px; width: 201px;" class="ttsconfig 1001 4001 keylinks">
-                        <font size="-1">
-                            <a class="ttsconfig 1001" id="linkvoicerss" target="_blank">
-                                <TMPL_VAR T2S.LABEL_API_KEY_VOICESS>
-                            </a>
-                        </font>
-                        <br><br>
-                        <font size="-1">
-                            <a class="ttsconfig 4001" id="linkpolly" target="_blank">
-                                <TMPL_VAR T2S.LABEL_API_KEY_POLLY>
-                            </a>
-                        </font>
-                        <font size="-1"><span><TMPL_VAR T2S.LABEL_CLOUDSERVICE_PRICING></span></font>
+                        
                     </td>
                     
                 </tr>
@@ -563,25 +569,26 @@ div.scrollmenu a:hover {
 											<br>
 											Player <TMPL_VAR SONOS_HEALTH_ONLINE>/<TMPL_VAR SONOS_HEALTH_TOTAL> online.
 										</div>
+										<td class="empty_template" style="height: 30px; width: 201px;">
+											<button type="button"
+											class="ui-btn ui-mini ui-btn-inline ui-btn-icon-left ui-icon-refresh"
+											onclick="restartSonosListener();">
+											Restart Listener
+											</button>
+										</td>		
 									</div>
 								</td>
 							</tr>
 						</table>
 					</td>
 
-					<td class="empty_template" style="height: 30px; width: 201px;">
-						<TMPL_IF SONOS_HEALTH_IS_ERROR>
+					<!--<td class="empty_template" style="height: 30px; width: 201px;">
 							<button type="button"
 									class="ui-btn ui-mini ui-btn-inline ui-btn-icon-left ui-icon-refresh"
 									onclick="restartSonosListener();">
 								Restart Listener
 							</button>
-						<TMPL_ELSE>
-							<!--<font size="-1">
-								<TMPL_VAR T2S.LABEL_SONOS_DATA_TRANSFER>
-							</font>-->
-						</TMPL_IF>
-					</td>
+					</td>-->
 
 					<td class="empty_template" style="height: 30px; width: 24px;">
 						<font size="-1">

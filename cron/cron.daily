@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # This is a sample cron file. According to it's name it will go to
 # ~/system/cron/cron.hourly. You may also let your Pluginscript create a
@@ -16,3 +17,29 @@ rm /run/shm/s4lox_bin_err
 rm /run/shm/s4lox_fav*
 rm /run/shm/s4lox_pl*
 rm /run/shm/s4lox_LastExeSonosInfo.log
+
+#Settings
+START_HOUR=6
+END_HOUR=23
+STEP_HOURS=2
+
+run_job() {
+  echo "[$(date '+%F %T')] restarting sonos_event_listener"
+  sudo /bin/systemctl restart sonos_event_listener.service
+}
+
+while true; do
+  now_h=$(date +%H); now_h=${now_h#0}
+
+  if (( now_h < START_HOUR || now_h > END_HOUR )); then
+    exit 0
+  fi
+
+  run_job
+
+  if (( now_h + STEP_HOURS > END_HOUR )); then
+    exit 0
+  fi
+
+  sleep $(( STEP_HOURS * 3600 ))
+done

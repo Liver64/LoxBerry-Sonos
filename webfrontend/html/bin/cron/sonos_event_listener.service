@@ -1,7 +1,7 @@
 # /etc/systemd/system/sonos_event_listener.service
 
 [Unit]
-Description=LoxBerry Sonos Event Listener (Sonos → MQTT)
+Description=LoxBerry Sonos Event Listener (MQTT)
 StartLimitIntervalSec=60
 StartLimitBurst=10
 After=network-online.target mosquitto.service
@@ -12,7 +12,7 @@ Type=simple
 User=loxberry
 Group=loxberry
 WorkingDirectory=/opt/loxberry/webfrontend/html/plugins/sonos4lox/bin
-ExecStart=/usr/bin/php /opt/loxberry/webfrontend/html/plugins/sonos4lox/bin/sonos_event_handling.php
+ExecStart=/usr/bin/php /opt/loxberry/webfrontend/html/plugins/sonos4lox/bin/event_handler.php
 Restart=always
 RestartSec=5
 StandardOutput=journal
