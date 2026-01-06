@@ -398,6 +398,7 @@ if ($q->{action}) {
     if ($AJAX_ACTION eq "restart_listener") {
         # No INFO logging for actions; log only on error via $error_message/END handler
         my $rc = system('sudo', 'systemctl', 'restart', 'sonos_event_listener');
+		get_sonos_health();
         if ($rc != 0) {
             $error_message = "AJAX restart_listener failed (rc=$rc)";
             print JSON::encode_json({ success => JSON::false, error => $error_message });
@@ -712,7 +713,13 @@ sub form
     foreach my $key (keys %{$radiofavorites}) {
         $countradios++;
         my @fields = split(/,/, $cfg->{RADIO}->{radio}->{$countradios});
-        $rowsradios .= "<tr><td style='height: 25px; width: 43px;'><INPUT type='checkbox' style='width: 20px' name='chkradios$countradios' id='chkradios$countradios' align='center'/></td>\n";
+        $rowsradios .= "<tr>";
+		$rowsradios .= "<td style='height: 25px; width: 43px; text-align:center;'>"
+		  . "<input type='checkbox' name='chkradios$countradios' id='chkradios$countradios' style='display:none' />"
+		  . "<a href='#' class='jsDelRadio' data-idx='$countradios' data-name='$fields[0]' title='Delete'>"
+		  . "<img class='ico_delete' src='/plugins/$lbpplugindir/images/recycle-bin.png' border='0' width='24' height='24'>"
+		  . "</a>"
+		  . "</td>\n";
         $rowsradios .= "<td style='height: 28px'><input type='text' id='radioname$countradios' name='radioname$countradios' size='20' value='$fields[0]' /> </td>\n";
         $rowsradios .= "<td style='width: 600px; height: 28px'><input type='text' id='radiourl$countradios' name='radiourl$countradios' size='100' value='$fields[1]' style='width: 100%' /> </td>\n";
         $rowsradios .= "<td style='width: 600px; height: 28px'><input type='text' id='coverurl$countradios' name='coverurl$countradios' size='100' value='$fields[2]' style='width: 100%' /> </td></tr>\n";
@@ -759,8 +766,13 @@ sub form
         my $filename   = $lbphtmldir . '/images/icon-' . $config->{$key}->[7] . '.png';
         my $statusfile = $lbpdatadir . '/PlayerStatus/s4lox_on_' . $room . '.txt';
 
-        $rowssonosplayer .= "<tr>";
-        $rowssonosplayer .= "<td style='height: 25px; width: 20px;'><input type='checkbox' name='chkplayers$countplayers' id='chkplayers$countplayers' align='middle'/></td>\n";
+        $rowssonosplayer  .= "<tr>";
+        $rowssonosplayer  .= "<td style='height: 25px; width: 20px; text-align:center;'>"
+						  . "<input type='checkbox' name='chkplayers$countplayers' id='chkplayers$countplayers' style='display:none' />"
+						  . "<a href='#' class='jsDelZone' data-idx='$countplayers' data-room='$room' title='Delete'>"
+						  . "<img class='ico_delete' src='/plugins/$lbpplugindir/images/recycle-bin.png' border='0' width='20' height='20'>"
+						  . "</a>"
+						  . "</td>\n";
 
         if (-e $statusfile) {
             $rowssonosplayer .= "<td style='height: 28px; width: 16%;'><input type='text' class='pd-price' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$room' style='width:100%; background-color:#6dac20; color:white'></td>\n";
@@ -1314,21 +1326,33 @@ sub save
         system("cp -r $lbpdatadir/$ttsfolder/$mp3folder/* $R::STORAGEPATH/$ttsfolder/$mp3folder");
     }
 
-    # Save radio stations
-    for (my $i = 1; $i <= $countradios; $i++) {
-        if (param("chkradios$i")) {
-            delete $cfg->{RADIO}->{radio}->{$i};
-        } else {
-            my $rname = param("radioname$i");
-            my $rurl  = param("radiourl$i");
-            my $curl  = param("coverurl$i");
-            $rname =~ s/^\s+|\s+$//g;
-            $rurl  =~ s/^\s+|\s+$//g;
-            $curl  =~ s/^\s+|\s+$//g;
-            $cfg->{RADIO}->{radio}->{$i} = $rname . "," . $rurl . "," . $curl;
-        }
-    }
-    LOGDEB "Radio Stations have been saved.";
+    # Save radio stations (re-index 1..n to avoid holes)
+	my %newradio;
+	my $newi = 0;
+
+	for (my $i = 1; $i <= $countradios; $i++) {
+
+		# Deleted via UI?
+		next if param("chkradios$i");
+
+		my $rname = param("radioname$i") // '';
+		my $rurl  = param("radiourl$i")  // '';
+		my $curl  = param("coverurl$i")  // '';
+
+		# trim
+		$rname =~ s/^\s+|\s+$//g;
+		$rurl  =~ s/^\s+|\s+$//g;
+		$curl  =~ s/^\s+|\s+$//g;
+
+		# Skip completely empty rows (prevents saving blank rows from AddRadio)
+		next if $rname eq '' && $rurl eq '' && $curl eq '';
+
+		$newi++;
+		$newradio{$newi} = $rname . "," . $rurl . "," . $curl;
+	}
+
+	$cfg->{RADIO}->{radio} = \%newradio;
+	LOGDEB "Radio Stations have been saved (count=$newi).";
 
     # Ensure at least 1 player exists (scan has been executed)
     if ($countplayers < 1) {

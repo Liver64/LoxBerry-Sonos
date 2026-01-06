@@ -1185,41 +1185,91 @@ function initial_lang_voice_load() {
  * ================================================================================================ */
 
 /**
+ * Delete Radio Station
+ * - Deletes selected row of radio station from table #tblBasic2
+ */
+$(document).on("click", "a.jsDelRadio", function (e) {
+  e.preventDefault();
+
+  const $btn  = $(this);
+  const idx   = String($btn.data("idx") || "");
+  const name  = String($btn.data("name") || "");
+
+  confirmDelete(
+    "<TMPL_VAR ZONES.ASK_DELETE4>",
+    "<TMPL_VAR ZONES.ASK_DELETE3> '" + name + "' <TMPL_VAR ZONES.ASK_DELETE2>",
+    function () {
+      $("#chkradios" + idx).prop("checked", true);
+      $btn.closest("tr").css("opacity", "0.4");
+      $("#main_form").trigger("submit");
+    },
+    {
+      deleteText: "<TMPL_VAR ZONES.BUTTON_CONFIRM>",
+      cancelText: "<TMPL_VAR ZONES.BUTTON_CANCEL>",
+      btnColor: "#6dac20",
+      alertIcon: "warning"
+    }
+  );
+});
+
+
+/**
  * AddRadio()
  * - Adds a new radio station row to table #tblBasic2
  * - Re-applies jQuery Mobile styles with trigger('create')
  */
 function AddRadio() {
 
-	// Total number of radios
-	var iteration = document.getElementById('countradios').value;
-	iteration = parseInt(iteration)
+  // Total number of radios
+  var iteration = parseInt(document.getElementById('countradios').value || "0", 10);
 
-	var tbl = document.getElementById('tblBasic2');
+  var tbl = document.getElementById('tblBasic2');
 
-	// Del 1st row if there were no radios
-	if (iteration < 1) {
-		var row = tbl.deleteRow(-1);
-	}
+  // Delete last info row if there were no radios (the "empty" row)
+  if (iteration < 1) {
+    // table has: header row + empty row => remove empty row (last row)
+    if (tbl.rows.length > 1) tbl.deleteRow(tbl.rows.length - 1);
+  }
 
-	var lastRow = tbl.rows.length;
-	iteration += 1;
-	document.getElementById("countradios").value = iteration;
+  iteration += 1;
+  document.getElementById("countradios").value = iteration;
 
-	// Add cells
-	var row = tbl.insertRow(lastRow);
-	var cellRight = row.insertCell(0);
-	cellRight.innerHTML = '<tr><td style="height: 25px; width: 43px; text-align: center;"><INPUT type="checkbox" style="width: 20px" name="chkradios' + iteration + '" id="chkradios' + iteration + '" align="center"/></td>'
-	var cellRight = row.insertCell(1);
-	cellRight.innerHTML = '<td style="height: 28px"><input type="text" id="radioname' + iteration + '" name="radioname' + iteration + '" size="20" value="" /> </td>'
-	var cellRight = row.insertCell(2);
-	cellRight.innerHTML = '<td style="width: 600px; height: 28px"><input type="text" id="radiourl' + iteration + '" name="radiourl' + iteration + '" size="100" value="" style="width: 100%" /> </td>'
-	var cellRight = row.insertCell(3);
-	cellRight.innerHTML = '<td style="width: 600px; height: 28px"><input type="text" id="coverurl' + iteration + '" name="coverurl' + iteration + '" size="100" value="" style="width: 100%" /> </td></tr>'
+  // Insert new row at end
+  var row = tbl.insertRow(tbl.rows.length);
 
-	// Recreate JQUERY styles
-	$("#main_form").trigger('create');
+  // --- Column 1: (new row) no delete icon yet, but keep hidden checkbox for backend ---
+  var c0 = row.insertCell(0);
+  c0.style.height = "25px";
+  c0.style.width  = "43px";
+  c0.style.textAlign = "center";
+  c0.innerHTML =
+  "<input type='checkbox' name='chkradios" + iteration + "' id='chkradios" + iteration + "' style='display:none' />" +
+  "&nbsp;";
+
+  // --- Column 2: station name ---
+  var c1 = row.insertCell(1);
+  c1.style.height = "28px";
+  c1.innerHTML =
+    "<input type='text' id='radioname" + iteration + "' name='radioname" + iteration + "' size='20' value='' />";
+
+  // --- Column 3: station url ---
+  var c2 = row.insertCell(2);
+  c2.style.width  = "600px";
+  c2.style.height = "28px";
+  c2.innerHTML =
+    "<input type='text' id='radiourl" + iteration + "' name='radiourl" + iteration + "' size='100' value='' style='width:100%' />";
+
+  // --- Column 4: cover url ---
+  var c3 = row.insertCell(3);
+  c3.style.width  = "600px";
+  c3.style.height = "28px";
+  c3.innerHTML =
+    "<input type='text' id='coverurl" + iteration + "' name='coverurl" + iteration + "' size='100' value='' style='width:100%' />";
+
+  // Recreate jQuery Mobile styles
+  $("#main_form").trigger("create");
 }
+
 
 /**
  * Scan()
@@ -1440,7 +1490,7 @@ $("#tvmon").on("change", function(e){
 
 
 /* ================================================================================================
- * 12) Backup/Restore buttons
+ * 12) Backup/Restore/Delete buttons
  * ================================================================================================ */
 
 // Save config file extern
@@ -1507,9 +1557,87 @@ $(function() {
 });
 
 
+// Delete zone from config
+$(document).on("click", "a.jsDelZone", function (e) {
+  e.preventDefault();
+
+  const $btn = $(this);
+  const idx  = String($btn.data("idx") || "");
+  const room = String($btn.data("room") || "");
+
+  confirmDelete(
+    "<TMPL_VAR ZONES.TEXT_DELETE>",
+    "<TMPL_VAR ZONES.ASK_DELETE1>'" + room + "' <TMPL_VAR ZONES.ASK_DELETE2>",
+    function () {
+      $("#chkplayers" + idx).prop("checked", true);
+      $btn.closest("tr").css("opacity", "0.4");
+      $("#main_form").trigger("submit");
+    },
+    {
+      deleteText: "<TMPL_VAR ZONES.BUTTON_CONFIRM>",
+      cancelText: "<TMPL_VAR ZONES.BUTTON_CANCEL>",
+      btnColor: "#6dac20",
+      alertIcon: "warning"
+    }
+  );
+});
+
+
 /* ================================================================================================
  * 13) Dialog helpers
  * ================================================================================================ */
+
+/**
+ * confirmDelete(title, text, onConfirm, opts)
+ * - Shows a SilverBox confirm dialog with Delete/Cancel buttons
+ * - Calls onConfirm() only if user clicks Delete
+ */
+function confirmDelete(title, text, onConfirm, opts) {
+  opts = opts || {};
+
+  const btnColor  = opts.btnColor  || "#6dac20";
+  const delText   = opts.deleteText || "<TMPL_VAR ZONES.BUTTON_CONFIRM>";
+  const cancelText= opts.cancelText || "<TMPL_VAR ZONES.BUTTON_CANCEL>";
+  const icon      = opts.alertIcon || "warning";
+
+  // Fallback if SilverBox is not available
+  if (typeof silverBox !== "function") {
+    if (confirm((title ? title + "\n\n" : "") + text)) {
+      if (typeof onConfirm === "function") onConfirm();
+    }
+    return;
+  }
+
+  silverBox({
+    alertIcon: icon,
+    title: { text: title || "Delete" },
+    text: text || "<TMPL_VAR ZONES.ASK_DELETE>",
+    centerContent: true,
+
+    confirmButton: {
+      bgColor: btnColor,
+      border: "10px",
+      borderColor: btnColor,
+      textColor: "#fff",
+      text: delText,
+	  iconStart: "/plugins/<TMPL_VAR PLUGINDIR>/web/images/confirm.svg",
+      closeOnClick: false,
+      onClick: () => {
+        if (typeof onConfirm === "function") onConfirm();
+      }
+    },
+
+    cancelButton: {
+      bgColor: btnColor,
+      border: "10px",
+      borderColor: btnColor,
+      textColor: "#fff",
+      text: cancelText,
+	  iconStart: "/plugins/<TMPL_VAR PLUGINDIR>/web/images/cancel.svg",
+      closeOnClick: true
+    }
+  });
+}
 
 /**
  * dialog()
