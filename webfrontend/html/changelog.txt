@@ -512,4 +512,5 @@
 			[BUGFIX] Abfallkalender gefixed und Validierung hinzugefügt
  6.1.2		[IMPROVEMENT] Auto Backup Konfiguration
 			[BUGFIX] fixed Radio Ansage bei pluginradio
-			[IMPROVEMENT] Kalender Validierung
+			[IMPROVEMENT] Kalender Validierung optimiert
+			[BUGFIX] Some minor changes in UI
