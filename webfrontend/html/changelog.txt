@@ -514,3 +514,4 @@
 			[BUGFIX] fixed Radio Ansage bei pluginradio
 			[IMPROVEMENT] Kalender Validierung optimiert
 			[BUGFIX] Some minor changes in UI
+			[BUGFIX] Radio Station Ansage gefixed
