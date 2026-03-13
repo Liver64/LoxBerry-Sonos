@@ -9,9 +9,10 @@
 
 # Will be executed as user "loxberry".
 
-if [ -e /run/shm/s4lox_zap_zone.json ]
-then
-    rm /run/shm/s4lox_zap_zone.json
-fi
+# Alle master-spezifischen Zap-State-Files löschen
+for f in /run/shm/s4lox_zap_*.json; do
+    [ -e "$f" ] && rm "$f"
+done
+
 rm /run/shm/s4lox_fav*
 

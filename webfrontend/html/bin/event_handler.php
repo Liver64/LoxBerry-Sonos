@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 /**
  * Sonos Event Listener (raum-zentriert, vollständig)
- * - liest Räume/Player aus REPLACELBHOMEDIR/config/plugins/sonos4lox/s4lox_config.json
+ * - liest Räume/Player aus /opt/loxberry/config/plugins/sonos4lox/s4lox_config.json
  * - SUBSCRIBE: AVTransport, RenderingControl, ZoneGroupTopology
  * - NOTIFY -> MQTT je Raum:
  *     state   (retain, QoS1)
@@ -54,10 +54,14 @@ declare(strict_types=1);
  * - nutzt mqtt_connectiondetails() aus LoxBerry (Host, Port, User, Passwort)
  * - Reconnect mit Backoff
  * - verbose Logging
+ *
+ * VOLUME FIX:
+ * - Gruppen-Koordinatoren verwenden GroupVolume (die "echte" Gruppenlautstärke)
+ * - Members verwenden ihre individuelle Volume
  */
 
-require_once "REPLACELBHOMEDIR/libs/phplib/loxberry_system.php";
-require_once "REPLACELBHOMEDIR/libs/phplib/loxberry_io.php";
+require_once "/opt/loxberry/libs/phplib/loxberry_system.php";
+require_once "/opt/loxberry/libs/phplib/loxberry_io.php";
 require_once __DIR__ . '/../system/SonosMqttClient.php';
 require_once "$lbphtmldir/system/sonosAccess.php";
 
@@ -65,7 +69,7 @@ date_default_timezone_set('Europe/Berlin');
 pcntl_async_signals(true);
 
 // --------------------------------- Pfade ---------------------------------
-const S4L_CFG     = "REPLACELBHOMEDIR/config/plugins/sonos4lox/s4lox_config.json";
+const S4L_CFG     = "/opt/loxberry/config/plugins/sonos4lox/s4lox_config.json";
 $ramLogDir        = '/run/shm/sonos4lox';
 $LogFile          = 'sonos_events.log';
 $loglevel 	  	  = LBSystem::pluginloglevel();
@@ -150,7 +154,7 @@ function logln(string $lvl, string $msg): void {
 
 // --------------------------------- Helpers ---------------------------------
 
-require_once "REPLACELBHOMEDIR/webfrontend/html/plugins/sonos4lox/Helper.php";
+require_once "/opt/loxberry/webfrontend/html/plugins/sonos4lox/Helper.php";
 
 /**
  * Decide if we should publish a nexttrack MQTT event.
@@ -326,7 +330,7 @@ function get_miniserver_target_from_general_cached(string $msId): ?array
         'general' => null,
     ];
 
-    $path  = 'REPLACELBHOMEDIR/config/system/general.json';
+    $path  = '/opt/loxberry/config/system/general.json';
     $mtime = @filemtime($path) ?: 0;
 
     // Reload only if changed (or first time)
@@ -1276,9 +1280,13 @@ function publish_room_event(
         $data['state_code'] = $map[$data['state']] ?? 0;
     }
 
-    // --- Volume-Alias ---
-    if ($type === 'volume' && isset($data['volume'])) {
-        $data['vol'] = (int)$data['volume'];
+    // --- Volume: einfach direkt publishen (GroupVolume wird separat ignoriert) ---
+    if ($type === 'volume') {
+        $vol = (int)($data['volume'] ?? 0);
+        $data['volume'] = $vol;
+        $data['vol']    = $vol;  // Alias
+        // volume_src falls vorhanden entfernen (nicht mehr nötig)
+        unset($data['volume_src']);
     }
 
     // --- Mute-Alias ---
@@ -1933,18 +1941,11 @@ function process_sonos_http_request(
 
 
         // --- GroupRenderingControl: GroupVolume / GroupMute ---
+        // GroupVolume wird NICHT als normales volume-Event published
+        // (jeder Player soll seine individuelle Volume behalten)
         foreach ($sx->xpath('//*[local-name()="GroupVolume"]') as $gv) {
-            $vol = (int)$gv;
-            publish_room_event(
-                $room,
-                'volume',
-                ['volume' => $vol],
-                $rooms,
-                $mqttClient,
-                $TOPIC_PREFIX,
-                $svc,
-                $MQTT_QOS
-            );
+            // GroupVolume ignorieren - wird nicht als Volume-Event published
+            logln('dbg', "$room: GroupVolume=" . (int)$gv . " (ignored)");
         }
 
 		foreach ($sx->xpath('//*[local-name()="GroupMute"]') as $gm) {

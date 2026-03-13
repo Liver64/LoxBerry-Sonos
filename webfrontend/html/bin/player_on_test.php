@@ -67,7 +67,8 @@ function clear_tts_cache_for_text(string $text, array $config): array
     }
 
     // cifsinterface/<hash>.mp3 und cifsinterface/mp3/<hash>.mp3
-    if (!empty($config['SYSTEM']['cifsinterface'])) {
+    if (!empty($config['SYSTEM']['cifsinterface']) 
+    && strpos($config['SYSTEM']['cifsinterface'], '://') === false) {
         $cifs = rtrim($config['SYSTEM']['cifsinterface'], '/');
         $candidates[] = $cifs . '/' . $hash . '.mp3';
         $candidates[] = $cifs . '/' . $hash . '.wav';

@@ -9,101 +9,131 @@
 
 function zap()
 {
-	global $sonos, $config, $tmp_tts, $maxzap, $volume, $sonoszone, $master, $zapname, $lbphtmldir, $lbhomedir, $lbpplugindir;
-	
-	#$zapname = "/run/shm/s4lox_zap_zone.json";								// queue.php: file containig running zones
-	
-	
-	# check if TTS is currently running
-	if (file_exists($tmp_tts))  {
-		LOGGING("queue.php: Currently a T2S is running, we skip zapzone for now. Please try again later.", 4);
-		exit;
-	}
+    global $sonos, $config, $tmp_tts, $volume, $sonoszone, $master, $zapname, $lbphtmldir, $lbhomedir, $lbpplugindir;
 
-	# become single zone 1st
-	#$sonos = new SonosAccess($sonoszone[$master][0]);
-	#$sonos->BecomeCoordinatorOfStandaloneGroup();
-	
-	$sonos->SetVolume($volume);
-	# set cronjob default in case nothing has been selected
-	if ($config['VARIOUS']['cron'] == "")   {
-		system ("ln -s $lbphtmldir/bin/cronjob.sh $lbhomedir/system/cron/cron.01min/$lbpplugindir");
-		@unlink ("$lbhomedir/system/cron/cron.03min/$lbpplugindir");
-		@unlink ("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
-		@unlink ("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
-		@unlink ("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
-		LOGGING("queue.php: Please configure zapzone settings in Sonos Plugin under 'Details/Reset after:'",4);
-	}
-	# set subfunction default in case nothing has been selected
-	if ($config['VARIOUS']['selfunction'] === "")   {
-		$subfunction = "nextradio";
-		LOGGING("queue.php: Please configure zapzone settings in Sonos Plugin under 'Sub-Funktion für ZAPZONE:'",4);
-	} else {
-		$subfunction = $config['VARIOUS']['selfunction'];
-	}
-	$value  = substr($config['VARIOUS']['selfunction'], 0, 4);
-	
-	# START ZAPZONE
+    $zapname = "/run/shm/s4lox_zap_" . $master . ".json";
 
-	# check if file exist
-	if (is_file($zapname) === false)  {
-		# file exists
-		LOGGING("queue.php: Start ZAPZONE", 7);
-		$runarray = array();
+    # TTS läuft gerade → abbrechen
+    if (file_exists($tmp_tts)) {
+        LOGGING("queue.php: TTS is running, skipping zapzone.", 4);
+        exit;
+    }
+
+    $sonos->SetVolume($volume);
+
+    # Cronjob Default setzen
+    if ($config['VARIOUS']['cron'] == "") {
+        system("ln -s $lbphtmldir/bin/cronjob.sh $lbhomedir/system/cron/cron.01min/$lbpplugindir");
+        @unlink("$lbhomedir/system/cron/cron.03min/$lbpplugindir");
+        @unlink("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
+        @unlink("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
+        @unlink("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
+        LOGGING("queue.php: Please configure zapzone settings.", 4);
+    }
+
+    # Subfunction bestimmen
+    $subfunction = ($config['VARIOUS']['selfunction'] === "") ? "nextradio" : $config['VARIOUS']['selfunction'];
+    $value = substr($subfunction, 0, 4);
+
+    # Sofort zur SubFunction wenn http-Stream konfiguriert
+    if ($value == "http") {
+        LOGGING("queue.php: HTTP subfunction configured, calling PlayZapzoneNext()", 7);
+        PlayZapzoneNext();
+        exit;
+    }
+
+    # -------------------------------------------------------
+    # STATE LADEN oder neu erstellen
+    # -------------------------------------------------------
+    if (is_file($zapname)) {
+        $state = json_decode(file_get_contents($zapname), true);
+    } else {
+        $state = null;
+    }
+
+    # -------------------------------------------------------
+    # ERSTER AUFRUF: Spielende Zonen scannen und State aufbauen
+    # -------------------------------------------------------
+    if ($state === null) {
+        LOGGING("queue.php: Start ZAPZONE - scanning playing zones", 7);
+
+        $playingZones = [];
 		foreach ($sonoszone as $zone => $player) {
-			$sonos = new SonosAccess($sonoszone[$zone][0]);
-			$state = $sonos->GetTransportInfo();			// select only playing zones
+			if ($zone === $master) continue;
+
+			# Nur Coordinators berücksichtigen (keine Gruppen-Members)
+			$coordinator = getCoordinator($zone);
+			if ($coordinator !== $zone) {
+				LOGGING("queue.php: Skipping '$zone' - is member of GroupCoordinator '$coordinator'", 7);
+				continue;
+			}
+
+			$s = new SonosAccess($sonoszone[$zone][0]);
+			$transportState = $s->GetTransportInfo();
 			usleep(200000);
-			$posinfo = $sonos->GetPositionInfo();
-			#echo $zone." = ".$state."<br>";
-			if ($state == '1' and $zone != $master and substr($posinfo["TrackURI"], 0, 18) != "x-sonos-htastream:")   {				// except masterzone
-				array_push($runarray, $zone); 				// add Player to array
+			$posinfo = $s->GetPositionInfo();
+			$isTV = substr($posinfo["TrackURI"], 0, 18) === "x-sonos-htastream:";
+			if ($transportState == '1' && !$isTV) {
+				$playingZones[] = $zone;
 			}
 		}
-		$countzones = count($runarray);
-		if ($countzones == 0)  {
-			$empty = Array();
-			LOGGING("queue.php: Currently no zone is running or last Zone has been reached, we switch to Sub-Function",7);
-			file_put_contents($zapname, json_encode($empty));
-			PlayZapzoneNext();
-			LOGGING("queue.php: Zapzone Sub-Function '".$subfunction."' has been called ",7);
-		} else {
-			# join zone to currently running zone
-			$sonos = new SonosAccess($sonoszone[$master][0]);
-			$sonos->SetAVTransportURI("x-rincon:" . $sonoszone[$runarray[0]][1]);
-			LOGGING("queue.php: Zone '$master' has been added as member to Zone '$runarray[0]'",5);
-			sleep(1);
-			array_shift($runarray);										// remove 1st key
-			DeleteTmpFavFiles();
-			$result = file_put_contents($zapname, json_encode($runarray));		// save file
-			if ($result === false)    {
-				LOGGING("queue.php: Writing file '$zapname' failed. Pls. check your Loxberry settings!", 7);
-			}
-		}
-	} else {
-		# file does not exists
-		LOGGING("queue.php: Continue ZAPNAME", 7);
-		$file = json_decode(file_get_contents($zapname), true);
-		$countzapfile = count($file);
-		if ($countzapfile == 0 or $value == "http")  {
-			LOGGING("queue.php: Currently no zone is running or last Zone has been reached, we switch to Sub-Function",7);
-			PlayZapzoneNext();
-			LOGGING("queue.php: Sub-Function '".$subfunction."' has been called ",7);																
-			exit;
-		} else {
-			# add master to zone and remove zone from array
-			$sonos = new SonosAccess($sonoszone[$master][0]);
-			$sonos->SetAVTransportURI("x-rincon:" . $sonoszone[$file[0]][1]);
-			LOGGING("queue.php: Zone '$master' has been added as member to Zone '$file[0]'",5);
-			sleep(1);
-			array_shift($file);
-			# save new array again
-			$result = file_put_contents($zapname, json_encode($file));
-			if ($result === false)    {
-				LOGGING("queue.php: Writing file '$zapname' failed. Pls. check your Loxberry settings!", 7);
-			}
-		}
-	}
+
+        if (empty($playingZones)) {
+            LOGGING("queue.php: No zones playing, calling '".$config['VARIOUS']['selfunction']."'", 7);
+            DeleteTmpFavFiles();
+            PlayZapzoneNext();
+            exit;
+        }
+
+        $state = [
+            "zones" => $playingZones,
+            "index" => 0,
+            "total" => count($playingZones)
+        ];
+        LOGGING("queue.php: Found " . $state['total'] . " playing zone(s): " . implode(', ', $playingZones), 7);
+    }
+
+    # -------------------------------------------------------
+    # ALLE ZONEN DURCH → SubFunction
+    # -------------------------------------------------------
+    if ($state['index'] >= $state['total']) {
+        LOGGING("queue.php: All zones visited, calling '".$config['VARIOUS']['selfunction']."'", 7);
+        @unlink($zapname);
+        DeleteTmpFavFiles();
+        PlayZapzoneNext();
+        exit;
+    }
+
+    # -------------------------------------------------------
+    # NÄCHSTE ZONE JOINEN
+    # -------------------------------------------------------
+    $targetZone = $state['zones'][$state['index']];
+
+    try {
+        $sonos = new SonosAccess($sonoszone[$master][0]);
+        $sonos->SetAVTransportURI("x-rincon:" . $sonoszone[$targetZone][1]);
+        LOGGING("queue.php: Zone '$master' joined Zone '$targetZone' (" . ($state['index']+1) . "/" . $state['total'] . ")", 5);
+        $state['index']++;
+    } catch (Exception $e) {
+        LOGGING("queue.php: Join to '$targetZone' failed, removing from list. Error: " . $e->getMessage(), 4);
+        array_splice($state['zones'], $state['index'], 1);
+        $state['total']--;
+        if ($state['index'] >= $state['total']) {
+            LOGGING("queue.php: All zones visited after skip, calling '".$config['VARIOUS']['selfunction']."'", 7);
+            @unlink($zapname);
+            DeleteTmpFavFiles();
+            PlayZapzoneNext();
+            exit;
+        }
+    }
+
+    sleep(1);
+    $result = file_put_contents($zapname, json_encode($state));
+    if ($result === false) {
+        LOGGING("queue.php: Writing '$zapname' failed!", 7);
+    }
+
+    DeleteTmpFavFiles();
 }
 
 

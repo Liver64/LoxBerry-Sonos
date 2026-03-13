@@ -515,3 +515,12 @@
 			[IMPROVEMENT] Kalender Validierung optimiert
 			[BUGFIX] Some minor changes in UI
 			[BUGFIX] Radio Station Ansage gefixed
+ 6.1.3		[BUGFIX] Zapzone gefixed (auch bei mehreren Calls mit unterschiedlichen Playern)
+			[BUGFIX] MQTT Status t2s_<RAUM> sendet 0 oder 1 bei Audioclip
+			[BUGFIX] MQTT Radio Namen werden gepusht
+			[BUGFIX] T2S Error Authenticating gefixed
+			[IMPROVEMENT] Zusätzliche Sprachen/Stimmen für Piper werden automatisch integriert
+			[IMPROVEMENT] Beim TV-Monitor sind die Player auswählbar die beim Einschalten gestoppt werden sollen
+			[BUGFIX] kleinere Fehler wurden behoben
+			[BUGFIX] MQTT Volume per Player bei Gruppenkonstellation wurde gefixed
+			

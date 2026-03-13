@@ -6,7 +6,7 @@
 **/
 
 require_once "loxberry_system.php";
-#require_once "loxberry_log.php";
+require_once "loxberry_log.php";
 include($lbphtmldir."/system/sonosAccess.php");
 include($lbphtmldir."/Grouping.php");
 include($lbphtmldir."/Speaker.php");
@@ -15,6 +15,8 @@ include($lbphtmldir."/Info.php");
 
 ini_set('max_execution_time', 30); 	
 register_shutdown_function('shutdown');
+
+#startlog();
 
 $configfile			= "s4lox_config.json";								// configuration file
 $TV_safe_file		= "s4lox_TV_save";									// saved Values of all SB's
@@ -29,6 +31,8 @@ $Stunden 			= date("H:i");
 $time_start 		= microtime(true);
 #var_dump($Stunden);
 
+global $soundbars, $grouping, $sonoszone;
+
 echo "<PRE>";
 
 	# Preparation
@@ -36,6 +40,15 @@ echo "<PRE>";
 	# load Configuration
 	if (file_exists($lbpconfigdir . "/" . $configfile))    {
 		$config = json_decode(file_get_contents($lbpconfigdir . "/" . $configfile), TRUE);
+		$sonosgrpzone = [];
+		foreach ($config['sonoszonen'] as $room => $data) {
+			$sonosgrpzone[$room][0] = $data[0];  // IP
+			$sonosgrpzone[$room][1] = $data[1];  // UUID
+		}
+		// Debug
+		#echo "Sonoszone mapping:\n";
+		#print_r($sonosgrpzone);
+		
 		# check if no TV Volume turned on
 		if (is_disabled($config['VARIOUS']['tvmon']))   {
 			echo "TV Monitor off".PHP_EOL;
@@ -44,6 +57,8 @@ echo "<PRE>";
 		} else {
 			echo "TV Monitor on".PHP_EOL;
 			echo "<br>";
+			$soundbars = identSB($config['sonoszonen'], $folfilePlOn);
+			$GLOBALS['soundbars'];
 		}
 	} else {
 		echo "The configuration file could not be loaded, the file may be disrupted. We have to abort :-(')".PHP_EOL;
@@ -86,7 +101,7 @@ echo "<PRE>";
 							$actual = json_decode(file_get_contents("/run/shm/".$lbpplugindir."/".$TV_safe_file."_".$key.".json"), true);
 							startlog();
 							# Restore previous Zone settings
-							restoreSingleZone($sonoszone, $master);
+							restoreFromJson($actual);
 							@array_map('unlink', glob('/run/shm/'.$lbpplugindir.'/s4lox_TV*'.$key.'*.*'));
 							LOGDEB("bin/tv_monitor.php: Soundbar TV Mode for ".$key." has been turned off and previous settings has been restored.");
 						}
@@ -104,6 +119,13 @@ echo "<PRE>";
 						# TV has been turned on
 						if (!file_exists("/run/shm/".$lbpplugindir."/".$status_file."_".$key.".json"))   {
 							echo "TV Mode for Soundbar '".$key."' has been turned On".PHP_EOL;
+							try {
+								$sonos->BecomeCoordinatorOfStandaloneGroup();
+								sleep(1);
+								echo "Player '".$key."' been seperated".PHP_EOL;
+							} catch (Exception $e) {
+								echo "Player '".$key."' already been seperated".PHP_EOL;
+							}								
 							startlog();
 							$sonos->SetAVTransportURI("x-sonos-htastream:".$soundbars[$key][1].":spdif");
 							# Set Volume
@@ -126,6 +148,11 @@ echo "<PRE>";
 								echo "Bass for '".$key."' has been set to: ".$bass.PHP_EOL;
 								LOGDEB("bin/tv_monitor.php: Bass for '".$key."' has been set to: ".$bass);
 							}
+							if (!empty($soundbars[$key][14]['tvgrpstop']))    {
+								processTvGroupStop($soundbars, $sonosgrpzone);
+							}
+							$sonos = new SonosAccess($soundbars[$key][0]); //Sonos IP Adresse
+							$sonos->SetAVTransportURI("x-sonos-htastream:".$soundbars[$key][1].":spdif");
 							try {
 								$dialog['Volume'] = $vol;
 								$dialog['Treble'] = $treble;
@@ -160,8 +187,8 @@ echo "<PRE>";
 							# Soundbar is already running
 							#******************************************************
 							echo "TV Mode for Soundbar '".$key."' is already running.".PHP_EOL;
-							# set Nightmode and Subgain
 							if ($soundbars[$key][14]['fromtime'] != "false")    {
+								# set Nightmode and Subgain
 								if ((string)$Stunden >= (string)$soundbars[$key][14]['fromtime'])   { 
 									if (!file_exists("/run/shm/".$lbpplugindir."/".$statusNight."_".$key.".json"))   {
 										# Turn Night Mode On/Off
@@ -297,7 +324,7 @@ function RestorePrevSBsettings($soundbars)    {
 
 function PrepSaveZonesStati() {
 	
-	global $sonoszone, $sonoszonen, $soundbars, $sonos, $player, $actual, $time_start, $log, $folfilePlOn;
+	global $sonoszone, $soundbars, $sonos, $player, $actual, $time_start, $log, $folfilePlOn;
 	
 	# identify if Soundbars are grouped
 	foreach($soundbars as $zonen => $ip) {
@@ -379,196 +406,177 @@ function saveZonesStati($sonoszone) {
 * @return: previous settings
 **/		
 
-function restoreSingleZone($sonoszone, $master) {
+function restoreFromJson($actual)
+{
+    global $sonoszone;
+
+    LOGDEB("bin/tv_monitor.php: Starting full Sonos restore from JSON.");
+    if (empty($actual)) {
+        LOGWARN("bin/tv_monitor.php: Restore aborted - JSON empty.");
+        return;
+    }
+
+    /*
+        MASTER ERMITTELN
+    */
+    $firstZone = array_key_first($actual);
+    if (!empty($actual[$firstZone]['Grouping'])) {
+        $master = $actual[$firstZone]['Grouping'][0];
+    } else {
+        $master = $firstZone;
+    }
+    LOGDEB("bin/tv_monitor.php: Master zone detected: ".$master);
+
+    /*
+        GRUPPE WIEDERHERSTELLEN
+    */
+
+    $group = $actual[$master]['Grouping'] ?? [];
+    if (count($group) > 1) {
+        foreach ($group as $member) {
+            if ($member == $master) {
+                continue;
+            }
+            try {
+                $sonos = new SonosAccess($sonoszone[$member][0]);
+                $sonos->SetAVTransportURI("x-rincon:" . $sonoszone[$master][1]);
+                LOGDEB("bin/tv_monitor.php: '".$member."' joined '".$master."'");
+            } catch (Exception $e) {
+                LOGWARN("bin/tv_monitor.php: Group join failed for ".$member);
+            }
+        }
+    }
+
+    /*
+        QUELLE WIEDERHERSTELLEN
+    */
+
+    try {
+
+        $sonos = new SonosAccess($sonoszone[$master][0]);
+        $uri  = $actual[$master]['MediaInfo']['CurrentURI'] ?? "";
+        $meta = $actual[$master]['MediaInfo']['CurrentURIMetaData'] ?? "";
+        if (!empty($meta)) {
+            $meta = htmlspecialchars_decode($meta);
+        }
+        if (!empty($uri)) {
+            $sonos->SetAVTransportURI($uri, $meta);
+            LOGDEB("bin/tv_monitor.php: Source restored on '".$master."'");
+        }
+    } catch (Exception $e) {
+        LOGWARN("bin/tv_monitor.php: Source restore failed on ".$master);
+    }
+
+    /*
+        AUDIO SETTINGS
+    */
+
+    foreach ($actual as $zone => $data) {
+        try {
+            $sonos = new SonosAccess($sonoszone[$zone][0]);
+            if (isset($data['Volume']))
+                $sonos->SetVolume($data['Volume']);
+            if (isset($data['Bass']))
+                $sonos->SetBass($data['Bass']);
+            if (isset($data['Treble']))
+                $sonos->SetTreble($data['Treble']);
+            if (isset($data['Mute']))
+                $sonos->SetMute($data['Mute']);
+            LOGDEB("bin/tv_monitor.php: Audio settings restored for '".$zone."'");
+        } catch (Exception $e) {
+            LOGWARN("bin/tv_monitor.php: Audio restore failed for ".$zone);
+        }
+    }
 	
-	global $sonoszone, $sonos, $actual, $time_start, $log, $mode, $tts_stat;
-	
-	$sonos = new SonosAccess($sonoszone[$master][0]); 
-	$restore = $actual;
-	#print_r($restore);
-	switch ($restore) {
-		// Zone was playing in Single Mode
-		case $actual[$master]['ZoneStatus'] == 'single':
-			#$prevStatus = "single";
-			restore_details($master);
-			$sonos->SetVolume($actual[$master]['Volume']);
-			$sonos->SetTreble($actual[$master]['Treble']);
-			$sonos->SetBass($actual[$master]['Bass']);
-			$sonos->SetMute($actual[$master]['Mute']);
-			if (($actual[$master]['TransportInfo'] == 1)) {
-				$sonos->Play();	
-				RestoreShuffle($master);
-			}
-			LOGDEB("bin/tv_monitor.php: Single Zone ".$master." has been restored.");
-		break;
-		
-		// Zone was Member of a group
-		case $actual[$master]['ZoneStatus'] == 'member':
-			#$prevStatus = "member";
-			try {
-				$sonos->SetAVTransportURI($actual[$master]['PositionInfo']["TrackURI"]); 
-				$sonos->SetVolume($actual[$master]['Volume']);
-				$sonos->SetTreble($actual[$master]['Treble']);
-				$sonos->SetBass($actual[$master]['Bass']);
-				$sonos->SetMute($actual[$master]['Mute']);
-				LOGDEB("bin/tv_monitor.php: Zone ".$master." has been added back to group.");
-			} catch (Exception $e) {
-				LOGWARN("bin/tv_monitor.php: Re-Assignment to previous Zone failed.");	
-			}
-		break;
-		
-		// Zone was Master of a group
-		case $actual[$master]['ZoneStatus'] == 'master':
-			if ($actual[$master]['Type'] == "LineIn") {
-				#echo "LineIn";
-				# Zone was Master of a group
-				try {
-					$sonos = new SonosAccess($sonoszone[$master][0]);
-					$sonos->SetAVTransportURI($actual[$master]['PositionInfo']["TrackURI"]);
-				} catch (Exception $e) {
-					LOGWARN("bin/tv_monitor.php: Restore to previous status (Master of Line-in failed.");	
-				}
-				# Restore Zone Members
-				$tmp_group = $actual[$master]['Grouping'];
-				$tmp_group1st = array_shift($tmp_group);
-				foreach ($tmp_group as $groupmem) {
-					try {
-						$sonos = new SonosAccess($sonoszone[$groupmem][0]);
-						$sonos->SetAVTransportURI($actual[$groupmem]['PositionInfo']["TrackURI"]);
-						$sonos->SetVolume($actual[$groupmem]['Volume']);
-						$sonos->SetTreble($actual[$groupmem]['Treble']);
-						$sonos->SetBass($actual[$groupmem]['Bass']);
-						$sonos->SetMute($actual[$groupmem]['Mute']);
-					} catch (Exception $e) {
-						LOGWARN("bin/tv_monitor.php: Restore to previous status (Member of Line-in) failed.");	
-					}
-				}
-				# Start restore Master settings
-				$sonos = new SonosAccess($sonoszone[$master][0]);
-				$sonos->SetVolume($actual[$master]['Volume']);
-				$sonos->SetTreble($actual[$master]['Treble']);
-				$sonos->SetBass($actual[$master]['Bass']);
-				$sonos->SetMute($actual[$master]['Mute']);
-			} else {
-				#$prevStatus = "master";
-				$oldGroup = $actual[$master]['Grouping'];
-				array_shift($oldGroup);
-				foreach ($oldGroup as $newMaster) {
-					// loop threw former Members in order to get the New Coordinator
-					try {
-						$sonos = new SonosAccess($sonoszone[$newMaster][0]);
-						$check = $sonos->GetPositionInfo();
-						$checkMaster = $check['TrackURI'];
-					} catch (Exception $e) {
-						LOGWARN("bin/tv_monitor.php: Restore to previous Group Coordinator status failed.");	
-					}
-					if (empty($checkMaster)) {
-						try {
-							// if TrackURI is empty add Zone to New Coordinator
-							$sonos_old = new SonosAccess($sonoszone[$master][0]);
-							$sonos_old->SetVolume($actual[$master]['Volume']);
-							$sonos_old->SetTreble($actual[$master]['Treble']);
-							$sonos_old->SetBass($actual[$master]['Bass']);
-							$sonos_old->SetMute($actual[$master]['Mute']);
-							$sonos_old->SetAVTransportURI("x-rincon:" . $sonoszone[$newMaster][1]);
-						} catch (Exception $e) {
-							LOGWARN("bin/tv_monitor.php: Restore to previous Group Coordinator status failed.");	
-						}
-					}
-				}
-				$rinconOfNewMaster = $sonoszone[$newMaster][1];
-				$sonos = new SonosAccess($sonoszone[$master][0]);
-				try {
-					$sonos->SetAVTransportURI("x-rincon:" . $rinconOfNewMaster);
-					$sonos->SetVolume($actual[$master]['Volume']);
-					$sonos->SetTreble($actual[$master]['Treble']);
-					$sonos->SetBass($actual[$master]['Bass']);
-					$sonos->SetMute($actual[$master]['Mute']);
-					# delegate back to exMaster
-					#$sonos = new SonosAccess($sonoszone[$newMaster][0]);
-					#$sonos->DelegateGroupCoordinationTo($sonoszone[$master][1], 1);
-					#$sonos = new SonosAccess($sonoszone[$master][0]);
-					LOGDEB("bin/tv_monitor.php: Zone '".$master."' has been added back to group.");
-				} catch (Exception $e) {
-					LOGWARN("bin/tv_monitor.php: Assignment to Zone '" . $newMaster . "' failed.");	
-				}	
-			}
-		break;
-	}
-	return;
-}
-
-
-/**
-* Function : restore_details() --> restore the details of each zone
-*
-* @param:  Player
-* @return: restore
-**/
-
-function restore_details($zone) {
-	global $sonoszone, $sonos, $master, $actual, $j, $browselist, $senderName, $log;
-
-	# Playlist/Track
-	$sonos = new SonosAccess($sonoszone[$zone][0]); 
-	if ($actual[$zone]['Type'] == "Track")   {	
-		if ($actual[$zone]['PositionInfo']['Track'] != "0")    {
-			$sonos->SetQueue("x-rincon-queue:".$sonoszone[$zone][1]."#0");
-			$sonos->SetTrack($actual[$zone]['PositionInfo']['Track']);
-			$sonos->Seek("REL_TIME", $actual[$zone]['PositionInfo']['RelTime']);
-			LOGDEB("bin/tv_monitor.php: Source 'Track' has been set for '".$zone."'");
+	$posinfo = $actual[$master]['PositionInfo'] ?? [];
+	if (!empty($posinfo['RelTime']) && $posinfo['RelTime'] != "0:00:00") {
+		try {
+			$reltime = $posinfo['RelTime'];
+			$sonos = new SonosAccess($sonoszone[$master][0]);
+			$sonos->Seek("REL_TIME", $reltime);
+			LOGDEB("bin/tv_monitor.php: Seek restored to ".$reltime." on '".$master."'");
+		} catch (Exception $e) {
+			LOGWARN("bin/tv_monitor.php: Seek restore failed on ".$master);
 		}
-	} 
-	# TV
-	elseif ($actual[$zone]['Type'] == "TV") {
-		#echo "TV for ".$zone."<br>";	
-		$sonos->SetAVTransportURI($actual[$zone]['PositionInfo']["TrackURI"]); 
-		LOGDEB("bin/tv_monitor.php: Source 'TV' has been set for '".$zone."'");
-	} 
-	# LineIn
-	elseif ($actual[$zone]['Type'] == "LineIn") {
-		#echo "LineIn for ".$zone."<br>";	
-		$sonos->SetAVTransportURI($actual[$zone]['PositionInfo']["TrackURI"]); 
-		LOGDEB("bin/tv_monitor.php: Source 'LineIn' has been set for '".$zone."'");
-	} 
-	# Radio Station
-	elseif ($actual[$zone]['Type'] == "Radio") {
-		#echo "Radio for ".$zone."<br>";	
-		$sonos->SetAVTransportURI($actual[$zone]['MediaInfo']["CurrentURI"], htmlspecialchars_decode($actual[$zone]['MediaInfo']["CurrentURIMetaData"])); 
-		LOGDEB("bin/tv_monitor.php: Source 'Radio' has been set for '".$zone."'");
-	}
-	# Queue empty
-	elseif (empty($actual[$zone]['Type'])) {
-		#echo "No Queue for ".$zone."<br>";	
-		$sonos->SetQueue("x-rincon-queue:".$sonoszone[$zone][1]."#0");
-		LOGDEB("bin/tv_monitor.php: '".$zone."' had no Queue");
-	} else {
-		#echo "Something went wrong :-(<br>";	
-		LOGDEB("bin/tv_monitor.php: Something went wrong :-(");
-	}
-	return;
+    }
+
+    /*
+        PLAY STATUS
+    */
+
+    if (!empty($actual[$master]['TransportInfo'])) {
+        try {
+            $sonos = new SonosAccess($sonoszone[$master][0]);
+            if ($actual[$master]['TransportInfo'] == 1) {
+                $sonos->Play();
+                LOGDEB("bin/tv_monitor.php: Playback restarted on '".$master."'");
+            } else {
+                $sonos->Pause();
+                LOGDEB("bin/tv_monitor.php: Playback paused on '".$master."'");
+            }
+        } catch (Exception $e) {
+            LOGWARN("bin/tv_monitor.php: Playback restore failed on ".$master);
+        }
+    }
+    LOGDEB("bin/tv_monitor.php: Restore finished.");
 }
 
 
 /**
-* Function : RestoreShuffle() --> Restore previous playmode settings
+* Function : processTvGroupStop --> stop grouped players 
 *
-* @param: string playmode, string player
+* @param: array @soundbars, array @sonoszone
 * @return: static
 **/
 
-function RestoreShuffle($player) {
-	
-	global $sonoszone, $actual, $log;
-	
-	$sonos = new SonosAccess($sonoszone[$player][0]);
-	$mode = $actual[$player]['TransportSettings'];
-	$pl = $sonos->GetCurrentPlaylist();
-	if (count($pl) > 1 and ($actual[$player]['TransportSettings'] != 0))   {
-		$modereal = playmode_detection($player, $mode);
-		LOGDEB("bin/tv_monitor.php: Previous playmode '".$modereal."' for '".$player."' has been restored.");		
-	}
-	
+function processTvGroupStop(array $soundbars, array $sonoszone) {
+
+    foreach ($soundbars as $sbRoom => $sbData) {
+
+        $tvgrpstop = $sbData[14]['tvgrpstop'] ?? [];
+        if (empty($tvgrpstop)) {
+            continue; // keine Räume zum Stoppen
+        }
+        echo "Processing Soundbar: $sbRoom\n";
+        foreach ($tvgrpstop as $stopRoom) {
+            // Prüfen, ob IP/UUID existiert
+            if (empty($sonoszone[$stopRoom][0])) {
+                echo "ERROR: No Sonos IP/UUID for room '$stopRoom'\n";
+				LOGERR("bin/tv_monitor.php: ERROR: No Sonos IP/UUID for room '$stopRoom'");
+                continue;
+            }
+            echo "Processing stop room: $stopRoom\n";
+            try {
+                $sonos = new SonosAccess($sonoszone[$stopRoom][0]);
+                // Status abfragen
+                $status = getZoneStatus($stopRoom);
+                #echo "Room '$stopRoom' status: $status\n";
+                // Aktion je nach Status
+                if ($status === 'member' || $status === 'master') {
+					$sonos->BecomeCoordinatorOfStandaloneGroup();
+					LOGDEB("bin/tv_monitor.php: '$stopRoom' is leaving group");
+					echo "'$stopRoom' is leaving group\n";
+                    sleep(1);
+					if ($sonos->GetTransportInfo() === 1) {
+						$sonos->Pause();
+						echo "Pausing room '$stopRoom'\n";
+						LOGDEB("bin/tv_monitor.php: Pausing room '$stopRoom'");
+					}
+                } elseif ($status === 'single') {
+					if ($sonos->GetTransportInfo() === 1) {
+						$sonos->Pause();
+						echo "Pausing single room '$stopRoom'\n";
+						LOGDEB("bin/tv_monitor.php: Pausing single room '$stopRoom'");
+					}
+                } else {
+                    echo "No action for room '$stopRoom'\n";
+                }
+            } catch (Exception $e) {
+				LOGERR("bin/tv_monitor.php: ERROR processing room '$stopRoom': " . $e->getMessage());
+                echo "ERROR processing room '$stopRoom': " . $e->getMessage() . "\n";
+            }
+        }
+    }
 }
 
 /**
@@ -578,31 +586,40 @@ function RestoreShuffle($player) {
 /* @return: 
 **/
 
-function startlog()   {
-	
-require_once "loxberry_log.php";
+function startlog()
+{
+    require_once "loxberry_log.php";
+    global $lbplogdir, $lbpplugindir, $log;
 
-global $name, $file;
+    $params = [
+        "name"     => "TV Monitor",
+        "package"  => $lbpplugindir,                // WICHTIG: package setzen
+        "filename" => $lbplogdir . "/tv_monitor.log", // WICHTIG: echten Pfad nutzen
+        "append"   => 1,
+        "addtime"  => 1,
+        "loglevel" => 7,
+    ];
 
-$name = "TV Monitor";
-$filename = "tv_monitor";
+    $log = LBLog::newLog($params);
 
-$params = [	"name" => $name,
-				"filename" => LBPLOGDIR."/".$filename.".log",
-				"append" => 1,
-				"addtime" => 1,
-				"loglevel" => 7,
-				];
-$level = LBSystem::pluginloglevel();
-$log = LBLog::newLog($params);
-LOGSTART($name);
+    // Falls newLog fehlschlägt, nicht weiter loggen
+    if (empty($log)) {
+        echo "ERROR: Could not initialize LoxBerry log.\n";
+        return;
+    }
+
+    $GLOBALS['TVMON_LOG_STARTED'] = true;
+    $log->LOGSTART("TV Monitor");   // Methode benutzen, nicht globales LOGSTART()
 }
-
 
 function shutdown()
 {
-	require_once "loxberry_log.php";
-	
-	LOGEND("TV Monitor");
+    require_once "loxberry_log.php";
+    global $log;
+
+    if (!empty($GLOBALS['TVMON_LOG_STARTED']) && !empty($log)) {
+        $log->LOGEND("TV Monitor"); // Methode benutzen, nicht globales LOGEND()
+    }
 }
+
 ?>

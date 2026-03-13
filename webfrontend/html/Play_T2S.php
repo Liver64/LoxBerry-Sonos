@@ -25,7 +25,7 @@ if (!defined('T2S_BATCHFILE')) {
 
 function say() {
 	
-	global $sonos, $profile, $master, $lbpconfigdir, $config, $vol_config, $group, $textstring, $result;
+	global $sonos, $tts_stat, $profile, $master, $lbpconfigdir, $config, $vol_config, $group, $textstring, $result;
 	
 	presence_detection();
 	if ((empty($config['TTS']['t2s_engine'])) or (empty($config['TTS']['messageLang'])))  {
@@ -58,15 +58,21 @@ function say() {
 		if (isset($_GET['playbatch'])) {
 			$tocall = "Playbatch T2S";
 			LOGGING("play_t2s.php: 'Playbatch T2S' has been identified", 6);
+			#$tts_stat = 1;
+			#send_tts_source($tts_stat);
 			sendmessage();
 		} else {
 			if(isset($_GET['clip']))  {
 				$tocall = "Single Clip";
-				LOGGING("play_t2s.php: 'Single Clip' has been identified", 6);	
+				LOGGING("play_t2s.php: 'Single Clip' has been identified", 6);
+				#$tts_stat = 1;
+				#send_tts_source($tts_stat);				
 				sendAudioSingleClip();
 			} else {
 				$tocall = "Single T2S";
 				LOGGING("play_t2s.php: 'Single T2S' has been identified", 6);
+				#$tts_stat = 1;
+				#send_tts_source($tts_stat);
 				sendmessage();			
 			}
 		}
@@ -75,34 +81,46 @@ function say() {
 			$tocall = "Multi Clip Member";
 			LOGGING("play_t2s.php: 'Multi Clip Member' has been identified", 6);
 			$profile = true;
+			#$tts_stat = 1;
+			#send_tts_source($tts_stat);
 			sendAudioMultiClip();
 		} elseif(isset($_GET['clip']) and isset($_GET['profile']) and !isset($_GET['member']))  {
 			$group = checkGroupProfile();
 			if ($group == true)   {
 				$tocall = "Multi Clip Profile";
 				LOGGING("play_t2s.php: 'Multi Clip Profile' has been identified", 6);
+				#$tts_stat = 1;
+				#send_tts_source($tts_stat);
 				sendAudioMultiClip();
 			} else {
 				$tocall = "Single Clip Profile";
-				LOGGING("play_t2s.php: 'Single Clip Profile' has been identified", 6);	
+				LOGGING("play_t2s.php: 'Single Clip Profile' has been identified", 6);
+				#$tts_stat = 1;
+				#send_tts_source($tts_stat);				
 				sendAudioSingleClip();
 			}
 		} elseif(!isset($_GET['clip']) and isset($_GET['member']) and !isset($_GET['profile'])) {
 			$tocall = "Group T2S";
 			LOGGING("play_t2s.php: 'Group T2S' has been identified", 6);	
 			$profile = true;
+			#$tts_stat = 1;
+			#send_tts_source($tts_stat);
 			sendgroupmessage();
 		} elseif(!isset($_GET['clip']) and !isset($_GET['member']) and isset($_GET['profile'])) {
 			$group = checkGroupProfile();
 			if ($group == true)   {
 				$tocall = "Group T2S Profile";
 				LOGGING("play_t2s.php: 'Group T2S Profile' has been identified", 6);
-				$profile = true;	
+				$profile = true;
+				#$tts_stat = 1;
+				#send_tts_source($tts_stat);				
 				sendgroupmessage();
 			} else {
 				$tocall = "Single T2S Profile";
 				LOGGING("play_t2s.php: 'Single T2S Profile' has been identified", 6);
 				createArrayFromGroupProfile();				
+				#$tts_stat = 1;
+				#send_tts_source($tts_stat);
 				sendmessage();
 			}
 		}
@@ -421,15 +439,14 @@ function check_file() {
 	
 	
 function create_tts($text ='') {
+	
     global $sonos, $config, $dist, $filename, $MessageStorepath, $errortext, $zones, $messageid,
            $textstring, $home, $time_start, $tmp_batch, $MP3path, $filenameplay, $textstring,
            $volume, $tts_stat;
 
     // setze 1 für virtuellen Texteingang (T2S Start)
-    $tts_stat = 1;
-    if(!isset($_GET['clip'])) {
-        send_tts_source($tts_stat);
-    }
+    #$tts_stat = 1;
+    #send_tts_source($tts_stat);
 
     // ----------------------------------------------------------
     // Optional Greeting (GREETINGS.* aus T2S-Textdatei)
@@ -578,8 +595,10 @@ function create_tts($text ='') {
     $primary_engine_code = (int)($t2s_param['t2sengine'] ?? ($config['TTS']['t2s_engine'] ?? 0));
 
     // Engine-Datei einbinden
-    $primary_engine_code = select_t2s_engine($primary_engine_code);
-
+    $primary_engine_code_tmp = select_t2s_engine($primary_engine_code);
+	$primary_engine_code = $primary_engine_code_tmp['code'];
+	$primary_engine_name = $primary_engine_code_tmp['name'];
+	
     // ----------------------------------------------------------
     // Cache-Check
     // ----------------------------------------------------------
@@ -596,13 +615,13 @@ function create_tts($text ='') {
         // ======================================================
         // 1. Primäre TTS-Engine ausführen
         // ======================================================
-        LOGGING("play_t2s.php: Primary TTS engine '$primary_engine_code' will be used for '$textstring'.", 6);
+        LOGGING("play_t2s.php: Primary TTS engine '$primary_engine_name' will be used for '$textstring'.", 6);
 
         if (function_exists('t2s')) {
             // Für ALLE Engines (inkl. Piper) gilt: t2s($t2s_param)
             t2s($t2s_param);
         } else {
-            LOGERR("play_t2s.php: t2s() is not defined for engine '$primary_engine_code'. Did you include the correct voice_engines file?");
+            LOGERR("play_t2s.php: t2s() is not defined for engine '$primary_engine_name'. Did you include the correct voice_engines file?");
         }
 
         // ======================================================
@@ -1016,9 +1035,7 @@ function sendmessage($errortext = "") {
 
 function sendAudioSingleClip($errortext = "") {
 	
-	global $config, $volume, $master, $filename, $messageid, $sonoszone, $sonos, $zones, $playstat, $time_start, $roomcord;
-	
-	$time_start = microtime(true);
+	global $config, $duration, $volume, $master, $filename, $messageid, $sonoszone, $sonos, $zones, $playstat, $time_start, $roomcord;
 	
 	if(isset($_GET['member'])) {
 		$zones = $sonoszone[$master];
@@ -1039,10 +1056,8 @@ function sendAudioSingleClip($errortext = "") {
 	}
 	create_tts($errortext);
 	playAudioClip();
-		
-	$time_end = microtime(true);
-	$t2s_time = $time_end - $time_start;
-	LOGGING("play_t2s.php: Audioclip: The requested Notification tooks ".round($t2s_time, 2)." seconds to be processed.", 5);	
+	
+	proccessing_time();	
 }
 	
 	
@@ -1056,8 +1071,6 @@ function sendAudioSingleClip($errortext = "") {
 function sendAudioMultiClip($errortext = "") {
 	
 	global $config, $volume, $master, $filename, $messageid, $sonoszone, $sonos, $time_start, $zones, $playstat, $roomcord, $profile_details, $zones_all;
-	
-	$time_start = microtime(true);
 	
 	LOGDEB("play_t2s.php: Audioclip: Notification for Player has been called.");
 	
@@ -1274,30 +1287,72 @@ function handle_playgong($zones, $source) {
 * @return: 
 **/
 			
-function handle_message($zones, $source) {	
+function handle_message($zones, $source)
+{
+    global $config, $prio, $filename, $duration, $tmp_tts;
 
-	global $sonos, $config, $prio, $zones, $source, $memberon, $sonoszone, $errortext, $filename, $roomcord, $time_start;
+    if (isset($_GET['messageid'])) {
+        $messageid = $_GET['messageid'];
 
-	if (isset($_GET['messageid'])) {
-		// messageid
-		$messageid = $_GET['messageid'];
-		if ($source === "multi")   {
-			audioclip_multi_post_request($zones, "CUSTOM", $prio, $config['SYSTEM']['cifsinterface']."/mp3/".$messageid.".mp3");
-		} else {
-			audioclip_post_request($zones[0], $zones[1], "CUSTOM", $prio, $config['SYSTEM']['cifsinterface']."/mp3/".$messageid.".mp3");
-		}
-		LOGGING("play_t2s.php: Audioclip: Messageid has been played as Notification", 7);
-	} else {
-		// Text-to-speech
-		if ($source === "multi")   {
-			audioclip_multi_post_request($zones, "CUSTOM", $prio, $config['SYSTEM']['cifsinterface']."/".$filename.".mp3");
-		} else {
-			audioclip_post_request($zones[0], $zones[1], "CUSTOM", $prio, $config['SYSTEM']['cifsinterface']."/".$filename.".mp3");
-		}
-		LOGDEB("play_t2s.php: Audioclip: TTS '".$filename."' has been played as Notification");
-	}
-	return;
+        $mp3 = "/opt/loxberry/data/plugins/sonos4lox/tts/mp3/{$messageid}.mp3";
+        $duration = get_mp3_duration($mp3);
+		#wait_for_global_audio_lock($duration);
+
+        if ($source === "multi") {
+            audioclip_multi_post_request(
+                $zones,
+                "CUSTOM",
+                $prio,
+                $config['SYSTEM']['cifsinterface']."/mp3/".$messageid.".mp3"
+            );
+        } else {
+            audioclip_post_request(
+                $zones[0],
+                $zones[1],
+                "CUSTOM",
+                $prio,
+                $config['SYSTEM']['cifsinterface']."/mp3/".$messageid.".mp3"
+            );
+        }
+		usleep($duration);
+		$tts_stat = 0;
+		send_tts_source($tts_stat);
+        LOGGING("play_t2s.php: Audioclip messageid played", 7);
+
+    } else {
+        $mp3 = "/opt/loxberry/data/plugins/sonos4lox/tts/{$filename}.mp3";
+        $duration = get_mp3_duration($mp3);
+		#wait_for_global_audio_lock($duration);
+
+		# Status senden
+		$tts_stat = 1;
+		send_tts_source($tts_stat);
+
+		if ($source === "multi") {
+            audioclip_multi_post_request(
+                $zones,
+                "CUSTOM",
+                $prio,
+                $config['SYSTEM']['cifsinterface']."/".$filename.".mp3"
+            );
+        } else {
+            audioclip_post_request(
+                $zones[0],
+                $zones[1],
+                "CUSTOM",
+                $prio,
+                $config['SYSTEM']['cifsinterface']."/".$filename.".mp3"
+            );
+        }
+		usleep($duration);
+		$tts_stat = 0;
+		send_tts_source($tts_stat);
+        LOGDEB("play_t2s.php: TTS '{$filename}' played");
+		
+    }
+	
 }
+
 
 /**
  * Helper : audioclip_can_handle_group
@@ -1763,13 +1818,13 @@ if (!function_exists('create_t2s_param')) {
 
 function send_tts_source($tts_stat)  {
 	
-	global $config, $tmp_tts, $sonoszone, $time_start, $sonoszonen, $master, $ms, $tts_stat, $lbphtmldir;
+	global $config, $tmp_tts, $sonoszone, $time_start, $sonoszonen, $master, $ms, $lbphtmldir;
 	
 	require_once "$lbphtmldir/system/io-modul.php";
 	require_once "$lbphtmldir/bin/phpmqtt/phpMQTT.php";
 
 	$tmp_tts = "/run/shm/s4lox_tmp_tts";
-
+	#var_dump($tts_stat);
 	if ($tts_stat == 1)  {
 		if(!touch($tmp_tts)) {
 			LOGGING("play_t2s.php: No permission to write file", 3);
@@ -1824,6 +1879,8 @@ function send_tts_source($tts_stat)  {
 			$data['t2s_'.$value] = $tts_stat;
 			if ($mqttstat == "1")   {
 				$err = $mqtt->publish('Sonos4lox/t2s/'.$value, $data['t2s_'.$value], 0, 1);
+				$err1 = $mqtt->publish('s4lox/t2s/'.$value, $data['t2s_'.$value], 0, 1);
+				#LOGINF("play_t2s.php: MQTT value has been send");
 			} else {			
 				$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/t2s_$value/$tts_stat");
 			}
@@ -2233,23 +2290,22 @@ function audioclip_post_request($ip, $rincon, $clipType="CUSTOM", $priority="LOW
 	$info = curl_getinfo($ch);
 	
 	// was the request successful?
-	if($result === false or $info['http_code'] != "200")  {
+	if($result === false or $info['http_code'] != "200") {
 		$result = json_decode($result, true);
-		if (isset($result['_objectType']))  {
-			$split = explode(",", $result['wwwAuthenticate']);
-			try {
-				LOGGING("play_t2s.php: cURL AudioClip error: ".$result['errorCode']." ".$split[2], 3);
-				exit;
-			} catch (Exception $e) {
-				LOGGING("play_t2s.php: cURL AudioClip unknown error", 3);
-				exit;
+		if (isset($result['_objectType'])) {
+			$msg = "unknown";
+			if (isset($result['wwwAuthenticate'])) {
+				$split = explode(",", $result['wwwAuthenticate']);
+				if (isset($split[2])) {
+					$msg = $split[2];
+				}
 			}
+			LOGGING("play_t2s.php: cURL AudioClip error: ".$result['errorCode']." ".$msg, 3);
+			exit;
 		} else {
 			LOGGING("play_t2s.php: cURL AudioClip error: ".curl_error($ch), 3);
 			exit;
 		}
-	} else {
-		LOGGING("play_t2s.php: cURL AudioClip request okay!", 7);
 	}
 	// close cURL
 	curl_close($ch);
@@ -2489,16 +2545,50 @@ function getProfileZonesForAudioclip()
     return $zones;
 }
 
+function get_mp3_duration(string $mp3_file): int
+{
+    require_once("system/bin/getid3/getid3.php");
+
+    $add_time = 1; // safety buffer in seconds
+    $getID3 = new getID3();
+    $info = $getID3->analyze($mp3_file);
+
+    $seconds = (float)($info['playtime_seconds'] ?? 0);
+	// turn to microseconds
+    return (int)round(($seconds + $add_time) * 1000000);
+}
+
+
+function wait_for_global_audio_lock(int $duration_ms): void
+{
+    $lockfile = "/run/shm/sonos4lox/sonos4lox_audio_global.lock";
+    $now = (int)round(microtime(true) * 1000);
+
+    // ensure directory exists
+    @mkdir(dirname($lockfile), 0777, true);
+
+    // --- Phase 1: wait for previous playback ---
+    if (file_exists($lockfile)) {
+        $until = (int)trim(@file_get_contents($lockfile));
+        if ($until > $now) {
+            usleep(($until - $now) * 1000);
+        }
+    }
+
+    // --- Phase 2: set new lock ---
+    $new_until = (int)round(microtime(true) * 1000) + $duration_ms;
+    file_put_contents($lockfile, $new_until, LOCK_EX);
+}
 
 
 
 function proccessing_time()
 {
-	global $time_start;
-	
-	$time_end = microtime(true);
-	$t2s_time = $time_end - $time_start;
-	LOGGING("play_t2s.php: The requested T2S tooks ".round($t2s_time, 2)." seconds to be processed completly.", 5);	
+    global $duration;
+
+    $elapsed = microtime(true) - $GLOBALS['time_start'];
+    $t2s_time = isset($duration) ? $elapsed - ($duration / 1000000) : $elapsed;
+    LOGGING("play_t2s.php: The requested T2S/AudioClip tooks ".round($t2s_time, 2)." seconds to be processed completly.", 5);
 }
 
 ?>

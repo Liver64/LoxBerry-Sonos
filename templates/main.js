@@ -46,12 +46,20 @@ $(document).on('pageinit', function () {
 	if (document.getElementById('donate')) {
 		donation();
 	}
-
 	// DETAILS page init
 	if (document.getElementById('detail_form')) {
 		details_init();
 	}
 });
+
+// DISABLE (ElevenLabs) - ENABLE (all other) Language Dropdown
+$('#engine-selector input[name="t2s_engine"]').on('change', function () {
+	updateLanguageDropdownForEngine();
+});
+
+// hide 2-digits language ISO-Code in UI
+$(".clangiso").hide();
+
 var tvmonerr = "true";
 
 
@@ -131,6 +139,22 @@ function weatherlayout() {
 		$(".weatherdet").hide();
 	}
 }
+
+/**
+ * updateLanguageDropdownForEngine()
+ * - Toggles visibility for language dropdown depending on selected Engine
+ */
+function updateLanguageDropdownForEngine() {
+	// ElevenLabs selected?
+	if ($('#tts_elevenlabs').is(':checked')) {
+		$('#t2slang').selectmenu('disable');
+	} else {
+		$('#t2slang').selectmenu('enable');
+	}
+
+	$('#t2slang').selectmenu('refresh', true);
+}
+
 
 /**
  * donation()
@@ -381,6 +405,34 @@ function populateVoice() {
 	var isocode = '<TMPL_VAR CODE>'.substr(0, 2);
 	$('#langiso').val(isocode);
 	$("#langiso").textinput("refresh");
+}
+
+/**
+ * piperInfo(event)
+ * - For Piper: if user clicks on the link for further languages/voices
+ *   a dialog box appears, link to Voices/languages open in a new Browser
+ *   and link to update languages appears
+ */
+function piperInfo(event) {
+
+	event.preventDefault();
+
+	var lbhost = window.location.hostname;
+
+	var text = "<TMPL_VAR T2S.PIPER_DIA1><br><br>"
+	+ "<code style='font-size:14px;font-weight:bold'>"
+	+ "/opt/loxberry/webfrontend/html/voice_engines/piper-voices"
+	+ "</code><br><br>"
+	+ "<TMPL_VAR T2S.PIPER_DIA3><br><br>"
+	+ "<TMPL_VAR T2S.PIPER_DIA4><br><br>"
+	+ "<a href='http://" + lbhost + "/plugins/sonos4lox/bin/piper-voices.php' "
+	+ "target='_blank' style='color:#0066cc;text-decoration:underline;'>"
+	+ "http://" + lbhost + "/plugins/sonos4lox/bin/piper-voices.php"
+	+ "</a>";
+
+	dialog(text, "OK", "info", "Piper Voices");
+
+	window.open("https://huggingface.co/rhasspy/piper-voices/tree/main", "_blank");
 }
 
 /**
@@ -826,67 +878,35 @@ $('#engine-selector input')
  * ================================================================================================ */
 
 function populateElevenlabsLang() {
-	console.log("populateElevenlabsLang");
+	console.log("populateElevenlabsLang (ElevenLabs v2)");
 
 	if (!document.main_form.tts_elevenlabs ||
 		document.main_form.tts_elevenlabs.checked !== true) {
 		return;
 	}
 
-	const url = 'https://api.elevenlabs.io/v1/models';
-	$('#t2slang').empty();
+	const $lang = $('#t2slang');
 
-	const key = document.getElementById('apikey').value.trim();
-	if (!key) {
-		console.warn("ElevenLabs language error: no API key set.");
-		return;
+	// UI only
+	$lang.empty().append(
+		'<option value="DE-de">Auto (Multilingual)</option>'
+	);
+	$lang.selectmenu('refresh', true);
+
+	// ensure POST value exists independently of jQM selectmenu
+	let $hidden = $('#t2slang_hidden');
+	if ($hidden.length === 0) {
+		$hidden = $('<input>', {
+			type: 'hidden',
+			id: 't2slang_hidden',
+			name: 't2slang'
+		}).appendTo('#main_form');
 	}
+	// Fake entry, not used in backend for ElevenLabs
+	$hidden.val('DE-de');
+	// -----------------------
 
-	const options = { method: 'GET', headers: { "xi-api-key": key } };
-
-	fetch(url, options)
-		.then(response => response.json())
-		.then(function (data) {
-
-			if (data[0] === undefined) {
-				console.warn("ElevenLabs language error:", data.detail ? data.detail.message : "Unknown error");
-				return false;
-			}
-
-			let lang = data[0]['languages'];
-
-			$('#t2slang').append(
-				'<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>'
-			);
-
-			lang.forEach((lang, index) => {
-				if (lang.language_id == "<TMPL_VAR TTS.messageLang>") {
-					$('#t2slang').append(
-						"<option selected='selected' value=\"" + lang.language_id + "\">&nbsp;" +
-						lang.name + "</option>"
-					);
-				} else {
-					$('#t2slang').append(
-						"<option value=\"" + lang.language_id + "\">&nbsp;" +
-						lang.name + "</option>"
-					);
-				}
-			});
-
-			$('#t2slang').selectmenu('refresh', true);
-
-			// Remove old handlers, add dedicated ElevenLabs handler
-			$('#t2slang').off('change.elevenlabs').on('change.elevenlabs', function () {
-				// Only refresh voice list
-				populateElevenlabsVoices();
-			});
-
-			// Initial voice list load
-			populateElevenlabsVoices();
-		})
-		.catch(function (err) {
-			console.warn("ElevenLabs language error:", err);
-		});
+	populateElevenlabsVoices();
 }
 
 function populateElevenlabsVoices() {
@@ -900,37 +920,56 @@ function populateElevenlabsVoices() {
 		return;
 	}
 
-	const options = { method: 'GET', headers: { "xi-api-key": key } };
+	const options = {
+		method: 'GET',
+		headers: { "xi-api-key": key }
+	};
+
 	const url = 'https://api.elevenlabs.io/v2/voices';
 
 	fetch(url, options)
 		.then(response => response.json())
 		.then(function (data) {
-			let voice = data['voices'];
 
-			if (voice === undefined) {
-				console.warn("ElevenLabs voice error:", data.detail ? data.detail.message : "Unknown error");
-				return false;
+			let voices = data['voices'];
+			if (!voices) {
+				console.warn(
+					"ElevenLabs voice error:",
+					data.detail ? data.detail.message : "Unknown error"
+				);
+				return;
 			}
 
 			$('#voice').append(
-				'<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>'
+				'<option selected="true" value="" disabled>' +
+				'<TMPL_VAR T2S.SELECT_VOICE_DROPDOWN>' +
+				'</option>'
 			);
 
-			voice.forEach((voice, index) => {
-				if (voice.voice_id == "<TMPL_VAR TTS.voice>") {
+			voices.forEach((voice) => {
+
+				let labelAge = voice.labels && voice.labels.age ? voice.labels.age : '';
+				let labelDesc = voice.labels && voice.labels.description ? voice.labels.description : '';
+
+				let label = voice.name;
+				if (labelAge || labelDesc) {
+					label += " - " + labelAge;
+					if (labelDesc) label += ", " + labelDesc;
+				}
+
+				if (voice.voice_id === "<TMPL_VAR TTS.voice>") {
 					$('#voice').append(
-						"<option selected='selected' id=\"" + voice.preview_url +
+						"<option selected='selected' id=\"" +
+						(voice.preview_url || "") +
 						"\" value=\"" + voice.voice_id + "\">&nbsp;" +
-						voice.name + " - " + voice.labels.age + ", " +
-						voice.labels.description + "</option>"
+						label + "</option>"
 					);
 				} else {
 					$('#voice').append(
-						"<option id=\"" + voice.preview_url +
+						"<option id=\"" +
+						(voice.preview_url || "") +
 						"\" value=\"" + voice.voice_id + "\">&nbsp;" +
-						voice.name + " - " + voice.labels.age + ", " +
-						voice.labels.description + "</option>"
+						label + "</option>"
 					);
 				}
 			});
@@ -940,9 +979,8 @@ function populateElevenlabsVoices() {
 		.catch(function (err) {
 			console.warn("ElevenLabs voice error:", err);
 		});
-
-	return;
 }
+
 
 
 /* ================================================================================================
@@ -1401,6 +1439,27 @@ function getsbconfig()   {
 						$("#tvvol_" + index).val(valu[14].tvvol).text("refresh");
 						$("#tvbass_" + index).val(valu[14].tvbass).text("refresh");
 						$("#tvtreble_" + index).val(valu[14].tvtreble).text("refresh");
+						// 🔥 tvgrpstop Checkboxen setzen (jQuery Mobile kompatibel)
+						setTimeout(function() {
+
+							var saved = [];
+
+							if (valu[14] && Array.isArray(valu[14].tvgrpstop)) {
+								saved = valu[14].tvgrpstop;
+							}
+
+							$("input[name='tvgrpstop_" + index + "']").each(function() {
+
+								var roomValue = $(this).val();
+								var shouldCheck = saved.includes(roomValue);
+
+								$(this)
+									.prop("checked", shouldCheck)
+									.checkboxradio("refresh");
+
+							});
+
+						}, 100);
 					}
 					var usage = document.getElementById("usesb_" + index).value;
 					if (usage == "true")   {
@@ -1416,6 +1475,7 @@ function getsbconfig()   {
 						if (tvmonbass.length == 0)    {
 							tvmonerr = "false";
 						}
+						//var tvgrp = document.getElementById("tvgrp_" + index).checked ? "true" : "false";
 						// Field validation, but without abort
 						validate_enable("#tvvol_" + index);
 						validate_enable("#tvtreble_" + index);
@@ -1482,10 +1542,37 @@ function validateTVMon()   {
 $("#tvmon").on("change", function(e){
 	var tvmonitor = document.getElementById('tvmon').value;
 	if (tvmonitor == "true")   {
-		timeout('<TMPL_VAR TEMPLATE.TV_MONITOR_ON>', 'OK', 'info', 'TV Monitor', '4000');
+		timeout('<TMPL_VAR TEMPLATE.TV_MONITOR_ON>', 'OK', 'info', 'TV Monitor', '7000');
 	} else {
-		timeout('<TMPL_VAR TEMPLATE.TV_MONITOR_OFF>', 'OK', 'info', 'TV Monitor', '4000');
+		timeout('<TMPL_VAR TEMPLATE.TV_MONITOR_OFF>', 'OK', 'info', 'TV Monitor', '7000');
 	}
+});
+
+/**
+ * TV Monitor onChange handler by clicking Soundbar On/Off
+ */
+function toggleSoundbar(room) {
+    var header = document.getElementById("soundbar_header_" + room);
+    var row    = document.getElementById("soundbar_row_" + room);
+    var usesb  = document.getElementById("usesb_" + room);
+
+    if (!header || !row || !usesb) return;
+
+    if (usesb.value === "true") {
+        header.style.display = "";
+        row.style.display    = "";
+    } else {
+        header.style.display = "none";
+        row.style.display    = "none";
+    }
+}
+
+// Direkt beim Laden initial setzen
+document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll("[id^='usesb_']").forEach(function(el) {
+        var room = el.id.replace("usesb_", "");
+        toggleSoundbar(room);
+    });
 });
 
 
@@ -1647,7 +1734,7 @@ function dialog(text, ButtonText, Icon='', Title) {
 	// https://silverboxjs.ir/documentation/?v=latest
 	silverBox({
 		alertIcon: Icon,
-		text: text,
+		html: text,
 		centerContent: true,
 		title: {
 			text: Title
@@ -2049,6 +2136,7 @@ function getSelectedEngine() {
 
 $(document).ready(function(e) {
 	console.log("documentreadyfunction");
+	$(".usesb-flipswitch").flipswitch("refresh");
 
 	// IMPORTANT: This block belongs to the SETTINGS page (TTS config). If that page
 	// isn't active (e.g., DETAILS), we must not run the heavy init to avoid JS errors.
@@ -2067,6 +2155,7 @@ $(document).ready(function(e) {
 	validateSB();
 	validateTVMon();
 	getsbconfig();
+	updateLanguageDropdownForEngine();
 
 	// Main submit validation
 	$("form#main_form").submit(function(e) {
@@ -2113,7 +2202,7 @@ $(document).ready(function(e) {
 				break;
 
 			case 'tts_elevenlabs':
-				if (apidata.length !== 32 && apidata.length !== 51) return fail(e, '<TMPL_VAR ERRORS.ERR_APIKEY32>', 'ElevenLabs', '#apikey');
+				if (apidata.length !== 32 && apidata.length !== 51 && apidata.length !== 64) return fail(e, '<TMPL_VAR ERRORS.ERR_APIKEY_ELEVEN>', 'ElevenLabs', '#apikey');
 				if (!requireLangVoice('ElevenLabs')) return false;
 				break;
 
@@ -2126,7 +2215,7 @@ $(document).ready(function(e) {
 				break;
 
 			case 'tts_azure':
-				if (![32,36,84].includes(apidata.length)) return fail(e, '<TMPL_VAR ERRORS.ERR_APIKEY32>', 'Azure', '#apikey');
+				if (![32,36,84].includes(apidata.length)) return fail(e, '<TMPL_VAR ERRORS.ERR_APIKEY_AZURE>', 'Azure', '#apikey');
 				if (!selectlang) return fail(e, '<TMPL_VAR T2S.VALIDATE_T2S_LANG>', 'Azure', '#t2slang');
 				break;
 		}

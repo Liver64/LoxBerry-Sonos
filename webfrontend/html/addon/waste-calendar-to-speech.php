@@ -9,7 +9,7 @@
 function muellkalender() {
 	global $config, $home, $myIP;
 
-	$TL = LOAD_T2S_TEXT();
+	$TL = load_t2s_text();
 
 	if (!file_exists("$home/webfrontend/html/plugins/caldav4lox/caldav.php")) {
 		LOGGING('waste-calendar-to-speech.php: The required Caldav-4-Lox Plugin is already not installed. Please install Plugin!', 3);
@@ -22,10 +22,7 @@ function muellkalender() {
 	}
 
 	// URL from Config
-	if ($url === '') {
-		lLOGGING("waste-calendar-to-speech.php: Config for waste calendar is empty – aborting.");
-		exit(0); // or exit(1) if you want it to be treated as an error
-	}
+	$url = $config['VARIOUS']['CALDavMuell'];
 
 	$checkdebug = strpos($url, "&debug");
 	if ($checkdebug !== false) {

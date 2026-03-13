@@ -569,7 +569,8 @@ function PluginRadio()
         $uri = 'x-rincon-mp3radio://' . $stationUrl;
         $sonos->SetRadio($uri, $stationName, $stationMeta);
         $sonos->SetGroupMute(false);
-
+		$sonos->SetVolume($volume);
+		
         // Lautstärke anhand Profil/Member
         if (isset($_GET['profile']) or isset($_GET['Profile'])) {
             $volume = $profile_details[0]['Player'][$master][0]['Volume'];
@@ -577,11 +578,12 @@ function PluginRadio()
             volume_group();
             $sonos = new SonosAccess($sonoszone[$master][0]);
         }
-
+		
         if (!isset($_GET['load']) && !isset($_GET['rampto'])) {
             $sonos->SetMute(false);
             $sonos->Stop();
-            $sonos->SetVolume($volume);
+            #$sonos->SetVolume($volume);
+			LOGOK("radio.php: Volume: $volume set");
             $sonos->Play();
             LOGOK("radio.php: Your Plugin Radio '".$stationName."' has been successful loaded and is playing!");
         }

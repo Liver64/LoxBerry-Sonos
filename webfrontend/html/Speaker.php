@@ -119,17 +119,17 @@ function SetAutoplayRoomUUID($key, $rincon)  {
 	
 	try {
 		$sonos = new SonosAccess($soundbars[$key][0]);
-		$sonos->SetAutoplayRoomUUID($rincon);
+		$sonos->SetAutoplayRoomUUID($rincon, $source = "");
 		if (!empty($rincon))   {
-			LOGGING("/bin/speaker.php: TV Autoplay mode for Player ".$key." has been set activ.", 7);
-			echo "TV Autoplay mode for Player ".$key." has been set activ".PHP_EOL;
+			#LOGINF("/bin/speaker.php: TV Autoplay mode for Player ".$key." has been configured.");
+			#echo "TV Autoplay mode for Player ".$key." has been set activ".PHP_EOL;
 		} else {
-			LOGGING("/bin/speaker.php: TV Autoplay mode for Player ".$key." has been set inactiv.", 7);
+			LOGINF("/bin/speaker.php: TV Autoplay mode for Player ".$key." has been set inactiv.");
 			echo "TV Autoplay mode for Player ".$key." has been set inactiv".PHP_EOL;
 		}
 	} catch (Exception $e) {
-		startlog("TV Monitor", "tv_monitor");
-		LOGGING("/bin/speaker.php: Player ".$key." could not be set to TV Autoplay mode.", 4);
+		#startlog("TV Monitor", "tv_monitor");
+		#LOGGING("/bin/speaker.php: Player ".$key." could not be set to TV Autoplay mode.", 4);
 		echo "Player ".$key." could not be set to TV Autoplay mode".PHP_EOL;
 	}
 }
@@ -168,15 +168,16 @@ function SetAutoplayLinkedZones($data, $soundbars, $key)  {
 	} else {
 		$value = $data;
 	}
+	#print_r("data: ".$data);
 	try {
 		$sonos = new SonosAccess($soundbars[$key][0]);
 		$AutoPlayZones = $sonos->SetAutoplayLinkedZones($value);
-		LOGGING("/bin/speaker.php: Include linked zones for Player ".$master." has been set to ".$value." in TV Autoplay mode.", 7);
-		echo "Include linked zones for Player ".$key." has been set to ".$value." in TV Autoplay mode.";
+		#LOGGING("/bin/speaker.php: Include linked zones for Player ".$master." has been set to ".$value." in TV Autoplay mode.", 7);
+		echo "Include linked zones for Player ".$key." has been set to ".$value." in TV Autoplay mode.".PHP_EOL;
 	} catch (Exception $e) {
-		startlog("TV Monitor", "tv_monitor");
-		LOGGING("/bin/speaker.php: Include linked zones for Player ".$master." could not be set to TV Autoplay mode.", 3);
-		echo "Include linked zones for Player ".$key." could not be set to TV Autoplay mode.";
+		#startlog("TV Monitor", "tv_monitor");
+		#LOGGING("/bin/speaker.php: Include linked zones for Player ".$master." could not be set to TV Autoplay mode.", 3);
+		echo "Include linked zones for Player ".$key." could not be set to TV Autoplay mode.".PHP_EOL;
 	}
 }
 

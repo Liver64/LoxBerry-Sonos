@@ -11,20 +11,10 @@ $folfilePlOn 		= "$lbpdatadir/PlayerStatus/s4lox_on_";			// Folder and file name
 
 echo "<PRE>";
 
-$params = [	"name" => "TV Monitor",
-				"filename" => "$lbplogdir/sonos.log",
-				"append" => 1,
-				"addtime" => 1,
-				];
-$level = LBSystem::pluginloglevel();
-$log = LBLog::newLog($params);
-LOGSTART("TV Monitor");
-
 	# load Configuration
 	if (file_exists($lbpconfigdir . "/" . $configfile))    {
 		$config = json_decode(file_get_contents($lbpconfigdir . "/" . $configfile), TRUE);
 	} else {
-		echo "The configuration file could not be loaded, the file may be disrupted. We have to abort :-(')".PHP_EOL;
 		exit;
 	}
 	$soundbars = identSB($config['sonoszonen'], $folfilePlOn);
@@ -34,9 +24,8 @@ LOGSTART("TV Monitor");
 	foreach($soundbars as $key => $value)   {
 		$sonos = new SonosAccess($soundbars[$key][0]); //Sonos IP Adresse
 		if ($config['VARIOUS']['tvmon'] == true)   {
-			SetAutoplayRoomUUID($key, $soundbars[$key][1]);
-			SetAutoplayLinkedZones('false', $soundbars[$key][0], $key);
+			$sonos->SetAutoplayRoomUUID($soundbars[$key][1], "TV");
+			$sonos->SetAutoplayLinkedZones("false", "TV");
 		}
 	}
-#@LOGEND("TV Monitor");
 ?>

@@ -261,7 +261,14 @@
 			echo '<OK> Min. 1 Player seems to be Offline, but main config is up-to-date. Please turn on Player(s) and restart Loxberry'.PHP_EOL;
 		break;
 	}
-	echo "<INFO> End of player update.";
+	echo "<INFO> End of player update".PHP_EOL;
+	
+	if (!file_exists(LBPHTMLDIR."/bin/piper_voices.php")) {
+		echo "<ERROR> Piper voices file missing!".PHP_EOL;
+		exit(1);
+	}
+	require_once(LBPHTMLDIR."/bin/piper_voices.php");
+	
 	#print_r($sonoszonen);
 
 

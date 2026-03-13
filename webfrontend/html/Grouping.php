@@ -273,6 +273,8 @@ function getGroup(string $zonename)
         LOGWARN("helper.php: getGroup: sonosGetZoneGroups failed for '".$zonename."' (".$e->getMessage().") – fallback to single zone.");
         return [$zonename];
     }
+	#echo "Groups Once: ";
+	#print_r($groups);
 
     // 3) Mapping-Tabelle RINCON -> Zonename aufbauen
     $rinconToZone = [];
@@ -308,10 +310,13 @@ function getGroup(string $zonename)
                 $result[] = $mName;
             }
         }
-
+		#print_r("Result Group: ");
+		#print_r($result);
+		#echo "<br>";
         return $result;
     }
-
+	#print_r("Result Single: ".[$zonename]);
+	#echo "<br>";
     // --- Wenn Player in keiner Gruppe -> Single zone ---
     return [$zonename];
 }
@@ -336,7 +341,7 @@ function getGroups() {
 		#return($groups);
 	}
 	#print_r($groups);
-	#return($groups);
+	return($group);
  }
  
  

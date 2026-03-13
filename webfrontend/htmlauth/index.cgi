@@ -51,6 +51,7 @@ use JSON::PP ();                    # JSON::PP::true/false for consistent JSON b
 
 use Scalar::Util qw/reftype/;
 use List::MoreUtils qw(uniq);
+use Data::Dumper;
 
 # Template system needs symbol-table access (legacy LoxBerry plugin templates)
 no strict "refs";
@@ -757,6 +758,7 @@ sub form
     # Reset counters (important if form() is called multiple times)
     $countplayers   = 0;
     $countsoundbars = 0;
+	my @all_rooms = sort keys %$config;
 
     foreach my $key (sort keys %$config) {
 
@@ -847,21 +849,69 @@ sub form
 
         # Prepare soundbar table if device is a soundbar
         if (($config->{$key}[13]) eq "SB") {
-            $rowssoundbar .= "<tr class='tvmon_body'>\n";
-            $rowssoundbar .= "<td style='height: 25px; width: 13%;'><fieldset align='center'><select id='usesb_$room' name='usesb_$room' data-role='flipswitch' style='width: 100%'><option value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
-            $rowssoundbar .= "<div id='tvmonitor'><td style='height: 28px; width: 20%;'><input type='text' id='sbzone_$room' name='sbzone_$room' size='40' readonly='true' value='$room' vertical-align='center' style='width: 100%; background-color: #e6e6e6;'></td>\n";
+  
+            # 1. Raumname + An/Aus zentriert
+            $rowssoundbar .= "<tr class='tvmon_body_header'>\n";
+			$rowssoundbar .= "<td colspan='12' style='padding: 4px 0 2px 0; border:none; background:#6db33f;'>\n";
+			$rowssoundbar .= "<div style='display:flex !important; align-items:center !important; gap:10px;'>\n";
+			$rowssoundbar .= "<label for='sbzone_$room' style='font-weight:bold; color:black; margin:0; line-height:normal;'>Soundbar:</label>\n";
+			$rowssoundbar .= "<input type='text' id='sbzone_$room' name='sbzone_$room' readonly='true' value='$room' style='width:150px; background-color:#e6e6e6; margin:0; padding:8px 10px; height:auto;'>\n";
+			$rowssoundbar .= "<div style='display:inline-flex; align-items:center; margin:0;'>\n";
+			$rowssoundbar .= "<select id='usesb_$room' name='usesb_$room' class='usesb-flipswitch' data-role='flipswitch' style='width:100px; margin:0;' onchange='toggleSoundbar(\"$room\")'>\n";
+			$rowssoundbar .= "<option value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option>\n";
+			$rowssoundbar .= "<option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option>\n";
+			$rowssoundbar .= "</select>\n";
+			$rowssoundbar .= "</div>\n";
+			$rowssoundbar .= "</div></td>\n";
+			$rowssoundbar .= "</tr>\n";
+
+            # 2. Spalten-Header (th)
+			$rowssoundbar .= "<tr class='tvmon_header' id='soundbar_header_$room' style='background-color: #6db33f;'>\n";
+            $rowssoundbar .= "<th align='middle'>$SL{'SOUNDBARS.LABEL_SPEECH'}</th>\n";
+            $rowssoundbar .= "<th align='middle'>$SL{'SOUNDBARS.LABEL_SURROUND'}</th>\n";
+            $rowssoundbar .= "<th align='middle'>$SL{'SOUNDBARS.LABEL_SUB'}</th>\n";
+            $rowssoundbar .= "<th align='middle' id='tvmtvol' name='tvmtvol'>$SL{'SOUNDBARS.LABEL_TVVOL'}</th>\n";
+            $rowssoundbar .= "<th align='middle' id='tvmttreble' name='tvmttreble'>$SL{'SOUNDBARS.LABEL_TVTREBLE'}</th>\n";
+            $rowssoundbar .= "<th align='middle' id='tvmtbass' name='tvmtbass'>$SL{'SOUNDBARS.LABEL_TVBASS'}</th>\n";
+            $rowssoundbar .= "<th align='middle'>$SL{'SOUNDBARS.LABEL_GRPZONE'}</th>\n";
+            $rowssoundbar .= "<th align='middle'>$SL{'SOUNDBARS.LABEL_FROM_TIME'}</th>\n";
+            $rowssoundbar .= "<th align='middle'>$SL{'SOUNDBARS.LABEL_NIGHT'}</th>\n";
+            $rowssoundbar .= "<th align='middle'>$SL{'SOUNDBARS.LABEL_SUB'}</th>\n";
+            $rowssoundbar .= "<th align='middle'>$SL{'SOUNDBARS.LABEL_SUB_GAIN'}</th>\n";
+            $rowssoundbar .= "</tr>\n";
+
+            # 3. Datenzeile
+            $rowssoundbar .= "<tr class='tvmon_body' id='soundbar_row_$room'>\n";
             $rowssoundbar .= "<td style='width: 8%'><fieldset align='center'><select id='tvmonspeech_$room' name='tvmonspeech_$room' data-role='flipswitch' style='width: 100%'><option value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
             $rowssoundbar .= "<td style='width: 8%'><fieldset align='center'><select id='tvmonsurr_$room' name='tvmonsurr_$room' data-role='flipswitch' style='width: 100%'><option selected='selected' value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
             $rowssoundbar .= "<td style='width: 8%'><fieldset align='center'><select id='tvmonnightsub_$room' name='tvmonnightsub_$room' data-role='flipswitch' style='width: 100%'><option selected='selected' value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
-            $rowssoundbar .= "<td style='width: 6%; height: 28px;'><div><input class='tvvol' type='text' id='tvvol_$room' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='tvvol_$room' value='$config->{$key}->[14]->{tvvol}'></div></td></div>\n";
-            $rowssoundbar .= "<td style='width: 6%; height: 28px;'><div><input class='tvtreble' type='text' id='tvtreble_$room' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='$error_treble_bass' name='tvtreble_$room' value='$config->{$key}->[14]->{tvtreble}'></div></td></div>\n";
-            $rowssoundbar .= "<td style='width: 6%; height: 28px;'><div><input class='tvbass' type='text' id='tvbass_$room' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='$error_treble_bass' name='tvbass_$room' value='$config->{$key}->[14]->{tvbass}'></div></td></div>\n";
+            $rowssoundbar .= "<td style='width: 6%; height: 28px;'><div><input class='tvvol' type='text' id='tvvol_$room' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='tvvol_$room' value='$config->{$key}->[14]->{tvvol}'></div></td>\n";
+            $rowssoundbar .= "<td style='width: 6%; height: 28px;'><div><input class='tvtreble' type='text' id='tvtreble_$room' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='$error_treble_bass' name='tvtreble_$room' value='$config->{$key}->[14]->{tvtreble}'></div></td>\n";
+            $rowssoundbar .= "<td style='width: 6%; height: 28px;'><div><input class='tvbass' type='text' id='tvbass_$room' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='$error_treble_bass' name='tvbass_$room' value='$config->{$key}->[14]->{tvbass}'></div></td>\n";
+             $rowssoundbar .= "<td style='width: 12%;'>\n";
+            $rowssoundbar .= "<div data-role='collapsible' data-collapsed='true' data-mini='true'>\n";
+            $rowssoundbar .= "<h4>$SL{'SOUNDBARS.LABEL_SELECT'}</h4>\n";
+            # Gespeicherte tvgrpstop-Zonen als Array holen
+			my @saved_players = @{ $config->{$key}->[14]->{tvgrpstop} // [] };
+			foreach my $other_room (@all_rooms) {
+				next if $other_room eq $room;
+				# prüfen ob Raum im gespeicherten Array ist
+				my $checked = grep { $_ eq $other_room } @saved_players
+					? " checked='checked'"
+					: "";
+				$rowssoundbar .= "<label>
+					<input type='checkbox' name='tvgrpstop_$room' value='$other_room'$checked>
+					$other_room
+				</label>\n";
+			}
+            $rowssoundbar .= "</div>\n";
+            $rowssoundbar .= "</td>\n";
             $rowssoundbar .= "<td style='width: 8%; height: 28px;'><div id='tvmon_addend'><input id='fromtime_$room' type='time' name='fromtime_$room' value='$config->{$key}->[13]->{fromtime}'></div></td>\n";
             $rowssoundbar .= "<td style='width: 8%'><fieldset align='center'><select id='tvmonnight_$room' name='tvmonnight_$room' data-role='flipswitch' style='width: 100%'><option selected='selected' value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
             $rowssoundbar .= "<td style='width: 8%'><fieldset align='center'><select id='tvmonnightsubn_$room' name='tvmonnightsubn_$room' data-role='flipswitch' style='width: 100%'><option selected='selected' value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
             $rowssoundbar .= "<td style='width: 8%'><div id='tvmon_addend'><fieldset align='center'>\n";
             $rowssoundbar .= "<select id='subgain_$room' name='subgain_$room' data-mini='true' data-native-menu='true' style='width: 100%'>";
-            $rowssoundbar .= "    <option value='-15'>-15</option>
+            $rowssoundbar .= "<option value='-15'>-15</option>
                                 <option value='-14'>-14</option>
                                 <option value='-12'>-12</option>
                                 <option value='-11'>-11</option>
@@ -892,10 +942,9 @@ sub form
                                 <option value='14'>14</option>
                                 <option value='15'>15</option>
                                 </select></fieldset></div></td>\n";
-            $rowssoundbar .= "</tr>";
+            $rowssoundbar .= "</tr>\n";
         }
     }
-
     if ($countplayers < 1) {
         $rowssonosplayer .= "<tr><td colspan=10>" . $SL{'ZONES.SONOS_EMPTY_ZONES'} . "</td></tr>\n";
     }
@@ -953,137 +1002,6 @@ sub form
     }
     $template->param("MP3_LIST", $mp3_list);
     LOGDEB "List of MP3 files has been loaded.";
-
-    # -------------------------------------------------------------------------
-    # Piper voice index (FAST): rebuild only if piper-voices/*.json changed
-    # -------------------------------------------------------------------------
-
-    my $piper_dir        = $lbphtmldir . "/voice_engines/piper-voices/";
-    my $piper_out_lang   = $lbphtmldir . "/voice_engines/langfiles/piper.json";
-    my $piper_out_voices = $lbphtmldir . "/voice_engines/langfiles/piper_voices.json";
-
-    my $cache_dir_piper  = "/dev/shm/$lbpplugindir";
-    my $cache_meta       = $cache_dir_piper . "/piper_voices_cache.meta";
-
-    if (!-d $cache_dir_piper) {
-        mkdir($cache_dir_piper, 0775);
-    }
-
-    # Cheap change detection: max mtime + file count of *.json
-    my $max_mtime  = 0;
-    my $file_count = 0;
-
-    if (-d $piper_dir) {
-        if (opendir(my $pdh, $piper_dir)) {
-            while (my $f = readdir($pdh)) {
-                next if $f eq '.' || $f eq '..';
-                next if $f !~ /\.json$/i;
-                my $full = $piper_dir . $f;
-                next if !-f $full;
-
-                $file_count++;
-                my @st = stat($full);
-                if (@st && $st[9] && $st[9] > $max_mtime) {
-                    $max_mtime = $st[9];
-                }
-            }
-            closedir($pdh);
-        }
-    }
-
-    my $cached_sig = "";
-    if (-r $cache_meta) {
-        if (open(my $cfh, '<', $cache_meta)) {
-            chomp($cached_sig = <$cfh> // "");
-            close($cfh);
-        }
-    }
-    my $current_sig = $max_mtime . ";" . $file_count;
-
-    my $need_rebuild = 1;
-    if ($cached_sig ne "" && $cached_sig eq $current_sig && -r $piper_out_lang && -r $piper_out_voices) {
-        $need_rebuild = 0;
-        LOGDEB("Piper: voices cache valid ($current_sig) – skipping rebuild");
-    }
-
-    if ($need_rebuild) {
-        LOGINF("Piper: rebuilding voice index (changed voices detected: $current_sig)");
-
-        my @data_piper;
-        my @data_piper_voices;
-        my %seen_lang;
-
-        if (opendir(my $dh2, $piper_dir)) {
-            while (my $file = readdir($dh2)) {
-                next if $file eq '.' || $file eq '..';
-                next if $file !~ /\.json$/i;
-
-                my $full = $piper_dir . $file;
-                next if !-f $full;
-
-                my $jsonparser_local = LoxBerry::JSON->new();
-                my $config_local;
-                eval {
-                    $config_local = $jsonparser_local->open(filename => $full, writeonclose => 0);
-                    1;
-                } or do {
-                    LOGERR("Piper: Could not parse $full – skipping");
-                    next;
-                };
-
-                next if !$config_local || ref($config_local) ne 'HASH';
-                next if !$config_local->{language} || ref($config_local->{language}) ne 'HASH';
-
-                my $country = $config_local->{language}->{country_english} // '';
-                my $code    = $config_local->{language}->{code}            // '';
-                my $dataset = $config_local->{dataset}                     // '';
-                next if $code eq '';
-
-                # piper.json: languages unique by code
-                if (!$seen_lang{$code}++) {
-                    push @data_piper, { "country" => $country, "value" => $code };
-                }
-
-                # piper_voices.json: one entry per voice file
-                (my $fname = $file) =~ s/\.json$//i;
-                push @data_piper_voices, {
-                    "name"     => $dataset,
-                    "language" => $code,
-                    "filename" => $fname
-                };
-            }
-            closedir($dh2);
-        }
-
-        # Stable ordering (nice for diffs + UI determinism)
-        @data_piper = sort {
-            (lc($a->{country} // '') cmp lc($b->{country} // ''))
-            || (lc($a->{value} // '') cmp lc($b->{value} // ''))
-        } @data_piper;
-
-        @data_piper_voices = sort {
-            (lc($a->{language} // '') cmp lc($b->{language} // ''))
-            || (lc($a->{name} // '') cmp lc($b->{name} // ''))
-        } @data_piper_voices;
-
-        # Write piper.json
-        my $jsonobjpiper = LoxBerry::JSON->new();
-        $jsonobjpiper->{jsonobj} = \@data_piper;
-        $jsonobjpiper->write($piper_out_lang);
-
-        # Write piper_voices.json
-        my $jsonobjpiper_voice = LoxBerry::JSON->new();
-        $jsonobjpiper_voice->{jsonobj} = \@data_piper_voices;
-        $jsonobjpiper_voice->write($piper_out_voices);
-
-        # Update cache signature
-        if (open(my $wfh, '>', $cache_meta)) {
-            print $wfh $current_sig;
-            close($wfh);
-        }
-
-        LOGOK("Piper: voice index rebuilt (" . scalar(@data_piper) . " languages, " . scalar(@data_piper_voices) . " voices)");
-    }
 
     # ---------------------------------------------------------------------
     # MQTT gateway installed?
@@ -1384,7 +1302,8 @@ sub save
         } else {
 
             my $emergecalltts = (param("mainchk$i") eq "on") ? "on" : "off";
-
+			#my $tvgrp = defined(param("tvgrp_$i")) ? "true" : "false";
+			
             my @player = (
                 param("ip$i"),
                 param("rincon$i"),
@@ -1407,6 +1326,7 @@ sub save
 
                     # Add soundbar settings to zone
                     my $room = param("zone$i");
+					#my $tvgrp = defined(param("tvgrp_$room")) ? "true" : "false";
 
                     my $tvmonspeech = param("tvmonspeech_$room");
                     my $usesb       = param("usesb_$room");
@@ -1418,7 +1338,7 @@ sub save
 
                     my $tvbass      = param("tvbass_$room");
                     $tvbass = "" if $tvbass eq "false";
-
+					
                     my $tvmonsurr   = param("tvmonsurr_$room");
                     my $fromtime    = param("fromtime_$room");
                     my $tvmonnight  = param("tvmonnight_$room");
@@ -1429,24 +1349,32 @@ sub save
                     my $starttime = param("pl-start-time$i");
                     my $endtime   = param("pl-end-time$i");
 
-                    my @sbs = (
-                        {
-                            "tvmonspeech"        => $tvmonspeech,
-                            "usesb"              => $usesb,
-                            "tvvol"              => $tvvol,
-                            "tvtreble"           => $tvtreble,
-                            "tvbass"             => $tvbass,
-                            "tvmonsurr"          => $tvmonsurr,
-                            "fromtime"           => $fromtime,
-                            "tvmonnight"         => $tvmonnight,
-                            "tvmonnightsub"      => $tvmonnightsub,
-                            "tvsubnight"         => $tvsubnight,
-                            "tvmonnightsublevel" => $tvmonnightsublevel
-                        },
-                        $starttime,
-                        $endtime
-                    );
+                    # tvgrpstop korrekt als Array holen
+					my @tvgrpstop = param("tvgrpstop_$room");
 
+					# Falls nichts gewählt wurde → leeres Array
+					@tvgrpstop = () unless @tvgrpstop;
+
+					my @sbs = (
+						{
+							"tvmonspeech"        => $tvmonspeech,
+							"usesb"              => $usesb,
+							"tvvol"              => $tvvol,
+							"tvtreble"           => $tvtreble,
+							"tvbass"             => $tvbass,
+							"tvmonsurr"          => $tvmonsurr,
+							"fromtime"           => $fromtime,
+							"tvmonnight"         => $tvmonnight,
+							"tvmonnightsub"      => $tvmonnightsub,
+							"tvsubnight"         => $tvsubnight,
+							"tvmonnightsublevel" => $tvmonnightsublevel,
+							"tvgrpstop"          => \@tvgrpstop
+						},
+						$starttime,
+						$endtime
+					);
+					
+					# LOGDEB Dumper(\@tvgrpstop);
                     push @player, @sbs;
 
                 } else {

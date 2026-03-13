@@ -2,8 +2,8 @@
 
 ##############################################################################################################################
 #
-# Version: 	5.9.9
-# Datum: 	07.2025
+# Version: 	6.1.3
+# Datum: 	01.2026
 # veröffentlicht in: https://github.com/Liver64/LoxBerry-Sonos/releases
 #
 # http://<IP>:1400/xml/device_description.xml
@@ -38,6 +38,7 @@ include("bin/mp3/MpegAudio.php");
 include("bin/mp3/MpegAudioFrameHeader.php");
 include('system/logging.php');
 include('system/bin/openssl_file.class.php');
+#include('bin/multi_functions.php');
 
 register_shutdown_function('shutdown');
 
@@ -45,6 +46,7 @@ register_shutdown_function('shutdown');
 date_default_timezone_set(date("e"));
 
 $time_start = microtime(true);
+$GLOBALS['time_start'] = microtime(true);
 
 # prepare variables
 $home = $lbhomedir;
@@ -247,7 +249,7 @@ if ((isset($_GET['text'])) or (isset($_GET['messageid'])) or
 	}
 	
 	# select language file for text-to-speech
-	$t2s_langfile = "t2s-text_".substr($config['TTS']['messageLang'],0,2).".ini";			// language file for text-speech
+	$t2s_langfile = "t2s-text_".strtolower(substr($config['TTS']['messageLang'],0,2).".ini");			// language file for text-speech
 
 	# Standardpath for saving MP3
 	$MessageStorepath = $config['SYSTEM']['ttspath'];
@@ -861,6 +863,8 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$oldtext="old";
 			$newtext="new";
 			$last=time();
+			$tts_stat = 1;
+			send_tts_source($tts_stat);
 
 			if (isset($_GET["text"])) $newtext=$_GET["text"];
 
@@ -873,8 +877,8 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			}	
 			if ((($oldtext==$newtext) AND( $last > $min_sec)) OR ($oldtext!=$newtext))  {
 				if(isset($_GET['clip'])) {
-					LOGGING("sonos.php: Audioclip Notification for group messages is not available.", 3);
-					exit;
+					LOGGING("sonos.php: Audioclip Notification for group messages is not available.", 4);
+					#exit;
 				} else {
 					say();
 					LOGGING("sonos.php: we switched to function 'say'", 5);
@@ -898,6 +902,8 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$oldtext="old";
 			$newtext="new";
 			$last=time();
+			$tts_stat = 1;
+			send_tts_source($tts_stat);
 
 			if (isset($_GET["text"])) $newtext=$_GET["text"];
 
@@ -936,6 +942,8 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			$oldtext="old";
 			$newtext="new";
 			$last=time();
+			$tts_stat = 1;
+			send_tts_source($tts_stat);
 
 			if (isset($_GET["text"])) $newtext=$_GET["text"];
 
@@ -1761,8 +1769,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		
 		case 'test':
-			$zone = $_GET['zone'];
-			checkOnline($zone);
+			get_MP3_duration();
 		break;
 		
 		case 'profile':
@@ -2168,11 +2175,11 @@ function presence()   {
 	
 	if ($_GET['action'] == "present")   {
 		$cfg->TTS->presence = "true";
-		LOGOK("play_t2s.php: Presence detection has been turned ON");
+		LOGOK("sonos.php: Presence detection has been turned ON");
 	} 
 	if ($_GET['action'] == "absent")   {
 		$cfg->TTS->presence = "false";
-		LOGOK("play_t2s.php: Presence detection has been turned OFF");
+		LOGOK("sonos.php: Presence detection has been turned OFF");
 	}
 	$cfg->write();
 }
@@ -2194,7 +2201,7 @@ function presence_detection()   {
 	$cfg = new LBJSON($lbpconfigdir . "/" . $configfile);
 	
 	if ($cfg->TTS->presence == "false")   {
-		LOGINF("play_t2s.php: Presence detection is OFF, no TTS been announced!");
+		LOGINF("sonos.php: Presence detection is OFF, no TTS been announced!");
 		exit;
 	}
 
@@ -2203,7 +2210,7 @@ function presence_detection()   {
 
 function shutdown()
 {
-	global $log, $tts_stat, $check_info, $tmp_tts, $time_start;
+	global $log, $tts_stat, $check_info, $duration, $tmp_tts, $time_start;
 	
 	# FALLBACK --> setze 0 für virtuellen Texteingang (T2S End) falls etwas schief lief
 	if ($tts_stat == 1)  {
@@ -2212,13 +2219,10 @@ function shutdown()
 	}
 	if (isset($_GET['debug']))    {
 		debugInfo();
-		$time_end = microtime(true);
-		$process_time = $time_end - $time_start;
+		$elapsed = microtime(true) - $GLOBALS['time_start'];
+		$process_time = isset($duration) ? $elapsed - ($duration / 1000000) : $elapsed;
 		LOGGING("Processing request tooks about ".round($process_time, 3)." seconds.\n", 6);
-	} else {
-		#@unlink($lbplogdir."/SOAP-Log-".$heute.".log");
-		#@unlink($lbplogdir."/s4lox_debug_".$heute.".log");
-	}
+	} 
 	if ($getsonos = strrpos($check_info, "getsonosinfo") === false)  {
 		LOGEND("PHP finished");
 	}

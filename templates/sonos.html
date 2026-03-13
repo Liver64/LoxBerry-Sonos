@@ -275,32 +275,15 @@ div.scrollmenu a:hover {
         </td>
         
 		</tr>
-				<tr class="tvmon_header">
-					<td style="width: 15%; height: 20px;" valign="top">
-						</td>
-					<div class="soundbars">
-						<td valign="middle" style="height: 15px; width: 100%;">
-							<table class="tables" border="0" width="100%" id="tblsb" name="tblsb">
-								<tr>
-									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_USE></th>
-									<th align="left"><TMPL_VAR SOUNDBARS.LABEL_SOUNDBAR></th>
-									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_SPEECH></th>
-									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_SURROUND></th>
-									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_SUB></th>
-									<th align="middle" id="tvmtvol" name="tvmtvol"><TMPL_VAR SOUNDBARS.LABEL_TVVOL></th>
-									<th align="middle" id="tvmttreble" name="tvmttreble"><TMPL_VAR SOUNDBARS.LABEL_TVTREBLE></th>
-									<th align="middle" id="tvmtbass" name="tvmtbass"><TMPL_VAR SOUNDBARS.LABEL_TVBASS></th>
-									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_FROM_TIME></th>
-									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_NIGHT></th>
-									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_SUB></th>
-									<th align="middle"><TMPL_VAR SOUNDBARS.LABEL_SUB_GAIN></th>
-									
-								</tr>
-								<TMPL_VAR ROWSOUNDBARS>
-							</table>
-						</td>
-					</div>
-				</tr>
+			<tr class="tvmon_header">
+				<td style="width: 0; height: 20px;" valign="top">
+				</td>
+				<td colspan="2" style="height: 20px; padding: 0;">
+					<table class="tables" border="0" width="100%" id="tblsb" name="tblsb">
+						<TMPL_VAR ROWSOUNDBARS>
+					</table>
+				</td>
+			</tr>
 				<tr>
 					<td style="width: 201px; height: 20px;" valign="top">
                     </td>
@@ -352,7 +335,7 @@ div.scrollmenu a:hover {
 						
 						<div class="ttsconfig piperinfo 9012">
                              <font size="-1" align="middle">
-                                <a id="linkpiper" href="https://huggingface.co/rhasspy/piper-voices/tree/main" target="_blank">
+                                <a id="linkpiper" href="https://huggingface.co/rhasspy/piper-voices/tree/main" target="_blank" onclick="piperInfo(event)">
                                     <TMPL_VAR T2S.PIPER_LINK>
                                 </a>
                             </font>

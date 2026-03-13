@@ -1189,7 +1189,7 @@ function AudioTypeIsSupported($type) {
  *                              (falls null, wird Config-Wert verwendet)
  * @return int  Effektiv verwendeter Engine-Code
  */
-function select_t2s_engine(int $engineCode = null): int
+function select_t2s_engine(int $engineCode = null): array
 {
     global $config;
 
@@ -1197,45 +1197,48 @@ function select_t2s_engine(int $engineCode = null): int
         $engineCode = (int)($config['TTS']['t2s_engine'] ?? 0);
     }
 
-    switch ($engineCode) {
-        case 1001: // VoiceRSS
-            include_once("voice_engines/VoiceRSS.php");
-            break;
+    // Engine Registry
+    $engines = [
+        1001 => ['name' => 'VoiceRSS',        'file' => 'VoiceRSS.php'],
+        6001 => ['name' => 'ResponsiveVoice', 'file' => 'ResponsiveVoice.php'],
+        9012 => ['name' => 'Piper',           'file' => 'Piper.php'],
+        4001 => ['name' => 'Polly',           'file' => 'Polly.php'],
+        9001 => ['name' => 'MS_Azure',        'file' => 'MS_Azure.php'],
+        9011 => ['name' => 'ElevenLabs',      'file' => 'ElevenLabs.php'],
+        8001 => ['name' => 'GoogleCloud',     'file' => 'GoogleCloud.php']
+    ];
 
-        case 6001: // ResponsiveVoice
-            include_once("voice_engines/ResponsiveVoice.php");
-            break;
+    if (!isset($engines[$engineCode])) {
 
-        case 9012: // Piper
-            include_once("voice_engines/Piper.php");
-            break;
+        if (function_exists('LOGERR')) {
+            LOGERR("helper.php: select_t2s_engine(): Unknown TTS engine code '$engineCode'.");
+        }
 
-        case 4001: // Polly
-            include_once("voice_engines/Polly.php");
-            break;
-
-        case 9001: // MS_Azure
-            include_once("voice_engines/MS_Azure.php");
-            break;
-
-        case 9011: // ElevenLabs
-            include_once("voice_engines/ElevenLabs.php");
-            break;
-
-        case 8001: // GoogleCloud
-            include_once("voice_engines/GoogleCloud.php");
-            break;
-
-        default:
-            if (function_exists('LOGERR')) {
-                LOGERR("helper.php: select_t2s_engine(): Unknown TTS engine code '$engineCode'.");
-            }
-            break;
+        return [
+            'code' => $engineCode,
+            'name' => 'Unknown'
+        ];
     }
 
-    return $engineCode;
-}
+    $engine = $engines[$engineCode];
 
+    $engineFile = "voice_engines/" . $engine['file'];
+
+    if (!file_exists($engineFile)) {
+
+        if (function_exists('LOGERR')) {
+            LOGERR("helper.php: select_t2s_engine(): Engine file missing: $engineFile");
+        }
+
+    } else {
+        include_once($engineFile);
+    }
+
+    return [
+        'code' => $engineCode,
+        'name' => $engine['name']
+    ];
+}
 
 
 /**
@@ -1889,7 +1892,7 @@ function vversion()    {
 	$url = 'https://raw.githubusercontent.com/Liver64/LoxBerry-Sonos/master/webfrontend/html/release/release.cfg';
 	$as = is_file($url);
 	var_dump($as);
-	$file = "REPLACELBHOMEDIR/data/plugins/sonos4lox/plugin.cfg";
+	$file = "/opt/loxberry/data/plugins/sonos4lox/plugin.cfg";
 	file_put_contents($file, file_get_contents($url));
 	$wq = json_decode(file_get_contents($file, TRUE));
 	#print_r($wq);
@@ -2378,7 +2381,7 @@ if (!function_exists('update_sonos_health')) {
 
         // Fallback, falls $lbpconfigdir nicht gesetzt ist
         if (empty($lbpconfigdir)) {
-            $lbpconfigdir = 'REPLACELBHOMEDIR/config/plugins/sonos4lox';
+            $lbpconfigdir = '/opt/loxberry/config/plugins/sonos4lox';
         }
 
         $healthFile = $lbpconfigdir . '/health.json';
