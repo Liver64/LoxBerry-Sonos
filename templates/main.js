@@ -28,9 +28,6 @@
 $(document).on('pageinit', function () {
 
 	// SETTINGS page init (only if the related controls exist)
-	if (document.getElementById('sendlox')) {
-		selection();
-	}
 	if (document.getElementById('cal_det')) {
 		callayout();
 	}
@@ -62,6 +59,209 @@ $(".clangiso").hide();
 
 var tvmonerr = "true";
 
+/**
+ * refreshJqmCheckboxes(selector)
+ * -----------------------------------------------------------------------------
+ * Safely refreshes jQuery Mobile checkboxradio widgets while excluding
+ * custom flipswitches and non-enhanced elements.
+ *
+ * @param {string|HTMLElement|jQuery} selector (optional)
+ * - If provided: only refresh these elements
+ * - If omitted: refresh all checkboxes on the page
+ *
+ * Behavior:
+ * - Excludes elements with class ".no-jqm-flipswitch"
+ * - Excludes elements with data-role="none"
+ * - Only refreshes elements already initialized by jQM
+ */
+function refreshJqmCheckboxes(selector) {
+    var $boxes = selector
+        ? $(selector)
+        : $('input:checkbox');
+
+    $boxes = $boxes
+        .not('.no-jqm-flipswitch')          // exclude custom flipswitches
+        .filter(function () {
+            return $(this).attr('data-role') !== 'none'; // exclude non-jQM elements
+        });
+
+    if (!$boxes.length) {
+        return;
+    }
+
+    $boxes.each(function () {
+        if ($(this).data('mobile-checkboxradio')) {
+            $(this).checkboxradio('refresh');
+        }
+    });
+}
+
+
+/**
+ * checkboxradio override (safe wrapper)
+ * -----------------------------------------------------------------------------
+ * Prevents jQuery Mobile from initializing or refreshing custom flipswitches.
+ *
+ * Filters out:
+ * - .no-jqm-flipswitch
+ * - data-role="none"
+ *
+ * Ensures:
+ * - Existing jQM checkboxradio usage remains untouched
+ * - Custom switches are completely isolated from jQM
+ */
+(function ($) {
+    var originalCheckboxradio = $.fn.checkboxradio;
+
+    if (typeof originalCheckboxradio === 'function') {
+        $.fn.checkboxradio = function () {
+
+            var $filtered = this
+                .not('.no-jqm-flipswitch')
+                .filter(function () {
+                    return $(this).attr('data-role') !== 'none';
+                });
+
+            if (!$filtered.length) {
+                return this;
+            }
+
+            return originalCheckboxradio.apply($filtered, arguments);
+        };
+    }
+})(jQuery);
+
+
+/**
+ * lbParseBool(value)
+ * -----------------------------------------------------------------------------
+ * Converts various truthy string representations into a boolean.
+ *
+ * Supported TRUE values:
+ * - "true", "1", "on", "yes" (case-insensitive)
+ *
+ * Everything else returns false.
+ *
+ * @param {any} value
+ * @returns {boolean}
+ */
+function lbParseBool(value) {
+    return /^(true|1|on|yes)$/i.test(String(value || '').trim());
+}
+
+
+/**
+ * initCustomFlipswitches()
+ * -----------------------------------------------------------------------------
+ * Initializes all custom LoxBerry flipswitch components (.lb-flipswitch).
+ *
+ * Responsibilities:
+ * - Reads initial value from data-value attribute
+ * - Converts value to boolean
+ * - Syncs:
+ *     - checkbox state (checked / unchecked)
+ *     - hidden input (true / false) → used for form submission
+ *     - checkbox.value (for legacy code compatibility)
+ *
+ * - Binds change event:
+ *     - Keeps hidden input in sync with UI
+ *     - Keeps checkbox.value updated for legacy consumers
+ *
+ * - Triggers dependent UI updates after initialization:
+ *     - selection()   → Loxone communication block visibility
+ *     - validateTVMon() → TV monitor UI state
+ *
+ * Requirements:
+ * - Each flipswitch must have:
+ *     data-input="name"
+ *     hidden input with id="name_hidden"
+ *     checkbox with id="name"
+ */
+function initCustomFlipswitches() {
+    $('.lb-flipswitch').each(function () {
+        var $wrap = $(this);
+        var inputId = $wrap.data('input');
+        var rawValue = $wrap.data('value');
+
+        var $checkbox = $('#' + inputId);
+        var $hidden   = $('#' + inputId + '_hidden');
+
+        if (!$checkbox.length || !$hidden.length) {
+            return;
+        }
+
+        var checked = lbParseBool(rawValue);
+
+        // Initial state sync
+        $checkbox.prop('checked', checked);
+        $hidden.val(checked ? 'true' : 'false');
+        $checkbox.val(checked ? 'true' : 'false');
+
+        // Keep values in sync on user interaction
+        $checkbox.off('change.lbflip').on('change.lbflip', function () {
+            var isChecked = $(this).is(':checked');
+            $hidden.val(isChecked ? 'true' : 'false');
+            $(this).val(isChecked ? 'true' : 'false');
+        });
+    });
+
+    // Trigger dependent UI logic AFTER initialization
+    if ($('#sendlox').length) {
+        selection();
+    }
+    if ($('#tvmon').length) {
+        validateTVMon();
+    }
+}
+
+/**
+ * Sets the state of a custom flipswitch and synchronizes its related hidden field.
+ *
+ * This helper updates three things for the flipswitch identified by `id`:
+ * 1. the checkbox checked state
+ * 2. the checkbox value (`"true"` / `"false"`)
+ * 3. the matching hidden input value (`"true"` / `"false"`)
+ *
+ * Expected HTML structure:
+ * - checkbox id: <id>
+ * - hidden field id: <id>_hidden
+ *
+ * Example:
+ *   setCustomFlipswitchValue('tvmon', true);
+ *   setCustomFlipswitchValue('usesb_livingroom', 'false');
+ *
+ * @param {string} id - The base id of the custom flipswitch checkbox.
+ * @param {*} value - The value to apply. It is converted to a boolean by `lbParseBool()`.
+ * @returns {void}
+ */
+ 
+function setCustomFlipswitchValue(id, value) {
+    var $cb = $('#' + id);
+    var $hidden = $('#' + id + '_hidden');
+
+    if (!$cb.length || !$hidden.length) {
+        return;
+    }
+
+    var checked = lbParseBool(value);
+
+    $cb.prop('checked', checked);
+    $cb.val(checked ? 'true' : 'false');
+    $hidden.val(checked ? 'true' : 'false');
+}
+
+
+/**
+ * Page lifecycle hook
+ * -----------------------------------------------------------------------------
+ * Ensures custom flipswitches are initialized across:
+ * - jQuery Mobile pageinit
+ * - pageshow (page transitions)
+ * - standard document ready
+ */
+$(document).on('pageinit pageshow ready', function () {
+    initCustomFlipswitches();
+});
 
 /* ================================================================================================
  * 2) Layout toggles (show/hide blocks)
@@ -83,13 +283,11 @@ function checkboxes() {
 	for (i = 1; i < iteration; ++i) {
 		if (document.getElementById('mainchk' + i).value == "on") {
 			document.getElementById('mainchk' + i).checked = true;
-			$('input:checkbox').checkboxradio('refresh');
 		} else {
 			document.getElementById('mainchk' + i).checked = false;
-			$('input:checkbox').checkboxradio('refresh');
 		}
 	}
-	return;
+	refreshJqmCheckboxes(); // ✅ nur einmal!
 }
 
 /**
@@ -105,40 +303,82 @@ function t2slayout() {
 }
 
 /**
+ * Generic handler for Function layouts for
+ * callayout(), destlayout(), radlayout(), weatherlayout()
+ */
+function toggleLayoutButton(fieldId) {
+    var hiddenField = document.getElementById(fieldId);
+    var button = document.getElementById("btn_" + fieldId);
+
+    if (!hiddenField || !button) {
+        return;
+    }
+
+    if (hiddenField.value === "1") {
+        hiddenField.value = "0";
+        button.classList.remove("active");
+    } else {
+        hiddenField.value = "1";
+        button.classList.add("active");
+    }
+}
+
+/* Beim Laden alles auf Standard zurücksetzen */
+document.addEventListener("DOMContentLoaded", function () {
+    var fields = ["radio_det", "weather_det", "dest_det", "cal_det"];
+
+    fields.forEach(function (fieldId) {
+        var hiddenField = document.getElementById(fieldId);
+        var button = document.getElementById("btn_" + fieldId);
+
+        if (hiddenField) {
+            hiddenField.value = "0";
+        }
+
+        if (button) {
+            button.classList.remove("active");
+        }
+    });
+});
+
+
+/**
  * callayout(), destlayout(), radlayout(), weatherlayout()
  * - Toggle visibility for their related detail blocks.
+ * - Reads state from hidden fields used by the layout buttons.
  */
 function callayout() {
-	if (document.main_form.cal_det.checked == true) {
-		$(".caldet").show();
-	} else {
-		$(".caldet").hide();
-	}
+    if (document.main_form.cal_det.value === "1") {
+        $(".caldet").show();
+    } else {
+        $(".caldet").hide();
+    }
 }
 
 function destlayout() {
-	if (document.main_form.dest_det.checked == true) {
-		$(".destdet").show();
-	} else {
-		$(".destdet").hide();
-	}
+    if (document.main_form.dest_det.value === "1") {
+        $(".destdet").show();
+    } else {
+        $(".destdet").hide();
+    }
 }
 
 function radlayout() {
-	if (document.main_form.radio_det.checked == true) {
-		$(".radiodet").show();
-	} else {
-		$(".radiodet").hide();
-	}
+    if (document.main_form.radio_det.value === "1") {
+        $(".radiodet").show();
+    } else {
+        $(".radiodet").hide();
+    }
 }
 
 function weatherlayout() {
-	if (document.main_form.weather_det.checked == true) {
-		$(".weatherdet").show();
-	} else {
-		$(".weatherdet").hide();
-	}
+    if (document.main_form.weather_det.value === "1") {
+        $(".weatherdet").show();
+    } else {
+        $(".weatherdet").hide();
+    }
 }
+
 
 /**
  * updateLanguageDropdownForEngine()
@@ -211,6 +451,21 @@ function prepareTTSConfigFields() {
 	} else {
 		$('.ttsconfig').hide();
 	}
+	
+	// Adjust API key width for ElevenLabs
+	if (document.getElementById('tts_elevenlabs').checked == true) {
+		$('#apikey_wrap').css({
+			'flex': '0 0 570px',
+			'min-width': '570px',
+			'max-width': '570px'
+		});
+	} else {
+		$('#apikey_wrap').css({
+			'flex': '0 0 500px',
+			'min-width': '500px',
+			'max-width': '500px'
+		});
+	}
 
 	// T2S INSTANZ
 	if (document.getElementById('tts_voicerss').checked == true) {
@@ -245,23 +500,21 @@ function prepareTTSConfigFields() {
  * - Driven by flipswitch #sendlox value "true"/"false".
  */
 function selection() {
-	console.log("Selection");
-	var cat = document.getElementById('sendlox').value;
-	if (cat == "true") {
-		console.log("Communication to Loxone turned on");
-		$('.field_ms').show();
-		//$('.label_template').show();
-		//$('.template').show();
+    console.log("Selection");
+
+    var cat = $('#sendlox_hidden').val();
+
+    if (cat == "true") {
+        console.log("Communication to Loxone turned on");
+ 		$('.field_ms').show();
 		$('.empty_template').show();
-	} else {
-		console.log("Communication to Loxone turned off");
-		$('.field_ms').hide();
-		//$('.label_template').hide();
-		//$('.template').hide();
+    } else {
+        console.log("Communication to Loxone turned off");
+ 		$('.field_ms').hide();
 		$('.empty_template').hide();
-	}
-	$("#sendlox").flipswitch("refresh");
-	$('#miniserver').selectmenu('refresh', true);
+    }
+
+    $('#miniserver').selectmenu('refresh', true);
 }
 
 
@@ -1396,51 +1649,83 @@ $(function () {
  * - Updates a lot of UI elements depending on response structure
  * - Leaves validation as-is (no abort, tvmonerr flag toggling)
  */
-function getsbconfig()   {
+function getsbconfig() {
 
 	$.ajax({
 		url: 'index.cgi',
 		type: 'post',
-		data: { action: 'soundbars'},
+		data: { action: 'soundbars' },
 		dataType: 'json',
 		async: false,
-		success: function(data, textStatus, jqXHR )   {
-			//console.log(data);
-			$.each(data, function(index, valu) {
-				if (valu[13] == 'SB')   {
+		success: function (data, textStatus, jqXHR) {
+
+			$.each(data, function (index, valu) {
+
+				if (valu[13] == 'SB') {
 					console.log(valu);
-					if (valu[8] == 'SUB' && valu.length == 15 || valu.length == 17) {
-						$("#tvmonnightsub_" + index).val(valu[14].tvmonnightsub).flipswitch("refresh");
-						$("#tvmonnightsubn_" + index).val(valu[14].tvsubnight).flipswitch("refresh");
+
+					/* ------------------------------------------------------------------
+					 * SUB handling
+					 * ------------------------------------------------------------------ */
+					if ((valu[8] == 'SUB' && valu.length == 15) || valu.length == 17) {
+						setCustomFlipswitchValue("tvmonnightsub_" + index, valu[14].tvmonnightsub);
+						setCustomFlipswitchValue("tvmonnightsubn_" + index, valu[14].tvsubnight);
 						$("#subgain_" + index).val(valu[14].tvmonnightsublevel).selectmenu("refresh");
+
 					} else if (valu[8] == 'SUB' && valu.length == 14) {
-						$("#tvmonnightsub_" + index).val("false").flipswitch("refresh");
-						$("#tvmonnightsubn_" + index).val("false").flipswitch("refresh");
+						setCustomFlipswitchValue("tvmonnightsub_" + index, "false");
+						setCustomFlipswitchValue("tvmonnightsubn_" + index, "false");
 						$("#subgain_" + index).val("0").selectmenu("refresh");
+
 					} else {
-						$("#tvmonnightsubn_" + index).flipswitch("disable").flipswitch("refresh");
-						$("#tvmonnightsub_" + index).flipswitch("disable").flipswitch("refresh");
-						$("#subgain_" + index).val("0").selectmenu("disable").selectmenu("refresh");
+						setCustomFlipswitchValue("tvmonnightsub_" + index, "false");
+						setCustomFlipswitchValue("tvmonnightsubn_" + index, "false");
+
+						$("#tvmonnightsub_" + index).prop("disabled", true);
+						$("#tvmonnightsubn_" + index).prop("disabled", true);
+
+						$("#subgain_" + index)
+							.val("0")
+							.selectmenu("disable")
+							.selectmenu("refresh");
 					}
-					if (valu[10] == 'SUR' && valu.length == 15 || valu.length == 17) {
-						$("#tvmonsurr_" + index).val(valu[14].tvmonsurr).flipswitch("refresh");
+
+					/* ------------------------------------------------------------------
+					 * SURROUND handling
+					 * ------------------------------------------------------------------ */
+					if ((valu[10] == 'SUR' && valu.length == 15) || valu.length == 17) {
+						setCustomFlipswitchValue("tvmonsurr_" + index, valu[14].tvmonsurr);
+
 					} else if (valu[10] == 'SUR' && valu.length == 14) {
-						$("#tvmonsurr_" + index).val("false").flipswitch("refresh");
+						setCustomFlipswitchValue("tvmonsurr_" + index, "false");
+
 					} else {
-						$("#tvmonsurr_" + index).val('false').flipswitch("disable").flipswitch("refresh");
+						setCustomFlipswitchValue("tvmonsurr_" + index, "false");
+						$("#tvmonsurr_" + index).prop("disabled", true);
 					}
-					if (valu.length == 15 || valu.length == 17)   {
+
+					/* ------------------------------------------------------------------
+					 * Main soundbar config
+					 * ------------------------------------------------------------------ */
+					if (valu.length == 15 || valu.length == 17) {
 						$("#sbzone_" + index).val(index).text("refresh");
-						$("#usesb_" + index).val(valu[14].usesb).flipswitch("refresh");
-						$("#tvmonspeech_" + index).val(valu[14].tvmonspeech).flipswitch("refresh");
-						$("#tvmonnight_" + index).val(valu[14].tvmonnight).flipswitch("refresh");
-						$("#tvmonnightsub_" + index).val(valu[14].tvmonnightsub).flipswitch("refresh");
+
+						setCustomFlipswitchValue("usesb_" + index, valu[14].usesb);
+						toggleSoundbar(index);
+
+						setCustomFlipswitchValue("tvmonspeech_" + index, valu[14].tvmonspeech);
+						setCustomFlipswitchValue("tvmonnight_" + index, valu[14].tvmonnight);
+						setCustomFlipswitchValue("tvmonnightsub_" + index, valu[14].tvmonnightsub);
+
 						$("#fromtime_" + index).val(valu[14].fromtime);
 						$("#tvvol_" + index).val(valu[14].tvvol).text("refresh");
 						$("#tvbass_" + index).val(valu[14].tvbass).text("refresh");
 						$("#tvtreble_" + index).val(valu[14].tvtreble).text("refresh");
-						// 🔥 tvgrpstop Checkboxen setzen (jQuery Mobile kompatibel)
-						setTimeout(function() {
+
+						/* --------------------------------------------------------------
+						 * tvgrpstop checkboxes (standard jQM checkboxes)
+						 * -------------------------------------------------------------- */
+						setTimeout(function () {
 
 							var saved = [];
 
@@ -1448,40 +1733,42 @@ function getsbconfig()   {
 								saved = valu[14].tvgrpstop;
 							}
 
-							$("input[name='tvgrpstop_" + index + "']").each(function() {
-
+							$("input[name='tvgrpstop_" + index + "']").each(function () {
 								var roomValue = $(this).val();
 								var shouldCheck = saved.includes(roomValue);
 
-								$(this)
-									.prop("checked", shouldCheck)
-									.checkboxradio("refresh");
-
+								$(this).prop("checked", shouldCheck);
+								refreshJqmCheckboxes(this);
 							});
 
 						}, 100);
 					}
-					var usage = document.getElementById("usesb_" + index).value;
-					if (usage == "true")   {
+
+					/* ------------------------------------------------------------------
+					 * Validation
+					 * IMPORTANT: custom flipswitch state must be read from hidden input
+					 * ------------------------------------------------------------------ */
+					var usage = $("#usesb_" + index + "_hidden").val();
+
+					if (usage == "true") {
 						var tvmonvol = document.getElementById("tvvol_" + index).value;
 						var tvmontreble = document.getElementById("tvtreble_" + index).value;
 						var tvmonbass = document.getElementById("tvbass_" + index).value;
-						if (tvmonvol.length == 0)    {
+
+						if (tvmonvol.length == 0) {
 							tvmonerr = "false";
 						}
-						if (tvmontreble.length == 0)    {
+						if (tvmontreble.length == 0) {
 							tvmonerr = "false";
 						}
-						if (tvmonbass.length == 0)    {
+						if (tvmonbass.length == 0) {
 							tvmonerr = "false";
 						}
-						//var tvgrp = document.getElementById("tvgrp_" + index).checked ? "true" : "false";
-						// Field validation, but without abort
+
 						validate_enable("#tvvol_" + index);
 						validate_enable("#tvtreble_" + index);
 						validate_enable("#tvbass_" + index);
 					}
-
 				}
 			});
 		}
@@ -1489,10 +1776,10 @@ function getsbconfig()   {
 	.fail(function (jqXHR, textStatus, errorThrown) {
 		console.log(errorThrown);
 	})
-	.always(function(data) {
-		console.log( "Action get Soundbars Config executed" );
-	})
-};
+	.always(function (data) {
+		console.log("Action get Soundbars Config executed");
+	});
+}
 
 /**
  * validateSB()
@@ -1515,50 +1802,59 @@ function validateSB()   {
 		$('.tvmon_header').hide();
 		$('.tvmon_switch').hide();
 	}
-	$("#tvmon").flipswitch("refresh");
+	refreshJqmCheckboxes(); // ✅ nur einmal!
 }
 
 /**
  * validateTVMon()
- * - Shows/hides TV monitor blocks based on #tvmon flipswitch value
+ * - Shows/hides TV monitor blocks based on #tvmon flipswitch state
  */
-function validateTVMon()   {
-	var tvmonitor = document.getElementById('tvmon').value;
-	if (tvmonitor == "true")   {
+function validateTVMon() {
+	var tvmonitor = $('#tvmon').is(':checked');
+
+	if (tvmonitor) {
 		$('.tvmon_header').show();
 		$('.tvmon_body').show();
+		$('.tvmon_extra').show();
 		console.log("TV Monitor On");
 	} else {
 		$('.tvmon_header').hide();
 		$('.tvmon_body').hide();
+		$('.tvmon_extra').hide();
 		console.log("TV Monitor Off");
 	}
-	$("#tvmon").flipswitch("refresh");
+
+	refreshJqmCheckboxes();
 }
 
 /**
- * TV Monitor onChange handler (kept as-is)
+ * TV Monitor onChange handler
  */
-$("#tvmon").on("change", function(e){
-	var tvmonitor = document.getElementById('tvmon').value;
-	if (tvmonitor == "true")   {
-		timeout('<TMPL_VAR TEMPLATE.TV_MONITOR_ON>', 'OK', 'info', 'TV Monitor', '7000');
+$("#tvmon").on("change", function () {
+	var tvmonitor = $(this).is(':checked');
+
+	if (tvmonitor) {
+		timeout('<TMPL_VAR TEMPLATE.TV_MONITOR_ON>', 'OK', 'info', 'TV Monitor', '3000');
 	} else {
-		timeout('<TMPL_VAR TEMPLATE.TV_MONITOR_OFF>', 'OK', 'info', 'TV Monitor', '7000');
+		timeout('<TMPL_VAR TEMPLATE.TV_MONITOR_OFF>', 'OK', 'info', 'TV Monitor', '3300');
 	}
 });
 
 /**
- * TV Monitor onChange handler by clicking Soundbar On/Off
+ * Show or hide the soundbar detail rows depending on the Soundbar switch state.
+ * ON  -> show
+ * OFF -> hide
  */
 function toggleSoundbar(room) {
     var header = document.getElementById("soundbar_header_" + room);
     var row    = document.getElementById("soundbar_row_" + room);
     var usesb  = document.getElementById("usesb_" + room);
 
-    if (!header || !row || !usesb) return;
+    if (!header || !row || !usesb) {
+        return;
+    }
 
-    if (usesb.value === "true") {
+    if (usesb.checked) {
         header.style.display = "";
         row.style.display    = "";
     } else {
@@ -1567,9 +1863,11 @@ function toggleSoundbar(room) {
     }
 }
 
-// Direkt beim Laden initial setzen
-document.addEventListener("DOMContentLoaded", function() {
-    document.querySelectorAll("[id^='usesb_']").forEach(function(el) {
+/**
+ * Initialize all Soundbar rows on page load.
+ */
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("[id^='usesb_']").forEach(function (el) {
         var room = el.id.replace("usesb_", "");
         toggleSoundbar(room);
     });
@@ -2138,18 +2436,19 @@ $(document).ready(function(e) {
 	console.log("documentreadyfunction");
 	$(".usesb-flipswitch").flipswitch("refresh");
 
-	// IMPORTANT: This block belongs to the SETTINGS page (TTS config). If that page
-	// isn't active (e.g., DETAILS), we must not run the heavy init to avoid JS errors.
+	toggleRadioAnnounce();
+
+	$(document).on('change click', '#announceradio, #announceradio_always', function () {
+		toggleRadioAnnounce();
+	});
+
+	// IMPORTANT: This block belongs to the SETTINGS page (TTS config).
 	if (!document.getElementById('engine-selector')) {
 		return;
 	}
-	// Engine selection changes
-	//$('#engine-selector input').change(prepareTTSConfigFields);
 
-	// Language changes: populate voice list (note: Azure overwrites 'change' handler using off('change') as before)
 	$('#t2slang').change(populateVoice);
 
-	// Initial UI setup
 	initial_lang_voice_load();
 	checkboxes();
 	validateSB();
@@ -2157,8 +2456,7 @@ $(document).ready(function(e) {
 	getsbconfig();
 	updateLanguageDropdownForEngine();
 
-	// Main submit validation
-	$("form#main_form").submit(function(e) {
+	$("form#main_form").submit(function(e) {	// Main submit validation
 		console.log("submit");
 
 		if (!validateVolumes(e)) {
@@ -2232,7 +2530,7 @@ $(document).ready(function(e) {
 			if (!el) continue;
 			el.value = el.checked ? "on" : "off";
 		}
-		$('input:checkbox').checkboxradio('refresh');
+		refreshJqmCheckboxes();
 
 		let isChecked = false;
 		const checkBoxes = document.getElementsByClassName('chk-checked');
@@ -2271,48 +2569,48 @@ $(document).ready(function(e) {
  * ================================================================================================ */
 
 function details_init() {
-	select();
 	select_update();
 	load_radio_favorites_into_func_list();
+	toggleRadioAnnounce();
 }
 
-function select() {
-	var el  = document.getElementById('announceradio');
-	var el1 = document.getElementById('announceradio_always');
-	if (!el || !el1) return;
+function toggleRadioAnnounce() {
+    var el  = document.getElementById('announceradio');
+    var el1 = document.getElementById('announceradio_always');
+    if (!el || !el1) return;
 
-	var rad  = el.value;
-	var rad1 = el1.value;
-
-	if (rad == true || rad1 == true) {
-		$('.radioannounce').show();
-	} else {
-		$('.radioannounce').hide();
-	}
+    if (el.checked || el1.checked) {
+        $('.radioannounce').show();
+    } else {
+        $('.radioannounce').hide();
+    }
 }
 
-function select_always() {
-	var el1 = document.getElementById('announceradio_always');
-	if (!el1) return;
+function details_init() {
+	select_update();
+	load_radio_favorites_into_func_list();
 
-	var rad1 = el1.value;
-	if (rad1 == true) {
-		$('.radioannounce').show();
-	} else {
-		$('.radioannounce').hide();
-	}
+	toggleRadioAnnounce();
+
+	setTimeout(function () {
+		toggleRadioAnnounce();
+	}, 50);
 }
 
 function select_update() {
 	var upEl = document.getElementById('hw_update');
 	if (!upEl) return;
 
-	if (upEl.value == 'true') {
+	if (upEl.checked) {
 		$('.update').show();
 	} else {
 		$('.update').hide();
 	}
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+	select_update();
+});
 
 function load_radio_favorites_into_func_list() {
 	if (!document.getElementById('func_list')) return;

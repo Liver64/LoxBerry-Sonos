@@ -1,84 +1,19 @@
-<style type="text/css">
-/* =========================================================
-   Basic UI tweaks
-   ========================================================= */
-
-td input[type="checkbox"] {
-  /* float:center is invalid; keep it simple + stable */
-  display: inline-block;
-  width: 70%;
-}
-
-/* Horizontal scroll menu (if used somewhere else) */
-div.scrollmenu {
-  overflow: auto;
-  white-space: nowrap;
-}
-
-div.scrollmenu a {
-  display: inline-block;
-  color: white;
-  text-align: center;
-  padding: 14px;
-  text-decoration: none;
-}
-
-div.scrollmenu a:hover {
-  background-color: #777;
-}
-
-/* =========================================================
-   Calendar validation styles (only optics)
-   ========================================================= */
-
-.textfield.valid {
-  background-color: #f3f4f6; /* light green-ish */
-  border-color: #2e7d32;
-}
-
-.textfield.invalid {
-  background-color: #fe4746; /* light red */
-  color: #fff;
-  border-color: #c62828;
-}
-
-/* Small line under the field */
-.calmsg {
-  margin-top: 4px;
-  font-size: 12px;
-  line-height: 1.35;
-  color: #6b7280; /* gray for "checking..." */
-}
-
-.calmsg.error {
-  color: #c62828; /* red on error */
-}
-
-.hidden {
-  display: none;
-}
-
-/* =========================================================
-   Delete Sonos Player Icon
-   ========================================================= */
-.ico_delete { cursor: pointer; }
-  a.jsDelZone { text-decoration:none; }
-  
-</style>
-
-
 <TMPL_IF SETTINGS>
     <!-- form 'FORM' START -->
 	
     <form method="post" data-ajax="false" accept-charset="utf-8" name="main_form" id="main_form" action="./index.cgi?form">
         <input type="hidden" name="saveformdata1" value="1">
 		<input type="hidden" name="regionOptions" id="regionOptions" value="<TMPL_VAR TTS.regionms>">
-		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table.css"/>
-		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.min.css"/>
-		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.css"/>
-		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.min.js"></script>
-		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.js"></script>
-	
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table/table.css"/>
+		
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.min.css"/>
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.css"/>
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/switch/flipswitch.css"/>
+		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.min.js"></script>
+		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.js"></script>
+		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/slider/ion.rangeSlider.js"></script>
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/slider/ion.rangeSlider.css?v=8">
+		
         <div class="form-group">
             <font COLOR="blue">
                 <TMPL_VAR SAVE>
@@ -88,9 +23,9 @@ div.scrollmenu a:hover {
                 <tr>
 				
 				<TMPL_IF NAME="PLAYER_AVAILABLE">
-                    <td valign="middle" style="height: 33px; width: 25%; text-align: center; color:black">
+                    <td valign="middle" style="height: 33px; width: 25%; text-align: left; color:black">
 				<TMPL_ELSE>
-					<td valign="middle" style="height: 33px; width: 25%; text-align: center; color:red">
+					<td valign="middle" style="height: 33px; width: 25%; text-align: left; color:red"></td></td>
 				</TMPL_IF>
                         <h2 class="auto-style3" style="width: 100%">
                             <TMPL_VAR ZONES.SONOS_CONFIG>
@@ -177,113 +112,131 @@ div.scrollmenu a:hover {
                 </tr>
 				<TMPL_IF NAME="TESTVOICE">
 					<tr class="testtext">
-						<td style="height: 60px; width: 15%;">
+						<td style="height: 50px; width: 220px; vertical-align: top;">
 							<label id="tt"><TMPL_VAR ZONES.SONOS_LABEL_TEST_PLAYER></label>
 						</td>
-						<td style="width: 50%; height: 48px">
-							<textarea placeholder="<TMPL_VAR ZONES.SONOS_TEST_PLAYER_PH>" maxlength="500" id="testtext" name="testtext" rows="7" cols="10" style="overflow-y: scroll;"></textarea>
+						<td style="height: 48px; vertical-align: top;">
+							<!-- Breite über Prozentwert in calc(98% - 104px) änderbar -->
+							<textarea
+								placeholder="<TMPL_VAR ZONES.SONOS_TEST_PLAYER_PH>"
+								maxlength="500"
+								id="testtext"
+								name="testtext"
+								rows="3"
+								style="width: calc(98% - 100px); box-sizing: border-box; overflow-y: auto; margin: 0; border-radius: 12px;"></textarea>
 						</td>
 					</tr>
 				</TMPL_IF>
 				
 	            <tr>			
-					<td style="height: 60px; width: 15%;">
+					<td style="height: 28px; width: 15%; padding-top: 2px; padding-bottom: 2px;">
 						<label id="lt2son"><TMPL_VAR T2S.LABEL_T2SON></label>
 					</td>
-					<td style="height: 60px; width: 70%;">
-						<table border=0 width="92%">
-								<td style="width: 5%">
-									<fieldset>
-										<select id="t2son" name="t2son" data-role="flipswitch" style="width: 5%">
-											<option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
-											<option selected="selected" value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
-										</select>
-									</fieldset>
-									<script>
-										$('#t2son').val('<TMPL_VAR TTS.t2son>')
-									</script>
-								</td>
-								<td style="height: 60px; width: 25%">
-									<TMPL_IF NAME="RESTORE_POSSIBLE">
-										<label id="lt2son" align="right"><TMPL_VAR BASIS.PLUGIN_RESTORE></label>
-									</TMPL_IF>
-								</td>
+					<td style="height: 28px; width: 70%; padding-top: 2px; padding-bottom: 2px;">
+						<table border="0" width="92%" style="border-collapse:collapse;">
+							<td style="width: 5%; padding-top: 0; padding-bottom: 0;">
+								<div class="lb-flipswitch"
+									 data-input="t2son"
+									 data-value="<TMPL_VAR TTS.t2son>">
 
-								<td style="height: 60px; width: 1%">
-									<TMPL_IF NAME="RESTORE_POSSIBLE">
-										<a id="restorec" name="restorec"
-										   data-role="button" data-inline="true" data-mini="true" data-icon="refresh">
-										   Restore
-										</a>
-									</TMPL_IF>
-								</td>
+									<input type="hidden" name="t2son" id="t2son_hidden" value="false">
 
+									<input type="checkbox"
+										   id="t2son"
+										   class="lb-flipswitch-checkbox no-jqm-flipswitch"
+										   data-role="none">
+
+									<label class="lb-flipswitch-label" for="t2son">
+										<span class="lb-flipswitch-inner"></span>
+										<span class="lb-flipswitch-switch"></span>
+									</label>
+								</div>
+							</td>
+
+							<td style="height: 28px; width: 25%; padding-top: 0; padding-bottom: 0;">
+								<TMPL_IF NAME="RESTORE_POSSIBLE">
+									<label id="lt2son_restore" align="right"><TMPL_VAR BASIS.PLUGIN_RESTORE></label>
+								</TMPL_IF>
+							</td>
+
+							<td style="height: 28px; width: 1%; padding-top: 0; padding-bottom: 0;">
+								<TMPL_IF NAME="RESTORE_POSSIBLE">
+									<a id="restorec" name="restorec"
+									   data-role="button" data-inline="true" data-mini="true" data-icon="refresh">
+									   Restore
+									</a>
+								</TMPL_IF>
+							</td>
 						</table>
 					</td>		
 				</tr>
-				
-				<tr class="tvmon_switch">
-					<td class="tvmon_switch" style="height: 60px; width: 25%;">
-                        <label align="left" id="lfunc_list"><TMPL_VAR ZONES.SONOS_LABEL_TV-VOL></label>
-                    </td>
-                    <td class="tvmon_switch" width="5%" style="height: 60px">
-                        <table border="0" width="100%">
-                            <tr>
-                                <td style="width: 6%">
-                                    <fieldset>
-										<select onchange="validateTVMon()" id="tvmon" name="tvmon" data-role="flipswitch" style="width: 5%">
-											<option selected="selected" value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
-											<option value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
-										</select>
-                                    </fieldset>
+
+				<tr class="tvmon_switch_row">
+					<td class="tvmon_label_cell" style="padding-top: 2px; padding-bottom: 2px;">
+						<label id="lfunc_list"><TMPL_VAR ZONES.SONOS_LABEL_TV-VOL></label>
+					</td>
+
+					<td class="tvmon_content_cell" style="padding-top: 2px; padding-bottom: 2px;">
+						<div class="tvmon_inline_wrap" style="align-items:center; gap:8px;">
+
+							<fieldset class="tvmon_fieldset" style="margin:0; padding:0; border:0;">
+								<div class="lb-flipswitch"
+									 data-input="tvmon"
+									 data-value="<TMPL_VAR VARIOUS.tvmon>">
+									<input type="hidden" name="tvmon" id="tvmon_hidden" value="false">
+									<input type="checkbox"
+										   id="tvmon"
+										   class="lb-flipswitch-checkbox no-jqm-flipswitch"
+										   data-role="none">
+									<label class="lb-flipswitch-label" for="tvmon">
+										<span class="lb-flipswitch-inner"></span>
+										<span class="lb-flipswitch-switch"></span>
+									</label>
+								</div>
+							</fieldset>
+
+							<span class="tvmon_spacer tvmon_extra" style="width:6px;"></span>
+
+							<div class="tvmon_extra" style="display:flex; align-items:center; gap:8px;">
+								<label id="lstart"><TMPL_VAR ZONES.SONOS_LABEL_START></label>
+
+								<div id="tvmon_addstart" class="tvmon_time_wrap">
+									<input id="starttime" type="time" name="starttime" style="width: 100px; margin:0;">
 									<script>
-										$('#tvmon').val('<TMPL_VAR VARIOUS.tvmon>');
-									</script>	
-                                </td>
-                                <td class="tvmon_header" style="width: 23px; text-align: center;">
-                                    &nbsp;</td>
-                                <td>
-                                    <table border="0" style="width: 40%">
-                                        <tr>
-                                            <td class="tvmon_header" style="height: 25%; width: 35%">
-												<label align="center" id="lstart"><TMPL_VAR ZONES.SONOS_LABEL_START></label>
-											</td>
-                                <td class="tvmon_header" style="width: 20%">
-									<div id="tvmon_addstart">
-										<input id='starttime' type='time' name='starttime'  style='width: 100px'>
-										<script>
-											$('#starttime').val('<TMPL_VAR VARIOUS.starttime>');
-										</script>
-									</div>
-								</td>
-								<td class="tvmon_header" style="width: 5%; height: 15%;">
-                                    <label align="center" id="lend"><TMPL_VAR ZONES.SONOS_LABEL_END></label>
-                                </td>
-                                <td class="tvmon_header" style="width: 20%">
-									<div id="tvmon_addend">
-										<input id='endtime' type='time' name='endtime'>
-										<script>
-											$('#endtime').val('<TMPL_VAR VARIOUS.endtime>');
-										</script>
-									</div>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-            </table>
-        </td>
-        
-		</tr>
-			<tr class="tvmon_header">
-				<td style="width: 0; height: 20px;" valign="top">
-				</td>
-				<td colspan="2" style="height: 20px; padding: 0;">
-					<table class="tables" border="0" width="100%" id="tblsb" name="tblsb">
-						<TMPL_VAR ROWSOUNDBARS>
-					</table>
-				</td>
-			</tr>
+										$('#starttime').val('<TMPL_VAR VARIOUS.starttime>');
+									</script>
+								</div>
+
+								<label id="lend"><TMPL_VAR ZONES.SONOS_LABEL_END></label>
+
+								<div id="tvmon_addend" class="tvmon_time_wrap">
+									<input id="endtime" type="time" name="endtime" style="width: 100px; margin:0;">
+									<script>
+										$('#endtime').val('<TMPL_VAR VARIOUS.endtime>');
+									</script>
+								</div>
+							</div>
+
+						<script>
+							$(document).off('change.tvmonCustom', '#tvmon').on('change.tvmonCustom', '#tvmon', function () {
+								validateTVMon();
+							});
+						</script>
+					</td>
+				</tr>
+	 
+				<tr class="tvmon_header">
+					<td style="width: 0; height: 20px;" valign="top">
+					</td>
+					<td colspan="2" style="height: 20px; padding: 0;">
+						<div style="overflow-x: auto;">
+							<table class="tables" border="0" style="width: auto; min-width: 880px; table-layout: fixed;" id="tblsb" name="tblsb">
+								<TMPL_VAR ROWSOUNDBARS>
+							</table>
+						</div>
+					</td>
+				</tr>
+				
 				<tr>
 					<td style="width: 201px; height: 20px;" valign="top">
                     </td>
@@ -327,7 +280,7 @@ div.scrollmenu a:hover {
 						
 						<div class="ttsconfig elevenlabsinfo 9011">
                              <font size="-1" align="middle">
-                                <a id="linkazureapi" href="https://elevenlabs.io/" target="_blank">
+                                <a id="linkazuelevenlabs" href="https://elevenlabs.io/" target="_blank">
                                     <TMPL_VAR T2S.ELEVENLABS_API_LINK>
                                 </a>
                             </font>
@@ -373,212 +326,297 @@ div.scrollmenu a:hover {
                     
                 </tr>
 
-                <tr class="ttsconfig colapi 1001 4001 8001 9001 9011">
-                    <td style="height: 48px; width: 25%">
-                        <label id="lapikey"><TMPL_VAR T2S.LABEL_API_KEY></label>
-                    </td>
-                    <td style="width: 50%; height: 48px">
-                        <input id="apikey" name="apikey" type="text" class="textfield" value="<TMPL_VAR APIKEY>">
-					</td>
-                    <td style="height: 48px; width: 100px;" class="auto-style4" valign="top">
-                        <div class="ttsconfig btnpopulategooglevoices 8001 9001 9011 9012">
-                            <a onclick="checkProvider(); return false;" data-role="button" data-inline="true" data-mini="true" href="#">
-								<TMPL_VAR T2S.BUTTON_VOICES>
-							</a>
-                        </div>
-                    </td>
-                </tr>
-                <tr class="ttsconfig colsec 4001">
-                    <td style="width: 25%; height: 48px;">
-                        <label id="lseckey"><TMPL_VAR T2S.LABEL_SECRET_KEY></label>
-                    </td>
-                    <td style="width: 50%; height: 48px;">
-                        <input id="seckey" name="seckey" type="text" class="textfield" value="<TMPL_VAR SECKEY>">
+                <!--<p id="errorinfo"></p>-->
 
-                        <td style="width: 201px; height: 48px;">
-                        </td>
-                        
-                </tr>
-				<p id="errorinfo"></p>
-                <tr class="ttsconfig ttsbaseconfig collang">
-                    <td style="height: 60px; width: 25%;">
-                        <label id="llang"><TMPL_VAR T2S.TTS_LANGUAGE></label>
-                    </td>
-                    <td width="50%" style="height: 60px">
-                        <table border=0 width="100%">
-                            <tr>
-                                <div data-role="collapsible">
-                                    <td style="height: 36px; width:25%; text-align: left;">
-                                        <fieldset style="width: 100%">
-                                            <select id="t2slang" name="t2slang" data-mini="true"; 
-												data-validation-error-msg="<TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN>" 
-												data-validation-rule="^([A-Za-z0-9]){4,10}$">
-											</select>
-                                        </fieldset>
-                                    </td>
-                                    <div id="loginResult" style="display:none;">
-                                    </div>
-                                    <div id="msg"></div>
-                                    <td style="height: 36px; width: 35%;" class="ttsconfig field-voice 1001 9012 4001 8001 9001 9011" style="display:none">
-                                        <fieldset style="width: 100%">
-                                            <select class="voice_select" id="voice" name="voice" data-mini="true";
-											data-validation-error-msg="<TMPL_VAR T2S.SELECT_VOICE_DROPDOWN>" 
-											data-validation-rule="^([A-Za-z0-9]){4,10}$">
-											</select>
-                                        </fieldset>
-                                        <td style="height: 36px; width: 32%; text-align: right;">
-                                            <fieldset style="width: 15%">
-                                                <input name="langiso" id="langiso" readonly="true" type="text" align="middle">
-                                            </fieldset>
-                                        </td>
-                                </div>
-                            </tr>
-                        </table>
-                        </td>
-                        <td style="height: 30px; width: 201px;">
-                        </td>
-                </tr>
-                <tr class="ttsconfig ttsbaseconfig colmp3">
-                    <td style="width: 25%">
-                        <label id="lmp3store"><TMPL_VAR T2S.LABEL_MP3_FILES></label>
-                    </td>
-                    <td style="width: 50%">
-                        <table border=0 width="100%">
-                            <tr>
-                                <td width="19%">
-                                    <select id="mp3store" name="mp3store" data-mini="true" data-native-menu="false" width="50%">
+				<tr class="ttsconfig colapi 1001 4001 8001 9001 9011">
+					<td style="height: 48px; width: 26%; vertical-align: middle;">
+						<label id="lapikey"><TMPL_VAR T2S.LABEL_API_KEY></label>
+					</td>
+
+					<td colspan="2" style="height: 48px; vertical-align: middle; padding-right: 0;">
+						<div style="display:flex; align-items:center; gap:12px; width:100%;">
+							
+							<div id="apikey_wrap" class="ttsconfig 1001 4001 8001 9001 9011" style="flex:0 0 500px;">
+								<input
+									id="apikey"
+									name="apikey"
+									type="text"
+									class="textfield"
+									value="<TMPL_VAR APIKEY>"
+									placeholder="API-Key"
+									style="width:100%; box-sizing:border-box;"
+								>
+							</div>
+
+							<div class="ttsconfig colsec 4001" style="flex:0 0 430px;">
+								<input
+									id="seckey"
+									name="seckey"
+									type="text"
+									class="textfield"
+									value="<TMPL_VAR SECKEY>"
+									placeholder="Secret-Key (Polly)"
+									style="width:100%; box-sizing:border-box;"
+								>
+							</div>
+
+							<div class="ttsconfig btnpopulategooglevoices 8001 9001 9011 9012" style="flex:0 0 auto; white-space:nowrap;">
+								<a onclick="checkProvider(); return false;" data-role="button" data-inline="true" data-mini="true" href="#">
+									<TMPL_VAR T2S.BUTTON_VOICES>
+								</a>
+							</div>
+
+						</div>
+					</td>
+				</tr>
+
+				<tr class="ttsconfig ttsbaseconfig collang">
+					<td style="height: 50px; width: 26%; vertical-align: middle;">
+						<label id="llang"><TMPL_VAR T2S.TTS_LANGUAGE></label>
+					</td>
+
+					<td colspan="2" style="height: 50px; vertical-align: middle; padding-right: 0;">
+						<div style="display:flex; align-items:center; gap:16px; width:100%;">
+
+							<div style="flex:0 0 345px;">
+								<select
+									id="t2slang"
+									name="t2slang"
+									data-mini="true"
+									data-validation-error-msg="<TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN>"
+									data-validation-rule="^([A-Za-z0-9]){4,10}$"
+									style="width:100%;">
+								</select>
+							</div>
+
+							<div class="ttsconfig field-voice 1001 9012 4001 8001 9001 9011" style="flex:0 0 530px;">
+								<select
+									class="voice_select"
+									id="voice"
+									name="voice"
+									data-mini="true"
+									data-validation-error-msg="<TMPL_VAR T2S.SELECT_VOICE_DROPDOWN>"
+									data-validation-rule="^([A-Za-z0-9]){4,10}$"
+									style="width:100%;">
+								</select>
+							</div>
+
+							<div style="flex:0 0 34px;">
+								<input
+									name="langiso"
+									id="langiso"
+									readonly="true"
+									type="text"
+									style="width:100%; text-align:center; box-sizing:border-box;"
+								>
+							</div>
+
+						</div>
+
+						<div id="loginResult" style="display:none;"></div>
+						<div id="msg"></div>
+					</td>
+				</tr>
+
+				<tr class="ttsconfig ttsbaseconfig colmp3">
+					<td style="height: 80px; width: 26%; vertical-midle: bottom;">
+						<label id="lmp3store"><TMPL_VAR T2S.LABEL_MP3_FILES></label>
+					</td>
+
+					<td colspan="2" style="height: 50px; vertical-align: bottom; padding-right: 0;">
+						<div style="display:flex; align-items:center; gap:24px; width:100%;">
+
+							<div style="flex:0 0 295px;">
+								<select id="mp3store" name="mp3store" data-mini="true" data-native-menu="false" style="width:100%;">
 									<option value="1"><TMPL_VAR T2S.1DAY_MP3_STORE></option>
 									<option value="7"><TMPL_VAR T2S.7DAY_MP3_STORE></option>
 									<option value="30"><TMPL_VAR T2S.30DAY_MP3_STORE></option>
 									<option value="365"><TMPL_VAR T2S.365DAY_MP3_STORE></option>
 									<option value="0"><TMPL_VAR T2S.ENDLESS_MP3_STORE></option>
 								</select>
-                                    <script>
-                                        $('#mp3store option[value="<TMPL_VAR MP3.MP3store>"').prop('selected', 'selected');
-                                    </script>
-                                </td>
-                                <td>
-                                    <table border=0 width="100%">
-                                        <tr>
-                                            <td style="height: 30px; text-align: center; width: 34%;">
-                                                <label id="lfile_gong"><TMPL_VAR T2S.LABEL_MP3_FILE></label>
-                                            </td>
-                                            <td style="height: 30px">
-                                                <select id='file_gong' name='file_gong' data-mini='true' 
-													data-validation-error-msg="<TMPL_VAR T2S.SELECT_JINGLE_DROPDOWN>" 
-													data-validation-rule="^([A-Za-z0-9]){4,10}$" style="width: 100%">
-													<option selected='true' value='' disabled><TMPL_VAR T2S.SELECT_JINGLE_DROPDOWN></option>
-													<TMPL_VAR MP3_LIST>
-												</select>
-                                                <script>
-                                                    $('#file_gong').val('<TMPL_VAR MP3.file_gong>');
-                                                </script>
+								<script>
+									$('#mp3store option[value="<TMPL_VAR MP3.MP3store>"]').prop('selected', 'selected');
+								</script>
+							</div>
 
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                        </table>
-                        <td valign="middle" style="height: 60px; width: 100px;">
-                            &nbsp;
-                        </td>
-                        
-                </tr>
+							<div style="display:flex; align-items:center; gap:12px; flex:0 0 760px; min-width:760px; max-width:760px;">
+								<label id="lfile_gong" style="margin:0; flex:0 0 115px; text-align:left;">
+									<TMPL_VAR T2S.LABEL_MP3_FILE>
+								</label>
 
-                <tr class="ttsconfig ttsbaseconfig colcachesize">
-                    <td style="height: 60px; width: 25%;">
-                        <label id="lcachesize"><TMPL_VAR T2S.LABEL_CACHESIZE></label>
-                    </td>
-                    <td width="50%" style="height: 60px">
-                        <input type="range" name="cachesize" id="cachesize" value="<TMPL_VAR MP3.cachesize>" min="100" max="5000" step="100">
-                    </td>
-                    <td style="height: 30px; width: 201px;">
-                    </td>
-                    
-                </tr>
+							<div style="flex:0 0 500px; min-width:500px; max-width:630px;">
+									<select
+										id="file_gong"
+										name="file_gong"
+										data-mini="true"
+										data-validation-error-msg="<TMPL_VAR T2S.SELECT_JINGLE_DROPDOWN>"
+										data-validation-rule="^([A-Za-z0-9]){4,10}$"
+										style="width:100%;">
+										<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_JINGLE_DROPDOWN></option>
+										<TMPL_VAR MP3_LIST>
+									</select>
+									<script>
+										$('#file_gong').val('<TMPL_VAR MP3.file_gong>');
+									</script>
+								</div>
+							</div>
 
-                <tr class="ttsconfig ttsbaseconfig colmp3path">
-                    <td style="height: 60px; width: 25%;">
-                        <label id="lcard1"><TMPL_VAR T2S.LABEL_SOUNDCARD></label>
-                    </td>
-                    <td id="mypath" name="mypath" style="height: 60px; width: 25%;">
-                        <TMPL_VAR STORAGEPATH>
-                            <font size="-1">
-                                <TMPL_VAR T2S.JINGLE_SOURCE>
-                            </font>
-                            <font size="-1" color="blue">
-                                <TMPL_VAR DATADIR>/tts/</font>
-                    </td>
-                    <td style="height: 60px; width: 201px;">
- 
-                    </td>
-                    
-                </tr>
+						</div>
+					</td>
+				</tr>
 
-                <tr class="ttsconfig ttsbaseconfig">
-					<td style="height: 60px; width: 25%;">
+				<tr class="ttsconfig ttsbaseconfig colcachesize">
+					<td style="height: 50px; width: 26%; vertical-align: top; padding-top: 10px;">
+						<label id="lcachesize"><TMPL_VAR T2S.LABEL_CACHESIZE></label>
+					</td>
+
+					<td colspan="2" style="vertical-align: top; padding-right: 0;">
+						<div style="display:flex; align-items:flex-start; gap:20px; width:100%;">
+
+							<div style="flex:0 0 520px; padding-top:2px;">
+								<input type="hidden" id="cachesize" name="cachesize" value="<TMPL_VAR MP3.cachesize>" />
+
+								<script>
+								$(function () {
+									var $cache = $("#cachesize");
+									var savedValue = parseInt($cache.val(), 10);
+
+									if (isNaN(savedValue)) {
+										savedValue = 500;
+									}
+
+									$cache.ionRangeSlider({
+										skin: "big",
+										grid: true,
+										min: 100,
+										max: 3000,
+										from: savedValue,
+										step: 200,
+										postfix: " MB",
+										onStart: function (data) {
+											console.log("Initial MP3 Cache: " + data.from);
+										},
+										onChange: function (data) {
+											console.log("Current selected MP3 Cache: " + data.from);
+										}
+									});
+
+									$cache.hide();
+								});
+								</script>
+							</div>
+
+							<div style="flex:0 0 430px; min-width:430px; max-width:430px; margin-left:0px;">
+								<TMPL_VAR STORAGEPATH>
+
+								<div style="margin-top:14px; margin-left:15px; line-height:1.45;">
+									<font size="-1"><TMPL_VAR T2S.JINGLE_SOURCE></font><br>
+									<font size="-1" color="blue"><TMPL_VAR DATADIR>/tts/</font>
+								</div>
+							</div>
+
+						</div>
+					</td>
+				</tr>
+				
+				<tr class="ttsconfig ttsbaseconfig">
+					<td style="height: 50px; width: 26%; vertical-align: middle;">
 						<label id="lsendlox"><TMPL_VAR T2S.DATA_TRANSFER_MINISERVER></label>
 					</td>
 
-				<td width="5%" style="height: 60px">
-						<table border="0" width="100%">
-							<tr>
-								<td style="width: 6%; vertical-align: middle;">
-									<fieldset>
-										<select onchange="selection()" id="sendlox" name="sendlox"
-												data-role="flipswitch" style="width: 104px">
-											<option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
-											<option value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
-										</select>
-									</fieldset>
-									<script>
-										$('#sendlox').val('<TMPL_VAR LOXONE.LoxDaten>');
-									</script>
-								</td>
+					<td colspan="2" style="height: 50px; vertical-align: middle; padding-right: 0;">
+						<div style="display:flex; align-items:center; gap:28px; width:100%;">
 
-								<td style="width: 20px;">&nbsp;</td>
-								<td class="empty_template" style="width: 30%; vertical-align: middle;">
-									<div style="display: inline-block; min-width: 220px; max-width: 260px;">
-										<TMPL_VAR MS>
+							<div style="flex:0 0 auto;">
+								<div class="lb-flipswitch"
+									 data-input="sendlox"
+									 data-value="<TMPL_VAR LOXONE.LoxDaten>">
+									<input type="hidden" name="sendlox" id="sendlox_hidden" value="false">
+
+									<input type="checkbox"
+										   id="sendlox"
+										   class="lb-flipswitch-checkbox no-jqm-flipswitch"
+										   data-role="none">
+									<label class="lb-flipswitch-label" for="sendlox">
+										<span class="lb-flipswitch-inner"></span>
+										<span class="lb-flipswitch-switch"></span>
+									</label>
+								</div>
+
+								<script>
+									$(document).off('change.sendloxCustom', '#sendlox').on('change.sendloxCustom', '#sendlox', function () {
+										selection();
+									});
+								</script>
+							</div>
+
+							<div class="empty_template" style="flex:0 0 250px;">
+								<div style="width:100%;">
+									<TMPL_VAR MS>
+								</div>
+								<input id="sendloxMQTT" name="sendloxMQTT" type="hidden" value="false">
+							</div>
+
+							<div class="empty_template" style="flex:0 0 380px; min-width:380px; max-width:520px;">
+								<div class="sonos-health-box" style="display:inline-block; text-align:left;">
+									<div class="lbgreen" style="text-align:left;">
+										Event Listener running (PID <TMPL_VAR SONOS_HEALTH_PID>)
 									</div>
-									<input id="sendloxMQTT" name="sendloxMQTT" type="hidden" value="false">
-								</td>
-								<td class="empty_template"
-									style="vertical-align: middle; text-align: left; white-space: nowrap; padding-left: 10px;">
-									<div class="sonos-health-box" style="display: inline-block; text-align: left;">
-										<div class="lbgreen" style="text-align: left;">
-											Event Listener running (PID <TMPL_VAR SONOS_HEALTH_PID>)
-										</div>
-										<div style="font-size: 0.85em; margin-top: 2px; text-align: left;">
-											<span class="health-indicator <TMPL_VAR SONOS_HEALTH_STATUS_CLASS>"></span>
-											Event-Listener State: <TMPL_VAR SONOS_HEALTH_STATUS>
-											<TMPL_IF SONOS_HEALTH_FORMATTED_TIME>
-												<TMPL_VAR SONOS_HEALTH_FORMATTED_TIME>
-											</TMPL_IF>
-											<br>
-											Player <TMPL_VAR SONOS_HEALTH_ONLINE>/<TMPL_VAR SONOS_HEALTH_TOTAL> online.
-										</div>
-										<td class="empty_template" style="height: 30px; width: 201px;">
-											<button type="button"
-											class="ui-btn ui-mini ui-btn-inline ui-btn-icon-left ui-icon-refresh"
-											onclick="restartSonosListener();">
-											Restart Listener
-											</button>
-										</td>		
+									<div style="font-size:0.85em; margin-top:2px; text-align:left;">
+										<span class="health-indicator <TMPL_VAR SONOS_HEALTH_STATUS_CLASS>"></span>
+										Event-Listener State: <TMPL_VAR SONOS_HEALTH_STATUS>
+										<TMPL_IF SONOS_HEALTH_FORMATTED_TIME>
+											<TMPL_VAR SONOS_HEALTH_FORMATTED_TIME>
+										</TMPL_IF>
+										<br>
+										Player <TMPL_VAR SONOS_HEALTH_ONLINE>/<TMPL_VAR SONOS_HEALTH_TOTAL> online.
 									</div>
-								</td>
-							</tr>
-						</table>
+								</div>
+							</div>
+
+							<div class="empty_template" style="flex:0 0 170px; margin-left:18px;">
+								<button type="button"
+										class="ui-btn ui-mini ui-btn-inline ui-btn-icon-left ui-icon-refresh"
+										onclick="restartSonosListener();"
+										style="margin:0;">
+									Restart Listener
+								</button>
+							</div>
+						</div>
+					</td>
+				</tr>
+				
+				
+                <tr class="empty_template">
+					<td class="empty_template" style="height: 50px; width: 25%; vertical-align: middle;">
+						<label id="ltemplate"><TMPL_VAR T2S.LABEL_TEMPLATE></label>
 					</td>
 
-					<!--<td class="empty_template" style="height: 30px; width: 201px;">
-							<button type="button"
-									class="ui-btn ui-mini ui-btn-inline ui-btn-icon-left ui-icon-refresh"
-									onclick="restartSonosListener();">
-								Restart Listener
-							</button>
-					</td>-->
+					<td class="empty_template" style="height: 50px; width: 50%; vertical-align: middle;">
+						<div style="display:flex; align-items:center; gap:16px; width:100%;">
+							<div class="btnc">
+								<input
+									type="button"
+									onclick="checkfile('VI_MQTT_UDP_Sonos.xml')"
+									id="btn2"
+									data-mini="true"
+									value="VI_MQTT_UDP_Sonos.xml" />
+							</div>
+
+							<!--
+							<div class="btnd">
+								<input
+									type="button"
+									onclick="checkfile('VI_MQTT_HTTP_Sonos.xml')"
+									id="btn3"
+									data-mini="true"
+									value="VI_MQTT_HTTP_Sonos.xml" />
+							</div>
+							-->
+						</div>
+					</td>
+
+					<td class="empty_template" style="height: 30px; width: 201px;"></td>
 
 					<td class="empty_template" style="height: 30px; width: 24px;">
 						<font size="-1">
@@ -586,40 +624,6 @@ div.scrollmenu a:hover {
 						</font>
 					</td>
 				</tr>
-				
-                <tr class="empty_template">
-                    <td class="empty_template" style="height: 60px; width: 25%;">
-                        <label id="ltemplate"><TMPL_VAR T2S.LABEL_TEMPLATE></label>
-
-                    </td>
-                    <td class="empty_template" width="50%" style="height: 60px">
-                        <table border=0 width="100%">
-                            <tr>
-                                <td class="empty_template" style="width: 5%">
-									<div class="btnc">
-                                        <input type="button" onclick="checkfile('VI_MQTT_UDP_Sonos.xml')" id="btn2" data-mini="true" value="VI_MQTT_UDP_Sonos.xml" />
-									</div>
-									<td style="width: 5%">
-										<!--<div class="btnd">
-											<input type="button" onclick="checkfile('VI_MQTT_HTTP_Sonos.xml')" id="btn3" data-mini="true" value="VI_MQTT_HTTP_Sonos.xml" />
-										</div>-->
-									</td>
-								</td>
-                                <td class="empty_template" style="width: 25%"></td>
-                            </tr>
-                        </table>
-						<td class="empty_template" style="width: 50%; height: 60px;">
-                          </td>
-					</td>
-                        <td class="empty_template" style="height: 30px; width: 201px;">
-                        </td>
-                        <td class="empty_template" style="height: 30px; width: 24px;">
-                            <font size="-1">
-                                <div id="testurl">
-                                </div>
-                            </font>
-                        </td>
-                </tr>
 
                 <!-- Options-->
                 <tr>
@@ -631,32 +635,29 @@ div.scrollmenu a:hover {
                 <td style="height: 30px; width: 10%;">
                     <TMPL_VAR TEMPLATE.LABEL_OPTIONS>
                 </td>
-                <td colspan=3 valign="middle">
-                    <div style="display:table-cell; width:60%;">
-                        <div style="display:table; border-spacing: 10; border-radius: 20px; border: 8px solid #9a9b98; border-radius: 20px; background-color: #6dac20;">
-                            <fieldset data-role="controlgroup">
-                                <div style="display:table-row;">
-                                    <div style="display:table-cell;">
-                                        <input name="Checkbox2" type="checkbox" onclick="radlayout() " id="radio_det" data-icon="check" style="width: 142px">
-                                        <label for="radio_det"><TMPL_VAR RADIO.LAYOUT_CHECKBOX></label>
-                                    </div>
-                                    <div style="display:table-cell;">
-                                        <input name="Checkbox3" type="checkbox" onclick="weatherlayout()" id="weather_det" data-icon="check" style="width: 142px">
-                                        <label for="weather_det"><TMPL_VAR WEATHER.LAYOUT_CHECKBOX></label>
-                                    </div>
-                                    <div style="display:table-cell;">
-                                        <input name="Checkbox4" type="checkbox" onclick="destlayout()" id="dest_det" data-icon="check" style="width: 142px">
-                                        <label for="dest_det"><TMPL_VAR DESTINATION.LAYOUT_CHECKBOX></label>
-                                    </div>
-                                    <div style="display:table-cell;">
-                                        <input name="Checkbox5" type="checkbox" onclick="callayout()" id="cal_det" data-icon="check" style="width: 142px">
-                                        <label for="cal_det"><TMPL_VAR CALENDAR.LAYOUT_CHECKBOX></label>
-                                    </div>
-                                </div>
-                            </fieldset>
-                        </div>
-                    </div>
-                </td>
+				
+                <td colspan="3" valign="middle">
+					<div style="display:table-cell; width:60%;">
+						<div class="layout-button-row">
+							<button type="button" class="layout-btn" id="btn_radio_det" onclick="toggleLayoutButton('radio_det'); radlayout();">
+								🎵 <TMPL_VAR RADIO.LAYOUT_CHECKBOX>
+							</button>
+							<input type="hidden" name="radio_det" id="radio_det" value="0">
+							<button type="button" class="layout-btn" id="btn_weather_det" onclick="toggleLayoutButton('weather_det'); weatherlayout();">
+								🌤️ <TMPL_VAR WEATHER.LAYOUT_CHECKBOX>
+							</button>
+							<input type="hidden" name="weather_det" id="weather_det" value="0">
+							<button type="button" class="layout-btn" id="btn_dest_det" onclick="toggleLayoutButton('dest_det'); destlayout();">
+								🚗 <TMPL_VAR DESTINATION.LAYOUT_CHECKBOX>
+							</button>
+							<input type="hidden" name="dest_det" id="dest_det" value="0">
+							<button type="button" class="layout-btn last" id="btn_cal_det" onclick="toggleLayoutButton('cal_det'); callayout();">
+								📅 <TMPL_VAR CALENDAR.LAYOUT_CHECKBOX>
+							</button>
+							<input type="hidden" name="cal_det" id="cal_det" value="0">
+						</div>
+					</div>
+				</td>
 
 
                 <!-- Start Radio-->
@@ -692,74 +693,90 @@ div.scrollmenu a:hover {
                     <!-- End Radio-->
 
 
-                    <!-- Start Destination -->
+					<!-- Start Destination -->
 
-                    <tr class="destdet">
-                        <td colspan=3 valign="middle" style="height: 33px">
-                            <h3>&nbsp;</h3>
-                            <hr />
-                            <h3>
-                                <TMPL_VAR DESTINATION.HEADER>
-                            </h3>
-                        </td>
-                    </tr>
-                    <tr class="destdet">
-                        <td colspan=3 valign="middle" style="height: 37px">
-                            <font size="-1">
-                                <TMPL_VAR DESTINATION.NOTE>
-                                    <a href="<TMPL_VAR DESTINATION.LINK_GOOGLE>"></a>
-                            </font>
-                        </td>
-                    </tr>
+					<tr class="destdet">
+						<td colspan="3" valign="middle" style="height: 33px;">
+							<h3>&nbsp;</h3>
+							<hr />
+							<h3>
+								<TMPL_VAR DESTINATION.HEADER>
+							</h3>
+						</td>
+					</tr>
 
-                    <tr class="destdet">
-                        <td style="height: 48px; width: 25%">
-                            <label id="lapikey"><TMPL_VAR DESTINATION.LABEL_GOOGLE_API></label>
-                        </td>
-                        <td style="width: 50%; height: 48px">
-                            <input id="googlekey" name="googlekey" type="text" class="textfield" value="<TMPL_VAR LOCATION.googlekey>">
-                        </td>
-                        <td style="height: 48px; width: 201px;" class="auto-style4">
-                            <font size="-1">
-                                <a id="linkgoogle" href="<TMPL_VAR DESTINATION.LINK_GOOGLE_DISTANCE>" target="_blank">
-                                    <TMPL_VAR DESTINATION.LABEL_GOOGLE_DISTANCE>
-                                </a>
-                            </font>
-                        </td>
-                    </tr>
+					<tr class="destdet">
+						<td colspan="3" valign="middle" style="height: 37px;">
+							<font size="-1">
+								<TMPL_VAR DESTINATION.NOTE>
+								<a href="<TMPL_VAR DESTINATION.LINK_GOOGLE>"></a>
+							</font>
+						</td>
+					</tr>
 
+					<!-- API Key -->
+					<tr class="destdet">
+						<td style="width: 260px; vertical-align: middle; white-space: nowrap;">
+							<label id="lapikey"><TMPL_VAR DESTINATION.LABEL_GOOGLE_API></label>
+						</td>
+						<td colspan="2" style="vertical-align: middle; padding-bottom: 8px;">
+							<div style="width: 528px; max-width: 528px;">
+								<input
+									id="googlekey"
+									name="googlekey"
+									type="text"
+									class="textfield"
+									value="<TMPL_VAR LOCATION.googlekey>"
+									style="width: 520px !important; max-width: 528px !important; box-sizing: border-box;">
+							</div>
+						</td>
+					</tr>
 
-                    <td class="destdet" style="width: 25%">
-                        <TMPL_VAR DESTINATION.LABEL_GOOGLE_REGION>
-                            <label style="font-size: x-small;" id="lexample"><TMPL_VAR DESTINATION.LABEL_GOOGLE_EXAMPLE></label>
-                    </td>
-                    <td style="width: 10%">
-                        <table border=0 width="100%">
-                            <tr class="destdet">
-                                <td style="width: 41%">
-                                    <input id="googletown" name="googletown" type="text" class="textfield" value="<TMPL_VAR LOCATION.googletown>" style="width: 215px">
-                                </td>
-                                <td>
-                                    <table border=0 width="100%">
-                                        <tr class="destdet">
-                                            <td style="height: 30px; width: 24%; text-align: center;">
-                                                <TMPL_VAR DESTINATION.LABEL_ADDRESS>
-                                            </td>
-                                            <td style="height: 30px">
-                                                <input id="googlestreet" name="googlestreet" type="text" class="textfield" value="<TMPL_VAR LOCATION.googlestreet>" style="width: 231px">
-                                            </td>
+					<!-- Link one row lower -->
+					<tr class="destdet">
+						<td></td>
+						<td colspan="2" style="padding-bottom: 10px; font-size: smaller; text-align: left;">
+							<a id="linkgoogle" href="<TMPL_VAR DESTINATION.LINK_GOOGLE_DISTANCE>" target="_blank">
+								<TMPL_VAR DESTINATION.LABEL_GOOGLE_DISTANCE>
+							</a>
+						</td>
+					</tr>
 
-                                        </tr>
-                                    </table>
-                            </tr>
-                            <tr class="destdet">
-                                <td colspan=3 valign="middle" style="height: 33px">
-                                    <h3></h3>
-                                </td>
-                            </tr>
-                        </table>
+					<!-- Town + Address in one line -->
+					<tr class="destdet">
+						<td style="width: 260px; vertical-align: top; padding-top: 6px;">
+							<TMPL_VAR DESTINATION.LABEL_GOOGLE_REGION><br>
+							<label style="font-size: x-small;" id="lexample">
+								<TMPL_VAR DESTINATION.LABEL_GOOGLE_EXAMPLE>
+							</label>
+						</td>
 
-                        <!-- End Destination-->
+						<td colspan="2" style="vertical-align: top; padding-top: 4px;">
+							<table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse; width: auto;">
+								<tr>
+									<td style="width: 95px; vertical-align: left;">
+										<input id="googletown" name="googletown" type="text" class="textfield" value="<TMPL_VAR LOCATION.googletown>">
+									</td>
+
+									<td style="vertical-align: middle; padding: 12px; white-space: nowrap;">
+										<TMPL_VAR DESTINATION.LABEL_ADDRESS>
+									</td>
+
+									<td style="width: 340px; vertical-align: middle;">
+										<input id="googlestreet" name="googlestreet" type="text" class="textfield" value="<TMPL_VAR LOCATION.googlestreet>">
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+
+					<tr class="destdet">
+						<td colspan="3" valign="middle" style="height: 33px;">
+							<h3></h3>
+						</td>
+					</tr>
+
+					<!-- End Destination -->
 
 
                         <!-- Start Kalender-->
@@ -807,31 +824,36 @@ div.scrollmenu a:hover {
 								
 								
 
-                                <!-- Start Weather-->
-                                <tr class="weatherdet">
-                                    <td colspan=3 valign="middle" style="height: 33px">
-                                        <hr/>
-                                        <h3>
-                                            <TMPL_VAR WEATHER.HEADER_WEATHER>
-                                        </h3>
-                                    </td>
-                                </tr>
-                                <tr class="weatherdet">
-                                    <td colspan=3 style="height: 23px; width: 70%">
-                                        <font size="-1">
-                                            <TMPL_VAR WEATHER.NOTE_WEATHER>
-                                        </font>
-                                    </td>
-                                </tr>
-                                <tr class="weatherdet">
-                                    <td style="height: 56px">
-                                        <TMPL_VAR WEATHER.REGION>
-                                    </td>
-                                    <td style="width: 50%; height: 56px;">
-                                        <table border=0 width="100%">
-                                            <tr class="weatherdet">
-                                                <td width="20%" style="height: 30px">
-                                                    <select id="region" name="region" data-mini="true" style="width: 102px">
+                                <!-- Start Weather -->
+								<tr class="weatherdet">
+									<td colspan="3" valign="middle" style="height: 33px;">
+										<hr/>
+										<h3>
+											<TMPL_VAR WEATHER.HEADER_WEATHER>
+										</h3>
+									</td>
+								</tr>
+
+								<tr class="weatherdet">
+									<td colspan="3" style="height: 23px;">
+										<font size="-1">
+											<TMPL_VAR WEATHER.NOTE_WEATHER>
+										</font>
+									</td>
+								</tr>
+
+								<tr class="weatherdet">
+									<td colspan="3" style="vertical-align: top; padding-top: 8px;">
+										<table border="0" style="width: 100%;">
+											<tr>
+												<!-- Label Region -->
+												<td style="width: 220px; height: 56px; vertical-align: middle; text-align: left; white-space: nowrap;">
+													<TMPL_VAR WEATHER.REGION>
+												</td>
+
+												<!-- Dropdown Region -->
+												<td style="width: 240px; height: 56px; vertical-align: middle; text-align: left;">
+													<select id="region" name="region" data-mini="true" style="width: 100%;">
 														<option value="baw"><TMPL_VAR WEATHER.REGION1></option>
 														<option value="bay"><TMPL_VAR WEATHER.REGION2></option>
 														<option value="bbb"><TMPL_VAR WEATHER.REGION3></option>
@@ -845,35 +867,60 @@ div.scrollmenu a:hover {
 														<option value="shh"><TMPL_VAR WEATHER.REGION11></option>
 														<option value="thu"><TMPL_VAR WEATHER.REGION12></option>
 													</select>
-                                                    <script>
-                                                        $('#region').val('<TMPL_VAR LOCATION.region>');
-                                                    </script>
-                                                </td>
-                                                <td style="height: 30px">
-                                                    <td width="50%" style="height: 30px; text-align: center;">
-                                                        <TMPL_VAR WEATHER.TOWN>
-                                                    </td>
-                                                    <td style="height: 30px"><input id="town" name="town" type="text" class="textfield" value="<TMPL_VAR LOCATION.town>"></td>
-                                            </tr>
-                                        </table>
-                                        <td valign="middle" style="height: 60px; width: 201px; font-size: smaller;">
-                                            <a id="linkdwd" href="<TMPL_VAR WEATHER.LINK_WEATHER_SERVICE>" target="_blank">
-                                                <TMPL_VAR WEATHER.LABEL_WEATHER_SERVICE>
-                                            </a><br>
-                                            <a id="linkpollen" href="<TMPL_VAR WEATHER.LINK_ALLERGEN>" target="_blank">
-                                                <TMPL_VAR WEATHER.LABEL_ALLERGEN>
-                                            </a>
-                                        </td>
-                                        <tr class="weatherdet">
-                                            <td colspan=3 valign="middle" style="height: 33px">
-                                                <h3></h3>
-                                            </td>
-                                        </tr>
-                                        </td>
-                                        <!-- Ende Weather-->
+													<script>
+														$('#region').val('<TMPL_VAR LOCATION.region>');
+													</script>
+												</td>
+
+												<!-- Label Town -->
+												<td style="width: 220px; height: 56px; vertical-align: middle; text-align: left; white-space: nowrap;">
+													<TMPL_VAR WEATHER.TOWN>
+												</td>
+
+												<!-- Input Town -->
+												<td style="width: 360px; height: 56px; vertical-align: middle; text-align: left;">
+													<input
+														id="town"
+														name="town"
+														type="text"
+														class="textfield"
+														value="<TMPL_VAR LOCATION.town>"
+														style="width: 320px;"
+													>
+												</td>
+
+												<!-- Rest leer -->
+												<td style="width: auto;"></td>
+											</tr>
+
+											<!-- Links eine Zeile tiefer -->
+											<tr>
+												<td></td>
+												<td></td>
+												<td></td>
+												<td style="padding-top: 6px; text-align: left; font-size: smaller; vertical-align: top;">
+													<a id="linkdwd" href="<TMPL_VAR WEATHER.LINK_WEATHER_SERVICE>" target="_blank">
+														<TMPL_VAR WEATHER.LABEL_WEATHER_SERVICE>
+													</a><br>
+													<a id="linkpollen" href="<TMPL_VAR WEATHER.LINK_ALLERGEN>" target="_blank">
+														<TMPL_VAR WEATHER.LABEL_ALLERGEN>
+													</a>
+												</td>
+												<td></td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+
+								<tr class="weatherdet">
+									<td colspan="3" valign="middle" style="height: 33px;">
+										<h3></h3>
+									</td>
+								</tr>
+								<!-- Ende Weather -->
 
 
-                                        <!-- Ende-->
+                                <!-- Ende-->
 
             </table>
             <td></td>
@@ -881,9 +928,6 @@ div.scrollmenu a:hover {
                 <center>
                     <button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SAVE.SAVE_BUTTON></button>
 				</center>
-				<script>
-				
-				</script>
             </p>
         </div>
 		
@@ -935,21 +979,27 @@ div.scrollmenu a:hover {
 <form method="post" data-ajax="false" accept-charset="utf-8" name="main_form" id="main_form" action="./index.cgi?do=volume">
 		<!--<div class="scrollmenu">-->
         <input type="hidden" name="saveformdata3" value="1">
-		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table.css"/>
-		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.min.css"/>
-		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.css"/>
-		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.min.js"></script>
-		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.js"></script>
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table/table.css"/>
+		
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.min.css"/>
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.css"/>
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/switch/flipswitch.css"/>
+		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.min.js"></script>
+		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.js"></script>
+				
+		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/slider/ion.rangeSlider.js"></script>
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/slider/ion.rangeSlider.css?v=8">
 		
         <div class="form-group">
-		<tbody>
+			<!--<tbody>-->
             <table class="formtable-container" id="vol" border="0" width="80%" cellpadding="10">
+			<tbody>
                 <tr>
 	                <td valign="left" style="height: 33px; width: 15%; text-align: left;">
                     <h2 class="auto-style3" style="width: 100%"></h2>
                     <td style="height: 33px; text-align: center; width: 850px;">
                         <img class='ico_sonos' src='/plugins/<TMPL_VAR PLUGINDIR>/images/sonos_logo.png' border='0' width='186' height='125' align="absmiddle">
-					</th>
+					</td>
 				</tr>
 				
 				<tr>
@@ -979,6 +1029,8 @@ div.scrollmenu a:hover {
 </TMPL_IF>
 
 
+
+
 <TMPL_IF LOGFILES>
     <!-- form 'LOGFILES' START -->
     <TMPL_VAR LOGLIST_HTML>
@@ -986,388 +1038,874 @@ div.scrollmenu a:hover {
 </TMPL_IF LOGFILES>
 
 
+
+
 <TMPL_IF DETAILS>
     <!-- form 'FORM' DETAILS -->
     <form method="post" data-ajax="false" accept-charset="utf-8" name="detail_form" id="detail_form" action="./index.cgi?do=details">
         <input type="hidden" name="saveformdata2" value="1">
-		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.min.css"/>
-		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.css"/>
-		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.min.js"></script>
-		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox.js"></script>
+
+        <!-- CSS / JS includes -->
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table/table.css"/>
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.min.css"/>
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.css"/>
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/switch/flipswitch.css"/>
+		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.min.js"></script>
+		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.js"></script>
+		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/slider/ion.rangeSlider.js"></script>
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/slider/ion.rangeSlider.css?v=8">
+
         <div class="form-group">
             <table class="formtable" border="0" width="90%" cellpadding="10">
+                <!--
+                    width="90%"         = Gesamtbreite der Haupttabelle
+                    Beispiel:
+                    90%  -> etwas schmaler
+                    100% -> nutzt volle Breite
+
+                    cellpadding="10"    = Innenabstand in ALLEN Tabellenzellen
+                    Beispiel:
+                    6  -> kompakter
+                    10 -> aktueller Wert
+                    14 -> luftiger
+                -->
+
                 <tr>
                     <td valign="middle" style="height: 33px; width: 25%; text-align: center;">
+                        <!--
+                            height: 33px   = Höhe der Kopfzeile links
+                            width: 25%     = Breite der linken Kopfspalte
+                            text-align:center = Inhalt zentriert
+                        -->
                         <h2 class="auto-style3" style="width: 100%">
+                            <!-- width:100% = Überschrift füllt die ganze TD-Breite -->
                             <TMPL_VAR ZONES.SONOS_OPTIONS>
                         </h2>
-                        <td style="height: 33px; text-align: center; width: 800px;">
-                            <img class='ico_sonos' src='/plugins/<TMPL_VAR PLUGINDIR>/images/sonos_logo.png' border='0' width='186' height='125' align="absmiddle">
-                        </td>
+                    </td>
+
+                    <td style="height: 33px; text-align: center; width: 800px;">
+                        <!--
+                            width: 800px   = feste Breite der rechten Kopfspalte
+                            Beispiel:
+                            700px -> schmaler
+                            900px -> breiter
+                        -->
+                        <img class='ico_sonos' src='/plugins/<TMPL_VAR PLUGINDIR>/images/sonos_logo.png' border='0' width='186' height='125' align="absmiddle">
+                    </td>
                 </tr>
 
                 <tr>
-                    <td style="height: 60px; width: 15%;">
-                        <label id="lcheckonline"><TMPL_VAR T2S.ONLINECHECK></label>
+                    <td style="height: 50px; width: 15%;">
+                        <!--
+                            height: 50px = Zeilenhöhe
+                            width: 15%   = Breite der linken Label-Spalte
+                            Beispiel:
+                            12% -> schmaler
+                            20% -> breiter
+                        -->
+                        <label id="lcheckonline"><TMPL_VAR T2S_DETAILS.LABEL_ZAPZONE></label>
                     </td>
-                    <td style="height: 60px; width: 800px;">
-                        <table border=0 width="100%">
+
+                    <td style="height: 50px; width: 15%;">
+                        <!--
+                            rechte Zelle dieser Zeile
+                            width:15% wirkt hier nur auf die TD selbst
+                            der innere Aufbau kommt aus der verschachtelten Tabelle
+                        -->
+                        <table border="0" width="100%">
+                            <!-- width:100% = innere Tabelle füllt komplette Eltern-Zelle -->
+
                             <tr>
-                                <td style="width: 5%">
-                                    <fieldset>
-										<select id="checkt2s" name="checkt2s" data-role="flipswitch" style="width: 5%">
-											<option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
-											<option selected="selected" value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
-										</select>
-                                    </fieldset>
-                                    <script>
-                                        $('#checkt2s').val('<TMPL_VAR SYSTEM.checkt2s>')
-                                    </script>
+                                <td style="width: 11%">
+                                    <!--
+                                        width:11% = Breite des Dropdown-Bereichs "func_list"
+                                        Beispiel:
+                                        11% -> aktuell
+                                        15% -> mehr Platz
+                                        8%  -> kompakter
+                                    -->
+									<select id="func_list" name="func_list" data-mini="true" data-native-menu="true">
+										<option selected="selected" disabled value="">*** Select Function ***</option>
+										<option value="">None</option>
+										<option value="nextradio">Nextradio</option>
+										<option value="trackfavorites">Track Favorites</option>
+										<option value="playlistfavorites">Playlist Favorites</option>
+										<option value="radiofavorites">Radio Favorites</option>
+									</select>
+									<script>
+										$('#func_list').val('<TMPL_VAR VARIOUS.selfunction>')
+									</script>
                                 </td>
 
-								<td style="width: 40%; text-align: center;">
-                                    <label align="right" id="lfunc_list"><TMPL_VAR T2S_DETAILS.LABEL_ZAPZONE></label>
-								</td>
-                                <td style="width: 30%">
-										<select id="func_list" name="func_list" data-mini="true" data-native-menu="true">
-											<option selected="selected" disabled value="" >*** Select Function ***</option>
-											<option value="" >None</option>
-											<option value="nextradio" >Nextradio</option>
-											<option value="trackfavorites" >Track Favorites</option>
-											<option value="playlistfavorites" >Playlist Favorites</option>
-											<option value="radiofavorites" >Radio Favorites</option>
-										</select>
+								<td style="width: 9%; height: 50px;">
+                                    <!--
+                                        width:9%    = Breite des Reset-Labels
+                                        height:60px = Höhe dieser Zelle
+                                        Wenn das Label zu nah am Slider sitzt:
+                                        z. B. width:12%;
+                                    -->
+                                    <label align="right" id="lcron"><TMPL_VAR T2S_DETAILS.LABEL_ZAPZONE_RESET></label>
+                                </td>
+
+                                <td style="width: 50%">
+                                    <!--
+                                        width:50% = Platz für Slider-Bereich
+                                        Beispiel:
+                                        50% -> aktuell
+                                        60% -> mehr Platz für Slider
+                                    -->
+                                    <div style="flex:0 0 46%;">
+                                        <!--
+                                            flex:0 0 46% = effektive Breite des Slider-Containers
+                                            Beispiel:
+                                            46% -> aktuell
+                                            60% -> breiter
+                                            35% -> schmaler
+                                        -->
+										<input type="hidden" id="cron" name="cron" value="<TMPL_VAR VARIOUS.cron>" />
 										<script>
-											$('#func_list').val('<TMPL_VAR VARIOUS.selfunction>')
+										$(function () {
+											var $cron = $("#cron");
+											var savedValue = parseInt($cron.val(), 10);
+
+											if (isNaN(savedValue)) {
+												savedValue = 3;
+											}
+
+											$cron.ionRangeSlider({
+												skin: "big",
+												grid: true,
+												min: 1,
+												max: 30,
+												from: savedValue,
+												step: 3,
+												postfix: " Min.",
+												onStart: function (data) {
+													console.log("Initial data: " + data.from);
+												},
+												onChange: function (data) {
+													console.log("Current selected data: " + data.from);
+												}
+											});
+
+											$cron.hide();
+										});
 										</script>
-                                </td>
-									<td style="width: 20%; height: 60px;">
-                                        <label align="right" id="lcron"><TMPL_VAR T2S_DETAILS.LABEL_ZAPZONE_RESET></label>
-                                </td>
-                                <td style="width: 29%">
-                                    <select id="cron" name="cron" data-mini="true" data-native-menu="true" style="width: 100%">
-										<option value="1">1 Min</option>
-										<option value="3">3 Min</option>
-										<option value="5">5 Min</option>
-										<option value="10">10 Min</option>
-										<option value="30">30 Min</option>
-									</select>
-                                    <script>
-                                        $('#cron').val('<TMPL_VAR VARIOUS.cron>');
-                                    </script>
+									</div>
                                 </td>
                             </tr>
                         </table>
                     </td>
                 </tr>
-				
+
                 <tr>
-                    <td style="height: 60px; width: 25%;">
+                    <td style="height: 50px; width: 25%;">
+                        <!--
+                            width:25% = linke Label-Spalte dieser Zeile
+                        -->
                         <label id="lvolume"><TMPL_VAR T2S_DETAILS.LABEL_T2S_VOLUME_CHANGE></label>
                     </td>
-					
-                    <td style="width: 20%">
-                        <select id="volume" name="volume" data-mini="true" data-native-menu="true" style="width: 100%">
-							<option value="3">3 %</option>
-							<option value="5">5 %</option>
-							<option value="7">7 %</option>
-							<option value="10">10 %</option>
-						</select>
-                        <script>
-                            $('#volume').val('<TMPL_VAR MP3.volumedown>');
-                        </script>
-					</td>
-                   
 
+                    <td style="width: 20%">
+                        <!--
+                            width:20% = rechter Bereich
+                            Falls Slider mehr Platz braucht, hier erhöhen
+                        -->
+                        <div style="flex:0 0 46%;">
+                            <!--
+                                flex:0 0 46% = Breite des Slider-Containers
+                                Beispiel:
+                                46% -> aktuell
+                                60% -> breiter
+                            -->
+							<input type="hidden" id="volume" name="volume" value="<TMPL_VAR MP3.volumedown>" />
+
+							<script>
+							$(function () {
+								var $volume = $("#volume");
+								var savedValue = parseInt($volume.val(), 10);
+
+								if (isNaN(savedValue)) {
+									savedValue = 3;
+								}
+
+								$volume.ionRangeSlider({
+									skin: "big",
+									grid: true,
+									min: 1,
+									max: 10,
+									from: savedValue,
+									step: 2,
+									postfix: " %",
+									onStart: function (data) {
+										console.log("Initial data: " + data.from);
+									},
+									onChange: function (data) {
+										console.log("Current selected data: " + data.from);
+									}
+								});
+
+								$volume.hide();
+							});
+							</script>
+						</div>
+					</td>
                 </tr>
-                <td style="width: 27%">
-                    <TMPL_VAR RADIO.LABEL_RADIO_ANNOUNCE>
-                </td>
-                <td style="width: 800px">
-                    <fieldset style="width: 788px">
-                        <select onchange="select()" id="announceradio" name="announceradio" data-role="flipswitch">
-					<option value="0"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
-					<option value="1"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
-				</select>&nbsp;&nbsp;
-                        <script>
-                            $('#announceradio').val('<TMPL_VAR VARIOUS.announceradio>')
-                        </script>
-                        <span class="auto-style4"><TMPL_VAR RADIO.NOTE_RADIO_ANNOUNCE></span>
-                    </fieldset>
-                    <input id="maxzap" name="maxzap" type="hidden" class="textfield" value="<TMPL_VAR MAXZAP>">
-                </td>
-				
+
                 <tr>
                     <td style="width: 27%">
+                        <!--
+                            width:27% = linke Spalte
+                        -->
+                        <TMPL_VAR RADIO.LABEL_RADIO_ANNOUNCE>
+                    </td>
+
+                    <td style="width: 400px">
+                        <!--
+                            width:400px = feste Breite der rechten Spalte
+                            Beispiel:
+                            350px -> schmaler
+                            500px -> breiter
+                        -->
+						<div class="lb-flipswitch"
+							 data-input="announceradio"
+							 data-value="<TMPL_VAR VARIOUS.announceradio>">
+                            <!--
+                                Abstände dieses Schalters kommen überwiegend aus CSS
+                                (flipswitch.css), nicht aus diesem HTML
+                            -->
+
+							<input type="hidden"
+								   name="announceradio"
+								   id="announceradio_hidden"
+								   value="<TMPL_VAR VARIOUS.announceradio>">
+
+							<input type="checkbox"
+								   id="announceradio"
+								   class="lb-flipswitch-checkbox no-jqm-flipswitch"
+								   data-role="none"
+								   onchange="toggleRadioAnnounce()">
+
+							<label class="lb-flipswitch-label" for="announceradio">
+								<span class="lb-flipswitch-inner"></span>
+								<span class="lb-flipswitch-switch"></span>
+							</label>
+						</div>
+
+						<span class="auto-style4"><TMPL_VAR RADIO.NOTE_RADIO_ANNOUNCE></span>
+                        <!--
+                            Abstand zwischen Switch und Textnote:
+                            kommt aktuell aus Standard-Flow / CSS.
+                            Falls nötig, könnte man z. B. hier ergänzen:
+                            <span class="auto-style4" style="margin-left:10px; display:inline-block;">
+                        -->
+						<input id="maxzap" name="maxzap" type="hidden" class="textfield" value="<TMPL_VAR MAXZAP>">
+					</td>
+                </tr>
+
+                <tr>
+                    <td style="width: 27%">
+                        <!-- Breite linke Spalte -->
                         <TMPL_VAR RADIO.LABEL_RADIO_ANNOUNCE_ALWAYS>
                     </td>
+
                     <td style="width: 800px">
-                        <fieldset style="width: 788px">
-                            <select onchange="select_always()" id="announceradio_always" name="announceradio_always" data-role="flipswitch">
-						<option value="0"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
-						<option value="1"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
-					</select>&nbsp;&nbsp;
-                            <script>
-                                $('#announceradio_always').val('<TMPL_VAR VARIOUS.announceradio_always>')
-                            </script>
-                            <span class="auto-style4"><TMPL_VAR RADIO.NOTE_RADIO_ANNOUNCE_ALWAYS></span>
-                        </fieldset>
+                        <!-- feste Breite rechte Spalte -->
+                        <div class="lb-flipswitch"
+							data-input="announceradio_always"
+							data-value="<TMPL_VAR VARIOUS.announceradio_always>">
+
+							<input type="hidden"
+								   name="announceradio_always"
+								   id="announceradio_always_hidden"
+								   value="<TMPL_VAR VARIOUS.announceradio_always>">
+
+							<input type="checkbox"
+								   id="announceradio_always"
+								   class="lb-flipswitch-checkbox no-jqm-flipswitch"
+								   data-role="none"
+								   onchange="toggleRadioAnnounce()">
+
+							<label class="lb-flipswitch-label" for="announceradio_always">
+								<span class="lb-flipswitch-inner"></span>
+								<span class="lb-flipswitch-switch"></span>
+							</label>
+						</div>
+
+						<span class="auto-style4"><TMPL_VAR RADIO.NOTE_RADIO_ANNOUNCE_ALWAYS></span>
+                        <!--
+                            Optionaler Abstand zur Note:
+                            style="margin-left:10px; display:inline-block;"
+                        -->
                     </td>
                 </tr>
-				
+
                 <tr class="radioannounce">
-                    <td style="height: 60px; width: 25%;">
+                    <td style="height: 50px; width: 25%;">
+                        <!-- Höhe/Breite linker Label-Bereich -->
                         <label id="lcorrection"><TMPL_VAR T2S.LABEL_CORRECTION></label>
                     </td>
-                    <td style="height: 60px; width: 800px;">
-                        <input type="range" name="correction" id="correction" value="<TMPL_VAR TTS.correction>" min="0" max="20" step="2">
+
+                    <td style="height: 50px; width: 800px;">
+                        <!-- feste Breite des Slider-Bereichs -->
+                        <div style="flex:0 0 46%;">
+                            <!--
+                                Breite des inneren Slider-Containers
+                                Beispiel:
+                                46% -> aktuell
+                                70% -> deutlich breiter
+                            -->
+							<input type="hidden" id="correction" name="correction" value="<TMPL_VAR TTS.correction>" />
+							<script>
+							$(function () {
+								var $correction = $("#correction");
+								var savedValue = parseInt($correction.val(), 10);
+
+								if (isNaN(savedValue)) {
+									savedValue = 8;
+								}
+
+								$correction.ionRangeSlider({
+									skin: "big",
+									grid: true,
+									min: 1,
+									max: 20,
+									from: savedValue,
+									step: 2,
+									postfix: " Sec.",
+									onStart: function (data) {
+										console.log("Initial data: " + data.from);
+									},
+									onChange: function (data) {
+										console.log("Current selected data: " + data.from);
+									}
+								});
+
+								$correction.hide();
+							});
+							</script>
+						</div>
                     </td>
                 </tr>
 
                 <tr class="t2sdet">
-                    <td style="width: 25%; height: 40px;">
-                        <label id="lrampto"><TMPL_VAR T2S_DETAILS.LABEL_RAMPTO></label>
-                    </td>
-                    <td style="width: 50%; height: 60px;">
-                        <table border=0 width="100%">
-                            <td style="width: 60%; height: 45px;">
-                                <fieldset data-role="controlgroup" data-type="horizontal">
-                                    <input type="radio" name="rampto" id="rmpsleep" value="sleep">
-                                    <label for="rmpsleep">Sleep</label>
-                                    <input type="radio" name="rampto" id="rmpalarm" value="alarm">
-                                    <label for="rmpalarm">Alarm</label>
-                                    <input type="radio" name="rampto" id="rmpauto" value="auto">
-                                    <label for="rmpauto">Auto</label>
-                                </fieldset>
-                                <script>
-                                    $("input[name=rampto]").val(['<TMPL_VAR TTS.rampto>']);
-                                </script>
-                            </td>
-                            <td style="width: 40%; height: 45px">
-                                <table border=0 align="left" style="width: 99%">
-                                    <tr>
-                                        <td style="height: 30px; width: 70%; text-align: center;">
-                                            <label id="lrmpvol"><TMPL_VAR T2S_DETAILS.LABEL_RAMPTO_VOLUME></label>
-                                        </td>
-                                        <td style="text-align: right;">
-                                            <input id="rmpvol" name="rmpvol" type="text" data-validation="number" class="textfield" value="<TMPL_VAR TTS.volrampto>" 
-											data-validation-allowing="special:number-min-max-value:1:100" 
-											data-validation-error-msg="<TMPL_VAR T2S_DETAILS.ERROR_RAMPTO>">
-                                        </td>
-                                    </tr>
-                                </table>
-                            </td>
-                        </table>
-                 </tr>
+					<td style="width: 25%; height: 40px; vertical-align: middle;">
+                        <!--
+                            width:25%          = Breite linke Spalte
+                            height:40px        = Zeilenhöhe
+                            vertical-align     = vertikale Zentrierung
+                        -->
+						<label id="lrampto"><TMPL_VAR T2S_DETAILS.LABEL_RAMPTO></label>
+					</td>
 
-                <tr>
-                    <td style="height: 60px; width: 25%;">
-                        <label id="lphonemute"><TMPL_VAR T2S.LABEL_PHONEMUTE></label>
-                    </td>
-                    <td style="height: 60px; width: 800px;">
-                        <input type="range" name="phonemute" id="phonemute" value="<TMPL_VAR VARIOUS.phonemute>" min="0" max="16" step="2">
-                    </td>
-                 </tr>
-				
+					<td style="width: 75%; height: 50px; vertical-align: middle;">
+                        <!--
+                            width:75% = Breite rechte Hauptspalte
+                        -->
+						<table border="0" style="width:100%;">
+                            <!-- innere Tabelle füllt 100% der rechten Zelle -->
+							<tr>
+								<td style="width: 26%; height: 45px; vertical-align: middle; white-space: nowrap;">
+                                    <!--
+                                        width:26% = Platz für die Radio-Buttons Sleep / Alarm / Auto
+                                        Beispiel:
+                                        22% -> kompakter
+                                        30% -> mehr Platz
+
+                                        white-space:nowrap = verhindert Zeilenumbruch
+                                    -->
+									<fieldset id="rampto-selector" data-role="controlgroup" data-type="horizontal" style="margin:0;">
+                                        <!--
+                                            margin:0 = kein Außenabstand um das Fieldset
+                                            Wenn du Luft drumherum willst:
+                                            margin:0 10px 0 0;
+                                        -->
+										<input type="radio" name="rampto" id="rmpsleep" value="sleep">
+										<label for="rmpsleep">Sleep</label>
+
+										<input type="radio" name="rampto" id="rmpalarm" value="alarm">
+										<label for="rmpalarm">Alarm</label>
+
+										<input type="radio" name="rampto" id="rmpauto" value="auto">
+										<label for="rmpauto">Auto</label>
+									</fieldset>
+
+									<script>
+										$("input[name=rampto]").val(['<TMPL_VAR TTS.rampto>']);
+									</script>
+								</td>
+
+								<td style="width: 74%; height: 45px; vertical-align: middle;">
+                                    <!--
+                                        width:74% = rechter Bereich mit Label + Slider
+                                    -->
+									<div style="display:flex; align-items:center; gap:16px; width:100%;">
+                                        <!--
+                                            display:flex       = horizontale Ausrichtung
+                                            align-items:center = vertikale Zentrierung
+                                            gap:16px           = Abstand zwischen Label und Slider
+                                            Beispiel:
+                                            gap:8px  -> enger
+                                            gap:24px -> luftiger
+                                        -->
+										<label id="lrmpvol" style="white-space:nowrap; margin:0;">
+                                            <!--
+                                                white-space:nowrap = Label bleibt in einer Zeile
+                                                margin:0           = kein Außenabstand
+                                                Mehr Abstand nach rechts lieber über gap steuern
+                                            -->
+											<TMPL_VAR T2S_DETAILS.LABEL_RAMPTO_VOLUME>
+										</label>
+
+										<div style="flex:1; min-width:0;">
+                                            <!--
+                                                flex:1      = Slider nimmt restlichen Platz
+                                                min-width:0 = erlaubt Schrumpfen im Flex-Container
+                                            -->
+											<input type="hidden" id="rmpvol" name="rmpvol" value="<TMPL_VAR TTS.volrampto>" />
+										</div>
+									</div>
+
+									<script>
+									$(function () {
+										var $rmpvol = $("#rmpvol");
+										var savedValue = parseInt($rmpvol.val(), 10);
+
+										if (isNaN(savedValue)) {
+											savedValue = 25;
+										}
+
+										$rmpvol.ionRangeSlider({
+											skin: "big",
+											grid: true,
+											min: 0,
+											max: 100,
+											from: savedValue,
+											step: 5,
+											postfix: " %",
+											onStart: function (data) {
+												console.log("Initial data: " + data.from);
+											},
+											onChange: function (data) {
+												console.log("Current selected data: " + data.from);
+											}
+										});
+
+										$rmpvol.hide();
+									});
+									</script>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+
 				<tr>
-                    <td style="height: 60px; width: 15%; text-align: left;">
-                        <label id="lcheckonline"><TMPL_VAR ZONES.FOLLOW_LABEL></label>
-                    </td>
-                    <td style="height: 60px; width: 30%;">
-                        <table border=0 width="65%">
-                            <tr>
-							<td style="width:15%; text-align: right;">
-                                <label align="left" id="lfollow_host"><TMPL_VAR ZONES.FOLLOW_HOST_LABEL></label>
-							</td>
-                            <td style="width: 15%">
-                                <select id="follow_host" name="follow_host" data-mini="true" data-native-menu="true">
-									<option selected="selected" value="false" ><TMPL_VAR ZONES.FOLLOW_HOST_OPTION></option>
+					<td style="height: 50px; width: 15%; text-align: left; white-space: nowrap;">
+						<label id="lcheckonline"><TMPL_VAR ZONES.FOLLOW_LABEL></label>
+					</td>
+
+					<td style="height: 50px; width: 85%; vertical-align: middle;">
+						<div style="display:flex; align-items:center; gap:18px; flex-wrap:nowrap; white-space:nowrap; width:100%;">
+
+							<label id="lfollow_host" style="margin:0;"><TMPL_VAR ZONES.FOLLOW_HOST_LABEL></label>
+
+							<div style="width:180px;">
+								<select id="follow_host" name="follow_host" data-mini="true" data-native-menu="true" style="width:100%;">
+									<option selected="selected" value="false"><TMPL_VAR ZONES.FOLLOW_HOST_OPTION></option>
 									<TMPL_VAR ROWSHOSTPLAYER>
 								</select>
-								<script>
+							</div>
+
+							<label id="lfollow_wait" style="margin:0 0 0 20px;"><TMPL_VAR ZONES.FOLLOW_HOST_WAIT_LABEL></label>
+
+							<div style="flex:1; min-width:0;">
+								<input type="hidden"
+									   id="follow_wait"
+									   name="follow_wait"
+									   value="<TMPL_VAR VARIOUS.follow_wait>">
+							</div>
+						</div>
+
+						<script>
+							$(function () {
+								var $followWait = $("#follow_wait");
+								var values = [0, 30, 60, 120, 180, 300];
+								var rawValue = $followWait.val();
+								var savedSeconds = parseInt(rawValue, 10);
+
+								if (isNaN(savedSeconds)) {
+									savedSeconds = 30;
+								}
+
+								var startIndex = values.indexOf(savedSeconds);
+								if (startIndex === -1) {
+									startIndex = 1; // default = 30 sec
+								}
+
+								$followWait.ionRangeSlider({
+									skin: "big",
+									grid: true,
+									values: values,
+									from: startIndex,
+
+									prettify: function (value) {
+										if (value === 0) {
+											return "0 Sec.";
+										}
+										if (value < 60) {
+											return value + " Sec.";
+										}
+										if (value === 60) {
+											return "1 Min.";
+										}
+										return (value / 60) + " Min.";
+									},
+
+									onStart: function (data) {
+										$followWait.val(data.from_value);
+									},
+
+									onChange: function (data) {
+										$followWait.val(data.from_value);
+									},
+
+									onFinish: function (data) {
+										$followWait.val(data.from_value);
+									}
+								});
+
+								$followWait.hide();
 								$('#follow_host').val('<TMPL_VAR VARIOUS.follow_host>');
-								</script>	
-                            </td>
+							});
+						</script>
+					</td>
+				</tr>
 
-								<td style="width: 11%; text-align: left;">
-                                    <label align="right" id="lfollow_wait"><TMPL_VAR ZONES.FOLLOW_HOST_WAIT_LABEL></label>
-								</td>
-                                <td style="width: 15%">
-                                        	<select id="follow_wait" name="follow_wait" data-mini="true" data-native-menu="true">
-												<option selected="selected" value="false" ><TMPL_VAR ZONES.FOLLOW_HOST_WAIT_OPTION></option>
-												<option value="0" ><TMPL_VAR ZONES.FOLLOW_HOST_WAIT_OPTION_TIME></option>
-												<option value="30" >30 Sec.</option>
-												<option value="60" >1 Min.</option>
-												<option value="120" >2 Min.</option>
-												<option value="180" >3 Min.</option>
-												<option value="300" >5 Min.</option>
-											</select>
-										<script>
-											$('#follow_wait').val('<TMPL_VAR VARIOUS.follow_wait>');
-										</script>	
-                                    <!--</table>-->
-                                
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-				
 				<tr>
-                    <td style="height: 60px; width: 15%; text-align: left;">
-                        <label id="lswupdate"><TMPL_VAR ZONES.SONOS_LABEL_UPDATE_FIRMWARE></label>
-                    </td>
-                    <td style="height: 60px; width: 30%;">
-                        <table border=0 width="80%">
-                            <tr>
-							<td style="width: 10%">
-									<fieldset style="width: 100%">
-										<select onchange="select_update()" id="hw_update" name="hw_update" data-role="flipswitch">
-											<option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
-											<option value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
-										</select>
-										<script>
-											$('#hw_update').val('<TMPL_VAR SYSTEM.hw_update>')
-										</script>
-									</fieldset>
-								</td>
-								<div class="update">
-								<td class="update" style="width: 15%; height: 60px;">
-                                    <label align="right" id="lstartupdate">Start:</label>
-                                </td>
-								<td class="update" style="width: 20%">
-										<fieldset style="width:90%">
-											<select id="hw_update_day" name="hw_update_day" data-mini="true" data-native-menu="true" style="width: 100%">
-												  <option selected="selected" value="10"><TMPL_VAR TEMPLATE.UPDATE_DAILY></option>
-												  <option disabled value="7"><TMPL_VAR TEMPLATE.UPDATE_WEEKLY></option>
-												  <option value="1"><TMPL_VAR TEMPLATE.UPDATE_MONDAY></option>
-												  <option value="2"><TMPL_VAR TEMPLATE.UPDATE_TUESDAY></option>
-												  <option value="3"><TMPL_VAR TEMPLATE.UPDATE_WEDNESDAY></option>
-												  <option value="4"><TMPL_VAR TEMPLATE.UPDATE_THURSDAY></option>
-												  <option value="5"><TMPL_VAR TEMPLATE.UPDATE_FRIDAY></option>
-												  <option value="6"><TMPL_VAR TEMPLATE.UPDATE_SATURDAY></option>
-												  <option value="0"><TMPL_VAR TEMPLATE.UPDATE_SUNDAY></option>
-											</select>
-										</fieldset>
-										<script>
-											$('#hw_update_day').val('<TMPL_VAR SYSTEM.hw_update_day>');
-										</script>
-                               </td>
-                                <td class="update" style="width: 20%">
-										<fieldset style="width:90%">
-											<select id="hw_update_time" name="hw_update_time" data-mini="true" data-native-menu="true" style="width: 100%">
-												  <option value="0">0:00</option>
-												  <option value="1">1:00</option>
-												  <option value="2">2:00</option>
-												  <option value="3">3:00</option>
-												  <option value="4">4:00</option>
-												  <option value="5">5:00</option>
-												  <option value="6">6:00</option>
-												  <option value="7">7:00</option>
-												  <option value="8">8:00</option>
-												  <option value="9">9:00</option>
-												  <option value="10">10:00</option>
-												  <option value="11">11:00</option>
-												  <option value="12">12:00</option>
-												  <option value="13">13:00</option>
-												  <option value="14">14:00</option>
-												  <option value="15">15:00</option>
-												  <option value="16">16:00</option>
-												  <option value="17">17:00</option>
-												  <option value="18">18:00</option>
-												  <option value="19">19:00</option>
-												  <option value="20">20:00</option>
-												  <option value="21">21:00</option>
-												  <option selected="selected" value="22">22:00</option>
-												  <option value="23">23:00</option>
-											</select>
-										</fieldset>
-										<script>
-											$('#hw_update_time').val('<TMPL_VAR SYSTEM.hw_update_time>');
-										</script>
-                               </td>
-								
-								<td class="update" style="width: 17%; text-align: left;">
-                                    <label align="right" id="lupdatepower">Power On:</label>
-								</td>
-                                <td class="update" style="width: 5%">
-                                    <fieldset style="width: 100%">
-										<select id="hw_update_power" name="hw_update_power" data-role="flipswitch">
-											<option value="false"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
-											<option value="true"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
-										</select>
-									</fieldset>
-									<script>
-										$('#hw_update_power').val('<TMPL_VAR SYSTEM.hw_update_power>');
-									</script>
-                                </td>
+					<td style="height: 50px; width: 15%; text-align: left; white-space: nowrap;">
+                        <!-- linke Label-Spalte -->
+						<label id="lswupdate"><TMPL_VAR ZONES.SONOS_LABEL_UPDATE_FIRMWARE></label>
+					</td>
+
+					<td style="height: 50px; width: 85%; vertical-align: middle;">
+						<div style="display:flex; align-items:center; gap:14px; flex-wrap:nowrap; white-space:nowrap;">
+                            <!--
+                                gap:14px = Hauptabstand zwischen den großen Bereichen:
+                                Switch | Update-Block | Volmax-Block
+
+                                Beispiel:
+                                gap:8px  -> enger
+                                gap:20px -> luftiger
+                            -->
+
+							<!-- HW Update switch -->
+							<div class="lb-flipswitch"
+								 data-input="hw_update"
+								 data-value="<TMPL_VAR SYSTEM.hw_update>"
+								 style="margin:0;">
+                                <!--
+                                    margin:0 = kein zusätzlicher Außenabstand um den Switch
+                                    Falls mehr Luft rechts:
+                                    style="margin:0 10px 0 0;"
+                                -->
+								<input type="hidden"
+									   name="hw_update"
+									   id="hw_update_hidden"
+									   value="<TMPL_VAR SYSTEM.hw_update>">
+
+								<input type="checkbox"
+									   id="hw_update"
+									   class="lb-flipswitch-checkbox no-jqm-flipswitch"
+									   data-role="none"
+									   onchange="select_update()">
+
+								<label class="lb-flipswitch-label" for="hw_update">
+									<span class="lb-flipswitch-inner"></span>
+									<span class="lb-flipswitch-switch"></span>
+								</label>
+							</div>
+
+							<!-- Update block -->
+							<div class="update" style="display:flex; align-items:center; gap:10px; white-space:nowrap;">
+                                <!--
+                                    gap:10px = Abstand innerhalb des Update-Blocks
+                                    (Start-Label / Day-Select / Time-Select / Power-On-Label / Switch)
+                                    Beispiel:
+                                    gap:6px  -> enger
+                                    gap:16px -> luftiger
+                                -->
+								<label id="lstartupdate" style="margin:0;">Start:</label>
+                                <!-- margin:0 = kein zusätzlicher Abstand -->
+
+								<fieldset style="margin:0; width:130px;">
+                                    <!--
+                                        width:130px = Breite von hw_update_day
+                                        Beispiel:
+                                        110px -> schmaler
+                                        150px -> breiter
+                                    -->
+									<select id="hw_update_day" name="hw_update_day" data-mini="true" data-native-menu="true" style="width:100%;">
+										<option selected="selected" value="10"><TMPL_VAR TEMPLATE.UPDATE_DAILY></option>
+										<option disabled value="7"><TMPL_VAR TEMPLATE.UPDATE_WEEKLY></option>
+										<option value="1"><TMPL_VAR TEMPLATE.UPDATE_MONDAY></option>
+										<option value="2"><TMPL_VAR TEMPLATE.UPDATE_TUESDAY></option>
+										<option value="3"><TMPL_VAR TEMPLATE.UPDATE_WEDNESDAY></option>
+										<option value="4"><TMPL_VAR TEMPLATE.UPDATE_THURSDAY></option>
+										<option value="5"><TMPL_VAR TEMPLATE.UPDATE_FRIDAY></option>
+										<option value="6"><TMPL_VAR TEMPLATE.UPDATE_SATURDAY></option>
+										<option value="0"><TMPL_VAR TEMPLATE.UPDATE_SUNDAY></option>
+									</select>
+								</fieldset>
+
+								<fieldset style="margin:0; width:100px;">
+                                    <!--
+                                        width:100px = Breite von hw_update_time
+                                        Beispiel:
+                                        85px  -> schmaler
+                                        120px -> breiter
+                                    -->
+									<select id="hw_update_time" name="hw_update_time" data-mini="true" data-native-menu="true" style="width:100%;">
+										<option value="0">0:00</option>
+										<option value="1">1:00</option>
+										<option value="2">2:00</option>
+										<option value="3">3:00</option>
+										<option value="4">4:00</option>
+										<option value="5">5:00</option>
+										<option value="6">6:00</option>
+										<option value="7">7:00</option>
+										<option value="8">8:00</option>
+										<option value="9">9:00</option>
+										<option value="10">10:00</option>
+										<option value="11">11:00</option>
+										<option value="12">12:00</option>
+										<option value="13">13:00</option>
+										<option value="14">14:00</option>
+										<option value="15">15:00</option>
+										<option value="16">16:00</option>
+										<option value="17">17:00</option>
+										<option value="18">18:00</option>
+										<option value="19">19:00</option>
+										<option value="20">20:00</option>
+										<option value="21">21:00</option>
+										<option selected="selected" value="22">22:00</option>
+										<option value="23">23:00</option>
+									</select>
+								</fieldset>
+
+								<label id="lupdatepower" style="margin:0 0 0 8px;">Power On:</label>
+                                <!--
+                                    margin-left = 8px zusätzlicher linker Abstand vor "Power On:"
+                                    Beispiel:
+                                    0px  -> direkt näher dran
+                                    8px  -> aktuell
+                                    16px -> weiter weg
+                                -->
+
+								<div class="lb-flipswitch"
+									 data-input="hw_update_power"
+									 data-value="<TMPL_VAR SYSTEM.hw_update_power>"
+									 style="margin:0;">
+									<input type="hidden"
+										   name="hw_update_power"
+										   id="hw_update_power_hidden"
+										   value="<TMPL_VAR SYSTEM.hw_update_power>">
+
+									<input type="checkbox"
+										   id="hw_update_power"
+										   class="lb-flipswitch-checkbox no-jqm-flipswitch"
+										   data-role="none">
+
+									<label class="lb-flipswitch-label" for="hw_update_power">
+										<span class="lb-flipswitch-inner"></span>
+										<span class="lb-flipswitch-switch"></span>
+									</label>
 								</div>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-				
+							</div>
+
+							<!-- Volmax block -->
+							<div style="display:flex; align-items:center; gap:10px; white-space:nowrap; margin-left:20px;">
+                                <!--
+                                    gap:10px        = Abstand zwischen Label und Volmax-Switch
+                                    margin-left:20px = Abstand der GESAMTEN Volmax-Gruppe zum Update-Block
+
+                                    Beispiel:
+                                    margin-left:8px  -> näher an Update-Block
+                                    margin-left:20px -> aktuell
+                                    margin-left:35px -> weiter nach rechts
+                                -->
+								<label id="lvolmax" style="margin:0;"><TMPL_VAR T2S_DETAILS.LABEL_MAX_VOLUME></label>
+
+								<div class="lb-flipswitch"
+									 data-input="volmax"
+									 data-value="<TMPL_VAR VARIOUS.volmax>"
+									 style="margin:0;">
+									<input type="hidden"
+										   name="volmax"
+										   id="volmax_hidden"
+										   value="<TMPL_VAR VARIOUS.volmax>">
+
+									<input type="checkbox"
+										   id="volmax"
+										   class="lb-flipswitch-checkbox no-jqm-flipswitch"
+										   data-role="none">
+
+									<label class="lb-flipswitch-label" for="volmax">
+										<span class="lb-flipswitch-inner"></span>
+										<span class="lb-flipswitch-switch"></span>
+									</label>
+								</div>
+							</div>
+
+						</div>
+
+						<script>
+							$('#hw_update_day').val('<TMPL_VAR SYSTEM.hw_update_day>');
+							$('#hw_update_time').val('<TMPL_VAR SYSTEM.hw_update_time>');
+						</script>
+					</td>
+				</tr>
 
                 <tr>
-                    <td style="width: 27%">
-                        <TMPL_VAR T2S_DETAILS.LABEL_PHONESTOP>
-                    </td>
-                    <td style="height: 60px; width: 800px;">
-                        <table border=0 width="100%">
-                            <tr>
-                                <td style="width: 10%">
-									<fieldset style="width: 30%">
-										<select id="phonestop" name="phonestop" data-role="flipswitch">
-											<option value="0"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
-											<option value="1"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
-										</select>
-										<script>
-											$('#phonestop').val('<TMPL_VAR VARIOUS.phonestop>')
-										</script>
-									</fieldset>
-								</td>
-                                <td style="width: 23px; text-align: center;">
-                                    &nbsp;</td>
-                                <td>
-                                    <table class="volmax" border=0 style="width: 91%">
-                                        <tr>
-                                            <td style="width: 50%; height: 60px;">
-                                                <label align="right" id="lcron"><TMPL_VAR T2S_DETAILS.LABEL_MAX_VOLUME>&nbsp;&nbsp;&nbsp;</label>
-                                            </td>
-                                            <td style="width: 10%">
-												<fieldset style="width: 30%">
-													<select id="volmax" name="volmax" data-role="flipswitch">
-														<option value="0"><TMPL_VAR T2S.LABEL_FLIPSWITCH_OFF></option>
-														<option value="1"><TMPL_VAR T2S.LABEL_FLIPSWITCH_ON></option>
-													</select>
-													<script>
-														$('#volmax').val('<TMPL_VAR VARIOUS.volmax>')
-													</script>
-												</fieldset>
-											</td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-
-                <tr>
-                    <td style="height: 60px; width: 25%;">
+                    <td style="height: 50px; width: 25%;">
+                        <!-- linke Label-Zelle -->
                         <label id="lwaiting"><TMPL_VAR T2S.LABEL_WAITING></label>
                     </td>
-                    <td style="height: 60px; width: 800px;">
-                        <input type="range" name="waiting" id="waiting" value="<TMPL_VAR MP3.waiting>" min="0" max="10" step="1">
+
+                    <td style="height: 50px; width: 800px;">
+                        <!-- Slider-Zelle -->
+                        <div style="flex:0 0 46%;">
+                            <!--
+                                Breite des Slider-Containers
+                                Beispiel:
+                                46% -> aktuell
+                                70% -> breiter
+                            -->
+							<input type="hidden" id="waiting" name="waiting" value="<TMPL_VAR MP3.waiting>" />
+
+							<script>
+							$(function () {
+								var $waiting = $("#waiting");
+								var savedValue = parseInt($waiting.val(), 10);
+
+								if (isNaN(savedValue)) {
+									savedValue = 8;
+								}
+
+								$waiting.ionRangeSlider({
+									skin: "big",
+									grid: true,
+									min: 1,
+									max: 10,
+									from: savedValue,
+									step: 1,
+									postfix: " Sec.",
+									onStart: function (data) {
+										console.log("Initial data: " + data.from);
+									},
+									onChange: function (data) {
+										console.log("Current selected data: " + data.from);
+									}
+								});
+
+								$waiting.hide();
+							});
+							</script>
+						</div>
                     </td>
-					</tr>
+				</tr>
             </table>
+
             <td></td>
+
             <p>
                 <center>
                     <button onclick="message()" type="submit" form="detail_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SAVE.SAVE_BUTTON></button>
+                    <!--
+                        Abstand um den Save-Button:
+                        kommt aktuell vor allem durch <p> und <center>.
+                        Falls du ihn gezielt verschieben willst, eher so:
+                        <button ... style="margin-top:10px;">
+                    -->
                 </center>
             </p>
         </div>
     </form>
-<TMPL_INCLUDE NAME="main.js">
+	
+	<!-- Doku zu Abstandseinstellungen
+	
+	Ja — das sind in deinem Block die 10 wichtigsten Werte, an denen du fast alles sichtbar steuern kannst:
+
+	<table class="formtable" border="0" width="90%" cellpadding="10">
+	width="90%" = Gesamtbreite der ganzen Maske
+	cellpadding="10" = Innenabstand in allen Zellen
+	Beispiel:
+	width="95%" cellpadding="6"
+	
+	<div style="display:flex; align-items:center; gap:18px; flex-wrap:nowrap; white-space:nowrap;">
+	gap:18px; = Hauptabstand im Follow-Block
+	kleiner: gap:10px;
+	größer: gap:25px;
+	
+	<label id="lfollow_wait" style="margin:0 0 0 20px;">
+	20px = extra Abstand links vor FOLLOW_WAIT
+	kleiner: 8px
+	größer: 30px
+	
+	<fieldset style="margin:0; width:180px;">
+	width:180px; = Breite Dropdown follow_host
+	Beispiel:
+	schmaler: 150px
+	breiter: 220px
+	
+	<fieldset style="margin:0; width:170px;">
+	width:170px; = Breite Dropdown follow_wait
+	Beispiel:
+	schmaler: 140px
+	breiter: 200px
+	
+	<div style="display:flex; align-items:center; gap:14px; flex-wrap:nowrap; white-space:nowrap;">
+	gap:14px; = Hauptabstand im Firmware/Update-Block
+	kleiner: 8px
+	größer: 20px
+	
+	<div class="update" style="display:flex; align-items:center; gap:10px; white-space:nowrap;">
+	gap:10px; = Abstand innerhalb des Update-Blocks
+	kleiner: 6px
+	größer: 16px
+	
+	<label id="lupdatepower" style="margin:0 0 0 8px;">
+	8px = extra Abstand links vor Power On
+	kleiner: 0px
+	größer: 16px
+	
+	<div style="display:flex; align-items:center; gap:10px; white-space:nowrap; margin-left:20px;">
+	margin-left:20px; = Abstand der Volmax-Gruppe zum Update-Block
+	kleiner: 8px
+	größer: 35px
+	
+	<div style="display:flex; align-items:center; gap:16px; width:100%;">
+	gap:16px; = Abstand zwischen LABEL_RAMPTO_VOLUME und Slider
+	kleiner: 8px
+	größer: 24px
+
+	Hier noch drei ganz konkrete Mini-Beispiele:
+	Follow-Block enger machen
+
+	<div style="display:flex; align-items:center; gap:10px; flex-wrap:nowrap; white-space:nowrap;">
+	<label id="lfollow_wait" style="margin:0 0 0 8px;">
+	<fieldset style="margin:0; width:150px;">
+
+	Update-Block luftiger machen
+
+	<div style="display:flex; align-items:center; gap:20px; flex-wrap:nowrap; white-space:nowrap;">
+	<div class="update" style="display:flex; align-items:center; gap:16px; white-space:nowrap;">
+	<div style="display:flex; align-items:center; gap:10px; white-space:nowrap; margin-left:35px;">
+
+	Gesamte Tabelle kompakter machen
+
+	<table class="formtable" border="0" width="95%" cellpadding="6">
+	-->
+	
+    <TMPL_INCLUDE NAME="main.js">
 </TMPL_IF>

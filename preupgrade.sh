@@ -46,14 +46,14 @@ PSBIN=$LBPSBIN/$PDIR
 PBIN=$LBPBIN/$PDIR
 
 
-DIR=$LBPDATA/$PDIR/backup
+#DIR=$LBPDATA/$PDIR/backup
 
-if [ -d "$DIR" ]; then
-  echo "<INFO> Delete previous Plugin Backup folder"
-  rm -r $LBPDATA/$PDIR/backup
-else
-  echo "<INFO> No Backup folder exist"
-fi
+#if [ -d "$DIR" ]; then
+#  echo "<INFO> Delete previous Plugin Backup folder"
+#  rm -r $LBPDATA/$PDIR/backup
+#else
+#  echo "<INFO> No Backup folder exist"
+#fi
 
 echo "<INFO> Creating temporary folders for upgrading"
 mkdir -p /tmp/$1\_upgrade

@@ -1,0 +1,594 @@
+/* =========================================================
+   TV Monitor general settings
+   ========================================================= */
+
+.tvmon_switch_row > td {
+    vertical-align: middle;
+    height: 60px;
+}
+
+.tvmon_label_cell {
+    width: 25%;
+    vertical-align: middle;
+}
+
+.tvmon_content_cell {
+    vertical-align: middle;
+}
+
+.tvmon_inline_wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 60px;
+    flex-wrap: nowrap;
+}
+
+.tvmon_fieldset {
+    margin: 0;
+    padding: 0;
+    border: none;
+    display: flex;
+    align-items: center;
+}
+
+.tvmon_time_wrap {
+    display: flex;
+    align-items: center;
+    position: relative;
+    top: -3px;
+}
+
+.tvmon_time_wrap input[type="time"] {
+    margin: 0;
+    height: 32px;
+    box-sizing: border-box;
+}
+
+#lfunc_list,
+#lstart,
+#lend {
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.tvmon_spacer {
+    display: inline-block;
+    width: 20px;
+}
+
+/* =========================================================
+   TV Monitor dynamic head settings
+   ========================================================= */
+
+.sb_topline_wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sb_topline_label {
+    font-weight: bold;
+    color: black;
+    margin: 0;
+    line-height: normal;
+    display: inline-flex;
+    align-items: center;
+}
+
+.sb_topline_input_wrap {
+    display: flex;
+    align-items: center;
+    position: relative;
+    top: -7px;   /* bei Bedarf -4px oder -5px */
+}
+
+.sb_topline_input {
+    width: 150px;
+    background-color: #e6e6e6;
+    margin: 0;
+    padding: 8px 10px;
+    height: auto;
+    box-sizing: border-box;
+}
+
+.sb_topline_switch_wrap {
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+    width: 90px;
+    min-width: 90px;
+    max-width: 90px;
+    overflow: visible;
+}
+
+/* =========================================================
+   TV Monitor dynamic row settings
+   ========================================================= */
+
+.tvmon_body td,
+.tvmon_body_header td,
+.tvmon_header th {
+    height: 22px;
+    line-height: 22px;
+    padding-top: 0;
+    padding-bottom: 0;
+    vertical-align: middle !important;
+}
+
+.sb_input_wrap,
+.sb_time_wrap,
+.sb_select_wrap,
+.sb_switch_wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+}
+
+.sb_input_wrap input,
+.sb_time_wrap input,
+.sb_select_wrap select {
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.sb_switch_wrap {
+    width: 90px;
+    min-width: 90px;
+    max-width: 90px;
+    margin: 0 auto;
+    overflow: visible;
+}
+
+/* Feintuning */
+.sb_input_wrap {
+    position: relative;
+    top: -4px;
+}
+
+.sb_time_wrap {
+    justify-content: flex-start;
+    position: relative;
+    top: -4px;
+}
+
+.sb_select_wrap {
+    justify-content: center;
+    width: 100%;
+    position: relative;
+    top: -4px;
+}
+
+/* =========================================================
+   Basic UI tweaks
+   ========================================================= */
+
+td input[type="checkbox"] {
+  /* float:center is invalid; keep it simple + stable */
+  display: inline-block;
+  width: 70%;
+}
+
+/* Horizontal scroll menu (if used somewhere else) */
+div.scrollmenu {
+  overflow: auto;
+  white-space: nowrap;
+}
+
+div.scrollmenu a {
+  display: inline-block;
+  color: white;
+  text-align: center;
+  padding: 14px;
+  text-decoration: none;
+}
+
+div.scrollmenu a:hover {
+  background-color: #777;
+}
+
+/* =========================================================
+   Calendar validation styles (only optics)
+   ========================================================= */
+
+.textfield.valid {
+  background-color: #f3f4f6; /* light green-ish */
+  border-color: #2e7d32;
+}
+
+.textfield.invalid {
+  background-color: #fe4746; /* light red */
+  color: #fff;
+  border-color: #c62828;
+}
+
+/* Small line under the field */
+.calmsg {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: #6b7280; /* gray for "checking..." */
+}
+
+.calmsg.error {
+  color: #c62828; /* red on error */
+}
+
+.hidden {
+  display: none;
+}
+
+/* =========================================================
+   Delete Sonos Player Icon
+   ========================================================= */
+.ico_delete { cursor: pointer; }
+  a.jsDelZone { text-decoration:none; }
+
+
+/* =========================================================
+   Cache + MP3 row layout
+   ========================================================= */
+
+.cache-mp3-row {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    width: 100%;
+    min-height: 60px;
+}
+
+.cache-group,
+.mp3-group {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    white-space: nowrap;
+}
+
+.cache-label {
+    margin: 0;
+    white-space: nowrap;
+    min-width: 300px;
+}
+
+.mp3-label {
+    margin: 0;
+    white-space: nowrap;
+}
+
+.cache-cell {
+    white-space: nowrap;
+}
+
+.cache-cell .ui-slider {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: auto !important;
+    margin: 0 !important;
+}
+
+.cache-cell .ui-slider-input {
+    width: 55px !important;
+    min-width: 55px !important;
+    margin-right: 8px !important;
+}
+
+.cache-cell .ui-slider-track {
+    width: 430px !important;
+    min-width: 430px !important;
+    max-width: 430px !important;
+    margin: 0 !important;
+}
+
+.mp3-path {
+    line-height: 1.3;
+}
+
+.mp3-group {
+    display: flex;
+    align-items: flex-start;
+    gap: 120px;
+    white-space: nowrap;
+}
+
+.mp3-label {
+    margin: 0;
+    white-space: nowrap;
+    min-width: 390px;
+}
+
+/* =========================================================
+   Change UI Storage fields
+   ========================================================= */
+
+tr.ttsconfig.ttsbaseconfig.colcachesize #STORAGEPATH-select-button,
+tr.ttsconfig.ttsbaseconfig.colcachesize .ui-select {
+    width: 240px !important;
+    max-width: 240px !important;
+    min-width: 240px !important;
+    height: 30px !important;
+    min-height: 30px !important;
+    line-height: 30px !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    display: inline-block !important;
+    vertical-align: middle !important;
+}
+
+tr.ttsconfig.ttsbaseconfig.colcachesize #STORAGEPATH-select-button span {
+    line-height: 18px !important;
+}
+
+tr.ttsconfig.ttsbaseconfig.colcachesize .ui-input-text,
+tr.ttsconfig.ttsbaseconfig.colcachesize #STORAGEPATH-folder,
+tr.ttsconfig.ttsbaseconfig.colcachesize .ui-input-text input {
+    width: 240px !important;
+    max-width: 240px !important;
+    min-width: 240px !important;
+    height: 30px !important;
+    min-height: 30px !important;
+    line-height: 30px !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    display: inline-block !important;
+    vertical-align: middle !important;
+}
+
+/* inneres STORAGEPATH-Layout sauber ausrichten */
+tr.ttsconfig.ttsbaseconfig.colcachesize #STORAGEPATH-select,
+tr.ttsconfig.ttsbaseconfig.colcachesize #STORAGEPATH-folder {
+    box-sizing: border-box !important;
+}
+
+tr.ttsconfig.ttsbaseconfig.colcachesize div[data-role="fieldcontain"] {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin: 0 0 10px 0 !important;
+    padding: 0 !important;
+}
+
+tr.ttsconfig.ttsbaseconfig.colcachesize div[data-role="fieldcontain"] label {
+    width: 125px !important;
+    min-width: 125px !important;
+    max-width: 125px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    text-align: left !important;
+    white-space: nowrap !important;
+    display: inline-block !important;
+    vertical-align: middle !important;
+}
+
+/* der Wrapper aus TMPL_VAR STORAGEPATH */
+tr.ttsconfig.ttsbaseconfig.colcachesize #STORAGEPATH-select,
+tr.ttsconfig.ttsbaseconfig.colcachesize #STORAGEPATH-folder,
+tr.ttsconfig.ttsbaseconfig.colcachesize #STORAGEPATH-select-button,
+tr.ttsconfig.ttsbaseconfig.colcachesize .ui-input-text,
+tr.ttsconfig.ttsbaseconfig.colcachesize .ui-select {
+    flex: 0 0 240px !important;
+}
+
+/* Browse-Button sauber daneben */
+tr.ttsconfig.ttsbaseconfig.colcachesize #STORAGEPATH-browse {
+    width: 30px !important;
+    min-width: 30px !important;
+    margin: 0 0 0 8px !important;
+    top: 0 !important;
+    position: relative !important;
+    align-self: flex-start !important;
+}
+
+tr.ttsconfig.ttsbaseconfig.colcachesize div[data-role="fieldcontain"] label {
+    display: inline-block !important;
+    margin-right: 14px !important;
+    white-space: nowrap !important;
+}
+/* =========================================================
+   Layout for additional function Buttons
+   ========================================================= */
+.layout-button-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+.layout-btn {
+    height: 42px;
+    min-width: 10px;
+    padding: 0 0px;
+    margin: 0;
+    border: 1px solid #8f8f8f;
+    border-right: none;
+    background: #efefef;
+    color: #000;
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 42px;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: none;
+    outline: none;
+    white-space: nowrap;
+}
+
+.layout-btn:first-child {
+    border-top-left-radius: 3px;
+    border-bottom-left-radius: 3px;
+}
+
+.layout-btn.last {
+    border-right: 1px solid #8f8f8f;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+}
+
+.layout-btn.active {
+    background: #dcdcdc;
+}
+
+.layout-btn:hover {
+    background: #e6e6e6;
+}
+
+/* =========================================================
+   Compact row spacing for TTS settings
+   ========================================================= */
+
+tr.ttsconfig td,
+tr.empty_template td {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+}
+
+tr.ttsconfig fieldset,
+tr.empty_template fieldset {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+tr.ttsconfig .ui-field-contain,
+tr.empty_template .ui-field-contain,
+tr.ttsconfig div[data-role="fieldcontain"],
+tr.empty_template div[data-role="fieldcontain"] {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+tr.ttsconfig .ui-select,
+tr.empty_template .ui-select,
+tr.ttsconfig .ui-input-text,
+tr.empty_template .ui-input-text,
+tr.ttsconfig .ui-btn,
+tr.empty_template .ui-btn {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+tr.ttsconfig label,
+tr.empty_template label {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+/* =========================================================
+   TTS Engine Selector rounding left/right
+   ========================================================= */
+   
+/* Engine selector: äußere Ecken stärker runden */
+#engine-selector .ui-controlgroup-controls {
+    border-radius: 18px !important;
+    overflow: hidden !important;
+}
+
+#engine-selector .ui-radio:first-of-type .ui-btn,
+#engine-selector .ui-radio:first-of-type label.ui-btn {
+    border-top-left-radius: 14px !important;
+    border-bottom-left-radius: 14px !important;
+}
+
+#engine-selector .ui-radio:last-of-type .ui-btn,
+#engine-selector .ui-radio:last-of-type label.ui-btn {
+    border-top-right-radius: 14px !important;
+    border-bottom-right-radius: 14px !important;
+}
+
+/* =========================================================
+   Layout button row - outer corners more rounded
+   ========================================================= */
+
+.layout-button-row {
+    display: flex;
+    width: 100%;
+    max-width: 700px;         /* Breite anpassen */
+    overflow: hidden;
+    border-radius: 16px;
+    gap: 0 !important;
+}
+
+.layout-button-row .layout-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    white-space: nowrap;
+    text-align: center;
+
+    background: #f2f2f2 !important;
+    background-image: none !important;
+    color: #000 !important;
+    text-shadow: none !important;
+    box-shadow: none !important;
+    font-weight: 600;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.layout-button-row .layout-btn:first-of-type {
+    border-top-left-radius: 16px !important;
+    border-bottom-left-radius: 16px !important;
+}
+
+.layout-button-row .layout-btn:last-of-type {
+    border-top-right-radius: 16px !important;
+    border-bottom-right-radius: 16px !important;
+}
+
+.layout-button-row .layout-btn.active {
+    background: #6db33f !important;
+    background-image: none !important;
+    color: #ffffff !important;
+    text-shadow: none !important;
+    box-shadow: none !important;
+}
+
+/* =========================================================
+   Layout Rampto Options
+   ========================================================= */
+
+#rampto-selector .ui-controlgroup-controls {
+    border-radius: 14px !important;
+    overflow: hidden !important;
+}
+
+#rampto-selector .ui-radio:first-of-type .ui-btn,
+#rampto-selector .ui-radio:first-of-type label.ui-btn {
+    border-top-left-radius: 14px !important;
+    border-bottom-left-radius: 14px !important;
+}
+
+#rampto-selector .ui-radio:last-of-type .ui-btn,
+#rampto-selector .ui-radio:last-of-type label.ui-btn {
+    border-top-right-radius: 14px !important;
+    border-bottom-right-radius: 14px !important;
+}
+
+/* =========================================================
+   Layout Verkehrsansagen
+   ========================================================= */
+
+#googlekey {
+    width: 528px !important;
+    min-width: 528px !important;
+    max-width: 800px !important;
+    box-sizing: border-box !important;
+}
+
+#googletown {
+    width: 95px !important;
+    min-width: 95px !important;
+    max-width: 95px !important;
+    box-sizing: border-box !important;
+}
+
+#googlestreet {
+    width: 340px !important;
+    min-width: 340px !important;
+    max-width: 600px !important;
+    box-sizing: border-box !important;
+}

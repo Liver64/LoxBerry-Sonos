@@ -330,16 +330,23 @@ function leave()    {
 		}
 		@unlink("/run/shm/".$save_status_file."_".$client.".json");
 		# get wait time
-		if (isset($_GET['delay']))   {
+		if (isset($_GET['delay'])
+			&& $_GET['delay'] !== ''
+			&& $_GET['delay'] !== '0') {
+
 			$waitleave = $_GET['delay'];
 			LOGINF("follow.php: ".$waitleave." seconds delay for '".$client."' has been entered");
-		} elseif (isset($config['VARIOUS']['follow_wait']) 
-				and $config['VARIOUS']['follow_wait'] != "false"
-				and $config['VARIOUS']['follow_wait'] != "")   {
-			$waitleave 	= $config['VARIOUS']['follow_wait'];
+
+		} elseif (isset($config['VARIOUS']['follow_wait'])
+			&& $config['VARIOUS']['follow_wait'] !== "false"
+			&& $config['VARIOUS']['follow_wait'] !== ""
+			&& $config['VARIOUS']['follow_wait'] !== "0") {
+
+			$waitleave = $config['VARIOUS']['follow_wait'];
 			LOGINF("follow.php: ".$waitleave." seconds delay for '".$client."' grabbed from config");
+
 		} else {
-			LOGWARN("follow.php: No delay to leave 'follow' function has been maintained in config, nore delay has been entered in URL. Please maintain config <Options> or add '...&action=leave&delay=SECONDS'");
+			LOGWARN("follow.php: No delay to leave 'follow' function has been maintained in config, nor delay has been entered in URL. Please maintain config <Options> or add '...&action=leave&delay=SECONDS'");
 			exit;
 		}
 				

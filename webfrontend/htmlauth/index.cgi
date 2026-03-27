@@ -330,6 +330,9 @@ $cgi->import_names('R');
 # Get MQTT credentials
 $mqttcred = LoxBerry::IO::mqtt_connectiondetails();
 
+# Inject CSS files
+our $htmlhead = '<link rel="stylesheet" href="/plugins/'.$lbpplugindir.'/web/sonos.css"/>';
+
 #########################################################################
 # Handle AJAX requests
 #########################################################################
@@ -623,63 +626,17 @@ sub form
         LOGINF("Default path has been added to config");
     }
 
-    # -------------------------------------------------------------------------
-    # Storage HTML (CACHED): get_storage_html is expensive -> cache in /dev/shm
-    # -------------------------------------------------------------------------
-    my $cache_dir_local  = "/dev/shm/$lbpplugindir";
-    my $cache_file_local = "$cache_dir_local/storage_html.cache";
-    my $cache_ttl        = 300;  # seconds (5 min)
-
-    if (!-d $cache_dir_local) {
-        mkdir($cache_dir_local, 0775);
-    }
-
-    my $currentpath = $jsonobj->param("SYSTEM.path") // "";
-    my $cache_key   = "PATH=$currentpath";
-
-    my $storage;
-    my $use_cache = 0;
-
-    if (-r $cache_file_local) {
-        my @st  = stat($cache_file_local);
-        my $age = @st ? (time() - ($st[9] // 0)) : 999999;
-
-        if ($age <= $cache_ttl) {
-            if (open(my $fh, '<', $cache_file_local)) {
-                my $first = <$fh>;
-                chomp($first) if defined $first;
-
-                if (defined $first && $first eq $cache_key) {
-                    local $/ = undef;
-                    $storage = <$fh>;
-                    $use_cache = 1 if defined $storage && $storage ne '';
-                }
-                close($fh);
-            }
-        }
-    }
-
-    if ($use_cache) {
-        LOGDEB("PERF: Storage HTML loaded from cache (ttl=${cache_ttl}s)");
-    } else {
-        $storage = LoxBerry::Storage::get_storage_html(
-            formid        => 'STORAGEPATH',
-            currentpath   => $currentpath,
-            custom_folder => 1,
-            type_all      => 1,
-            readwriteonly => 1,
-            data_mini     => 1,
-            label         => "$SL{'T2S.SAFE_DETAILS'}"
-        );
-
-        if (open(my $fh, '>', $cache_file_local)) {
-            print $fh $cache_key . "\n";
-            print $fh $storage // '';
-            close($fh);
-        }
-    }
-
-    $template->param("STORAGEPATH", $storage // '');
+    # prepare Storage
+	my $storage = LoxBerry::Storage::get_storage_html(
+					formid => 'STORAGEPATH', 
+					currentpath => $jsonobj->param("SYSTEM.path"),
+					custom_folder => 1,
+					type_all => 1, 
+					readwriteonly => 1, 
+					data_mini => 1,
+					label => "$SL{'T2S.LABEL_SOUNDCARD'}");
+					
+	$template->param("STORAGEPATH", $storage);
 
     # Fill saved values into form
     $template->param("SELFURL", $SL{REQUEST_URI});
@@ -847,103 +804,188 @@ sub form
         $rowssonosplayer .= "<input type='hidden' id='voice$countplayers' name='voice$countplayers' value='$config->{$key}->[12]'>\n";
         $rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' value='$config->{$key}->[1]'>\n";
 
-        # Prepare soundbar table if device is a soundbar
-        if (($config->{$key}[13]) eq "SB") {
-  
-            # 1. Raumname + An/Aus zentriert
-            $rowssoundbar .= "<tr class='tvmon_body_header'>\n";
-			$rowssoundbar .= "<td colspan='12' style='padding: 4px 0 2px 0; border:none; background:#6db33f;'>\n";
-			$rowssoundbar .= "<div style='display:flex !important; align-items:center !important; gap:10px;'>\n";
-			$rowssoundbar .= "<label for='sbzone_$room' style='font-weight:bold; color:black; margin:0; line-height:normal;'>Soundbar:</label>\n";
-			$rowssoundbar .= "<input type='text' id='sbzone_$room' name='sbzone_$room' readonly='true' value='$room' style='width:150px; background-color:#e6e6e6; margin:0; padding:8px 10px; height:auto;'>\n";
-			$rowssoundbar .= "<div style='display:inline-flex; align-items:center; margin:0;'>\n";
-			$rowssoundbar .= "<select id='usesb_$room' name='usesb_$room' class='usesb-flipswitch' data-role='flipswitch' style='width:100px; margin:0;' onchange='toggleSoundbar(\"$room\")'>\n";
-			$rowssoundbar .= "<option value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option>\n";
-			$rowssoundbar .= "<option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option>\n";
-			$rowssoundbar .= "</select>\n";
+		# Prepare soundbar table if device is a soundbar
+		if (($config->{$key}[13]) eq "SB") {
+
+			# 1. Room name + On/Off
+			$rowssoundbar .= "<tr class='tvmon_body_header'>\n";
+			$rowssoundbar .= "<td colspan='11' style='padding: 4px 0 2px 0; border:none; background:white; vertical-align:middle;'>\n";
+			$rowssoundbar .= "<div class='sb_topline_wrap'>\n";
+			$rowssoundbar .= "<label for='sbzone_$room' class='sb_topline_label' style='font-weight:bold;'>Soundbar:</label>\n";
+			$rowssoundbar .= "<div class='sb_topline_input_wrap'><input type='text' id='sbzone_$room' name='sbzone_$room' readonly='true' value='$room' class='sb_topline_input'></div>\n";
+			$rowssoundbar .= "<div class='sb_topline_switch_wrap'>\n";
+
+			my $usesb_val = $config->{$key}->[14]->{usesb} // 'false';
+			$rowssoundbar .= render_lb_flipswitch(
+				id       => "usesb_$room",
+				name     => "usesb_$room",
+				value    => $usesb_val,
+				onchange => "toggleSoundbar('$room')",
+				style    => "margin:0;"
+			);
+
 			$rowssoundbar .= "</div>\n";
 			$rowssoundbar .= "</div></td>\n";
 			$rowssoundbar .= "</tr>\n";
 
-            # 2. Spalten-Header (th)
-			$rowssoundbar .= "<tr class='tvmon_header' id='soundbar_header_$room' style='background-color: #6db33f;'>\n";
-            $rowssoundbar .= "<th align='middle'>$SL{'SOUNDBARS.LABEL_SPEECH'}</th>\n";
-            $rowssoundbar .= "<th align='middle'>$SL{'SOUNDBARS.LABEL_SURROUND'}</th>\n";
-            $rowssoundbar .= "<th align='middle'>$SL{'SOUNDBARS.LABEL_SUB'}</th>\n";
-            $rowssoundbar .= "<th align='middle' id='tvmtvol' name='tvmtvol'>$SL{'SOUNDBARS.LABEL_TVVOL'}</th>\n";
-            $rowssoundbar .= "<th align='middle' id='tvmttreble' name='tvmttreble'>$SL{'SOUNDBARS.LABEL_TVTREBLE'}</th>\n";
-            $rowssoundbar .= "<th align='middle' id='tvmtbass' name='tvmtbass'>$SL{'SOUNDBARS.LABEL_TVBASS'}</th>\n";
-            $rowssoundbar .= "<th align='middle'>$SL{'SOUNDBARS.LABEL_GRPZONE'}</th>\n";
-            $rowssoundbar .= "<th align='middle'>$SL{'SOUNDBARS.LABEL_FROM_TIME'}</th>\n";
-            $rowssoundbar .= "<th align='middle'>$SL{'SOUNDBARS.LABEL_NIGHT'}</th>\n";
-            $rowssoundbar .= "<th align='middle'>$SL{'SOUNDBARS.LABEL_SUB'}</th>\n";
-            $rowssoundbar .= "<th align='middle'>$SL{'SOUNDBARS.LABEL_SUB_GAIN'}</th>\n";
-            $rowssoundbar .= "</tr>\n";
+			# 2. Column header
+			$rowssoundbar .= "<tr class='tvmon_header' id='soundbar_header_$room' style='background-color:#6db33f;'>\n";
+			$rowssoundbar .= "<th style='width:96px;  min-width:96px;  max-width:96px;  text-align:center; vertical-align:middle;'>$SL{'SOUNDBARS.LABEL_SPEECH'}</th>\n";
+			$rowssoundbar .= "<th style='width:96px;  min-width:96px;  max-width:96px;  text-align:center; vertical-align:middle;'>$SL{'SOUNDBARS.LABEL_SURROUND'}</th>\n";
+			$rowssoundbar .= "<th style='width:96px;  min-width:96px;  max-width:96px;  text-align:center; vertical-align:middle;'>$SL{'SOUNDBARS.LABEL_SUB'}</th>\n";
+			$rowssoundbar .= "<th style='width:70px;  min-width:70px;  max-width:70px;  text-align:center; vertical-align:middle;' id='tvmtvol' name='tvmtvol'>$SL{'SOUNDBARS.LABEL_TVVOL'}</th>\n";
+			$rowssoundbar .= "<th style='width:70px;  min-width:70px;  max-width:70px;  text-align:center; vertical-align:middle;' id='tvmttreble' name='tvmttreble'>$SL{'SOUNDBARS.LABEL_TVTREBLE'}</th>\n";
+			$rowssoundbar .= "<th style='width:70px;  min-width:70px;  max-width:70px;  text-align:center; vertical-align:middle;' id='tvmtbass' name='tvmtbass'>$SL{'SOUNDBARS.LABEL_TVBASS'}</th>\n";
+			$rowssoundbar .= "<th style='width:210px; min-width:210px; max-width:210px; text-align:center; vertical-align:middle;'>$SL{'SOUNDBARS.LABEL_GRPZONE'}</th>\n";
+			$rowssoundbar .= "<th style='width:110px; min-width:110px; max-width:110px; text-align:center; vertical-align:middle;'>$SL{'SOUNDBARS.LABEL_FROM_TIME'}</th>\n";
+			$rowssoundbar .= "<th style='width:96px;  min-width:96px;  max-width:96px;  text-align:center; vertical-align:middle;'>$SL{'SOUNDBARS.LABEL_NIGHT'}</th>\n";
+			$rowssoundbar .= "<th style='width:96px;  min-width:96px;  max-width:96px;  text-align:center; vertical-align:middle;'>$SL{'SOUNDBARS.LABEL_SUB'}</th>\n";
+			$rowssoundbar .= "<th style='width:90px;  min-width:90px;  max-width:90px;  text-align:center; vertical-align:middle;'>$SL{'SOUNDBARS.LABEL_SUB_GAIN'}</th>\n";
+			$rowssoundbar .= "</tr>\n";
 
-            # 3. Datenzeile
-            $rowssoundbar .= "<tr class='tvmon_body' id='soundbar_row_$room'>\n";
-            $rowssoundbar .= "<td style='width: 8%'><fieldset align='center'><select id='tvmonspeech_$room' name='tvmonspeech_$room' data-role='flipswitch' style='width: 100%'><option value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
-            $rowssoundbar .= "<td style='width: 8%'><fieldset align='center'><select id='tvmonsurr_$room' name='tvmonsurr_$room' data-role='flipswitch' style='width: 100%'><option selected='selected' value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
-            $rowssoundbar .= "<td style='width: 8%'><fieldset align='center'><select id='tvmonnightsub_$room' name='tvmonnightsub_$room' data-role='flipswitch' style='width: 100%'><option selected='selected' value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
-            $rowssoundbar .= "<td style='width: 6%; height: 28px;'><div><input class='tvvol' type='text' id='tvvol_$room' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='tvvol_$room' value='$config->{$key}->[14]->{tvvol}'></div></td>\n";
-            $rowssoundbar .= "<td style='width: 6%; height: 28px;'><div><input class='tvtreble' type='text' id='tvtreble_$room' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='$error_treble_bass' name='tvtreble_$room' value='$config->{$key}->[14]->{tvtreble}'></div></td>\n";
-            $rowssoundbar .= "<td style='width: 6%; height: 28px;'><div><input class='tvbass' type='text' id='tvbass_$room' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='$error_treble_bass' name='tvbass_$room' value='$config->{$key}->[14]->{tvbass}'></div></td>\n";
-             $rowssoundbar .= "<td style='width: 12%;'>\n";
-            $rowssoundbar .= "<div data-role='collapsible' data-collapsed='true' data-mini='true'>\n";
-            $rowssoundbar .= "<h4>$SL{'SOUNDBARS.LABEL_SELECT'}</h4>\n";
-            # Gespeicherte tvgrpstop-Zonen als Array holen
+			# 3. Data row
+			$rowssoundbar .= "<tr class='tvmon_body' id='soundbar_row_$room'>\n";
+
+			my $tvmonspeech_val    = $config->{$key}->[14]->{tvmonspeech}   // 'false';
+			my $tvmonsurr_val      = $config->{$key}->[14]->{tvmonsurr}     // 'false';
+			my $tvmonnightsub_val  = $config->{$key}->[14]->{tvmonnightsub} // 'false';
+			my $tvmonnight_val     = $config->{$key}->[14]->{tvmonnight}    // 'false';
+			my $tvmonnightsubn_val = $config->{$key}->[14]->{tvsubnight}    // 'false';
+
+			# Speech
+			$rowssoundbar .= "<td style='width:96px; min-width:96px; max-width:96px; text-align:center; white-space:nowrap; vertical-align:middle;'>\n";
+			$rowssoundbar .= "<fieldset style='margin:0; padding:0; border:none; text-align:center;'>\n";
+			$rowssoundbar .= "<div class='sb_switch_wrap'>\n";
+			$rowssoundbar .= render_lb_flipswitch(
+				id    => "tvmonspeech_$room",
+				name  => "tvmonspeech_$room",
+				value => $tvmonspeech_val
+			);
+			$rowssoundbar .= "</div>\n";
+			$rowssoundbar .= "</fieldset></td>\n";
+
+			# Surround
+			$rowssoundbar .= "<td style='width:96px; min-width:96px; max-width:96px; text-align:center; white-space:nowrap; vertical-align:middle;'>\n";
+			$rowssoundbar .= "<fieldset style='margin:0; padding:0; border:none; text-align:center;'>\n";
+			$rowssoundbar .= "<div class='sb_switch_wrap'>\n";
+			$rowssoundbar .= render_lb_flipswitch(
+				id    => "tvmonsurr_$room",
+				name  => "tvmonsurr_$room",
+				value => $tvmonsurr_val
+			);
+			$rowssoundbar .= "</div>\n";
+			$rowssoundbar .= "</fieldset></td>\n";
+
+			# Sub
+			$rowssoundbar .= "<td style='width:96px; min-width:96px; max-width:96px; text-align:center; white-space:nowrap; vertical-align:middle;'>\n";
+			$rowssoundbar .= "<fieldset style='margin:0; padding:0; border:none; text-align:center;'>\n";
+			$rowssoundbar .= "<div class='sb_switch_wrap'>\n";
+			$rowssoundbar .= render_lb_flipswitch(
+				id    => "tvmonnightsub_$room",
+				name  => "tvmonnightsub_$room",
+				value => $tvmonnightsub_val
+			);
+			$rowssoundbar .= "</div>\n";
+			$rowssoundbar .= "</fieldset></td>\n";
+
+			# TV Volume
+			$rowssoundbar .= "<td style='width:70px; min-width:70px; max-width:70px;'>\n";
+			$rowssoundbar .= "<div class='sb_input_wrap'><input class='tvvol' type='text' id='tvvol_$room' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='tvvol_$room' value='$config->{$key}->[14]->{tvvol}'></div>\n";
+			$rowssoundbar .= "</td>\n";
+
+			# TV Treble
+			$rowssoundbar .= "<td style='width:70px; min-width:70px; max-width:70px;'>\n";
+			$rowssoundbar .= "<div class='sb_input_wrap'><input class='tvtreble' type='text' id='tvtreble_$room' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='$error_treble_bass' name='tvtreble_$room' value='$config->{$key}->[14]->{tvtreble}'></div>\n";
+			$rowssoundbar .= "</td>\n";
+
+			# TV Bass
+			$rowssoundbar .= "<td style='width:70px; min-width:70px; max-width:70px;'>\n";
+			$rowssoundbar .= "<div class='sb_input_wrap'><input class='tvbass' type='text' id='tvbass_$room' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='$error_treble_bass' name='tvbass_$room' value='$config->{$key}->[14]->{tvbass}'></div>\n";
+			$rowssoundbar .= "</td>\n";
+
+			# Group zone / stop players
+			$rowssoundbar .= "<td style='width:210px; min-width:210px; max-width:210px; vertical-align:middle;'>\n";
+			$rowssoundbar .= "<div data-role='collapsible' data-collapsed='true' data-mini='true'>\n";
+			$rowssoundbar .= "<h4>$SL{'SOUNDBARS.LABEL_SELECT'}</h4>\n";
+
 			my @saved_players = @{ $config->{$key}->[14]->{tvgrpstop} // [] };
 			foreach my $other_room (@all_rooms) {
 				next if $other_room eq $room;
-				# prüfen ob Raum im gespeicherten Array ist
-				my $checked = grep { $_ eq $other_room } @saved_players
-					? " checked='checked'"
-					: "";
-				$rowssoundbar .= "<label>
-					<input type='checkbox' name='tvgrpstop_$room' value='$other_room'$checked>
-					$other_room
-				</label>\n";
+				my $checked = grep { $_ eq $other_room } @saved_players ? " checked='checked'" : "";
+				$rowssoundbar .= "<label><input type='checkbox' name='tvgrpstop_$room' value='$other_room'$checked>$other_room</label>\n";
 			}
-            $rowssoundbar .= "</div>\n";
-            $rowssoundbar .= "</td>\n";
-            $rowssoundbar .= "<td style='width: 8%; height: 28px;'><div id='tvmon_addend'><input id='fromtime_$room' type='time' name='fromtime_$room' value='$config->{$key}->[13]->{fromtime}'></div></td>\n";
-            $rowssoundbar .= "<td style='width: 8%'><fieldset align='center'><select id='tvmonnight_$room' name='tvmonnight_$room' data-role='flipswitch' style='width: 100%'><option selected='selected' value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
-            $rowssoundbar .= "<td style='width: 8%'><fieldset align='center'><select id='tvmonnightsubn_$room' name='tvmonnightsubn_$room' data-role='flipswitch' style='width: 100%'><option selected='selected' value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option></select></fieldset></td>\n";
-            $rowssoundbar .= "<td style='width: 8%'><div id='tvmon_addend'><fieldset align='center'>\n";
-            $rowssoundbar .= "<select id='subgain_$room' name='subgain_$room' data-mini='true' data-native-menu='true' style='width: 100%'>";
-            $rowssoundbar .= "<option value='-15'>-15</option>
-                                <option value='-14'>-14</option>
-                                <option value='-12'>-12</option>
-                                <option value='-11'>-11</option>
-                                <option value='-10'>-10</option>
-                                <option value='-9'>-9</option>
-                                <option value='-8'>-8</option>
-                                <option value='-7'>-7</option>
-                                <option value='-6'>-6</option>
-                                <option value='-5'>-5</option>
-                                <option value='-4'>-4</option>
-                                <option value='-3'>-3</option>
-                                <option value='-2'>-2</option>
-                                <option value='-1'>-1</option>
-                                <option selected='selected' value='0'>0</option>
-                                <option value='1'>1</option>
-                                <option value='2'>2</option>
-                                <option value='3'>3</option>
-                                <option value='4'>4</option>
-                                <option value='5'>5</option>
-                                <option value='6'>6</option>
-                                <option value='7'>7</option>
-                                <option value='8'>8</option>
-                                <option value='9'>9</option>
-                                <option value='10'>10</option>
-                                <option value='11'>11</option>
-                                <option value='12'>12</option>
-                                <option value='13'>13</option>
-                                <option value='14'>14</option>
-                                <option value='15'>15</option>
-                                </select></fieldset></div></td>\n";
-            $rowssoundbar .= "</tr>\n";
-        }
+
+			$rowssoundbar .= "</div>\n";
+			$rowssoundbar .= "</td>\n";
+
+			# From time
+			$rowssoundbar .= "<td style='width:110px; min-width:110px; max-width:110px;'>\n";
+			$rowssoundbar .= "<div class='sb_time_wrap'><input id='fromtime_$room' type='time' name='fromtime_$room' value='" . ($config->{$key}->[14]->{fromtime} // '') . "'></div>\n";
+			$rowssoundbar .= "</td>\n";
+
+			# Night
+			$rowssoundbar .= "<td style='width:96px; min-width:96px; max-width:96px; text-align:center; white-space:nowrap; vertical-align:middle;'>\n";
+			$rowssoundbar .= "<fieldset style='margin:0; padding:0; border:none; text-align:center;'>\n";
+			$rowssoundbar .= "<div class='sb_switch_wrap'>\n";
+			$rowssoundbar .= render_lb_flipswitch(
+				id    => "tvmonnight_$room",
+				name  => "tvmonnight_$room",
+				value => $tvmonnight_val
+			);
+			$rowssoundbar .= "</div>\n";
+			$rowssoundbar .= "</fieldset></td>\n";
+
+			# Night Sub
+			$rowssoundbar .= "<td style='width:96px; min-width:96px; max-width:96px; text-align:center; white-space:nowrap; vertical-align:middle;'>\n";
+			$rowssoundbar .= "<fieldset style='margin:0; padding:0; border:none; text-align:center;'>\n";
+			$rowssoundbar .= "<div class='sb_switch_wrap'>\n";
+			$rowssoundbar .= render_lb_flipswitch(
+				id    => "tvmonnightsubn_$room",
+				name  => "tvmonnightsubn_$room",
+				value => $tvmonnightsubn_val
+			);
+			$rowssoundbar .= "</div>\n";
+			$rowssoundbar .= "</fieldset></td>\n";
+
+			# Sub gain
+			$rowssoundbar .= "<td style='width:90px; min-width:90px; max-width:90px;'>\n";
+			$rowssoundbar .= "<div class='sb_select_wrap'><fieldset style='margin:0; padding:0; border:none; width:100%;'>\n";
+			$rowssoundbar .= "<select id='subgain_$room' name='subgain_$room' data-mini='true' data-native-menu='true' style='width:100%'>\n";
+			$rowssoundbar .= "<option value='-15'>-15</option>
+								<option value='-14'>-14</option>
+								<option value='-12'>-12</option>
+								<option value='-11'>-11</option>
+								<option value='-10'>-10</option>
+								<option value='-9'>-9</option>
+								<option value='-8'>-8</option>
+								<option value='-7'>-7</option>
+								<option value='-6'>-6</option>
+								<option value='-5'>-5</option>
+								<option value='-4'>-4</option>
+								<option value='-3'>-3</option>
+								<option value='-2'>-2</option>
+								<option value='-1'>-1</option>
+								<option selected='selected' value='0'>0</option>
+								<option value='1'>1</option>
+								<option value='2'>2</option>
+								<option value='3'>3</option>
+								<option value='4'>4</option>
+								<option value='5'>5</option>
+								<option value='6'>6</option>
+								<option value='7'>7</option>
+								<option value='8'>8</option>
+								<option value='9'>9</option>
+								<option value='10'>10</option>
+								<option value='11'>11</option>
+								<option value='12'>12</option>
+								<option value='13'>13</option>
+								<option value='14'>14</option>
+								<option value='15'>15</option>\n";
+				$rowssoundbar .= "</select></fieldset></div>\n";
+				$rowssoundbar .= "</td>\n";
+
+			$rowssoundbar .= "</tr>\n";
+		}
     }
     if ($countplayers < 1) {
         $rowssonosplayer .= "<tr><td colspan=10>" . $SL{'ZONES.SONOS_EMPTY_ZONES'} . "</td></tr>\n";
@@ -1089,7 +1131,8 @@ sub save_details
     }
     $cfg->{VARIOUS}->{cron} = "$R::cron";
     $cfg->{VARIOUS}->{selfunction} = "$R::func_list";
-    $cfg->{SYSTEM}->{checkt2s} = "$R::checkt2s";
+	# $cfg->{SYSTEM}->{checkt2s} = "$R::checkt2s";
+    $cfg->{SYSTEM}->{checkt2s} = "true";
     $cfg->{SYSTEM}->{hw_update} = "$R::hw_update";
     $cfg->{SYSTEM}->{hw_update_day} = "$R::hw_update_day";
     $cfg->{SYSTEM}->{hw_update_time} = "$R::hw_update_time";
@@ -1540,8 +1583,8 @@ sub save_zone
 # Volume page renderer
 #####################################################
 
-sub volumes
-{
+sub volumes {
+
     $template->param(FORMNO => 'VOLUME');
 
     # Ensure profiles file exists
@@ -1552,12 +1595,33 @@ sub volumes
         LOGDEB("New Volume Profiles config has been created");
     }
 
-    $rowsvolplayer = '';
-    my $jsonobjvol = LoxBerry::JSON->new();
-    my $vcfg_local = $jsonobj->open(filename => $lbpconfigdir . "/" . $volumeconfigfile);
+    my $rowsvolplayer = '';
+    my $jsonobjvol    = LoxBerry::JSON->new();
+    my $vcfg_local    = $jsonobj->open(filename => $lbpconfigdir . "/" . $volumeconfigfile);
 
     my $last_id = (keys @$vcfg_local);
     my $config  = $cfg->{sonoszonen};
+
+    my $build_flipswitch = sub {
+        my ($name, $value, $disabled) = @_;
+
+        $value    = defined $value ? $value : 'false';
+        $disabled = $disabled ? 1 : 0;
+
+        my $checked_attr  = ($value eq 'true') ? " checked='checked'" : "";
+        my $disabled_attr = $disabled ? " disabled='disabled'" : "";
+        my $wrap_class    = $disabled ? "lb-flipswitch is-disabled" : "lb-flipswitch";
+
+        return ""
+            . "<div class='$wrap_class' data-input='$name' data-value='$value'>"
+            . "<input type='hidden' name='$name' id='${name}_hidden' value='$value'>"
+            . "<input type='checkbox' id='$name' class='lb-flipswitch-checkbox no-jqm-flipswitch' data-role='none'$checked_attr$disabled_attr>"
+            . "<label class='lb-flipswitch-label' for='$name'>"
+            . "<span class='lb-flipswitch-inner'></span>"
+            . "<span class='lb-flipswitch-switch'></span>"
+            . "</label>"
+            . "</div>";
+    };
 
     for (my $id = 1; $id <= $last_id; $id++) {
         $countplayers = 0;
@@ -1568,9 +1632,11 @@ sub volumes
         $rowsvolplayer .= "<input class='textfield' type='text' style='align: middle; width: 100%' id='profile$id' name='profile$id' value='' placeholder='Volume Profile Name'/>\n";
         $rowsvolplayer .= "<td valign='left'>";
         $rowsvolplayer .= "<img title='Load current values from Sonos devices' value='$id' id='btnload$id' name='btnload$id' class='ico-load' src='/plugins/$lbpplugindir/images/musik-note.png' border='0' width='30' height='30'>\n";
+
         if ($last_id > 1) {
             $rowsvolplayer .= "<img title='Delete current Profile' onclick='' value='$id' id='btndel$id' name='btndel$id' class='ico-delete' src='/plugins/$lbpplugindir/images/recycle-bin.png' border='0' width='30' height='30'></td>\n";
         }
+
         $rowsvolplayer .= "</th><tr><th style='background-color: #6dac20;' align='left'>&nbsp;Rooms</th><div class='form-group col-7'>\n";
         $rowsvolplayer .= "<th class='form-control' style='background-color: #6dac20; align: center'>V</th>\n";
         $rowsvolplayer .= "<th class='form-control' style='background-color: #6dac20; align: center'>T</th>\n";
@@ -1591,6 +1657,26 @@ sub volumes
             my $error_treble_bass = $SL{'VOLUME_PROFILES.ERROR_TREBLE_BASS_PLAYER'};
             my $error_sbass       = $SL{'VOLUME_PROFILES.ERROR_SUB_LEVEL_PLAYER'};
 
+            my $surround_cap = $config->{$key}->[10];
+            my $sub_cap      = $config->{$key}->[8];
+
+            my $surround_disabled = ($surround_cap && $surround_cap eq 'NOSUR') ? 1 : 0;
+            my $sub_disabled      = ($sub_cap && $sub_cap eq 'NOSUB') ? 1 : 0;
+
+            my $loudness_value = $vcfg_local->[$id-1]->{Player}->{$key}->[0]->{Loudness} // 'false';
+            my $surround_value = $vcfg_local->[$id-1]->{Player}->{$key}->[0]->{Surround} // 'false';
+            my $subwoofer_value = $vcfg_local->[$id-1]->{Player}->{$key}->[0]->{Subwoofer} // 'false';
+
+            if ($surround_value eq 'na') {
+                $surround_value    = 'false';
+                $surround_disabled = 1;
+            }
+
+            if ($subwoofer_value eq 'na') {
+                $subwoofer_value = 'false';
+                $sub_disabled    = 1;
+            }
+
             $rowsvolplayer .= "<tr><div class='container'>";
 
             my $statusfile = $lbpdatadir . '/PlayerStatus/s4lox_on_' . $key . '.txt';
@@ -1604,22 +1690,24 @@ sub volumes
             $rowsvolplayer .= "<td style='width: 45px; height: 15px;'><input type='text' class='form-validation' id='treble_$zid' name='treble_$zid' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='$error_treble_bass' value='$vcfg_local->[$id-1]->{Player}->{$key}->[0]->{Treble}'></td>\n";
             $rowsvolplayer .= "<td style='width: 45px; height: 15px;'><input type='text' class='form-validation' id='bass_$zid' name='bass_$zid' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='$error_treble_bass' value='$vcfg_local->[$id-1]->{Player}->{$key}->[0]->{Bass}'></td>\n";
 
-            $rowsvolplayer .= "<td style='height: 10px; width: 5px; align: middle'>";
-            $rowsvolplayer .= "<fieldset><select onchange='' id='loudness_$zid' name='loudness_$zid' data-role='flipswitch' style='width: 5%'>\n";
-            $rowsvolplayer .= "<option value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option>";
-            $rowsvolplayer .= "</select></fieldset></td>\n";
+            $rowsvolplayer .= "<td style='height: 10px; width: 70px; text-align:center; vertical-align:middle;'>";
+            $rowsvolplayer .= $build_flipswitch->("loudness_$zid", $loudness_value, 0);
+            $rowsvolplayer .= "</td>\n";
 
-            $rowsvolplayer .= "<td style='height: 10px; width: 25px; align: middle'>";
-            $rowsvolplayer .= "<fieldset><select onchange='' id='surround_$zid' name='surround_$zid' data-role='flipswitch' style='width: 5%'>\n";
-            $rowsvolplayer .= "<option value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option>";
-            $rowsvolplayer .= "</select></fieldset></td>\n";
+            $rowsvolplayer .= "<td style='height: 10px; width: 70px; text-align:center; vertical-align:middle;'>";
+            $rowsvolplayer .= $build_flipswitch->("surround_$zid", $surround_value, $surround_disabled);
+            $rowsvolplayer .= "</td>\n";
 
-            $rowsvolplayer .= "<td style='height: 10px; width: 25px; align: middle'>";
-            $rowsvolplayer .= "<fieldset><select onchange='' id='subwoofer_$zid' name='subwoofer_$zid' data-role='flipswitch' style='width: 5%'>\n";
-            $rowsvolplayer .= "<option value='false'>$SL{'T2S.LABEL_FLIPSWITCH_OFF'}</option><option value='true'>$SL{'T2S.LABEL_FLIPSWITCH_ON'}</option>";
-            $rowsvolplayer .= "</select></fieldset></td>\n";
+            $rowsvolplayer .= "<td style='height: 10px; width: 70px; text-align:center; vertical-align:middle;'>";
+            $rowsvolplayer .= $build_flipswitch->("subwoofer_$zid", $subwoofer_value, $sub_disabled);
+            $rowsvolplayer .= "</td>\n";
 
-            $rowsvolplayer .= "<td style='width: 55px; height: 15px'><input type='text' class='form-validation' id='sbass_$zid' name='sbass_$zid' size='100' data-validation-rule='special:number-min-max-value:-15:15' data-validation-error-msg='$error_sbass' value='$vcfg_local->[$id-1]->{Player}->{$key}->[0]->{Subwoofer_level}'></td>\n";
+            if ($sub_disabled) {
+                $rowsvolplayer .= "<td style='width: 55px; height: 15px'><input type='text' class='form-validation' id='sbass_$zid' name='sbass_$zid' size='100' disabled='disabled' style='background: rgba(192,192,192, 0.2)' data-validation-rule='special:number-min-max-value:-15:15' data-validation-error-msg='$error_sbass' value='$vcfg_local->[$id-1]->{Player}->{$key}->[0]->{Subwoofer_level}'></td>\n";
+            } else {
+                $rowsvolplayer .= "<td style='width: 55px; height: 15px'><input type='text' class='form-validation' id='sbass_$zid' name='sbass_$zid' size='100' data-validation-rule='special:number-min-max-value:-15:15' data-validation-error-msg='$error_sbass' value='$vcfg_local->[$id-1]->{Player}->{$key}->[0]->{Subwoofer_level}'></td>\n";
+            }
+
             $rowsvolplayer .= "<td style='width: 60px; height: 15px'><div class='$id' id='$id'><input type='checkbox' id='master_$zid' name='master_$zid' class='$id' value='$vcfg_local->[$id-1]->{Player}->{$key}->[0]->{Master}'></div></td>\n";
             $rowsvolplayer .= "<td style='width: 60px; height: 15px'><input type='checkbox' id='member_$zid' name='member_$zid' class='member_$id' value='$vcfg_local->[$id-1]->{Player}->{$key}->[0]->{Member}'></td>\n";
             $rowsvolplayer .= "</div></tr>";
@@ -1633,6 +1721,7 @@ sub volumes
     $rowsvolplayer .= "<input type='hidden' id='new_id' name='new_id' value='$last_id'>\n";
     $rowsvolplayer .= "<input type='hidden' id='delprofil' name='delprofil' value=0>\n";
     $rowsvolplayer .= "<input type='hidden' id='countplayers' name='countplayers' value='$countplayers'>\n";
+
     $template->param("ROWSVOLPLAYER", $rowsvolplayer);
 
     LOGOK "Sound Profiles have been loaded successfully.";
@@ -2068,6 +2157,33 @@ sub get_sonos_health
     );
 
     return \%out;
+}
+
+
+sub render_lb_flipswitch {
+    my (%p) = @_;
+
+    my $id      = $p{id}      // return '';
+    my $name    = $p{name}    // $id;
+    my $value   = defined $p{value} ? $p{value} : 'false';
+    my $class   = $p{class}   // '';
+    my $style   = $p{style}   // '';
+    my $onchange= $p{onchange} // '';
+
+    my $html = "";
+
+    $html .= "<div class='lb-flipswitch $class' data-input='$id' data-value='$value' style='$style'>\n";
+    $html .= "  <input type='hidden' name='$name' id='${id}_hidden' value='false'>\n";
+    $html .= "  <input type='checkbox' id='$id' class='lb-flipswitch-checkbox no-jqm-flipswitch' data-role='none'";
+    $html .= " onchange=\"$onchange\"" if $onchange;
+    $html .= ">\n";
+    $html .= "  <label class='lb-flipswitch-label' for='$id'>\n";
+    $html .= "      <span class='lb-flipswitch-inner'></span>\n";
+    $html .= "      <span class='lb-flipswitch-switch'></span>\n";
+    $html .= "  </label>\n";
+    $html .= "</div>\n";
+
+    return $html;
 }
 
 #####################################################
