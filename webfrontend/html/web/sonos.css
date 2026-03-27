@@ -592,3 +592,29 @@ tr.empty_template label {
     max-width: 600px !important;
     box-sizing: border-box !important;
 }
+
+/* =========================================================
+   Layout Folgefunktion ZAPZONE...
+   ========================================================= */
+
+.func-list-cell {
+    width: 260px !important;
+    min-width: 260px !important;
+    max-width: 260px !important;
+    vertical-align: top;
+}
+
+.func-list-wrap {
+    width: 260px !important;
+    min-width: 260px !important;
+    max-width: 260px !important;
+}
+
+.func-list-wrap .ui-select,
+.func-list-wrap #func_list-button,
+.func-list-wrap select {
+    width: 260px !important;
+    min-width: 260px !important;
+    max-width: 260px !important;
+    box-sizing: border-box;
+}

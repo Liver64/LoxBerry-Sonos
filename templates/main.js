@@ -2437,6 +2437,17 @@ $(document).ready(function(e) {
 	$(".usesb-flipswitch").flipswitch("refresh");
 
 	toggleRadioAnnounce();
+	
+	$('#func_list').on('change', function () {
+        toggleCronFields();
+    });
+    toggleCronFields();
+	
+	$('#follow_host').on('change', function () {
+        toggleFollowDelayFields();
+    });
+
+    toggleFollowDelayFields();
 
 	$(document).on('change click', '#announceradio, #announceradio_always', function () {
 		toggleRadioAnnounce();
@@ -2455,7 +2466,7 @@ $(document).ready(function(e) {
 	validateTVMon();
 	getsbconfig();
 	updateLanguageDropdownForEngine();
-
+	
 	$("form#main_form").submit(function(e) {	// Main submit validation
 		console.log("submit");
 
@@ -2568,6 +2579,25 @@ $(document).ready(function(e) {
  * DETAILS page helpers (safe, only used if #detail_form exists)
  * ================================================================================================ */
 
+function toggleCronFields() {
+    var selectedValue = $('#func_list').val();
+
+    // Anzeigen nur wenn eine echte Funktion gewählt wurde
+    // "" = Placeholder oder None -> ausblenden
+    if (selectedValue && selectedValue !== "") {
+        $('#cron_label_cell, #cron_slider_cell').show();
+
+        // ionRangeSlider nach dem Einblenden kurz updaten,
+        // damit Breite korrekt berechnet wird
+        var cronSlider = $('#cron').data('ionRangeSlider');
+        if (cronSlider) {
+            cronSlider.update({});
+        }
+    } else {
+        $('#cron_label_cell, #cron_slider_cell').hide();
+    }
+}
+
 function details_init() {
 	select_update();
 	load_radio_favorites_into_func_list();
@@ -2583,6 +2613,23 @@ function toggleRadioAnnounce() {
         $('.radioannounce').show();
     } else {
         $('.radioannounce').hide();
+    }
+}
+
+function toggleFollowDelayFields() {
+    var selectedValue = $('#follow_host').val();
+
+    // Anzeigen nur wenn wirklich ein Player gewählt wurde
+    // ausblenden bei "", "false" oder "keinem"
+    if (selectedValue && selectedValue !== '' && selectedValue !== 'false' && selectedValue !== 'keinem') {
+        $('#follow_delay_label_cell, #follow_delay_slider_cell').show();
+
+        var followSlider = $('#waitleave').data('ionRangeSlider');
+        if (followSlider) {
+            followSlider.update({});
+        }
+    } else {
+        $('#follow_delay_label_cell, #follow_delay_slider_cell').hide();
     }
 }
 

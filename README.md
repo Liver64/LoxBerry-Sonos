@@ -2,7 +2,7 @@
 
 # Control
 
-![](https://img.shields.io/badge/Release-v6.1.3-blue)
+![](https://img.shields.io/badge/Release-v6.1.4-blue)
 ![](https://img.shields.io/badge/PreRrelease-v6.0.1-blue)
 
 Sonos for Smart Home

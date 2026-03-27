@@ -1071,7 +1071,7 @@
                 -->
 
                 <tr>
-                    <td valign="middle" style="height: 33px; width: 25%; text-align: center;">
+                    <td valign="middle" style="height: 33px; width: 25%; text-align: left;">
                         <!--
                             height: 33px   = Höhe der Kopfzeile links
                             width: 25%     = Breite der linken Kopfspalte
@@ -1106,62 +1106,38 @@
                         <label id="lcheckonline"><TMPL_VAR T2S_DETAILS.LABEL_ZAPZONE></label>
                     </td>
 
-                    <td style="height: 50px; width: 15%;">
+                    <td style="height: 50px; width: 85%;">
                         <!--
                             rechte Zelle dieser Zeile
                             width:15% wirkt hier nur auf die TD selbst
                             der innere Aufbau kommt aus der verschachtelten Tabelle
                         -->
-                        <table border="0" width="100%">
-                            <!-- width:100% = innere Tabelle füllt komplette Eltern-Zelle -->
+                        <table border="0" style="width:100%; table-layout:fixed;">
+							<tr>
+								<td class="func-list-cell">
+									<div class="func-list-wrap">
+										<select id="func_list" name="func_list" data-mini="true" data-native-menu="true">
+											<option selected="selected" disabled value="">*** Select Function ***</option>
+											<option value="">None</option>
+											<option value="nextradio">Nextradio</option>
+											<option value="trackfavorites">Track Favorites</option>
+											<option value="playlistfavorites">Playlist Favorites</option>
+											<option value="radiofavorites">Radio Favorites</option>
+										</select>
+									</div>
 
-                            <tr>
-                                <td style="width: 11%">
-                                    <!--
-                                        width:11% = Breite des Dropdown-Bereichs "func_list"
-                                        Beispiel:
-                                        11% -> aktuell
-                                        15% -> mehr Platz
-                                        8%  -> kompakter
-                                    -->
-									<select id="func_list" name="func_list" data-mini="true" data-native-menu="true">
-										<option selected="selected" disabled value="">*** Select Function ***</option>
-										<option value="">None</option>
-										<option value="nextradio">Nextradio</option>
-										<option value="trackfavorites">Track Favorites</option>
-										<option value="playlistfavorites">Playlist Favorites</option>
-										<option value="radiofavorites">Radio Favorites</option>
-									</select>
 									<script>
-										$('#func_list').val('<TMPL_VAR VARIOUS.selfunction>')
+										$('#func_list').val('<TMPL_VAR VARIOUS.selfunction>');
+										$('#func_list').trigger('change');
 									</script>
-                                </td>
+								</td>
 
-								<td style="width: 9%; height: 50px;">
-                                    <!--
-                                        width:9%    = Breite des Reset-Labels
-                                        height:60px = Höhe dieser Zelle
-                                        Wenn das Label zu nah am Slider sitzt:
-                                        z. B. width:12%;
-                                    -->
-                                    <label align="right" id="lcron"><TMPL_VAR T2S_DETAILS.LABEL_ZAPZONE_RESET></label>
-                                </td>
+								<td id="cron_label_cell" style="width: 85px; height: 50px; white-space: nowrap; padding-left: 14px;">
+									<label id="lcron"><TMPL_VAR T2S_DETAILS.LABEL_ZAPZONE_RESET></label>
+								</td>
 
-                                <td style="width: 50%">
-                                    <!--
-                                        width:50% = Platz für Slider-Bereich
-                                        Beispiel:
-                                        50% -> aktuell
-                                        60% -> mehr Platz für Slider
-                                    -->
-                                    <div style="flex:0 0 46%;">
-                                        <!--
-                                            flex:0 0 46% = effektive Breite des Slider-Containers
-                                            Beispiel:
-                                            46% -> aktuell
-                                            60% -> breiter
-                                            35% -> schmaler
-                                        -->
+								<td id="cron_slider_cell" style="width: auto; padding-left: 8px;">
+									<div style="width: 100%;">
 										<input type="hidden" id="cron" name="cron" value="<TMPL_VAR VARIOUS.cron>" />
 										<script>
 										$(function () {
@@ -1192,9 +1168,9 @@
 										});
 										</script>
 									</div>
-                                </td>
-                            </tr>
-                        </table>
+								</td>
+							</tr>
+						</table>
                     </td>
                 </tr>
 
@@ -1501,87 +1477,89 @@
 				</tr>
 
 				<tr>
-					<td style="height: 50px; width: 15%; text-align: left; white-space: nowrap;">
-						<label id="lcheckonline"><TMPL_VAR ZONES.FOLLOW_LABEL></label>
+					<td style="height: 50px; width: 15%; vertical-align: middle;">
+						<label id="lfollow"><TMPL_VAR ZONES.FOLLOW_LABEL></label>
 					</td>
 
 					<td style="height: 50px; width: 85%; vertical-align: middle;">
-						<div style="display:flex; align-items:center; gap:18px; flex-wrap:nowrap; white-space:nowrap; width:100%;">
+						<table border="0" style="width:100%; table-layout:fixed;">
+							<tr>
+								<!-- Player label + select -->
+								<td class="follow-player-cell" style="width: 320px; vertical-align: middle; white-space: nowrap;">
+									<div class="follow-player-wrap" style="display:flex; align-items:center; gap:10px; white-space:nowrap;">
+										<label id="lfollow_host" for="follow_host" style="margin:0; white-space:nowrap;">
+											<TMPL_VAR ZONES.FOLLOW_HOST_LABEL>
+										</label>
 
-							<label id="lfollow_host" style="margin:0;"><TMPL_VAR ZONES.FOLLOW_HOST_LABEL></label>
+										<div style="width:180px; min-width:180px; max-width:180px;">
+											<select id="follow_host" name="follow_host" data-mini="true" data-native-menu="true" style="width:100%;">
+												<option selected="selected" value="false"><TMPL_VAR ZONES.FOLLOW_HOST_OPTION></option>
+												<TMPL_VAR ROWSHOSTPLAYER>
+											</select>
+										</div>
+									</div>
 
-							<div style="width:180px;">
-								<select id="follow_host" name="follow_host" data-mini="true" data-native-menu="true" style="width:100%;">
-									<option selected="selected" value="false"><TMPL_VAR ZONES.FOLLOW_HOST_OPTION></option>
-									<TMPL_VAR ROWSHOSTPLAYER>
-								</select>
-							</div>
+									<script>
+										$('#follow_host').val('<TMPL_VAR VARIOUS.follow_host>');
+										$('#follow_host').trigger('change');
+									</script>
+								</td>
 
-							<label id="lfollow_wait" style="margin:0 0 0 20px;"><TMPL_VAR ZONES.FOLLOW_HOST_WAIT_LABEL></label>
+								<!-- Delay label -->
+								<td id="follow_delay_label_cell" style="width: 70px; height: 50px; white-space: nowrap; padding-left: 14px; vertical-align: middle;">
+									<label id="lfollow_delay" for="waitleave" style="margin:0; white-space:nowrap;">
+										<TMPL_VAR ZONES.FOLLOW_HOST_WAIT_LABEL>
+									</label>
+								</td>
 
-							<div style="flex:1; min-width:0;">
-								<input type="hidden"
-									   id="follow_wait"
-									   name="follow_wait"
-									   value="<TMPL_VAR VARIOUS.follow_wait>">
-							</div>
-						</div>
+								<!-- Delay slider -->
+								<td id="follow_delay_slider_cell" style="vertical-align: middle; padding-left: 8px;">
+									<div style="width:100%; min-width:320px;">
+										<input type="hidden" id="waitleave" name="waitleave" value="<TMPL_VAR VARIOUS.follow_wait>" />
 
-						<script>
-							$(function () {
-								var $followWait = $("#follow_wait");
-								var values = [0, 30, 60, 120, 180, 300];
-								var rawValue = $followWait.val();
-								var savedSeconds = parseInt(rawValue, 10);
+										<script>
+										$(function () {
+											var $waitleave = $("#waitleave");
+											var savedValue = parseInt($waitleave.val(), 10);
 
-								if (isNaN(savedSeconds)) {
-									savedSeconds = 30;
-								}
+											if (isNaN(savedValue)) {
+												savedValue = 180;
+											}
 
-								var startIndex = values.indexOf(savedSeconds);
-								if (startIndex === -1) {
-									startIndex = 1; // default = 30 sec
-								}
+											$waitleave.ionRangeSlider({
+												skin: "big",
+												grid: true,
+												min: 0,
+												max: 300,
+												from: savedValue,
+												step: 30,
+												prettify: function (value) {
+													if (value === 0) {
+														return "Off";
+													}
+													if (value < 60) {
+														return value + " Sec.";
+													}
+													return Math.floor(value / 60) + " Min.";
+												},
+												onStart: function (data) {
+													console.log("Initial follow delay: " + data.from);
+												},
+												onChange: function (data) {
+													console.log("Current follow delay: " + data.from);
+												}
+											});
 
-								$followWait.ionRangeSlider({
-									skin: "big",
-									grid: true,
-									values: values,
-									from: startIndex,
-
-									prettify: function (value) {
-										if (value === 0) {
-											return "0 Sec.";
-										}
-										if (value < 60) {
-											return value + " Sec.";
-										}
-										if (value === 60) {
-											return "1 Min.";
-										}
-										return (value / 60) + " Min.";
-									},
-
-									onStart: function (data) {
-										$followWait.val(data.from_value);
-									},
-
-									onChange: function (data) {
-										$followWait.val(data.from_value);
-									},
-
-									onFinish: function (data) {
-										$followWait.val(data.from_value);
-									}
-								});
-
-								$followWait.hide();
-								$('#follow_host').val('<TMPL_VAR VARIOUS.follow_host>');
-							});
-						</script>
+											$waitleave.hide();
+										});
+										</script>
+									</div>
+								</td>
+							</tr>
+						</table>
 					</td>
 				</tr>
-
+				
 				<tr>
 					<td style="height: 50px; width: 15%; text-align: left; white-space: nowrap;">
                         <!-- linke Label-Spalte -->
