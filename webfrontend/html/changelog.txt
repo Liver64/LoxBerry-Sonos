@@ -523,4 +523,6 @@
 			[IMPROVEMENT] Beim TV-Monitor sind die Player auswählbar die beim Einschalten gestoppt werden sollen
 			[BUGFIX] kleinere Fehler wurden behoben
 			[BUGFIX] MQTT Volume per Player bei Gruppenkonstellation wurde gefixed
+ 6.1.4		[IMPROVEMENT] UI neu gestaltet
+			[BUGFIX] TV Monitor optimiert
 			
