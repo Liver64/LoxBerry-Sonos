@@ -304,6 +304,12 @@ if (is_disabled($cfg->{LOXONE}->{LoxDatenMQTT}) && is_enabled($cfg->{LOXONE}->{L
     $defaultSave = "true";
 }
 
+# Switch checkt2s On per default
+if ($cfg->{SYSTEM}->{checkt2s} eq "false") {
+	$cfg->{SYSTEM}->{checkt2s} = "true";
+	$defaultSave = "true";
+}
+
 if (is_enabled($defaultSave)) {
     $jsonobj->write();
 }
@@ -1126,8 +1132,8 @@ sub save_details
     if ($R::follow_host ne "") {
         $cfg->{VARIOUS}->{follow_host} = "$R::follow_host";
     }
-    if ($R::follow_wait ne "") {
-        $cfg->{VARIOUS}->{follow_wait} = "$R::follow_wait";
+    if ($R::waitleave ne "") {
+        $cfg->{VARIOUS}->{follow_wait} = "$R::waitleave";
     }
     $cfg->{VARIOUS}->{cron} = "$R::cron";
     $cfg->{VARIOUS}->{selfunction} = "$R::func_list";
@@ -1146,6 +1152,7 @@ sub save_details
         unlink("$lbhomedir/system/cron/cron.03min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
+		unlink("$lbhomedir/system/cron/cron.15min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
         LOGOK "Cron job (each minute) created";
     }
@@ -1154,31 +1161,44 @@ sub save_details
         unlink("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
+		unlink("$lbhomedir/system/cron/cron.15min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
         LOGOK "Cron job (every 3 minutes) created";
     }
     if ($R::cron eq "5") {
         system("ln -s $lbphtmldir/bin/cron/cronjob.sh $lbhomedir/system/cron/cron.05min/$lbpplugindir");
+		unlink("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.03min/$lbpplugindir");
-        unlink("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
+		unlink("$lbhomedir/system/cron/cron.15min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
         LOGOK "Cron job (every 5 minutes) created";
     }
     if ($R::cron eq "10") {
         system("ln -s $lbphtmldir/bin/cron/cronjob.sh $lbhomedir/system/cron/cron.10min/$lbpplugindir");
+		unlink("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.03min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
-        unlink("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
+        unlink("$lbhomedir/system/cron/cron.15min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
         LOGOK "Cron job (every 10 minutes) created";
     }
+	if ($R::cron eq "15") {
+        system("ln -s $lbphtmldir/bin/cron/cronjob.sh $lbhomedir/system/cron/cron.15min/$lbpplugindir");
+		unlink("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
+        unlink("$lbhomedir/system/cron/cron.03min/$lbpplugindir");
+        unlink("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
+		unlink("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
+        unlink("$lbhomedir/system/cron/cron.30min/$lbpplugindir");
+        LOGOK "Cron job (every 15 minutes) created";
+    }
     if ($R::cron eq "30") {
         system("ln -s $lbphtmldir/bin/cron/cronjob.sh $lbhomedir/system/cron/cron.30min/$lbpplugindir");
+		unlink("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.03min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
-        unlink("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
+        unlink("$lbhomedir/system/cron/cron.15min/$lbpplugindir");
         LOGOK "Cron job (every 30 minutes) created";
     }
 

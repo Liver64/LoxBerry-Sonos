@@ -1057,61 +1057,24 @@
 
         <div class="form-group">
             <table class="formtable" border="0" width="90%" cellpadding="10">
-                <!--
-                    width="90%"         = Gesamtbreite der Haupttabelle
-                    Beispiel:
-                    90%  -> etwas schmaler
-                    100% -> nutzt volle Breite
-
-                    cellpadding="10"    = Innenabstand in ALLEN Tabellenzellen
-                    Beispiel:
-                    6  -> kompakter
-                    10 -> aktueller Wert
-                    14 -> luftiger
-                -->
-
                 <tr>
                     <td valign="middle" style="height: 33px; width: 25%; text-align: left;">
-                        <!--
-                            height: 33px   = Höhe der Kopfzeile links
-                            width: 25%     = Breite der linken Kopfspalte
-                            text-align:center = Inhalt zentriert
-                        -->
                         <h2 class="auto-style3" style="width: 100%">
-                            <!-- width:100% = Überschrift füllt die ganze TD-Breite -->
                             <TMPL_VAR ZONES.SONOS_OPTIONS>
                         </h2>
                     </td>
 
                     <td style="height: 33px; text-align: center; width: 800px;">
-                        <!--
-                            width: 800px   = feste Breite der rechten Kopfspalte
-                            Beispiel:
-                            700px -> schmaler
-                            900px -> breiter
-                        -->
                         <img class='ico_sonos' src='/plugins/<TMPL_VAR PLUGINDIR>/images/sonos_logo.png' border='0' width='186' height='125' align="absmiddle">
                     </td>
                 </tr>
 
                 <tr>
                     <td style="height: 50px; width: 15%;">
-                        <!--
-                            height: 50px = Zeilenhöhe
-                            width: 15%   = Breite der linken Label-Spalte
-                            Beispiel:
-                            12% -> schmaler
-                            20% -> breiter
-                        -->
                         <label id="lcheckonline"><TMPL_VAR T2S_DETAILS.LABEL_ZAPZONE></label>
                     </td>
 
                     <td style="height: 50px; width: 85%;">
-                        <!--
-                            rechte Zelle dieser Zeile
-                            width:15% wirkt hier nur auf die TD selbst
-                            der innere Aufbau kommt aus der verschachtelten Tabelle
-                        -->
                         <table border="0" style="width:100%; table-layout:fixed;">
 							<tr>
 								<td class="func-list-cell">
@@ -1142,25 +1105,27 @@
 										<script>
 										$(function () {
 											var $cron = $("#cron");
+											var allowedValues = [1, 3, 5, 10, 15, 30];
 											var savedValue = parseInt($cron.val(), 10);
 
-											if (isNaN(savedValue)) {
+											// Fallback, falls nichts Gültiges gespeichert ist
+											if (allowedValues.indexOf(savedValue) === -1) {
 												savedValue = 3;
 											}
+
+											var startIndex = allowedValues.indexOf(savedValue);
 
 											$cron.ionRangeSlider({
 												skin: "big",
 												grid: true,
-												min: 1,
-												max: 30,
-												from: savedValue,
-												step: 3,
+												values: allowedValues,
+												from: startIndex,
 												postfix: " Min.",
 												onStart: function (data) {
-													console.log("Initial data: " + data.from);
+													console.log("Initial data: " + data.from_value);
 												},
 												onChange: function (data) {
-													console.log("Current selected data: " + data.from);
+													console.log("Current selected data: " + data.from_value);
 												}
 											});
 
@@ -1176,24 +1141,11 @@
 
                 <tr>
                     <td style="height: 50px; width: 25%;">
-                        <!--
-                            width:25% = linke Label-Spalte dieser Zeile
-                        -->
                         <label id="lvolume"><TMPL_VAR T2S_DETAILS.LABEL_T2S_VOLUME_CHANGE></label>
                     </td>
 
                     <td style="width: 20%">
-                        <!--
-                            width:20% = rechter Bereich
-                            Falls Slider mehr Platz braucht, hier erhöhen
-                        -->
                         <div style="flex:0 0 46%;">
-                            <!--
-                                flex:0 0 46% = Breite des Slider-Containers
-                                Beispiel:
-                                46% -> aktuell
-                                60% -> breiter
-                            -->
 							<input type="hidden" id="volume" name="volume" value="<TMPL_VAR MP3.volumedown>" />
 
 							<script>
@@ -1230,27 +1182,13 @@
 
                 <tr>
                     <td style="width: 27%">
-                        <!--
-                            width:27% = linke Spalte
-                        -->
                         <TMPL_VAR RADIO.LABEL_RADIO_ANNOUNCE>
                     </td>
 
                     <td style="width: 400px">
-                        <!--
-                            width:400px = feste Breite der rechten Spalte
-                            Beispiel:
-                            350px -> schmaler
-                            500px -> breiter
-                        -->
 						<div class="lb-flipswitch"
 							 data-input="announceradio"
 							 data-value="<TMPL_VAR VARIOUS.announceradio>">
-                            <!--
-                                Abstände dieses Schalters kommen überwiegend aus CSS
-                                (flipswitch.css), nicht aus diesem HTML
-                            -->
-
 							<input type="hidden"
 								   name="announceradio"
 								   id="announceradio_hidden"
@@ -1269,24 +1207,16 @@
 						</div>
 
 						<span class="auto-style4"><TMPL_VAR RADIO.NOTE_RADIO_ANNOUNCE></span>
-                        <!--
-                            Abstand zwischen Switch und Textnote:
-                            kommt aktuell aus Standard-Flow / CSS.
-                            Falls nötig, könnte man z. B. hier ergänzen:
-                            <span class="auto-style4" style="margin-left:10px; display:inline-block;">
-                        -->
 						<input id="maxzap" name="maxzap" type="hidden" class="textfield" value="<TMPL_VAR MAXZAP>">
 					</td>
                 </tr>
 
                 <tr>
                     <td style="width: 27%">
-                        <!-- Breite linke Spalte -->
                         <TMPL_VAR RADIO.LABEL_RADIO_ANNOUNCE_ALWAYS>
                     </td>
 
                     <td style="width: 800px">
-                        <!-- feste Breite rechte Spalte -->
                         <div class="lb-flipswitch"
 							data-input="announceradio_always"
 							data-value="<TMPL_VAR VARIOUS.announceradio_always>">
@@ -1309,28 +1239,16 @@
 						</div>
 
 						<span class="auto-style4"><TMPL_VAR RADIO.NOTE_RADIO_ANNOUNCE_ALWAYS></span>
-                        <!--
-                            Optionaler Abstand zur Note:
-                            style="margin-left:10px; display:inline-block;"
-                        -->
                     </td>
                 </tr>
 
                 <tr class="radioannounce">
                     <td style="height: 50px; width: 25%;">
-                        <!-- Höhe/Breite linker Label-Bereich -->
                         <label id="lcorrection"><TMPL_VAR T2S.LABEL_CORRECTION></label>
                     </td>
 
                     <td style="height: 50px; width: 800px;">
-                        <!-- feste Breite des Slider-Bereichs -->
                         <div style="flex:0 0 46%;">
-                            <!--
-                                Breite des inneren Slider-Containers
-                                Beispiel:
-                                46% -> aktuell
-                                70% -> deutlich breiter
-                            -->
 							<input type="hidden" id="correction" name="correction" value="<TMPL_VAR TTS.correction>" />
 							<script>
 							$(function () {
@@ -1366,36 +1284,14 @@
 
                 <tr class="t2sdet">
 					<td style="width: 25%; height: 40px; vertical-align: middle;">
-                        <!--
-                            width:25%          = Breite linke Spalte
-                            height:40px        = Zeilenhöhe
-                            vertical-align     = vertikale Zentrierung
-                        -->
 						<label id="lrampto"><TMPL_VAR T2S_DETAILS.LABEL_RAMPTO></label>
 					</td>
 
 					<td style="width: 75%; height: 50px; vertical-align: middle;">
-                        <!--
-                            width:75% = Breite rechte Hauptspalte
-                        -->
 						<table border="0" style="width:100%;">
-                            <!-- innere Tabelle füllt 100% der rechten Zelle -->
 							<tr>
 								<td style="width: 26%; height: 45px; vertical-align: middle; white-space: nowrap;">
-                                    <!--
-                                        width:26% = Platz für die Radio-Buttons Sleep / Alarm / Auto
-                                        Beispiel:
-                                        22% -> kompakter
-                                        30% -> mehr Platz
-
-                                        white-space:nowrap = verhindert Zeilenumbruch
-                                    -->
 									<fieldset id="rampto-selector" data-role="controlgroup" data-type="horizontal" style="margin:0;">
-                                        <!--
-                                            margin:0 = kein Außenabstand um das Fieldset
-                                            Wenn du Luft drumherum willst:
-                                            margin:0 10px 0 0;
-                                        -->
 										<input type="radio" name="rampto" id="rmpsleep" value="sleep">
 										<label for="rmpsleep">Sleep</label>
 
@@ -1412,32 +1308,12 @@
 								</td>
 
 								<td style="width: 74%; height: 45px; vertical-align: middle;">
-                                    <!--
-                                        width:74% = rechter Bereich mit Label + Slider
-                                    -->
-									<div style="display:flex; align-items:center; gap:16px; width:100%;">
-                                        <!--
-                                            display:flex       = horizontale Ausrichtung
-                                            align-items:center = vertikale Zentrierung
-                                            gap:16px           = Abstand zwischen Label und Slider
-                                            Beispiel:
-                                            gap:8px  -> enger
-                                            gap:24px -> luftiger
-                                        -->
-										<label id="lrmpvol" style="white-space:nowrap; margin:0;">
-                                            <!--
-                                                white-space:nowrap = Label bleibt in einer Zeile
-                                                margin:0           = kein Außenabstand
-                                                Mehr Abstand nach rechts lieber über gap steuern
-                                            -->
+ 									<div style="display:flex; align-items:center; gap:16px; width:100%;">
+ 										<label id="lrmpvol" style="white-space:nowrap; margin:0;">
 											<TMPL_VAR T2S_DETAILS.LABEL_RAMPTO_VOLUME>
 										</label>
 
 										<div style="flex:1; min-width:0;">
-                                            <!--
-                                                flex:1      = Slider nimmt restlichen Platz
-                                                min-width:0 = erlaubt Schrumpfen im Flex-Container
-                                            -->
 											<input type="hidden" id="rmpvol" name="rmpvol" value="<TMPL_VAR TTS.volrampto>" />
 										</div>
 									</div>
@@ -1484,7 +1360,6 @@
 					<td style="height: 50px; width: 85%; vertical-align: middle;">
 						<table border="0" style="width:100%; table-layout:fixed;">
 							<tr>
-								<!-- Player label + select -->
 								<td class="follow-player-cell" style="width: 320px; vertical-align: middle; white-space: nowrap;">
 									<div class="follow-player-wrap" style="display:flex; align-items:center; gap:10px; white-space:nowrap;">
 										<label id="lfollow_host" for="follow_host" style="margin:0; white-space:nowrap;">
@@ -1562,31 +1437,16 @@
 				
 				<tr>
 					<td style="height: 50px; width: 15%; text-align: left; white-space: nowrap;">
-                        <!-- linke Label-Spalte -->
 						<label id="lswupdate"><TMPL_VAR ZONES.SONOS_LABEL_UPDATE_FIRMWARE></label>
 					</td>
 
 					<td style="height: 50px; width: 85%; vertical-align: middle;">
 						<div style="display:flex; align-items:center; gap:14px; flex-wrap:nowrap; white-space:nowrap;">
-                            <!--
-                                gap:14px = Hauptabstand zwischen den großen Bereichen:
-                                Switch | Update-Block | Volmax-Block
-
-                                Beispiel:
-                                gap:8px  -> enger
-                                gap:20px -> luftiger
-                            -->
-
 							<!-- HW Update switch -->
 							<div class="lb-flipswitch"
 								 data-input="hw_update"
 								 data-value="<TMPL_VAR SYSTEM.hw_update>"
 								 style="margin:0;">
-                                <!--
-                                    margin:0 = kein zusätzlicher Außenabstand um den Switch
-                                    Falls mehr Luft rechts:
-                                    style="margin:0 10px 0 0;"
-                                -->
 								<input type="hidden"
 									   name="hw_update"
 									   id="hw_update_hidden"
@@ -1606,23 +1466,8 @@
 
 							<!-- Update block -->
 							<div class="update" style="display:flex; align-items:center; gap:10px; white-space:nowrap;">
-                                <!--
-                                    gap:10px = Abstand innerhalb des Update-Blocks
-                                    (Start-Label / Day-Select / Time-Select / Power-On-Label / Switch)
-                                    Beispiel:
-                                    gap:6px  -> enger
-                                    gap:16px -> luftiger
-                                -->
 								<label id="lstartupdate" style="margin:0;">Start:</label>
-                                <!-- margin:0 = kein zusätzlicher Abstand -->
-
-								<fieldset style="margin:0; width:130px;">
-                                    <!--
-                                        width:130px = Breite von hw_update_day
-                                        Beispiel:
-                                        110px -> schmaler
-                                        150px -> breiter
-                                    -->
+ 								<fieldset style="margin:0; width:130px;">
 									<select id="hw_update_day" name="hw_update_day" data-mini="true" data-native-menu="true" style="width:100%;">
 										<option selected="selected" value="10"><TMPL_VAR TEMPLATE.UPDATE_DAILY></option>
 										<option disabled value="7"><TMPL_VAR TEMPLATE.UPDATE_WEEKLY></option>
@@ -1637,12 +1482,6 @@
 								</fieldset>
 
 								<fieldset style="margin:0; width:100px;">
-                                    <!--
-                                        width:100px = Breite von hw_update_time
-                                        Beispiel:
-                                        85px  -> schmaler
-                                        120px -> breiter
-                                    -->
 									<select id="hw_update_time" name="hw_update_time" data-mini="true" data-native-menu="true" style="width:100%;">
 										<option value="0">0:00</option>
 										<option value="1">1:00</option>
@@ -1672,14 +1511,6 @@
 								</fieldset>
 
 								<label id="lupdatepower" style="margin:0 0 0 8px;">Power On:</label>
-                                <!--
-                                    margin-left = 8px zusätzlicher linker Abstand vor "Power On:"
-                                    Beispiel:
-                                    0px  -> direkt näher dran
-                                    8px  -> aktuell
-                                    16px -> weiter weg
-                                -->
-
 								<div class="lb-flipswitch"
 									 data-input="hw_update_power"
 									 data-value="<TMPL_VAR SYSTEM.hw_update_power>"
@@ -1703,17 +1534,7 @@
 
 							<!-- Volmax block -->
 							<div style="display:flex; align-items:center; gap:10px; white-space:nowrap; margin-left:20px;">
-                                <!--
-                                    gap:10px        = Abstand zwischen Label und Volmax-Switch
-                                    margin-left:20px = Abstand der GESAMTEN Volmax-Gruppe zum Update-Block
-
-                                    Beispiel:
-                                    margin-left:8px  -> näher an Update-Block
-                                    margin-left:20px -> aktuell
-                                    margin-left:35px -> weiter nach rechts
-                                -->
 								<label id="lvolmax" style="margin:0;"><TMPL_VAR T2S_DETAILS.LABEL_MAX_VOLUME></label>
-
 								<div class="lb-flipswitch"
 									 data-input="volmax"
 									 data-value="<TMPL_VAR VARIOUS.volmax>"
@@ -1746,19 +1567,11 @@
 
                 <tr>
                     <td style="height: 50px; width: 25%;">
-                        <!-- linke Label-Zelle -->
                         <label id="lwaiting"><TMPL_VAR T2S.LABEL_WAITING></label>
                     </td>
 
                     <td style="height: 50px; width: 800px;">
-                        <!-- Slider-Zelle -->
                         <div style="flex:0 0 46%;">
-                            <!--
-                                Breite des Slider-Containers
-                                Beispiel:
-                                46% -> aktuell
-                                70% -> breiter
-                            -->
 							<input type="hidden" id="waiting" name="waiting" value="<TMPL_VAR MP3.waiting>" />
 
 							<script>
@@ -1799,12 +1612,6 @@
             <p>
                 <center>
                     <button onclick="message()" type="submit" form="detail_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SAVE.SAVE_BUTTON></button>
-                    <!--
-                        Abstand um den Save-Button:
-                        kommt aktuell vor allem durch <p> und <center>.
-                        Falls du ihn gezielt verschieben willst, eher so:
-                        <button ... style="margin-top:10px;">
-                    -->
                 </center>
             </p>
         </div>
