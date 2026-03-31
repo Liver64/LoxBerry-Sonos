@@ -1670,12 +1670,24 @@ function getsbconfig() {
 					if ((valu[8] == 'SUB' && valu.length == 15) || valu.length == 17) {
 						setCustomFlipswitchValue("tvmonnightsub_" + index, valu[14].tvmonnightsub);
 						setCustomFlipswitchValue("tvmonnightsubn_" + index, valu[14].tvsubnight);
-						$("#subgain_" + index).val(valu[14].tvmonnightsublevel).selectmenu("refresh");
+						$("#tvsublevel_" + index).val(valu[14].tvsublevel).selectmenu("refresh");
+						$("#tvmonnightsublevel_" + index).val(valu[14].tvmonnightsublevel).selectmenu("refresh");
+
+						$("#tvmonnightsub_" + index).prop("disabled", false);
+						$("#tvmonnightsubn_" + index).prop("disabled", false);
+
+						$("#tvsublevel_" + index).selectmenu("enable").selectmenu("refresh");
+						$("#tvmonnightsublevel_" + index).selectmenu("enable").selectmenu("refresh");
 
 					} else if (valu[8] == 'SUB' && valu.length == 14) {
 						setCustomFlipswitchValue("tvmonnightsub_" + index, "false");
 						setCustomFlipswitchValue("tvmonnightsubn_" + index, "false");
-						$("#subgain_" + index).val("0").selectmenu("refresh");
+
+						$("#tvsublevel_" + index).val("0").selectmenu("enable").selectmenu("refresh");
+						$("#tvmonnightsublevel_" + index).val("0").selectmenu("enable").selectmenu("refresh");
+
+						$("#tvmonnightsub_" + index).prop("disabled", false);
+						$("#tvmonnightsubn_" + index).prop("disabled", false);
 
 					} else {
 						setCustomFlipswitchValue("tvmonnightsub_" + index, "false");
@@ -1684,11 +1696,18 @@ function getsbconfig() {
 						$("#tvmonnightsub_" + index).prop("disabled", true);
 						$("#tvmonnightsubn_" + index).prop("disabled", true);
 
-						$("#subgain_" + index)
+						$("#tvsublevel_" + index)
+							.val("0")
+							.selectmenu("disable")
+							.selectmenu("refresh");
+
+						$("#tvmonnightsublevel_" + index)
 							.val("0")
 							.selectmenu("disable")
 							.selectmenu("refresh");
 					}
+
+					toggleSoundbarSubLevels(index);
 
 					/* ------------------------------------------------------------------
 					 * SURROUND handling
@@ -1862,6 +1881,57 @@ function toggleSoundbar(room) {
         row.style.display    = "none";
     }
 }
+
+/**
+ * Show/hide the two SubLevel fields depending on the related Subwoofer switch.
+ * We only hide the inner wrapper, not the whole <td>, so the table layout stays stable.
+ */
+function toggleSoundbarSubLevels(room) {
+    var $tvSubSwitch       = $("#tvmonnightsub_" + room);
+    var $nightSubSwitch    = $("#tvmonnightsubn_" + room);
+
+    var $tvSubLevelWrap    = $("#tvsublevel_" + room).closest(".sb_select_wrap");
+    var $nightSubLevelWrap = $("#tvmonnightsublevel_" + room).closest(".sb_select_wrap");
+
+    if ($tvSubSwitch.length && $tvSubLevelWrap.length) {
+        if ($tvSubSwitch.is(":checked") && !$tvSubSwitch.prop("disabled")) {
+            $tvSubLevelWrap.show();
+        } else {
+            $tvSubLevelWrap.hide();
+        }
+    }
+
+    if ($nightSubSwitch.length && $nightSubLevelWrap.length) {
+        if ($nightSubSwitch.is(":checked") && !$nightSubSwitch.prop("disabled")) {
+            $nightSubLevelWrap.show();
+        } else {
+            $nightSubLevelWrap.hide();
+        }
+    }
+}
+
+/**
+ * Initialize SubLevel visibility for all soundbars.
+ */
+function initSoundbarSubLevels() {
+    $("[id^='usesb_']").each(function () {
+        var room = this.id.replace("usesb_", "");
+        toggleSoundbarSubLevels(room);
+    });
+}
+
+/**
+ * React live when one of the two Subwoofer switches is changed.
+ */
+$(document)
+    .off("change.sbSubLevels")
+    .on("change.sbSubLevels", "[id^='tvmonnightsub_'], [id^='tvmonnightsubn_']", function () {
+        var room = this.id
+            .replace("tvmonnightsubn_", "")
+            .replace("tvmonnightsub_", "");
+
+        toggleSoundbarSubLevels(room);
+    });
 
 /**
  * Initialize all Soundbar rows on page load.
@@ -2465,6 +2535,7 @@ $(document).ready(function(e) {
 	validateSB();
 	validateTVMon();
 	getsbconfig();
+	initSoundbarSubLevels();
 	updateLanguageDropdownForEngine();
 	
 	$("form#main_form").submit(function(e) {	// Main submit validation

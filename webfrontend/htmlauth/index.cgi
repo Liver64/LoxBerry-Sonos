@@ -815,7 +815,7 @@ sub form
 
 			# 1. Room name + On/Off
 			$rowssoundbar .= "<tr class='tvmon_body_header'>\n";
-			$rowssoundbar .= "<td colspan='11' style='padding: 4px 0 2px 0; border:none; background:white; vertical-align:middle;'>\n";
+			$rowssoundbar .= "<td colspan='12' style='padding: 4px 0 2px 0; border:none; background:white; vertical-align:middle;'>\n";
 			$rowssoundbar .= "<div class='sb_topline_wrap'>\n";
 			$rowssoundbar .= "<label for='sbzone_$room' class='sb_topline_label' style='font-weight:bold;'>Soundbar:</label>\n";
 			$rowssoundbar .= "<div class='sb_topline_input_wrap'><input type='text' id='sbzone_$room' name='sbzone_$room' readonly='true' value='$room' class='sb_topline_input'></div>\n";
@@ -839,6 +839,7 @@ sub form
 			$rowssoundbar .= "<th style='width:96px;  min-width:96px;  max-width:96px;  text-align:center; vertical-align:middle;'>$SL{'SOUNDBARS.LABEL_SPEECH'}</th>\n";
 			$rowssoundbar .= "<th style='width:96px;  min-width:96px;  max-width:96px;  text-align:center; vertical-align:middle;'>$SL{'SOUNDBARS.LABEL_SURROUND'}</th>\n";
 			$rowssoundbar .= "<th style='width:96px;  min-width:96px;  max-width:96px;  text-align:center; vertical-align:middle;'>$SL{'SOUNDBARS.LABEL_SUB'}</th>\n";
+			$rowssoundbar .= "<th style='width:90px;  min-width:90px;  max-width:90px;  text-align:center; vertical-align:middle;'>$SL{'SOUNDBARS.LABEL_SUB_GAIN'}</th>\n";
 			$rowssoundbar .= "<th style='width:70px;  min-width:70px;  max-width:70px;  text-align:center; vertical-align:middle;' id='tvmtvol' name='tvmtvol'>$SL{'SOUNDBARS.LABEL_TVVOL'}</th>\n";
 			$rowssoundbar .= "<th style='width:70px;  min-width:70px;  max-width:70px;  text-align:center; vertical-align:middle;' id='tvmttreble' name='tvmttreble'>$SL{'SOUNDBARS.LABEL_TVTREBLE'}</th>\n";
 			$rowssoundbar .= "<th style='width:70px;  min-width:70px;  max-width:70px;  text-align:center; vertical-align:middle;' id='tvmtbass' name='tvmtbass'>$SL{'SOUNDBARS.LABEL_TVBASS'}</th>\n";
@@ -852,11 +853,13 @@ sub form
 			# 3. Data row
 			$rowssoundbar .= "<tr class='tvmon_body' id='soundbar_row_$room'>\n";
 
-			my $tvmonspeech_val    = $config->{$key}->[14]->{tvmonspeech}   // 'false';
-			my $tvmonsurr_val      = $config->{$key}->[14]->{tvmonsurr}     // 'false';
-			my $tvmonnightsub_val  = $config->{$key}->[14]->{tvmonnightsub} // 'false';
-			my $tvmonnight_val     = $config->{$key}->[14]->{tvmonnight}    // 'false';
-			my $tvmonnightsubn_val = $config->{$key}->[14]->{tvsubnight}    // 'false';
+			my $tvmonspeech_val         = $config->{$key}->[14]->{tvmonspeech}         // 'false';
+			my $tvmonsurr_val           = $config->{$key}->[14]->{tvmonsurr}           // 'false';
+			my $tvmonnightsub_val       = $config->{$key}->[14]->{tvmonnightsub}       // 'false';
+			my $tvmonnight_val          = $config->{$key}->[14]->{tvmonnight}          // 'false';
+			my $tvmonnightsubn_val      = $config->{$key}->[14]->{tvsubnight}          // 'false';
+			my $tvsublevel_val          = $config->{$key}->[14]->{tvsublevel}          // 0;
+			my $tvmonnightsublevel_val  = $config->{$key}->[14]->{tvmonnightsublevel}  // 0;
 
 			# Speech
 			$rowssoundbar .= "<td style='width:96px; min-width:96px; max-width:96px; text-align:center; white-space:nowrap; vertical-align:middle;'>\n";
@@ -893,6 +896,17 @@ sub form
 			);
 			$rowssoundbar .= "</div>\n";
 			$rowssoundbar .= "</fieldset></td>\n";
+			
+			# TV SubLevel
+			$rowssoundbar .= "<td style='width:90px; min-width:90px; max-width:90px;'>\n";
+			$rowssoundbar .= "<div class='sb_select_wrap sb_select_wrap_mid_left'><fieldset style='margin:0; padding:0; border:none; width:100%;'>\n";
+			$rowssoundbar .= "<select id='tvsublevel_$room' name='tvsublevel_$room' data-mini='true' data-native-menu='true' style='width:100%'>\n";
+			for my $i (-15 .. 15) {
+				my $selected = ($i == $tvsublevel_val) ? " selected='selected'" : "";
+				$rowssoundbar .= "<option value='$i'$selected>$i</option>\n";
+			}
+			$rowssoundbar .= "</select></fieldset></div>\n";
+			$rowssoundbar .= "</td>\n";
 
 			# TV Volume
 			$rowssoundbar .= "<td style='width:70px; min-width:70px; max-width:70px;'>\n";
@@ -908,6 +922,8 @@ sub form
 			$rowssoundbar .= "<td style='width:70px; min-width:70px; max-width:70px;'>\n";
 			$rowssoundbar .= "<div class='sb_input_wrap'><input class='tvbass' type='text' id='tvbass_$room' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='$error_treble_bass' name='tvbass_$room' value='$config->{$key}->[14]->{tvbass}'></div>\n";
 			$rowssoundbar .= "</td>\n";
+
+			
 
 			# Group zone / stop players
 			$rowssoundbar .= "<td style='width:210px; min-width:210px; max-width:210px; vertical-align:middle;'>\n";
@@ -953,42 +969,16 @@ sub form
 			$rowssoundbar .= "</div>\n";
 			$rowssoundbar .= "</fieldset></td>\n";
 
-			# Sub gain
+			# Night SubLevel
 			$rowssoundbar .= "<td style='width:90px; min-width:90px; max-width:90px;'>\n";
-			$rowssoundbar .= "<div class='sb_select_wrap'><fieldset style='margin:0; padding:0; border:none; width:100%;'>\n";
-			$rowssoundbar .= "<select id='subgain_$room' name='subgain_$room' data-mini='true' data-native-menu='true' style='width:100%'>\n";
-			$rowssoundbar .= "<option value='-15'>-15</option>
-								<option value='-14'>-14</option>
-								<option value='-12'>-12</option>
-								<option value='-11'>-11</option>
-								<option value='-10'>-10</option>
-								<option value='-9'>-9</option>
-								<option value='-8'>-8</option>
-								<option value='-7'>-7</option>
-								<option value='-6'>-6</option>
-								<option value='-5'>-5</option>
-								<option value='-4'>-4</option>
-								<option value='-3'>-3</option>
-								<option value='-2'>-2</option>
-								<option value='-1'>-1</option>
-								<option selected='selected' value='0'>0</option>
-								<option value='1'>1</option>
-								<option value='2'>2</option>
-								<option value='3'>3</option>
-								<option value='4'>4</option>
-								<option value='5'>5</option>
-								<option value='6'>6</option>
-								<option value='7'>7</option>
-								<option value='8'>8</option>
-								<option value='9'>9</option>
-								<option value='10'>10</option>
-								<option value='11'>11</option>
-								<option value='12'>12</option>
-								<option value='13'>13</option>
-								<option value='14'>14</option>
-								<option value='15'>15</option>\n";
-				$rowssoundbar .= "</select></fieldset></div>\n";
-				$rowssoundbar .= "</td>\n";
+			$rowssoundbar .= "<div class='sb_select_wrap sb_select_wrap_mid_right'><fieldset style='margin:0; padding:0; border:none; width:100%;'>\n";
+			$rowssoundbar .= "<select id='tvmonnightsublevel_$room' name='tvmonnightsublevel_$room' data-mini='true' data-native-menu='true' style='width:100%'>\n";
+			for my $i (-15 .. 15) {
+				my $selected = ($i == $tvmonnightsublevel_val) ? " selected='selected'" : "";
+				$rowssoundbar .= "<option value='$i'$selected>$i</option>\n";
+			}
+			$rowssoundbar .= "</select></fieldset></div>\n";
+			$rowssoundbar .= "</td>\n";
 
 			$rowssoundbar .= "</tr>\n";
 		}
@@ -1393,21 +1383,33 @@ sub save
 
                     my $tvmonspeech = param("tvmonspeech_$room");
                     my $usesb       = param("usesb_$room");
-                    my $tvvol       = param("tvvol_$room");
-                    $tvvol = "" if $tvvol eq "false";
+                    my $tvvol = param("tvvol_$room");
+					$tvvol = "" if !defined $tvvol || $tvvol eq "false";
 
-                    my $tvtreble    = param("tvtreble_$room");
-                    $tvtreble = "" if $tvtreble eq "false";
+					my $tvtreble = param("tvtreble_$room");
+					$tvtreble = "" if !defined $tvtreble || $tvtreble eq "false";
 
-                    my $tvbass      = param("tvbass_$room");
-                    $tvbass = "" if $tvbass eq "false";
+					my $tvbass = param("tvbass_$room");
+					$tvbass = "" if !defined $tvbass || $tvbass eq "false";
 					
-                    my $tvmonsurr   = param("tvmonsurr_$room");
-                    my $fromtime    = param("fromtime_$room");
-                    my $tvmonnight  = param("tvmonnight_$room");
-                    my $tvmonnightsub = param("tvmonnightsub_$room");
-                    my $tvsubnight  = param("tvmonnightsubn_$room");
-                    my $tvmonnightsublevel = param("subgain_$room");
+                    my $tvmonsurr   		= param("tvmonsurr_$room");
+                    my $fromtime    		= param("fromtime_$room");
+                    my $tvmonnight  		= param("tvmonnight_$room");
+                    my $tvmonnightsub 		= param("tvmonnightsub_$room");
+					$tvmonnightsub 			= "false" if !defined $tvmonnightsub || $tvmonnightsub eq "";
+
+					my $tvsubnight 			= param("tvmonnightsubn_$room");
+					$tvsubnight 			= "false" if !defined $tvsubnight || $tvsubnight eq "";
+
+					my $tvmonnightsublevel 	= param("tvmonnightsublevel_$room");
+					$tvmonnightsublevel 	= 0 if !defined $tvmonnightsublevel || $tvmonnightsublevel eq "";
+
+					my $tvsublevel 			= param("tvsublevel_$room");
+					$tvsublevel 			= 0 if !defined $tvsublevel || $tvsublevel eq "";
+
+					# If Subwoofer switch is OFF, force related SubLevel to 0
+					$tvsublevel 			= 0 if $tvmonnightsub eq "false";
+					$tvmonnightsublevel 	= 0 if $tvsubnight eq "false";
 
                     my $starttime = param("pl-start-time$i");
                     my $endtime   = param("pl-end-time$i");
@@ -1425,6 +1427,7 @@ sub save
 							"tvvol"              => $tvvol,
 							"tvtreble"           => $tvtreble,
 							"tvbass"             => $tvbass,
+							"tvsublevel"        =>  $tvsublevel,
 							"tvmonsurr"          => $tvmonsurr,
 							"fromtime"           => $fromtime,
 							"tvmonnight"         => $tvmonnight,
