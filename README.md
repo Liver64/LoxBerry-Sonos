@@ -11,7 +11,7 @@ Sonos for Smart Home
 This Sonos Application is a PHP based library for interacting with [Sonos](http://www.sonos.com/) speakers based on 
 [LoxBerry](https://wiki-loxberry-de.translate.goog/start?_x_tr_sl=de&_x_tr_tl=en&_x_tr_hl=de&_x_tr_pto=wapp). The library is a fully maintained including a
 wrapper to control your Sonos system from every Smart Home Environment which can handle http GET requests.
-The GUI of the Sonos Plugin, as well as Loxberry, is multilingual and could easily be translated in what ever language
+The GUI of the Sonos Plugin, as well as Loxberry, is multilingual and could easily be translated in whatever language
 you want by using a standard widget of Loxberry. 
 
 ![Plugin logo](webfrontend/html/images/SR1a.png)
