@@ -525,4 +525,7 @@
 			[BUGFIX] MQTT Volume per Player bei Gruppenkonstellation wurde gefixed
  6.1.4		[IMPROVEMENT] UI neu gestaltet
 			[BUGFIX] TV Monitor optimiert
+ 6.1.5		[BUGFIX] follow me function gefixed
+			[BUGFIX] Folgefunktionen Cronjob gefixed
+			[BUGFIX] Added SubLevel Feld beim TV Monitor
 			

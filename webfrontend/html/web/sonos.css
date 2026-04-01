@@ -66,7 +66,7 @@
 .sb_topline_wrap {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .sb_topline_label {
@@ -82,14 +82,14 @@
     display: flex;
     align-items: center;
     position: relative;
-    top: -7px;   /* bei Bedarf -4px oder -5px */
+    top: -7px;
 }
 
 .sb_topline_input {
-    width: 150px;
+    width: 140px;
     background-color: #e6e6e6;
     margin: 0;
-    padding: 8px 10px;
+    padding: 6px 8px;
     height: auto;
     box-sizing: border-box;
 }
@@ -98,9 +98,9 @@
     display: inline-flex;
     align-items: center;
     margin: 0;
-    width: 90px;
-    min-width: 90px;
-    max-width: 90px;
+    width: 76px;
+    min-width: 76px;
+    max-width: 76px;
     overflow: visible;
 }
 
@@ -118,6 +118,58 @@
     vertical-align: middle !important;
 }
 
+.tvmon_header th,
+.tvmon_body td {
+    padding-left: 3px !important;
+    padding-right: 3px !important;
+}
+
+.tvmon_header th {
+    font-size: 13px;
+    white-space: nowrap;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.sb_col_switch {
+    width: 76px;
+    min-width: 76px;
+    max-width: 76px;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.sb_col_level {
+    width: 74px;
+    min-width: 74px;
+    max-width: 74px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.sb_col_num {
+    width: 58px;
+    min-width: 58px;
+    max-width: 58px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.sb_col_group {
+    width: 190px;
+    min-width: 190px;
+    max-width: 190px;
+    vertical-align: middle;
+}
+
+.sb_col_time {
+    width: 98px;
+    min-width: 98px;
+    max-width: 98px;
+    vertical-align: middle;
+}
+
 .sb_input_wrap input,
 .sb_time_wrap input,
 .sb_select_wrap select {
@@ -126,9 +178,9 @@
 }
 
 .sb_switch_wrap {
-    width: 90px;
-    min-width: 90px;
-    max-width: 90px;
+    width: 76px;
+    min-width: 76px;
+    max-width: 76px;
     margin: 0 auto;
     overflow: visible;
 }
@@ -139,17 +191,29 @@
     top: -4px;
 }
 
+.sb_input_wrap input {
+    text-align: center;
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+}
+
 .sb_time_wrap {
     justify-content: flex-start;
     position: relative;
     top: -4px;
 }
 
+.sb_time_wrap input[type="time"] {
+    width: 98px;
+    min-width: 98px;
+    max-width: 98px;
+}
+
 .sb_select_wrap {
     justify-content: center;
     width: 100%;
     position: relative;
-    top: 0;   /* wichtig: Grundwert neutral */
+    top: 0;
 }
 
 /* jQuery Mobile Select-Hülle mit ausrichten */
@@ -161,13 +225,16 @@
 .sb_select_wrap .ui-select .ui-btn {
     margin: 0 !important;
     box-sizing: border-box;
+    padding-left: 6px !important;
+    padding-right: 22px !important;
 }
 
 /* vertikale Korrektur nur für die beiden SubLevel-Felder */
-.sb_select_wrap_mid_left .ui-select, 
+.sb_select_wrap_mid_left .ui-select,
 .sb_select_wrap_mid_right .ui-select {
-    top: 0px !important;
+    top: 0 !important;
 }
+
 /* =========================================================
    Basic UI tweaks
    ========================================================= */
@@ -623,4 +690,155 @@ tr.empty_template label {
     min-width: 260px !important;
     max-width: 260px !important;
     box-sizing: border-box;
+}
+
+/* =========================================================
+   Soundbar tables - one table per soundbar
+   ========================================================= */
+
+.sb_tables_wrap {
+    display: block;
+    width: 100%;
+}
+
+table.sb_single_table,
+table.sb_single_table.tables {
+    display: table;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    table-layout: auto !important;
+    margin: 0 0 10px 0 !important;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+table.sb_single_table:last-child,
+table.sb_single_table.tables:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* =========================================================
+   Soundbar top row - real inner bottom radius
+   ========================================================= */
+
+.sb_topcell {
+    padding: 4px 6px 2px 6px !important;
+    border: none !important;
+    background: transparent !important;
+    vertical-align: middle !important;
+}
+
+.sb_topline_inner {
+    background: #ffffff;
+    border-radius: 10px 10px 0 0;
+    padding: 0;
+}
+
+.sb_topcell.sb_topcell_collapsed .sb_topline_inner {
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+/* =========================================================
+   Soundbar table wrapper - cleaned up
+   ========================================================= */
+
+table.sb_table_compact .sb_col_switch {
+    width: 72px;
+    min-width: 72px;
+    max-width: 72px;
+}
+
+table.sb_table_compact .sb_col_level {
+    width: 64px;
+    min-width: 64px;
+    max-width: 64px;
+}
+
+table.sb_table_compact .sb_col_num {
+    width: 48px;
+    min-width: 48px;
+    max-width: 48px;
+}
+
+/* Gesamtbreite der Tabelle einstellen */
+table.sb_table_compact .sb_col_group {
+    width: 260px;
+    min-width: 260px;
+    max-width: 260px;
+}
+
+table.sb_table_compact .sb_col_time {
+    width: 92px;
+    min-width: 92px;
+    max-width: 92px;
+}
+
+table.sb_table_compact .tvmon_header th,
+table.sb_table_compact .tvmon_body td,
+table.sb_table_compact .tvmon_body_header td {
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+}
+
+table.sb_table_compact .sb_switch_wrap {
+    width: 72px;
+    min-width: 72px;
+    max-width: 72px;
+}
+
+table.sb_table_compact .sb_topline_input {
+    width: 130px;
+    padding: 5px 8px;
+}
+
+table.sb_table_compact .sb_topline_switch_wrap {
+    width: 72px;
+    min-width: 72px;
+    max-width: 72px;
+}
+
+table.sb_table_compact .sb_time_wrap input[type="time"] {
+    width: 92px;
+    min-width: 92px;
+    max-width: 92px;
+}
+
+table.sb_table_compact .sb_input_wrap input {
+    text-align: center;
+    padding-left: 3px !important;
+    padding-right: 3px !important;
+}
+
+table.sb_table_compact .sb_select_wrap .ui-select .ui-btn {
+    padding-left: 4px !important;
+    padding-right: 18px !important;
+}
+
+
+/* =========================================================
+   Inactive Flipswitch for Audio Profiles
+   ========================================================= */
+
+.lb-flipswitch.is-disabled {
+    opacity: 1 !important;
+}
+
+.lb-flipswitch.is-disabled .lb-flipswitch-label {
+    background-color: #6a6a6a !important;
+    background-image: none !important;
+    border-color: #5a5a5a !important;
+    cursor: not-allowed !important;
+}
+
+.lb-flipswitch.is-disabled .lb-flipswitch-inner {
+    background-color: #6a6a6a !important;
+    background-image: none !important;
+}
+
+.lb-flipswitch.is-disabled .lb-flipswitch-switch {
+    background-color: #d9d9d9 !important;
+    background-image: none !important;
+    border-color: #8c8c8c !important;
 }

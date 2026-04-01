@@ -6,6 +6,38 @@
  * - This file is included by the template engine (TMPL_INCLUDE).
  * - Therefore: Do NOT introduce new template tags in comments
  *   otherwise HTML::Template may try to resolve them and can throw a 500 error.
+ *
+ * OVERVIEW
+ * --------
+ * This module handles:
+ * - loading existing volume profiles from backend
+ * - creating new profiles dynamically
+ * - cloning the last profile into a new profile
+ * - reading live Sonos values into a profile
+ * - custom flipswitch synchronization
+ * - Master / Member mutual exclusion logic
+ * - validation before form submit
+ *
+ * CAPABILITY RULES
+ * ----------------
+ * Existing profiles must NOT decide SR / SW availability from old saved values like:
+ *   innerArray[0].Surround  == 'na'
+ *   innerArray[0].Subwoofer == 'na'
+ *
+ * Those values are historical profile content only.
+ *
+ * CURRENT availability must always come from:
+ *   index.cgi  action: 'soundbars'
+ *
+ * This is why:
+ * - new profiles already worked
+ * - existing profiles did not
+ *
+ * VISUAL RULES
+ * ------------
+ * - Disabled SubLevel field (#sbass_*) = standard light gray
+ * - Enabled SubLevel field (#sbass_*)  = white
+ * - Disabled flipswitch background is controlled by CSS via .lb-flipswitch.is-disabled
  * ========================================================================================= */
 
 
@@ -16,6 +48,13 @@ $(document).on('pageinit', function() {
 	//getvolprofiles();
 	//$('#main_form').trigger('create');
 });
+
+
+/* =========================================================================================
+ * Visual constants for SubLevel field
+ * ========================================================================================= */
+var SBASS_DISABLED_BG = 'rgba(192,192,192, 0.2)';
+var SBASS_ENABLED_BG  = '#ffffff';
 
 
 /* =========================================================================================
@@ -51,6 +90,26 @@ function syncCustomFlipswitch($wrap) {
 	$wrap.toggleClass('is-disabled', $cb.is(':disabled'));
 }
 
+function clearSbassWhenSubwooferOff(inputId, checked) {
+	var match = String(inputId || '').match(/^subwoofer_(\d+)_(\d+)$/);
+
+	if (!match) {
+		return;
+	}
+
+	var playerIdx  = match[1];
+	var profileIdx = match[2];
+	var $sbass     = $('#sbass_' + playerIdx + '_' + profileIdx);
+
+	if (!$sbass.length) {
+		return;
+	}
+
+	if (!checked) {
+		$sbass.val('');
+	}
+}
+
 function initCustomFlipswitches(context) {
 	var $root = context ? $(context) : $(document);
 
@@ -78,6 +137,9 @@ function initCustomFlipswitches(context) {
 			var checked = $(this).is(':checked');
 			$(this).val(checked ? 'true' : 'false');
 			$hidden.val(checked ? 'true' : 'false');
+
+			clearSbassWhenSubwooferOff(inputId, checked);
+
 			syncCustomFlipswitch($wrap);
 		});
 
@@ -115,6 +177,10 @@ function setCustomFlipswitchDisabled(id, disabled) {
 	syncCustomFlipswitch($wrap);
 }
 
+
+/* =========================================================================================
+ * Generic checkbox / jQuery Mobile helpers
+ * ========================================================================================= */
 function refreshCheckboxRadioSafe(selector) {
 	$(selector).each(function () {
 		var $el = $(this);
@@ -142,86 +208,326 @@ function setCheckboxSafe(selector, checked, value) {
 	}
 }
 
+function refreshSingleCheckboxSafe($el) {
+	if ($el && $el.length && $el.data('mobile-checkboxradio')) {
+		$el.checkboxradio('refresh');
+	}
+}
+
+function setCheckboxFieldVisible($checkbox, visible) {
+	var $cell = $checkbox.closest('td');
+
+	if (!$cell.length) {
+		return;
+	}
+
+	if (visible) {
+		$cell.children().show();
+	} else {
+		$cell.children().hide();
+	}
+
+	refreshSingleCheckboxSafe($checkbox);
+}
+
+
+/* =========================================================================================
+ * Master / Member row synchronization
+ * ========================================================================================= */
+function syncMasterMemberRow(playerIdx, profileIdx) {
+	var suffix  = playerIdx + '_' + profileIdx;
+	var $master = $('#master_' + suffix);
+	var $member = $('#member_' + suffix);
+
+	if (!$master.length || !$member.length) {
+		return;
+	}
+
+	if ($master.is(':checked')) {
+		$member.prop('checked', false).val('false');
+		$member.prop('disabled', true);
+		$master.prop('disabled', false);
+
+		setCheckboxFieldVisible($master, true);
+		setCheckboxFieldVisible($member, false);
+
+	} else if ($member.is(':checked')) {
+		$master.prop('checked', false).val('false');
+		$master.prop('disabled', true);
+		$member.prop('disabled', false);
+
+		setCheckboxFieldVisible($master, false);
+		setCheckboxFieldVisible($member, true);
+
+	} else {
+		$master.prop('disabled', false);
+		$member.prop('disabled', false);
+
+		setCheckboxFieldVisible($master, true);
+		setCheckboxFieldVisible($member, true);
+	}
+
+	refreshSingleCheckboxSafe($master);
+	refreshSingleCheckboxSafe($member);
+}
+
+function syncMasterAvailabilityForProfile(profileIdx) {
+	var $masters = $('input[id^="master_"][id$="_' + profileIdx + '"]');
+
+	if (!$masters.length) {
+		return;
+	}
+
+	var $checkedMaster = $masters.filter(':checked').first();
+
+	if ($checkedMaster.length) {
+		$masters.not($checkedMaster).prop('disabled', true);
+		$checkedMaster.prop('disabled', false);
+	} else {
+		$masters.prop('disabled', false);
+	}
+
+	$masters.each(function () {
+		var suffix = this.id.replace('master_', '');
+		var $master = $(this);
+		var $member = $('#member_' + suffix);
+
+		if ($member.length && $member.is(':checked')) {
+			$master.prop('disabled', true);
+		}
+
+		refreshSingleCheckboxSafe($master);
+	});
+}
+
+function syncAllMasterMemberRows() {
+	var iteration  = parseInt($('#countplayers').val(), 10) + 1;
+	var iterate_id = parseInt($('#new_id').val(), 10) + 1;
+
+	if (isNaN(iteration) || isNaN(iterate_id)) {
+		return;
+	}
+
+	for (var i = 1; i < iteration; ++i) {
+		for (var e = 1; e < iterate_id; ++e) {
+			syncMasterMemberRow(i, e);
+		}
+	}
+
+	for (var p = 1; p < iterate_id; ++p) {
+		syncMasterAvailabilityForProfile(p);
+	}
+}
+
+
+/* =========================================================================================
+ * Current capability cache
+ * -----------------------------------------------------------------------------------------
+ * Source of truth for SR / SW availability:
+ *   index.cgi  action: 'soundbars'
+ * ========================================================================================= */
+var currentCapabilities = {};
+
+function normalizeRoomName(room) {
+	return $.trim(String(room || ''));
+}
+
+function fetchCurrentCapabilities(callback) {
+	$.ajax({
+		url: 'index.cgi',
+		type: 'post',
+		data: { action: 'soundbars' },
+		dataType: 'json',
+		async: false
+	})
+	.done(function(data) {
+		currentCapabilities = {};
+
+		$.each(data, function(room, value) {
+			currentCapabilities[normalizeRoomName(room)] = {
+				surround:  (value[10] !== 'NOSUR'),
+				subwoofer: (value[8]  !== 'NOSUB')
+			};
+		});
+
+		if (typeof callback === 'function') {
+			callback(currentCapabilities);
+		}
+	})
+	.fail(function(jqXHR, textStatus, errorThrown) {
+		console.log(errorThrown);
+		currentCapabilities = {};
+
+		if (typeof callback === 'function') {
+			callback(currentCapabilities);
+		}
+	});
+}
+
+function hasSurroundCapability(room) {
+	room = normalizeRoomName(room);
+	return !!(currentCapabilities[room] && currentCapabilities[room].surround);
+}
+
+function hasSubwooferCapability(room) {
+	room = normalizeRoomName(room);
+	return !!(currentCapabilities[room] && currentCapabilities[room].subwoofer);
+}
+
+
+/* =========================================================================================
+ * Capability application helpers
+ * ========================================================================================= */
+function setSbassFieldState(playerIdx, profileIdx, enabled, subLevelValue) {
+	var $sbass  = $('#sbass_' + playerIdx + '_' + profileIdx);
+	var $uiWrap = $sbass.closest('.ui-input-text');
+
+	if (!$sbass.length) {
+		return;
+	}
+
+	if (enabled) {
+		$sbass
+			.removeAttr('disabled')
+			.prop('disabled', false)
+			.prop('readonly', false)
+			.css('background', '#ffffff')
+			.css('color', '');
+
+		if (typeof subLevelValue !== 'undefined') {
+			$sbass.val(subLevelValue);
+		}
+
+		if ($sbass.data('mobile-textinput')) {
+			try {
+				$sbass.textinput('enable');
+			} catch (e) {}
+		}
+
+		$uiWrap
+			.removeClass('ui-state-disabled ui-disabled')
+			.attr('aria-disabled', 'false')
+			.css('background', '#ffffff');
+
+	} else {
+		$sbass
+			.val('')
+			.attr('disabled', 'disabled')
+			.prop('disabled', true)
+			.css('background', 'rgba(192,192,192, 0.2)')
+			.css('color', '');
+
+		if ($sbass.data('mobile-textinput')) {
+			try {
+				$sbass.textinput('disable');
+			} catch (e) {}
+		}
+
+		$uiWrap
+			.addClass('ui-state-disabled ui-disabled')
+			.attr('aria-disabled', 'true')
+			.css('background', 'rgba(192,192,192, 0.2)');
+	}
+
+	if ($sbass.data('mobile-textinput')) {
+		try {
+			$sbass.textinput('refresh');
+		} catch (e) {}
+	}
+}
+
+function applySurroundCapability(playerIdx, profileIdx, roomName, savedValue) {
+	var surroundId = 'surround_' + playerIdx + '_' + profileIdx;
+
+	if (hasSurroundCapability(roomName)) {
+		setCustomFlipswitchDisabled(surroundId, false);
+		setCustomFlipswitchValue(surroundId, savedValue === 'true');
+	} else {
+		setCustomFlipswitchValue(surroundId, false);
+		setCustomFlipswitchDisabled(surroundId, true);
+	}
+}
+
+function applySubwooferCapability(playerIdx, profileIdx, roomName, savedValue, subLevelValue) {
+	var subwooferId = 'subwoofer_' + playerIdx + '_' + profileIdx;
+
+	if (hasSubwooferCapability(roomName)) {
+		setCustomFlipswitchDisabled(subwooferId, false);
+		setCustomFlipswitchValue(subwooferId, savedValue === 'true');
+		setSbassFieldState(playerIdx, profileIdx, true, subLevelValue);
+	} else {
+		setCustomFlipswitchValue(subwooferId, false);
+		setCustomFlipswitchDisabled(subwooferId, true);
+		setSbassFieldState(playerIdx, profileIdx, false, '');
+	}
+}
+
 
 /* =========================================================================================
  * Load & apply existing profiles from backend
  * ========================================================================================= */
 function getvolprofiles() {
 	let countdata = 0;
-	var data;
 
-	$.ajax({
-		url: 'index.cgi',
-		type: 'post',
-		data: { action: 'profiles'},
-		dataType: 'json',
-	})
+	fetchCurrentCapabilities(function() {
+		$.ajax({
+			url: 'index.cgi',
+			type: 'post',
+			data: { action: 'profiles'},
+			dataType: 'json',
+		})
 
-	.fail(function (jqXHR, textStatus, errorThrown) {
-		console.log(errorThrown);
-	})
-	.done(function(data, textStatus, jqXHR) {
-		$.each(data, function(i, outerArray) {
-			countdata++;
-			$('#profile' + countdata).val(data[parseInt(countdata) - 1].Name);
+		.fail(function (jqXHR, textStatus, errorThrown) {
+			console.log(errorThrown);
+		})
 
-			unsorted = outerArray.Player;
-			const sorted = Object.keys(unsorted).sort().reduce(
-				(obj, key) => {
-					obj[key] = unsorted[key];
-					return obj;
-				},
-				{}
-			);
+		.done(function(data, textStatus, jqXHR) {
+			$.each(data, function(i, outerArray) {
+				countdata++;
+				$('#profile' + countdata).val(data[parseInt(countdata, 10) - 1].Name);
 
-			var iteration = 0;
-			iteration = parseInt(iteration);
+				var unsorted = outerArray.Player;
+				const sorted = Object.keys(unsorted).sort().reduce(
+					function(obj, key) {
+						obj[key] = unsorted[key];
+						return obj;
+					},
+					{}
+				);
 
-			$.each(sorted, function(j, innerArray) {
-				iteration++;
+				var iteration = 0;
 
-				setCustomFlipswitchValue('loudness_' + iteration + '_' + countdata, innerArray[0].Loudness === 'true');
+				$.each(sorted, function(j, innerArray) {
+					iteration++;
 
-				if (innerArray[0].Surround === 'na') {
-					setCustomFlipswitchDisabled('surround_' + iteration + '_' + countdata, true);
-					setCustomFlipswitchValue('surround_' + iteration + '_' + countdata, false);
-				} else {
-					setCustomFlipswitchDisabled('surround_' + iteration + '_' + countdata, false);
-					setCustomFlipswitchValue('surround_' + iteration + '_' + countdata, innerArray[0].Surround === 'true');
-				}
+					var roomName = normalizeRoomName(j);
 
-				if (innerArray[0].Subwoofer === 'na') {
-					setCustomFlipswitchDisabled('subwoofer_' + iteration + '_' + countdata, true);
-					$('#sbass_' + iteration + '_' + countdata)
-						.attr("disabled", "disabled")
-						.css("background", "rgba(192,192,192, 0.2)");
-					setCustomFlipswitchValue('subwoofer_' + iteration + '_' + countdata, false);
-				} else {
-					setCustomFlipswitchDisabled('subwoofer_' + iteration + '_' + countdata, false);
-					$('#sbass_' + iteration + '_' + countdata)
-						.removeAttr("disabled")
-						.css("background", "");
-					setCustomFlipswitchValue('subwoofer_' + iteration + '_' + countdata, innerArray[0].Subwoofer === 'true');
-				}
+					setCustomFlipswitchValue('loudness_' + iteration + '_' + countdata, innerArray[0].Loudness === 'true');
 
-				if (innerArray[0].Master == 'true') {
-					setCheckboxSafe('#master_' + iteration + '_' + countdata, true, "true");
-				} else {
-					setCheckboxSafe('#master_' + iteration + '_' + countdata, false, "false");
-				}
+					applySurroundCapability(iteration, countdata, roomName, innerArray[0].Surround);
+					applySubwooferCapability(iteration, countdata, roomName, innerArray[0].Subwoofer, innerArray[0].Subwoofer_level);
 
-				if (innerArray[0].Member == 'true') {
-					setCheckboxSafe('#member_' + iteration + '_' + countdata, true, "true");
-				} else {
-					setCheckboxSafe('#member_' + iteration + '_' + countdata, false, "false");
-				}
+					if (innerArray[0].Master == 'true') {
+						setCheckboxSafe('#master_' + iteration + '_' + countdata, true, 'true');
+					} else {
+						setCheckboxSafe('#master_' + iteration + '_' + countdata, false, 'false');
+					}
+
+					if (innerArray[0].Member == 'true') {
+						setCheckboxSafe('#member_' + iteration + '_' + countdata, true, 'true');
+					} else {
+						setCheckboxSafe('#member_' + iteration + '_' + countdata, false, 'false');
+					}
+				});
 			});
+		})
+
+		.always(function(data) {
+			initCustomFlipswitches(document);
+			$('#main_table').trigger('create').trigger('refresh');
+			syncAllMasterMemberRows();
+			console.log("Action get Volume Profiles executed", data);
 		});
-	})
-	.always(function(data) {
-		initCustomFlipswitches(document);
-		$('#main_table').trigger('create').trigger('refresh');
-		console.log("Action get Volume Profiles executed", data);
 	});
 }
 
@@ -231,11 +537,10 @@ function getvolprofiles() {
  * ========================================================================================= */
 function create_new_profile() {
 
-	last_id = parseInt(document.getElementById('last_id').value);
+	last_id = parseInt(document.getElementById('last_id').value, 10);
 	new_id = last_id + 1;
 
 	var iteration = 0;
-	iteration = parseInt(iteration);
 	var trHTML = '';
 
 	$.ajax({
@@ -266,7 +571,7 @@ function create_new_profile() {
 			trHTML += "</div></tr>";
 
 			const sorted = Object.keys(data).sort().reduce(
-				(obj, key) => {
+				function(obj, key) {
 					obj[key] = data[key];
 					return obj;
 				},
@@ -313,9 +618,9 @@ function create_new_profile() {
 				trHTML += "</td>\n";
 
 				if (value[8] == 'NOSUB') {
-					trHTML += "<td style='width: 55px; height: 15px;'><input disabled type='text' id='sbass_" + iteration + "_" + new_id + "' name='sbass_" + iteration + "_" + new_id + "' size='100' value='' style='background: rgba(192,192,192, 0.2)'></td>\n";
+					trHTML += "<td style='width: 55px; height: 15px;'><input disabled type='text' id='sbass_" + iteration + "_" + new_id + "' name='sbass_" + iteration + "_" + new_id + "' size='100' value='' style='background: " + SBASS_DISABLED_BG + ";'></td>\n";
 				} else {
-					trHTML += "<td style='width: 55px; height: 15px;'><input type='text' id='sbass_" + iteration + "_" + new_id + "' name='sbass_" + iteration + "_" + new_id + "' size='100' data-validation-rule='special:number-min-max-value:-15:15' data-validation-error-msg='<TMPL_VAR VOLUME_PROFILES.ERROR_SUB_LEVEL_PLAYER>' value=''></td>\n";
+					trHTML += "<td style='width: 55px; height: 15px;'><input type='text' id='sbass_" + iteration + "_" + new_id + "' name='sbass_" + iteration + "_" + new_id + "' size='100' data-validation-rule='special:number-min-max-value:-15:15' data-validation-error-msg='<TMPL_VAR VOLUME_PROFILES.ERROR_SUB_LEVEL_PLAYER>' value='' style='background: " + SBASS_ENABLED_BG + ";'></td>\n";
 				}
 
 				trHTML += "<td style='width: 60px; height: 15px'><input type='checkbox' id='master_" + iteration + "_" + new_id + "' name='master_" + iteration + "_" + new_id + "' class='" + new_id + "'></td>\n";
@@ -334,6 +639,7 @@ function create_new_profile() {
 			$('#tblvol_prof' + new_id).trigger('create');
 			$('#main_table').trigger('create');
 			refreshCheckboxRadioSafe('input:checkbox');
+			syncAllMasterMemberRows();
 
 			$("#btnsubmit").focus();
 			$("#profile" + new_id).focus();
@@ -353,86 +659,70 @@ function create_new_profile() {
  * Clone values from last saved profile into the newly created profile
  * ========================================================================================= */
 function cloneprofile() {
-	var data;
-
-	var last_id = parseInt(document.getElementById('last_id').value);
+	var last_id = parseInt(document.getElementById('last_id').value, 10);
 	var new_id = last_id + 1;
 
-	$.ajax({
-		url: 'index.cgi',
-		type: 'post',
-		data: { action: 'profiles'},
-		dataType: 'json',
-		async: false,
-	})
+	fetchCurrentCapabilities(function() {
+		$.ajax({
+			url: 'index.cgi',
+			type: 'post',
+			data: { action: 'profiles'},
+			dataType: 'json',
+			async: false,
+		})
 
-	.fail(function (jqXHR, textStatus, errorThrown) {
-		console.log(errorThrown);
-	})
-	.done(function(data, textStatus, jqXHR) {
-		$.each(data, function(i, outerArray) {
-			unsorted = outerArray.Player;
-			const sorted = Object.keys(unsorted).sort().reduce(
-				(obj, key) => {
-					obj[key] = unsorted[key];
-					return obj;
-				},
-				{}
-			);
+		.fail(function (jqXHR, textStatus, errorThrown) {
+			console.log(errorThrown);
+		})
 
-			var iteration = 0;
-			iteration = parseInt(iteration);
+		.done(function(data, textStatus, jqXHR) {
+			$.each(data, function(i, outerArray) {
+				var unsorted = outerArray.Player;
+				const sorted = Object.keys(unsorted).sort().reduce(
+					function(obj, key) {
+						obj[key] = unsorted[key];
+						return obj;
+					},
+					{}
+				);
 
-			$.each(sorted, function(j, innerArray) {
-				iteration++;
+				var iteration = 0;
 
-				$('#vol_' + iteration + '_' + new_id).val(innerArray[0].Volume);
-				$('#treble_' + iteration + '_' + new_id).val(innerArray[0].Treble);
-				$('#bass_' + iteration + '_' + new_id).val(innerArray[0].Bass);
+				$.each(sorted, function(j, innerArray) {
+					iteration++;
 
-				setCustomFlipswitchValue('loudness_' + iteration + '_' + new_id, innerArray[0].Loudness === 'true');
+					var roomName = normalizeRoomName(j);
 
-				if (innerArray[0].Surround === 'na') {
-					setCustomFlipswitchDisabled('surround_' + iteration + '_' + new_id, true);
-					setCustomFlipswitchValue('surround_' + iteration + '_' + new_id, false);
-				} else {
-					setCustomFlipswitchDisabled('surround_' + iteration + '_' + new_id, false);
-					setCustomFlipswitchValue('surround_' + iteration + '_' + new_id, innerArray[0].Surround === 'true');
-				}
+					$('#vol_' + iteration + '_' + new_id).val(innerArray[0].Volume);
+					$('#treble_' + iteration + '_' + new_id).val(innerArray[0].Treble);
+					$('#bass_' + iteration + '_' + new_id).val(innerArray[0].Bass);
 
-				if (innerArray[0].Subwoofer === 'na') {
-					setCustomFlipswitchDisabled('subwoofer_' + iteration + '_' + new_id, true);
-					$('#sbass_' + iteration + '_' + new_id)
-						.attr("disabled", "disabled")
-						.css("background", "rgba(192,192,192, 0.2)");
-					setCustomFlipswitchValue('subwoofer_' + iteration + '_' + new_id, false);
-				} else {
-					setCustomFlipswitchDisabled('subwoofer_' + iteration + '_' + new_id, false);
-					$('#sbass_' + iteration + '_' + new_id)
-						.removeAttr("disabled")
-						.css("background", "");
-					setCustomFlipswitchValue('subwoofer_' + iteration + '_' + new_id, innerArray[0].Subwoofer === 'true');
-				}
+					setCustomFlipswitchValue('loudness_' + iteration + '_' + new_id, innerArray[0].Loudness === 'true');
 
-				$('#sbass_' + iteration + '_' + new_id).val(innerArray[0].Subwoofer_level);
+					applySurroundCapability(iteration, new_id, roomName, innerArray[0].Surround);
+					applySubwooferCapability(iteration, new_id, roomName, innerArray[0].Subwoofer, innerArray[0].Subwoofer_level);
 
-				if (innerArray[0].Master == 'true') {
-					setCheckboxSafe('#master_' + iteration + '_' + new_id, true, "true");
-				} else {
-					setCheckboxSafe('#master_' + iteration + '_' + new_id, false, "false");
-				}
+					if (innerArray[0].Master == 'true') {
+						setCheckboxSafe('#master_' + iteration + '_' + new_id, true, "true");
+					} else {
+						setCheckboxSafe('#master_' + iteration + '_' + new_id, false, "false");
+					}
 
-				if (innerArray[0].Member == 'true') {
-					setCheckboxSafe('#member_' + iteration + '_' + new_id, true, "true");
-				} else {
-					setCheckboxSafe('#member_' + iteration + '_' + new_id, false, "false");
-				}
+					if (innerArray[0].Member == 'true') {
+						setCheckboxSafe('#member_' + iteration + '_' + new_id, true, "true");
+					} else {
+						setCheckboxSafe('#member_' + iteration + '_' + new_id, false, "false");
+					}
+				});
 			});
+		})
+
+		.always(function(data) {
+			initCustomFlipswitches(document);
+			$('#main_table').trigger('create').trigger('refresh');
+			syncAllMasterMemberRows();
+			console.log("Action Clone Profile executed", data);
 		});
-	})
-	.always(function(data) {
-		initCustomFlipswitches(document);
-		console.log("Action Clone Profile executed", data);
 	});
 }
 
@@ -440,82 +730,63 @@ function cloneprofile() {
 /* =========================================================================================
  * Load current values from Sonos devices into a profile
  * ========================================================================================= */
-
-// Helper for "new profile" load action
 function NewSonosData() {
-	var last_id = parseInt(document.getElementById('last_id').value);
+	var last_id = parseInt(document.getElementById('last_id').value, 10);
 	var load = last_id + 1;
 	obtainSonosData(load);
 }
 
-// Fetch actual data from all players
 function obtainSonosData(load) {
-	var arrkey = parseInt(load) - 1;
 	var new_id = load;
 
-	$.ajax({
-		url: '/plugins/<TMPL_VAR PLUGINDIR>/bin/vol_prof_ini.php',
-		type: 'post',
-		dataType: "json",
-		data: { 'new_id': 'true'}
-	})
-	.fail(function (jqXHR, textStatus, errorThrown) {
-		console.log(errorThrown);
-	})
-	.done(function(data, textStatus, jqXHR) {
-		$.each(data, function(i, outerArray) {
-			unsorted = outerArray.Player;
-			const sorted = Object.keys(unsorted).sort().reduce(
-				(obj, key) => {
-					obj[key] = unsorted[key];
-					return obj;
-				},
-				{}
-			);
+	fetchCurrentCapabilities(function() {
+		$.ajax({
+			url: '/plugins/<TMPL_VAR PLUGINDIR>/bin/vol_prof_ini.php',
+			type: 'post',
+			dataType: "json",
+			data: { 'new_id': 'true'}
+		})
+		.fail(function (jqXHR, textStatus, errorThrown) {
+			console.log(errorThrown);
+		})
+		.done(function(data, textStatus, jqXHR) {
+			$.each(data, function(i, outerArray) {
+				var unsorted = outerArray.Player;
+				const sorted = Object.keys(unsorted).sort().reduce(
+					function(obj, key) {
+						obj[key] = unsorted[key];
+						return obj;
+					},
+					{}
+				);
 
-			var iteration = 0;
-			iteration = parseInt(iteration);
+				var iteration = 0;
 
-			$.each(sorted, function(j, innerArray) {
-				iteration++;
+				$.each(sorted, function(j, innerArray) {
+					iteration++;
 
-				$('#vol_' + iteration + '_' + new_id).val(innerArray[0].Volume);
-				$('#treble_' + iteration + '_' + new_id).val(innerArray[0].Treble);
-				$('#bass_' + iteration + '_' + new_id).val(innerArray[0].Bass);
+					var roomName = normalizeRoomName(j);
 
-				setCustomFlipswitchValue('loudness_' + iteration + '_' + new_id, innerArray[0].Loudness === 'true');
+					$('#vol_' + iteration + '_' + new_id).val(innerArray[0].Volume);
+					$('#treble_' + iteration + '_' + new_id).val(innerArray[0].Treble);
+					$('#bass_' + iteration + '_' + new_id).val(innerArray[0].Bass);
 
-				if (innerArray[0].Surround === 'na') {
-					setCustomFlipswitchDisabled('surround_' + iteration + '_' + new_id, true);
-					setCustomFlipswitchValue('surround_' + iteration + '_' + new_id, false);
-				} else {
-					setCustomFlipswitchDisabled('surround_' + iteration + '_' + new_id, false);
-					setCustomFlipswitchValue('surround_' + iteration + '_' + new_id, innerArray[0].Surround === 'true');
-				}
+					setCustomFlipswitchValue('loudness_' + iteration + '_' + new_id, innerArray[0].Loudness === 'true');
 
-				if (innerArray[0].Subwoofer === 'na') {
-					setCustomFlipswitchDisabled('subwoofer_' + iteration + '_' + new_id, true);
-					$('#sbass_' + iteration + '_' + new_id)
-						.attr("disabled", "disabled")
-						.css("background", "rgba(192,192,192, 0.2)");
-					setCustomFlipswitchValue('subwoofer_' + iteration + '_' + new_id, false);
-				} else {
-					setCustomFlipswitchDisabled('subwoofer_' + iteration + '_' + new_id, false);
-					$('#sbass_' + iteration + '_' + new_id)
-						.removeAttr("disabled")
-						.css("background", "");
-					setCustomFlipswitchValue('subwoofer_' + iteration + '_' + new_id, innerArray[0].Subwoofer === 'true');
-				}
+					applySurroundCapability(iteration, new_id, roomName, innerArray[0].Surround);
+					applySubwooferCapability(iteration, new_id, roomName, innerArray[0].Subwoofer, innerArray[0].Subwoofer_level);
 
-				setCheckboxSafe('#master_' + iteration + '_' + new_id, false, "false");
-				setCheckboxSafe('#member_' + iteration + '_' + new_id, false, "false");
-				$('#sbass_' + iteration + '_' + new_id).val(innerArray[0].Subwoofer_level);
+					setCheckboxSafe('#master_' + iteration + '_' + new_id, false, "false");
+					setCheckboxSafe('#member_' + iteration + '_' + new_id, false, "false");
+				});
 			});
+		})
+		.always(function(data) {
+			initCustomFlipswitches(document);
+			$('#main_table').trigger('create').trigger('refresh');
+			syncAllMasterMemberRows();
+			console.log("Action load Sonos Data executed", data);
 		});
-	})
-	.always(function(data) {
-		initCustomFlipswitches(document);
-		console.log("Action load Sonos Data executed", data);
 	});
 }
 
@@ -523,8 +794,6 @@ function obtainSonosData(load) {
 /* =========================================================================================
  * SilverBox dialogs & notifications
  * ========================================================================================= */
-
-// Timed info popup
 function timeout(text, ButtonText, Icon='', Title, timeout) {
 	silverBox({
 		timer: timeout,
@@ -537,20 +806,17 @@ function timeout(text, ButtonText, Icon='', Title, timeout) {
 	});
 }
 
-// Initiate deleting profile (icon handler)
 $(".ico-delete").on("click", function() {
 	$('#delprofil').val(0);
 	var del = ($(this).attr('value'));
 	deletedialog('<TMPL_VAR VOLUME_PROFILES.DIALOG_DELETE>', '<TMPL_VAR VOLUME_PROFILES.DIALOG_BUTTON_DELETE>', 'question', 'Volume Profile', del);
 });
 
-// Initiate loading actual data (icon handler)
 $(".ico-load").on("click", function() {
 	var load = ($(this).attr('value'));
 	obtainSonosData(load);
 });
 
-// Confirmation dialog for profile deletion
 function deletedialog(text, ButtonText, Icon='', Title, del) {
 	silverBox({
 		alertIcon: Icon,
@@ -577,13 +843,11 @@ function deletedialog(text, ButtonText, Icon='', Title, del) {
 	});
 }
 
-// Message during saving
 function message() {
 	console.log("Save data");
 	timeout('<TMPL_VAR SAVE.SAVE_MESSAGE>', 'OK', 'info', '<TMPL_VAR SAVE.SAVE_ALL_OK>', '3000');
 }
 
-// Submit helper for deletion
 function deleteProfile(del) {
 	$('#delprofil').val(del);
 	$('#main_form').trigger('submit').trigger('create');
@@ -610,25 +874,28 @@ function checkboxes() {
 				continue;
 			}
 
-			if (master.value == "true") {
+			var masterIsTrue = (master.value === "true");
+			var memberIsTrue = (member.value === "true");
+
+			if (masterIsTrue) {
 				master.checked = true;
 				member.checked = false;
-				$('#master_' + i + '_' + e).attr('disabled', false);
+				member.value = "false";
+			} else if (memberIsTrue) {
+				member.checked = true;
+				master.checked = false;
+				master.value = "false";
 			} else {
 				master.checked = false;
+				member.checked = false;
 			}
 
-			var $master = $('#master_' + i + '_' + e);
-			var $member = $('#member_' + i + '_' + e);
-
-			if ($master.data('mobile-checkboxradio')) {
-				$master.checkboxradio('refresh');
-			}
-			if ($member.data('mobile-checkboxradio')) {
-				$member.checkboxradio('refresh');
-			}
+			refreshSingleCheckboxSafe($(master));
+			refreshSingleCheckboxSafe($(member));
 		}
 	}
+
+	syncAllMasterMemberRows();
 }
 
 
@@ -660,18 +927,40 @@ function ProfilNameDialog(text, ButtonText, Icon='', Title) {
  * ========================================================================================= */
 $(document).ready(function(e) {
 	initCustomFlipswitches(document);
-	getvolprofiles();
-	checkboxes();
 
-	// Master checkbox rule: only one master per profile group
-	$(document.body).on('click','input[name^="master"]',function(event) {
-		var id = ($(this).attr('class'));
-		if($(this).is(':checked')) {
-			$('input[class=' + id + ']').not(this).attr('disabled',true);
-		} else {
-			$('input[class=' + id + ']').attr('disabled',false);
+	fetchCurrentCapabilities(function() {
+		getvolprofiles();
+		checkboxes();
+	});
+
+	$(document.body).on('change', 'input[name^="master"]', function () {
+		var parts = this.id.split('_');
+		var playerIdx = parts[1];
+		var profileIdx = parts[2];
+
+		if ($(this).is(':checked')) {
+			$('#member_' + playerIdx + '_' + profileIdx)
+				.prop('checked', false)
+				.val('false');
 		}
-		refreshCheckboxRadioSafe('input:checkbox');
+
+		syncMasterMemberRow(playerIdx, profileIdx);
+		syncMasterAvailabilityForProfile(profileIdx);
+	});
+
+	$(document.body).on('change', 'input[name^="member"]', function () {
+		var parts = this.id.split('_');
+		var playerIdx = parts[1];
+		var profileIdx = parts[2];
+
+		if ($(this).is(':checked')) {
+			$('#master_' + playerIdx + '_' + profileIdx)
+				.prop('checked', false)
+				.val('false');
+		}
+
+		syncMasterMemberRow(playerIdx, profileIdx);
+		syncMasterAvailabilityForProfile(profileIdx);
 	});
 
 	$("form#main_form").submit(function (e) {
@@ -709,32 +998,49 @@ $(document).ready(function(e) {
 				var masterEl = document.getElementById('master_' + pi + '_' + pj);
 				var memberEl = document.getElementById('member_' + pi + '_' + pj);
 
-				if (masterEl) {
+				if (masterEl && memberEl) {
 					if (masterEl.checked) {
 						masterEl.value = "true";
-						if (memberEl) {
-							memberEl.checked = false;
-							memberEl.value = "false";
-						}
+						memberEl.checked = false;
+						memberEl.value = "false";
+					} else if (memberEl.checked) {
+						memberEl.value = "true";
+						masterEl.checked = false;
+						masterEl.value = "false";
 					} else {
 						masterEl.value = "false";
+						memberEl.value = "false";
 					}
-				}
-				if (memberEl) {
-					memberEl.value = memberEl.checked ? "true" : "false";
+				} else {
+					if (masterEl) {
+						masterEl.value = masterEl.checked ? "true" : "false";
+					}
+					if (memberEl) {
+						memberEl.value = memberEl.checked ? "true" : "false";
+					}
 				}
 
 				var selV = '#vol_' + pi + '_' + pj;
 				var selT = '#treble_' + pi + '_' + pj;
 				var selB = '#bass_' + pi + '_' + pj;
+				var selS = '#sbass_' + pi + '_' + pj;
 
 				if ($(selV).length !== 1 || $(selT).length !== 1 || $(selB).length !== 1) {
 					continue;
 				}
 
-				var vStr = (($(selV).val() ?? '') + '').trim();
-				var tStr = (($(selT).val() ?? '') + '').trim();
-				var bStr = (($(selB).val() ?? '') + '').trim();
+				var vStr = (String($(selV).val() || '')).trim();
+				var tStr = (String($(selT).val() || '')).trim();
+				var bStr = (String($(selB).val() || '')).trim();
+
+				var hasSwlField = ($(selS).length === 1);
+				var swlEnabled  = hasSwlField && !$(selS).prop('disabled');
+				var sStr        = swlEnabled ? (String($(selS).val() || '')).trim() : '';
+				
+				if (swlEnabled && sStr === '') {
+					$(selS).val('0');
+					sStr = '0';
+				}
 
 				if (vStr === '' || !isIntUnsigned(vStr)) {
 					return showFail(selV, '<TMPL_VAR VOLUME_PROFILES.ERROR_VOLUME_PLAYER>');
@@ -758,6 +1064,19 @@ $(document).ready(function(e) {
 				var b = parseInt(bStr, 10);
 				if (b < -10 || b > 10) {
 					return showFail(selB, '<TMPL_VAR VOLUME_PROFILES.ERROR_BASS_PLAYER>');
+				}
+
+				/* SWL validation:
+				   only validate when the field exists and is enabled */
+				if (swlEnabled && sStr !== '') {
+					if (!isIntSigned(sStr)) {
+						return showFail(selS, '<TMPL_VAR VOLUME_PROFILES.ERROR_SUB_LEVEL_PLAYER>');
+					}
+
+					var s = parseInt(sStr, 10);
+					if (s < -15 || s > 15) {
+						return showFail(selS, '<TMPL_VAR VOLUME_PROFILES.ERROR_SUB_LEVEL_PLAYER>');
+					}
 				}
 			}
 		}

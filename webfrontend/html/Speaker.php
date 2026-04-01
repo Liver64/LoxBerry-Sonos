@@ -783,61 +783,82 @@ function VolumeProfilesArrayURL()   {
 /* @return: 
 **/
 
-function VolumeProfilesSound($playerprof)   {
-	
-global $sonoszone, $profile_details, $profile_selected, $profile, $config;
+function VolumeProfilesSound($playerprof) {
 
-foreach ($playerprof as $key)  {
-	try {
-		@$sonos = new SonosAccess($sonoszone[$key][0]);
-		#@$sonos->SetMute(true)
-		# Set Volume	
-		if ($profile_details[0]['Player'][$key][0]['Volume'] != "")	{
-			$sonos->SetVolume($profile_details[0]['Player'][$key][0]['Volume']);
-			$volume = $profile_details[0]['Player'][$key][0]['Volume'];
-			LOGINF("speaker.php: Volume for '".$key."' has been set to: ".$profile_details[0]['Player'][$key][0]['Volume']);
-		} else {
-			LOGWARN("speaker.php: No Volume entered in Profile, so we could not set Volume");
-		}
-		# Set Treble
-		if ($profile_details[0]['Player'][$key][0]['Treble'] != "")	{
-			$sonos->SetTreble($profile_details[0]['Player'][$key][0]['Treble']);
-			LOGDEB("speaker.php: Treble for '".$key."' has been set to: ".$profile_details[0]['Player'][$key][0]['Treble']);
-		} else {
-			LOGWARN("speaker.php: No Treble entered in Profile, so we could not set Treble");
-		}
-		# Set Bass
-		if ($profile_details[0]['Player'][$key][0]['Bass'] != "")	{
-			$sonos->SetBass($profile_details[0]['Player'][$key][0]['Bass']);
-			LOGDEB("speaker.php: Bass for '".$key."' has been set to: ".$profile_details[0]['Player'][$key][0]['Bass']);
+	global $sonoszone, $profile_details, $profile_selected, $profile, $config;
+
+	foreach ($playerprof as $key) {
+		try {
+			@$sonos = new SonosAccess($sonoszone[$key][0]);
+			#@$sonos->SetMute(true)
+
+			# Set Volume
+			if ($profile_details[0]['Player'][$key][0]['Volume'] != "") {
+				$sonos->SetVolume($profile_details[0]['Player'][$key][0]['Volume']);
+				$volume = $profile_details[0]['Player'][$key][0]['Volume'];
+				LOGINF("speaker.php: Volume for '".$key."' has been set to: ".$profile_details[0]['Player'][$key][0]['Volume']);
 			} else {
-			LOGWARN("speaker.php: No Bass entered in Profile, so we could not set Bass");
-		}
-		# Set Loudness
-		if ((bool)is_enabled($profile_details[0]['Player'][$key][0]['Loudness'] === "true" ? $ldstate = "1" : $ldstate = "0"));
-		$sonos->SetLoudness($ldstate);
-		if ((bool)is_enabled($profile_details[0]['Player'][$key][0]['Loudness']) === true ? $ld = "On" : $ld = "Off");
-		LOGDEB("speaker.php: Loudness for '".$key."' has been switched ".$ld);
-		# Set Surround
-		if ($profile_details[0]['Player'][$key][0]['Surround'] != "na")   {
-			$sonos->SetDialogLevel(is_enabled($profile_details[0]['Player'][$key][0]['Surround']), 'SurroundEnable');
-			if ((bool)is_enabled($profile_details[0]['Player'][$key][0]['Surround']) === true ? $sur = "On" : $sur = "Off");
-			LOGDEB("speaker.php: Surround for '".$key."' has been switched ".$sur);
-		}
-		# Set Subwoofer and Subwoofer Bass Level
-		if ($profile_details[0]['Player'][$key][0]['Subwoofer'] != "na")   {
-			$sonos->SetDialogLevel(is_enabled($profile_details[0]['Player'][$key][0]['Subwoofer']), 'SubEnable');
-			if ((bool)is_enabled($profile_details[0]['Player'][$key][0]['Subwoofer']) === true ? $sub = "On" : $sub = "Off");
+				LOGWARN("speaker.php: No Volume entered in Profile, so we could not set Volume");
+			}
+
+			# Set Treble
+			if ($profile_details[0]['Player'][$key][0]['Treble'] != "") {
+				$sonos->SetTreble($profile_details[0]['Player'][$key][0]['Treble']);
+				LOGDEB("speaker.php: Treble for '".$key."' has been set to: ".$profile_details[0]['Player'][$key][0]['Treble']);
+			} else {
+				LOGWARN("speaker.php: No Treble entered in Profile, so we could not set Treble");
+			}
+
+			# Set Bass
+			if ($profile_details[0]['Player'][$key][0]['Bass'] != "") {
+				$sonos->SetBass($profile_details[0]['Player'][$key][0]['Bass']);
+				LOGDEB("speaker.php: Bass for '".$key."' has been set to: ".$profile_details[0]['Player'][$key][0]['Bass']);
+			} else {
+				LOGWARN("speaker.php: No Bass entered in Profile, so we could not set Bass");
+			}
+
+			# Set Loudness
+			if ((bool)is_enabled($profile_details[0]['Player'][$key][0]['Loudness'] === "true" ? $ldstate = "1" : $ldstate = "0"))
+			$sonos->SetLoudness($ldstate);
+			if ((bool)is_enabled($profile_details[0]['Player'][$key][0]['Loudness']) === true ? $ld = "On" : $ld = "Off")
+			LOGDEB("speaker.php: Loudness for '".$key."' has been switched ".$ld);
+
+			# Set Surround
+			if ($profile_details[0]['Player'][$key][0]['Surround'] != "na") {
+				$sonos->SetDialogLevel(is_enabled($profile_details[0]['Player'][$key][0]['Surround']), 'SurroundEnable');
+				if ((bool)is_enabled($profile_details[0]['Player'][$key][0]['Surround']) === true ? $sur = "On" : $sur = "Off")
+				LOGDEB("speaker.php: Surround for '".$key."' has been switched ".$sur);
+			}
+
+			# Set Subwoofer and Subwoofer Bass Level
+			if ($profile_details[0]['Player'][$key][0]['Subwoofer'] != "na") {
+
+				$sub_enabled = (bool)is_enabled($profile_details[0]['Player'][$key][0]['Subwoofer']);
+
+				$sonos->SetDialogLevel($sub_enabled, 'SubEnable');
+				$sub = $sub_enabled ? "On" : "Off";
 				LOGDEB("speaker.php: Subwoofer for '".$key."' has been switched ".$sub);
-				$sonos->SetDialogLevel($profile_details[0]['Player'][$key][0]['Subwoofer_level'], 'SubGain');
-				LOGDEB("speaker.php: Subwoofer Bass for '".$key."' has been set to: ".$profile_details[0]['Player'][$key][0]['Subwoofer_level']);
+
+				if ($sub_enabled) {
+					$sub_level = $profile_details[0]['Player'][$key][0]['Subwoofer_level'];
+
+					if ($sub_level === "" || !is_numeric($sub_level)) {
+						$sub_level = 0;
+					}
+
+					$sonos->SetDialogLevel((int)$sub_level, 'SubGain');
+					LOGDEB("speaker.php: Subwoofer Bass for '".$key."' has been set to: ".$sub_level);
+				} else {
+					$sonos->SetDialogLevel(0, 'SubGain');
+					LOGDEB("speaker.php: Subwoofer Bass for '".$key."' has been reset to: 0");
+				}
 			}
 		} catch (Exception $e) {
 			LOGERR("speaker.php: Player '".$key."' does not respond. Please check your settings");
 			continue;
 		}
 	}
-return;
+	return;
 }
 
 

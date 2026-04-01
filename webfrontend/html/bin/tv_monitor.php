@@ -382,7 +382,7 @@ function restoreSoundbarSettings($soundbars, $restore_file) {
 						
 						echo "TV Monitor has been restored for '".$subkey."'".PHP_EOL;
 						file_put_contents($restoremark, json_encode("1", JSON_PRETTY_PRINT));
-						LOGOK("bin/tv_monitor.php: TV Monitor has been restored for '".$subkey."'");
+						LOGDEB("bin/tv_monitor.php: TV Monitor has been restored for '".$subkey."'");
 						
 					} else {
 						echo "Restore failed for '".$subkey."'".PHP_EOL;
@@ -494,7 +494,7 @@ function restoreSoundbarSettingsFromJson($subkey, $ip, $lbpplugindir, $status_fi
 		LOGDEB("bin/tv_monitor.php: Bass restored to '".$saved["Bass"]."' for '".$subkey."'");
 	}
 
-	LOGINF("bin/tv_monitor.php: Restore finished successfully for '".$subkey."'");
+	LOGDEB("bin/tv_monitor.php: Restore finished successfully for '".$subkey."'");
 	return true;
 }
 

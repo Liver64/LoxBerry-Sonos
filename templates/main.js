@@ -667,25 +667,33 @@ function populateVoice() {
  *   and link to update languages appears
  */
 function piperInfo(event) {
-
 	event.preventDefault();
 
-	var lbhost = window.location.hostname;
+	var lbhost   = window.location.hostname;
+	var hfUrl    = "https://huggingface.co/rhasspy/piper-voices/tree/main";
+	var localUrl = "http://" + lbhost + "/plugins/sonos4lox/bin/piper-voices.php";
 
 	var text = "<TMPL_VAR T2S.PIPER_DIA1><br><br>"
+	+ "<div style='text-align:center;'>"
+	+ "<div style='margin-bottom:1px;'>"
+	+ "</div>"
+	+ "<a href='" + hfUrl + "' "
+	+ "target='_blank' rel='noopener noreferrer' "
+	+ "style='color:#0066cc; text-decoration:underline;'>"
+	+ "Piper Voices"
+	+ "</a>"
+	+ "</div><br>"
+	+ "<TMPL_VAR T2S.PIPER_DIA5><br><br>"
 	+ "<code style='font-size:14px;font-weight:bold'>"
 	+ "/opt/loxberry/webfrontend/html/voice_engines/piper-voices"
 	+ "</code><br><br>"
-	+ "<TMPL_VAR T2S.PIPER_DIA3><br><br>"
 	+ "<TMPL_VAR T2S.PIPER_DIA4><br><br>"
-	+ "<a href='http://" + lbhost + "/plugins/sonos4lox/bin/piper-voices.php' "
+	+ "<a href='" + localUrl + "' "
 	+ "target='_blank' style='color:#0066cc;text-decoration:underline;'>"
-	+ "http://" + lbhost + "/plugins/sonos4lox/bin/piper-voices.php"
+	+ localUrl
 	+ "</a>";
 
 	dialog(text, "OK", "info", "Piper Voices");
-
-	window.open("https://huggingface.co/rhasspy/piper-voices/tree/main", "_blank");
 }
 
 /**
@@ -1707,8 +1715,6 @@ function getsbconfig() {
 							.selectmenu("refresh");
 					}
 
-					toggleSoundbarSubLevels(index);
-
 					/* ------------------------------------------------------------------
 					 * SURROUND handling
 					 * ------------------------------------------------------------------ */
@@ -1730,7 +1736,6 @@ function getsbconfig() {
 						$("#sbzone_" + index).val(index).text("refresh");
 
 						setCustomFlipswitchValue("usesb_" + index, valu[14].usesb);
-						toggleSoundbar(index);
 
 						setCustomFlipswitchValue("tvmonspeech_" + index, valu[14].tvmonspeech);
 						setCustomFlipswitchValue("tvmonnight_" + index, valu[14].tvmonnight);
@@ -1740,6 +1745,21 @@ function getsbconfig() {
 						$("#tvvol_" + index).val(valu[14].tvvol).text("refresh");
 						$("#tvbass_" + index).val(valu[14].tvbass).text("refresh");
 						$("#tvtreble_" + index).val(valu[14].tvtreble).text("refresh");
+
+						/* --------------------------------------------------------------
+						 * IMPORTANT:
+						 * Apply visibility/state logic only AFTER all values are set
+						 * ------------------------------------------------------------------
+						 * This ensures that after re-enabling usesb_<room>, the dependent
+						 * fields (Night / Subwoofer / SubLevel) are recalculated correctly.
+						 * -------------------------------------------------------------- */
+						toggleSoundbar(index);
+						toggleNightFieldsByTime(index);
+						toggleSoundbarSubLevels(index);
+
+						if (typeof updateSoundbarColspan === "function") {
+							updateSoundbarColspan(index);
+						}
 
 						/* --------------------------------------------------------------
 						 * tvgrpstop checkboxes (standard jQM checkboxes)
@@ -1829,21 +1849,40 @@ function validateSB()   {
  * - Shows/hides TV monitor blocks based on #tvmon flipswitch state
  */
 function validateTVMon() {
-	var tvmonitor = $('#tvmon').is(':checked');
+    var tvmonitor = $('#tvmon').is(':checked');
 
-	if (tvmonitor) {
-		$('.tvmon_header').show();
-		$('.tvmon_body').show();
-		$('.tvmon_extra').show();
-		console.log("TV Monitor On");
-	} else {
-		$('.tvmon_header').hide();
-		$('.tvmon_body').hide();
-		$('.tvmon_extra').hide();
-		console.log("TV Monitor Off");
-	}
+    if (tvmonitor) {
+        $('.tvmon_header').show();
+        $('.tvmon_body').show();
+        $('.tvmon_extra').show();
+        console.log("TV Monitor On");
 
-	refreshJqmCheckboxes();
+        /* --------------------------------------------------------------
+         * IMPORTANT:
+         * After global TV Monitor is shown again, every individual
+         * soundbar row must be restored according to usesb_<room>.
+         * Otherwise rows appear although the room switch is OFF.
+         * -------------------------------------------------------------- */
+        $("input[id^='usesb_']").each(function () {
+            var room = this.id.replace("usesb_", "");
+
+            toggleSoundbar(room);
+            toggleNightFieldsByTime(room);
+            toggleSoundbarSubLevels(room);
+
+            if (typeof updateSoundbarColspan === "function") {
+                updateSoundbarColspan(room);
+            }
+        });
+
+    } else {
+        $('.tvmon_header').hide();
+        $('.tvmon_body').hide();
+        $('.tvmon_extra').hide();
+        console.log("TV Monitor Off");
+    }
+
+    refreshJqmCheckboxes();
 }
 
 /**
@@ -1865,21 +1904,36 @@ $("#tvmon").on("change", function () {
  * OFF -> hide
  */
 function toggleSoundbar(room) {
-    var header = document.getElementById("soundbar_header_" + room);
-    var row    = document.getElementById("soundbar_row_" + room);
-    var usesb  = document.getElementById("usesb_" + room);
+    var header  = document.getElementById("soundbar_header_" + room);
+    var row     = document.getElementById("soundbar_row_" + room);
+    var usesb   = document.getElementById("usesb_" + room);
+    var topcell = document.getElementById("soundbar_topcell_" + room);
 
-    if (!header || !row || !usesb) {
+    if (!header || !row || !usesb || !topcell) {
         return;
     }
 
     if (usesb.checked) {
         header.style.display = "";
-        row.style.display    = "";
+        row.style.display = "";
+        topcell.classList.remove("sb_topcell_collapsed");
     } else {
         header.style.display = "none";
-        row.style.display    = "none";
+        row.style.display = "none";
+        topcell.classList.add("sb_topcell_collapsed");
     }
+
+    toggleNightFieldsByTime(room);
+    toggleSoundbarSubLevels(room);
+
+    if (typeof updateSoundbarColspan === "function") {
+        updateSoundbarColspan(room);
+    }
+}
+
+function updateSoundbarColspan(room) {
+    var visibleCols = $("#soundbar_header_" + room).children("th:visible").length;
+    $("#soundbar_topcell_" + room).attr("colspan", visibleCols);
 }
 
 /**
@@ -1887,27 +1941,26 @@ function toggleSoundbar(room) {
  * We only hide the inner wrapper, not the whole <td>, so the table layout stays stable.
  */
 function toggleSoundbarSubLevels(room) {
-    var $tvSubSwitch       = $("#tvmonnightsub_" + room);
-    var $nightSubSwitch    = $("#tvmonnightsubn_" + room);
+    var $tvSubSwitch    = $("#tvmonnightsub_" + room);
+    var $nightSubSwitch = $("#tvmonnightsubn_" + room);
+    var $fromTimeInput  = $("#fromtime_" + room);
 
-    var $tvSubLevelWrap    = $("#tvsublevel_" + room).closest(".sb_select_wrap");
-    var $nightSubLevelWrap = $("#tvmonnightsublevel_" + room).closest(".sb_select_wrap");
+    var fromTimeValue   = $.trim($fromTimeInput.val() || "");
+    var hasValidTime    = /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(fromTimeValue);
 
-    if ($tvSubSwitch.length && $tvSubLevelWrap.length) {
-        if ($tvSubSwitch.is(":checked") && !$tvSubSwitch.prop("disabled")) {
-            $tvSubLevelWrap.show();
-        } else {
-            $tvSubLevelWrap.hide();
-        }
-    }
+    var showTvSubCol = $tvSubSwitch.length &&
+                       $tvSubSwitch.is(":checked") &&
+                       !$tvSubSwitch.prop("disabled");
 
-    if ($nightSubSwitch.length && $nightSubLevelWrap.length) {
-        if ($nightSubSwitch.is(":checked") && !$nightSubSwitch.prop("disabled")) {
-            $nightSubLevelWrap.show();
-        } else {
-            $nightSubLevelWrap.hide();
-        }
-    }
+    var showNightSubCol = hasValidTime &&
+                          $nightSubSwitch.length &&
+                          $nightSubSwitch.is(":checked") &&
+                          !$nightSubSwitch.prop("disabled");
+
+    $(".sb_tvsublevel_col_" + room).css("display", showTvSubCol ? "table-cell" : "none");
+    $(".sb_nightsublevel_col_" + room).css("display", showNightSubCol ? "table-cell" : "none");
+
+    updateSoundbarColspan(room);
 }
 
 /**
@@ -2522,6 +2575,12 @@ $(document).ready(function(e) {
 	$(document).on('change click', '#announceradio, #announceradio_always', function () {
 		toggleRadioAnnounce();
 	});
+	
+	$("input[id^='fromtime_']").each(function () {
+        var room = this.id.replace("fromtime_", "");
+        toggleNightFieldsByTime(room);
+        toggleSoundbarSubLevels(room);
+    });
 
 	// IMPORTANT: This block belongs to the SETTINGS page (TTS config).
 	if (!document.getElementById('engine-selector')) {
@@ -2703,6 +2762,43 @@ function toggleFollowDelayFields() {
         $('#follow_delay_label_cell, #follow_delay_slider_cell').hide();
     }
 }
+
+function toggleNightFieldsByTime(room) {
+    var $input = $("#fromtime_" + room);
+    if (!$input.length) return;
+
+    var value = $.trim($input.val());
+    var isValid = /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
+
+    // Nur die "normalen" Night-Spalten schalten:
+    // NIGHT + NIGHT SUB
+    $(".sb_night_col_" + room)
+        .not(".sb_nightsublevel_col_" + room)
+        .css("display", isValid ? "table-cell" : "none");
+
+    // Wenn keine gültige Uhrzeit gesetzt ist, Night-SubLevel immer ausblenden
+    if (!isValid) {
+        $(".sb_nightsublevel_col_" + room).css("display", "none");
+    }
+
+    // Night-SubLevel danach IMMER über den zugehörigen Flipswitch steuern
+    toggleSoundbarSubLevels(room);
+}
+
+$(function () {
+    $("input[id^='fromtime_']").each(function () {
+        var room = this.id.replace("fromtime_", "");
+        toggleNightFieldsByTime(room);
+    });
+});
+
+$(document).on("change", "input[id^='tvmonnightsub_'], input[id^='tvmonnightsubn_']", function () {
+    var room = this.id
+        .replace("tvmonnightsub_", "")
+        .replace("tvmonnightsubn_", "");
+
+    toggleSoundbarSubLevels(room);
+});
 
 function details_init() {
 	select_update();

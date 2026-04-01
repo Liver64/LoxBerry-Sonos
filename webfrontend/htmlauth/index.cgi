@@ -812,16 +812,36 @@ sub form
 
 		# Prepare soundbar table if device is a soundbar
 		if (($config->{$key}[13]) eq "SB") {
+			
+			my $tvmonnightsubn_val      = $config->{$key}->[14]->{tvsubnight}          // 'false';
+			my $tvsublevel_val          = $config->{$key}->[14]->{tvsublevel}          // 0;
+			my $tvmonnightsublevel_val  = $config->{$key}->[14]->{tvmonnightsublevel}  // 0;
+			my $fromtime_val            = $config->{$key}->[14]->{fromtime}            // '';
+			my $has_valid_fromtime      = ($fromtime_val =~ /^(?:[01]\d|2[0-3]):[0-5]\d$/) ? 1 : 0;
+			my $night_style             = $has_valid_fromtime ? "" : "display:none;";
+
+			my $usesb_val               = $config->{$key}->[14]->{usesb}               // 'false';
+			my $tvmonspeech_val         = $config->{$key}->[14]->{tvmonspeech}         // 'false';
+			my $tvmonsurr_val           = $config->{$key}->[14]->{tvmonsurr}           // 'false';
+			my $tvmonnightsub_val       = $config->{$key}->[14]->{tvmonnightsub}       // 'false';
+			my $tvmonnight_val          = $config->{$key}->[14]->{tvmonnight}          // 'false';
+
+			$rowssoundbar .= "<table class='tables sb_table_compact sb_single_table' border='0' id='tblsb_$room' name='tblsb_$room'>\n";
+			$rowssoundbar .= "<tbody>\n";
 
 			# 1. Room name + On/Off
 			$rowssoundbar .= "<tr class='tvmon_body_header'>\n";
-			$rowssoundbar .= "<td colspan='12' style='padding: 4px 0 2px 0; border:none; background:white; vertical-align:middle;'>\n";
+			$rowssoundbar .= "<td id='soundbar_topcell_$room' colspan='12' class='sb_topcell'>\n";
+			$rowssoundbar .= "<div class='sb_topline_inner'>\n";
 			$rowssoundbar .= "<div class='sb_topline_wrap'>\n";
 			$rowssoundbar .= "<label for='sbzone_$room' class='sb_topline_label' style='font-weight:bold;'>Soundbar:</label>\n";
-			$rowssoundbar .= "<div class='sb_topline_input_wrap'><input type='text' id='sbzone_$room' name='sbzone_$room' readonly='true' value='$room' class='sb_topline_input'></div>\n";
+			if (-e $statusfile) {
+				$rowssoundbar .= "<div class='sb_topline_input_wrap'><input type='text' id='sbzone_$room' name='sbzone_$room' style='background-color: #6dac20; color:white' readonly='true' value='$room' class='sb_topline_input'></div>\n";
+			} else {
+				$rowssoundbar .= "<div class='sb_topline_input_wrap'><input type='text' id='sbzone_$room' name='sbzone_$room' style='background-color: #e6e6e6;' readonly='true' value='$room' class='sb_topline_input'></div>\n";
+			}
 			$rowssoundbar .= "<div class='sb_topline_switch_wrap'>\n";
 
-			my $usesb_val = $config->{$key}->[14]->{usesb} // 'false';
 			$rowssoundbar .= render_lb_flipswitch(
 				id       => "usesb_$room",
 				name     => "usesb_$room",
@@ -831,38 +851,32 @@ sub form
 			);
 
 			$rowssoundbar .= "</div>\n";
-			$rowssoundbar .= "</div></td>\n";
+			$rowssoundbar .= "</div>\n";
+			$rowssoundbar .= "</div>\n";
+			$rowssoundbar .= "</td>\n";
 			$rowssoundbar .= "</tr>\n";
 
 			# 2. Column header
 			$rowssoundbar .= "<tr class='tvmon_header' id='soundbar_header_$room' style='background-color:#6db33f;'>\n";
-			$rowssoundbar .= "<th style='width:96px;  min-width:96px;  max-width:96px;  text-align:center; vertical-align:middle;'>$SL{'SOUNDBARS.LABEL_SPEECH'}</th>\n";
-			$rowssoundbar .= "<th style='width:96px;  min-width:96px;  max-width:96px;  text-align:center; vertical-align:middle;'>$SL{'SOUNDBARS.LABEL_SURROUND'}</th>\n";
-			$rowssoundbar .= "<th style='width:96px;  min-width:96px;  max-width:96px;  text-align:center; vertical-align:middle;'>$SL{'SOUNDBARS.LABEL_SUB'}</th>\n";
-			$rowssoundbar .= "<th style='width:90px;  min-width:90px;  max-width:90px;  text-align:center; vertical-align:middle;'>$SL{'SOUNDBARS.LABEL_SUB_GAIN'}</th>\n";
-			$rowssoundbar .= "<th style='width:70px;  min-width:70px;  max-width:70px;  text-align:center; vertical-align:middle;' id='tvmtvol' name='tvmtvol'>$SL{'SOUNDBARS.LABEL_TVVOL'}</th>\n";
-			$rowssoundbar .= "<th style='width:70px;  min-width:70px;  max-width:70px;  text-align:center; vertical-align:middle;' id='tvmttreble' name='tvmttreble'>$SL{'SOUNDBARS.LABEL_TVTREBLE'}</th>\n";
-			$rowssoundbar .= "<th style='width:70px;  min-width:70px;  max-width:70px;  text-align:center; vertical-align:middle;' id='tvmtbass' name='tvmtbass'>$SL{'SOUNDBARS.LABEL_TVBASS'}</th>\n";
-			$rowssoundbar .= "<th style='width:210px; min-width:210px; max-width:210px; text-align:center; vertical-align:middle;'>$SL{'SOUNDBARS.LABEL_GRPZONE'}</th>\n";
-			$rowssoundbar .= "<th style='width:110px; min-width:110px; max-width:110px; text-align:center; vertical-align:middle;'>$SL{'SOUNDBARS.LABEL_FROM_TIME'}</th>\n";
-			$rowssoundbar .= "<th style='width:96px;  min-width:96px;  max-width:96px;  text-align:center; vertical-align:middle;'>$SL{'SOUNDBARS.LABEL_NIGHT'}</th>\n";
-			$rowssoundbar .= "<th style='width:96px;  min-width:96px;  max-width:96px;  text-align:center; vertical-align:middle;'>$SL{'SOUNDBARS.LABEL_SUB'}</th>\n";
-			$rowssoundbar .= "<th style='width:90px;  min-width:90px;  max-width:90px;  text-align:center; vertical-align:middle;'>$SL{'SOUNDBARS.LABEL_SUB_GAIN'}</th>\n";
+			$rowssoundbar .= "<th class='sb_col_switch'>$SL{'SOUNDBARS.LABEL_SPEECH'}</th>\n";
+			$rowssoundbar .= "<th class='sb_col_switch'>$SL{'SOUNDBARS.LABEL_SURROUND'}</th>\n";
+			$rowssoundbar .= "<th class='sb_col_switch'>$SL{'SOUNDBARS.LABEL_SUB'}</th>\n";
+			$rowssoundbar .= "<th class='sb_col_level sb_tvsublevel_col_$room'>$SL{'SOUNDBARS.LABEL_SUB_GAIN'}</th>\n";
+			$rowssoundbar .= "<th class='sb_col_num' id='tvmtvol' name='tvmtvol'>$SL{'SOUNDBARS.LABEL_TVVOL'}</th>\n";
+			$rowssoundbar .= "<th class='sb_col_num' id='tvmttreble' name='tvmttreble'>$SL{'SOUNDBARS.LABEL_TVTREBLE'}</th>\n";
+			$rowssoundbar .= "<th class='sb_col_num' id='tvmtbass' name='tvmtbass'>$SL{'SOUNDBARS.LABEL_TVBASS'}</th>\n";
+			$rowssoundbar .= "<th class='sb_col_group'>$SL{'SOUNDBARS.LABEL_GRPZONE'}</th>\n";
+			$rowssoundbar .= "<th class='sb_col_time'>$SL{'SOUNDBARS.LABEL_FROM_TIME'}</th>\n";
+			$rowssoundbar .= "<th class='sb_col_switch sb_night_col_$room' style='$night_style'>$SL{'SOUNDBARS.LABEL_NIGHT'}</th>\n";
+			$rowssoundbar .= "<th class='sb_col_switch sb_night_col_$room' style='$night_style'>$SL{'SOUNDBARS.LABEL_SUB'}</th>\n";
+			$rowssoundbar .= "<th class='sb_col_level sb_night_col_$room sb_nightsublevel_col_$room' style='$night_style'>$SL{'SOUNDBARS.LABEL_SUB_GAIN'}</th>\n";
 			$rowssoundbar .= "</tr>\n";
 
 			# 3. Data row
 			$rowssoundbar .= "<tr class='tvmon_body' id='soundbar_row_$room'>\n";
 
-			my $tvmonspeech_val         = $config->{$key}->[14]->{tvmonspeech}         // 'false';
-			my $tvmonsurr_val           = $config->{$key}->[14]->{tvmonsurr}           // 'false';
-			my $tvmonnightsub_val       = $config->{$key}->[14]->{tvmonnightsub}       // 'false';
-			my $tvmonnight_val          = $config->{$key}->[14]->{tvmonnight}          // 'false';
-			my $tvmonnightsubn_val      = $config->{$key}->[14]->{tvsubnight}          // 'false';
-			my $tvsublevel_val          = $config->{$key}->[14]->{tvsublevel}          // 0;
-			my $tvmonnightsublevel_val  = $config->{$key}->[14]->{tvmonnightsublevel}  // 0;
-
 			# Speech
-			$rowssoundbar .= "<td style='width:96px; min-width:96px; max-width:96px; text-align:center; white-space:nowrap; vertical-align:middle;'>\n";
+			$rowssoundbar .= "<td class='sb_col_switch'>\n";
 			$rowssoundbar .= "<fieldset style='margin:0; padding:0; border:none; text-align:center;'>\n";
 			$rowssoundbar .= "<div class='sb_switch_wrap'>\n";
 			$rowssoundbar .= render_lb_flipswitch(
@@ -874,7 +888,7 @@ sub form
 			$rowssoundbar .= "</fieldset></td>\n";
 
 			# Surround
-			$rowssoundbar .= "<td style='width:96px; min-width:96px; max-width:96px; text-align:center; white-space:nowrap; vertical-align:middle;'>\n";
+			$rowssoundbar .= "<td class='sb_col_switch'>\n";
 			$rowssoundbar .= "<fieldset style='margin:0; padding:0; border:none; text-align:center;'>\n";
 			$rowssoundbar .= "<div class='sb_switch_wrap'>\n";
 			$rowssoundbar .= render_lb_flipswitch(
@@ -886,7 +900,7 @@ sub form
 			$rowssoundbar .= "</fieldset></td>\n";
 
 			# Sub
-			$rowssoundbar .= "<td style='width:96px; min-width:96px; max-width:96px; text-align:center; white-space:nowrap; vertical-align:middle;'>\n";
+			$rowssoundbar .= "<td class='sb_col_switch'>\n";
 			$rowssoundbar .= "<fieldset style='margin:0; padding:0; border:none; text-align:center;'>\n";
 			$rowssoundbar .= "<div class='sb_switch_wrap'>\n";
 			$rowssoundbar .= render_lb_flipswitch(
@@ -896,9 +910,9 @@ sub form
 			);
 			$rowssoundbar .= "</div>\n";
 			$rowssoundbar .= "</fieldset></td>\n";
-			
+
 			# TV SubLevel
-			$rowssoundbar .= "<td style='width:90px; min-width:90px; max-width:90px;'>\n";
+			$rowssoundbar .= "<td class='sb_col_level sb_tvsublevel_col_$room'>\n";
 			$rowssoundbar .= "<div class='sb_select_wrap sb_select_wrap_mid_left'><fieldset style='margin:0; padding:0; border:none; width:100%;'>\n";
 			$rowssoundbar .= "<select id='tvsublevel_$room' name='tvsublevel_$room' data-mini='true' data-native-menu='true' style='width:100%'>\n";
 			for my $i (-15 .. 15) {
@@ -909,24 +923,22 @@ sub form
 			$rowssoundbar .= "</td>\n";
 
 			# TV Volume
-			$rowssoundbar .= "<td style='width:70px; min-width:70px; max-width:70px;'>\n";
+			$rowssoundbar .= "<td class='sb_col_num'>\n";
 			$rowssoundbar .= "<div class='sb_input_wrap'><input class='tvvol' type='text' id='tvvol_$room' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='tvvol_$room' value='$config->{$key}->[14]->{tvvol}'></div>\n";
 			$rowssoundbar .= "</td>\n";
 
 			# TV Treble
-			$rowssoundbar .= "<td style='width:70px; min-width:70px; max-width:70px;'>\n";
+			$rowssoundbar .= "<td class='sb_col_num'>\n";
 			$rowssoundbar .= "<div class='sb_input_wrap'><input class='tvtreble' type='text' id='tvtreble_$room' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='$error_treble_bass' name='tvtreble_$room' value='$config->{$key}->[14]->{tvtreble}'></div>\n";
 			$rowssoundbar .= "</td>\n";
 
 			# TV Bass
-			$rowssoundbar .= "<td style='width:70px; min-width:70px; max-width:70px;'>\n";
+			$rowssoundbar .= "<td class='sb_col_num'>\n";
 			$rowssoundbar .= "<div class='sb_input_wrap'><input class='tvbass' type='text' id='tvbass_$room' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='$error_treble_bass' name='tvbass_$room' value='$config->{$key}->[14]->{tvbass}'></div>\n";
 			$rowssoundbar .= "</td>\n";
 
-			
-
 			# Group zone / stop players
-			$rowssoundbar .= "<td style='width:210px; min-width:210px; max-width:210px; vertical-align:middle;'>\n";
+			$rowssoundbar .= "<td class='sb_col_group'>\n";
 			$rowssoundbar .= "<div data-role='collapsible' data-collapsed='true' data-mini='true'>\n";
 			$rowssoundbar .= "<h4>$SL{'SOUNDBARS.LABEL_SELECT'}</h4>\n";
 
@@ -941,12 +953,12 @@ sub form
 			$rowssoundbar .= "</td>\n";
 
 			# From time
-			$rowssoundbar .= "<td style='width:110px; min-width:110px; max-width:110px;'>\n";
-			$rowssoundbar .= "<div class='sb_time_wrap'><input id='fromtime_$room' type='time' name='fromtime_$room' value='" . ($config->{$key}->[14]->{fromtime} // '') . "'></div>\n";
+			$rowssoundbar .= "<td class='sb_col_time'>\n";
+			$rowssoundbar .= "<div class='sb_time_wrap'><input id='fromtime_$room' type='time' name='fromtime_$room' value='$fromtime_val' oninput=\"toggleNightFieldsByTime('$room')\" onchange=\"toggleNightFieldsByTime('$room')\"></div>\n";
 			$rowssoundbar .= "</td>\n";
 
 			# Night
-			$rowssoundbar .= "<td style='width:96px; min-width:96px; max-width:96px; text-align:center; white-space:nowrap; vertical-align:middle;'>\n";
+			$rowssoundbar .= "<td class='sb_col_switch sb_night_col_$room' style='$night_style'>\n";
 			$rowssoundbar .= "<fieldset style='margin:0; padding:0; border:none; text-align:center;'>\n";
 			$rowssoundbar .= "<div class='sb_switch_wrap'>\n";
 			$rowssoundbar .= render_lb_flipswitch(
@@ -958,7 +970,7 @@ sub form
 			$rowssoundbar .= "</fieldset></td>\n";
 
 			# Night Sub
-			$rowssoundbar .= "<td style='width:96px; min-width:96px; max-width:96px; text-align:center; white-space:nowrap; vertical-align:middle;'>\n";
+			$rowssoundbar .= "<td class='sb_col_switch sb_night_col_$room' style='$night_style'>\n";
 			$rowssoundbar .= "<fieldset style='margin:0; padding:0; border:none; text-align:center;'>\n";
 			$rowssoundbar .= "<div class='sb_switch_wrap'>\n";
 			$rowssoundbar .= render_lb_flipswitch(
@@ -970,7 +982,7 @@ sub form
 			$rowssoundbar .= "</fieldset></td>\n";
 
 			# Night SubLevel
-			$rowssoundbar .= "<td style='width:90px; min-width:90px; max-width:90px;'>\n";
+			$rowssoundbar .= "<td class='sb_col_level sb_night_col_$room sb_nightsublevel_col_$room' style='$night_style'>\n";
 			$rowssoundbar .= "<div class='sb_select_wrap sb_select_wrap_mid_right'><fieldset style='margin:0; padding:0; border:none; width:100%;'>\n";
 			$rowssoundbar .= "<select id='tvmonnightsublevel_$room' name='tvmonnightsublevel_$room' data-mini='true' data-native-menu='true' style='width:100%'>\n";
 			for my $i (-15 .. 15) {
@@ -981,6 +993,8 @@ sub form
 			$rowssoundbar .= "</td>\n";
 
 			$rowssoundbar .= "</tr>\n";
+			$rowssoundbar .= "</tbody>\n";
+			$rowssoundbar .= "</table>\n";
 		}
     }
     if ($countplayers < 1) {
