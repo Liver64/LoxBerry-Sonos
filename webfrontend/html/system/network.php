@@ -72,13 +72,11 @@ if (!is_dir($cache_dir)) {
 	@mkdir($cache_dir, 0775, true);
 }
 
-/* >>> ADD THIS BLOCK HERE <<< */
 // ttl=0 => disable cache and remove any existing cache file
 if ($ttl === 0 && file_exists($cache_file)) {
 	@unlink($cache_file);
 	LOGDEB("system/network.php: ttl=0 -> cache file removed ($cache_file)");
 }
-/* >>> END ADD <<< */
 
 // Serve cache quickly if valid (and not forced)
 if (!$force && $ttl > 0 && file_exists($cache_file)) {

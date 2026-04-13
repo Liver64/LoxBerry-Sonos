@@ -462,6 +462,36 @@ function applySubwooferCapability(playerIdx, profileIdx, roomName, savedValue, s
 	}
 }
 
+/**
+ * Shows custom tooltip and applies its visual styling.
+ * The tooltip uses the plugin green color and removes any text shadow.
+ */
+function showGreenTooltip(selector) {
+	$(selector).css({
+		"background": "#6db33f",
+		"color": "#ffffff",
+		"text-shadow": "none",
+		"box-shadow": "0 2px 10px rgba(0,0,0,0.18)",
+		"display": "inline-block",
+		"width": "max-content",
+		"min-width": "220px",
+		"max-width": "420px",
+		"white-space": "normal"
+	});
+
+	$(selector + " div").css({
+		"border-top-color": "#6db33f"
+	});
+
+	$(selector).stop(true, true).fadeIn(120);
+}
+
+/**
+ * Hides a tooltip.
+ */
+function hideTooltip(selector) {
+	$(selector).stop(true, true).fadeOut(120);
+}
 
 /* =========================================================================================
  * Load & apply existing profiles from backend
@@ -556,8 +586,44 @@ function create_new_profile() {
 			trHTML += "<th align='middle' colspan='8'><div style='width: 180px; align: left'>\n";
 			trHTML += "<input class='textfield' type='text' style='align: middle; width: 100%' id='profile" + new_id + "' name='profile" + new_id + "' value='' placeholder='Volume Profile Name'/>\n";
 			trHTML += "<td valign='left'>";
-			trHTML += "<img onclick='NewSonosData()' title='Load current values from Sonos devices' value='" + new_id + "' id='btnload" + new_id + "' name='btnload" + new_id + "' src='/plugins/<TMPL_VAR PLUGINDIR>/images/musik-note.png' border='0' width='28' height='28'>\n";
-			trHTML += "<img title='Clone values from last Profile' onclick='cloneprofile()' value='new_id' id='btnclone" + new_id + "' name='btnclone" + new_id + "' class='ico_clone' src='/plugins/<TMPL_VAR PLUGINDIR>/images/clone.svg' border='0' width='33' height='33'></td>\n";
+			trHTML += "<span style='position:relative; display:inline-block; margin-right:8px;'>"
+				+ "<img onclick='NewSonosData()' "
+				+ "value='" + new_id + "' "
+				+ "id='btnload" + new_id + "' "
+				+ "name='btnload" + new_id + "' "
+				+ "style='cursor:pointer;' "
+				+ "onmouseenter=\"showGreenTooltip('#btnload_tip_" + new_id + "')\" "
+				+ "onmouseleave=\"hideTooltip('#btnload_tip_" + new_id + "')\" "
+				+ "src='/plugins/<TMPL_VAR PLUGINDIR>/images/musik-note.png' "
+				+ "border='0' width='28' height='28'>"
+				+ "<div id='btnload_tip_" + new_id + "' "
+				+ "style='display:none; position:absolute; left:50%; bottom:38px; transform:translateX(-50%); "
+				+ "padding:8px 12px; border-radius:6px; white-space:nowrap; z-index:9999;'>"
+				+ "Load current values from Sonos devices"
+				+ "<div style='position:absolute; left:50%; transform:translateX(-50%); bottom:-8px; width:0; height:0; "
+				+ "border-left:8px solid transparent; border-right:8px solid transparent; border-top:8px solid #6db33f;'></div>"
+				+ "</div>"
+				+ "</span>\n";
+
+			trHTML += "<span style='position:relative; display:inline-block;'>"
+				+ "<img onclick='cloneprofile()' "
+				+ "value='" + new_id + "' "
+				+ "id='btnclone" + new_id + "' "
+				+ "name='btnclone" + new_id + "' "
+				+ "class='ico_clone' "
+				+ "style='cursor:pointer;' "
+				+ "onmouseenter=\"showGreenTooltip('#btnclone_tip_" + new_id + "')\" "
+				+ "onmouseleave=\"hideTooltip('#btnclone_tip_" + new_id + "')\" "
+				+ "src='/plugins/<TMPL_VAR PLUGINDIR>/images/clone.svg' "
+				+ "border='0' width='33' height='33'>"
+				+ "<div id='btnclone_tip_" + new_id + "' "
+				+ "style='display:none; position:absolute; left:50%; bottom:43px; transform:translateX(-50%); "
+				+ "padding:8px 12px; border-radius:6px; white-space:nowrap; z-index:9999;'>"
+				+ "Clone values from last Profile"
+				+ "<div style='position:absolute; left:50%; transform:translateX(-50%); bottom:-8px; width:0; height:0; "
+				+ "border-left:8px solid transparent; border-right:8px solid transparent; border-top:8px solid #6db33f;'></div>"
+				+ "</div>"
+				+ "</span></td>\n";
 			trHTML += "</th><tr><th style='background-color: #6dac20;' align='left'>&nbsp;Rooms</th><div class='form-group col-7'>\n";
 			trHTML += "<th class='form-control' style='background-color: #6dac20; align: center'>V</th>\n";
 			trHTML += "<th class='form-control' style='background-color: #6dac20; align: center'>T</th>\n";

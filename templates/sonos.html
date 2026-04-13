@@ -50,7 +50,7 @@
 								<th align="left" style="height: 45px; width: 8px">
                                     <TMPL_VAR ZONES.SONOS_MAIN>
                                 </th>
-                                <th align="left">
+                                <th align="middle">
                                     <TMPL_VAR ZONES.SONOS_MODEL>
                                 </th>
 								<th align="middle" style="height: 25px; width:10px">
@@ -62,7 +62,7 @@
 								<th align="middle">
                                     <TMPL_VAR ZONES.SONOS_AUDIOCLIP>
                                 </th>
-                                <th align="left">
+                                <th align="middle">
                                     <TMPL_VAR ZONES.SONOS_T2S-VOL>
                                 </th>
                                 <th align="left">
@@ -522,67 +522,106 @@
 					</td>
 
 					<td colspan="2" style="height: 50px; vertical-align: middle; padding-right: 0;">
-						<div style="display:flex; align-items:center; gap:28px; width:100%;">
-
-							<div style="flex:0 0 auto;">
-								<div class="lb-flipswitch"
-									 data-input="sendlox"
-									 data-value="<TMPL_VAR LOXONE.LoxDaten>">
-									<input type="hidden" name="sendlox" id="sendlox_hidden" value="false">
-
-									<input type="checkbox"
-										   id="sendlox"
-										   class="lb-flipswitch-checkbox no-jqm-flipswitch"
-										   data-role="none">
-									<label class="lb-flipswitch-label" for="sendlox">
-										<span class="lb-flipswitch-inner"></span>
-										<span class="lb-flipswitch-switch"></span>
-									</label>
-								</div>
-
-								<script>
-									$(document).off('change.sendloxCustom', '#sendlox').on('change.sendloxCustom', '#sendlox', function () {
-										selection();
-									});
-								</script>
-							</div>
-
-							<div class="empty_template" style="flex:0 0 250px;">
-								<div style="width:100%;">
-									<TMPL_VAR MS>
-								</div>
-								<input id="sendloxMQTT" name="sendloxMQTT" type="hidden" value="false">
-							</div>
-
-							<div class="empty_template" style="flex:0 0 380px; min-width:380px; max-width:520px;">
-								<div class="sonos-health-box" style="display:inline-block; text-align:left;">
-									<div class="lbgreen" style="text-align:left;">
-										Event Listener running (PID <TMPL_VAR SONOS_HEALTH_PID>)
+						<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate; border-spacing:10px 0; width:auto;">
+							<tr>
+								<td style="padding:0; vertical-align:middle; white-space:nowrap;">
+									<div class="lb-flipswitch"
+										 data-input="sendlox"
+										 data-value="<TMPL_VAR LOXONE.LoxDaten>"
+										 onmouseenter="showGreenTooltip('#sendlox_tooltip')"
+										 onmouseleave="hideTooltip('#sendlox_tooltip')">
+										 
+										<input type="hidden" name="sendlox" id="sendlox_hidden" value="false">
+										
+										<div id="sendlox_tooltip"
+											style="display:none; position:absolute; left:0; bottom:42px; width:320px; padding:8px 10px; background:rgba(40,40,40,0.96); color:#fff; font-size:12px; line-height:1.35; border-radius:6px; box-shadow:0 2px 10px rgba(0,0,0,0.25); white-space:normal; z-index:99999; text-align:left;">
+											<TMPL_VAR TEMPLATE.TEXT_LOXONE_COMM>
+											<div style="position:absolute; left:18px; top:100%; width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-top:6px solid rgba(40,40,40,0.96);"></div>
+										</div>
+										
+										<input type="checkbox"
+											   id="sendlox"
+											   class="lb-flipswitch-checkbox no-jqm-flipswitch"
+											   data-role="none">
+											   
+										<label class="lb-flipswitch-label" for="sendlox">
+											<span class="lb-flipswitch-inner"></span>
+											<span class="lb-flipswitch-switch"></span>
+										</label>
 									</div>
-									<div style="font-size:0.85em; margin-top:2px; text-align:left;">
-										<span class="health-indicator <TMPL_VAR SONOS_HEALTH_STATUS_CLASS>"></span>
-										Event-Listener State: <TMPL_VAR SONOS_HEALTH_STATUS>
-										<TMPL_IF SONOS_HEALTH_FORMATTED_TIME>
-											<TMPL_VAR SONOS_HEALTH_FORMATTED_TIME>
-										</TMPL_IF>
-										<br>
-										Player <TMPL_VAR SONOS_HEALTH_ONLINE>/<TMPL_VAR SONOS_HEALTH_TOTAL> online.
-									</div>
-								</div>
-							</div>
+								</td>
 
-							<div class="empty_template" style="flex:0 0 170px; margin-left:18px;">
-								<button type="button"
-										class="ui-btn ui-mini ui-btn-inline ui-btn-icon-left ui-icon-refresh"
-										onclick="restartSonosListener();"
-										style="margin:0;">
-									Restart Listener
-								</button>
-							</div>
-						</div>
+								<td class="empty_template" style="padding:0; vertical-align:middle; white-space:nowrap;">
+									<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate; border-spacing:12px 0; width:auto;">
+										<tr>
+											<td style="padding:0; vertical-align:middle; white-space:nowrap; width:225px; min-width:225px; max-width:225px;">
+												<div id="s4l_ms_wrap" style="width:225px;">
+													<TMPL_VAR MS>
+												</div>
+											</td>
+
+											<td id="udpPortCell" style="padding:0 0 0 18px; vertical-align:middle; white-space:nowrap;">
+												<div id="udpPortHelpWrap"
+													 style="position:relative; display:inline-flex; align-items:center;"
+													 onmouseenter="showGreenTooltip('#udpPortTooltip')"
+													 onmouseleave="hideTooltip('#udpPortTooltip')">
+													
+													<div id="udpPortTooltip"
+														 style="display:none; position:absolute; left:0; bottom:42px; width:320px; padding:8px 10px; background:rgba(40,40,40,0.96); color:#fff; font-size:12px; line-height:1.35; border-radius:6px; box-shadow:0 2px 10px rgba(0,0,0,0.25); white-space:normal; z-index:99999; text-align:left;">
+														<TMPL_VAR TEMPLATE.TEXT_UDPPORT_MOUSEOVER>
+														<div style="position:absolute; left:18px; top:100%; width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-top:6px solid rgba(40,40,40,0.96);"></div>
+													</div>
+
+													<span style="display:inline-block; vertical-align:middle; margin-right:6px; cursor:help;">UDP Port:</span>
+													<input type="text"
+														   name="UDP"
+														   id="UDP"
+														   value="<TMPL_VAR LOXONE.UDP>"
+														   data-role="none"
+														   inputmode="numeric"
+														   maxlength="5"
+														   onfocus="showUdpPortTooltip();"
+														   onblur="hideUdpPortTooltip();"
+														   style="display:inline-block; vertical-align:middle; width:72px; min-width:72px; max-width:72px; height:32px; line-height:32px; margin:0; padding:0 6px; box-sizing:border-box; text-align:center;">
+												</div>
+											</td>
+
+											<td style="padding:0; width:225px; min-width:225px; max-width:225px;"></td>
+
+											<td style="padding:0 0 0 2px; vertical-align:middle; white-space:nowrap;">
+												<div style="cursor:pointer; position:relative; display:inline-block;"
+													 onmouseenter="showGreenTooltip('#sonosHealthTooltip')"
+													 onmouseleave="hideTooltip('#sonosHealthTooltip')">
+
+													<img id="sonosHealthAmpel"
+														 src="/plugins/<TMPL_VAR PLUGINDIR>/images/A-Rot.png"
+														 alt="Sonos Health"
+														 style="display:block; height:50px; width:auto; max-height:50px;">
+
+													<div id="sonosHealthTooltip"
+														 style="display:none; position:absolute; left:0; bottom:54px; width:320px; padding:8px 10px; background:rgba(40,40,40,0.96); color:#fff; font-size:12px; line-height:1.35; border-radius:6px; box-shadow:0 2px 10px rgba(0,0,0,0.25); white-space:normal; z-index:99999; text-align:left;">
+														<TMPL_VAR TEMPLATE.TEXT_LOXONE_AMPEL>
+														<div style="position:absolute; left:18px; top:100%; width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-top:6px solid rgba(40,40,40,0.96);"></div>
+													</div>
+
+												</div>
+											</td>
+
+											<td style="padding:0 0 0 6px; vertical-align:middle; white-space:nowrap;">
+												<button type="button"
+														class="ui-btn ui-mini ui-btn-inline ui-btn-icon-left ui-icon-refresh"
+														onclick="restartSonosListener();"
+														style="margin:0;">
+													Restart Listener
+												</button>
+											</td>
+										</tr>
+									</table>
+								</td>
+							</tr>
+						</table>
 					</td>
-				</tr>
-				
+				</tr>	
 				
                 <tr class="empty_template">
 					<td class="empty_template" style="height: 50px; width: 25%; vertical-align: middle;">
@@ -600,16 +639,25 @@
 									value="VI_MQTT_UDP_Sonos.xml" />
 							</div>
 
-							<!--
 							<div class="btnd">
 								<input
 									type="button"
-									onclick="checkfile('VI_MQTT_HTTP_Sonos.xml')"
+									onclick="checkfile('VI_UDP_Sonos.xml')"
 									id="btn3"
 									data-mini="true"
-									value="VI_MQTT_HTTP_Sonos.xml" />
+									value="VI_UDP_Sonos.xml" />
 							</div>
-							-->
+
+							<div class="pdfinfo" style="display:flex; align-items:center; white-space:nowrap;">
+								<a
+									href="/plugins/<TMPL_VAR PLUGINDIR>/web/images/sonos4lox%20-%20virtual%20Inputs.pdf"
+									target="_blank"
+									rel="noopener noreferrer"
+									style="text-decoration:none; color:#1a1a1a; font-size:14px; display:inline-flex; align-items:center; gap:6px;">
+									<span style="display:inline-block; padding:1px 5px; background:#d9534f; color:#fff; border-radius:3px; font-size:11px; font-weight:bold; line-height:1;">PDF</span>
+									<span><TMPL_VAR TEMPLATE.TXT_INBOUND_INFO></span>
+								</a>
+							</div>
 						</div>
 					</td>
 
@@ -989,11 +1037,10 @@
 		
         <div class="form-group">
 			<!--<tbody>-->
-            <table class="formtable-container" id="vol" border="0" width="80%" cellpadding="10">
+            <table class="formtable-container" id="vol" border="0" width="80%">
 			<tbody>
                 <tr>
 	                <td valign="left" style="height: 33px; width: 15%; text-align: left;">
-                    <h2 class="auto-style3" style="width: 100%"></h2>
                     <td style="height: 33px; text-align: center; width: 850px;">
                         <img class='ico_sonos' src='/plugins/<TMPL_VAR PLUGINDIR>/images/sonos_logo.png' border='0' width='186' height='125' align="absmiddle">
 					</td>
@@ -1263,7 +1310,7 @@
 									max: 20,
 									from: savedValue,
 									step: 2,
-									postfix: " Sec.",
+									postfix: " %",
 									onStart: function (data) {
 										console.log("Initial data: " + data.from);
 									},

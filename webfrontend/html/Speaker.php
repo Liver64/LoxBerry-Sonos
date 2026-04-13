@@ -274,6 +274,68 @@ function SetUseAutoplayVolume()  {
 }
 
 
+
+
+function AutoplayConfig()   {
+	
+	global $config, $sonoszone, $master;
+
+	try {
+		$sonos = new SonosAccess($sonoszone[$master][0]);
+
+		/* =========================================================
+		 * 1) Current Autoplay target room UUID
+		 * ========================================================= */
+		$currentRoomUuid = @$sonos->GetAutoplayRoomUUID();
+		LOGINF("AutoplayRoomUUID current value: " . print_r($currentRoomUuid, true));
+
+		/* =========================================================
+		 * 2) Example: set Autoplay target room UUID
+		 * IMPORTANT:
+		 * Replace the UUID below with a REAL room UUID from your system.
+		 * On a Beam this is usually not needed for your volume issue.
+		 * ========================================================= */
+		$targetRoomUuid = $sonoszone[$master][1];
+
+		// Uncomment only if you really want to change it
+		// @$sonos->SetAutoplayRoomUUID($targetRoomUuid);
+		// LOGINF("AutoplayRoomUUID set to: " . $targetRoomUuid);
+
+		/* =========================================================
+		 * 3) Read current autoplay volumes
+		 * ========================================================= */
+		$tvAutoplayVolume    = @$sonos->GetAutoplayVolume("TV");
+		$musicAutoplayVolume = @$sonos->GetAutoplayVolume("Music");
+
+		LOGINF("Current TV Autoplay Volume: " . print_r($tvAutoplayVolume, true));
+		LOGINF("Current Music Autoplay Volume: " . print_r($musicAutoplayVolume, true));
+
+		/* =========================================================
+		 * 4) Example: set autoplay volumes
+		 * ========================================================= */
+		$desiredTvVolume    = 12;
+		$desiredMusicVolume = 18;
+
+		@$sonos->SetAutoplayVolume($desiredTvVolume, "TV");
+		@$sonos->SetAutoplayVolume($desiredMusicVolume, "Music");
+
+		LOGINF("TV Autoplay Volume set to: " . $desiredTvVolume);
+		LOGINF("Music Autoplay Volume set to: " . $desiredMusicVolume);
+
+		/* =========================================================
+		 * 5) Read back for verification
+		 * ========================================================= */
+		$tvAutoplayVolumeCheck    = @$sonos->GetAutoplayVolume("TV");
+		$musicAutoplayVolumeCheck = @$sonos->GetAutoplayVolume("Music");
+
+		LOGINF("Verify TV Autoplay Volume: " . print_r($tvAutoplayVolumeCheck, true));
+		LOGINF("Verify Music Autoplay Volume: " . print_r($musicAutoplayVolumeCheck, true));
+
+	} catch (Exception $e) {
+		LOGERR("Autoplay test failed: " . $e->getMessage());
+	}
+}
+
 /**
 * Funktion : 	GetButtonLockState() --> erfragt Button Lock state
 *
@@ -358,6 +420,35 @@ function GetHtMode()  {
 	}
 }
 
+
+/**
+/* Funktion : Getdialoglevel --> zeigt Informationen bzgl. DialogLevel der Zone an
+/*
+/* @param: 	empty
+/* @return: 
+**/	
+		
+function Getdialoglevel()  {
+	
+	global $sonos;
+	
+	$dialog = array();
+	#echo '<PRE>';
+	$NightMode = $sonos->GetDialogLevel('NightMode');
+	$dialog['NightMode'] = $NightMode;
+	$SurroundEnable = $sonos->GetDialogLevel('SurroundEnable');
+	$dialog['SurroundEnable'] = $SurroundEnable;
+	$DialogLevel = $sonos->GetDialogLevel('DialogLevel');
+	$dialog['DialogLevel'] = $DialogLevel;
+	$SubGain = $sonos->GetDialogLevel('SubGain');
+	$dialog['SubGain'] = $SubGain;
+	$SubEnable = $sonos->GetDialogLevel('SubEnable');
+	$dialog['SubEnable'] = $SubEnable;
+	$SurroundLevel = $sonos->GetDialogLevel('SurroundLevel');
+	$dialog['SurroundLevel'] = $SurroundLevel;
+	#print_r($dialog);
+	return $dialog;
+}
 
 /**
 * Funktion : 	SetSpeechMode() --> schaltet den Speech Mode aktiv/inaktiv

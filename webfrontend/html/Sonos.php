@@ -22,8 +22,8 @@ ini_set('max_execution_time', 60); 							// Max. Skriptlaufzeit auf 60 Sekunden
 include("system/sonosAccess.php");
 include("Grouping.php");
 include("Helper.php");
-include("Alarm.php");
 include("Playlist.php");
+include("Alarm.php");
 include("Metadata.php");
 include("Queue.php");
 include("Info.php");
@@ -1768,8 +1768,9 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			curr_volume();
 		break;
 		
-		case 'test':
-			get_MP3_duration();
+		case 'services':
+			$services = loadServices();
+			print_r($services);  // nur die einzelnen Services
 		break;
 		
 		case 'profile':

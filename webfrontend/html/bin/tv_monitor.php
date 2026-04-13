@@ -128,7 +128,8 @@ function processSoundbarTVFirstOn($key, $soundbars, $sonoszonen, $status_file) {
 	
 	$treble = null;
 	$bass = null;
-	$subgain = null;
+	$tvsublevel = null;
+	$tvsurrlevel = null;
 	
 	if (isset($soundbars[$key][14]['tvtreble']) && $soundbars[$key][14]['tvtreble'] !== "") {
 		$sonos->SetTreble((int)$soundbars[$key][14]['tvtreble']);
@@ -144,13 +145,6 @@ function processSoundbarTVFirstOn($key, $soundbars, $sonoszonen, $status_file) {
 		LOGDEB("bin/tv_monitor.php: Bass for '".$key."' has been set to: ".$bass);
 	}
 	
-	if (isset($soundbars[$key][14]['tvsublevel']) && $soundbars[$key][14]['tvsublevel'] !== "") {
-		@$sonos->SetDialogLevel((int)$soundbars[$key][14]['tvsublevel'], 'SubGain');
-		$tvsublevel = (int)$soundbars[$key][14]['tvsublevel'];
-		echo "Subwoofer Level for '".$key."' has been set to: ".$tvsublevel.PHP_EOL;
-		LOGDEB("bin/tv_monitor.php: Subwoofer Level for '".$key."' has been set to: ".$tvsublevel);
-	}
-	
 	if (!empty($soundbars[$key][14]['tvgrpstop'])) {
 		processTvGroupStop($soundbars, $sonoszonen);
 	}
@@ -162,7 +156,7 @@ function processSoundbarTVFirstOn($key, $soundbars, $sonoszonen, $status_file) {
 		// Turn Speech/Surround/Dialog Mode On and Mute Off
 		$dia = is_enabled($soundbars[$key][14]['tvmonspeech']) ? "On" : "Off";
 		$sonos->SetDialogLevel(is_enabled($soundbars[$key][14]['tvmonspeech']), 'DialogLevel');
-		echo "Speech for Soundbar ".$key." has been turned ".$dia."".PHP_EOL;
+		echo "Speech Mode for Soundbar ".$key." has been turned ".$dia."".PHP_EOL;
 		LOGDEB("bin/tv_monitor.php: Speech Mode for Soundbar ".$key." has been turned ".$dia."");
 		
 		$sur = is_enabled($soundbars[$key][14]['tvmonsurr']) ? "On" : "Off";
@@ -170,10 +164,28 @@ function processSoundbarTVFirstOn($key, $soundbars, $sonoszonen, $status_file) {
 		echo "Surround for Soundbar ".$key." has been turned ".$sur."".PHP_EOL;
 		LOGDEB("bin/tv_monitor.php: Surround for Soundbar ".$key." has been turned ".$sur);
 		
+		if ($sur == "On")   {
+			if (isset($soundbars[$key][14]['tvsurrlevel']) && $soundbars[$key][14]['tvsurrlevel'] !== "") {
+				$sonos->SetDialogLevel((int)$soundbars[$key][14]['tvsurrlevel'], 'SurroundLevel');
+				$tvsurrlevel = (int)$soundbars[$key][14]['tvsurrlevel'];
+				echo "Surround Level for '".$key."' has been set to: ".$tvsurrlevel.PHP_EOL;
+				LOGDEB("bin/tv_monitor.php: Surround Level for '".$key."' has been set to: ".$tvsurrlevel);
+			}
+		}
+		
 		$sub = is_enabled($soundbars[$key][14]['tvmonnightsub']) ? "On" : "Off";
 		$sonos->SetDialogLevel(is_enabled($soundbars[$key][14]['tvmonnightsub']), 'SubEnable');
 		echo "Subwoofer for Soundbar ".$key." has been turned ".$sub."".PHP_EOL;
 		LOGDEB("bin/tv_monitor.php: Subwoofer for Soundbar ".$key." has been turned ".$sub);
+		
+		if ($sub == "On")   {
+			if (isset($soundbars[$key][14]['tvsublevel']) && $soundbars[$key][14]['tvsublevel'] !== "") {
+				@$sonos->SetDialogLevel((int)$soundbars[$key][14]['tvsublevel'], 'SubGain');
+				$tvsublevel = (int)$soundbars[$key][14]['tvsublevel'];
+				echo "Subwoofer Level for '".$key."' has been set to: ".$tvsublevel.PHP_EOL;
+				LOGDEB("bin/tv_monitor.php: Subwoofer Level for '".$key."' has been set to: ".$tvsublevel);
+			}
+		}
 		
 		@$sonos->SetMute(false);
 
@@ -207,18 +219,20 @@ function processSoundbarTVRunning($key, $soundbars, $Stunden, $statusNight) {
 				echo "Night Mode for Soundbar ".$key." has been turned to ".$night."".PHP_EOL;
 				LOGDEB("bin/tv_monitor.php: NightMode for Soundbar ".$key." has been turned to ".$night);
 				
-				// Set Sub Level
-				$sublevel = $soundbars[$key][14]['tvmonnightsublevel'];
-				@$sonos->SetDialogLevel($soundbars[$key][14]['tvmonnightsublevel'], 'SubGain');
-				echo "Subwoofer Level for Soundbar ".$key." has been set to: ".$sublevel."".PHP_EOL;
-				LOGDEB("bin/tv_monitor.php: Subwoofer Level for Soundbar ".$key." has been set to: ".$sublevel);
-
 				// Turn Subwoofer On/Off
-				if (isset($soundbars[$key][14]['tvmonnightsublevel']) && $soundbars[$key][14]['tvmonnightsublevel'] !== "") {
-					$sublevel = (int)$soundbars[$key][14]['tvmonnightsublevel'];
-					@$sonos->SetDialogLevel($sublevel, 'SubGain');
-					echo "Subwoofer Level for Soundbar ".$key." has been set to: ".$sublevel." for night".PHP_EOL;
-					LOGDEB("bin/tv_monitor.php: Subwoofer Level for Soundbar ".$key." has been set to: ".$subwoof." for night");
+				$subnight = is_enabled($soundbars[$key][14]['tvsubnight']) ? "On" : "Off";
+				$sonos->SetDialogLevel(is_enabled($soundbars[$key][14]['tvsubnight']), 'SubEnable');
+				echo "Subwoofer for Soundbar ".$key." has been turned to ".$subnight."".PHP_EOL;
+				LOGDEB("bin/tv_monitor.php: Subwoofer for Soundbar ".$key." has been turned to ".$subnight);
+
+				// Set Sub Level
+				if ($subnight == "On")    {
+					if (isset($soundbars[$key][14]['tvmonnightsublevel']) && $soundbars[$key][14]['tvmonnightsublevel'] !== "") {
+						$sublevel = (int)$soundbars[$key][14]['tvmonnightsublevel'];
+						$sonos->SetDialogLevel($sublevel, 'SubGain');
+						echo "Subwoofer Level for Soundbar ".$key." has been set to: ".$sublevel." for night".PHP_EOL;
+						LOGDEB("bin/tv_monitor.php: Night Subwoofer Level for Soundbar ".$key." has been set to: ".$sublevel." for night");
+					}
 				}
 				
 				file_put_contents("/run/shm/".$lbpplugindir."/".$statusNight."_".$key.".json",json_encode("1", JSON_PRETTY_PRINT));
@@ -463,19 +477,36 @@ function restoreSoundbarSettingsFromJson($subkey, $ip, $lbpplugindir, $status_fi
 		LOGDEB("bin/tv_monitor.php: Surround Mode restored to '".boolToOnOff($saved["SurroundEnable"])."' for '".$subkey."'");
 	}
 
+	if (
+		array_key_exists("SurroundLevel", $saved) &&
+		array_key_exists("SurroundEnable", $saved) &&
+		$toBoolInt($saved["SurroundEnable"]) === 1
+	) {
+		$sonos->SetDialogLevel($saved["SurroundLevel"], "SurroundLevel");
+		LOGDEB("bin/tv_monitor.php: Surround Level restored to '".$saved["SurroundLevel"]."' for '".$subkey."'");
+	} elseif (array_key_exists("SurroundLevel", $saved)) {
+		LOGDEB("bin/tv_monitor.php: Surround Level restore skipped because Surround is Off for '".$subkey."'");
+	}
+
 	if (array_key_exists("DialogLevel", $saved)) {
 		$sonos->SetDialogLevel($toBoolInt($saved["DialogLevel"]), "DialogLevel");
 		LOGDEB("bin/tv_monitor.php: Speech Mode restored to '".boolToOnOff($saved["DialogLevel"])."' for '".$subkey."'");
 	}
 
-	if (array_key_exists("SubGain", $saved)) {
-		$sonos->SetDialogLevel($saved["SubGain"], "SubGain");
-		LOGDEB("bin/tv_monitor.php: Subwoofer Level restored to '".$saved["SubGain"]."' for '".$subkey."'");
-	}
-
 	if (array_key_exists("SubEnable", $saved)) {
 		$sonos->SetDialogLevel($toBoolInt($saved["SubEnable"]), "SubEnable");
 		LOGDEB("bin/tv_monitor.php: Subwoofer Mode restored to '".boolToOnOff($saved["SubEnable"])."' for '".$subkey."'");
+	}
+
+	if (
+		array_key_exists("SubGain", $saved) &&
+		array_key_exists("SubEnable", $saved) &&
+		$toBoolInt($saved["SubEnable"]) === 1
+	) {
+		$sonos->SetDialogLevel($saved["SubGain"], "SubGain");
+		LOGDEB("bin/tv_monitor.php: Subwoofer Level restored to '".$saved["SubGain"]."' for '".$subkey."'");
+	} elseif (array_key_exists("SubGain", $saved)) {
+		LOGDEB("bin/tv_monitor.php: Subwoofer Level restore skipped because Subwoofer is Off for '".$subkey."'");
 	}
 
 	// Restore audio settings
@@ -617,6 +648,7 @@ function RestorePrevSBsettings($soundbars)    {
 		$sonos->SetAVTransportURI("x-sonos-htastream:".$soundbars[$key][1].":spdif");
 		$sonos->SetDialogLevel(is_enabled(json_encode($restorelevel['NightMode'])), 'NightMode');
 		$sonos->SetDialogLevel($restorelevel['SubGain'], 'SubGain');
+		$sonos->SetDialogLevel($restorelevel['SurroundLevel'], 'SurroundLevel');
 		echo "Previous Soundbar settings for '".$key."' has been restored.".PHP_EOL;
 		LOGDEB("bin/tv_monitor.php: Previous Soundbar settings for '".$key."' has been restored");	
 	}

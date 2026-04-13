@@ -239,103 +239,58 @@ function metadata($value)
 
 
 /**
-* Funktion : 	isService --> prüft ob die gefundene SID unterstützt wird
+* Funktion : 	isService --> load actually SID from player
 *
-* @param: 	$sid --> sid von URI
-* @return:  $services --> Not available Service
+* @param: 	$sid --> sid from URI
+* @return:  $array
+
+	Array
+	(
+		[294] => Radio Javan
+		[237] => storePlay
+		[256] => CBC Radio & Music
+		[317] => Yogi Tunes
+		[309] => jazzed
+		[511] => 90s90s Radio
+		...
 **/
 
- function isService($sid) {
-	 
-	global $services;
-	
-    $services = [
-            "38"=>"7digital",
-			"321"=>"80s80s - REAL 80s Radio",
-			"201"=>"Amazon Music",
-			"198"=>"Anghami",
-			"204"=>"Apple Music",
-			"275"=>"ARTRADIO - RadioArt.com",
-			"306"=>"Atmosphere by Kollekt.fm",
-			"239"=>"Audible",
-			"219"=>"Audiobooks.com",
-			"157"=>"Bandcamp",
-			"307"=>"Bookmate",
-			"283"=>"Calm",
-			"144"=>"Calm Radio",
-			"256"=>"CBC Radio & Music",
-			"191"=>"Classical Archives",
-			"315"=>"Convoy Network",
-			"213"=>"Custom Channels",
-			"2"=>"Deezer",
-			"234"=>"deliver.media",
-			"285"=>"Epidemic Spaces",
-			"182"=>"FamilyStream",
-			"217"=>"FIT Radio Workout Music",
-			"192"=>"focus@will",
-			"167"=>"Gaana",
-			"279"=>"Global Player",
-			"36"=>"Hearts of Space",
-			"45"=>"hotelradio.fm",
-			"310"=>"iBroadcast",
-			"271"=>"IDAGIO",
-			"300"=>"JUKE",
-			"305"=>"Libby by OverDrive",
-			"221"=>"LivePhish+",
-			"260"=>"Minidisco",
-			"181"=>"Mixcloud",
-			"171"=>"Mood Mix",
-			"33"=>"Murfie",
-			"262"=>"My Cloud Home",
-			"268"=>"myTuner Radio",
-			"203"=>"Napster",
-			"277"=>"NRK Radio",
-			"230"=>"NTS Radio",
-			"222"=>"nugs.net",
-			"324"=>"Piraten.FM",
-			"212"=>"Plex",
-			"233"=>"Pocket Casts",
-			"265"=>"PowerApp",
-			"31"=>"Qobuz",
-			"294"=>"Radio Javan",
-			"308"=>"Radio Paradise",
-			"264"=>"radio.net",
-			"154"=>"Radionomy",
-			"162"=>"radioPup",
-			"312"=>"Radioshop",
-			"223"=>"RauteMusik.FM",
-			"270"=>"Relisten",
-			"150"=>"RUSC",
-			"164"=>"Saavn",
-			"303"=>"Sonos Radio",
-			"160"=>"Soundcloud",
-			"189"=>"SOUNDMACHINE",
-			"218"=>"Soundsuit.fm",
-			"295"=>"Soundtrack Player",
-			"9"=>"Spotify",
-			"163"=>"Spreaker",
-			"184"=>"Stingray Music",
-			"13"=>"Stitcher",
-			"237"=>"storePlay",
-			"226"=>"Storytel",
-			"235"=>"Sveriges Radio",
-			"211"=>"The Music Manager",
-			"174"=>"TIDAL",
-			"287"=>"toníque",
-			"169"=>"Tribe of Noise",
-			"193"=>"Tunify for Business",
-			"254"=>"TuneIn",
-			"333"=>"TuneIn (new)",
-			"231"=>"Wolfgang's Music",
-			"272"=>"Worldwide FM",
-			"317"=>"Yogi Tunes",
-			"284"=>"YouTube Music",
-			"996"=>"Plugin Radio",
-			"998"=>"Sonos Playlist",
-			"999"=>"Local Music",
-			"000"=>"unknown",
-        ];
-    return in_array($sid, array_keys($services));
+function isService($sid)
+{
+    $services = loadServices();
+    return array_key_exists((string)$sid, $services);
+}
+
+function loadServices()
+{
+    global $services, $sonos;
+
+    if (is_array($services) && !empty($services)) {
+        return $services;
+    }
+
+    $services = [];
+
+    try {
+        $services = $sonos->GetAvailableServicesMap();
+    } catch (Exception $e) {
+        $services = [];
+    }
+
+    // Manuelle Ergänzungen / lokale Sonderfälle
+    $services['996'] = $services['996'] ?? 'Plugin Radio';
+    $services['998'] = $services['998'] ?? 'Sonos Playlist';
+    $services['999'] = $services['999'] ?? 'Local Music';
+    $services['000'] = $services['000'] ?? 'unknown';
+
+    return $services;
+}
+
+
+function getServiceName($sid)
+{
+    $services = loadServices();
+    return $services[(string)$sid] ?? $services['000'];
 }
 
 

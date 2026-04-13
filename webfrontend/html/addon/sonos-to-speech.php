@@ -21,7 +21,7 @@ function s2s()
     global $debug, $sonos, $sonoszone, $master, $t2s_langfile, $templatepath, $config;
 
     // ********************** T2S-Textbausteine laden **********************
-    $TL = load_t2s_text();
+    $TL = LOAD_T2S_TEXT();
 
     $this_song   = $TL['SONOS-TO-SPEECH']['CURRENT_SONG'];               // z.B. "Es läuft gerade"
     $by          = $TL['SONOS-TO-SPEECH']['CURRENT_SONG_ARTIST_BY'];     // z.B. "von"

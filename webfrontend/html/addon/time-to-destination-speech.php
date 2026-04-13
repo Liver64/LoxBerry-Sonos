@@ -6,7 +6,7 @@ function tt2t()
 	
 	global $config, $debug, $traffic, $home, $myIP;
 	
-	$TL = load_t2s_text();
+	$TL = LOAD_T2S_TEXT();
 	    	
 	$valid_traffic_models = array("pessimistic","best_guess","optimistic");
 	if (empty($_GET['to'])) {

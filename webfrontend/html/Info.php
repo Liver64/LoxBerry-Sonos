@@ -480,34 +480,7 @@ function batteryinfo()  {
 	}
 }
 
-/**
-/* Funktion : Getdialoglevel --> zeigt Informationen bzgl. DialogLevel der Zone an
-/*
-/* @param: 	empty
-/* @return: 
-**/	
-		
-function Getdialoglevel()  {
-	
-	global $sonos;
-	
-	$dialog = array();
-	#echo '<PRE>';
-	$NightMode = $sonos->GetDialogLevel('NightMode');
-	$dialog['NightMode'] = $NightMode;
-	$SurroundEnable = $sonos->GetDialogLevel('SurroundEnable');
-	$dialog['SurroundEnable'] = $SurroundEnable;
-	$DialogLevel = $sonos->GetDialogLevel('DialogLevel');
-	$dialog['DialogLevel'] = $DialogLevel;
-	$SubGain = $sonos->GetDialogLevel('SubGain');
-	$dialog['SubGain'] = $SubGain;
-	$SubEnable = $sonos->GetDialogLevel('SubEnable');
-	$dialog['SubEnable'] = $SubEnable;
-	#print_r($dialog);
-	return $dialog;
-	
-	#echo '</PRE>';
-}
+
 
 
 

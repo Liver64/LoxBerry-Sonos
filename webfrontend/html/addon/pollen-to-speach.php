@@ -22,7 +22,7 @@ $polmuc = file_get_contents( "http://www.wetterdienst.de/Deutschlandwetter/".$to
 
 if (isset($_GET['greet']))  {
 		$Stunden = intval(strftime("%H"));
-		$TL = load_t2s_text();
+		$TL = LOAD_T2S_TEXT();
 		switch ($Stunden) {
 			# Gruß von 04:00 bis 10:00h
 			case $Stunden >=4 && $Stunden <10:

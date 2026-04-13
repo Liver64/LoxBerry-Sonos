@@ -220,12 +220,6 @@ if (!defined $cfg->{VARIOUS}->{volmax}) {
     $defaultSave = "true";
 }
 
-# Loxone data to MQTT
-if (!defined $cfg->{LOXONE}->{LoxDatenMQTT}) {
-    $cfg->{LOXONE}->{LoxDatenMQTT} = "false";
-    $defaultSave = "true";
-}
-
 # Text-to-speech status
 if (!defined $cfg->{TTS}->{t2son}) {
     $cfg->{TTS}->{t2son} = "true";
@@ -298,16 +292,16 @@ if (!defined $cfg->{TTS}->{hostip}) {
     $defaultSave = "true";
 }
 
-# Switch to MQTT if old LoxDaten is enabled but LoxDatenMQTT is disabled
-if (is_disabled($cfg->{LOXONE}->{LoxDatenMQTT}) && is_enabled($cfg->{LOXONE}->{LoxDaten})) {
-    $cfg->{LOXONE}->{LoxDatenMQTT} = "true";
-    $defaultSave = "true";
-}
-
 # Switch checkt2s On per default
 if ($cfg->{SYSTEM}->{checkt2s} eq "false") {
 	$cfg->{SYSTEM}->{checkt2s} = "true";
 	$defaultSave = "true";
+}
+
+# Deletes if available the entry in config
+if (exists $cfg->{LOXONE}->{LoxDatenMQTT}) {
+    delete $cfg->{LOXONE}->{LoxDatenMQTT};
+    $defaultSave = "true";
 }
 
 if (is_enabled($defaultSave)) {
@@ -708,7 +702,6 @@ sub form
     our $rowssoundbar = '';
     our $currtime;
 
-    my $error_treble_bass = $SL{'VOLUME_PROFILES.ERROR_TREBLE_BASS_PLAYER'};
     my $error_volume      = $SL{'T2S.ERROR_VOLUME_PLAYER'};
 
     my $config = $cfg->{sonoszonen};
@@ -722,6 +715,20 @@ sub form
     $countplayers   = 0;
     $countsoundbars = 0;
 	my @all_rooms = sort keys %$config;
+	
+	my $has_any_soundbar = 0;
+
+	foreach my $cfg_key (keys %{$config}) {
+		next unless ref $config->{$cfg_key} eq 'ARRAY';
+		next unless defined $config->{$cfg_key}->[13];
+
+		if ($config->{$cfg_key}->[13] eq 'SB') {
+			$has_any_soundbar = 1;
+			last;
+		}
+	}
+
+my $tvmon_master_style = $has_any_soundbar ? "" : "display:none;";
 
     foreach my $key (sort keys %$config) {
 
@@ -815,6 +822,7 @@ sub form
 			
 			my $tvmonnightsubn_val      = $config->{$key}->[14]->{tvsubnight}          // 'false';
 			my $tvsublevel_val          = $config->{$key}->[14]->{tvsublevel}          // 0;
+			my $tvsurrlevel_val         = $config->{$key}->[14]->{tvsurrlevel}         // 0;
 			my $tvmonnightsublevel_val  = $config->{$key}->[14]->{tvmonnightsublevel}  // 0;
 			my $fromtime_val            = $config->{$key}->[14]->{fromtime}            // '';
 			my $has_valid_fromtime      = ($fromtime_val =~ /^(?:[01]\d|2[0-3]):[0-5]\d$/) ? 1 : 0;
@@ -826,12 +834,14 @@ sub form
 			my $tvmonnightsub_val       = $config->{$key}->[14]->{tvmonnightsub}       // 'false';
 			my $tvmonnight_val          = $config->{$key}->[14]->{tvmonnight}          // 'false';
 
+			my $surrlevel_style         = ($tvmonsurr_val eq 'true') ? "" : "display:none;";
+
 			$rowssoundbar .= "<table class='tables sb_table_compact sb_single_table' border='0' id='tblsb_$room' name='tblsb_$room'>\n";
 			$rowssoundbar .= "<tbody>\n";
 
 			# 1. Room name + On/Off
-			$rowssoundbar .= "<tr class='tvmon_body_header'>\n";
-			$rowssoundbar .= "<td id='soundbar_topcell_$room' colspan='12' class='sb_topcell'>\n";
+			$rowssoundbar .= "<tr class='tvmon_switch_row tvmon_master' style='$tvmon_master_style'>\n";
+			$rowssoundbar .= "<td id='soundbar_topcell_$room' colspan='13' class='sb_topcell'>\n";
 			$rowssoundbar .= "<div class='sb_topline_inner'>\n";
 			$rowssoundbar .= "<div class='sb_topline_wrap'>\n";
 			$rowssoundbar .= "<label for='sbzone_$room' class='sb_topline_label' style='font-weight:bold;'>Soundbar:</label>\n";
@@ -860,6 +870,7 @@ sub form
 			$rowssoundbar .= "<tr class='tvmon_header' id='soundbar_header_$room' style='background-color:#6db33f;'>\n";
 			$rowssoundbar .= "<th class='sb_col_switch'>$SL{'SOUNDBARS.LABEL_SPEECH'}</th>\n";
 			$rowssoundbar .= "<th class='sb_col_switch'>$SL{'SOUNDBARS.LABEL_SURROUND'}</th>\n";
+			$rowssoundbar .= "<th class='sb_col_level sb_tvsurrlevel_col_$room' style='$surrlevel_style'>SurLev</th>\n";
 			$rowssoundbar .= "<th class='sb_col_switch'>$SL{'SOUNDBARS.LABEL_SUB'}</th>\n";
 			$rowssoundbar .= "<th class='sb_col_level sb_tvsublevel_col_$room'>$SL{'SOUNDBARS.LABEL_SUB_GAIN'}</th>\n";
 			$rowssoundbar .= "<th class='sb_col_num' id='tvmtvol' name='tvmtvol'>$SL{'SOUNDBARS.LABEL_TVVOL'}</th>\n";
@@ -872,7 +883,7 @@ sub form
 			$rowssoundbar .= "<th class='sb_col_level sb_night_col_$room sb_nightsublevel_col_$room' style='$night_style'>$SL{'SOUNDBARS.LABEL_SUB_GAIN'}</th>\n";
 			$rowssoundbar .= "</tr>\n";
 
-			# 3. Data row
+			# 3. Data rows
 			$rowssoundbar .= "<tr class='tvmon_body' id='soundbar_row_$room'>\n";
 
 			# Speech
@@ -892,12 +903,24 @@ sub form
 			$rowssoundbar .= "<fieldset style='margin:0; padding:0; border:none; text-align:center;'>\n";
 			$rowssoundbar .= "<div class='sb_switch_wrap'>\n";
 			$rowssoundbar .= render_lb_flipswitch(
-				id    => "tvmonsurr_$room",
-				name  => "tvmonsurr_$room",
-				value => $tvmonsurr_val
+				id       => "tvmonsurr_$room",
+				name     => "tvmonsurr_$room",
+				value    => $tvmonsurr_val,
+				onchange => "toggleSoundbarSurrLevel('$room')"
 			);
 			$rowssoundbar .= "</div>\n";
 			$rowssoundbar .= "</fieldset></td>\n";
+
+			# Surround Level
+			$rowssoundbar .= "<td class='sb_col_level sb_tvsurrlevel_col_$room' style='$surrlevel_style'>\n";
+			$rowssoundbar .= "<div class='sb_select_wrap sb_select_wrap_mid_left'><fieldset style='margin:0; padding:0; border:none; width:100%;'>\n";
+			$rowssoundbar .= "<select id='tvsurrlevel_$room' name='tvsurrlevel_$room' data-mini='true' data-native-menu='true' style='width:100%'>\n";
+			for my $i (-15 .. 15) {
+				my $selected = ($i == $tvsurrlevel_val) ? " selected='selected'" : "";
+				$rowssoundbar .= "<option value='$i'$selected>$i</option>\n";
+			}
+			$rowssoundbar .= "</select></fieldset></div>\n";
+			$rowssoundbar .= "</td>\n";
 
 			# Sub
 			$rowssoundbar .= "<td class='sb_col_switch'>\n";
@@ -924,30 +947,56 @@ sub form
 
 			# TV Volume
 			$rowssoundbar .= "<td class='sb_col_num'>\n";
-			$rowssoundbar .= "<div class='sb_input_wrap'><input class='tvvol' type='text' id='tvvol_$room' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='tvvol_$room' value='$config->{$key}->[14]->{tvvol}'></div>\n";
+			$rowssoundbar .= "<div class='sb_input_wrap'><input class='tvvol' type='text' id='tvvol_$room' size='100' data-validation-error-msg='$error_volume' name='tvvol_$room' value='$config->{$key}->[14]->{tvvol}'></div>\n";
 			$rowssoundbar .= "</td>\n";
 
 			# TV Treble
 			$rowssoundbar .= "<td class='sb_col_num'>\n";
-			$rowssoundbar .= "<div class='sb_input_wrap'><input class='tvtreble' type='text' id='tvtreble_$room' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='$error_treble_bass' name='tvtreble_$room' value='$config->{$key}->[14]->{tvtreble}'></div>\n";
+			$rowssoundbar .= "<div class='sb_input_wrap'><input class='tvtreble' type='text' id='tvtreble_$room' size='100' name='tvtreble_$room' value='$config->{$key}->[14]->{tvtreble}'></div>\n";
 			$rowssoundbar .= "</td>\n";
 
 			# TV Bass
 			$rowssoundbar .= "<td class='sb_col_num'>\n";
-			$rowssoundbar .= "<div class='sb_input_wrap'><input class='tvbass' type='text' id='tvbass_$room' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='$error_treble_bass' name='tvbass_$room' value='$config->{$key}->[14]->{tvbass}'></div>\n";
+			$rowssoundbar .= "<div class='sb_input_wrap'><input class='tvbass' type='text' id='tvbass_$room' size='100' name='tvbass_$room' value='$config->{$key}->[14]->{tvbass}'></div>\n";
 			$rowssoundbar .= "</td>\n";
 
 			# Group zone / stop players
-			$rowssoundbar .= "<td class='sb_col_group'>\n";
-			$rowssoundbar .= "<div data-role='collapsible' data-collapsed='true' data-mini='true'>\n";
-			$rowssoundbar .= "<h4>$SL{'SOUNDBARS.LABEL_SELECT'}</h4>\n";
+			my $tip_room = $room;
+			$tip_room =~ s/[^A-Za-z0-9_\-]/_/g;
+			my $tip_id = "tvgrpstop_tip_" . $tip_room;
+
+			$rowssoundbar .= "<td class='sb_col_group sb_select_wrap sb_player_select_wrap'>\n";
+			$rowssoundbar .= "<div style='position:relative; display:inline-block; width:100%; cursor:pointer;' "
+						   . "onmouseenter='showGreenTooltip(\"#$tip_id\")' "
+						   . "onmouseleave='hideTooltip(\"#$tip_id\")' "
+						   . "onmousedown='hideTooltip(\"#$tip_id\")' "
+						   . "onclick='hideTooltip(\"#$tip_id\")'>\n";
+
+			$rowssoundbar .= "<div data-role='collapsible' data-collapsed='true' data-mini='true' "
+						   . "style='cursor:pointer;' "
+						   . "onmousedown='hideTooltip(\"#$tip_id\")' "
+						   . "onclick='hideTooltip(\"#$tip_id\")'>\n";
+
+			$rowssoundbar .= "<h4 style='cursor:pointer;' "
+						   . "onmousedown='hideTooltip(\"#$tip_id\")' "
+						   . "onclick='hideTooltip(\"#$tip_id\")'>$SL{'SOUNDBARS.LABEL_SELECT'}</h4>\n";
 
 			my @saved_players = @{ $config->{$key}->[14]->{tvgrpstop} // [] };
 			foreach my $other_room (@all_rooms) {
 				next if $other_room eq $room;
 				my $checked = grep { $_ eq $other_room } @saved_players ? " checked='checked'" : "";
-				$rowssoundbar .= "<label><input type='checkbox' name='tvgrpstop_$room' value='$other_room'$checked>$other_room</label>\n";
+				$rowssoundbar .= "<label style='cursor:pointer;'><input type='checkbox' name='tvgrpstop_$room' value='$other_room'$checked style='cursor:pointer;'>$other_room</label>\n";
 			}
+
+			$rowssoundbar .= "</div>\n";
+
+			$rowssoundbar .= "<div id='$tip_id' "
+						   . "style='display:none; position:absolute; left:50%; bottom:42px; transform:translateX(-50%); "
+						   . "padding:8px 12px; border-radius:6px; z-index:9999; text-align:left;'>"
+						   . "$SL{'SOUNDBARS.TOOLTIP_PLAYER'} '$room' $SL{'SOUNDBARS.TOOLTIP_PLAYER1'}"
+						   . "<div style='position:absolute; left:50%; transform:translateX(-50%); bottom:-8px; width:0; height:0; "
+						   . "border-left:8px solid transparent; border-right:8px solid transparent; border-top:8px solid #6db33f;'></div>"
+						   . "</div>\n";
 
 			$rowssoundbar .= "</div>\n";
 			$rowssoundbar .= "</td>\n";
@@ -1019,7 +1068,7 @@ sub form
     LOGDEB "Sonos Player list loaded. Audioclip capability: $audioclip_ok_count of $countplayers zones support Audioclip.";
 
     if ($countsoundbars < 1) {
-        $rowssoundbar .= "<tr class='tvmon_header'><td colspan=8>" . $SL{'ZONES.SONOS_EMPTY_SOUNDBARS'} . "</td></tr>\n";
+        $rowssoundbar .= "<tr class='tvmon_extra tvmon_master' style='$tvmon_master_style'><td colspan=8>" . $SL{'ZONES.SONOS_EMPTY_SOUNDBARS'} . "</td></tr>\n";
     }
 
     $rowssoundbar .= "<input type='hidden' id='countsoundbars' name='countsoundbars' value='$countsoundbars'>\n";
@@ -1249,10 +1298,36 @@ sub save
         LOGDEB "Communication to Miniserver is switched OFF";
     }
 
+    # Track old UDP value to detect changes later
+    my $old_udp = exists $cfg->{LOXONE}->{UDP} ? ($cfg->{LOXONE}->{UDP} // '') : '';
+    $old_udp =~ s/^\s+|\s+$//g;
+
+    my $udp_changed = 0;
+
     # Write configuration
     $cfg->{LOXONE}->{Loxone}      = "$sel_ms";
     $cfg->{LOXONE}->{LoxDaten}    = "$R::sendlox";
-    $cfg->{LOXONE}->{LoxDatenMQTT}= "$R::sendloxMQTT";
+
+    if (!defined $cfg->{LOXONE}->{LoxDaten} || lc($cfg->{LOXONE}->{LoxDaten}) ne 'true') {
+
+        delete $cfg->{LOXONE}->{UDP};
+
+        my $new_udp = '';
+        $udp_changed = ($old_udp ne $new_udp) ? 1 : 0;
+
+    } else {
+
+        my $new_udp = defined $R::UDP ? "$R::UDP" : '';
+        $new_udp =~ s/^\s+|\s+$//g;
+
+        if ($new_udp eq '') {
+            delete $cfg->{LOXONE}->{UDP};
+        } else {
+            $cfg->{LOXONE}->{UDP} = $new_udp;
+        }
+
+        $udp_changed = ($old_udp ne $new_udp) ? 1 : 0;
+    }
 
     $cfg->{TTS}->{t2s_engine}     = "$R::t2s_engine";
     $cfg->{TTS}->{messageLang}    = "$R::t2slang";
@@ -1351,21 +1426,20 @@ sub save
     for (my $i = 1; $i <= $countplayers; $i++) {
 
         if (param("chkplayers$i")) {
-            # Delete selected player from config
-            my $room1 = param("zone$i");
-            delete $cfg->{sonoszonen}->{$room1};
-            LOGOK "Sonos Zone '$room1' has been deleted from main config";
+			# Delete selected player from config
+			my $room1 = param("zone$i");
+			delete $cfg->{sonoszonen}->{$room1};
+			LOGOK "Sonos Zone '$room1' has been deleted from main config";
 
-            # Delete selected player from volume profiles
-            if (-r $lbpconfigdir . "/" . $volumeconfigfile) {
-                for (my $e = 1; $e <= $size; $e++) {
-                    delete $vcfg->[$e - 1]->{Player}->{$room1};
-                    $del = "true";
-                    unlink($cache_file);
-                }
-                LOGOK "Sonos Zone '$room1' has been deleted from Volume Profiles";
-            }
-
+			# Delete selected player from volume profiles
+			if (-r $lbpconfigdir . "/" . $volumeconfigfile) {
+				for (my $e = 1; $e <= $size; $e++) {
+					delete $vcfg->[$e - 1]->{Player}->{$room1};
+					$del = "true";
+				}
+				LOGOK "Sonos Zone '$room1' has been deleted from Volume Profiles";
+			}
+			unlink($cache_file) if defined $cache_file && -e $cache_file;
         } else {
 
             my $emergecalltts = (param("mainchk$i") eq "on") ? "on" : "off";
@@ -1389,15 +1463,16 @@ sub save
             );
 
             if ($R::tvmon eq "true") {
-                if (param("sb$i") eq "SB") {
+				if (param("sb$i") eq "SB") {
 
-                    # Add soundbar settings to zone
-                    my $room = param("zone$i");
+					# Add soundbar settings to zone
+					my $room = param("zone$i");
 					#my $tvgrp = defined(param("tvgrp_$room")) ? "true" : "false";
 
-                    my $tvmonspeech = param("tvmonspeech_$room");
-                    my $usesb       = param("usesb_$room");
-                    my $tvvol = param("tvvol_$room");
+					my $tvmonspeech = param("tvmonspeech_$room");
+					my $usesb       = param("usesb_$room");
+
+					my $tvvol = param("tvvol_$room");
 					$tvvol = "" if !defined $tvvol || $tvvol eq "false";
 
 					my $tvtreble = param("tvtreble_$room");
@@ -1405,30 +1480,36 @@ sub save
 
 					my $tvbass = param("tvbass_$room");
 					$tvbass = "" if !defined $tvbass || $tvbass eq "false";
-					
-                    my $tvmonsurr   		= param("tvmonsurr_$room");
-                    my $fromtime    		= param("fromtime_$room");
-                    my $tvmonnight  		= param("tvmonnight_$room");
-                    my $tvmonnightsub 		= param("tvmonnightsub_$room");
-					$tvmonnightsub 			= "false" if !defined $tvmonnightsub || $tvmonnightsub eq "";
 
-					my $tvsubnight 			= param("tvmonnightsubn_$room");
-					$tvsubnight 			= "false" if !defined $tvsubnight || $tvsubnight eq "";
+					my $tvmonsurr = param("tvmonsurr_$room");
+					$tvmonsurr = "false" if !defined $tvmonsurr || $tvmonsurr eq "";
 
-					my $tvmonnightsublevel 	= param("tvmonnightsublevel_$room");
-					$tvmonnightsublevel 	= 0 if !defined $tvmonnightsublevel || $tvmonnightsublevel eq "";
+					my $tvsurrlevel = param("tvsurrlevel_$room");
+					$tvsurrlevel = 0 if !defined $tvsurrlevel || $tvsurrlevel eq "";
 
-					my $tvsublevel 			= param("tvsublevel_$room");
-					$tvsublevel 			= 0 if !defined $tvsublevel || $tvsublevel eq "";
+					my $fromtime       = param("fromtime_$room");
+					my $tvmonnight     = param("tvmonnight_$room");
+					my $tvmonnightsub  = param("tvmonnightsub_$room");
+					$tvmonnightsub     = "false" if !defined $tvmonnightsub || $tvmonnightsub eq "";
 
-					# If Subwoofer switch is OFF, force related SubLevel to 0
-					$tvsublevel 			= 0 if $tvmonnightsub eq "false";
-					$tvmonnightsublevel 	= 0 if $tvsubnight eq "false";
+					my $tvsubnight     = param("tvmonnightsubn_$room");
+					$tvsubnight        = "false" if !defined $tvsubnight || $tvsubnight eq "";
 
-                    my $starttime = param("pl-start-time$i");
-                    my $endtime   = param("pl-end-time$i");
+					my $tvmonnightsublevel = param("tvmonnightsublevel_$room");
+					$tvmonnightsublevel = 0 if !defined $tvmonnightsublevel || $tvmonnightsublevel eq "";
 
-                    # tvgrpstop korrekt als Array holen
+					my $tvsublevel = param("tvsublevel_$room");
+					$tvsublevel = 0 if !defined $tvsublevel || $tvsublevel eq "";
+
+					# If related switch is OFF, force level to 0
+					$tvsurrlevel        = 0 if $tvmonsurr eq "false";
+					$tvsublevel         = 0 if $tvmonnightsub eq "false";
+					$tvmonnightsublevel = 0 if $tvsubnight eq "false";
+
+					my $starttime = param("pl-start-time$i");
+					my $endtime   = param("pl-end-time$i");
+
+					# tvgrpstop korrekt als Array holen
 					my @tvgrpstop = param("tvgrpstop_$room");
 
 					# Falls nichts gewählt wurde → leeres Array
@@ -1441,8 +1522,9 @@ sub save
 							"tvvol"              => $tvvol,
 							"tvtreble"           => $tvtreble,
 							"tvbass"             => $tvbass,
-							"tvsublevel"        =>  $tvsublevel,
 							"tvmonsurr"          => $tvmonsurr,
+							"tvsurrlevel"        => $tvsurrlevel,
+							"tvsublevel"         => $tvsublevel,
 							"fromtime"           => $fromtime,
 							"tvmonnight"         => $tvmonnight,
 							"tvmonnightsub"      => $tvmonnightsub,
@@ -1453,22 +1535,21 @@ sub save
 						$starttime,
 						$endtime
 					);
-					
+
 					# LOGDEB Dumper(\@tvgrpstop);
-                    push @player, @sbs;
+					push @player, @sbs;
 
-                } else {
-                    # No soundbar
-                    my @sbs = ("false", param("pl-start-time$i"), param("pl-end-time$i"));
-                    push @player, @sbs;
-                }
+				} else {
+					# No soundbar
+					my @sbs = ("false", param("pl-start-time$i"), param("pl-end-time$i"));
+					push @player, @sbs;
+				}
 
-            } else {
-                # TV monitor turned off
-                my @sbs = ("false", param("pl-start-time$i"), param("pl-end-time$i"));
-                push @player, @sbs;
-            }
-
+			} else {
+				# TV monitor turned off
+				my @sbs = ("false", param("pl-start-time$i"), param("pl-end-time$i"));
+				push @player, @sbs;
+			}
             $cfg->{sonoszonen}->{param("zone$i")} = \@player;
         }
     }
@@ -1480,8 +1561,43 @@ sub save
     $jsonobj->write();
     LOGDEB "Sonos Zones have been saved.";
 
-    # Control Sonos services (LoxDaten On/Off)
+    # Control Sonos services (after config was written)
     services();
+
+    # Restart listener only if UDP setting changed and listener should continue running
+    if ($udp_changed) {
+
+        LOGINF "UDP setting changed - re-evaluating listener service";
+
+        my $listener_should_run = 0;
+        my $udp_after = exists $cfg->{LOXONE}->{UDP} ? ($cfg->{LOXONE}->{UDP} // '') : '';
+        $udp_after =~ s/^\s+|\s+$//g;
+
+        if (
+            defined $cfg->{LOXONE}->{LoxDaten}
+            && lc($cfg->{LOXONE}->{LoxDaten}) eq 'true'
+        ) {
+            if (
+                ($R::sendlox && $R::sendlox eq "true")
+                || ($udp_after ne '')
+            ) {
+                $listener_should_run = 1;
+            }
+        }
+
+        if ($listener_should_run) {
+            my $rc = system('sudo', '-n', '/bin/systemctl', 'restart', 'sonos_event_listener.service');
+            $rc = ($rc >> 8);
+
+            if ($rc != 0) {
+                LOGERR "Could not restart sonos_event_listener.service after UDP change (rc=$rc)";
+            } else {
+                LOGOK "sonos_event_listener.service has been restarted after UDP change";
+            }
+        } else {
+            LOGINF "Listener restart skipped after UDP change because service should not be running";
+        }
+    }
 
     # Prepare XML template during saving
     if ($R::sendlox eq "true") {
@@ -1503,7 +1619,7 @@ sub scan
     LOGINF "Auto-Discovery: Scan for Sonos Zones has been executed.";
 
     # Keep it fast via TTL cache in network.php
-    my $ttl = 120;
+    my $ttl = 240;
 
     my $cmd = "/usr/bin/php $lbphtmldir/system/$scanzonesfile --ttl=$ttl";
     my $response = qx($cmd);
@@ -1668,12 +1784,37 @@ sub volumes {
         $rowsvolplayer .= "<th align='middle' colspan='8'><div style='width: 180px; align: left'>\n";
         $rowsvolplayer .= "<input class='textfield' type='text' style='align: middle; width: 100%' id='profile$id' name='profile$id' value='' placeholder='Volume Profile Name'/>\n";
         $rowsvolplayer .= "<td valign='left'>";
-        $rowsvolplayer .= "<img title='Load current values from Sonos devices' value='$id' id='btnload$id' name='btnload$id' class='ico-load' src='/plugins/$lbpplugindir/images/musik-note.png' border='0' width='30' height='30'>\n";
+		$rowsvolplayer .= "<span style='position:relative; display:inline-block; margin-right:8px;'>"
+						. "<img value='$id' id='btnload$id' name='btnload$id' class='ico-load' "
+						. "style='cursor:pointer;' "
+						. "onmouseenter='showGreenTooltip(\"#btnload_tip_$id\")' "
+						. "onmouseleave='hideTooltip(\"#btnload_tip_$id\")' "
+						. "src='/plugins/$lbpplugindir/images/musik-note.png' border='0' width='30' height='30'>"
+						. "<div id='btnload_tip_$id' "
+						. "style='display:none; position:absolute; left:50%; bottom:38px; transform:translateX(-50%); "
+						. "padding:8px 12px; border-radius:6px; z-index:9999; text-align:left;'>"
+						. "Load current values from Sonos devices"
+						. "<div style='position:absolute; left:50%; transform:translateX(-50%); bottom:-8px; width:0; height:0; "
+						. "border-left:8px solid transparent; border-right:8px solid transparent; border-top:8px solid #6db33f;'></div>"
+						. "</div>"
+						. "</span>\n";
 
-        if ($last_id > 1) {
-            $rowsvolplayer .= "<img title='Delete current Profile' onclick='' value='$id' id='btndel$id' name='btndel$id' class='ico-delete' src='/plugins/$lbpplugindir/images/recycle-bin.png' border='0' width='30' height='30'></td>\n";
-        }
-
+		if ($last_id > 1) {
+			$rowsvolplayer .= "<span style='position:relative; display:inline-block;'>"
+							. "<img onclick='' value='$id' id='btndel$id' name='btndel$id' class='ico-delete' "
+							. "style='cursor:pointer;' "
+							. "onmouseenter='showGreenTooltip(\"#btndel_tip_$id\")' "
+							. "onmouseleave='hideTooltip(\"#btndel_tip_$id\")' "
+							. "src='/plugins/$lbpplugindir/images/recycle-bin.png' border='0' width='30' height='30'>"
+							. "<div id='btndel_tip_$id' "
+							. "style='display:none; position:absolute; left:50%; bottom:38px; transform:translateX(-50%); "
+							. "padding:8px 12px; border-radius:6px; z-index:9999; text-align:left;'>"
+							. "Delete current Profile"
+							. "<div style='position:absolute; left:50%; transform:translateX(-50%); bottom:-8px; width:0; height:0; "
+							. "border-left:8px solid transparent; border-right:8px solid transparent; border-top:8px solid #6db33f;'></div>"
+							. "</div>"
+							. "</span></td>\n";
+		}
         $rowsvolplayer .= "</th><tr><th style='background-color: #6dac20;' align='left'>&nbsp;Rooms</th><div class='form-group col-7'>\n";
         $rowsvolplayer .= "<th class='form-control' style='background-color: #6dac20; align: center'>V</th>\n";
         $rowsvolplayer .= "<th class='form-control' style='background-color: #6dac20; align: center'>T</th>\n";
@@ -2072,18 +2213,73 @@ sub services
         'sonos_watchdog.timer',
     );
 
-    sub sysd {
+    my @disable_units = (
+        'sonos_watchdog.timer',
+        'sonos_check_on_state.timer',
+        'sonos_event_listener.service',
+    );
+
+    my $sysd = sub {
         my (@args) = @_;
         my $rc = system('sudo', '-n', '/bin/systemctl', @args);
         return ($rc >> 8);
+    };
+
+    my $cfgfile      = "$lbpconfigdir/s4lox_config.json";
+    my $lox_enabled  = 0;
+    my $udp_port     = 0;
+    my $want_mqtt    = 0;
+    my $want_udp     = 0;
+    my $want_listener = 0;
+
+    if (-r $cfgfile) {
+        my $json_text;
+        if (open(my $fh, '<', $cfgfile)) {
+            local $/ = undef;
+            $json_text = <$fh>;
+            close($fh);
+
+            my $decoded;
+            eval {
+                $decoded = decode_json($json_text);
+                1;
+            } or do {
+                LOGERR "Could not decode $cfgfile while checking listener state";
+            };
+
+            if ($decoded && ref $decoded eq 'HASH') {
+                $lox_enabled = (
+                    defined $decoded->{LOXONE}->{LoxDaten}
+                    && $decoded->{LOXONE}->{LoxDaten} eq 'true'
+                ) ? 1 : 0;
+
+                $udp_port = int($decoded->{LOXONE}->{UDP} // 0);
+            }
+        } else {
+            LOGERR "Could not open $cfgfile while checking listener state";
+        }
+    } else {
+        LOGINF "Config file $cfgfile not readable - assuming listener disabled";
     }
 
-    if ($R::sendlox eq "true") {
+    if ($lox_enabled) {
+        $want_mqtt = ($R::sendlox && $R::sendlox eq "true") ? 1 : 0;
+        $want_udp  = ($udp_port > 0) ? 1 : 0;
+    }
 
-        LOGINF "MQTT data for Loxone is enabled – enabling and starting systemd units";
+    $want_listener = ($want_mqtt || $want_udp) ? 1 : 0;
+
+    if ($want_listener) {
+
+        my @modes;
+        push @modes, 'MQTT' if $want_mqtt;
+        push @modes, "UDP:$udp_port" if $want_udp;
+        my $mode_text = join(' + ', @modes);
+
+        LOGINF "Sonos event output is enabled ($mode_text) – enabling and starting systemd units";
 
         for my $u (@enable_units) {
-            my $rc = sysd('enable', '--now', $u);
+            my $rc = $sysd->('enable', '--now', $u);
             if ($rc != 0) {
                 LOGERR "Could not enable/start $u (rc=$rc)";
             } else {
@@ -2093,16 +2289,14 @@ sub services
 
     } else {
 
-        LOGINF "MQTT data for Loxone is disabled – disabling and stopping systemd units";
-
-        my @disable_units = (
-            'sonos_watchdog.timer',
-            'sonos_check_on_state.timer',
-            'sonos_event_listener.service',
-        );
+        if (!$lox_enabled) {
+            LOGINF "Sonos event output is disabled – disabling and stopping systemd units";
+        } else {
+            LOGINF "Sonos event output is disabled (MQTT off, UDP off) – disabling and stopping systemd units";
+        }
 
         for my $u (@disable_units) {
-            my $rc = sysd('disable', '--now', $u);
+            my $rc = $sysd->('disable', '--now', $u);
             if ($rc != 0) {
                 LOGERR "Could not disable/stop $u (rc=$rc)";
             } else {

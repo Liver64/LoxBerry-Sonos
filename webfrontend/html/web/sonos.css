@@ -118,6 +118,15 @@
     vertical-align: middle !important;
 }
 
+/* Mehr Abstand zwischen Header und Datenzeile */
+.tvmon_header th {
+    padding-bottom: 0px !important;
+}
+
+.tvmon_body td {
+    padding-top: 7px !important;
+}
+
 .tvmon_header th,
 .tvmon_body td {
     padding-left: 3px !important;
@@ -128,7 +137,6 @@
     font-size: 13px;
     white-space: nowrap;
     text-align: center;
-    vertical-align: middle;
 }
 
 .sb_col_switch {
@@ -161,6 +169,7 @@
     min-width: 190px;
     max-width: 190px;
     vertical-align: middle;
+    text-align: center;
 }
 
 .sb_col_time {
@@ -193,11 +202,19 @@
 
 .sb_input_wrap input {
     text-align: center;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
     padding-left: 4px !important;
     padding-right: 4px !important;
+    height: 30px;
+    min-height: 30px;
+    line-height: 30px;
+    box-sizing: border-box;
 }
 
 .sb_time_wrap {
+    display: flex;
+    align-items: center;
     justify-content: flex-start;
     position: relative;
     top: -4px;
@@ -207,32 +224,102 @@
     width: 98px;
     min-width: 98px;
     max-width: 98px;
+    height: 30px;
+    min-height: 30px;
+    line-height: 30px;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    box-sizing: border-box;
 }
 
 .sb_select_wrap {
+    display: flex;
+    align-items: center;
     justify-content: center;
     width: 100%;
     position: relative;
-    top: 0;
+    top: -4px;
 }
 
-/* jQuery Mobile Select-Hülle mit ausrichten */
+/* Nur "Bitte Player auswählen" wieder etwas nach unten */
+.sb_player_select_wrap {
+    top: 9px;
+}
+
+/* jQuery Mobile Select-Hülle sauber mittig */
 .sb_select_wrap .ui-select {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
     margin: 0 !important;
     position: relative;
+    top: 0 !important;
 }
 
+/* sichtbarer jQM-Button */
 .sb_select_wrap .ui-select .ui-btn {
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
     margin: 0 !important;
     box-sizing: border-box;
-    padding-left: 6px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    padding-left: 0 !important;
     padding-right: 22px !important;
+    height: 30px !important;
+    min-height: 30px !important;
+    line-height: 30px !important;
+    text-align: center !important;
 }
 
-/* vertikale Korrektur nur für die beiden SubLevel-Felder */
-.sb_select_wrap_mid_left .ui-select,
-.sb_select_wrap_mid_right .ui-select {
-    top: 0 !important;
+/* Feld "Bitte Player auswählen" horizontal mittig */
+.sb_player_select_wrap .ui-collapsible {
+    width: 200px;      /* Breite des Feldes */
+    margin: 0 auto;    /* horizontal zentrieren */
+}
+
+/* Player-Dropdown immer im Vordergrund */
+.sb_col_group,
+.sb_player_select_wrap,
+.sb_player_select_wrap .ui-collapsible,
+.sb_player_select_wrap .ui-collapsible-content {
+    position: relative;
+    overflow: visible !important;
+}
+
+.sb_player_select_wrap {
+    z-index: 5000;
+}
+
+.sb_player_select_wrap .ui-collapsible {
+    z-index: 5001;
+}
+
+.sb_player_select_wrap .ui-collapsible-content {
+    z-index: 5002;
+    background: #f5f5f5;
+}
+
+/* Text im Dropdown */
+.sb_select_wrap .ui-select .ui-btn span,
+.sb_select_wrap .ui-select .ui-btn .ui-btn-text {
+    line-height: 30px !important;
+}
+
+/* Kleine Zahlen-Dropdowns horizontal exakt mittig */
+.sb_col_level .ui-select .ui-btn {
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+    text-align: center !important;
+}
+
+.sb_col_level .ui-select .ui-btn span,
+.sb_col_level .ui-select .ui-btn .ui-btn-text {
+    display: block !important;
+    width: 100% !important;
+    text-align: center !important;
 }
 
 /* =========================================================
@@ -764,9 +851,9 @@ table.sb_table_compact .sb_col_num {
 
 /* Gesamtbreite der Tabelle einstellen */
 table.sb_table_compact .sb_col_group {
-    width: 260px;
-    min-width: 260px;
-    max-width: 260px;
+    width: 205px;
+    min-width: 205px;
+    max-width: 205px;
 }
 
 table.sb_table_compact .sb_col_time {
@@ -841,4 +928,180 @@ table.sb_table_compact .sb_select_wrap .ui-select .ui-btn {
     background-color: #d9d9d9 !important;
     background-image: none !important;
     border-color: #8c8c8c !important;
+}
+
+/* =========================================================
+   Sonos listener row - corrected layout
+   ========================================================= */
+
+.s4l_listener_row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 18px !important;
+    width: 100% !important;
+    flex-wrap: nowrap !important;
+}
+
+.s4l_listener_col_auto,
+.s4l_listener_col_health,
+.s4l_listener_col_button {
+    flex: 0 0 auto !important;
+}
+
+.s4l_listener_col_ms {
+    flex: 0 0 250px !important;
+    min-width: 250px !important;
+    max-width: 250px !important;
+}
+
+.s4l_listener_col_ms .ui-select,
+.s4l_listener_col_ms #ms-button,
+.s4l_listener_col_ms select {
+    width: 250px !important;
+    min-width: 250px !important;
+    max-width: 250px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.s4l_listener_col_ms .ui-btn,
+.s4l_listener_col_ms .ui-select .ui-btn {
+    height: 30px !important;
+    min-height: 30px !important;
+    line-height: 30px !important;
+    margin: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.s4l_protocol_wrap {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+}
+
+.s4l_proto_label {
+    display: inline-block !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+}
+
+.s4l_proto_switch {
+    margin: 0 !important;
+    flex: 0 0 auto !important;
+}
+
+.s4l_listener_col_health {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.s4l_listener_col_health img,
+#sonosHealthAmpel {
+    display: block !important;
+    height: 58px !important;
+    max-height: 58px !important;
+    width: auto !important;
+}
+
+.s4l_listener_col_button {
+    margin-left: 6px !important;
+}
+
+/* =========================================================
+   jQuery Mobile safe listener row
+   ========================================================= */
+
+.s4ljqm_listener_tbl {
+    border-collapse: separate;
+    border-spacing: 12px 0;
+    width: auto;
+    table-layout: auto;
+}
+
+.s4ljqm_listener_tbl td.s4ljqm_cell {
+    padding: 0 !important;
+    vertical-align: middle !important;
+    white-space: nowrap;
+}
+
+.s4ljqm_cell_ms {
+    width: 260px;
+    min-width: 260px;
+    max-width: 260px;
+}
+
+.s4ljqm_ms_wrap,
+.s4ljqm_ms_wrap .ui-select,
+.s4ljqm_ms_wrap select,
+.s4ljqm_ms_wrap #ms-button {
+    width: 260px !important;
+    min-width: 260px !important;
+    max-width: 260px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.s4ljqm_ms_wrap .ui-select {
+    display: inline-block !important;
+    vertical-align: middle !important;
+}
+
+.s4ljqm_ms_wrap .ui-btn,
+.s4ljqm_ms_wrap .ui-select .ui-btn {
+    height: 32px !important;
+    min-height: 32px !important;
+    line-height: 32px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.s4ljqm_cell_proto {
+    white-space: nowrap;
+}
+
+.s4ljqm_proto_label {
+    display: inline-block;
+    vertical-align: middle;
+    font-weight: 600;
+    margin: 0 6px;
+    line-height: 1;
+}
+
+.s4ljqm_proto_switch {
+    display: inline-block;
+    vertical-align: middle;
+    margin: 0;
+}
+
+.s4ljqm_cell_ampel img,
+#sonosHealthAmpel {
+    display: block;
+    height: 50px !important;
+    width: auto !important;
+    max-height: 60px !important;
+}
+
+.s4ljqm_cell_button .ui-btn {
+    margin: 0 !important;
+    white-space: nowrap !important;
+}
+
+.lb-flipswitch[data-input="sendloxMQTT"] input.lb-flipswitch-checkbox:not(:checked) + .lb-flipswitch-label .lb-flipswitch-inner:before,
+.lb-flipswitch[data-input="sendloxMQTT"] input.lb-flipswitch-checkbox:not(:checked) + .lb-flipswitch-label .lb-flipswitch-inner:after {
+    background-color: #6db33f !important;
+    background-image: none !important;
+}
+
+#ms-button,
+#ms-button span,
+#ms-button .ui-btn-text {
+    text-align: center !important;
 }

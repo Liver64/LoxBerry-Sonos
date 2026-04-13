@@ -47,6 +47,7 @@ $(document).on('pageinit', function () {
 	if (document.getElementById('detail_form')) {
 		details_init();
 	}
+	toggleUdpXmlButton();
 });
 
 // DISABLE (ElevenLabs) - ENABLE (all other) Language Dropdown
@@ -58,6 +59,25 @@ $('#engine-selector input[name="t2s_engine"]').on('change', function () {
 $(".clangiso").hide();
 
 var tvmonerr = "true";
+
+/**
+ * Initializes the complete row on page load / page init.
+ *
+ * setTimeout(...) is used because some jQuery Mobile elements
+ * are rendered a moment after the initial DOM is available.
+ */
+$(document).on("pageinit ready", function () {
+	initSonosHealthAmpel();
+	setTimeout(initS4LTransferRow, 0);
+	setTimeout(toggleUdpPortVisibility, 50);
+});
+
+/**
+ * Toggles the whole Fields for Communication to Loxone 
+ */
+$(document).off('change.sendloxCustom', '#sendlox').on('change.sendloxCustom', '#sendlox', function () {
+	selection();
+});
 
 /**
  * refreshJqmCheckboxes(selector)
@@ -135,12 +155,25 @@ function refreshJqmCheckboxes(selector) {
 /**
  * lbParseBool(value)
  * -----------------------------------------------------------------------------
- * Converts various truthy string representations into a boolean.
+ * Converts common truthy representations into a real boolean.
  *
- * Supported TRUE values:
- * - "true", "1", "on", "yes" (case-insensitive)
+ * Accepted TRUE values:
+ * - true
+ * - "true"
+ * - 1
+ * - "1"
+ * - "on"
+ * - "yes"
  *
- * Everything else returns false.
+ * Everything else is treated as false.
+ *
+ * Why this helper exists:
+ * - Custom LoxBerry flipswitches exchange values between:
+ *   1) the visible checkbox
+ *   2) the hidden form field
+ *   3) the wrapper data-value attribute
+ *
+ * To keep all three layers stable, every incoming value is normalized here.
  *
  * @param {any} value
  * @returns {boolean}
@@ -151,37 +184,102 @@ function lbParseBool(value) {
 
 
 /**
- * initCustomFlipswitches()
+ * syncCustomFlipswitch($wrap)
  * -----------------------------------------------------------------------------
- * Initializes all custom LoxBerry flipswitch components (.lb-flipswitch).
+ * Synchronizes the visual and logical state of one custom flipswitch wrapper.
  *
  * Responsibilities:
- * - Reads initial value from data-value attribute
- * - Converts value to boolean
- * - Syncs:
- *     - checkbox state (checked / unchecked)
- *     - hidden input (true / false) → used for form submission
- *     - checkbox.value (for legacy code compatibility)
+ * - read the current state primarily from the hidden field
+ * - apply checked / unchecked state to the real checkbox
+ * - normalize checkbox.value to "true" / "false"
+ * - normalize hidden.value to "true" / "false"
+ * - mirror the state to wrapper CSS classes:
+ *     - .is-on
+ *     - .is-disabled
+ * - persist the current state back into data-value
  *
- * - Binds change event:
- *     - Keeps hidden input in sync with UI
- *     - Keeps checkbox.value updated for legacy consumers
+ * Why hidden field first?
+ * - During normal runtime, the hidden field is the most reliable source for
+ *   form submission and restored state handling.
  *
- * - Triggers dependent UI updates after initialization:
- *     - selection()   → Loxone communication block visibility
- *     - validateTVMon() → TV monitor UI state
- *
- * Requirements:
- * - Each flipswitch must have:
- *     data-input="name"
- *     hidden input with id="name_hidden"
- *     checkbox with id="name"
+ * @param {jQuery} $wrap
+ * @returns {void}
  */
-function initCustomFlipswitches() {
-    $('.lb-flipswitch').each(function () {
+function syncCustomFlipswitch($wrap) {
+    if (!$wrap || !$wrap.length) {
+        return;
+    }
+
+    var inputId = $wrap.attr('data-input');
+    if (!inputId) {
+        return;
+    }
+
+    var $cb = $('#' + inputId);
+    var $hidden = $('#' + inputId + '_hidden');
+
+    if (!$cb.length || !$hidden.length) {
+        return;
+    }
+
+    var checked;
+
+    if (String($hidden.val() || '').trim() !== '') {
+        checked = lbParseBool($hidden.val());
+    } else {
+        checked = $cb.is(':checked');
+    }
+
+    $cb.prop('checked', checked);
+    $cb.val(checked ? 'true' : 'false');
+    $hidden.val(checked ? 'true' : 'false');
+
+    $wrap.attr('data-value', checked ? 'true' : 'false');
+    $wrap.toggleClass('is-on', checked);
+    $wrap.toggleClass('is-disabled', $cb.is(':disabled'));
+}
+
+
+/**
+ * initCustomFlipswitches(context)
+ * -----------------------------------------------------------------------------
+ * Initializes all custom LoxBerry flipswitches inside the given context.
+ *
+ * Initialization strategy:
+ *
+ * FIRST initialization of one switch:
+ * - Prefer wrapper data-value
+ * - If data-value is missing, use hidden field
+ * - If hidden field is also empty, use the current checkbox state
+ *
+ * FOLLOW-UP initializations:
+ * - Prefer hidden field
+ * - Fall back to current checkbox state
+ *
+ * Why this logic is important:
+ * - On first page load, data-value usually represents the server-rendered state
+ *   and must not be overwritten by a stale hidden field.
+ * - After the switch was initialized once, the hidden field becomes the main
+ *   source of truth during UI interaction.
+ *
+ * Additional behavior:
+ * - Marks each wrapper with data-lb-initialized="true"
+ * - Binds one namespaced change handler per switch
+ * - Keeps checkbox, hidden field and wrapper data-value fully synchronized
+ * - Triggers dependent UI logic for specific switches:
+ *     - sendlox  -> selection()
+ *     - tvmon    -> validateTVMon()
+ *
+ * @param {HTMLElement|jQuery|Document=} context
+ * @returns {void}
+ */
+function initCustomFlipswitches(context) {
+    var $root = context ? $(context) : $(document);
+
+    $root.find('.lb-flipswitch').each(function () {
         var $wrap = $(this);
-        var inputId = $wrap.data('input');
-        var rawValue = $wrap.data('value');
+        var inputId = $wrap.attr('data-input');
+        var rawValue = $wrap.attr('data-value');
 
         var $checkbox = $('#' + inputId);
         var $hidden   = $('#' + inputId + '_hidden');
@@ -190,22 +288,55 @@ function initCustomFlipswitches() {
             return;
         }
 
-        var checked = lbParseBool(rawValue);
+        var checked;
+        var alreadyInitialized = ($wrap.attr('data-lb-initialized') === 'true');
 
-        // Initial state sync
+        if (!alreadyInitialized) {
+            if (typeof rawValue !== 'undefined' && String(rawValue).trim() !== '') {
+                checked = lbParseBool(rawValue);
+            } else if (String($hidden.val() || '').trim() !== '') {
+                checked = lbParseBool($hidden.val());
+            } else {
+                checked = $checkbox.is(':checked');
+            }
+
+            $wrap.attr('data-lb-initialized', 'true');
+        } else {
+            if (String($hidden.val() || '').trim() !== '') {
+                checked = lbParseBool($hidden.val());
+            } else {
+                checked = $checkbox.is(':checked');
+            }
+        }
+
         $checkbox.prop('checked', checked);
-        $hidden.val(checked ? 'true' : 'false');
         $checkbox.val(checked ? 'true' : 'false');
+        $hidden.val(checked ? 'true' : 'false');
+        $wrap.attr('data-value', checked ? 'true' : 'false');
 
-        // Keep values in sync on user interaction
         $checkbox.off('change.lbflip').on('change.lbflip', function () {
             var isChecked = $(this).is(':checked');
-            $hidden.val(isChecked ? 'true' : 'false');
+
             $(this).val(isChecked ? 'true' : 'false');
+            $hidden.val(isChecked ? 'true' : 'false');
+            $wrap.attr('data-value', isChecked ? 'true' : 'false');
+
+            syncCustomFlipswitch($wrap);
+
+            /* --------------------------------------------------------------
+             * Trigger dependent UI logic immediately for specific switches.
+             * -------------------------------------------------------------- */
+            if (this.id === 'tvmon') {
+                validateTVMon();
+            }
         });
+
+        syncCustomFlipswitch($wrap);
     });
 
-    // Trigger dependent UI logic AFTER initialization
+    /* ----------------------------------------------------------------------
+     * Run dependent UI initialization after all switches are synchronized.
+     * ---------------------------------------------------------------------- */
     if ($('#sendlox').length) {
         selection();
     }
@@ -214,32 +345,34 @@ function initCustomFlipswitches() {
     }
 }
 
+
 /**
- * Sets the state of a custom flipswitch and synchronizes its related hidden field.
+ * setCustomFlipswitchValue(id, value)
+ * -----------------------------------------------------------------------------
+ * Programmatically sets a custom flipswitch to ON or OFF.
  *
- * This helper updates three things for the flipswitch identified by `id`:
- * 1. the checkbox checked state
- * 2. the checkbox value (`"true"` / `"false"`)
- * 3. the matching hidden input value (`"true"` / `"false"`)
+ * This helper updates:
+ * - checkbox.checked
+ * - checkbox.value
+ * - hidden.value
+ * - wrapper data-value
+ * - wrapper CSS classes (through syncCustomFlipswitch)
  *
- * Expected HTML structure:
- * - checkbox id: <id>
- * - hidden field id: <id>_hidden
+ * Typical use cases:
+ * - restoring values from backend config
+ * - enabling/disabling soundbar-related options
+ * - applying defaults for newly created UI sections
  *
- * Example:
- *   setCustomFlipswitchValue('tvmon', true);
- *   setCustomFlipswitchValue('usesb_livingroom', 'false');
- *
- * @param {string} id - The base id of the custom flipswitch checkbox.
- * @param {*} value - The value to apply. It is converted to a boolean by `lbParseBool()`.
+ * @param {string} id
+ * @param {any} value
  * @returns {void}
  */
- 
 function setCustomFlipswitchValue(id, value) {
+    var $wrap = $('.lb-flipswitch[data-input="' + id + '"]');
     var $cb = $('#' + id);
     var $hidden = $('#' + id + '_hidden');
 
-    if (!$cb.length || !$hidden.length) {
+    if (!$wrap.length || !$cb.length || !$hidden.length) {
         return;
     }
 
@@ -248,19 +381,105 @@ function setCustomFlipswitchValue(id, value) {
     $cb.prop('checked', checked);
     $cb.val(checked ? 'true' : 'false');
     $hidden.val(checked ? 'true' : 'false');
+    $wrap.attr('data-value', checked ? 'true' : 'false');
+
+    syncCustomFlipswitch($wrap);
 }
 
 
 /**
- * Page lifecycle hook
+ * setCustomFlipswitchDisabled(id, disabled)
  * -----------------------------------------------------------------------------
- * Ensures custom flipswitches are initialized across:
- * - jQuery Mobile pageinit
- * - pageshow (page transitions)
- * - standard document ready
+ * Enables or disables a custom flipswitch and immediately synchronizes its
+ * visual wrapper state.
+ *
+ * Important:
+ * - This helper does not change the ON/OFF value itself.
+ * - It only changes the disabled state and updates wrapper CSS classes.
+ *
+ * @param {string} id
+ * @param {boolean} disabled
+ * @returns {void}
  */
-$(document).on('pageinit pageshow ready', function () {
-    initCustomFlipswitches();
+function setCustomFlipswitchDisabled(id, disabled) {
+    var $wrap = $('.lb-flipswitch[data-input="' + id + '"]');
+    var $cb = $('#' + id);
+
+    if (!$wrap.length || !$cb.length) {
+        return;
+    }
+
+    $cb.prop('disabled', !!disabled);
+    syncCustomFlipswitch($wrap);
+}
+
+
+/**
+ * setSoundbarSelectState(id, enabled, fallbackValue)
+ * -----------------------------------------------------------------------------
+ * Enables or disables a jQuery Mobile select element used in the Soundbar /
+ * TV Monitor section.
+ *
+ * Behavior:
+ * - optionally applies a fallback value before disabling
+ * - updates the native disabled property
+ * - updates jQuery Mobile selectmenu UI if available
+ * - safely falls back to a simple change trigger if selectmenu throws
+ *
+ * Typical use cases:
+ * - disable SubLevel fields if a device has no SUB capability
+ * - restore and re-enable select fields if capability exists
+ *
+ * @param {string} id
+ * @param {boolean} enabled
+ * @param {string|number=} fallbackValue
+ * @returns {void}
+ */
+function setSoundbarSelectState(id, enabled, fallbackValue) {
+    var $select = $('#' + id);
+
+    if (!$select.length) {
+        return;
+    }
+
+    if (!enabled && typeof fallbackValue !== 'undefined') {
+        $select.val(fallbackValue);
+    }
+
+    $select.prop('disabled', !enabled);
+
+    try {
+        if (enabled) {
+            $select.selectmenu('enable');
+        } else {
+            $select.selectmenu('disable');
+        }
+        $select.selectmenu('refresh', true);
+    } catch (e) {
+        $select.trigger('change');
+    }
+}
+
+
+/**
+ * Flipswitch lifecycle hooks
+ * -----------------------------------------------------------------------------
+ * pageinit / pageshow:
+ * - needed for jQuery Mobile page lifecycle handling
+ *
+ * document ready:
+ * - needed for classic page load cases
+ *
+ * Result:
+ * - custom switches are initialized reliably in both jQM and non-jQM flows
+ */
+$(document).off('pageinit.lbflip pageshow.lbflip');
+$(document).on('pageinit.lbflip pageshow.lbflip', function () {
+    initCustomFlipswitches(this);
+});
+
+$(function () {
+    initCustomFlipswitches(document);
 });
 
 /* ================================================================================================
@@ -1659,6 +1878,67 @@ $(function () {
  */
 function getsbconfig() {
 
+	function setLbSwitchValueLocal(id, value) {
+		setCustomFlipswitchValue(id, value);
+
+		var $wrap = $('.lb-flipswitch[data-input="' + id + '"]');
+		var $cb = $('#' + id);
+		var $hidden = $('#' + id + '_hidden');
+
+		if (typeof syncCustomFlipswitch === "function") {
+			syncCustomFlipswitch($wrap);
+		} else {
+			var checked = String(($hidden.val() || "")).toLowerCase() === "true";
+			$cb.prop('checked', checked);
+			$cb.val(checked ? 'true' : 'false');
+			$wrap.toggleClass('is-on', checked);
+			$wrap.toggleClass('is-disabled', $cb.is(':disabled'));
+		}
+	}
+
+	function setLbSwitchDisabledLocal(id, disabled) {
+		var $wrap = $('.lb-flipswitch[data-input="' + id + '"]');
+		var $cb = $('#' + id);
+
+		if (!$cb.length) {
+			return;
+		}
+
+		$cb.prop("disabled", !!disabled);
+
+		if (typeof syncCustomFlipswitch === "function") {
+			syncCustomFlipswitch($wrap);
+		} else {
+			$wrap.toggleClass('is-disabled', !!disabled);
+			$wrap.toggleClass('is-on', $cb.is(':checked'));
+		}
+	}
+
+	function setSoundbarSelectStateLocal(id, enabled, fallbackValue) {
+		var $select = $("#" + id);
+
+		if (!$select.length) {
+			return;
+		}
+
+		if (!enabled && typeof fallbackValue !== "undefined") {
+			$select.val(fallbackValue);
+		}
+
+		$select.prop("disabled", !enabled);
+
+		try {
+			if (enabled) {
+				$select.selectmenu("enable");
+			} else {
+				$select.selectmenu("disable");
+			}
+			$select.selectmenu("refresh", true);
+		} catch (e) {
+			$select.trigger("change");
+		}
+	}
+
 	$.ajax({
 		url: 'index.cgi',
 		type: 'post',
@@ -1672,90 +1952,123 @@ function getsbconfig() {
 				if (valu[13] == 'SB') {
 					console.log(valu);
 
+					var hasSavedConfig = ((valu.length == 15 || valu.length == 17) && valu[14]);
+					var hasSub = (valu[8] !== 'NOSUB');
+					var hasSur = (valu[10] !== 'NOSUR');
+
 					/* ------------------------------------------------------------------
-					 * SUB handling
+					 * SUB capability handling
+					 * Source of truth:
+					 * - valu[8] => SUB / NOSUB
 					 * ------------------------------------------------------------------ */
-					if ((valu[8] == 'SUB' && valu.length == 15) || valu.length == 17) {
-						setCustomFlipswitchValue("tvmonnightsub_" + index, valu[14].tvmonnightsub);
-						setCustomFlipswitchValue("tvmonnightsubn_" + index, valu[14].tvsubnight);
-						$("#tvsublevel_" + index).val(valu[14].tvsublevel).selectmenu("refresh");
-						$("#tvmonnightsublevel_" + index).val(valu[14].tvmonnightsublevel).selectmenu("refresh");
+					if (hasSub) {
+						setLbSwitchDisabledLocal("tvmonnightsub_" + index, false);
+						setLbSwitchDisabledLocal("tvmonnightsubn_" + index, false);
 
-						$("#tvmonnightsub_" + index).prop("disabled", false);
-						$("#tvmonnightsubn_" + index).prop("disabled", false);
+						setLbSwitchValueLocal(
+							"tvmonnightsub_" + index,
+							(hasSavedConfig && typeof valu[14].tvmonnightsub !== "undefined")
+								? valu[14].tvmonnightsub
+								: "false"
+						);
 
-						$("#tvsublevel_" + index).selectmenu("enable").selectmenu("refresh");
-						$("#tvmonnightsublevel_" + index).selectmenu("enable").selectmenu("refresh");
+						setLbSwitchValueLocal(
+							"tvmonnightsubn_" + index,
+							(hasSavedConfig && typeof valu[14].tvsubnight !== "undefined")
+								? valu[14].tvsubnight
+								: "false"
+						);
 
-					} else if (valu[8] == 'SUB' && valu.length == 14) {
-						setCustomFlipswitchValue("tvmonnightsub_" + index, "false");
-						setCustomFlipswitchValue("tvmonnightsubn_" + index, "false");
+						$("#tvsublevel_" + index).val(
+							(hasSavedConfig && typeof valu[14].tvsublevel !== "undefined")
+								? valu[14].tvsublevel
+								: "0"
+						);
 
-						$("#tvsublevel_" + index).val("0").selectmenu("enable").selectmenu("refresh");
-						$("#tvmonnightsublevel_" + index).val("0").selectmenu("enable").selectmenu("refresh");
+						$("#tvmonnightsublevel_" + index).val(
+							(hasSavedConfig && typeof valu[14].tvmonnightsublevel !== "undefined")
+								? valu[14].tvmonnightsublevel
+								: "0"
+						);
 
-						$("#tvmonnightsub_" + index).prop("disabled", false);
-						$("#tvmonnightsubn_" + index).prop("disabled", false);
+						setSoundbarSelectStateLocal("tvsublevel_" + index, true);
+						setSoundbarSelectStateLocal("tvmonnightsublevel_" + index, true);
 
 					} else {
-						setCustomFlipswitchValue("tvmonnightsub_" + index, "false");
-						setCustomFlipswitchValue("tvmonnightsubn_" + index, "false");
+						setLbSwitchValueLocal("tvmonnightsub_" + index, "false");
+						setLbSwitchValueLocal("tvmonnightsubn_" + index, "false");
 
-						$("#tvmonnightsub_" + index).prop("disabled", true);
-						$("#tvmonnightsubn_" + index).prop("disabled", true);
+						setLbSwitchDisabledLocal("tvmonnightsub_" + index, true);
+						setLbSwitchDisabledLocal("tvmonnightsubn_" + index, true);
 
-						$("#tvsublevel_" + index)
-							.val("0")
-							.selectmenu("disable")
-							.selectmenu("refresh");
-
-						$("#tvmonnightsublevel_" + index)
-							.val("0")
-							.selectmenu("disable")
-							.selectmenu("refresh");
+						setSoundbarSelectStateLocal("tvsublevel_" + index, false, "0");
+						setSoundbarSelectStateLocal("tvmonnightsublevel_" + index, false, "0");
 					}
 
 					/* ------------------------------------------------------------------
-					 * SURROUND handling
+					 * SURROUND capability handling
+					 * Source of truth:
+					 * - valu[10] => SUR / NOSUR
 					 * ------------------------------------------------------------------ */
-					if ((valu[10] == 'SUR' && valu.length == 15) || valu.length == 17) {
-						setCustomFlipswitchValue("tvmonsurr_" + index, valu[14].tvmonsurr);
+					if (hasSur) {
+						setLbSwitchDisabledLocal("tvmonsurr_" + index, false);
 
-					} else if (valu[10] == 'SUR' && valu.length == 14) {
-						setCustomFlipswitchValue("tvmonsurr_" + index, "false");
+						setLbSwitchValueLocal(
+							"tvmonsurr_" + index,
+							(hasSavedConfig && typeof valu[14].tvmonsurr !== "undefined")
+								? valu[14].tvmonsurr
+								: "false"
+						);
+
+						$("#tvsurrlevel_" + index).val(
+							(hasSavedConfig && typeof valu[14].tvsurrlevel !== "undefined")
+								? valu[14].tvsurrlevel
+								: "0"
+						);
+
+						setSoundbarSelectStateLocal("tvsurrlevel_" + index, true);
 
 					} else {
-						setCustomFlipswitchValue("tvmonsurr_" + index, "false");
-						$("#tvmonsurr_" + index).prop("disabled", true);
+						setLbSwitchValueLocal("tvmonsurr_" + index, "false");
+						setLbSwitchDisabledLocal("tvmonsurr_" + index, true);
+
+						setSoundbarSelectStateLocal("tvsurrlevel_" + index, false, "0");
 					}
 
 					/* ------------------------------------------------------------------
 					 * Main soundbar config
 					 * ------------------------------------------------------------------ */
-					if (valu.length == 15 || valu.length == 17) {
+					if (hasSavedConfig) {
 						$("#sbzone_" + index).val(index).text("refresh");
 
-						setCustomFlipswitchValue("usesb_" + index, valu[14].usesb);
+						setLbSwitchValueLocal("usesb_" + index, valu[14].usesb);
+						setLbSwitchValueLocal("tvmonspeech_" + index, valu[14].tvmonspeech);
+						setLbSwitchValueLocal("tvmonnight_" + index, valu[14].tvmonnight);
 
-						setCustomFlipswitchValue("tvmonspeech_" + index, valu[14].tvmonspeech);
-						setCustomFlipswitchValue("tvmonnight_" + index, valu[14].tvmonnight);
-						setCustomFlipswitchValue("tvmonnightsub_" + index, valu[14].tvmonnightsub);
+						$("#fromtime_" + index).val(
+							typeof valu[14].fromtime !== "undefined" ? valu[14].fromtime : ""
+						);
 
-						$("#fromtime_" + index).val(valu[14].fromtime);
-						$("#tvvol_" + index).val(valu[14].tvvol).text("refresh");
-						$("#tvbass_" + index).val(valu[14].tvbass).text("refresh");
-						$("#tvtreble_" + index).val(valu[14].tvtreble).text("refresh");
+						$("#tvvol_" + index).val(
+							typeof valu[14].tvvol !== "undefined" ? valu[14].tvvol : ""
+						).text("refresh");
+
+						$("#tvbass_" + index).val(
+							typeof valu[14].tvbass !== "undefined" ? valu[14].tvbass : ""
+						).text("refresh");
+
+						$("#tvtreble_" + index).val(
+							typeof valu[14].tvtreble !== "undefined" ? valu[14].tvtreble : ""
+						).text("refresh");
 
 						/* --------------------------------------------------------------
 						 * IMPORTANT:
 						 * Apply visibility/state logic only AFTER all values are set
-						 * ------------------------------------------------------------------
-						 * This ensures that after re-enabling usesb_<room>, the dependent
-						 * fields (Night / Subwoofer / SubLevel) are recalculated correctly.
 						 * -------------------------------------------------------------- */
 						toggleSoundbar(index);
 						toggleNightFieldsByTime(index);
 						toggleSoundbarSubLevels(index);
+						toggleSoundbarSurrLevel(index);
 
 						if (typeof updateSoundbarColspan === "function") {
 							updateSoundbarColspan(index);
@@ -1804,9 +2117,9 @@ function getsbconfig() {
 							tvmonerr = "false";
 						}
 
-						validate_enable("#tvvol_" + index);
-						validate_enable("#tvtreble_" + index);
-						validate_enable("#tvbass_" + index);
+						//validate_enable("#tvvol_" + index);
+						//validate_enable("#tvtreble_" + index);
+						//validate_enable("#tvbass_" + index);
 					}
 				}
 			});
@@ -1824,24 +2137,27 @@ function getsbconfig() {
  * validateSB()
  * - Checks if any SB elements exist (#sbX) and shows/hides TV monitor settings accordingly
  */
-function validateSB()   {
-	var iteration = document.getElementById('countplayers').value;
-	var sbyes = "0";
-	iteration = parseInt(iteration)
-	iteration += 1;
-	for (i = 1; i < iteration; ++i) {
-		if($('#sb' + i + '').length)   {
-			var sbyes = "1";
-		}
-	}
-	if (sbyes == "1")   {
-		$('.tvmon_header').show();
-		$('.tvmon_switch').show();
-	} else {
-		$('.tvmon_header').hide();
-		$('.tvmon_switch').hide();
-	}
-	refreshJqmCheckboxes(); // ✅ nur einmal!
+function hasAnySoundbar() {
+    return $("[id^='tblsb_']").length > 0 ||
+           $("[id^='soundbar_header_']").length > 0 ||
+           $("[id^='soundbar_row_']").length > 0 ||
+           $("[id^='usesb_']").length > 0;
+}
+
+function validateSB() {
+    var hasSb = hasAnySoundbar();
+
+    if (hasSb) {
+        $('.tvmon_master, .tvmon_switch_row, .tvmon_switch, .tvmon_header').show();
+    } else {
+        if ($('#tvmon').length) {
+            setCustomFlipswitchValue('tvmon', false);
+        }
+
+        $('.tvmon_master, .tvmon_switch_row, .tvmon_switch, .tvmon_header, .tvmon_body, .tvmon_extra').hide();
+    }
+
+    refreshJqmCheckboxes();
 }
 
 /**
@@ -1849,6 +2165,10 @@ function validateSB()   {
  * - Shows/hides TV monitor blocks based on #tvmon flipswitch state
  */
 function validateTVMon() {
+	if (!hasAnySoundbar()) {
+        $('.tvmon_master, .tvmon_switch_row, .tvmon_switch, .tvmon_header, .tvmon_body, .tvmon_extra').hide();
+        return;
+    }
     var tvmonitor = $('#tvmon').is(':checked');
 
     if (tvmonitor) {
@@ -1869,6 +2189,7 @@ function validateTVMon() {
             toggleSoundbar(room);
             toggleNightFieldsByTime(room);
             toggleSoundbarSubLevels(room);
+			toggleSoundbarSurrLevel(room);
 
             if (typeof updateSoundbarColspan === "function") {
                 updateSoundbarColspan(room);
@@ -1925,6 +2246,7 @@ function toggleSoundbar(room) {
 
     toggleNightFieldsByTime(room);
     toggleSoundbarSubLevels(room);
+	toggleSoundbarSurrLevel(room);
 
     if (typeof updateSoundbarColspan === "function") {
         updateSoundbarColspan(room);
@@ -1934,6 +2256,31 @@ function toggleSoundbar(room) {
 function updateSoundbarColspan(room) {
     var visibleCols = $("#soundbar_header_" + room).children("th:visible").length;
     $("#soundbar_topcell_" + room).attr("colspan", visibleCols);
+}
+
+/**
+ * Show/hide the two SurLevel fields depending on the related Surround switch.
+ * We only hide the inner wrapper, not the whole <td>, so the table layout stays stable.
+ */
+function toggleSoundbarSurrLevel(room) {
+    var $surrSwitch = $("#tvmonsurr_" + room);
+    var $surrHidden = $("#tvmonsurr_" + room + "_hidden");
+
+    var isOn = false;
+
+    if ($surrHidden.length) {
+        isOn = lbParseBool($surrHidden.val());
+    } else if ($surrSwitch.length) {
+        isOn = $surrSwitch.is(":checked");
+    }
+
+    var showSurrCol = $surrSwitch.length &&
+                      isOn &&
+                      !$surrSwitch.prop("disabled");
+
+    $(".sb_tvsurrlevel_col_" + room).css("display", showSurrCol ? "table-cell" : "none");
+
+    updateSoundbarColspan(room);
 }
 
 /**
@@ -1970,6 +2317,7 @@ function initSoundbarSubLevels() {
     $("[id^='usesb_']").each(function () {
         var room = this.id.replace("usesb_", "");
         toggleSoundbarSubLevels(room);
+		toggleSoundbarSurrLevel(room);
     });
 }
 
@@ -1986,6 +2334,13 @@ $(document)
         toggleSoundbarSubLevels(room);
     });
 
+$(document)
+    .off("change.sbSurrLevel")
+    .on("change.sbSurrLevel", "input[id^='tvmonsurr_']:not([id$='_hidden'])", function () {
+        var room = this.id.replace("tvmonsurr_", "");
+        toggleSoundbarSurrLevel(room);
+    });
+
 /**
  * Initialize all Soundbar rows on page load.
  */
@@ -1996,6 +2351,161 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
+/**
+ * Re-check UDP port visibility whenever the MQTT/UDP switch changes.
+ */
+$(document)
+	.off("change.s4lUdpPortToggle", "#sendloxMQTT")
+	.on("change.s4lUdpPortToggle", "#sendloxMQTT", function () {
+	toggleUdpPortVisibility();
+});
+
+/**
+ * Updates the Sonos health traffic light image based on the current health status.
+ * Expected template values:
+ * - ok   -> green traffic light
+ * - warn -> yellow traffic light
+ * - else -> red traffic light
+ */
+function initSonosHealthAmpel() {
+	var statusClass = "<TMPL_VAR SONOS_HEALTH_STATUS_CLASS>";
+	var imgBase = "/plugins/<TMPL_VAR PLUGINDIR>/images/";
+	var imgFile = "A-Rot.png";
+
+	if (statusClass === "ok") {
+		imgFile = "A-Grün.png";
+	} else if (statusClass === "warn") {
+		imgFile = "A-Gelb.png";
+	} else {
+		imgFile = "A-Rot.png";
+	}
+
+	$("#sonosHealthAmpel").attr("src", imgBase + imgFile);
+}
+
+/**
+ * Shows custom tooltip and applies its visual styling.
+ * The tooltip uses the plugin green color and removes any text shadow.
+ */
+function showGreenTooltip(selector) {
+	$(selector).css({
+		"background": "#6db33f",
+		"color": "#ffffff",
+		"text-shadow": "none",
+		"box-shadow": "0 2px 10px rgba(0,0,0,0.18)",
+		"display": "inline-block",
+		"width": "max-content",
+		"min-width": "220px",
+		"max-width": "420px",
+		"white-space": "normal",
+		"pointer-events": "none"
+	});
+
+	$(selector + " div").css({
+		"border-top-color": "#6db33f"
+	});
+
+	$(selector).stop(true, true).fadeIn(120);
+}
+
+/**
+ * Hides a tooltip.
+ */
+function hideTooltip(selector) {
+	$(selector).stop(true, true).fadeOut(120);
+}
+
+/**
+ * Controls visibility of the UDP port field.
+ *
+ * Behavior:
+ * - If the MQTT/UDP switch does not exist, the UDP port field is shown.
+ * - If the switch exists and is on the right/checked position, the UDP port field is shown.
+ * - Otherwise, the UDP port field is hidden.
+ */
+function toggleUdpPortVisibility() {
+	if (!$("#sendloxMQTT").length) {
+		$("#udpPortCell").css("display", "table-cell");
+		return;
+	}
+
+	var switchIsRight = $("#sendloxMQTT").is(":checked");
+
+	if (switchIsRight) {
+		$("#udpPortCell").css("display", "table-cell");
+	} else {
+		$("#udpPortCell").hide();
+	}
+}
+
+/**
+ * Applies final layout and alignment fixes for the Loxone transfer row.
+ *
+ * This function:
+ * - sets a fixed width for the Miniserver select field
+ * - styles the generated jQuery Mobile button wrapper
+ * - vertically centers the text inside the select button
+ * - updates UDP port visibility
+ * - calls selection() so the full communication block is shown/hidden correctly
+ */
+function initS4LTransferRow() {
+	$("#ms").css({
+		"width": "225px",
+		"min-width": "225px",
+		"max-width": "225px"
+	});
+
+	$("#ms-button").css({
+		"width": "225px",
+		"min-width": "225px",
+		"max-width": "225px",
+		"margin": "0",
+		"display": "inline-block",
+		"vertical-align": "middle",
+		"box-sizing": "border-box",
+		"height": "32px",
+		"line-height": "32px",
+		"text-align": "center",
+		"padding-left": "28px",
+		"padding-right": "28px",
+		"padding-top": "0",
+		"padding-bottom": "0"
+	});
+
+	$("#ms-button span, #ms-button .ui-btn-text").css({
+		"display": "flex",
+		"align-items": "center",
+		"justify-content": "center",
+		"width": "100%",
+		"height": "30px",
+		"line-height": "1",
+		"text-align": "center",
+		"padding-left": "0",
+		"padding-right": "0",
+		"position": "relative",
+		"top": "-1px"
+	});
+
+	toggleUdpPortVisibility();
+	selection();
+}
+
+function toggleUdpXmlButton() {
+    var $udp = $('#UDP');
+
+    // Fallback, falls das Feld kein id="UDP" hat
+    if (!$udp.length) {
+        $udp = $('input[name="UDP"]');
+    }
+
+    var udpVal = $.trim($udp.val() || '');
+
+    if (udpVal === '') {
+        $('#btn3').closest('.btnd').hide();
+    } else {
+        $('#btn3').closest('.btnd').show();
+    }
+}
 
 /* ================================================================================================
  * 12) Backup/Restore/Delete buttons
@@ -2551,6 +3061,119 @@ function getSelectedEngine() {
 })(jQuery);
 
 
+
+function setTvMonFieldHighlight($field, active) {
+    var color = active ? '#FFFFC0' : '';
+    $field.css('background-color', color);
+    $field.closest('.ui-input-text').css('background-color', color);
+}
+
+function validateTvMonitorSoundbarFields(e) {
+    var tvMonitorOn = false;
+
+    if ($('#tvmon_hidden').length) {
+        tvMonitorOn = lbParseBool($('#tvmon_hidden').val());
+    } else if ($('#tvmon').length) {
+        tvMonitorOn = $('#tvmon').is(':checked');
+    }
+
+    if (!tvMonitorOn) {
+        return true;
+    }
+
+    function failField($field) {
+        var msg = $field.hasClass('tvvol')
+			? '<TMPL_VAR VOLUME_PROFILES.ERROR_VOLUME_PLAYER>'
+			: '<TMPL_VAR VOLUME_PROFILES.ERROR_TREBLE_BASS_PLAYER>';
+
+        setTvMonFieldHighlight($field, true);
+
+        $('html, body').animate({
+            scrollTop: Math.max(0, $field.offset().top - 120)
+        }, 400);
+
+        setTimeout(function () {
+            $field.focus();
+            $field.select();
+        }, 60);
+
+        timeout(msg, 'OK', 'info', 'TV Monitor', '2200');
+
+        if (e) {
+            e.preventDefault();
+        }
+        return false;
+    }
+
+    function validateOneField(id, min, max) {
+        var $field = $('#' + id);
+
+        if (!$field.length || $field.prop('disabled') || !$field.is(':visible')) {
+            return true;
+        }
+
+        var raw = $.trim($field.val());
+
+        if (raw === '') {
+            return failField($field);
+        }
+
+        if (!/^-?\d+$/.test(raw)) {
+            return failField($field);
+        }
+
+        var num = parseInt(raw, 10);
+
+        if (num < min || num > max) {
+            return failField($field);
+        }
+
+        setTvMonFieldHighlight($field, false);
+        return true;
+    }
+
+    var isValid = true;
+
+    $("[id^='usesb_']").each(function () {
+        var room = this.id.replace("usesb_", "");
+        var usesbOn = false;
+
+        if ($("#usesb_" + room + "_hidden").length) {
+            usesbOn = lbParseBool($("#usesb_" + room + "_hidden").val());
+        } else {
+            usesbOn = $("#usesb_" + room).is(':checked');
+        }
+
+        if (!usesbOn) {
+            return true; // continue
+        }
+
+        if (!validateOneField("tvvol_" + room, 0, 100)) {
+            isValid = false;
+            return false;
+        }
+
+        if (!validateOneField("tvtreble_" + room, -10, 10)) {
+            isValid = false;
+            return false;
+        }
+
+        if (!validateOneField("tvbass_" + room, -10, 10)) {
+            isValid = false;
+            return false;
+        }
+    });
+
+    return isValid;
+}
+
+/* Highlight wieder entfernen, sobald der User tippt/ändert */
+$(document)
+    .off('input.tvmonFieldValidate change.tvmonFieldValidate', '.tvvol, .tvtreble, .tvbass')
+    .on('input.tvmonFieldValidate change.tvmonFieldValidate', '.tvvol, .tvtreble, .tvbass', function () {
+        setTvMonFieldHighlight($(this), false);
+    });
+
 /* ================================================================================================
  * 16) Document ready: bind handlers + run initial state updates
  * ================================================================================================ */
@@ -2571,6 +3194,7 @@ $(document).ready(function(e) {
     });
 
     toggleFollowDelayFields();
+	toggleUdpXmlButton();
 
 	$(document).on('change click', '#announceradio, #announceradio_always', function () {
 		toggleRadioAnnounce();
@@ -2601,6 +3225,9 @@ $(document).ready(function(e) {
 		console.log("submit");
 
 		if (!validateVolumes(e)) {
+			return false;
+		}
+		if (!validateTvMonitorSoundbarFields(e)) {
 			return false;
 		}
 

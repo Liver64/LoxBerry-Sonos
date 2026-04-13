@@ -463,6 +463,10 @@ class SonosAccess
 		
 		if ($type == "SubGain") {
 			return $dialogLevel;
+		} elseif ($type == "SurroundLevel") {
+			return $dialogLevel;
+		} elseif ($type == "MusicSurroundLevel") {
+			return $dialogLevel;
 		} else {
 			if ($dialogLevel === 1) {
 				return true;
@@ -1188,23 +1192,23 @@ class SonosAccess
 	/**
 	 * Get Used Autoplay Volume from player
 	 *
-	 * @return array
+	 * @param string $source		Source to set true (TV or Music)
+	 * @return bolean
 	 
-	 Array
-	(
-		[CurrentVolume] => 20
-		[Source] => 
-	)
+	 return 0 or 1
 	
 	 */
 
-    public function GetUseAutoplayVolume()
+    public function GetUseAutoplayVolume($source = "")
     {
         return $this->processSoapCall(
             '/DeviceProperties/Control',
             'urn:schemas-upnp-org:service:DeviceProperties:1',
             'GetUseAutoplayVolume',
-            []
+            [
+				#new SoapParam($zones, 'UseVolume'),
+				new SoapParam($source, 'Source')
+			]
         );
     }
 	
@@ -1213,7 +1217,7 @@ class SonosAccess
 	 * Set used Autoplay Volume zones for player
 	 *
 	 * @param string $zones			true or false
-	 * @param string $source		Source to be played (could be empty)
+	 * @param string $source		Source to set (TV or Music)
 	 */
 
     public function SetUseAutoplayVolume($zones, $source = "")
@@ -2898,6 +2902,47 @@ class SonosAccess
 			]
           );
 	}
+	
+/**
+ * Returns a SID => ServiceName map of currently available Sonos music services based on UPnP ListAvailableServices
+ *
+ * @return array
+ */
+public function GetAvailableServicesMap(): array
+{
+    $returnContent = $this->processSoapCall(
+        '/MusicServices/Control',
+        'urn:schemas-upnp-org:service:MusicServices:1',
+        'ListAvailableServices',
+        []
+    );
+
+    $services = [];
+
+    if (empty($returnContent['AvailableServiceDescriptorList'])) {
+        return $services;
+    }
+
+    libxml_use_internal_errors(true);
+    $xml = simplexml_load_string($returnContent['AvailableServiceDescriptorList']);
+
+    if ($xml === false) {
+        return $services;
+    }
+
+    foreach ($xml->Service as $service) {
+        $attr = $service->attributes();
+
+        $sid  = isset($attr['Id'])   ? (string)$attr['Id']   : '';
+        $name = isset($attr['Name']) ? (string)$attr['Name'] : '';
+
+        if ($sid !== '' && $name !== '') {
+            $services[$sid] = $name;
+        }
+    }
+
+    return $services;
+}
 	
 	
 	/**

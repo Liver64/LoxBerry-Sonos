@@ -75,6 +75,11 @@ $LogFile          = 'sonos_events.log';
 $loglevel 	  	  = LBSystem::pluginloglevel();
 $presenceEnabled  = null;
 
+// --------------------------------- UDP memory send globals ---------------------------------
+#$mem_sendall_sec  = 300;
+#$mem_sendall      = 0;
+#$udpsocket        = null;
+
 // --------------------------------- Basis-Config ---------------------------------
 $LISTEN_HOST   = '0.0.0.0';
 $LISTEN_PORT   = 5005;
@@ -87,9 +92,10 @@ $MQTT_QOS      = 1;            // global QoS (1 wie gewünscht)
 // --------------------------------- Health-Monitor ---------------------------------
 $startTs              = time();
 $lastNotifyTs         = time();  // wird bei jedem NOTIFY aktualisiert
-$lastHealthPublish    = 0;
+#$lastHealthPublish    = 0;
 $NO_NOTIFY_WARN_AFTER = 600;     // 10 Minuten
 $HEALTH_INTERVAL      = 60;      // 1 Minute
+$lastHealthPublish    = time() - $HEALTH_INTERVAL;
 $healthRoomsFlags 	  = []; 	 // room => ['Online' => 0/1]
 // Zeitstempel der letzten Events pro Service
 $lastAvtEventTs 	  = 0;  // AVTransport
@@ -319,6 +325,182 @@ function default_event_urls(string $base): array
     ];
 }
 
+function udp_key_name(string $room, string $name): string
+{
+    $room = strtolower(trim($room));
+    $room = preg_replace('/[^a-z0-9_]+/i', '_', $room);
+    $room = trim((string)$room, '_');
+
+    $name = strtolower(trim($name));
+    $name = preg_replace('/[^a-z0-9_]+/i', '_', $name);
+    $name = trim((string)$name, '_');
+
+    return $room . '_' . $name;
+}
+
+function udp_plain_name(string $name): string
+{
+    $name = strtolower(trim($name));
+    $name = preg_replace('/[^a-z0-9_]+/i', '_', $name);
+    return trim((string)$name, '_');
+}
+
+function udp_value($value, int $maxLen = 120): string
+{
+    if (is_bool($value)) {
+        $value = $value ? '1' : '0';
+    } elseif ($value === null) {
+        $value = '';
+    }
+
+    $value = trim((string)$value);
+    $value = preg_replace('/[\r\n\t]+/', ' ', $value);
+
+    if (strlen($value) > $maxLen) {
+        $value = substr($value, 0, $maxLen);
+    }
+
+    return $value;
+}
+
+function udp_publish_for_event(string $type, array $payload, string $msnr, int $udpport, string $prefix): void
+{
+    if ($msnr === '' || $udpport < 1 || $udpport > 65535) {
+        return;
+    }
+
+    $params = [];
+
+    if ($type === 'health') {
+        if (isset($payload['online_players'])) {
+            $params['online_players'] = (string)(int)$payload['online_players'];
+        }
+        if (isset($payload['offline_players'])) {
+            $params['offline_players'] = (string)(int)$payload['offline_players'];
+        }
+        if (isset($payload['total_players'])) {
+            $params['total_players'] = (string)(int)$payload['total_players'];
+        }
+
+        foreach ($payload as $k => $v) {
+            if (preg_match('/_online$/i', (string)$k)) {
+                $params[udp_plain_name((string)$k)] = (string)(int)$v;
+            }
+        }
+    } else {
+        $room = strtolower((string)($payload['room'] ?? ''));
+        if ($room === '') {
+            return;
+        }
+
+        switch ($type) {
+            case 'state':
+                if (isset($payload['state_code'])) {
+                    $params[udp_key_name($room, 'state_code')] = (string)(int)$payload['state_code'];
+                }
+                break;
+
+            case 'volume':
+                if (isset($payload['volume'])) {
+                    $params[udp_key_name($room, 'volume')] = (string)(int)$payload['volume'];
+                }
+                break;
+
+            case 'mute':
+                if (isset($payload['mute_int'])) {
+                    $params[udp_key_name($room, 'mute')] = (string)(int)$payload['mute_int'];
+                }
+                break;
+
+            case 'group':
+                if (isset($payload['role_code'])) {
+                    $params[udp_key_name($room, 'group_role')] = (string)(int)$payload['role_code'];
+                }
+                break;
+
+            case 'track':
+                if (isset($payload['source'])) {
+                    $params[udp_key_name($room, 'current_source')] = (string)(int)$payload['source'];
+                }
+                if (isset($payload['tvstate'])) {
+                    $params[udp_key_name($room, 'tvstate')] = (string)(int)$payload['tvstate'];
+                }
+                break;
+
+            case 'nexttrack':
+                // intentionally no UDP output: no numeric values needed
+                break;
+
+            case 'eq':
+                if (isset($payload['bass'])) {
+                    $params[udp_key_name($room, 'bass')] = (string)(int)$payload['bass'];
+                }
+                if (isset($payload['treble'])) {
+                    $params[udp_key_name($room, 'treble')] = (string)(int)$payload['treble'];
+                }
+                if (isset($payload['loudness_int'])) {
+                    $params[udp_key_name($room, 'loudness')] = (string)(int)$payload['loudness_int'];
+                }
+                if (isset($payload['balance'])) {
+                    $params[udp_key_name($room, 'balance')] = (string)(int)$payload['balance'];
+                }
+                if (isset($payload['subgain'])) {
+                    $params[udp_key_name($room, 'subgain')] = (string)(int)$payload['subgain'];
+                }
+                if (isset($payload['nightmode'])) {
+                    $params[udp_key_name($room, 'nightmode')] = (string)(int)$payload['nightmode'];
+                }
+                if (isset($payload['dialoglevel'])) {
+                    $params[udp_key_name($room, 'dialoglevel')] = (string)(int)$payload['dialoglevel'];
+                }
+                break;
+
+            case 'playmode':
+                if (isset($payload['shuffle'])) {
+                    $params[udp_key_name($room, 'shuffle')] = (string)(int)$payload['shuffle'];
+                }
+                if (isset($payload['repeat'])) {
+                    $params[udp_key_name($room, 'repeat')] = (string)(int)$payload['repeat'];
+                }
+                if (isset($payload['repeat_one'])) {
+                    $params[udp_key_name($room, 'repeat_one')] = (string)(int)$payload['repeat_one'];
+                }
+                if (isset($payload['crossfade'])) {
+                    $params[udp_key_name($room, 'crossfade')] = (string)(int)$payload['crossfade'];
+                }
+                if (isset($payload['code'])) {
+                    $params[udp_key_name($room, 'playmode_code')] = (string)(int)$payload['code'];
+                }
+                break;
+
+            case 'position':
+                if (isset($payload['position_sec'])) {
+                    $params[udp_key_name($room, 'position_sec')] = (string)(int)$payload['position_sec'];
+                }
+                if (isset($payload['duration_sec'])) {
+                    $params[udp_key_name($room, 'duration_sec')] = (string)(int)$payload['duration_sec'];
+                }
+                if (isset($payload['progress_pct'])) {
+                    $params[udp_key_name($room, 'progress_pct')] = (string)(int)$payload['progress_pct'];
+                }
+                if (isset($payload['track_no'])) {
+                    $params[udp_key_name($room, 'track_no')] = (string)(int)$payload['track_no'];
+                }
+                if (isset($payload['track_count'])) {
+                    $params[udp_key_name($room, 'track_count')] = (string)(int)$payload['track_count'];
+                }
+                break;
+        }
+    }
+
+    if (empty($params)) {
+        return;
+    }
+
+    foreach ($params as $param => $value) {
+        udp_send_single_value($msnr, $udpport, $prefix, $param, $value);
+    }
+}
 
 // -------------------------------------------------------------
 // Loxone target resolver (cached general.json by mtime)
@@ -1221,13 +1403,13 @@ function publish_room_event(
     string $type,
     array $data,
     array $rooms,
-    SonosMqttClient $mqttClient,
+    ?SonosMqttClient $mqttClient,
     string $prefix,
     string $service,
     int $qos
 ): void {
 
-    global $lastEqByRoom, $groupByRoom;
+    global $lastEqByRoom, $groupByRoom, $useUdp, $loxMsId, $LoxoneUDPPort, $LoxoneUDPPrefix;
 
     // CENTRAL: always lowercase room everywhere downstream
     $room = strtolower($room);
@@ -1536,62 +1718,79 @@ function publish_room_event(
 
         $topicT = rtrim($prefix, '/') . "/{$tr}/{$type}";
 
-        $jsonT = json_encode($payloadT, JSON_UNESCAPED_UNICODE);
-        if ($jsonT === false) {
-            logln('warn', "JSON encode failed for $tr/$type");
-            continue;
-        }
+		if (!$mqttClient) {
+			logln('warn', "mqttClient is null");
+			continue;
+		}
 
-        $ok = $mqttClient->publish($topicT, $jsonT, $retain, $qos);
-        if (!$ok) {
-            logln('warn', "MQTT publish failed: $topicT");
-        } else {
-            $published++;
-        }
+		$jsonT = json_encode($payloadT, JSON_UNESCAPED_UNICODE);
+		if ($jsonT === false) {
+			logln('warn', "JSON encode failed for $tr/$type");
+			continue;
+		}
+
+		$ok = $mqttClient->publish($topicT, $jsonT, $retain, $qos);
+		if (!$ok) {
+			logln('warn', "MQTT publish failed: $topicT");
+		} else {
+			$published++;
+		}
+
+		if ($useUdp) {
+			udp_publish_for_event(
+				$type,
+				$payloadT,
+				$loxMsId,
+				$LoxoneUDPPort,
+				$LoxoneUDPPrefix
+			);
+		}
 
         // ----------------------------------------------------
         // Legacy-Kompatibilität: alte Sonos4lox-Topics weiter bedienen
         // (nur das, was du ohnehin publizierst; für track replizieren wir das genauso)
         // ----------------------------------------------------
-        $legacyPrefix = 'Sonos4lox';
+        if ($mqttClient) {
+            $legacyPrefix = 'Sonos4lox';
 
-        try {
-            if ($type === 'volume' && isset($payloadT['volume'])) {
-                $mqttClient->publish($legacyPrefix . '/vol/' . $tr, (string)$payloadT['volume'], true, 0);
-            }
-
-            if ($type === 'state' && isset($payloadT['state_code'])) {
-                $mqttClient->publish($legacyPrefix . '/stat/' . $tr, (string)$payloadT['state_code'], true, 0);
-            }
-
-            if ($type === 'group' && isset($payloadT['role_code'])) {
-                $mqttClient->publish($legacyPrefix . '/grp/' . $tr, (string)$payloadT['role_code'], true, 0);
-            }
-
-            if ($type === 'mute' && array_key_exists('mute_int', $payloadT)) {
-                $mqttClient->publish($legacyPrefix . '/mute/' . $tr, (string)$payloadT['mute_int'], true, 0);
-            }
-
-            if ($type === 'track') {
-                $mqttClient->publish($legacyPrefix . '/titint/' . $tr, (string)($payloadT['titint'] ?? ''), true, 0);
-                $mqttClient->publish($legacyPrefix . '/tit/'    . $tr, (string)($payloadT['tit']    ?? ''), true, 0);
-                $mqttClient->publish($legacyPrefix . '/int/'    . $tr, (string)($payloadT['int']    ?? ''), true, 0);
-                $mqttClient->publish($legacyPrefix . '/radio/'  . $tr, (string)($payloadT['radio']  ?? ''), true, 0);
-
-                if (isset($payloadT['source'])) {
-                    $mqttClient->publish($legacyPrefix . '/source/' . $tr, (string)$payloadT['source'], true, 0);
+            try {
+                if ($type === 'volume' && isset($payloadT['volume'])) {
+                    $mqttClient->publish($legacyPrefix . '/vol/' . $tr, (string)$payloadT['volume'], true, 0);
                 }
 
-                $mqttClient->publish($legacyPrefix . '/sid/'   . $tr, (string)($payloadT['sid']   ?? ''), true, 0);
-                $mqttClient->publish($legacyPrefix . '/cover/' . $tr, (string)($payloadT['cover'] ?? ''), true, 0);
-
-                if (isset($payloadT['tvstate'])) {
-                    $mqttClient->publish($legacyPrefix . '/tvstate/' . $tr, (string)$payloadT['tvstate'], true, 0);
+                if ($type === 'state' && isset($payloadT['state_code'])) {
+                    $mqttClient->publish($legacyPrefix . '/stat/' . $tr, (string)$payloadT['state_code'], true, 0);
                 }
-            }
 
-        } catch (Throwable $e) {
-            logln('warn', "Legacy MQTT publish failed for $tr/$type: " . $e->getMessage());
+                if ($type === 'group' && isset($payloadT['role_code'])) {
+                    $mqttClient->publish($legacyPrefix . '/grp/' . $tr, (string)$payloadT['role_code'], true, 0);
+                }
+
+                if ($type === 'mute' && array_key_exists('mute_int', $payloadT)) {
+                    $mqttClient->publish($legacyPrefix . '/mute/' . $tr, (string)$payloadT['mute_int'], true, 0);
+                }
+
+                if ($type === 'track') {
+                    $mqttClient->publish($legacyPrefix . '/titint/' . $tr, (string)($payloadT['titint'] ?? ''), true, 0);
+                    $mqttClient->publish($legacyPrefix . '/tit/'    . $tr, (string)($payloadT['tit']    ?? ''), true, 0);
+                    $mqttClient->publish($legacyPrefix . '/int/'    . $tr, (string)($payloadT['int']    ?? ''), true, 0);
+                    $mqttClient->publish($legacyPrefix . '/radio/'  . $tr, (string)($payloadT['radio']  ?? ''), true, 0);
+
+                    if (isset($payloadT['source'])) {
+                        $mqttClient->publish($legacyPrefix . '/source/' . $tr, (string)$payloadT['source'], true, 0);
+                    }
+
+                    $mqttClient->publish($legacyPrefix . '/sid/'   . $tr, (string)($payloadT['sid']   ?? ''), true, 0);
+                    $mqttClient->publish($legacyPrefix . '/cover/' . $tr, (string)($payloadT['cover'] ?? ''), true, 0);
+
+                    if (isset($payloadT['tvstate'])) {
+                        $mqttClient->publish($legacyPrefix . '/tvstate/' . $tr, (string)$payloadT['tvstate'], true, 0);
+                    }
+                }
+
+            } catch (Throwable $e) {
+                logln('warn', "Legacy MQTT publish failed for $tr/$type: " . $e->getMessage());
+            }
         }
 
         // ----------------------------------------------------
@@ -1610,110 +1809,112 @@ function publish_room_event(
     // ----------------------------------------------------
     // Legacy-Kompatibilität: alte Sonos4lox-Topics weiter bedienen
     // ----------------------------------------------------
-    $legacyPrefix = 'Sonos4lox';
+    if ($mqttClient) {
+        $legacyPrefix = 'Sonos4lox';
 
-    try {
-        // 1) Volume -> Sonos4lox/vol/<room>
-        if ($type === 'volume' && isset($payload['volume'])) {
-            $mqttClient->publish(
-                $legacyPrefix . '/vol/' . $room,
-                (string)$payload['volume'],
-                true,   // retain wie früher
-                0       // QoS 0 wie im alten push_loxone.php
-            );
-        }
-
-        // 2) State -> Sonos4lox/stat/<room> (GetTransportInfo-Code)
-        if ($type === 'state' && isset($payload['state_code'])) {
-            $mqttClient->publish(
-                $legacyPrefix . '/stat/' . $room,
-                (string)$payload['state_code'],
-                true,
-                0
-            );
-        }
-
-        // 3) Group-Role -> Sonos4lox/grp/<room> (1=single,2=master,3=member)
-        if ($type === 'group' && isset($payload['role_code'])) {
-            $mqttClient->publish(
-                $legacyPrefix . '/grp/' . $room,
-                (string)$payload['role_code'],
-                true,
-                0
-            );
-        }
-
-        // 4) Mute -> Sonos4lox/mute/<room> (0/1)
-        if ($type === 'mute' && array_key_exists('mute_int', $payload)) {
-            $mqttClient->publish(
-                $legacyPrefix . '/mute/' . $room,
-                (string)$payload['mute_int'],
-                true,
-                0
-            );
-        }
-
-        // 5) Track-Infos -> Sonos4lox/tit*, /radio, /source, /sid, /cover, /tvstate
-        if ($type === 'track') {
-            $mqttClient->publish(
-                $legacyPrefix . '/titint/' . $room,
-                (string)($payload['titint'] ?? ''),
-                true,
-                0
-            );
-            $mqttClient->publish(
-                $legacyPrefix . '/tit/' . $room,
-                (string)($payload['tit'] ?? ''),
-                true,
-                0
-            );
-            $mqttClient->publish(
-                $legacyPrefix . '/int/' . $room,
-                (string)($payload['int'] ?? ''),
-                true,
-                0
-            );
-            $mqttClient->publish(
-                $legacyPrefix . '/radio/' . $room,
-                (string)($payload['radio'] ?? ''),
-                true,
-                0
-            );
-
-            if (isset($payload['source'])) {
+        try {
+            // 1) Volume -> Sonos4lox/vol/<room>
+            if ($type === 'volume' && isset($payload['volume'])) {
                 $mqttClient->publish(
-                    $legacyPrefix . '/source/' . $room,
-                    (string)$payload['source'],   // 0..4 wie früher
+                    $legacyPrefix . '/vol/' . $room,
+                    (string)$payload['volume'],
+                    true,   // retain wie früher
+                    0       // QoS 0 wie im alten push_loxone.php
+                );
+            }
+
+            // 2) State -> Sonos4lox/stat/<room> (GetTransportInfo-Code)
+            if ($type === 'state' && isset($payload['state_code'])) {
+                $mqttClient->publish(
+                    $legacyPrefix . '/stat/' . $room,
+                    (string)$payload['state_code'],
                     true,
                     0
                 );
             }
 
-            $mqttClient->publish(
-                $legacyPrefix . '/sid/' . $room,
-                (string)($payload['sid'] ?? ''),
-                true,
-                0
-            );
-            $mqttClient->publish(
-                $legacyPrefix . '/cover/' . $room,
-                (string)($payload['cover'] ?? ''),
-                true,
-                0
-            );
-
-            if (isset($payload['tvstate'])) {
+            // 3) Group-Role -> Sonos4lox/grp/<room> (1=single,2=master,3=member)
+            if ($type === 'group' && isset($payload['role_code'])) {
                 $mqttClient->publish(
-                    $legacyPrefix . '/tvstate/' . $room,
-                    (string)$payload['tvstate'],
+                    $legacyPrefix . '/grp/' . $room,
+                    (string)$payload['role_code'],
                     true,
                     0
                 );
             }
-        }
 
-    } catch (Throwable $e) {
-        logln('warn', "Legacy MQTT publish failed for $room/$type: " . $e->getMessage());
+            // 4) Mute -> Sonos4lox/mute/<room> (0/1)
+            if ($type === 'mute' && array_key_exists('mute_int', $payload)) {
+                $mqttClient->publish(
+                    $legacyPrefix . '/mute/' . $room,
+                    (string)$payload['mute_int'],
+                    true,
+                    0
+                );
+            }
+
+            // 5) Track-Infos -> Sonos4lox/tit*, /radio, /source, /sid, /cover, /tvstate
+            if ($type === 'track') {
+                $mqttClient->publish(
+                    $legacyPrefix . '/titint/' . $room,
+                    (string)($payload['titint'] ?? ''),
+                    true,
+                    0
+                );
+                $mqttClient->publish(
+                    $legacyPrefix . '/tit/' . $room,
+                    (string)($payload['tit'] ?? ''),
+                    true,
+                    0
+                );
+                $mqttClient->publish(
+                    $legacyPrefix . '/int/' . $room,
+                    (string)($payload['int'] ?? ''),
+                    true,
+                    0
+                );
+                $mqttClient->publish(
+                    $legacyPrefix . '/radio/' . $room,
+                    (string)($payload['radio'] ?? ''),
+                    true,
+                    0
+                );
+
+                if (isset($payload['source'])) {
+                    $mqttClient->publish(
+                        $legacyPrefix . '/source/' . $room,
+                        (string)$payload['source'],   // 0..4 wie früher
+                        true,
+                        0
+                    );
+                }
+
+                $mqttClient->publish(
+                    $legacyPrefix . '/sid/' . $room,
+                    (string)($payload['sid'] ?? ''),
+                    true,
+                    0
+                );
+                $mqttClient->publish(
+                    $legacyPrefix . '/cover/' . $room,
+                    (string)($payload['cover'] ?? ''),
+                    true,
+                    0
+                );
+
+                if (isset($payload['tvstate'])) {
+                    $mqttClient->publish(
+                        $legacyPrefix . '/tvstate/' . $room,
+                        (string)$payload['tvstate'],
+                        true,
+                        0
+                    );
+                }
+            }
+
+        } catch (Throwable $e) {
+            logln('warn', "Legacy MQTT publish failed for $room/$type: " . $e->getMessage());
+        }
     }
 	
 	// ----------------------------------------------------
@@ -1730,7 +1931,7 @@ function publish_room_event(
     elseif ($type === 'volume')    logln('evnt', "$room volume: {$payload['volume']}");
     elseif ($type === 'mute')      logln('evnt', "$room mute: " . (!empty($payload['mute']) ? 'on' : 'off'));
     elseif ($type === 'group')     logln('evnt', "$room group: gid={$payload['group_id']} coord=" . (!empty($payload['is_coordinator']) ? 'yes' : 'no') . " role={$payload['role_name']}");
-	    elseif ($type === 'position') {
+	elseif ($type === 'position') {
         $pos = $payload['position_sec'] ?? null;
         $dur = $payload['duration_sec'] ?? null;
         $pct = $payload['progress_pct'] ?? null;
@@ -1755,7 +1956,7 @@ function process_sonos_http_request(
     string $raw,
     array &$subs,
     array $rooms,
-    SonosMqttClient $mqttClient,
+    ?SonosMqttClient $mqttClient,
     string $TOPIC_PREFIX,
     int $MQTT_QOS
 ): void {
@@ -1980,6 +2181,13 @@ function process_sonos_http_request(
     }
 }
 
+function udp_send_single_value(string $msnr, int $udpport, string $prefix, string $param, $value): void
+{
+    udp_send_mem($msnr, $udpport, $prefix, [
+        $param => (string)$value
+    ]);
+}
+
 // --------------------------------- Start: MQTT-Client & Callback ---------------------------------
 
 $CALLBACK_HOST = $CALLBACK_HOST ?: LBSystem::get_localip();
@@ -1987,19 +2195,6 @@ $CALLBACK_PATH = '/sonos/cb';
 
 $CALLBACK_URL  = "http://{$CALLBACK_HOST}:{$LISTEN_PORT}{$CALLBACK_PATH}";
 logln('info', "Callback URL (for SUBSCRIBE): $CALLBACK_URL");
-
-// MQTT-Verbindungsdaten aus LoxBerry holen
-$mqttconf = mqtt_connectiondetails();
-$mqttHost = $mqttconf['brokerhost'] ?? 'localhost';
-$mqttPort = (int)($mqttconf['brokerport'] ?? 1883);
-$mqttUser = $mqttconf['brokeruser'] ?? '';
-$mqttPass = $mqttconf['brokerpass'] ?? '';
-
-$mqttClientId = 'sonos_events_' . gethostname() . '_' . uniqid();
-$mqttClient   = new SonosMqttClient($mqttHost, $mqttPort, $mqttClientId, $mqttUser ?: null, $mqttPass ?: null);
-
-// Health-Topic
-$healthTopic = rtrim($TOPIC_PREFIX, '/') . '/_health';
 
 // --------------------------------- Räume/Player laden ---------------------------------
 if (!file_exists(S4L_CFG)) { logln('error', "Config missing: " . S4L_CFG); exit(1); }
@@ -2010,7 +2205,6 @@ if (!is_array($cfg)) { logln('error', "Invalid JSON in " . S4L_CFG); exit(1); }
 $loxCfg       = $cfg['LOXONE'] ?? [];
 $LoxDaten     = strtolower((string)($loxCfg['LoxDaten'] ?? 'false')) === 'true';
 $loxMsId      = (string)($loxCfg['Loxone'] ?? '1');
-$LoxDatenMQTT = strtolower((string)($loxCfg['LoxDatenMQTT'] ?? 'false'));
 
 // --- Loxone Miniserver Target einmalig auflösen (optional) ---
 $loxTarget = null;
@@ -2061,12 +2255,66 @@ $LOXONE_HTTP_PUBLISH = [
     ],
 ];
 
+// --------------------------------- Optional UDP output ---------------------------------
+$useMqtt = true;
+$LoxoneUDPPort   = (int)($cfg['LOXONE']['UDP'] ?? 0);
+$useUdp          = ($LoxoneUDPPort > 0);
+$LoxoneUDPPrefix = 's4lox';
 
-$LoxDatenMQTT = strtolower((string)($loxCfg['LoxDatenMQTT'] ?? 'false'));
-if ($LoxDatenMQTT !== 'true') {
-    // hier gerne noch ein einfaches echo, falls du willst
-    exit(0);
+if ($useUdp) {
+    require_once "/opt/loxberry/webfrontend/html/plugins/sonos4lox/system/io-modul.php";
+
+    $mem_sendall_sec = 300;
+    $mem_sendall     = 0;
+    $udpsocket       = null;
 }
+
+// MQTT-Verbindungsdaten aus LoxBerry holen
+$mqttClient  = null;
+$healthTopic = rtrim($TOPIC_PREFIX, '/') . '/_health';
+
+$mqttconf = mqtt_connectiondetails();
+
+if (is_object($mqttconf)) {
+    $mqttconf = (array)$mqttconf;
+}
+
+$mqttHost = $mqttconf['brokerhost']
+    ?? $mqttconf['Brokerhost']
+    ?? $mqttconf['BrokerHost']
+    ?? 'localhost';
+
+$mqttPort = (int)($mqttconf['brokerport']
+    ?? $mqttconf['Brokerport']
+    ?? $mqttconf['BrokerPort']
+    ?? 1883);
+
+$mqttUser = (string)($mqttconf['brokeruser']
+    ?? $mqttconf['Brokeruser']
+    ?? $mqttconf['BrokerUser']
+    ?? '');
+
+$mqttPass = (string)($mqttconf['brokerpass']
+    ?? $mqttconf['Brokerpass']
+    ?? $mqttconf['BrokerPass']
+    ?? '');
+
+$mqttClientId = 'sonos_events_' . gethostname() . '_' . uniqid();
+$mqttClient   = new SonosMqttClient($mqttHost, $mqttPort, $mqttClientId, $mqttUser ?: null, $mqttPass ?: null);
+
+// IMPORTANT:
+// mqtt_connectiondetails() may overwrite global $cfg internally.
+// Reload our plugin config here to restore the original behavior.
+$cfg = json_decode(file_get_contents(S4L_CFG), true);
+if (!is_array($cfg)) {
+    logln('error', "Invalid JSON in " . S4L_CFG);
+    exit(1);
+}
+
+// Re-read UDP config from the restored plugin config
+$LoxoneUDPPort   = (int)($cfg['LOXONE']['UDP'] ?? 0);
+$useUdp          = ($LoxoneUDPPort > 0);
+$LoxoneUDPPrefix = (string)(($cfg['LOXONE']['LoxoneUDPPrefix'] ?? 's4lox'));
 
 $zones = $cfg['sonoszonen'] ?? [];
 if (!$zones) { logln('error', "Block 'sonoszonen' missing/empty"); exit(1); }
@@ -2325,9 +2573,11 @@ while (true) {
     }
 
     // MQTT Housekeeping (KeepAlive/Reconnect)
-    $mqttClient->loop();
+    if ($mqttClient) {
+		$mqttClient->loop();
+	}
 
-        // --------------------------------- Health-Publish ---------------------------------
+    // --------------------------------- Health-Publish ---------------------------------
     $now = time();
     if ($now - $lastHealthPublish >= $HEALTH_INTERVAL) {
         $lastHealthPublish = $now;
@@ -2371,7 +2621,7 @@ while (true) {
         $uptime = $now - $startTs;
 
         // 2) Health-JSON im Plugin-Config-Verzeichnis via Helper schreiben
-                $lastEvents = [
+        $lastEvents = [
             'avtransport'       => $lastAvtEventTs,
             'renderingcontrol'  => $lastRcEventTs,
             'zonegrouptopology' => $lastZgtEventTs,
@@ -2408,11 +2658,22 @@ while (true) {
 
         $healthJson = json_encode($healthPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($healthJson !== false) {
-            // Topic bleibt: s4lox/sonos/_health
-            $ok = $mqttClient->publish($healthTopic, $healthJson, true, $MQTT_QOS);
-            if (!$ok) {
-                logln('warn', "MQTT publish failed: $healthTopic");
-            }
+			if ($mqttClient) {
+				$ok = $mqttClient->publish($healthTopic, $healthJson, true, $MQTT_QOS);
+				if (!$ok) {
+					logln('warn', "MQTT publish failed: $healthTopic");
+				}
+			}
+
+			if ($useUdp) {
+				udp_publish_for_event(
+					'health',
+					$healthPayload,
+					$loxMsId,
+					$LoxoneUDPPort,
+					$LoxoneUDPPrefix
+				);
+			}
 
             // Health-JSON zusätzlich im RAM-FS für die UI ablegen
             $healthFile = '/dev/shm/sonos4lox/health.json';
@@ -2443,9 +2704,21 @@ while (true) {
 
 				$eqJson = json_encode($eqPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 				if ($eqJson !== false) {
-					$ok = $mqttClient->publish($eqTopic, $eqJson, true, $MQTT_QOS);
-					if (!$ok) {
-						logln('warn', "MQTT publish failed: $eqTopic");
+					if ($mqttClient) {
+						$ok = $mqttClient->publish($eqTopic, $eqJson, true, $MQTT_QOS);
+						if (!$ok) {
+							logln('warn', "MQTT publish failed: $eqTopic");
+						}
+					}
+
+					if ($useUdp) {
+						udp_publish_for_event(
+							'eq',
+							$eqPayload,
+							$loxMsId,
+							$LoxoneUDPPort,
+							$LoxoneUDPPrefix
+						);
 					}
 				} else {
 					logln('warn', "JSON encode failed for eq payload (room $roomName)");

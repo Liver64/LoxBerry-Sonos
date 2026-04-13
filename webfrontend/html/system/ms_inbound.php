@@ -3,18 +3,31 @@ declare(strict_types=1);
 
 /**
  * Sonos4Lox - ms_inbound.php
- * Generate ONLY Loxone Virtual Input Template (MQTT -> UDP)
+ * Generate Loxone Virtual Input Templates
  *
  * Creates/overwrites:
  *   $lbphtmldir/system/VI_MQTT_UDP_Sonos.xml
+ *   $lbphtmldir/system/VI_UDP_Sonos.xml
  *
  * IMPORTANT:
- * Your MQTT gateway expands JSON to flat topics:
- *   - underscores become "##" (e.g. state##_code)
- *   - each JSON key becomes its own MQTT topic (topic/key=value)
+ * 1) MQTT gateway template:
+ *    Your MQTT gateway expands JSON to flat topics:
+ *      - underscores become "##" (e.g. state##_code)
+ *      - each JSON key becomes its own MQTT topic (topic/key=value)
+ *    Therefore this template subscribes to those expanded topics directly
+ *    (NO JSON extraction patterns).
  *
- * Therefore, this template subscribes to those expanded topics directly
- * (NO JSON extraction patterns).
+ * 2) Direct UDP template:
+ *    Your direct Sonos UDP format in Loxone UDP Monitor is:
+ *      s4lox: <key>@<value>
+ *
+ *    Examples:
+ *      s4lox: kueche_volume@3
+ *      s4lox: kueche_mute@0
+ *      s4lox: kueche_playmode_code@99
+ *
+ *    Therefore VI_UDP_Sonos.xml must use checks like:
+ *      s4lox: kueche_volume@\v
  */
 
 require_once "loxberry_system.php";
@@ -60,10 +73,22 @@ if (empty($config['sonoszonen']) || !is_array($config['sonoszonen']) || count($c
     exit(1);
 }
 
-// ------------------------ Read UDP port from mqttgateway.json ------------------------
-$mqttGwFile = "REPLACELBHOMEDIR/config/system/mqttgateway.json";
+// ------------------------ Read direct UDP port from plugin config ------------------------
+$udpDirectRaw  = trim((string)($config['LOXONE']['UDP'] ?? ''));
+$udpDirectPort = 0;
+$hasDirectUdp  = ($udpDirectRaw !== '');
+
+if ($hasDirectUdp) {
+    $udpDirectPort = (int)$udpDirectRaw;
+    validate_port($udpDirectPort, $udpDirectRaw, "LOXONE->UDP");
+} else {
+    LOGINF("system/ms_inbound.php: No direct UDP port configured in LOXONE->UDP - skipping direct UDP template.");
+}
+
+// ------------------------ Read MQTT gateway UDP port ------------------------
+$mqttGwFile = "/opt/loxberry/config/system/mqttgateway.json";
 if (!is_file($mqttGwFile)) {
-    LOGERR("system/ms_inbound.php: mqttgateway.json not found: $mqttGwFile (cannot determine UDP port).");
+    LOGERR("system/ms_inbound.php: mqttgateway.json not found: $mqttGwFile (cannot determine MQTT UDP port).");
     exit(1);
 }
 
@@ -73,38 +98,66 @@ if (!is_array($mqttGw)) {
     exit(1);
 }
 
-$udpPortRaw = $mqttGw['Main']['udpport'] ?? '';
-$udpPort = (int)$udpPortRaw;
+$udpMqttRaw = $mqttGw['Main']['udpport'] ?? '';
+$udpMqttPort = (int)$udpMqttRaw;
+validate_port($udpMqttPort, $udpMqttRaw, "mqttgateway.json Main->udpport");
 
-if ($udpPort <= 0 || $udpPort > 65535) {
-    LOGERR("system/ms_inbound.php: Invalid UDP port in mqttgateway.json (Main->udpport). Value=" . (is_scalar($udpPortRaw) ? (string)$udpPortRaw : 'non-scalar'));
-    exit(1);
+// ------------------------ Output files ------------------------
+$xmlOutFileMqtt = $lbphtmldir . "/system/VI_MQTT_UDP_Sonos.xml";
+$xmlOutFileUdp  = $lbphtmldir . "/system/VI_UDP_Sonos.xml";
+
+if (is_file($xmlOutFileMqtt)) {
+    @unlink($xmlOutFileMqtt);
 }
-
-// ------------------------ Output file ------------------------
-$xmlOutFile = $lbphtmldir . "/system/VI_MQTT_UDP_Sonos.xml";
-if (is_file($xmlOutFile)) {
-    @unlink($xmlOutFile);
+if (is_file($xmlOutFileUdp)) {
+    @unlink($xmlOutFileUdp);
 }
 
 // ------------------------ Topic prefix ------------------------
 $NEW_PREFIX = 's4lox/sonos';
 
-// ------------------------ Build XML (VirtualInUdp) ------------------------
-$VIudp = new VirtualInUdp([
-    "Title"   => "Sonos4lox (MQTT UDP)",
+// ------------------------ Build MQTT UDP XML ------------------------
+$VImqtt = new VirtualInUdp([
+    "Title"   => "Sonos4Lox (MQTT UDP)",
     "Address" => "",
-    "Port"    => (string)$udpPort
+    "Port"    => (string)$udpMqttPort
 ]);
 
+build_mqtt_template_commands($VImqtt, $NEW_PREFIX, array_keys($config['sonoszonen']));
+write_xml_file($xmlOutFileMqtt, $VImqtt->output(), "VI_MQTT_UDP_Sonos.xml");
+
+// ------------------------ Build direct UDP XML ------------------------
+if ($hasDirectUdp) {
+    $VIudp = new VirtualInUdp([
+        "Title"   => "Sonos4Lox (UDP)",
+        "Address" => "",
+        "Port"    => (string)$udpDirectPort
+    ]);
+
+    build_direct_udp_template_commands($VIudp, array_keys($config['sonoszonen']));
+    write_xml_file($xmlOutFileUdp, $VIudp->output(), "VI_UDP_Sonos.xml");
+
+    LOGOK(
+        "system/ms_inbound.php: Templates created successfully " .
+        "(MQTT UDP port: $udpMqttPort, direct UDP port: $udpDirectPort)"
+    );
+} else {
+    LOGOK(
+        "system/ms_inbound.php: MQTT UDP template created successfully " .
+        "(MQTT UDP port: $udpMqttPort, direct UDP template skipped)"
+    );
+}
+
+exit(0);
+
 /**
- * Add one UDP cmd line.
- * IMPORTANT:
- * - Build check strings so Loxone sees \i and \v literally
+ * Add one MQTT gateway based UDP cmd line.
+ *
+ * Expected pattern:
+ *   MQTT:\i<topic>=\i\v
  */
-function add_cmd(VirtualInUdp $vi, string $title, string $topic, bool $analog = true): void
+function add_cmd_mqtt(VirtualInUdp $vi, string $title, string $topic, bool $analog = true): void
 {
-    // Pattern: MQTT:\i<topic>=\i\v
     $check = 'MQTT:\i' . $topic . '=\i\v';
 
     $vi->VirtualInUdpCmd([
@@ -114,80 +167,201 @@ function add_cmd(VirtualInUdp $vi, string $title, string $topic, bool $analog = 
     ]);
 }
 
-// ============================================================
-// HEALTH (expanded topics, not JSON parsing)
-// ============================================================
-$healthBase = $NEW_PREFIX . '/_health';
+/**
+ * Add one direct UDP cmd line.
+ *
+ * Expected direct Sonos UDP pattern:
+ *   s4lox: <key>@<value>
+ *
+ * Example:
+ *   s4lox: kueche_volume@3
+ */
+function add_cmd_udp(VirtualInUdp $vi, string $title, string $key, bool $analog = true): void
+{
+    $check = '\is4lox: ' . $key . '@\i\v';
 
-// Global health fields (from your dump)
-add_cmd($VIudp, 'Health online_players',         $healthBase . '/online##_players', true);
-add_cmd($VIudp, 'Health total_players',          $healthBase . '/total##_players', true);
-
-// Per-room Online flags: <room>##_Online
-foreach ($config['sonoszonen'] as $room => $dummy) {
-    $roomName = (string)$room;
-    add_cmd($VIudp, 'Health ' . $roomName . ' Online', $healthBase . '/' . $roomName . '##_Online', true);
+    $vi->VirtualInUdpCmd([
+        "Title"  => $title,
+        "Check"  => $check,
+        "Analog" => $analog ? "true" : "false",
+    ]);
 }
 
-// ============================================================
-// PER ROOM TOPICS (expanded topics)
-// ============================================================
-foreach ($config['sonoszonen'] as $room => $dummy) {
+/**
+ * Build MQTT gateway template commands.
+ */
+function build_mqtt_template_commands(VirtualInUdp $vi, string $prefix, array $rooms): void
+{
+    // ============================================================
+    // HEALTH
+    // ============================================================
+    $healthBase = $prefix . '/_health';
 
-    $roomName = (string)$room;
+    add_cmd_mqtt($vi, 'Health online_players', $healthBase . '/online##_players', true);
+    add_cmd_mqtt($vi, 'Health total_players',  $healthBase . '/total##_players', true);
 
-    // ---------- EQ ----------
-    $eqBase = $NEW_PREFIX . '/' . $roomName . '/eq';
-    add_cmd($VIudp, 'EQ bass '        . $roomName, $eqBase . '/bass', true);
-    add_cmd($VIudp, 'EQ treble '      . $roomName, $eqBase . '/treble', true);
-    add_cmd($VIudp, 'EQ loudness '    . $roomName, $eqBase . '/loudness', true);
-    add_cmd($VIudp, 'EQ balance '     . $roomName, $eqBase . '/balance', true);
-    add_cmd($VIudp, 'EQ subgain '     . $roomName, $eqBase . '/subgain', true);
+    foreach ($rooms as $room) {
+        $roomName = (string)$room;
+        add_cmd_mqtt($vi, 'Health ' . $roomName . ' Online', $healthBase . '/' . $roomName . '##_Online', true);
+    }
 
-    // ---------- STATE ----------
-    $stateBase = $NEW_PREFIX . '/' . $roomName . '/state';
-    add_cmd($VIudp, 'State_code '     . $roomName, $stateBase . '/state##_code', true);
-	
-	// ---------- GROUP ----------
-    $stateBase = $NEW_PREFIX . '/' . $roomName . '/group';
-    add_cmd($VIudp, 'Group_code '     . $roomName, $stateBase . '/role##_code', true);
-	
-	// ---------- TRACK (SOURCE) ----------
-    $stateBase = $NEW_PREFIX . '/' . $roomName . '/track';
-    add_cmd($VIudp, 'Source_code '     . $roomName, $stateBase . '/source', true);
+    // ============================================================
+    // PER ROOM TOPICS
+    // ============================================================
+    foreach ($rooms as $room) {
+        $roomName = (string)$room;
 
-    // ---------- VOLUME ----------
-    $volBase = $NEW_PREFIX . '/' . $roomName . '/volume';
-    add_cmd($VIudp, 'Volume '  . $roomName, $volBase . '/volume', true);
+        // ---------- EQ ----------
+        $eqBase = $prefix . '/' . $roomName . '/eq';
+        add_cmd_mqtt($vi, 'EQ bass '     . $roomName, $eqBase . '/bass', true);
+        add_cmd_mqtt($vi, 'EQ treble '   . $roomName, $eqBase . '/treble', true);
+        add_cmd_mqtt($vi, 'EQ loudness ' . $roomName, $eqBase . '/loudness', true);
+        add_cmd_mqtt($vi, 'EQ balance '  . $roomName, $eqBase . '/balance', true);
+        add_cmd_mqtt($vi, 'EQ subgain '  . $roomName, $eqBase . '/subgain', true);
 
-    // ---------- MUTE ----------
-    $muteBase = $NEW_PREFIX . '/' . $roomName . '/mute';
-    add_cmd($VIudp, 'Mute '           . $roomName, $muteBase . '/mute', true);
+        // ---------- STATE ----------
+        $stateBase = $prefix . '/' . $roomName . '/state';
+        add_cmd_mqtt($vi, 'State_code ' . $roomName, $stateBase . '/state##_code', true);
 
-    // ---------- PLAYMODE ----------
-    $pmBase = $NEW_PREFIX . '/' . $roomName . '/playmode';
-	add_cmd($VIudp, 'Playmode_code '  . $roomName, $pmBase . '/code', true);
+        // ---------- GROUP ----------
+        $groupBase = $prefix . '/' . $roomName . '/group';
+        add_cmd_mqtt($vi, 'Group_code ' . $roomName, $groupBase . '/role##_code', true);
 
-    // ---------- POSITION ----------
-    $posBase = $NEW_PREFIX . '/' . $roomName . '/position';
-    add_cmd($VIudp, 'Pos track_no '       . $roomName, $posBase . '/track##_no', true);
-    add_cmd($VIudp, 'Pos track_count '    . $roomName, $posBase . '/track##_count', true);
+        // ---------- TRACK / SOURCE ----------
+        $trackBase = $prefix . '/' . $roomName . '/track';
+        add_cmd_mqtt($vi, 'Source_code ' . $roomName, $trackBase . '/source', true);
+
+        // ---------- VOLUME ----------
+        $volBase = $prefix . '/' . $roomName . '/volume';
+        add_cmd_mqtt($vi, 'Volume ' . $roomName, $volBase . '/volume', true);
+
+        // ---------- MUTE ----------
+        $muteBase = $prefix . '/' . $roomName . '/mute';
+        add_cmd_mqtt($vi, 'Mute ' . $roomName, $muteBase . '/mute', true);
+
+        // ---------- PLAYMODE ----------
+        $pmBase = $prefix . '/' . $roomName . '/playmode';
+        add_cmd_mqtt($vi, 'Playmode_code ' . $roomName, $pmBase . '/code', true);
+
+        // ---------- POSITION ----------
+        $posBase = $prefix . '/' . $roomName . '/position';
+        add_cmd_mqtt($vi, 'Pos track_no '    . $roomName, $posBase . '/track##_no', true);
+        add_cmd_mqtt($vi, 'Pos track_count ' . $roomName, $posBase . '/track##_count', true);
+    }
 }
 
-// ------------------------ Write XML ------------------------
-$xml = $VIudp->output();
+/**
+ * Build direct UDP template commands.
+ *
+ * Direct UDP naming is flattened:
+ *   s4lox: <room>_<field>@<value>
+ *
+ * Observed examples:
+ *   s4lox: kueche_volume@3
+ *   s4lox: kueche_mute@0
+ *   s4lox: kueche_playmode_code@99
+ */
+function build_direct_udp_template_commands(VirtualInUdp $vi, array $rooms): void
+{
+    // ============================================================
+    // OPTIONAL GLOBAL HEALTH
+    // ============================================================
+    add_cmd_udp($vi, 'Health online_players', 'online_players', true);
+    add_cmd_udp($vi, 'Health total_players', 'total_players', true);
 
-// Add BOM (same as your existing scripts)
-$xml = chr(239) . chr(187) . chr(191) . $xml;
+    foreach ($rooms as $room) {
+        $roomName = (string)$room;
+        $roomKey  = normalize_room_key($roomName);
 
-$ok = @file_put_contents($xmlOutFile, $xml);
-if ($ok === false) {
-    LOGERR("system/ms_inbound.php: Failed writing template: $xmlOutFile");
-    exit(1);
+        add_cmd_udp($vi, 'Health ' . $roomName . ' Online', $roomKey . '_Online', true);
+
+        // ---------- EQ ----------
+        add_cmd_udp($vi, 'EQ bass '     . $roomName, $roomKey . '_bass', true);
+        add_cmd_udp($vi, 'EQ treble '   . $roomName, $roomKey . '_treble', true);
+        add_cmd_udp($vi, 'EQ loudness ' . $roomName, $roomKey . '_loudness', true);
+        add_cmd_udp($vi, 'EQ balance '  . $roomName, $roomKey . '_balance', true);
+        add_cmd_udp($vi, 'EQ subgain '  . $roomName, $roomKey . '_subgain', true);
+
+        // ---------- STATE ----------
+        add_cmd_udp($vi, 'State_code ' . $roomName, $roomKey . '_state_code', true);
+
+        // ---------- GROUP ----------
+        add_cmd_udp($vi, 'Group_code ' . $roomName, $roomKey . '_role_code', true);
+
+        // ---------- TRACK / SOURCE ----------
+        add_cmd_udp($vi, 'Source_code ' . $roomName, $roomKey . '_source', true);
+
+        // ---------- VOLUME ----------
+        add_cmd_udp($vi, 'Volume ' . $roomName, $roomKey . '_volume', true);
+
+        // ---------- MUTE ----------
+        add_cmd_udp($vi, 'Mute ' . $roomName, $roomKey . '_mute', true);
+
+        // ---------- PLAYMODE ----------
+        add_cmd_udp($vi, 'Playmode_code ' . $roomName, $roomKey . '_playmode_code', true);
+
+        // ---------- POSITION ----------
+        add_cmd_udp($vi, 'Pos track_no '    . $roomName, $roomKey . '_track_no', true);
+        add_cmd_udp($vi, 'Pos track_count ' . $roomName, $roomKey . '_track_count', true);
+
+        // ---------- OPTIONAL PLAYMODE FLAGS ----------
+        add_cmd_udp($vi, 'Shuffle '    . $roomName, $roomKey . '_shuffle', true);
+        add_cmd_udp($vi, 'Repeat '     . $roomName, $roomKey . '_repeat', true);
+        add_cmd_udp($vi, 'Repeat one ' . $roomName, $roomKey . '_repeat_one', true);
+    }
 }
 
-LOGOK("system/ms_inbound.php: VI_MQTT_UDP_Sonos.xml created at '$xmlOutFile' (UDP port: $udpPort)");
-exit(0);
+/**
+ * Normalize room names for direct UDP flat keys.
+ *
+ * Example:
+ *   "Küche" -> "kueche"
+ *   "Living Room" -> "living_room"
+ */
+function normalize_room_key(string $room): string
+{
+    $map = [
+        'ä' => 'ae', 'Ä' => 'Ae',
+        'ö' => 'oe', 'Ö' => 'Oe',
+        'ü' => 'ue', 'Ü' => 'Ue',
+        'ß' => 'ss',
+    ];
+
+    $room = strtr($room, $map);
+    $room = strtolower($room);
+    $room = preg_replace('/[^a-z0-9]+/', '_', $room);
+    $room = trim((string)$room, '_');
+
+    return $room;
+}
+
+/**
+ * Validate a UDP port and abort on invalid values.
+ */
+function validate_port(int $port, $rawValue, string $label): void
+{
+    if ($port <= 0 || $port > 65535) {
+        $value = is_scalar($rawValue) ? (string)$rawValue : 'non-scalar';
+        LOGERR("system/ms_inbound.php: Invalid UDP port in $label. Value=$value");
+        exit(1);
+    }
+}
+
+/**
+ * Write XML output with UTF-8 BOM.
+ */
+function write_xml_file(string $filename, string $xml, string $label): void
+{
+    $xml = chr(239) . chr(187) . chr(191) . $xml;
+
+    $ok = @file_put_contents($filename, $xml);
+    if ($ok === false) {
+        LOGERR("system/ms_inbound.php: Failed writing template $label to '$filename'");
+        exit(1);
+    }
+
+    LOGOK("system/ms_inbound.php: $label created at '$filename'");
+}
 
 function shutdown(): void
 {

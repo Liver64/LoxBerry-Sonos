@@ -8,7 +8,7 @@ function c2s()
 	global $debug;
 	
 	#********************** NEW get text variables*********** ***********
-	$TL = load_t2s_text();
+	$TL = LOAD_T2S_TEXT();
 			
 	$Stunden = intval(strftime("%H"));
 	$Minuten = intval(strftime("%M"));
