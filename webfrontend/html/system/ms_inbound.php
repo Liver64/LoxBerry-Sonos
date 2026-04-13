@@ -86,7 +86,7 @@ if ($hasDirectUdp) {
 }
 
 // ------------------------ Read MQTT gateway UDP port ------------------------
-$mqttGwFile = "/opt/loxberry/config/system/mqttgateway.json";
+$mqttGwFile = "REPLACELBHOMEDIR/config/system/mqttgateway.json";
 if (!is_file($mqttGwFile)) {
     LOGERR("system/ms_inbound.php: mqttgateway.json not found: $mqttGwFile (cannot determine MQTT UDP port).");
     exit(1);

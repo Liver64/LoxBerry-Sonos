@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 /**
  * Sonos Event Listener (raum-zentriert, vollständig)
- * - liest Räume/Player aus /opt/loxberry/config/plugins/sonos4lox/s4lox_config.json
+ * - liest Räume/Player aus REPLACELBHOMEDIR/config/plugins/sonos4lox/s4lox_config.json
  * - SUBSCRIBE: AVTransport, RenderingControl, ZoneGroupTopology
  * - NOTIFY -> MQTT je Raum:
  *     state   (retain, QoS1)
@@ -60,8 +60,8 @@ declare(strict_types=1);
  * - Members verwenden ihre individuelle Volume
  */
 
-require_once "/opt/loxberry/libs/phplib/loxberry_system.php";
-require_once "/opt/loxberry/libs/phplib/loxberry_io.php";
+require_once "REPLACELBHOMEDIR/libs/phplib/loxberry_system.php";
+require_once "REPLACELBHOMEDIR/libs/phplib/loxberry_io.php";
 require_once __DIR__ . '/../system/SonosMqttClient.php';
 require_once "$lbphtmldir/system/sonosAccess.php";
 
@@ -69,7 +69,7 @@ date_default_timezone_set('Europe/Berlin');
 pcntl_async_signals(true);
 
 // --------------------------------- Pfade ---------------------------------
-const S4L_CFG     = "/opt/loxberry/config/plugins/sonos4lox/s4lox_config.json";
+const S4L_CFG     = "REPLACELBHOMEDIR/config/plugins/sonos4lox/s4lox_config.json";
 $ramLogDir        = '/run/shm/sonos4lox';
 $LogFile          = 'sonos_events.log';
 $loglevel 	  	  = LBSystem::pluginloglevel();
@@ -160,7 +160,7 @@ function logln(string $lvl, string $msg): void {
 
 // --------------------------------- Helpers ---------------------------------
 
-require_once "/opt/loxberry/webfrontend/html/plugins/sonos4lox/Helper.php";
+require_once "REPLACELBHOMEDIR/webfrontend/html/plugins/sonos4lox/Helper.php";
 
 /**
  * Decide if we should publish a nexttrack MQTT event.
@@ -512,7 +512,7 @@ function get_miniserver_target_from_general_cached(string $msId): ?array
         'general' => null,
     ];
 
-    $path  = '/opt/loxberry/config/system/general.json';
+    $path  = 'REPLACELBHOMEDIR/config/system/general.json';
     $mtime = @filemtime($path) ?: 0;
 
     // Reload only if changed (or first time)
@@ -2262,7 +2262,7 @@ $useUdp          = ($LoxoneUDPPort > 0);
 $LoxoneUDPPrefix = 's4lox';
 
 if ($useUdp) {
-    require_once "/opt/loxberry/webfrontend/html/plugins/sonos4lox/system/io-modul.php";
+    require_once "REPLACELBHOMEDIR/webfrontend/html/plugins/sonos4lox/system/io-modul.php";
 
     $mem_sendall_sec = 300;
     $mem_sendall     = 0;
