@@ -22,19 +22,17 @@ The library contains rigt now 9 diff. Text-to-speech Providers:
 * MS Azure (API key required)
 * AWS Polly (API key required)
 * Google Cloud (API key required)
-* Google Translate 
-* Pico2wave
+* Piper (Offline engine)
 * VoiceRSS (API key required)
 * ResponsiveVoice
 * ElevenLabs (API key required)
-* MAC OSX 
 
 fitting most likely all languages around the world.
 For configuration of your Sonos Plugin there is no programming experience necessary, just entering some data and clicking through.
 
 Besides the standard features to Control your Sonos System the Plugin deliver quit a huge amount of additional services:
 
-* 9 different Text-to-Speech Providers
+* 7 different Text-to-Speech Providers
 * A TV Monitor to set some time depending TV Sound Audio defaults
 * Outbound Data connection to deliver diff. Information for each Player using MQTT Protocol
 * Your Own Radio Favorites as endless function (ONE-Click)
