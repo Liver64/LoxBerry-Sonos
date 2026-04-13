@@ -12,7 +12,7 @@
 	require_once("loxberry_system.php");
 	require_once("loxberry_log.php");
 	require_once($lbphtmldir."/system/sonosAccess.php");
-	require_once($lbphtmldir."/Info.php");
+	require_once($lbphtmldir."/Speaker.php");
 
 	if (isset($_POST['new_id']) ? $ajax = "true" : $ajax = "false")    
 
