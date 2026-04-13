@@ -15,7 +15,7 @@ The GUI of the Sonos Plugin, as well as Loxberry, is multilingual and could easi
 you want by using a standard widget of Loxberry. 
 
 ![Plugin logo](webfrontend/html/images/SR1a.png)
-![Plugin logo](webfrontend/html/images/SR1a.png)
+![Plugin logo](webfrontend/html/images/SR2.png)
 ![Plugin logo](webfrontend/html/images/SR3.png)
 
 The library contains rigt now 9 diff. Text-to-speech Providers:
