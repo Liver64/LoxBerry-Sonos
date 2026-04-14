@@ -527,5 +527,12 @@
 			[BUGFIX] TV Monitor optimiert
  6.1.5		[BUGFIX] follow me function gefixed
 			[BUGFIX] Folgefunktionen Cronjob gefixed
-			[BUGFIX] Added SubLevel Feld beim TV Monitor
+			[BUGFIX] Surround Level Feld beim TV Monitor hinzugefügt
+			[IMPROVEMENT] UI etwas gepimpt und Validierung überarbeitet/optimiert
+			[IMPROVEMENT] Bei der Datenübertragung zum MS das UDP Protokoll (ohne Umweg über Loxberry MQTT) hinzugefügt
+			[IMPROVEMENT] Die XML Templates für die Datenübertragung überarbeitet und zusätzliche Info bereit gestellt
+			[IMPROVEMENT] Der TV Monitor untertützt mehrere Soundbars
+			[IMPROVEMENT] verschiedene Performance Optimierungen
+			[IMPROVEMENT] Bei der Engine Piper die Installation zusätzlicher Sprachen/Voices integriert
+			
 			
