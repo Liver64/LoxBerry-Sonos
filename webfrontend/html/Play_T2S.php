@@ -14,6 +14,11 @@ if (!defined('T2S_BATCHFILE')) {
     // Batch-Datei im RAM (/dev/shm) pro Plugin
     define('T2S_BATCHFILE', "/dev/shm/".LBPPLUGINDIR."/t2s_batch.txt");
 }
+if (!function_exists('check_zone_time')) {
+    function check_zone_time(string $zone): bool {
+        return defined('SONOSZONE') && isset(SONOSZONE[$zone]);
+    }
+}
 
 
 /**
@@ -25,9 +30,16 @@ if (!defined('T2S_BATCHFILE')) {
 
 function say() {
 	
-	global $sonos, $tts_stat, $profile, $master, $lbpconfigdir, $config, $vol_config, $group, $textstring, $result;
+	global $sonos, $tts_stat, $sonoszone, $profile, $master, $lbpconfigdir, $config, $vol_config, $group, $textstring, $result;
 	
 	presence_detection();
+	#print_r($sonoszone);
+	
+	if (!isset($sonoszone[$master])) {
+        LOGGING("play_t2s.php: Zone '$master' is currently not available. Maybe '$master' ist offline or Time restrictions are valid", 5);
+        exit();
+    }
+	
 	if ((empty($config['TTS']['t2s_engine'])) or (empty($config['TTS']['messageLang'])))  {
 		LOGGING("play_t2s.php: There is no T2S engine/language selected in Plugin config. Please select before using T2S functionality.", 3);
 		exit();
@@ -1433,27 +1445,20 @@ function audioclip_can_handle_group()
 
     // Fähigkeiten prüfen: jeder Player muss AudioClip können
     foreach ($zones as $z) {
-
-        if (!isset($sonoszone[$z])) {
-            LOGWARN("play_t2s.php: Audioclip: Zone '".$z."' not found in sonoszone[] – forcing classic T2S path.");
-            return array(false, $zones);
-        }
-
-        if (!zone_supports_audioclip($z)) {
-
-            // Spezialfall: S1 → gewünschte Logzeile
-            if (isset($sonoszone[$z][9]) && $sonoszone[$z][9] == "1") {
-                LOGINF("play_t2s.php: Audioclip: Zone '".$z."' is S1 → forcing classic T2S path.");
-            } else {
-                LOGINF("play_t2s.php: Audioclip: Zone '".$z."' does not support Audio Clip → forcing classic T2S path.");
-            }
-
-            return array(false, $zones);
-        }
-    }
-
-    return array(true, $zones);
-}
+		if (!isset($sonoszone[$z])) {
+			LOGGING("play_t2s.php: Zone '$z' is currently not available. Maybe '$z' ist offline or Time restrictions are valid", 4);
+			continue; // ← nicht return false, sondern überspringen
+		}
+		if (!zone_supports_audioclip($z)) {
+			LOGINF("play_t2s.php: Audioclip: Zone '$z' kein AudioClip → classic T2S path.");
+			return array(false, $zones);
+		}
+	}
+	// Duplikate/exkludierte Zonen sauber rausnehmen
+	$zones = array_values(array_filter($zones, fn($z) => isset($sonoszone[$z])));
+	if (empty($zones)) return array(false, array());
+	return array(true, $zones);
+	}
 
 
 function sendgroupmessage() {	
@@ -1554,11 +1559,13 @@ function sendgroupmessage() {
 		// Profil-basierte Gruppierung: nur Zonen mit PlayerStatus-File
 		foreach ($member as $zone) {
 			$file = $folfilePlOn . $zone . ".txt";
-
 			if (is_file($file)) {
-				#LOGDEB("play_t2s.php: Player status file '$file' found for zone '$zone'.");
+				if (!isset($sonoszone[$zone])) { // ← NEU
+					LOGGING("play_t2s.php: Zone '$master' is currently not available. Maybe '$master' ist offline or Time restrictions are valid", 5);
+					continue;
+				}
 
-				// Master selbst nicht erneut umbinden
+				// Master selbst nicht erneut einbinden
 				if ($zone != $master) {
 					try {
 						// Zone ggf. erst aus bestehender Gruppe lösen
@@ -1822,6 +1829,7 @@ function send_tts_source($tts_stat)  {
 	
 	require_once "$lbphtmldir/system/io-modul.php";
 	require_once "$lbphtmldir/bin/phpmqtt/phpMQTT.php";
+	require_once "$lbphtmldir/bin/communication_ms.php";
 
 	$tmp_tts = "/run/shm/s4lox_tmp_tts";
 	#var_dump($tts_stat);
@@ -1840,7 +1848,7 @@ function send_tts_source($tts_stat)  {
 		return;
 	}
 	
-	if(is_enabled($config['LOXONE']['LoxDatenMQTT'])) {
+	if (empty($config['LOXONE']['UDP'])) {
 		// Get the MQTT Gateway connection details from LoxBerry
 		$creds     = mqtt_connectiondetails();
 		// MQTT requires a unique client id
@@ -1878,11 +1886,14 @@ function send_tts_source($tts_stat)  {
 		try {
 			$data['t2s_'.$value] = $tts_stat;
 			if ($mqttstat == "1")   {
-				$err = $mqtt->publish('Sonos4lox/t2s/'.$value, $data['t2s_'.$value], 0, 1);
+				$err  = $mqtt->publish('Sonos4lox/t2s/'.$value, $data['t2s_'.$value], 0, 1);
 				$err1 = $mqtt->publish('s4lox/t2s/'.$value, $data['t2s_'.$value], 0, 1);
-				#LOGINF("play_t2s.php: MQTT value has been send");
 			} else {			
 				$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/t2s_$value/$tts_stat");
+			}
+			// UDP senden, wenn Port konfiguriert
+			if (!empty($config['LOXONE']['UDP'])) {
+				sendUDP($tts_stat, 't2s_'.$value);
 			}
 		} catch (Exception $e) {
 			LOGWARN("play_t2s.php: Sending T2S notification for Zone '".$value."' failed, we skip here...");	

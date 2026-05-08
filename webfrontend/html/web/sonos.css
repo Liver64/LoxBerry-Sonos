@@ -1105,3 +1105,34 @@ table.sb_table_compact .sb_select_wrap .ui-select .ui-btn {
 #ms-button .ui-btn-text {
     text-align: center !important;
 }
+
+/* =========================================================
+   Sonos release dropdown - newer version highlight
+   ========================================================= */
+
+#sonos_release.sonos-release-newer {
+    color: #c62828 !important;
+    font-weight: 700 !important;
+    -webkit-text-fill-color: #c62828 !important;
+}
+
+/* Keep dropdown list entries in normal color */
+#sonos_release option,
+#sonos_release.sonos-release-newer option {
+    color: #000 !important;
+    font-weight: 400 !important;
+    -webkit-text-fill-color: #000 !important;
+}
+
+/* Optional fallback if jQuery Mobile creates a button wrapper */
+#sonos_release-button.sonos-release-newer,
+#sonos_release-button.sonos-release-newer span,
+#sonos_release-button.sonos-release-newer .ui-btn-text,
+.ui-select.sonos-release-newer .ui-btn,
+.ui-select.sonos-release-newer .ui-btn span,
+.ui-select.sonos-release-newer .ui-btn .ui-btn-text {
+    color: #c62828 !important;
+    font-weight: 700 !important;
+    text-shadow: none !important;
+    -webkit-text-fill-color: #c62828 !important;
+}

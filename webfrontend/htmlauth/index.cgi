@@ -209,9 +209,9 @@ if (!defined $cfg->{VARIOUS}->{cron}) {
 }
 
 # checkonline
-if (!defined $cfg->{SYSTEM}->{checkonline}) {
-    $cfg->{SYSTEM}->{checkonline} = 3;
-    $defaultSave = "true";
+if (!defined $cfg->{SYSTEM}->{checkonline} || $cfg->{SYSTEM}->{checkonline} ne "true") {
+	$cfg->{SYSTEM}->{checkonline} = "true";
+	$defaultSave = "true";
 }
 
 # maxVolume
@@ -399,18 +399,199 @@ if ($q->{action}) {
         exit;
     }
 
-    if ($AJAX_ACTION eq "restart_listener") {
-        # No INFO logging for actions; log only on error via $error_message/END handler
-        my $rc = system('sudo', 'systemctl', 'restart', 'sonos_event_listener');
-		get_sonos_health();
-        if ($rc != 0) {
-            $error_message = "AJAX restart_listener failed (rc=$rc)";
-            print JSON::encode_json({ success => JSON::false, error => $error_message });
-            exit;
-        }
-        print JSON::encode_json({ success => JSON::true });
+    if ($AJAX_ACTION eq "get_sonos_health_json") {
+        my $health = get_sonos_health();
+
+        print JSON::encode_json({
+            timestamp      => 0 + ($health->{timestamp}       // 0),
+            status_class   =>      ($health->{status_class}   // 'error'),
+            status         =>      ($health->{status}         // ''),
+            formatted_time =>      ($health->{formatted_time} // ''),
+            age_sec        => 0 + ($health->{age_sec}         // 0),
+            players_online => 0 + ($health->{players_online}  // 0),
+            players_total  => 0 + ($health->{players_total}   // 0),
+        });
         exit;
     }
+
+    if ($AJAX_ACTION eq "restart_listener") {
+		my $healthfile = "/dev/shm/$lbpplugindir/health.json";
+
+		unlink($healthfile) if -e $healthfile;
+
+		my $rc = system('sudo', '-n', '/bin/systemctl', 'restart', 'sonos_event_listener.service');
+		$rc = ($rc >> 8);
+
+		if ($rc != 0) {
+			$error_message = "AJAX restart_listener failed (rc=$rc)";
+			print JSON::encode_json({ success => JSON::false, error => $error_message });
+			exit;
+		}
+
+		print JSON::encode_json({ success => JSON::true });
+		exit;
+	}
+
+
+	if ($AJAX_ACTION eq "getsonosversions") {
+
+		my $plugindb_file     = "REPLACELBHOMEDIR/data/system/plugindatabase.json";
+		my $release_cfg_url   = "https://raw.githubusercontent.com/Liver64/LoxBerry-Sonos/master/webfrontend/html/release/release.cfg";
+		my $releases_atom_url = "https://github.com/Liver64/LoxBerry-Sonos/releases.atom";
+
+		my $installed     = '';
+		my $latest_stable = '';
+		$error_message 	  = '';
+		my $error 		  = '';
+
+		# ----------------------------------------------------------
+		# 1) Installed version from local LoxBerry plugin database
+		# ----------------------------------------------------------
+		my $db_raw = LoxBerry::System::read_file($plugindb_file) // '';
+		if ($db_raw) {
+			my $db = eval { decode_json($db_raw) };
+
+			if (ref($db) eq 'HASH' && ref($db->{plugins}) eq 'HASH') {
+				foreach my $plugin_id (keys %{ $db->{plugins} }) {
+					my $plugin = $db->{plugins}{$plugin_id};
+					next unless ref($plugin) eq 'HASH';
+
+					my $folder = $plugin->{folder} // '';
+					my $name   = $plugin->{name}   // '';
+
+					if ($folder eq 'sonos4lox' || lc($name) eq 'sonos') {
+						$installed = _normalize_version($plugin->{version} // '');
+						last;
+					}
+				}
+			}
+		}
+
+		# ----------------------------------------------------------
+		# 2) Latest stable from release.cfg
+		# ----------------------------------------------------------
+		my $cfg_cmd = qq{curl -k -sfL --max-time 15 "$release_cfg_url" 2>/dev/null};
+		my $cfg_raw = `$cfg_cmd`;
+		my $cfg_rc  = $? >> 8;
+
+		if ($cfg_raw) {
+			my ($cfg_ver) = $cfg_raw =~ /^VERSION=(.+)$/m;
+			$latest_stable = _normalize_version($cfg_ver // '');
+		} else {
+			LOGWARN "Could not fetch release.cfg from $release_cfg_url (rc=$cfg_rc)";
+			# $error_message = "Could not fetch latest stable release.cfg";
+		}
+
+		# ----------------------------------------------------------
+		# 3) Full release list from GitHub releases.atom
+		# ----------------------------------------------------------
+		my $atom_cmd = qq{curl -k -sfL --max-time 20 "$releases_atom_url" 2>/dev/null};
+		my $atom_raw = `$atom_cmd`;
+		my $atom_rc  = $? >> 8;
+
+		my @releases;
+		my %seen;
+
+		if ($atom_raw) {
+			while (
+				$atom_raw =~ m{
+					<entry\b[^>]*>.*?
+					<title[^>]*>(.*?)</title>.*?
+					<link[^>]+href="([^"]+/releases/tag/([^"/]+))"[^>]*/?>.*?
+					</entry>
+				}sgx
+			) {
+				my $title    = $1 // '';
+				my $html_url = $2 // '';
+				my $raw_tag  = $3 // '';
+
+				my $version = _normalize_version($raw_tag);
+				next unless $version;
+				next if $seen{$version}++;
+
+				$title =~ s/&amp;/&/g;
+				$title =~ s/&lt;/</g;
+				$title =~ s/&gt;/>/g;
+				$title =~ s/&quot;/"/g;
+				$title =~ s/&#39;/'/g;
+
+				push @releases, {
+					version      => $version,
+					raw_tag      => $raw_tag,
+					name         => $title,
+					html_url     => $html_url,
+					published_at => '',
+					prerelease   => 0,
+				};
+			}
+		} else {
+			LOGWARN "Could not fetch Sonos releases atom feed from $releases_atom_url (rc=$atom_rc)";
+		}
+
+		if ($atom_raw && !@releases) {
+			LOGWARN "Sonos releases atom feed was fetched, but no release entries could be parsed";
+		}
+
+		# ----------------------------------------------------------
+		# 4) Complete release list
+		# ----------------------------------------------------------
+
+		# If release.cfg contains a version that is missing in releases.atom,
+		# add it explicitly so the dropdown always contains the latest stable.
+		if ($latest_stable && !$seen{$latest_stable}) {
+			$seen{$latest_stable} = 1;
+
+			push @releases, {
+				version      => $latest_stable,
+				raw_tag      => "v$latest_stable",
+				name         => $latest_stable,
+				html_url     => "https://github.com/Liver64/LoxBerry-Sonos/releases/tag/v$latest_stable",
+				published_at => '',
+				prerelease   => 0,
+			};
+
+			LOGINF "Latest stable version $latest_stable was added from release.cfg because it was missing in releases.atom";
+		}
+
+		# Keep installed version visible even if it is no longer part of the fetched list
+		if ($installed && !$seen{$installed}) {
+			$seen{$installed} = 1;
+
+			push @releases, {
+				version      => $installed,
+				raw_tag      => "v$installed",
+				name         => $installed,
+				html_url     => '',
+				published_at => '',
+				prerelease   => 0,
+			};
+		}
+
+		if (!@releases) {
+			$error = "No release information available";
+		}
+
+		@releases = sort { _sonos_version_cmp($a->{version}, $b->{version}) } @releases;
+
+		foreach my $rel (@releases) {
+			my $rel_version = _normalize_version($rel->{version});
+
+			$rel->{selected} = (
+				$installed
+				&& $rel_version eq _normalize_version($installed)
+			) ? 1 : 0;
+
+			$rel->{is_newer} = _sonos_version_is_newer($rel_version, $installed) ? 1 : 0;
+		}
+
+		print JSON::encode_json({
+			installed     => $installed,
+			latest_stable => $latest_stable,
+			releases      => \@releases,
+			error         => $error,
+		});
+		exit;
+	}
 
     # Unknown action -> error (logged by END handler)
     $error_message = "Unknown AJAX action: $AJAX_ACTION";
@@ -717,6 +898,7 @@ sub form
 	my @all_rooms = sort keys %$config;
 	
 	my $has_any_soundbar = 0;
+	my $tvmon_master_style;	
 
 	foreach my $cfg_key (keys %{$config}) {
 		next unless ref $config->{$cfg_key} eq 'ARRAY';
@@ -728,113 +910,116 @@ sub form
 		}
 	}
 
-my $tvmon_master_style = $has_any_soundbar ? "" : "display:none;";
+	foreach my $key (sort keys %{$config}) {
 
-    foreach my $key (sort keys %$config) {
+		my $zone = $config->{$key};
+		next unless ref($zone) eq 'ARRAY';
 
-        $countplayers++;
-        my $room = $key;
+		$countplayers++;
+		my $room       = $key;
+		my $filename   = $lbphtmldir . '/images/icon-' . ($zone->[7] // '') . '.png';
+		my $statusfile = $lbpdatadir . '/PlayerStatus/s4lox_on_' . $room . '.txt';
 
-        my $filename   = $lbphtmldir . '/images/icon-' . $config->{$key}->[7] . '.png';
-        my $statusfile = $lbpdatadir . '/PlayerStatus/s4lox_on_' . $room . '.txt';
-
-        $rowssonosplayer  .= "<tr>";
-        $rowssonosplayer  .= "<td style='height: 25px; width: 20px; text-align:center;'>"
+		$rowssonosplayer  .= "<tr>";
+		$rowssonosplayer  .= "<td style='height: 25px; width: 20px; text-align:center;'>"
 						  . "<input type='checkbox' name='chkplayers$countplayers' id='chkplayers$countplayers' style='display:none' />"
 						  . "<a href='#' class='jsDelZone' data-idx='$countplayers' data-room='$room' title='Delete'>"
 						  . "<img class='ico_delete' src='/plugins/$lbpplugindir/images/recycle-bin.png' border='0' width='20' height='20'>"
 						  . "</a>"
 						  . "</td>\n";
 
-        if (-e $statusfile) {
-            $rowssonosplayer .= "<td style='height: 28px; width: 16%;'><input type='text' class='pd-price' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$room' style='width:100%; background-color:#6dac20; color:white'></td>\n";
-        } else {
-            $rowssonosplayer .= "<td style='height: 28px; width: 16%;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$room' style='width: 100%; background-color: #e6e6e6;'></td>\n";
-        }
+		if (-e $statusfile) {
+			$rowssonosplayer .= "<td style='height: 28px; width: 16%;'><input type='text' class='pd-price' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$room' style='width:100%; background-color:#6dac20; color:white'></td>\n";
+		} else {
+			$rowssonosplayer .= "<td style='height: 28px; width: 16%;'><input type='text' id='zone$countplayers' name='zone$countplayers' size='40' readonly='true' value='$room' style='width: 100%; background-color: #e6e6e6;'></td>\n";
+		}
 
-        $rowssonosplayer .= "<td style='height: 25px; width: 6px;'><input type='checkbox' class='chk-checked' name='mainchk$countplayers' id='mainchk$countplayers' value='$config->{$key}->[6]' align='center'></td>\n";
+		$rowssonosplayer .= "<td style='height: 25px; width: 6px;'><input type='checkbox' class='chk-checked' name='mainchk$countplayers' id='mainchk$countplayers' value='" . ($zone->[6] // '') . "' align='center'></td>\n";
 
-        # Highlight old S1 devices red
-        if (($config->{$key}[9]) eq "1") {
-            $rowssonosplayer .= "<td style='height: 28px; width: 15%;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='$config->{$key}->[2]' style='width: 100%; background-color: red; color:white'></td>\n";
-            $template->param("SWGEN", "1");
-        } else {
-            $rowssonosplayer .= "<td style='height: 28px; width: 15%;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='$config->{$key}->[2]' style='width: 100%; background-color: #e6e6e6;'></td>\n";
-        }
+		# Highlight old S1 devices red
+		if (($zone->[9] // '') eq "1") {
+			$rowssonosplayer .= "<td style='height: 28px; width: 15%;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='" . ($zone->[2] // '') . "' style='width: 100%; background-color: red; color:white'></td>\n";
+			$template->param("SWGEN", "1");
+		} else {
+			$rowssonosplayer .= "<td style='height: 28px; width: 15%;'><input type='text' id='model$countplayers' name='model$countplayers' size='30' readonly='true' value='" . ($zone->[2] // '') . "' style='width: 100%; background-color: #e6e6e6;'></td>\n";
+		}
 
-        # Column: Sonos Player Logo
-        if (-e $filename) {
-            $rowssonosplayer .= "<td style='height: 28px; width: 2%;'><img src='/plugins/$lbpplugindir/images/icon-$config->{$key}->[7].png' border='0' width='50' height='50' align='middle'/></td>\n";
-        } else {
-            $rowssonosplayer .= "<td style='height: 28px; width: 2%;'><img src='/plugins/$lbpplugindir/images/sonos_logo_sm.png' border='0' width='50' height='50' align='middle'/></td>\n";
-        }
+		# Column: Sonos Player Logo
+		if (-e $filename) {
+			$rowssonosplayer .= "<td style='height: 28px; width: 2%;'><img src='/plugins/$lbpplugindir/images/icon-" . ($zone->[7] // '') . ".png' border='0' width='50' height='50' align='middle'/></td>\n";
+		} else {
+			$rowssonosplayer .= "<td style='height: 28px; width: 2%;'><img src='/plugins/$lbpplugindir/images/sonos_logo_sm.png' border='0' width='50' height='50' align='middle'/></td>\n";
+		}
 
-        $rowssonosplayer .= "<td style='height: 28px; width: 17%;'><input type='text' id='ip$countplayers' name='ip$countplayers' size='30' value='$config->{$key}->[0]' style='width: 100%; background-color: #e6e6e6;'></td>\n";
+		$rowssonosplayer .= "<td style='height: 28px; width: 17%;'><input type='text' id='ip$countplayers' name='ip$countplayers' size='30' value='" . ($zone->[0] // '') . "' style='width: 100%; background-color: #e6e6e6;'></td>\n";
 
-        # Audioclip capability indicator (green/red icon)
-        my $audioclip_ok = ($config->{$key}[11]) ? 1 : 0;
+		# Audioclip capability indicator (green/red icon)
+		my $audioclip_ok = ($zone->[11]) ? 1 : 0;
 
-        if ($audioclip_ok) {
-            $rowssonosplayer .= "<td style='height: 30px; width: 10px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/green.png' border='0' width='26' height='28' align='center'/></div></td>\n";
-            $audioclip_ok_count++;
-        } else {
-            $rowssonosplayer .= "<td style='height: 30px; width: 10px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/red.png' border='0' width='26' height='28' align='center'/></div></td>\n";
-        }
+		if ($audioclip_ok) {
+			$rowssonosplayer .= "<td style='height: 30px; width: 10px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/green.png' border='0' width='26' height='28' align='center'/></div></td>\n";
+			$audioclip_ok_count++;
+		} else {
+			$rowssonosplayer .= "<td style='height: 30px; width: 10px; align: 'middle'><div style='text-align: center;'><img src='/plugins/$lbpplugindir/images/red.png' border='0' width='26' height='28' align='center'/></div></td>\n";
+		}
 
-        $rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='$config->{$key}->[3]'></td>\n";
-        $rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='$config->{$key}->[4]'></td>\n";
-        $rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='$config->{$key}->[5]'></td>\n";
+		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='t2svol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='t2svol$countplayers' value='" . ($zone->[3] // '') . "'></td>\n";
+		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='sonosvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='sonosvol$countplayers' value='" . ($zone->[4] // '') . "'></td>\n";
+		$rowssonosplayer .= "<td style='width: 10%; height: 28px;'><input type='text' id='maxvol$countplayers' size='100' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' name='maxvol$countplayers' value='" . ($zone->[5] // '') . "'></td>\n";
 
-        # Soundbar count
-        if (($config->{$key}[13]) eq "SB") {
-            $countsoundbars++;
-            $rowssonosplayer .= "<input type='hidden' id='sb$countplayers' name='sb$countplayers' value='$config->{$key}->[13]'>\n";
-        } else {
-            $rowssonosplayer .= "<input type='hidden' id='sb$countplayers' name='sb$countplayers' value='NOSB'>\n";
-        }
+		# Soundbar count
+		if (($zone->[13] // '') eq "SB") {
+			$countsoundbars++;
+			$rowssonosplayer .= "<input type='hidden' id='sb$countplayers' name='sb$countplayers' value='" . ($zone->[13] // '') . "'>\n";
+		} else {
+			$rowssonosplayer .= "<input type='hidden' id='sb$countplayers' name='sb$countplayers' value='NOSB'>\n";
+		}
 
-        # Time restrictions
-        if ($config->{$key}->[15] ne "" || $config->{$key}->[16] ne "") {
-            if ($currtime ge $config->{$key}->[15] && $currtime lt $config->{$key}->[16]) {
-                $rowssonosplayer .= "<td style='width: 9%; height: 28px;'><input id='pl-start-time$countplayers' type='time' name='pl-start-time$countplayers' value='$config->{$key}->[15]'></td>\n";
-                $rowssonosplayer .= "<td style='width: 9%; height: 28px;'><input id='pl-end-time$countplayers' type='time' name='pl-end-time$countplayers' value='$config->{$key}->[16]'></td></tr>\n";
-            } else {
-                $rowssonosplayer .= "<td style='width: 9%; height: 28px;'><input id='pl-start-time$countplayers' type='time' name='pl-start-time$countplayers' value='$config->{$key}->[15]' style='width:100%; background-color:orange; color:black'></td>\n";
-                $rowssonosplayer .= "<td style='width: 9%; height: 28px;'><input id='pl-end-time$countplayers' type='time' name='pl-end-time$countplayers' value='$config->{$key}->[16]'style='width:100%; background-color:orange; color:black'></td></tr>\n";
-            }
-        } else {
-            $rowssonosplayer .= "<td style='width: 9%; height: 28px;'><input id='pl-start-time$countplayers' type='time' name='pl-start-time$countplayers' value='$config->{$key}->[15]'></td>\n";
-            $rowssonosplayer .= "<td style='width: 9%; height: 28px;'><input id='pl-end-time$countplayers' type='time' name='pl-end-time$countplayers' value='$config->{$key}->[16]'></td></tr>\n";
-        }
+		# Time restrictions
+		if (($zone->[15] // '') ne "" || ($zone->[16] // '') ne "") {
+			if ($currtime ge ($zone->[15] // '') && $currtime lt ($zone->[16] // '')) {
+				$rowssonosplayer .= "<td style='width: 9%; height: 28px;'><input id='pl-start-time$countplayers' type='time' name='pl-start-time$countplayers' value='" . ($zone->[15] // '') . "'></td>\n";
+				$rowssonosplayer .= "<td style='width: 9%; height: 28px;'><input id='pl-end-time$countplayers' type='time' name='pl-end-time$countplayers' value='" . ($zone->[16] // '') . "'></td></tr>\n";
+			} else {
+				$rowssonosplayer .= "<td style='width: 9%; height: 28px;'><input id='pl-start-time$countplayers' type='time' name='pl-start-time$countplayers' value='" . ($zone->[15] // '') . "' style='width:100%; background-color:orange; color:black'></td>\n";
+				$rowssonosplayer .= "<td style='width: 9%; height: 28px;'><input id='pl-end-time$countplayers' type='time' name='pl-end-time$countplayers' value='" . ($zone->[16] // '') . "'style='width:100%; background-color:orange; color:black'></td></tr>\n";
+			}
+		} else {
+			$rowssonosplayer .= "<td style='width: 9%; height: 28px;'><input id='pl-start-time$countplayers' type='time' name='pl-start-time$countplayers' value='" . ($zone->[15] // '') . "'></td>\n";
+			$rowssonosplayer .= "<td style='width: 9%; height: 28px;'><input id='pl-end-time$countplayers' type='time' name='pl-end-time$countplayers' value='" . ($zone->[16] // '') . "'></td></tr>\n";
+		}
 
-        # Hidden fields per room
-        $rowssonosplayer .= "<input type='hidden' id='room$countplayers' name='room$countplayers' value=$room>\n";
-        $rowssonosplayer .= "<input type='hidden' id='models$countplayers' name='models$countplayers' value='$config->{$key}->[7]'>\n";
-        $rowssonosplayer .= "<input type='hidden' id='sub$countplayers' name='sub$countplayers' value='$config->{$key}->[8]'>\n";
-        $rowssonosplayer .= "<input type='hidden' id='householdId$countplayers' name='householdId$countplayers' value='$config->{$key}->[9]'>\n";
-        $rowssonosplayer .= "<input type='hidden' id='sur$countplayers' name='sur$countplayers' value='$config->{$key}->[10]'>\n";
-        $rowssonosplayer .= "<input type='hidden' id='audioclip$countplayers' name='audioclip$countplayers' value='$config->{$key}->[11]'>\n";
-        $rowssonosplayer .= "<input type='hidden' id='voice$countplayers' name='voice$countplayers' value='$config->{$key}->[12]'>\n";
-        $rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' value='$config->{$key}->[1]'>\n";
+		# Hidden fields per room
+		$rowssonosplayer .= "<input type='hidden' id='room$countplayers' name='room$countplayers' value='$room'>\n";
+		$rowssonosplayer .= "<input type='hidden' id='models$countplayers' name='models$countplayers' value='" . ($zone->[7] // '') . "'>\n";
+		$rowssonosplayer .= "<input type='hidden' id='sub$countplayers' name='sub$countplayers' value='" . ($zone->[8] // '') . "'>\n";
+		$rowssonosplayer .= "<input type='hidden' id='householdId$countplayers' name='householdId$countplayers' value='" . ($zone->[9] // '') . "'>\n";
+		$rowssonosplayer .= "<input type='hidden' id='sur$countplayers' name='sur$countplayers' value='" . ($zone->[10] // '') . "'>\n";
+		$rowssonosplayer .= "<input type='hidden' id='audioclip$countplayers' name='audioclip$countplayers' value='" . ($zone->[11] // '') . "'>\n";
+		$rowssonosplayer .= "<input type='hidden' id='voice$countplayers' name='voice$countplayers' value='" . ($zone->[12] // '') . "'>\n";
+		$rowssonosplayer .= "<input type='hidden' id='rincon$countplayers' name='rincon$countplayers' data-validation-rule='special:number-min-max-value:1:100' data-validation-error-msg='$error_volume' value='" . ($zone->[1] // '') . "'>\n";
 
 		# Prepare soundbar table if device is a soundbar
-		if (($config->{$key}[13]) eq "SB") {
-			
-			my $tvmonnightsubn_val      = $config->{$key}->[14]->{tvsubnight}          // 'false';
-			my $tvsublevel_val          = $config->{$key}->[14]->{tvsublevel}          // 0;
-			my $tvsurrlevel_val         = $config->{$key}->[14]->{tvsurrlevel}         // 0;
-			my $tvmonnightsublevel_val  = $config->{$key}->[14]->{tvmonnightsublevel}  // 0;
-			my $fromtime_val            = $config->{$key}->[14]->{fromtime}            // '';
+		if (($zone->[13] // '') eq "SB") {
+
+			my $sbcfg = (ref($zone->[14]) eq 'HASH') ? $zone->[14] : {};
+
+			my $tvmonnightsubn_val      = $sbcfg->{tvsubnight}         // 'false';
+			my $tvsublevel_val          = $sbcfg->{tvsublevel}         // 0;
+			my $tvsurrlevel_val         = $sbcfg->{tvsurrlevel}        // 0;
+			my $tvmonnightsublevel_val  = $sbcfg->{tvmonnightsublevel} // 0;
+			my $fromtime_val            = $sbcfg->{fromtime}           // '';
 			my $has_valid_fromtime      = ($fromtime_val =~ /^(?:[01]\d|2[0-3]):[0-5]\d$/) ? 1 : 0;
 			my $night_style             = $has_valid_fromtime ? "" : "display:none;";
 
-			my $usesb_val               = $config->{$key}->[14]->{usesb}               // 'false';
-			my $tvmonspeech_val         = $config->{$key}->[14]->{tvmonspeech}         // 'false';
-			my $tvmonsurr_val           = $config->{$key}->[14]->{tvmonsurr}           // 'false';
-			my $tvmonnightsub_val       = $config->{$key}->[14]->{tvmonnightsub}       // 'false';
-			my $tvmonnight_val          = $config->{$key}->[14]->{tvmonnight}          // 'false';
+			my $usesb_val               = $sbcfg->{usesb}              // 'false';
+			my $tvmonspeech_val         = $sbcfg->{tvmonspeech}        // 'false';
+			my $tvmonsurr_val           = $sbcfg->{tvmonsurr}          // 'false';
+			my $tvmonnightsub_val       = $sbcfg->{tvmonnightsub}      // 'false';
+			my $tvmonnight_val          = $sbcfg->{tvmonnight}         // 'false';
 
 			my $surrlevel_style         = ($tvmonsurr_val eq 'true') ? "" : "display:none;";
+			my $tvmon_master_style      = "";
 
 			$rowssoundbar .= "<table class='tables sb_table_compact sb_single_table' border='0' id='tblsb_$room' name='tblsb_$room'>\n";
 			$rowssoundbar .= "<tbody>\n";
@@ -947,17 +1132,17 @@ my $tvmon_master_style = $has_any_soundbar ? "" : "display:none;";
 
 			# TV Volume
 			$rowssoundbar .= "<td class='sb_col_num'>\n";
-			$rowssoundbar .= "<div class='sb_input_wrap'><input class='tvvol' type='text' id='tvvol_$room' size='100' data-validation-error-msg='$error_volume' name='tvvol_$room' value='$config->{$key}->[14]->{tvvol}'></div>\n";
+			$rowssoundbar .= "<div class='sb_input_wrap'><input class='tvvol' type='text' id='tvvol_$room' size='100' data-validation-error-msg='$error_volume' name='tvvol_$room' value='" . ($sbcfg->{tvvol} // '') . "'></div>\n";
 			$rowssoundbar .= "</td>\n";
 
 			# TV Treble
 			$rowssoundbar .= "<td class='sb_col_num'>\n";
-			$rowssoundbar .= "<div class='sb_input_wrap'><input class='tvtreble' type='text' id='tvtreble_$room' size='100' name='tvtreble_$room' value='$config->{$key}->[14]->{tvtreble}'></div>\n";
+			$rowssoundbar .= "<div class='sb_input_wrap'><input class='tvtreble' type='text' id='tvtreble_$room' size='100' name='tvtreble_$room' value='" . ($sbcfg->{tvtreble} // '') . "'></div>\n";
 			$rowssoundbar .= "</td>\n";
 
 			# TV Bass
 			$rowssoundbar .= "<td class='sb_col_num'>\n";
-			$rowssoundbar .= "<div class='sb_input_wrap'><input class='tvbass' type='text' id='tvbass_$room' size='100' name='tvbass_$room' value='$config->{$key}->[14]->{tvbass}'></div>\n";
+			$rowssoundbar .= "<div class='sb_input_wrap'><input class='tvbass' type='text' id='tvbass_$room' size='100' name='tvbass_$room' value='" . ($sbcfg->{tvbass} // '') . "'></div>\n";
 			$rowssoundbar .= "</td>\n";
 
 			# Group zone / stop players
@@ -981,7 +1166,7 @@ my $tvmon_master_style = $has_any_soundbar ? "" : "display:none;";
 						   . "onmousedown='hideTooltip(\"#$tip_id\")' "
 						   . "onclick='hideTooltip(\"#$tip_id\")'>$SL{'SOUNDBARS.LABEL_SELECT'}</h4>\n";
 
-			my @saved_players = @{ $config->{$key}->[14]->{tvgrpstop} // [] };
+			my @saved_players = @{ (ref($sbcfg->{tvgrpstop}) eq 'ARRAY') ? $sbcfg->{tvgrpstop} : [] };
 			foreach my $other_room (@all_rooms) {
 				next if $other_room eq $room;
 				my $checked = grep { $_ eq $other_room } @saved_players ? " checked='checked'" : "";
@@ -1045,7 +1230,7 @@ my $tvmon_master_style = $has_any_soundbar ? "" : "display:none;";
 			$rowssoundbar .= "</tbody>\n";
 			$rowssoundbar .= "</table>\n";
 		}
-    }
+	}
     if ($countplayers < 1) {
         $rowssonosplayer .= "<tr><td colspan=10>" . $SL{'ZONES.SONOS_EMPTY_ZONES'} . "</td></tr>\n";
     }
@@ -1125,6 +1310,7 @@ my $tvmon_master_style = $has_any_soundbar ? "" : "display:none;";
         SONOS_HEALTH_PID            => $sonos_health->{pid},
         SONOS_HEALTH_STATUS         => $sonos_health->{status},
         SONOS_HEALTH_STATUS_CLASS   => $sonos_health->{status_class},
+		SONOS_HEALTH_TIMESTAMP 		=> $sonos_health->{timestamp},
         SONOS_HEALTH_FORMATTED_TIME => $sonos_health->{formatted_time},
         SONOS_HEALTH_ONLINE         => $sonos_health->{players_online},
         SONOS_HEALTH_TOTAL          => $sonos_health->{players_total},
@@ -1275,12 +1461,12 @@ sub save_details
 sub save
 {
     # Everything from forms
-    my $countplayers    = param('countplayers');
-    my $countsoundbars  = param('countsoundbars');
-    my $countradios     = param('countradios');
-    my $LoxDaten        = param('sendlox');
-    my $selminiserver   = param('ms');
-
+    my $countplayers    	= param('countplayers');
+    my $countsoundbars 		= param('countsoundbars');
+    my $countradios     	= param('countradios');
+    my $LoxDaten        	= param('sendlox');
+    my $selminiserver   	= param('ms');
+	
     # Extract last character for compatibility with older versions
     my $sel_ms = substr($selminiserver, -1, 1);
 
@@ -1298,36 +1484,52 @@ sub save
         LOGDEB "Communication to Miniserver is switched OFF";
     }
 
-    # Track old UDP value to detect changes later
-    my $old_udp = exists $cfg->{LOXONE}->{UDP} ? ($cfg->{LOXONE}->{UDP} // '') : '';
-    $old_udp =~ s/^\s+|\s+$//g;
+	# Track old LOXONE values to detect listener-relevant changes later
+	my $old_sendlox = exists $cfg->{LOXONE}->{LoxDaten} ? ($cfg->{LOXONE}->{LoxDaten} // '') : '';
+	my $old_loxone  = exists $cfg->{LOXONE}->{Loxone}   ? ($cfg->{LOXONE}->{Loxone}   // '') : '';
+	my $old_udp     = exists $cfg->{LOXONE}->{UDP}      ? ($cfg->{LOXONE}->{UDP}      // '') : '';
+	$old_sendlox =~ s/^\s+|\s+$//g;
+	$old_loxone  =~ s/^\s+|\s+$//g;
+	$old_udp     =~ s/^\s+|\s+$//g;
 
-    my $udp_changed = 0;
+	my $udp_changed             = 0;
+	my $listener_config_changed = 0;
 
-    # Write configuration
-    $cfg->{LOXONE}->{Loxone}      = "$sel_ms";
-    $cfg->{LOXONE}->{LoxDaten}    = "$R::sendlox";
+	# Detect listener-relevant changes before overwriting config
+	if (($old_sendlox // '') ne (($R::sendlox // ''))) {
+		$listener_config_changed = 1;
+	}
 
-    if (!defined $cfg->{LOXONE}->{LoxDaten} || lc($cfg->{LOXONE}->{LoxDaten}) ne 'true') {
+	if (($old_loxone // '') ne (($sel_ms // ''))) {
+		$listener_config_changed = 1;
+	}
 
-        delete $cfg->{LOXONE}->{UDP};
+	# Write LOXONE configuration
+	$cfg->{LOXONE}->{Loxone}   = "$sel_ms";
+	$cfg->{LOXONE}->{LoxDaten} = "$R::sendlox";
 
-        my $new_udp = '';
-        $udp_changed = ($old_udp ne $new_udp) ? 1 : 0;
+	if (!defined $cfg->{LOXONE}->{LoxDaten} || lc($cfg->{LOXONE}->{LoxDaten}) ne 'true') {
 
-    } else {
+		delete $cfg->{LOXONE}->{UDP};
 
-        my $new_udp = defined $R::UDP ? "$R::UDP" : '';
-        $new_udp =~ s/^\s+|\s+$//g;
+		my $new_udp = '';
+		$udp_changed = ($old_udp ne $new_udp) ? 1 : 0;
+		$listener_config_changed = 1 if $udp_changed;
 
-        if ($new_udp eq '') {
-            delete $cfg->{LOXONE}->{UDP};
-        } else {
-            $cfg->{LOXONE}->{UDP} = $new_udp;
-        }
+	} else {
 
-        $udp_changed = ($old_udp ne $new_udp) ? 1 : 0;
-    }
+		my $new_udp = defined $R::UDP ? "$R::UDP" : '';
+		$new_udp =~ s/^\s+|\s+$//g;
+
+		if ($new_udp eq '') {
+			delete $cfg->{LOXONE}->{UDP};
+		} else {
+			$cfg->{LOXONE}->{UDP} = $new_udp;
+		}
+
+		$udp_changed = ($old_udp ne $new_udp) ? 1 : 0;
+		$listener_config_changed = 1 if $udp_changed;
+	}
 
     $cfg->{TTS}->{t2s_engine}     = "$R::t2s_engine";
     $cfg->{TTS}->{messageLang}    = "$R::t2slang";
@@ -1560,44 +1762,14 @@ sub save
 
     $jsonobj->write();
     LOGDEB "Sonos Zones have been saved.";
-
+	
+	if ($listener_config_changed) {
+		my $healthfile = "/dev/shm/$lbpplugindir/health.json";
+		unlink($healthfile) if -e $healthfile;
+	}
+	
     # Control Sonos services (after config was written)
     services();
-
-    # Restart listener only if UDP setting changed and listener should continue running
-    if ($udp_changed) {
-
-        LOGINF "UDP setting changed - re-evaluating listener service";
-
-        my $listener_should_run = 0;
-        my $udp_after = exists $cfg->{LOXONE}->{UDP} ? ($cfg->{LOXONE}->{UDP} // '') : '';
-        $udp_after =~ s/^\s+|\s+$//g;
-
-        if (
-            defined $cfg->{LOXONE}->{LoxDaten}
-            && lc($cfg->{LOXONE}->{LoxDaten}) eq 'true'
-        ) {
-            if (
-                ($R::sendlox && $R::sendlox eq "true")
-                || ($udp_after ne '')
-            ) {
-                $listener_should_run = 1;
-            }
-        }
-
-        if ($listener_should_run) {
-            my $rc = system('sudo', '-n', '/bin/systemctl', 'restart', 'sonos_event_listener.service');
-            $rc = ($rc >> 8);
-
-            if ($rc != 0) {
-                LOGERR "Could not restart sonos_event_listener.service after UDP change (rc=$rc)";
-            } else {
-                LOGOK "sonos_event_listener.service has been restarted after UDP change";
-            }
-        } else {
-            LOGINF "Listener restart skipped after UDP change because service should not be running";
-        }
-    }
 
     # Prepare XML template during saving
     if ($R::sendlox eq "true") {
@@ -1621,7 +1793,12 @@ sub scan
     # Keep it fast via TTL cache in network.php
     my $ttl = 240;
 
-    my $cmd = "/usr/bin/php $lbphtmldir/system/$scanzonesfile --ttl=$ttl";
+    # SSDP multicast TTL:
+    # 1 = default / same subnet
+    # 2 = useful for routed VLAN environments if multicast routing/relay is configured
+    my $mcast_ttl = 2;
+
+    my $cmd = "/usr/bin/php $lbphtmldir/system/$scanzonesfile --ttl=$ttl --mcast-ttl=$mcast_ttl";
     my $response = qx($cmd);
     $response =~ s/^\s+|\s+$//g;
 
@@ -2198,6 +2375,52 @@ sub restoreconfig
 
     LOGOK "Plugin config has been restored";
     return "true";
+}
+
+# ------------------------------------------------------------------------------
+# Helpers
+# ------------------------------------------------------------------------------
+
+sub _normalize_version {
+	my ($v) = @_;
+	$v = lc($v // '');
+	$v =~ s/^\s+//;
+	$v =~ s/\s+$//;
+	$v =~ s/^v//i;
+	return $v;
+}
+
+sub _sonos_version_cmp {
+	my ($left, $right) = @_;
+
+	my $a = _normalize_version($left);
+	my $b = _normalize_version($right);
+
+	my @A = split /\./, $a;
+	my @B = split /\./, $b;
+
+	my $max = @A > @B ? scalar(@A) : scalar(@B);
+
+	for (my $i = 0; $i < $max; $i++) {
+		my $x = (defined $A[$i] && $A[$i] =~ /^\d+$/) ? $A[$i] : 0;
+		my $y = (defined $B[$i] && $B[$i] =~ /^\d+$/) ? $B[$i] : 0;
+
+		my $cmp = $y <=> $x;   # descending
+		return $cmp if $cmp;
+	}
+
+	return $b cmp $a;
+	
+	sub _sonos_version_is_newer {
+	my ($candidate, $installed) = @_;
+
+	$candidate = _normalize_version($candidate);
+	$installed = _normalize_version($installed);
+
+	return 0 if !$candidate || !$installed;
+
+	return _sonos_version_cmp($candidate, $installed) < 0 ? 1 : 0;
+}
 }
 
 #######################################################################

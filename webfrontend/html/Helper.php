@@ -2146,13 +2146,14 @@ function sonoszonen_on()    {
 		$handle = is_file($folfilePlOn."".$zonen.".txt");
 		#var_dump($handle);
 		if($handle === true) {
-			if ($config['SYSTEM']['checkonline'] != false)   {
+			if (is_enabled($config['SYSTEM']['checkonline'])) {
 				# add zones having time restrictions
 				if ($sonoszonen[$zonen][15] != "" and $sonoszonen[$zonen][16] != "")   {
 					$startime = $sonoszonen[$zonen][15]; #"07:15"
 					$endtime = $sonoszonen[$zonen][16]; #"20:32"
 					if ((string)$startime <= (string)$act_time and (string)$endtime >= (string)$act_time)   {
 						$sonoszone[$zonen] = $ip;
+						echo $zonen;
 					}
 				} else {
 					# add zones having no time restrictions

@@ -51,6 +51,11 @@ if (PHP_SAPI === 'cli' && isset($argv) && is_array($argv)) {
 		if (preg_match('/^--ttl=(\d+)$/', $arg, $m)) {
 			$_GET['ttl'] = $m[1];
 		}
+
+		if (preg_match('/^--mcast-ttl=(\d+)$/', $arg, $m)) {
+			$_GET['mcast_ttl'] = $m[1];
+		}
+
 		if ($arg === '--force=1' || $arg === '--force') {
 			$_GET['force'] = '1';
 		}
@@ -67,6 +72,14 @@ $force = isset($_GET['force']) && (string)$_GET['force'] === "1";
 $ttl   = isset($_GET['ttl']) ? (int)$_GET['ttl'] : 60;
 if ($ttl < 0) $ttl = 0;
 if ($ttl > 600) $ttl = 600;
+
+// Multicast TTL for SSDP.
+// Important for routed/VLAN environments.
+// This is NOT the cache TTL above.
+$mcast_ttl = isset($_GET['mcast_ttl']) ? (int)$_GET['mcast_ttl'] : 1;
+if ($mcast_ttl < 1) $mcast_ttl = 1;
+if ($mcast_ttl > 8) $mcast_ttl = 8;
+LOGDEB("system/network.php: SSDP multicast TTL configured as {$mcast_ttl}.");
 
 if (!is_dir($cache_dir)) {
 	@mkdir($cache_dir, 0775, true);
@@ -106,7 +119,7 @@ $existing = build_existing_maps($sonosnet);
 LOGDEB("Start scanning for Sonos Players using MULTICAST SSDP: {$ssdp_ip}:{$ssdp_port}");
 
 // ---- 1) SSDP multicast scan (fast fixed window) ----
-$devices = ssdp_discover_ips_multicast($ssdp_ip, $ssdp_port, $search, 2500);
+$devices = ssdp_discover_ips_multicast($ssdp_ip, $ssdp_port, $search, 2500, $mcast_ttl);
 
 // Fallback broadcast only if multicast yielded nothing
 if (empty($devices)) {
@@ -285,7 +298,7 @@ function parse_cfg_file_safe($folder, $file) {
 /**
  * SSDP multicast discovery: returns array of IPs
  */
-function ssdp_discover_ips_multicast($ip, $port, $st, $window_ms = 900) {
+function ssdp_discover_ips_multicast($ip, $port, $st, $window_ms = 900, $mcast_ttl = 1) {
 	$sock = @socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
 	if ($sock === false) {
 		LOGERR("system/network.php: socket_create failed for multicast SSDP.");
@@ -293,6 +306,21 @@ function ssdp_discover_ips_multicast($ip, $port, $st, $window_ms = 900) {
 	}
 
 	@socket_set_option($sock, SOL_SOCKET, SO_REUSEADDR, 1);
+
+	// Bind to all local interfaces. This helps on systems with multiple interfaces/VLAN routes.
+	@socket_bind($sock, '0.0.0.0', 0);
+
+	// Increase multicast TTL for routed/VLAN environments.
+	// Default is usually 1, which normally does not cross routers/VLANs.
+	if (defined('IP_MULTICAST_TTL')) {
+		@socket_set_option($sock, IPPROTO_IP, IP_MULTICAST_TTL, (int)$mcast_ttl);
+		LOGDEB("system/network.php: IP_MULTICAST_TTL set to {$mcast_ttl}.");
+	} else {
+		// Linux fallback: IP_MULTICAST_TTL = 33
+		@socket_set_option($sock, IPPROTO_IP, 33, (int)$mcast_ttl);
+		LOGDEB("system/network.php: IP_MULTICAST_TTL constant missing, fallback option 33 set to {$mcast_ttl}.");
+	}
+
 	@socket_set_nonblock($sock);
 
 	$data  = "M-SEARCH * HTTP/1.1\r\n";

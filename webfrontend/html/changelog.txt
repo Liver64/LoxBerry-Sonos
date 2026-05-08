@@ -534,5 +534,7 @@
 			[IMPROVEMENT] Der TV Monitor untertützt mehrere Soundbars
 			[IMPROVEMENT] verschiedene Performance Optimierungen
 			[IMPROVEMENT] Bei der Engine Piper die Installation zusätzlicher Sprachen/Voices integriert
+ 6.1.6		[BUGFIX] time restrictions gefixed
+			[IMPROVEMENT] Möglichkeit das Plugin downgraden oder auch upgraden (siehe Tab Optionen)
 			
 			

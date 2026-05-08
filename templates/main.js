@@ -48,6 +48,8 @@ $(document).on('pageinit', function () {
 		details_init();
 	}
 	toggleUdpXmlButton();
+	initSonosHealthAmpel();
+	
 });
 
 // DISABLE (ElevenLabs) - ENABLE (all other) Language Dropdown
@@ -625,27 +627,6 @@ function donation() {
 	} else {
 		$("#coll_donate").show();
 	}
-}
-
-
-/* ================================================================================================
- * 3) Sonos listener actions
- * ================================================================================================ */
-
-/**
- * restartSonosListener()
- * - Calls index.cgi?action=restart_listener
- * - On success: reload page
- */
-function restartSonosListener() {
-	$.get('index.cgi', { action: 'restart_listener' })
-		.done(function (data) {
-			console.log('Restart command sent to Sonos Event Listener.');
-			location.reload();
-		})
-		.fail(function () {
-			console.log('Failed to restart Sonos Event Listener.');
-		});
 }
 
 
@@ -2360,20 +2341,20 @@ $(document)
 	toggleUdpPortVisibility();
 });
 
-/**
- * Updates the Sonos health traffic light image based on the current health status.
- * Expected template values:
- * - ok   -> green traffic light
- * - warn -> yellow traffic light
- * - else -> red traffic light
- */
-function initSonosHealthAmpel() {
-	var statusClass = "<TMPL_VAR SONOS_HEALTH_STATUS_CLASS>";
+var sonosHealthPollTimer = null;
+var sonosHealthWaitBaseTs = 0;
+var sonosHealthWaitStartedAtMs = 0;
+
+var SONOS_HEALTH_WAIT_STORAGE_KEY = "s4l_health_wait_pending";
+var SONOS_HEALTH_WAIT_TS_KEY      = "s4l_health_wait_base_ts";
+var SONOS_HEALTH_WAIT_MAX_MS      = 120000; // safety fallback: 2 minutes
+
+function updateSonosHealthAmpel(statusClass) {
 	var imgBase = "/plugins/<TMPL_VAR PLUGINDIR>/images/";
 	var imgFile = "A-Rot.png";
 
 	if (statusClass === "ok") {
-		imgFile = "A-Grün.png";
+		imgFile = "A-Gruen.png";
 	} else if (statusClass === "warn") {
 		imgFile = "A-Gelb.png";
 	} else {
@@ -2382,6 +2363,231 @@ function initSonosHealthAmpel() {
 
 	$("#sonosHealthAmpel").attr("src", imgBase + imgFile);
 }
+
+function initSonosHealthAmpel() {
+	updateSonosHealthAmpel("<TMPL_VAR SONOS_HEALTH_STATUS_CLASS>");
+}
+
+function showListenerRestartWaitBox() {
+	$("#listenerRestartWaitBox").stop(true, true).fadeIn(150);
+}
+
+function hideListenerRestartWaitBox() {
+	$("#listenerRestartWaitBox").stop(true, true).fadeOut(150);
+}
+
+function getCurrentSonosHealthTimestamp() {
+	return parseInt($("#sonosHealthTimestamp").val(), 10) || 0;
+}
+
+function rememberHealthWaitState(baseTs) {
+	sessionStorage.setItem(SONOS_HEALTH_WAIT_STORAGE_KEY, "1");
+	sessionStorage.setItem(SONOS_HEALTH_WAIT_TS_KEY, String(baseTs || 0));
+}
+
+function clearHealthWaitState() {
+	sessionStorage.removeItem(SONOS_HEALTH_WAIT_STORAGE_KEY);
+	sessionStorage.removeItem(SONOS_HEALTH_WAIT_TS_KEY);
+}
+
+function stopHealthWaitWatcher() {
+	if (sonosHealthPollTimer) {
+		clearInterval(sonosHealthPollTimer);
+		sonosHealthPollTimer = null;
+	}
+}
+
+function finishHealthWait() {
+	stopHealthWaitWatcher();
+	hideListenerRestartWaitBox();
+	clearHealthWaitState();
+}
+
+function fetchSonosHealth(done) {
+	$.ajax({
+		url: window.location.pathname,
+		type: "GET",
+		dataType: "json",
+		cache: false,
+		data: {
+			action: "get_sonos_health_json",
+			_: Date.now()
+		}
+	}).done(function (response) {
+		if (typeof done === "function") {
+			done(response || null);
+		}
+	}).fail(function () {
+		if (typeof done === "function") {
+			done(null);
+		}
+	});
+}
+
+function handleFetchedSonosHealth(health) {
+	if (!health) {
+		if ((Date.now() - sonosHealthWaitStartedAtMs) >= SONOS_HEALTH_WAIT_MAX_MS) {
+			finishHealthWait();
+		}
+		return;
+	}
+
+	var newTs = parseInt(health.timestamp, 10) || 0;
+	var newStatusClass = health.status_class || "error";
+
+	updateSonosHealthAmpel(newStatusClass);
+	$("#sonosHealthTimestamp").val(newTs);
+
+	if (newTs > sonosHealthWaitBaseTs) {
+		finishHealthWait();
+		return;
+	}
+
+	if ((Date.now() - sonosHealthWaitStartedAtMs) >= SONOS_HEALTH_WAIT_MAX_MS) {
+		finishHealthWait();
+	}
+}
+
+function startWaitingForNextSonosHealth(baseTs) {
+	sonosHealthWaitBaseTs = parseInt(baseTs, 10) || 0;
+	sonosHealthWaitStartedAtMs = Date.now();
+
+	stopHealthWaitWatcher();
+	showListenerRestartWaitBox();
+
+	fetchSonosHealth(handleFetchedSonosHealth);
+
+	sonosHealthPollTimer = setInterval(function () {
+		fetchSonosHealth(handleFetchedSonosHealth);
+	}, 5000);
+}
+
+function initPendingHealthWaitOnLoad() {
+	if (!$("#sonosHealthTimestamp").length) {
+		return;
+	}
+
+	var pending = sessionStorage.getItem(SONOS_HEALTH_WAIT_STORAGE_KEY);
+	if (pending !== "1") {
+		return;
+	}
+
+	var baseTs = parseInt(sessionStorage.getItem(SONOS_HEALTH_WAIT_TS_KEY) || "0", 10) || 0;
+	var currentTs = getCurrentSonosHealthTimestamp();
+
+	if (currentTs > baseTs) {
+		finishHealthWait();
+		return;
+	}
+
+	startWaitingForNextSonosHealth(baseTs);
+}
+
+
+/**
+ * restartSonosListener()
+ * - Calls index.cgi?action=restart_listener
+ * - On success: reload page
+ */
+function restartSonosListener() {
+	var baseTs = getCurrentSonosHealthTimestamp();
+
+	rememberHealthWaitState(baseTs);
+	showListenerRestartWaitBox();
+	updateSonosHealthAmpel("error");
+
+	$.ajax({
+		url: window.location.pathname,
+		type: "POST",
+		cache: false,
+		dataType: "json",
+		data: {
+			action: "restart_listener"
+		}
+	}).done(function (response) {
+		if (response && response.success) {
+			startWaitingForNextSonosHealth(baseTs);
+		} else {
+			finishHealthWait();
+			alert("Listener restart failed.");
+		}
+	}).fail(function () {
+		finishHealthWait();
+		alert("Listener restart failed.");
+	});
+}
+
+/*
+ * Main settings save:
+ * When the settings page form is submitted, remember the current
+ * health timestamp and keep the wait box active across the reload
+ * until a newer health timestamp appears.
+ */
+$(document).on("submit", "form", function () {
+	if (!$("#sonosHealthTimestamp").length) {
+		return;
+	}
+
+	if (!$("#sendlox_hidden").length || !$("#UDP").length) {
+		return;
+	}
+
+	if (!hasLoxoneTransferChanges()) {
+		return;
+	}
+
+	var baseTs = getCurrentSonosHealthTimestamp();
+
+	updateSonosHealthAmpel("error");
+	rememberHealthWaitState(baseTs);
+	showListenerRestartWaitBox();
+});
+
+var initialLoxoneTransferState = null;
+
+function getCurrentLoxoneTransferState() {
+	var sendlox = ($("#sendlox_hidden").val() || "").toString().trim().toLowerCase();
+	var udp     = ($("#UDP").val() || "").toString().trim();
+
+	return {
+		sendlox: sendlox,
+		udp: udp
+	};
+}
+
+function rememberInitialLoxoneTransferState() {
+	if (!$("#sendlox_hidden").length || !$("#UDP").length) {
+		return;
+	}
+
+	initialLoxoneTransferState = getCurrentLoxoneTransferState();
+}
+
+function hasLoxoneTransferChanges() {
+	if (!initialLoxoneTransferState) {
+		return false;
+	}
+
+	var currentState = getCurrentLoxoneTransferState();
+
+	return (
+		currentState.sendlox !== initialLoxoneTransferState.sendlox ||
+		currentState.udp     !== initialLoxoneTransferState.udp
+	);
+}
+
+$(document).on("pageinit", function () {
+	initSonosHealthAmpel();
+	initPendingHealthWaitOnLoad();
+
+	setTimeout(function () {
+		rememberInitialLoxoneTransferState();
+	}, 300);
+});
+
+$(window).on("beforeunload pagehide", function () {
+	stopHealthWaitWatcher();
+});
 
 /**
  * Shows custom tooltip and applies its visual styling.
@@ -3478,4 +3684,283 @@ function load_radio_favorites_into_func_list() {
 	});
 }
 
+/* =============================================================================
+ * Sonos release selector + install handoff
+ * -----------------------------------------------------------------------------
+ * Purpose:
+ * - Load all available Sonos plugin releases via AJAX
+ * - Prefer a newer version as default selection if available
+ * - Otherwise preselect the currently installed version
+ * - Highlight newer selected versions in red
+ * - Show the "Installation" button only if the selected version differs
+ *   from the installed one
+ * - Open the LoxBerry plugin installer in a new browser window
+ * - Automatically fill the installer's "archiveurl" field with the
+ *   selected GitHub release ZIP URL
+ * ============================================================================= */
+
+var sonosInstalledVersion = '';
+
+/* -----------------------------------------------------------------------------
+ * normalizeVersion(v)
+ * -----------------------------------------------------------------------------
+ * Normalizes a version string:
+ * - converts to string
+ * - trims whitespace
+ * - removes a leading "v" if present
+ * ----------------------------------------------------------------------------- */
+function normalizeVersion(v) {
+	return String(v || '').trim().replace(/^v/i, '');
+}
+
+/* -----------------------------------------------------------------------------
+ * buildSonosArchiveUrl(version)
+ * -----------------------------------------------------------------------------
+ * Builds the GitHub ZIP archive URL for a selected Sonos release tag.
+ * ----------------------------------------------------------------------------- */
+function buildSonosArchiveUrl(version) {
+	version = normalizeVersion(version);
+	if (!version) {
+		return '';
+	}
+	return 'https://github.com/Liver64/LoxBerry-Sonos/archive/refs/tags/v' + version + '.zip';
+}
+
+/* -----------------------------------------------------------------------------
+ * updateSonosReleaseInstallButton()
+ * -----------------------------------------------------------------------------
+ * Shows the install button only if the selected version differs from
+ * the installed version.
+ * ----------------------------------------------------------------------------- */
+function updateSonosReleaseInstallButton() {
+	var selected = normalizeVersion($('#sonos_release').val());
+	var installed = normalizeVersion(sonosInstalledVersion);
+
+	if (selected && installed && selected !== installed) {
+		$('#sonos_release_install_wrap').show();
+	} else {
+		$('#sonos_release_install_wrap').hide();
+	}
+}
+
+/* -----------------------------------------------------------------------------
+ * updateSonosReleaseVisualState()
+ * -----------------------------------------------------------------------------
+ * Highlights the visible select text in red when the currently selected
+ * dropdown entry is marked as "newer".
+ * ----------------------------------------------------------------------------- */
+function updateSonosReleaseVisualState() {
+	var $sel = $('#sonos_release');
+	var $selectedOption = $sel.find('option:selected');
+	var isNewer = String($selectedOption.attr('data-is-newer') || '0') === '1';
+
+	var $btn = $('#sonos_release-button');
+	var $wrap = $btn.closest('.ui-select');
+
+	if (isNewer) {
+		$sel.addClass('sonos-release-newer').css({
+			color: '#c62828',
+			fontWeight: '700',
+			webkitTextFillColor: '#c62828'
+		});
+
+		$btn.addClass('sonos-release-newer');
+		$wrap.addClass('sonos-release-newer');
+	} else {
+		$sel.removeClass('sonos-release-newer').css({
+			color: '',
+			fontWeight: '',
+			webkitTextFillColor: ''
+		});
+
+		$btn.removeClass('sonos-release-newer');
+		$wrap.removeClass('sonos-release-newer');
+	}
+}
+
+/* -----------------------------------------------------------------------------
+ * openSonosReleaseInstall()
+ * -----------------------------------------------------------------------------
+ * Opens the LoxBerry plugin installer in a new browser window and injects
+ * the selected release ZIP URL into the installer field "archiveurl".
+ * ----------------------------------------------------------------------------- */
+function openSonosReleaseInstall() {
+	var selected = normalizeVersion($('#sonos_release').val());
+	if (!selected) {
+		return;
+	}
+
+	var archiveUrl = buildSonosArchiveUrl(selected);
+	if (!archiveUrl) {
+		return;
+	}
+
+	var installUrl = '/admin/system/plugininstall.cgi';
+	var win = window.open(installUrl, '_blank');
+
+	if (!win) {
+		alert('The installation window was blocked by the browser.');
+		return;
+	}
+
+	var tries = 0;
+	var maxTries = 100;
+
+	var timer = setInterval(function () {
+		tries++;
+
+		try {
+			if (!win || win.closed) {
+				clearInterval(timer);
+				return;
+			}
+
+			var doc = win.document;
+			if (!doc) {
+				if (tries >= maxTries) {
+					clearInterval(timer);
+				}
+				return;
+			}
+
+			var archiveField = doc.getElementById('archiveurl');
+			if (archiveField) {
+				archiveField.removeAttribute('readonly');
+				archiveField.value = archiveUrl;
+
+				if (typeof archiveField.dispatchEvent === 'function') {
+					archiveField.dispatchEvent(new Event('input', { bubbles: true }));
+					archiveField.dispatchEvent(new Event('change', { bubbles: true }));
+				}
+
+				archiveField.setAttribute('readonly', 'readonly');
+
+				var pinField = doc.getElementById('securepin');
+				if (pinField) {
+					pinField.focus();
+				}
+
+				clearInterval(timer);
+				return;
+			}
+
+			if (tries >= maxTries) {
+				clearInterval(timer);
+			}
+		} catch (e) {
+			if (tries >= maxTries) {
+				clearInterval(timer);
+			}
+		}
+	}, 200);
+}
+
+/* -----------------------------------------------------------------------------
+ * loadSonosReleaseDropdown()
+ * -----------------------------------------------------------------------------
+ * Loads Sonos versions from the backend AJAX action:
+ *   index.cgi?action=getsonosversions
+ *
+ * Behavior:
+ * - fills the dropdown with available versions
+ * - marks installed versions in the label
+ * - marks newer versions in the label
+ * - prefers the first newer version as default selection
+ * - otherwise falls back to installed or latest_stable
+ * - refreshes the jQuery Mobile selectmenu
+ * - updates button visibility and red highlight afterwards
+ * ----------------------------------------------------------------------------- */
+function loadSonosReleaseDropdown() {
+	$.getJSON('index.cgi?action=getsonosversions', function (data) {
+		var $sel = $('#sonos_release');
+		var installed = normalizeVersion(data.installed);
+		var latestStable = normalizeVersion(data.latest_stable);
+		var firstNewer = '';
+
+		sonosInstalledVersion = installed;
+		$sel.empty();
+
+		if (data && data.releases && data.releases.length) {
+			$.each(data.releases, function (_, rel) {
+				var version = normalizeVersion(rel.version);
+				var label = version;
+
+				if (rel.is_newer) {
+					label += ' (latest)';
+					if (!firstNewer) {
+						firstNewer = version;
+					}
+				}
+
+				if (version === installed) {
+					label += ' (installed)';
+				}
+
+				$sel.append($('<option>', {
+					value: version,
+					text: label
+				}).attr('data-is-newer', rel.is_newer ? '1' : '0'));
+			});
+
+			/* Prefer the first newer version if available */
+			if (firstNewer) {
+				$sel.val(firstNewer);
+			} else if (installed) {
+				$sel.val(installed);
+			} else if (latestStable) {
+				$sel.val(latestStable);
+			}
+		} else {
+			$sel.append($('<option>', {
+				value: '',
+				text: data && data.error ? data.error : 'No releases found'
+			}));
+		}
+
+		if ($sel.data('mobile-selectmenu')) {
+			$sel.selectmenu('refresh', true);
+		}
+
+		updateSonosReleaseInstallButton();
+		updateSonosReleaseVisualState();
+	}).fail(function () {
+		var $sel = $('#sonos_release');
+		$sel.empty().append($('<option>', {
+			value: '',
+			text: 'AJAX error loading releases'
+		}));
+
+		if ($sel.data('mobile-selectmenu')) {
+			$sel.selectmenu('refresh', true);
+		}
+
+		$('#sonos_release_install_wrap').hide();
+		$sel.removeClass('sonos-release-newer').css({
+			color: '',
+			fontWeight: '',
+			webkitTextFillColor: ''
+		});
+		$('#sonos_release-button').removeClass('sonos-release-newer');
+		$('#sonos_release-button').closest('.ui-select').removeClass('sonos-release-newer');
+	});
+}
+
+/* -----------------------------------------------------------------------------
+ * Event: dropdown selection changed
+ * ----------------------------------------------------------------------------- */
+$(document).on('change', '#sonos_release', function () {
+	updateSonosReleaseInstallButton();
+
+	/* Let jQuery Mobile update the visible select button first */
+	setTimeout(function () {
+		updateSonosReleaseVisualState();
+	}, 0);
+});
+
+/* -----------------------------------------------------------------------------
+ * Event: page initialization
+ * ----------------------------------------------------------------------------- */
+$(document).on('pageinit', function () {
+	loadSonosReleaseDropdown();
+});
 </script>

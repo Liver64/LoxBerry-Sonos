@@ -18,11 +18,12 @@ function sendUDP($value, $name)    {
 	$mem_sendall_sec = 3600;
 	
 	$tmp_array = array();
-	$server_port = $config['LOXONE']['LoxPort'];
+	$server_port = $config['LOXONE']['UDP'];
 	$no_ms = $config['LOXONE']['Loxone'];
 	$tmp_array[$name] = $value;	
 	
-	$response = udp_send_mem($no_ms, $server_port, "Sonos4lox", $tmp_array);
+	$response 		= udp_send_mem($no_ms, $server_port, "Sonos4lox", $tmp_array);
+	$response_new 	= udp_send_mem($no_ms, $server_port, "s4lox", $tmp_array);
 	return;
 }
 
@@ -49,6 +50,7 @@ function sendMQTT($value, $name)    {
 	$mqtt = new Bluerhinos\phpMQTT($creds['brokerhost'],  $creds['brokerport'], $client_id);
 	$mqtt->connect(true, NULL, $creds['brokeruser'], $creds['brokerpass']);
 	$mqtt->publish('Sonos4lox/'.$name.'', $value, 0, 1);
+	$mqtt->publish('s4lox/'.$name.'', $value, 0, 1);
 	return;
 }
 ?>

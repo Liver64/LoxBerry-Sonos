@@ -589,21 +589,32 @@
 											<td style="padding:0; width:225px; min-width:225px; max-width:225px;"></td>
 
 											<td style="padding:0 0 0 2px; vertical-align:middle; white-space:nowrap;">
-												<div style="cursor:pointer; position:relative; display:inline-block;"
-													 onmouseenter="showGreenTooltip('#sonosHealthTooltip')"
-													 onmouseleave="hideTooltip('#sonosHealthTooltip')">
+												<input type="hidden" id="sonosHealthTimestamp" value="<TMPL_VAR SONOS_HEALTH_TIMESTAMP>">
 
-													<img id="sonosHealthAmpel"
-														 src="/plugins/<TMPL_VAR PLUGINDIR>/images/A-Rot.png"
-														 alt="Sonos Health"
-														 style="display:block; height:50px; width:auto; max-height:50px;">
+												<div id="sonosHealthWrap"
+													 style="position:relative; display:inline-block; vertical-align:middle;">
 
-													<div id="sonosHealthTooltip"
-														 style="display:none; position:absolute; left:0; bottom:54px; width:320px; padding:8px 10px; background:rgba(40,40,40,0.96); color:#fff; font-size:12px; line-height:1.35; border-radius:6px; box-shadow:0 2px 10px rgba(0,0,0,0.25); white-space:normal; z-index:99999; text-align:left;">
-														<TMPL_VAR TEMPLATE.TEXT_LOXONE_AMPEL>
-														<div style="position:absolute; left:18px; top:100%; width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-top:6px solid rgba(40,40,40,0.96);"></div>
+													<div id="listenerRestartWaitBox"
+														 style="display:none; position:absolute; right:calc(100% + 12px); top:50%; transform:translateY(-50%); color:red; font-size:14px; font-weight:normal; white-space:nowrap; z-index:5; pointer-events:none;">
+														<TMPL_VAR TEMPLATE.TXT_WAIT_INFO>
 													</div>
 
+													<div style="cursor:pointer; position:relative; display:inline-block;"
+														 onmouseenter="showGreenTooltip('#sonosHealthTooltip')"
+														 onmouseleave="hideTooltip('#sonosHealthTooltip')">
+
+														<img id="sonosHealthAmpel"
+															 src="/plugins/<TMPL_VAR PLUGINDIR>/images/A-Rot.png"
+															 alt="Sonos Health"
+															 style="display:block; height:50px; width:auto; max-height:50px;">
+
+														<div id="sonosHealthTooltip"
+															 style="display:none; position:absolute; left:0; bottom:54px; width:320px; padding:8px 10px; background:rgba(40,40,40,0.96); color:#fff; font-size:12px; line-height:1.35; border-radius:6px; box-shadow:0 2px 10px rgba(0,0,0,0.25); white-space:normal; z-index:99999; text-align:left;">
+															<TMPL_VAR TEMPLATE.TEXT_LOXONE_AMPEL>
+															<div style="position:absolute; left:18px; top:100%; width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-top:6px solid rgba(40,40,40,0.96);"></div>
+														</div>
+
+													</div>
 												</div>
 											</td>
 
@@ -621,7 +632,7 @@
 							</tr>
 						</table>
 					</td>
-				</tr>	
+				</tr>
 				
                 <tr class="empty_template">
 					<td class="empty_template" style="height: 50px; width: 25%; vertical-align: middle;">
@@ -1649,6 +1660,34 @@
 						</div>
                     </td>
 				</tr>
+				
+				<tr>
+					<td style="height: 50px; width: 25%; vertical-align: middle;">
+						<label id="lsonosversions">Sonos Plugin Version:</label>
+					</td>
+
+					<td style="height: 50px; width: 800px; vertical-align: middle;">
+						<div style="display:flex; align-items:center; gap:12px; width:460px; white-space:nowrap;">
+							<div style="flex:0 0 280px;">
+								<fieldset style="margin:0; width:100%;">
+									<select name="sonos_release" id="sonos_release" data-mini="true" data-native-menu="true" style="width:100%;">
+										<option value="">Loading releases...</option>
+									</select>
+								</fieldset>
+							</div>
+
+							<div id="sonos_release_install_wrap" style="display:none; flex:0 0 auto;">
+								<input
+									type="button"
+									id="btn_sonos_release_install"
+									data-mini="true"
+									value="Installation"
+									onclick="openSonosReleaseInstall()">
+							</div>
+						</div>
+					</td>
+				</tr>
+				
             </table>
 
             <td></td>
