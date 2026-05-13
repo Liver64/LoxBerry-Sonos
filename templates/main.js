@@ -1713,6 +1713,22 @@ $(document).on("click", "a.jsDelRadio", function (e) {
 
 
 /**
+ * Manual Sonos IP input:
+ * Pressing ENTER in the IP field uses the same logic as the "Scan Player" button.
+ */
+$(document).on('pagecreate pagebeforeshow', function () {
+
+    $(document).off('keydown', '#vlan_ips_input').on('keydown', '#vlan_ips_input', function (e) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
+            e.preventDefault();
+            submitManualSonosIpScan($(this).val());
+            return false;
+        }
+    });
+
+});
+
+/**
  * AddRadio()
  * - Adds a new radio station row to table #tblBasic2
  * - Re-applies jQuery Mobile styles with trigger('create')
@@ -2894,56 +2910,129 @@ function dialog(text, ButtonText, Icon='', Title) {
  * timeout()
  * - SilverBox timer popup (auto closes)
  */
-function timeout(text, ButtonText, Icon='', Title, timeout) {
+/**
+ * timeout()
+ * - SilverBox timer popup (auto closes)
+ * - Icon = "info"    -> uses custom info.svg
+ * - Icon = "warning" -> uses SilverBox alertIcon warning
+ */
+function timeout(text, ButtonText, Icon = 'info', Title, timeout) {
 	// https://silverboxjs.ir/documentation/?v=latest
-	silverBox({
+
+	var boxOptions = {
 		timer: timeout,
-		//alertIcon: Icon,
-		customIcon: "/plugins/<TMPL_VAR PLUGINDIR>/web/images/info.svg",
 		text: text,
 		centerContent: true,
 		title: {
 			text: Title
-		},
-	});
+		}
+	};
+
+	if (Icon === 'info') {
+		boxOptions.customIcon = "/plugins/<TMPL_VAR PLUGINDIR>/web/images/info.svg";
+	} else if (Icon === 'warning') {
+		boxOptions.alertIcon = 'warning';
+	} else if (Icon) {
+		boxOptions.alertIcon = 'info';
+	}
+
+	silverBox(boxOptions);
 }
 
 /**
+ * submitManualSonosIpScan()
+ * - Sends manually entered Sonos IP(s) to index.cgi?action=save_vlan_ip
+ * - Reuses the main "Scan Player" button when the manual IP field is visible
+ */
+function submitManualSonosIpScan(raw) {
+    raw = (raw || '').trim();
+
+    if (!raw) {
+        dialog('Bitte mindestens eine Sonos-IP eingeben (z.B. 192.168.10.50).', "OK", "info", "IP-Adresse");
+        $('#vlan_ips_input').focus();
+        return false;
+    }
+
+    var ips = raw.split(/[\s,;]+/).filter(Boolean);
+    var ipv4re = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+
+    var invalid = ips.filter(function (ip) {
+        return !ipv4re.test(ip);
+    });
+
+    if (invalid.length > 0) {
+        dialog(
+            'Ungültige IP-Adresse(n): ' + invalid.join(', ') + '\nBitte nur gültige IPv4-Adressen eingeben.',
+            "OK",
+            "info",
+            "IP-Adresse"
+        );
+        $('#vlan_ips_input').focus();
+        return false;
+    }
+
+    var $btn = $('#btnplayerscan');
+    $btn.addClass('ui-disabled');
+
+    var $form = $('<form>', {
+        method: 'POST',
+        action: 'index.cgi'
+    }).append(
+        $('<input>', { type: 'hidden', name: 'action',   value: 'save_vlan_ip' }),
+        $('<input>', { type: 'hidden', name: 'vlan_ips', value: raw })
+    );
+
+    $('body').append($form);
+    $form.submit();
+
+    return true;
+}
+
+
+/**
  * discover()
- * - Discover Sonos devices prompt
+ * - If the manual IP field is visible, "Scan Player" submits the manual IP(s)
+ * - Otherwise it starts the normal Auto Discovery workflow
  */
 function discover() {
-	// https://silverboxjs.ir/documentation/?v=latest
-	silverBox({
-		alertIcon: 'warning',
-		text: '<TMPL_VAR ZONES.SONOS_SCAN_TEXT>',
-		footer: "<a href='#'>Auto Discover Sonos</a>",
-		centerContent: true,
-		title: {
-			text: '<TMPL_VAR ZONES.SONOS_SCAN_HEADER>'
-		},
-		confirmButton: {
-			bgColor: "#6dac20",
-			border: "10px",
-			borderColor: "#6dac20",
-			textColor: "#fff",
-			text: '<TMPL_VAR ZONES.BUTTON_NEXT>',
-			iconStart: "/plugins/<TMPL_VAR PLUGINDIR>/web/images/confirm.svg",
-			closeOnClick: false,
-			onClick: () => {url = './index.cgi?do=scanning';
-							document.location.href = url;
-			},
-		},
-		cancelButton: {
-			bgColor: "#6dac20",
-			border: "10px",
-			borderColor: "#6dac20",
-			textColor: "#fff",
-			text: '<TMPL_VAR ZONES.BUTTON_BACK>',
-			iconStart: "/plugins/<TMPL_VAR PLUGINDIR>/web/images/cancel.svg",
-			closeOnClick: true
-		},
-	});
+    var $manualInput = $('#vlan_ips_input:visible');
+
+    if ($manualInput.length > 0) {
+        submitManualSonosIpScan($manualInput.val());
+        return;
+    }
+
+    // https://silverboxjs.ir/documentation/?v=latest
+    silverBox({
+        alertIcon: 'warning',
+        text: '<TMPL_VAR ZONES.SONOS_SCAN_TEXT>',
+        footer: "<a href='#'>Auto Discover Sonos</a>",
+        centerContent: true,
+        title: {
+            text: '<TMPL_VAR ZONES.SONOS_SCAN_HEADER>'
+        },
+        confirmButton: {
+            bgColor: "#6dac20",
+            border: "10px",
+            borderColor: "#6dac20",
+            textColor: "#fff",
+            text: '<TMPL_VAR ZONES.BUTTON_NEXT>',
+            iconStart: "/plugins/<TMPL_VAR PLUGINDIR>/web/images/confirm.svg",
+            closeOnClick: false,
+            onClick: () => {
+                document.location.href = './index.cgi?do=scanning';
+            },
+        },
+        cancelButton: {
+            bgColor: "#6dac20",
+            border: "10px",
+            borderColor: "#6dac20",
+            textColor: "#fff",
+            text: '<TMPL_VAR ZONES.BUTTON_BACK>',
+            iconStart: "/plugins/<TMPL_VAR PLUGINDIR>/web/images/cancel.svg",
+            closeOnClick: true
+        },
+    });
 }
 
 /**
@@ -2951,11 +3040,65 @@ function discover() {
  * - Shows save message popup (kept as-is)
  */
 function message() {
-	// SETTINGS uses 3.5s, DETAILS uses 3.0s
 	var isDetails = !!document.getElementById('detail_form');
 	console.log(isDetails ? "Save" : "MESSAGE");
 	timeout('<TMPL_VAR SAVE.SAVE_MESSAGE>', 'OK', 'info', '<TMPL_VAR SAVE.SAVE_ALL_OK>', isDetails ? '3000' : '3500');
 }
+
+/**
+ * unicastScanHintMessage()
+ * Shows a warning after a failed MULTICAST/BROADCAST discovery scan.
+ */
+function unicastScanHintMessage() {
+	var isDetails = !!document.getElementById('detail_form');
+	console.log("MULTICAST/BROADCAST scan failed");
+	timeout('<TMPL_VAR ZONES.INFO_UNICAST>', 'OK', 'warning', '<TMPL_VAR ZONES.INFO_UNICAST_HEADER>',	isDetails ? '3000' : '4500');
+}
+
+
+/**
+ * Show MULTICAST/BROADCAST warning once if template marker exists.
+ * After the warning timeout has expired, focus the manual IP input field.
+ */
+$(document).on('pagecreate pageshow', function () {
+	if ($('#show_unicast_scan_hint').length < 1) {
+		return;
+	}
+
+	if (window.__s4lox_unicast_scan_hint_shown === true) {
+		return;
+	}
+
+	window.__s4lox_unicast_scan_hint_shown = true;
+
+	window.setTimeout(function () {
+		var isDetails = !!document.getElementById('detail_form');
+		var popupTimeout = isDetails ? 3000 : 3500;
+
+		unicastScanHintMessage();
+
+		// Focus input after SilverBox auto-close timeout has expired
+		window.setTimeout(function () {
+			var input = document.getElementById('vlan_ips_input');
+
+			if (!input) {
+				return;
+			}
+
+			input.scrollIntoView({
+				behavior: 'smooth',
+				block: 'center'
+			});
+
+			input.focus();
+
+			if (typeof input.select === 'function') {
+				input.select();
+			}
+		}, popupTimeout + 300);
+
+	}, 250);
+});
 
 function refresh() {
 	$("#langiso").textinput("refresh");

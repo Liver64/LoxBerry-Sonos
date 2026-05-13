@@ -41,15 +41,20 @@ require_once "loxberry_log.php";
 require_once "logging.php";
 require_once "error.php";
 require_once $lbphtmldir . "/Helper.php";
+
 register_shutdown_function('shutdown');
+
 $home          = $lbhomedir;
 $myConfigFolder = (string)$lbpconfigdir;
 $myConfigFile   = "s4lox_config.json";
+
 error_reporting(E_ALL);
 ini_set("display_errors", "off");
+
 define('ERROR_LOG_FILE', "$lbplogdir/sonos.log");
 // calling custom error handler
 set_error_handler("handleError");
+
 // Logger
 $params = [
 	"name"     => "Sonos",
@@ -70,16 +75,27 @@ if (PHP_SAPI === 'cli' && isset($argv) && is_array($argv)) {
 		if ($arg === '--force=1' || $arg === '--force') {
 			$_GET['force'] = '1';
 		}
+		if ($arg === '--unicast-only=1' || $arg === '--unicast-only') {
+			$_GET['unicast_only'] = '1';
+		}
 	}
 }
 global $sonosfinal, $sonosnet, $devices;
+
 // ---- Cache settings (for auto-discovery speed) ----
 $cache_dir  = "/dev/shm/sonos4lox";
 $cache_file = $cache_dir . "/discovery_cache.json";
-$force = isset($_GET['force']) && (string)$_GET['force'] === "1";
-$ttl   = isset($_GET['ttl']) ? (int)$_GET['ttl'] : 60;
+$force        = isset($_GET['force']) && (string)$_GET['force'] === "1";
+$unicast_only = isset($_GET['unicast_only']) && (string)$_GET['unicast_only'] === "1";
+$ttl          = isset($_GET['ttl']) ? (int)$_GET['ttl'] : 60;
+
+if ($unicast_only) {
+	$force = true;
+	$ttl   = 0;
+}
 if ($ttl < 0) $ttl = 0;
 if ($ttl > 600) $ttl = 600;
+
 // Multicast TTL for SSDP.
 // Important for routed/VLAN environments.
 // Default is 1 (same subnet only). Increase if Sonos players are in a different VLAN/subnet.
@@ -126,84 +142,114 @@ $static_ips = get_static_sonos_ips($myConfigFolder, $myConfigFile);
 if (!empty($static_ips)) {
 	LOGINF("system/network.php: VLAN unicast fallback configured with " . count($static_ips) . " static IP(s): " . implode(", ", $static_ips));
 }
-LOGDEB("Start scanning for Sonos Players using MULTICAST SSDP: {$ssdp_ip}:{$ssdp_port}");
-// ---- 1) SSDP multicast scan (fast fixed window) ----
-$devices = ssdp_discover_ips_multicast($ssdp_ip, $ssdp_port, $search, 2500, $mcast_ttl);
-// ---- 2) Broadcast fallback if multicast yielded nothing ----
-if (empty($devices)) {
-	LOGWARN("system/network.php: No Sonos devices detected via MULTICAST.");
-	if ($mcast_ttl === 1) {
-		LOGWARN("system/network.php: VLAN hint: If Sonos players are in a different VLAN/subnet, multicast (TTL=1) does not cross routers. Options:");
-		LOGWARN("system/network.php:   (A) Set up a multicast relay (igmpproxy, smcroute, avahi-daemon) between VLANs.");
-		LOGWARN("system/network.php:   (B) Increase multicast TTL: call network.php with --mcast-ttl=4 (requires router support).");
-		LOGWARN("system/network.php:   (C) Use unicast fallback: add 'vlan_static_ips' array to s4lox_config.json.");
-	} else {
-		LOGWARN("system/network.php: Multicast TTL={$mcast_ttl} was used – ensure your router/switch relays multicast group 239.255.255.250 between VLANs.");
-	}
-	LOGWARN("system/network.php: Trying BROADCAST fallback (255.255.255.255).");
-	$devices = ssdp_discover_ips_broadcast($ssdp_port, $search, 2500);
-}
-// ---- 3) VLAN Hint / Unicast fallback if broadcast also yielded nothing ----
-// Bedingungen für den VLAN-Hint:
-//   A) Kein Ergebnis via Multicast + Broadcast (SSDP komplett gescheitert)
-//   B) Keine vlan_static_ips konfiguriert => User muss IP manuell eingeben
-//      => Rückgabe: {"__vlan_hint__": 1, "reason": "ssdp_failed_no_static_ips"}
-// Bedingungen für den Unicast-Fallback:
-//   A) Kein Ergebnis via Multicast + Broadcast
-//   B) vlan_static_ips vorhanden => direkt per TCP 1400 prüfen
-//      Falls auch Unicast scheitert:
-//      => Rückgabe: {"__vlan_hint__": 1, "reason": "unicast_failed", "tried_ips": [...]}
-if (empty($devices)) {
-	LOGWARN("system/network.php: No Sonos devices detected via BROADCAST either.");
-	LOGWARN("system/network.php: Broadcast does not cross routers/VLANs by design – likely a VLAN environment.");
-	if (!empty($static_ips)) {
-		// Unicast-Fallback: konfigurierte IPs direkt via TCP 1400 prüfen
-		LOGINF("system/network.php: Trying UNICAST fallback with " . count($static_ips) . " configured static IP(s): " . implode(", ", $static_ips));
-		$unicast_devices = test_sonos_ips_unicast($static_ips);
-		if (!empty($unicast_devices)) {
-			LOGINF("system/network.php: UNICAST fallback succeeded. Reachable Sonos IP(s): " . implode(", ", $unicast_devices));
-			$devices = $unicast_devices;
-		} else {
-			// Unicast auch gescheitert – VLAN-Hint mit Reason unicast_failed zurückgeben.
-			// Der Perl-Caller zeigt ein Formular zur IP-Eingabe (ggf. andere IP probieren).
-			LOGWARN("system/network.php: UNICAST fallback also failed for all configured IPs.");
-			LOGWARN("system/network.php: Check that TCP port 1400 is open from LoxBerry to Sonos VLAN.");
-			LOGWARN("system/network.php: Returning VLAN hint (reason: unicast_failed) to Perl caller.");
-			$out = json_encode([
-				'__vlan_hint__' => 1,
-				'reason'        => 'unicast_failed',
-				'mcast_ttl'     => $mcast_ttl,
-				'tried_ips'     => array_values($static_ips),
-			]);
-			cache_write($cache_file, '[]'); // Cache leer lassen – kein valides Ergebnis
-			header('Content-Type: application/json; charset=utf-8');
-			echo $out;
-			exit;
-		}
-	} else {
-		// Keine Static-IPs konfiguriert.
-		// Hochwahrscheinlich VLAN-Problem: VLAN-Hint an Perl zurückgeben.
-		// Der Perl-Caller zeigt dem User ein Formular zur manuellen IP-Eingabe.
-		LOGWARN("system/network.php: No vlan_static_ips configured – cannot attempt unicast fallback.");
-		LOGWARN("system/network.php: --- VLAN TROUBLESHOOTING (for log) ---");
-		LOGWARN("system/network.php: Required firewall ports (LoxBerry <-> Sonos VLAN):");
-		LOGWARN("system/network.php:   UDP 1900  (both)            SSDP multicast discovery");
-		LOGWARN("system/network.php:   TCP 1400  (LoxBerry->Sonos) Sonos HTTP API (/info, SOAP)");
-		LOGWARN("system/network.php:   TCP 1443  (LoxBerry->Sonos) Sonos HTTPS API");
-		LOGWARN("system/network.php:   TCP 3400  (LoxBerry->Sonos) Sonos control");
-		LOGWARN("system/network.php:   TCP 3401  (LoxBerry->Sonos) Sonos events");
-		LOGWARN("system/network.php:   TCP 3500  (LoxBerry->Sonos) Sonos events");
-		LOGWARN("system/network.php:   NOTE: Ports 137-139/445 (Samba/NetBIOS) are NOT required for Sonos.");
-		LOGWARN("system/network.php: Returning VLAN hint (reason: ssdp_failed_no_static_ips) to Perl caller.");
+if ($unicast_only) {
+	LOGINF("system/network.php: UNICAST-ONLY mode enabled – skipping SSDP multicast and broadcast.");
+
+	if (empty($static_ips)) {
+		LOGWARN("system/network.php: UNICAST-ONLY requested, but no vlan_static_ips configured.");
+
 		$out = json_encode([
 			'__vlan_hint__' => 1,
 			'reason'        => 'ssdp_failed_no_static_ips',
 			'mcast_ttl'     => $mcast_ttl,
 		]);
-		cache_write($cache_file, '[]'); // Cache leer lassen
+
+		@unlink($cache_file);
 		header('Content-Type: application/json; charset=utf-8');
 		echo $out;
 		exit;
+	}
+
+	LOGINF("system/network.php: Trying UNICAST fallback with " . count($static_ips) . " configured static IP(s): " . implode(", ", $static_ips));
+
+	$devices = test_sonos_ips_unicast($static_ips);
+
+	if (empty($devices)) {
+		LOGWARN("system/network.php: UNICAST-ONLY failed for all configured IPs.");
+		LOGWARN("system/network.php: Check that TCP port 1400 is open from LoxBerry to Sonos VLAN.");
+
+		$out = json_encode([
+			'__vlan_hint__' => 1,
+			'reason'        => 'unicast_failed',
+			'mcast_ttl'     => $mcast_ttl,
+			'tried_ips'     => array_values($static_ips),
+		]);
+
+		@unlink($cache_file);
+		header('Content-Type: application/json; charset=utf-8');
+		echo $out;
+		exit;
+	}
+
+	LOGINF("system/network.php: UNICAST-ONLY succeeded. Reachable Sonos IP(s): " . implode(", ", $devices));
+} else {
+	LOGDEB("system/network.php: Start scanning for Sonos Players using MULTICAST SSDP: {$ssdp_ip}:{$ssdp_port}");
+
+	// ---- 1) SSDP multicast scan ----
+	$devices = ssdp_discover_ips_multicast($ssdp_ip, $ssdp_port, $search, 2500, $mcast_ttl);
+
+	// ---- 2) Broadcast fallback if multicast yielded nothing ----
+	if (empty($devices)) {
+		LOGWARN("system/network.php: No Sonos devices detected via MULTICAST.");
+
+		if ($mcast_ttl === 1) {
+			LOGWARN("system/network.php: VLAN hint: If Sonos players are in a different VLAN/subnet, multicast (TTL=1) does not cross routers. Options:");
+			LOGWARN("system/network.php:   (A) Set up a multicast relay (igmpproxy, smcroute, avahi-daemon) between VLANs.");
+			LOGWARN("system/network.php:   (B) Increase multicast TTL: call network.php with --mcast-ttl=4 (requires router support).");
+			LOGWARN("system/network.php:   (C) Use unicast fallback: add 'vlan_static_ips' array to s4lox_config.json.");
+		} else {
+			LOGWARN("system/network.php: Multicast TTL={$mcast_ttl} was used – ensure your router/switch relays multicast group 239.255.255.250 between VLANs.");
+		}
+
+		LOGWARN("system/network.php: Trying BROADCAST fallback (255.255.255.255).");
+		$devices = ssdp_discover_ips_broadcast($ssdp_port, $search, 2500);
+	}
+
+	// ---- 3) VLAN Hint / Unicast fallback if broadcast also yielded nothing ----
+	if (empty($devices)) {
+		LOGWARN("system/network.php: No Sonos devices detected via BROADCAST either.");
+		LOGWARN("system/network.php: Broadcast does not cross routers/VLANs by design – likely a VLAN environment.");
+
+		if (!empty($static_ips)) {
+			LOGINF("system/network.php: Trying UNICAST fallback with " . count($static_ips) . " configured static IP(s): " . implode(", ", $static_ips));
+
+			$unicast_devices = test_sonos_ips_unicast($static_ips);
+
+			if (!empty($unicast_devices)) {
+				LOGINF("system/network.php: UNICAST fallback succeeded. Reachable Sonos IP(s): " . implode(", ", $unicast_devices));
+				$devices = $unicast_devices;
+			} else {
+				LOGWARN("system/network.php: UNICAST fallback also failed for all configured IPs.");
+				LOGWARN("system/network.php: Check that TCP port 1400 is open from LoxBerry to Sonos VLAN.");
+				LOGWARN("system/network.php: Returning VLAN hint (reason: unicast_failed) to Perl caller.");
+
+				$out = json_encode([
+					'__vlan_hint__' => 1,
+					'reason'        => 'unicast_failed',
+					'mcast_ttl'     => $mcast_ttl,
+					'tried_ips'     => array_values($static_ips),
+				]);
+
+				@unlink($cache_file);
+				header('Content-Type: application/json; charset=utf-8');
+				echo $out;
+				exit;
+			}
+		} else {
+			LOGWARN("system/network.php: No vlan_static_ips configured – cannot attempt unicast fallback.");
+			LOGWARN("system/network.php: Returning VLAN hint (reason: ssdp_failed_no_static_ips) to Perl caller.");
+
+			$out = json_encode([
+				'__vlan_hint__' => 1,
+				'reason'        => 'ssdp_failed_no_static_ips',
+				'mcast_ttl'     => $mcast_ttl,
+			]);
+
+			@unlink($cache_file);
+			header('Content-Type: application/json; charset=utf-8');
+			echo $out;
+			exit;
+		}
 	}
 }
 // Hard-dedupe

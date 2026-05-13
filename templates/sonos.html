@@ -36,30 +36,30 @@
                         <td style="height: 33px; width: 80px;"></td>
 
                 </tr>
-                <tr>
+				<tr>
                     <td style="height: 41px; width: 25%;" valign="top">
                         <label id="lzonen"><TMPL_VAR ZONES.SONOS_ZONE_LABEL></label>
                     </td>
                     <td valign="middle" style="height: 41px; width: 90%;">
-						<table class="tables" width="85%" id="tblzonen" name="tblzonen">
+                        <table class="tables" width="85%" id="tblzonen" name="tblzonen">
                             <tr>
-								<th align="middle"><img class='ico_delete' src='/plugins/<TMPL_VAR PLUGINDIR>/images/recycle-bin.png' border='0' width='24' height='24'></th>
+                                <th align="middle"><img class='ico_delete' src='/plugins/<TMPL_VAR PLUGINDIR>/images/recycle-bin.png' border='0' width='24' height='24'></th>
                                 <th align="left">
                                     <TMPL_VAR ZONES.SONOS_ROOM>
                                 </th>
-								<th align="left" style="height: 45px; width: 8px">
+                                <th align="left" style="height: 45px; width: 8px">
                                     <TMPL_VAR ZONES.SONOS_MAIN>
                                 </th>
                                 <th align="middle">
                                     <TMPL_VAR ZONES.SONOS_MODEL>
                                 </th>
-								<th align="middle" style="height: 25px; width:10px">
+                                <th align="middle" style="height: 25px; width:10px">
                                     <TMPL_VAR ZONES.SONOS_MODEL.PIC>
                                 </th>
                                 <th align="left">
                                     <TMPL_VAR ZONES.SONOS_IP>
                                 </th>
-								<th align="middle">
+                                <th align="middle">
                                     <TMPL_VAR ZONES.SONOS_AUDIOCLIP>
                                 </th>
                                 <th align="middle">
@@ -71,62 +71,105 @@
                                 <th align="left">
                                     <TMPL_VAR ZONES.SONOS_MAX-VOL>
                                 </th>
-								<th align="left">
+                                <th align="left">
                                     <TMPL_VAR ZONES.SONOS_FROM>
                                 </th>
-								<th align="left">
+                                <th align="left">
                                     <TMPL_VAR ZONES.SONOS_TO>
                                 </th>
                             </tr>
                             <TMPL_VAR ROWSSONOSPLAYER>
                         </table>
-							<TMPL_IF NAME="PLAYER_AVAILABLE">
-								<div class='icoclip' style='text-align: left;'>
-									&nbsp;&nbsp;&nbsp;<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/green.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_GREEN>
-									&nbsp;&nbsp;<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/red.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_RED>
-								</div>
 
-								<!-- Neue Zeile direkt darunter -->
-								<div class='icoclip' style='text-align: center; margin-top: 2px;'>
-									<TMPL_IF NAME="AUDIOCLIP_ALL_SUPPORTED">
-										<TMPL_VAR T2S.AUDIOCLIP_ALL_SUPPORTED>
-									<TMPL_ELSE>
-										<TMPL_VAR T2S.AUDIOCLIP_PARTIAL_SUPPORT>
-									</TMPL_IF>
-								</div>
-							</TMPL_IF>
-							<br>
-							<TMPL_IF NAME="SWGEN">
-								<div class='icoclip' style='text-align: left;'>
-									&nbsp;&nbsp;&nbsp;<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/S1_high.png' border='0' width='65' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_SWGENERATION>
-								</div>
-							</TMPL_IF>
+                        <TMPL_IF NAME="PLAYER_AVAILABLE">
+                            <div class='icoclip' style='text-align: left;'>
+                                &nbsp;&nbsp;&nbsp;<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/green.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_GREEN>
+                                &nbsp;&nbsp;<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/red.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_RED>
+                            </div>
+                            <div class='icoclip' style='text-align: center; margin-top: 2px;'>
+                                <TMPL_IF NAME="AUDIOCLIP_ALL_SUPPORTED">
+                                    <TMPL_VAR T2S.AUDIOCLIP_ALL_SUPPORTED>
+                                <TMPL_ELSE>
+                                    <TMPL_VAR T2S.AUDIOCLIP_PARTIAL_SUPPORT>
+                                </TMPL_IF>
+                            </div>
+                        </TMPL_IF>
+
+                        <br>
+
+                        <TMPL_IF NAME="SWGEN">
+                            <div class='icoclip' style='text-align: left;'>
+                                &nbsp;&nbsp;&nbsp;<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/S1_high.png' border='0' width='65' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_SWGENERATION>
+                            </div>
+                        </TMPL_IF>
 
                     </td>
-
                     <td style="height: 41px;" valign="top">
                         <!--<a onClick="discover()" id="btnplayerscan" data-role="button" data-inline="true" data-mini="true" data-icon="check" href="#">
                             <TMPL_VAR T2S.BUTTON_SCAN>
                         </a>-->
                     </td>
                 </tr>
-				<TMPL_IF NAME="TESTVOICE">
-					<tr class="testtext">
-						<td style="height: 50px; width: 220px; vertical-align: top;">
-							<label id="tt"><TMPL_VAR ZONES.SONOS_LABEL_TEST_PLAYER></label>
+
+				 <TMPL_IF VLAN_HINT>
+					<tr>
+						<td style="width: 25%;"></td>
+						<td valign="top">
+							<div class="panel panel-warning" style="width: 89%; margin: 4px 0 8px 0;">
+
+								<div class="panel-heading">
+									<TMPL_IF VLAN_HINT_UNICAST_FAILED>
+										<TMPL_VAR ZONES.TXT_UNICAST_FAILED>
+									<TMPL_ELSE>
+										<TMPL_VAR ZONES.TXT_UNICAST>
+									</TMPL_IF>
+								</div>
+
+								<div class="panel-body">
+									<TMPL_IF VLAN_HINT_UNICAST_FAILED>
+										<p style="color:#a94442; font-weight:bold; margin:0 0 8px 0;">
+											<TMPL_VAR VLAN_UNICAST_FAILED>
+										</p>
+									</TMPL_IF>
+
+									<div style="display:flex; align-items:center; gap:12px; width:100%; max-width:1180px;">
+										<div style="flex:1 1 890px; min-width:660px;">
+											<input type="text"
+												   id="vlan_ips_input"
+												   name="vlan_ips"
+												   placeholder="<TMPL_VAR ZONES.TXT_UNICAST_PLACEHOLDER>"
+												   class="form-control"
+												   style="width:100%; box-sizing:border-box;">
+										</div>
+									</div>
+								</div>
+
+							</div>
 						</td>
-						<td style="height: 48px; vertical-align: top;">
-							<!-- Breite über Prozentwert in calc(98% - 104px) änderbar -->
-							<textarea
-								placeholder="<TMPL_VAR ZONES.SONOS_TEST_PLAYER_PH>"
-								maxlength="500"
-								id="testtext"
-								name="testtext"
-								rows="3"
-								style="width: calc(98% - 100px); box-sizing: border-box; overflow-y: auto; margin: 0; border-radius: 12px;"></textarea>
-						</td>
+						<td></td>
 					</tr>
 				</TMPL_IF>
+				
+				<TMPL_IF SHOW_UNICAST_SCAN_HINT>
+					<input type="hidden" id="show_unicast_scan_hint" value="1">
+				</TMPL_IF>
+
+                <TMPL_IF NAME="TESTVOICE">
+                <tr class="testtext">
+                    <td style="height: 50px; width: 220px; vertical-align: top;">
+                        <label id="tt"><TMPL_VAR ZONES.SONOS_LABEL_TEST_PLAYER></label>
+                    </td>
+                    <td style="height: 48px; vertical-align: top;">
+                        <textarea
+                            placeholder="<TMPL_VAR ZONES.SONOS_TEST_PLAYER_PH>"
+                            maxlength="500"
+                            id="testtext"
+                            name="testtext"
+                            rows="3"
+                            style="width: calc(98% - 100px); box-sizing: border-box; overflow-y: auto; margin: 0; border-radius: 12px;"></textarea>
+                    </td>
+                </tr>
+                </TMPL_IF>
 				
 	            <tr>			
 					<td style="height: 28px; width: 15%; padding-top: 2px; padding-bottom: 2px;">
