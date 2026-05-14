@@ -922,7 +922,7 @@ sub form
         $rowssonosplayer .= "<tr><td colspan=10>" . $SL{'ZONES.SONOS_EMPTY_ZONES'} . "</td></tr>\n";
     }
     $rowssonosplayer .= "<input type='hidden' id='countplayers' name='countplayers' value='$countplayers'>\n";
-	$rowssonosplayer .= "<tr style='background-color: #6db33f;'><td colspan='12' style='text-align: center; height: 41px;'><a onClick='discover()' id='btnplayerscan' data-role='button' data-inline='true' data-mini='true' href='#'>$SL{'T2S.BUTTON_SCAN'}</a></td></tr>";
+	$rowssonosplayer .= "<tr style='background-color: #6db33f;'><td colspan='12' style='text-align: center; height: 41px;'><a onClick='discover()' id='btnplayerscan' data-icon='plus' data-role='button' data-inline='true' data-mini='true' href='#'>$SL{'T2S.BUTTON_SCAN'}</a></td></tr>";
     
 	$template->param("ROWSSONOSPLAYER", $rowssonosplayer);
     $template->param(

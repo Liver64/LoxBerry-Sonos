@@ -3020,8 +3020,20 @@ function discover() {
             iconStart: "/plugins/<TMPL_VAR PLUGINDIR>/web/images/confirm.svg",
             closeOnClick: false,
             onClick: () => {
-                document.location.href = './index.cgi?do=scanning';
-            },
+				const form = document.createElement('form');
+				form.method = 'POST';
+				form.action = './index.cgi';
+				form.style.display = 'none';
+
+				const input = document.createElement('input');
+				input.type = 'hidden';
+				input.name = 'do';
+				input.value = 'scanning';
+
+				form.appendChild(input);
+				document.body.appendChild(form);
+				form.submit();
+			},
         },
         cancelButton: {
             bgColor: "#6dac20",
@@ -3077,7 +3089,8 @@ $(document).on('pagecreate pageshow', function () {
 
 		unicastScanHintMessage();
 
-		// Focus input after SilverBox auto-close timeout has expired
+		// Scroll input into view after SilverBox auto-close timeout has expired
+		// but do NOT focus it, so the placeholder remains visible.
 		window.setTimeout(function () {
 			var input = document.getElementById('vlan_ips_input');
 
@@ -3090,11 +3103,9 @@ $(document).on('pagecreate pageshow', function () {
 				block: 'center'
 			});
 
-			input.focus();
+			// Make sure the input does not receive/keep the cursor
+			input.blur();
 
-			if (typeof input.select === 'function') {
-				input.select();
-			}
 		}, popupTimeout + 300);
 
 	}, 250);

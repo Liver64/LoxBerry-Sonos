@@ -536,5 +536,5 @@
 			[IMPROVEMENT] Bei der Engine Piper die Installation zusätzlicher Sprachen/Voices integriert
  6.1.6		[BUGFIX] time restrictions gefixed
 			[IMPROVEMENT] Möglichkeit das Plugin downgraden oder auch upgraden (siehe Tab Optionen)
-			
+			[IMPROVEMENT] Hinzufügen von Playern wieder aktiviert, zusätzlich für Probleme im VLAN die Möglichkeit eines UNICAST Scans
 			
