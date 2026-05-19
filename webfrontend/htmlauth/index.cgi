@@ -238,6 +238,10 @@ if (exists $cfg->{LOXONE}->{LoxDatenMQTT}) {
     delete $cfg->{LOXONE}->{LoxDatenMQTT};
     $defaultSave = "true";
 }
+if (exists $cfg->{vlan_static_ips}) {
+    delete $cfg->{vlan_static_ips};
+    $defaultSave = "true";
+}
 if (is_enabled($defaultSave)) {
     $jsonobj->write();
 }
@@ -332,7 +336,7 @@ if ($q->{action} && $q->{action} ne 'save_vlan_ip') {   # <-- nur hier ne 'save_
 		exit;
 	}
 	if ($AJAX_ACTION eq "getsonosversions") {
-		my $plugindb_file     = "REPLACELBHOMEDIR/data/system/plugindatabase.json";
+		my $plugindb_file     = "/opt/loxberry/data/system/plugindatabase.json";
 		my $release_cfg_url   = "https://raw.githubusercontent.com/Liver64/LoxBerry-Sonos/master/webfrontend/html/release/release.cfg";
 		my $releases_atom_url = "https://github.com/Liver64/LoxBerry-Sonos/releases.atom";
 		my $installed     = '';
@@ -1013,8 +1017,23 @@ sub form
 # - They are NOT written to s4lox_config.json here.
 # - The user must press the normal Save button to persist them.
 #####################################################
+#####################################################
+# Scan Sonos players / zones
+# MULTICAST/BROADCAST:
+#   scan()
+#
+# UNICAST:
+#   scan(@valid_unicast_ips)
+#
+# Important:
+# - Discovered players are added to $cfg->{sonoszonen} in memory only.
+# - They are NOT written to s4lox_config.json here.
+# - The user must press the normal Save button to persist them.
+#####################################################
 sub scan
 {
+    my @manual_unicast_ips = @_;
+
     LOGINF "Auto-Discovery: Scan for Sonos Zones has been executed.";
 
     my $ttl       = 0;
@@ -1024,41 +1043,68 @@ sub scan
     if ($FORCE_UNICAST_SCAN) {
         $ttl = 0;
         $extra_args = " --force=1 --unicast-only=1";
+
+        if (@manual_unicast_ips) {
+            my @clean_ips;
+
+            foreach my $ip (@manual_unicast_ips) {
+                next if !defined $ip;
+                $ip =~ s/^\s+|\s+$//g;
+                next if $ip eq '';
+                next if !_is_valid_ipv4($ip);
+
+                push @clean_ips, $ip;
+            }
+
+            if (@clean_ips) {
+                my $ip_arg = join(',', @clean_ips);
+                $extra_args .= " --unicast-ips=$ip_arg";
+                LOGINF "Auto-Discovery: Manual UNICAST scan requested for IP(s): $ip_arg";
+            } else {
+                LOGWARN "Auto-Discovery: UNICAST mode requested, but no valid IPs were provided.";
+            }
+        } else {
+            LOGWARN "Auto-Discovery: UNICAST mode requested without explicit IPs.";
+        }
+
         LOGINF "Auto-Discovery: Manual VLAN IP scan requested – using UNICAST-ONLY mode.";
     }
 
     my $cmd = "/usr/bin/php $lbphtmldir/system/$scanzonesfile --ttl=$ttl --mcast-ttl=$mcast_ttl$extra_args";
+
+    LOGDEB "Auto-Discovery: Executing command: $cmd";
+
     my $response = qx($cmd);
     $response =~ s/^\s+|\s+$//g;
 
-	if ($response eq "") {
-		LOGWARN "Auto-Discovery: Empty response from network.php. Manual Sonos IP input will be shown.";
+    if ($response eq "") {
+        LOGWARN "Auto-Discovery: Empty response from network.php. Manual Sonos IP input will be shown.";
 
-		$vlan_hint        = 1;
-		$vlan_hint_reason = 'empty_scan_result';
-		$vlan_hint_ips    = [];
+        $vlan_hint        = 1;
+        $vlan_hint_reason = 'empty_scan_result';
+        $vlan_hint_ips    = [];
 
-		# Show JS warning only after a failed MULTICAST/BROADCAST scan,
-		# not after a manual UNICAST scan.
-		$show_unicast_scan_hint = 1 if !$FORCE_UNICAST_SCAN;
+        # Show JS warning only after a failed MULTICAST/BROADCAST scan,
+        # not after a manual UNICAST scan.
+        $show_unicast_scan_hint = 1 if !$FORCE_UNICAST_SCAN;
 
-		return($countplayers);
-	}
+        return($countplayers);
+    }
 
     # No players found: empty array or empty object
-	if ($response =~ /^\[\s*\]$/ || $response =~ /^\{\s*\}$/) {
-		LOGINF "Auto-Discovery: No new players found. Manual Sonos IP input will be shown.";
+    if ($response =~ /^\[\s*\]$/ || $response =~ /^\{\s*\}$/) {
+        LOGINF "Auto-Discovery: No new players found. Manual Sonos IP input will be shown.";
 
-		$vlan_hint        = 1;
-		$vlan_hint_reason = 'no_new_players';
-		$vlan_hint_ips    = [];
+        $vlan_hint        = 1;
+        $vlan_hint_reason = 'no_new_players';
+        $vlan_hint_ips    = [];
 
-		# Show JS warning only after a failed MULTICAST/BROADCAST scan,
-		# not after a manual UNICAST scan.
-		$show_unicast_scan_hint = 1 if !$FORCE_UNICAST_SCAN;
+        # Show JS warning only after a failed MULTICAST/BROADCAST scan,
+        # not after a manual UNICAST scan.
+        $show_unicast_scan_hint = 1 if !$FORCE_UNICAST_SCAN;
 
-		return($countplayers);
-	}
+        return($countplayers);
+    }
 
     LOGOK "Auto-Discovery: JSON data received from network.php.";
 
@@ -1078,23 +1124,21 @@ sub scan
     }
 
     # ---- VLAN Hint Detection ----
-    # network.php returns __vlan_hint__ when SSDP failed completely
-    # or configured unicast IPs also failed.
-	if (exists $newzones->{'__vlan_hint__'}) {
-		$vlan_hint        = 1;
-		$vlan_hint_reason = $newzones->{'reason'}    // 'ssdp_failed_no_static_ips';
-		$vlan_hint_ips    = $newzones->{'tried_ips'} // [];
+    if (exists $newzones->{'__vlan_hint__'}) {
+        $vlan_hint        = 1;
+        $vlan_hint_reason = $newzones->{'reason'}    // 'ssdp_failed_no_static_ips';
+        $vlan_hint_ips    = $newzones->{'tried_ips'} // [];
 
-		LOGWARN "Auto-Discovery: VLAN hint received from network.php (reason: $vlan_hint_reason).";
-		LOGWARN "Auto-Discovery: SSDP discovery failed completely or unicast fallback failed.";
-		LOGWARN "Auto-Discovery: Manual Sonos IP input will be shown.";
+        LOGWARN "Auto-Discovery: VLAN hint received from network.php (reason: $vlan_hint_reason).";
+        LOGWARN "Auto-Discovery: SSDP discovery failed completely or unicast fallback failed.";
+        LOGWARN "Auto-Discovery: Manual Sonos IP input will be shown.";
 
-		# Show JS warning only after a failed MULTICAST/BROADCAST scan,
-		# not after a manual UNICAST scan.
-		$show_unicast_scan_hint = 1 if !$FORCE_UNICAST_SCAN;
+        # Show JS warning only after a failed MULTICAST/BROADCAST scan,
+        # not after a manual UNICAST scan.
+        $show_unicast_scan_hint = 1 if !$FORCE_UNICAST_SCAN;
 
-		return($countplayers);
-	}
+        return($countplayers);
+    }
 
     # ---- Normal flow: stage discovered players in memory only ----
     $cfg->{sonoszonen} = {} if ref($cfg->{sonoszonen}) ne 'HASH';
@@ -1119,18 +1163,18 @@ sub scan
         $vlan_hint_ips    = [];
 
         LOGOK "Auto-Discovery: $added new player(s) staged in UI. Configuration was not written yet.";
-	} else {
-		$vlan_hint        = 1;
-		$vlan_hint_reason = 'no_new_players';
-		$vlan_hint_ips    = [];
+    } else {
+        $vlan_hint        = 1;
+        $vlan_hint_reason = 'no_new_players';
+        $vlan_hint_ips    = [];
 
-		# Show JS warning only after a MULTICAST/BROADCAST scan without new players,
-		# not after a manual UNICAST scan.
-		$show_unicast_scan_hint = 1 if !$FORCE_UNICAST_SCAN;
+        # Show JS warning only after a MULTICAST/BROADCAST scan without new players,
+        # not after a manual UNICAST scan.
+        $show_unicast_scan_hint = 1 if !$FORCE_UNICAST_SCAN;
 
-		LOGINF "Auto-Discovery: Scan returned players, but no new player was added to the UI.";
-		LOGINF "Auto-Discovery: Manual Sonos IP input will be shown.";
-	}
+        LOGINF "Auto-Discovery: Scan returned players, but no new player was added to the UI.";
+        LOGINF "Auto-Discovery: Manual Sonos IP input will be shown.";
+    }
 
     return($countplayers);
 }
@@ -1205,24 +1249,15 @@ sub validate_sonos_unicast_ip
 
 
 #####################################################
-# Save VLAN static IPs to config
-# Speichert manuell eingegebene Sonos-IPs als
-# vlan_static_ips in der s4lox_config.json.
-# network.php verwendet diese beim nächsten Scan
-# als Unicast-Fallback wenn SSDP fehlschlägt.
+# Validate manual Sonos UNICAST IPs
+# Important:
+# - IPs are NOT written to s4lox_config.json.
+# - IPs are only returned for the current UNICAST scan.
 #####################################################
 sub save_vlan_static_ips
 {
     my @new_ips = @_;
 
-    my @existing = ();
-    if (ref($cfg->{'vlan_static_ips'}) eq 'ARRAY') {
-        @existing = @{$cfg->{'vlan_static_ips'}};
-    }
-
-    my %seen = map { $_ => 1 } @existing;
-
-    my @added;
     my @valid;
     my @failed;
 
@@ -1234,43 +1269,30 @@ sub save_vlan_static_ips
 
         if (!$ok) {
             push @failed, "$ip ($msg)";
-            LOGWARN "save_vlan_static_ips: IP '$ip' failed validation and will NOT be saved: $msg";
+            LOGWARN "validate_manual_unicast_ips: IP '$ip' failed validation: $msg";
             next;
         }
 
         push @valid, $ip;
-        LOGOK "save_vlan_static_ips: IP '$ip' validated successfully: $msg";
-
-        if ($seen{$ip}) {
-            LOGINF "save_vlan_static_ips: IP '$ip' is already stored in vlan_static_ips.";
-            next;
-        }
-
-        push @existing, $ip;
-        push @added, $ip;
-        $seen{$ip} = 1;
+        LOGOK "validate_manual_unicast_ips: IP '$ip' validated successfully: $msg";
     }
 
-    if (@added) {
-        $cfg->{'vlan_static_ips'} = \@existing;
-        $jsonobj->write();
-
-        LOGOK "save_vlan_static_ips: Saved validated VLAN static IP(s): " . join(", ", @added);
+    if (@valid) {
+        LOGOK "validate_manual_unicast_ips: Valid IP(s) for current UNICAST scan: " . join(", ", @valid);
     } else {
-        LOGWARN "save_vlan_static_ips: No new validated IPs were saved.";
+        LOGWARN "validate_manual_unicast_ips: No valid IPs for current UNICAST scan.";
     }
 
     if (@failed) {
-        LOGWARN "save_vlan_static_ips: Failed IP(s): " . join(", ", @failed);
+        LOGWARN "validate_manual_unicast_ips: Failed IP(s): " . join(", ", @failed);
     }
 
     return {
-        added  => \@added,
+        added  => [],
         valid  => \@valid,
         failed => \@failed,
     };
 }
-
 
 #####################################################
 # VLAN IP form submit handler
@@ -1347,8 +1369,8 @@ sub save_vlan_ip_handler
 
     # Run network.php in unicast-only mode using vlan_static_ips from config
     $FORCE_UNICAST_SCAN = 1;
-    scan();
-    $FORCE_UNICAST_SCAN = 0;
+	scan(@{ $result->{valid} // [] });
+	$FORCE_UNICAST_SCAN = 0;
 
     # If at least one submitted IP failed validation, keep the manual block visible
     # even if another valid IP was successfully scanned.
