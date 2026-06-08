@@ -198,7 +198,7 @@ function nextradio() {
     // Optional: Radio-Ansage vor dem Senderwechsel
     // -----------------------------
     $ann_volume = null;
-    if ($config['VARIOUS']['announceradio'] == 1 && $textan == "0") {
+    if (is_enabled($config['VARIOUS']['announceradio']) && $textan == "0") {
         // Ansage "Radio <NextName>" mit Lautstärke-Logik aus say_radio_station()
         $ann_volume = say_radio_station('', $next_name);
     }

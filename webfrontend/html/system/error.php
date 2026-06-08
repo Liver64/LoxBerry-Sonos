@@ -19,26 +19,50 @@
 
 
 function handleError($code, $description, $file = null, $line = null, $context = null) {
-	global $data;
-	
-    $displayErrors = ini_get("display_errors");
-    $displayErrors = strtolower($displayErrors);
-    if (error_reporting() === 0 || $displayErrors === "on") {
+
+    /*
+     * Respect current error_reporting().
+     * Example: error_reporting(E_ALL & ~E_NOTICE) must really suppress notices.
+     */
+    if ((error_reporting() & $code) === 0) {
         return false;
     }
+
+    $displayErrors = strtolower((string) ini_get("display_errors"));
+    if ($displayErrors === "on" || $displayErrors === "1") {
+        return false;
+    }
+
     list($error, $log) = mapErrorCode($code);
-    $data = array(
-        'level' => $log,
-        'code' => $code,
-        'error' => $error,
+
+    $requestUri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+    $remoteAddr = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
+
+    /*
+     * Compact PHP error information.
+     * IMPORTANT: Do NOT log $context.
+     */
+    $logData = array(
+        'level'       => $log,
+        'code'        => $code,
+        'error'       => $error,
         'description' => $description,
-        'file' => $file,
-        'line' => $line,
-        'context' => $context,
-        'path' => $file,
-        'message' => $error . ' (' . $code . '): ' . $description . ' in [' . $file . ', line ' . $line . ']'
+        'file'        => $file,
+        'line'        => $line
     );
-    return fileLog($data);
+
+    if ($requestUri !== '') {
+        $logData['request'] = $requestUri;
+    }
+
+    if ($remoteAddr !== '') {
+        $logData['remote'] = $remoteAddr;
+    }
+
+    $message  = date("H:i:s") . " <ERROR> PHP error detected:\n";
+    $message .= print_r($logData, true);
+
+    return fileLog($message);
 }
 
 /**
@@ -48,16 +72,29 @@ function handleError($code, $description, $file = null, $line = null, $context =
 * @return boolean
 */
 
-function fileLog($logData, $fileName = ERROR_LOG_FILE) {
-	global $data;
-	
-    $fh = fopen($fileName, 'a+');
-    if (is_array($logData)) {
-        $logData = print_r($logData, 1);
+function fileLog($logData, $fileName = null) {
+
+    if ($fileName === null || $fileName === '') {
+        if (defined('ERROR_LOG_FILE')) {
+            $fileName = ERROR_LOG_FILE;
+        } else {
+            return false;
+        }
     }
+
+    if (is_array($logData)) {
+        $logData = print_r($logData, true);
+    }
+
+    $fh = fopen($fileName, 'a');
+    if (!$fh) {
+        return false;
+    }
+
     $status = fwrite($fh, $logData);
     fclose($fh);
-    return ($status) ? true : false;
+
+    return ($status !== false);
 }
 
 /**

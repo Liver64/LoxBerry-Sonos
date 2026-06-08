@@ -1,14 +1,20 @@
 <TMPL_IF SETTINGS>
     <!-- form 'FORM' START -->
-	
+	 
     <form method="post" data-ajax="false" accept-charset="utf-8" name="main_form" id="main_form" action="./index.cgi?form">
         <input type="hidden" name="saveformdata1" value="1">
 		<input type="hidden" name="regionOptions" id="regionOptions" value="<TMPL_VAR TTS.regionms>">
-		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table/table.css"/>
-		
+		<TMPL_IF NAME="LBV4">
+			<TMPL_IF NAME="THEMEMAC">
+			<TMPL_ELSE>
+				<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table/table.css"/>
+			</TMPL_IF>
+		<TMPL_ELSE>
+			<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table/table.css"/>
+			<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/switch/flipswitch.css"/>
+		</TMPL_IF>
 		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.min.css"/>
 		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.css"/>
-		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/switch/flipswitch.css"/>
 		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.min.js"></script>
 		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.js"></script>
 		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/slider/ion.rangeSlider.js"></script>
@@ -21,27 +27,51 @@
 
             <table class="formtable" border="0" width="100%" cellpadding="10">
                 <tr>
-				
-				<TMPL_IF NAME="PLAYER_AVAILABLE">
-                    <td valign="middle" style="height: 33px; width: 25%; text-align: left; color:black">
-				<TMPL_ELSE>
-					<td valign="middle" style="height: 33px; width: 25%; text-align: left; color:red"></td></td>
-				</TMPL_IF>
-                        <h2 class="auto-style3" style="width: 100%">
-                            <TMPL_VAR ZONES.SONOS_CONFIG>
-                        </h2>
-                        <td style="height: 33px; text-align: center;">
-                            <img class='ico_sonos' src='/plugins/<TMPL_VAR PLUGINDIR>/images/sonos_logo.png' border='0' width='186' height='125' align="absmiddle">
-                        </td>
-                        <td style="height: 33px; width: 80px;"></td>
+					<td colspan="3" style="height: 150px; position: relative; vertical-align: middle; padding: 0;">
 
-                </tr>
+						<h2 class="auto-style3"
+							style="position: absolute; left: 0; top: 50%; transform: translateY(-50%); margin: 0; width: auto; text-align: left;
+								   <TMPL_IF NAME="PLAYER_AVAILABLE"><TMPL_ELSE>color:red;</TMPL_IF>">
+							<TMPL_VAR ZONES.SONOS_CONFIG>
+						</h2>
+						<div style="width: 100%; text-align: center;">
+							<TMPL_IF NAME="THEMEGLASS">
+								<img class="ico_sonos"
+									 src="/plugins/<TMPL_VAR PLUGINDIR>/images/sonos_logo_white.svg"
+									 border="0"
+									 width="186"
+									 height="125"
+									 align="absmiddle">
+							<TMPL_ELSE>
+								<TMPL_IF NAME="THEMEMAC">
+									<img class="ico_sonos"
+										 src="/plugins/<TMPL_VAR PLUGINDIR>/images/sonos_mac_classic.svg"
+										 border="0"
+										 width="186"
+										 height="125"
+										 align="absmiddle">
+								<TMPL_ELSE>
+									<img class="ico_sonos"
+										 src="/plugins/<TMPL_VAR PLUGINDIR>/images/sonos_logo_black.svg"
+										 border="0"
+										 width="186"
+										 height="125"
+										 align="absmiddle">
+								</TMPL_IF>
+							</TMPL_IF>
+						</div>
+
+					</td>
+				</tr>
 				<tr>
                     <td style="height: 41px; width: 25%;" valign="top">
                         <label id="lzonen"><TMPL_VAR ZONES.SONOS_ZONE_LABEL></label>
                     </td>
-                    <td valign="middle" style="height: 41px; width: 90%;">
-                        <table class="tables" width="85%" id="tblzonen" name="tblzonen">
+                    <td valign="middle" style="height: 41px; width: 94%;">
+                        <table class="tables"
+							   id="tblzonen"
+							   name="tblzonen"
+							   style="width:<TMPL_IF NAME="LBV4">86%<TMPL_ELSE>90%</TMPL_IF> !important;">						   
                             <tr>
                                 <th align="middle"><img class='ico_delete' src='/plugins/<TMPL_VAR PLUGINDIR>/images/recycle-bin.png' border='0' width='24' height='24'></th>
                                 <th align="left">
@@ -82,18 +112,26 @@
                         </table>
 
                         <TMPL_IF NAME="PLAYER_AVAILABLE">
-                            <div class='icoclip' style='text-align: left;'>
-                                &nbsp;&nbsp;&nbsp;<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/green.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_GREEN>
-                                &nbsp;&nbsp;<img class='icoclip' src='/plugins/<TMPL_VAR PLUGINDIR>/images/red.png' border='0' width='26' height='28' align="absmiddle"><TMPL_VAR ZONES.SONOS_AUDIOCLIP_RED>
-                            </div>
-                            <div class='icoclip' style='text-align: center; margin-top: 2px;'>
-                                <TMPL_IF NAME="AUDIOCLIP_ALL_SUPPORTED">
-                                    <TMPL_VAR T2S.AUDIOCLIP_ALL_SUPPORTED>
-                                <TMPL_ELSE>
-                                    <TMPL_VAR T2S.AUDIOCLIP_PARTIAL_SUPPORT>
-                                </TMPL_IF>
-                            </div>
-                        </TMPL_IF>
+							<TMPL_IF NAME="THEMEMAC">
+								<div class='icoclip' style='text-align: left;'>
+									&nbsp;&nbsp;&nbsp;<TMPL_VAR ZONES.SONOS_AUDIOCLIP_MAC_OK>
+									&nbsp;&nbsp;<TMPL_VAR ZONES.SONOS_AUDIOCLIP_MAC_NOK>
+								</div>
+							<TMPL_ELSE>
+								<div class='icoclip' style='text-align: left;'>
+									&nbsp;&nbsp;&nbsp;<TMPL_VAR ZONES.SONOS_AUDIOCLIP_GREEN>
+									&nbsp;&nbsp;<TMPL_VAR ZONES.SONOS_AUDIOCLIP_RED>
+								</div>
+							</TMPL_IF>
+
+							<div class='icoclip' style='text-align: center; margin-top: 2px;'>
+								<TMPL_IF NAME="AUDIOCLIP_ALL_SUPPORTED">
+									<TMPL_VAR T2S.AUDIOCLIP_ALL_SUPPORTED>
+								<TMPL_ELSE>
+									<TMPL_VAR T2S.AUDIOCLIP_PARTIAL_SUPPORT>
+								</TMPL_IF>
+							</div>
+						</TMPL_IF>
 
                         <br>
 
@@ -169,14 +207,14 @@
                             style="width: calc(98% - 100px); box-sizing: border-box; overflow-y: auto; margin: 0; border-radius: 12px;"></textarea>
                     </td>
                 </tr>
-                </TMPL_IF>
-				
+                </TMPL_IF>			
 	            <tr>			
 					<td style="height: 28px; width: 15%; padding-top: 2px; padding-bottom: 2px;">
 						<label id="lt2son"><TMPL_VAR T2S.LABEL_T2SON></label>
 					</td>
 					<td style="height: 28px; width: 70%; padding-top: 2px; padding-bottom: 2px;">
 						<table border="0" width="92%" style="border-collapse:collapse;">
+							<tr>
 							<td style="width: 5%; padding-top: 0; padding-bottom: 0;">
 								<div class="lb-flipswitch"
 									 data-input="t2son"
@@ -184,14 +222,12 @@
 
 									<input type="hidden" name="t2son" id="t2son_hidden" value="false">
 
-									<input type="checkbox"
-										   id="t2son"
-										   class="lb-flipswitch-checkbox no-jqm-flipswitch"
-										   data-role="none">
-
-									<label class="lb-flipswitch-label" for="t2son">
-										<span class="lb-flipswitch-inner"></span>
-										<span class="lb-flipswitch-switch"></span>
+									<label class="lb-toggle" for="t2son">
+										<input type="checkbox"
+											   id="t2son"
+											   class="lb-flipswitch-checkbox no-jqm-flipswitch"
+											   data-role="none">
+										<span class="lb-toggle-slider"></span>
 									</label>
 								</div>
 							</td>
@@ -205,11 +241,12 @@
 							<td style="height: 28px; width: 1%; padding-top: 0; padding-bottom: 0;">
 								<TMPL_IF NAME="RESTORE_POSSIBLE">
 									<a id="restorec" name="restorec"
-									   data-role="button" data-inline="true" data-mini="true" data-icon="refresh">
+									   data-role="none" data-inline="true" data-mini="true" data-icon="refresh" class="lb-btn lb-btn-sm" href="#">
 									   Restore
 									</a>
 								</TMPL_IF>
 							</td>
+							</tr>
 						</table>
 					</td>		
 				</tr>
@@ -227,13 +264,12 @@
 									 data-input="tvmon"
 									 data-value="<TMPL_VAR VARIOUS.tvmon>">
 									<input type="hidden" name="tvmon" id="tvmon_hidden" value="false">
-									<input type="checkbox"
-										   id="tvmon"
-										   class="lb-flipswitch-checkbox no-jqm-flipswitch"
-										   data-role="none">
-									<label class="lb-flipswitch-label" for="tvmon">
-										<span class="lb-flipswitch-inner"></span>
-										<span class="lb-flipswitch-switch"></span>
+									<label class="lb-toggle" for="tvmon">
+										<input type="checkbox"
+											   id="tvmon"
+											   class="lb-flipswitch-checkbox no-jqm-flipswitch"
+											   data-role="none">
+										<span class="lb-toggle-slider"></span>
 									</label>
 								</div>
 							</fieldset>
@@ -243,22 +279,29 @@
 							<div class="tvmon_extra" style="display:flex; align-items:center; gap:8px;">
 								<label id="lstart"><TMPL_VAR ZONES.SONOS_LABEL_START></label>
 
-								<div id="tvmon_addstart" class="tvmon_time_wrap">
-									<input id="starttime" type="time" name="starttime" style="width: 100px; margin:0;">
-									<script>
-										$('#starttime').val('<TMPL_VAR VARIOUS.starttime>');
-									</script>
+								<div id="tvmon_addstart" class="tvmon_time_wrap sb_time_wrap">
+									<input
+										id="starttime"
+										name="starttime"
+										type="time"
+										class="sb_time_input"
+										data-role="none"
+										value="<TMPL_VAR VARIOUS.starttime>">
 								</div>
 
 								<label id="lend"><TMPL_VAR ZONES.SONOS_LABEL_END></label>
 
-								<div id="tvmon_addend" class="tvmon_time_wrap">
-									<input id="endtime" type="time" name="endtime" style="width: 100px; margin:0;">
-									<script>
-										$('#endtime').val('<TMPL_VAR VARIOUS.endtime>');
-									</script>
+								<div id="tvmon_addend" class="tvmon_time_wrap sb_time_wrap">
+									<input
+										id="endtime"
+										name="endtime"
+										type="time"
+										class="sb_time_input"
+										data-role="none"
+										value="<TMPL_VAR VARIOUS.endtime>">
 								</div>
 							</div>
+						</div>
 
 						<script>
 							$(document).off('change.tvmonCustom', '#tvmon').on('change.tvmonCustom', '#tvmon', function () {
@@ -294,22 +337,57 @@
                         <label id="ltts_instanz"><TMPL_VAR T2S.TTS_INSTANZ></label>
                     </td>
                     <td style="width: 55%; height: 45px;">
-                        <fieldset id="engine-selector" data-role="controlgroup" data-type="horizontal">
-                            <input type="radio" name="t2s_engine" id="tts_voicerss" value="1001">
-                            <label for="tts_voicerss">🔊 VoiceRSS</label>
-                            <input type="radio" name="t2s_engine" id="tts_polly" value="4001">
-                            <label for="tts_polly">☁️ Polly</label>
-                            <input type="radio" name="t2s_engine" id="tts_piper" value="9012">
-                            <label for="tts_piper">🎙️ Piper</label>
-                            <input type="radio" name="t2s_engine" id="tts_respvoice" value="6001">
-                            <label for="tts_respvoice">🔈 RespVoice</label>
-                            <input type="radio" name="t2s_engine" id="tts_google_cloud" value="8001">
-                            <label for="tts_google_cloud">🌐 Google Cloud</label>
-							<input type="radio" name="t2s_engine" id="tts_azure" value="9001">
-							<label for="tts_azure">💎 MS Azure AI</label>
-							<input type="radio" name="t2s_engine" id="tts_elevenlabs" value="9011">
-							<label for="tts_elevenlabs">🧠 ElevenLabs</label>
-                        </fieldset>
+                        <TMPL_IF NAME="LBV4">
+
+							<div id="engine-selector" class="lb-btn-group tts-engine-group">
+								<input type="radio" name="t2s_engine" id="tts_voicerss" value="1001" data-role="none">
+								<label class="lb-btn lb-btn-sm" for="tts_voicerss">🔊 VoiceRSS</label>
+
+								<input type="radio" name="t2s_engine" id="tts_polly" value="4001" data-role="none">
+								<label class="lb-btn lb-btn-sm" for="tts_polly">☁️ Polly</label>
+
+								<input type="radio" name="t2s_engine" id="tts_piper" value="9012" data-role="none">
+								<label class="lb-btn lb-btn-sm" for="tts_piper">🎙️ Piper</label>
+
+								<input type="radio" name="t2s_engine" id="tts_respvoice" value="6001" data-role="none">
+								<label class="lb-btn lb-btn-sm" for="tts_respvoice">🔈 RespVoice</label>
+
+								<input type="radio" name="t2s_engine" id="tts_google_cloud" value="8001" data-role="none">
+								<label class="lb-btn lb-btn-sm" for="tts_google_cloud">🌐 Google Cloud</label>
+
+								<input type="radio" name="t2s_engine" id="tts_azure" value="9001" data-role="none">
+								<label class="lb-btn lb-btn-sm" for="tts_azure">💎 MS Azure AI</label>
+
+								<input type="radio" name="t2s_engine" id="tts_elevenlabs" value="9011" data-role="none">
+								<label class="lb-btn lb-btn-sm" for="tts_elevenlabs">🧠 ElevenLabs</label>
+							</div>
+
+						<TMPL_ELSE>
+
+							<fieldset id="engine-selector" data-role="controlgroup" data-type="horizontal">
+								<input type="radio" name="t2s_engine" id="tts_voicerss" value="1001">
+								<label for="tts_voicerss">🔊 VoiceRSS</label>
+
+								<input type="radio" name="t2s_engine" id="tts_polly" value="4001">
+								<label for="tts_polly">☁️ Polly</label>
+
+								<input type="radio" name="t2s_engine" id="tts_piper" value="9012">
+								<label for="tts_piper">🎙️ Piper</label>
+
+								<input type="radio" name="t2s_engine" id="tts_respvoice" value="6001">
+								<label for="tts_respvoice">🔈 RespVoice</label>
+
+								<input type="radio" name="t2s_engine" id="tts_google_cloud" value="8001">
+								<label for="tts_google_cloud">🌐 Google Cloud</label>
+
+								<input type="radio" name="t2s_engine" id="tts_azure" value="9001">
+								<label for="tts_azure">💎 MS Azure AI</label>
+
+								<input type="radio" name="t2s_engine" id="tts_elevenlabs" value="9011">
+								<label for="tts_elevenlabs">🧠 ElevenLabs</label>
+							</fieldset>
+
+						</TMPL_IF>
                         <div class="ttsconfig googlecloudinfo 8001">
                             <font size="-1" align="middle">
                                 <a id="linkgoogleapi" href="https://www.youtube.com/watch?v=1n8xlVNWEZ0" target="_blank">
@@ -325,7 +403,7 @@
                                 </a>
                             </font>
                         </div>
-						
+					
 						<div class="ttsconfig piperinfo 9012">
                              <font size="-1" align="middle">
                                 <a id="linkpiper" href="https://huggingface.co/rhasspy/piper-voices/tree/main" target="_blank" onclick="piperInfo(event)">
@@ -401,7 +479,7 @@
 							</div>
 
 							<div class="ttsconfig btnpopulategooglevoices 8001 9001 9011 9012" style="flex:0 0 auto; white-space:nowrap;">
-								<a onclick="checkProvider(); return false;" data-role="button" data-inline="true" data-mini="true" href="#">
+								<a onclick="checkProvider(); return false;" data-role="none" data-inline="true" data-mini="true" href="#" class="lb-btn lb-btn-sm">
 									<TMPL_VAR T2S.BUTTON_VOICES>
 								</a>
 							</div>
@@ -418,20 +496,20 @@
 					<td colspan="2" style="height: 50px; vertical-align: middle; padding-right: 0;">
 						<div style="display:flex; align-items:center; gap:16px; width:100%;">
 
-							<div style="flex:0 0 345px;">
+							<div id="t2slang_wrap" style="flex:0 0 345px;">
 								<select
 									id="t2slang"
 									name="t2slang"
 									data-mini="true"
 									data-validation-error-msg="<TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN>"
 									data-validation-rule="^([A-Za-z0-9]){4,10}$"
-									style="width:100%;">
+									style="width:100%;" class="lb-select">
 								</select>
 							</div>
 
 							<div class="ttsconfig field-voice 1001 9012 4001 8001 9001 9011" style="flex:0 0 530px;">
 								<select
-									class="voice_select"
+									class="voice_select lb-select"
 									id="voice"
 									name="voice"
 									data-mini="true"
@@ -459,7 +537,7 @@
 				</tr>
 
 				<tr class="ttsconfig ttsbaseconfig colmp3">
-					<td style="height: 80px; width: 26%; vertical-midle: bottom;">
+					<td style="height: 80px; width: 26%; vertical-align: bottom;">
 						<label id="lmp3store"><TMPL_VAR T2S.LABEL_MP3_FILES></label>
 					</td>
 
@@ -467,15 +545,22 @@
 						<div style="display:flex; align-items:center; gap:24px; width:100%;">
 
 							<div style="flex:0 0 295px;">
-								<select id="mp3store" name="mp3store" data-mini="true" data-native-menu="false" style="width:100%;">
+								<select
+									id="mp3store"
+									name="mp3store"
+									class="lb-select"
+									data-role="none"
+									data-mini="true"
+									style="width:100%; box-sizing:border-box;">
 									<option value="1"><TMPL_VAR T2S.1DAY_MP3_STORE></option>
 									<option value="7"><TMPL_VAR T2S.7DAY_MP3_STORE></option>
 									<option value="30"><TMPL_VAR T2S.30DAY_MP3_STORE></option>
 									<option value="365"><TMPL_VAR T2S.365DAY_MP3_STORE></option>
 									<option value="0"><TMPL_VAR T2S.ENDLESS_MP3_STORE></option>
 								</select>
+
 								<script>
-									$('#mp3store option[value="<TMPL_VAR MP3.MP3store>"]').prop('selected', 'selected');
+									$('#mp3store').val('<TMPL_VAR MP3.MP3store>');
 								</script>
 							</div>
 
@@ -491,7 +576,7 @@
 										data-mini="true"
 										data-validation-error-msg="<TMPL_VAR T2S.SELECT_JINGLE_DROPDOWN>"
 										data-validation-rule="^([A-Za-z0-9]){4,10}$"
-										style="width:100%;">
+										style="width:100%;" class="lb-select">
 										<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_JINGLE_DROPDOWN></option>
 										<TMPL_VAR MP3_LIST>
 									</select>
@@ -551,7 +636,11 @@
 
 								<div style="margin-top:14px; margin-left:15px; line-height:1.45;">
 									<font size="-1"><TMPL_VAR T2S.JINGLE_SOURCE></font><br>
-									<font size="-1" color="blue"><TMPL_VAR DATADIR>/tts/</font>
+									<TMPL_IF NAME="THEMEGLASS">
+										<font size="-1"><b><TMPL_VAR DATADIR>/tts/</b></font>
+									<TMPL_ELSE>	
+										<font size="-1" color="blue"><TMPL_VAR DATADIR>/tts/</font>
+									</TMPL_IF>	
 								</div>
 							</div>
 
@@ -582,14 +671,12 @@
 											<div style="position:absolute; left:18px; top:100%; width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-top:6px solid rgba(40,40,40,0.96);"></div>
 										</div>
 										
-										<input type="checkbox"
-											   id="sendlox"
-											   class="lb-flipswitch-checkbox no-jqm-flipswitch"
-											   data-role="none">
-											   
-										<label class="lb-flipswitch-label" for="sendlox">
-											<span class="lb-flipswitch-inner"></span>
-											<span class="lb-flipswitch-switch"></span>
+										<label class="lb-toggle" for="sendlox">
+											<input type="checkbox"
+												   id="sendlox"
+												   class="lb-flipswitch-checkbox no-jqm-flipswitch"
+												   data-role="none">
+											<span class="lb-toggle-slider"></span>
 										</label>
 									</div>
 								</td>
@@ -663,9 +750,11 @@
 
 											<td style="padding:0 0 0 6px; vertical-align:middle; white-space:nowrap;">
 												<button type="button"
-														class="ui-btn ui-mini ui-btn-inline ui-btn-icon-left ui-icon-refresh"
+														class="lb-btn lb-btn-sm lb-btn-icon"
 														onclick="restartSonosListener();"
-														style="margin:0;">
+														style="margin:0;"
+														data-role="none">
+													<i class="pi pi-refresh"></i>
 													Restart Listener
 												</button>
 											</td>
@@ -690,7 +779,7 @@
 									onclick="checkfile('VI_MQTT_UDP_Sonos.xml')"
 									id="btn2"
 									data-mini="true"
-									value="VI_MQTT_UDP_Sonos.xml" />
+									value="VI_MQTT_UDP_Sonos.xml"  class="lb-btn lb-btn-sm" data-role="none"/>
 							</div>
 
 							<div class="btnd">
@@ -699,7 +788,7 @@
 									onclick="checkfile('VI_UDP_Sonos.xml')"
 									id="btn3"
 									data-mini="true"
-									value="VI_UDP_Sonos.xml" />
+									value="VI_UDP_Sonos.xml"  class="lb-btn lb-btn-sm" data-role="none"/>
 							</div>
 
 							<div class="pdfinfo" style="display:flex; align-items:center; white-space:nowrap;">
@@ -707,8 +796,15 @@
 									href="/plugins/<TMPL_VAR PLUGINDIR>/web/images/sonos4lox%20-%20virtual%20Inputs.pdf"
 									target="_blank"
 									rel="noopener noreferrer"
-									style="text-decoration:none; color:#1a1a1a; font-size:14px; display:inline-flex; align-items:center; gap:6px;">
-									<span style="display:inline-block; padding:1px 5px; background:#d9534f; color:#fff; border-radius:3px; font-size:11px; font-weight:bold; line-height:1;">PDF</span>
+									style="text-decoration:none; font-size:14px; display:inline-flex; align-items:center; gap:6px;
+										<TMPL_IF NAME="THEMEGLASS">
+											color:#ffffff !important; font-weight:bold !important;
+										<TMPL_ELSE>
+											color:#1a1a1a !important; font-weight:bold !important;
+										</TMPL_IF>">
+									<span style="display:inline-block; padding:2px 6px; background:#d9534f !important; color:#ffffff !important; -webkit-text-fill-color:#ffffff !important; border-radius:3px; font-size:11px; font-weight:bold !important; line-height:1; text-shadow:none !important;">
+										PDF
+									</span>
 									<span><TMPL_VAR TEMPLATE.TXT_INBOUND_INFO></span>
 								</a>
 							</div>
@@ -731,6 +827,7 @@
                         <h3><TMPL_VAR TEMPLATE.MAIN_LABEL_OPTIONS></h3>
                     </td>
                 </tr>
+                <tr>
                 <td style="height: 30px; width: 10%;">
                     <TMPL_VAR TEMPLATE.LABEL_OPTIONS>
                 </td>
@@ -738,25 +835,26 @@
                 <td colspan="3" valign="middle">
 					<div style="display:table-cell; width:60%;">
 						<div class="layout-button-row">
-							<button type="button" class="layout-btn" id="btn_radio_det" onclick="toggleLayoutButton('radio_det'); radlayout();">
+							<button type="button" class="layout-btn lb-btn lb-btn-sm" id="btn_radio_det" onclick="toggleLayoutButton('radio_det'); radlayout();" data-role="none">
 								🎵 <TMPL_VAR RADIO.LAYOUT_CHECKBOX>
 							</button>
 							<input type="hidden" name="radio_det" id="radio_det" value="0">
-							<button type="button" class="layout-btn" id="btn_weather_det" onclick="toggleLayoutButton('weather_det'); weatherlayout();">
+							<button type="button" class="layout-btn lb-btn lb-btn-sm" id="btn_weather_det" onclick="toggleLayoutButton('weather_det'); weatherlayout();" data-role="none">
 								🌤️ <TMPL_VAR WEATHER.LAYOUT_CHECKBOX>
 							</button>
 							<input type="hidden" name="weather_det" id="weather_det" value="0">
-							<button type="button" class="layout-btn" id="btn_dest_det" onclick="toggleLayoutButton('dest_det'); destlayout();">
+							<button type="button" class="layout-btn lb-btn lb-btn-sm" id="btn_dest_det" onclick="toggleLayoutButton('dest_det'); destlayout();" data-role="none">
 								🚗 <TMPL_VAR DESTINATION.LAYOUT_CHECKBOX>
 							</button>
 							<input type="hidden" name="dest_det" id="dest_det" value="0">
-							<button type="button" class="layout-btn last" id="btn_cal_det" onclick="toggleLayoutButton('cal_det'); callayout();">
+							<button type="button" class="layout-btn last lb-btn lb-btn-sm" id="btn_cal_det" onclick="toggleLayoutButton('cal_det'); callayout();" data-role="none">
 								📅 <TMPL_VAR CALENDAR.LAYOUT_CHECKBOX>
 							</button>
 							<input type="hidden" name="cal_det" id="cal_det" value="0">
 						</div>
 					</div>
 				</td>
+                </tr>
 
 
                 <!-- Start Radio-->
@@ -769,6 +867,7 @@
                         </h3>
                     </td>
                     <td style="height: 33px; width: 24px;"></td>
+                </tr>
                     <tr class="radiodet">
                         <td colspan=3 valign="middle" style="height: 36px"> 
                             <font size="-1">
@@ -781,12 +880,18 @@
                                     <th align="left" style="height: 25px; width: 210px"><TMPL_VAR RADIO.RADIO_STATION_NAME></th>
                                     <th align="left"><TMPL_VAR RADIO.RADIO_STATION_URL></th>
 									<th align="left"><TMPL_VAR RADIO.RADIO_STATION_COVER_URL></th>
-                                </tr class="radiodet">
+                                </tr>
                                 <TMPL_VAR ROWSRADIO>
                             </table>
-                            <a onClick="AddRadio();return false;" id="btnaddradio" data-role="button" data-inline="true" data-mini="true" data-icon="plus" href="#">
-                                <TMPL_VAR RADIO.BUTTON_ADD_STATION>
-                            </a>
+                            <a onClick="AddRadio();return false;"
+							   id="btnaddradio"
+							   href="#"
+							   class="lb-btn lb-btn-sm lb-btn-icon"
+							   data-role="none">
+								<i class="pi pi-plus"></i>
+								<TMPL_VAR RADIO.BUTTON_ADD_STATION>
+							</a>
+                        </td>
                     </tr>
 
                     <!-- End Radio-->
@@ -816,7 +921,7 @@
 					<!-- API Key -->
 					<tr class="destdet">
 						<td style="width: 260px; vertical-align: middle; white-space: nowrap;">
-							<label id="lapikey"><TMPL_VAR DESTINATION.LABEL_GOOGLE_API></label>
+							<label id="lgooglekey"><TMPL_VAR DESTINATION.LABEL_GOOGLE_API></label>
 						</td>
 						<td colspan="2" style="vertical-align: middle; padding-bottom: 8px;">
 							<div style="width: 528px; max-width: 528px;">
@@ -845,7 +950,7 @@
 					<tr class="destdet">
 						<td style="width: 260px; vertical-align: top; padding-top: 6px;">
 							<TMPL_VAR DESTINATION.LABEL_GOOGLE_REGION><br>
-							<label style="font-size: x-small;" id="lexample">
+							<label style="font-size: x-small;" id="lgoogleexample">
 								<TMPL_VAR DESTINATION.LABEL_GOOGLE_EXAMPLE>
 							</label>
 						</td>
@@ -884,9 +989,7 @@
                             <td colspan=3 valign="middle" style="height: 33px">
                                 <hr/>
                                 <h3>
-                                    <a target="_blank">
                                         <TMPL_VAR CALENDAR.HEADER>
-                                    </a>
                                 </h3>
                             </td>
                         </tr>
@@ -901,6 +1004,7 @@
                                 <input name="val_t2s" id="val_t2s" class="textfield" value="<TMPL_VAR T2S_ENGINE>" type="hidden" style="width: 96px">
                                 <input name="lblang" id="lblang" class="textfield" value="<TMPL_VAR LBLANG>" type="hidden" style="width: 96px">
                             </td>
+                        </tr>
                             <tr class="caldet">
                                 <td style="height: 48px; width: 25%">
                                     <label id="lcal"><TMPL_VAR CALENDAR.CALENDAR_LABEL></label>
@@ -912,6 +1016,7 @@
                                     <input name="val_voice" id="val_voice" type="hidden" class="textfield" value="<TMPL_VAR VOICE>" style="width: 93px">
                                     <input name="val_code" id="val_code" type="hidden" class="textfield" value="<TMPL_VAR CODE>" style="width: 93px">
                                 </td>
+                            </tr>
                                 <tr class="caldet">
                                     <td colspan=3 valign="middle" style="height: 33px">
                                         <h3></h3>
@@ -952,7 +1057,7 @@
 
 												<!-- Dropdown Region -->
 												<td style="width: 240px; height: 56px; vertical-align: middle; text-align: left;">
-													<select id="region" name="region" data-mini="true" style="width: 100%;">
+													<select id="region" name="region" data-mini="true" style="width: 100%;" class="lb-select">
 														<option value="baw"><TMPL_VAR WEATHER.REGION1></option>
 														<option value="bay"><TMPL_VAR WEATHER.REGION2></option>
 														<option value="bbb"><TMPL_VAR WEATHER.REGION3></option>
@@ -1022,12 +1127,9 @@
                                 <!-- Ende-->
 
             </table>
-            <td></td>
-            <p>
-                <center>
-                    <button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SAVE.SAVE_BUTTON></button>
-				</center>
-            </p>
+            <div style="text-align:center; margin:1em 0;">
+                    <button type="submit" form="main_form" id="btnsubmit" data-role="none" data-inline="true" data-mini="true" data-icon="check" class="lb-btn lb-btn-sm lb-btn-primary"><TMPL_VAR SAVE.SAVE_BUTTON></button>
+            </div>
         </div>
 		
 		<!-- Donation -->
@@ -1038,7 +1140,7 @@
             <TMPL_VAR donate>
                 <div style="margin:auto;text-align:left;">
                     <br>
-                    <label id="lexample"><TMPL_VAR BASIS.DONATE_TEXT></label>
+                    <label id="ldonate_text"><TMPL_VAR BASIS.DONATE_TEXT></label>
                 </div>
                 <div style="margin:auto;text-align:left;">
                     <br>
@@ -1051,13 +1153,13 @@
                 <br>
                 <div style="display:flex;justify-content:center;align-content:space-around;">
                     <div style="padding: 10px 10px 10px 10px;">
-                        <fieldset data-role="controlgroup">
+                        <fieldset data-role="controlgroup" class="lb-btn-group">
                             <input type="checkbox" name="donate" id="donate" <TMPL_VAR DONATE>>
                             <label for="donate"><TMPL_VAR BASIS.DONATE_DONE_REMOVE></label>
                         </fieldset>
                     </div>
                     <div style="padding: 10px 10px 10px 10px;">
-                        <button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true"><TMPL_VAR SAVE.SAVE_BUTTON></button>
+                        <button type="submit" form="main_form" id="btnsubmit_donate" data-role="none" data-inline="true" class="lb-btn lb-btn-sm lb-btn-primary"><TMPL_VAR SAVE.SAVE_BUTTON></button>
                     </div>
                 </div>
         </div>
@@ -1078,11 +1180,17 @@
 <form method="post" data-ajax="false" accept-charset="utf-8" name="main_form" id="main_form" action="./index.cgi?do=volume">
 		<!--<div class="scrollmenu">-->
         <input type="hidden" name="saveformdata3" value="1">
-		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table/table.css"/>
-		
+		<TMPL_IF NAME="LBV4">
+			<TMPL_IF NAME="THEMEMAC">
+			<TMPL_ELSE>
+				<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table/table.css"/>
+			</TMPL_IF>
+		<TMPL_ELSE>
+			<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table/table.css"/>
+			<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/switch/flipswitch.css"/>
+		</TMPL_IF>
 		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.min.css"/>
 		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.css"/>
-		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/switch/flipswitch.css"/>
 		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.min.js"></script>
 		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.js"></script>
 				
@@ -1094,38 +1202,375 @@
             <table class="formtable-container" id="vol" border="0" width="80%">
 			<tbody>
                 <tr>
-	                <td valign="left" style="height: 33px; width: 15%; text-align: left;">
-                    <td style="height: 33px; text-align: center; width: 850px;">
-                        <img class='ico_sonos' src='/plugins/<TMPL_VAR PLUGINDIR>/images/sonos_logo.png' border='0' width='186' height='125' align="absmiddle">
+					<td style="height: 110px; width: 25%; text-align: left; vertical-align: middle;"></td>
+					<td style="height: 110px; width: 900px; text-align: center; vertical-align: middle; padding: 0;">
+						<div style="width: 900px; max-width: 900px; text-align: center;">
+							<TMPL_IF NAME="THEMEGLASS">
+								<img class="ico_sonos"
+									 src="/plugins/<TMPL_VAR PLUGINDIR>/images/sonos_logo_white.svg"
+									 border="0"
+									 width="186"
+									 height="125"
+									 align="absmiddle">
+							<TMPL_ELSE>
+								<TMPL_IF NAME="THEMEMAC">
+									<img class="ico_sonos"
+										 src="/plugins/<TMPL_VAR PLUGINDIR>/images/sonos_mac_classic.svg"
+										 border="0"
+										 width="186"
+										 height="125"
+										 align="absmiddle">
+								<TMPL_ELSE>
+									<img class="ico_sonos"
+										 src="/plugins/<TMPL_VAR PLUGINDIR>/images/sonos_logo_black.svg"
+										 border="0"
+										 width="186"
+										 height="125"
+										 align="absmiddle">
+								</TMPL_IF>
+							</TMPL_IF>
+						</div>
 					</td>
 				</tr>
 				
 				<tr>
-					<td valign="left" style="height: 33px; width: 25%; text-align: left;"></td>	
-					<td valign="left">
-						<table class='formtable' id='formtable' style='width:900px; background: rgba(192,192,192, 0.2); border-radius: 20px; border: 1px solid #7e7e7e; padding: 0px'>
-							<td valign="left">
-							<button onclick="create_new_profile()" type="button" class="btn btn-primary" style="width:180px; align:right" id="btnscan" data-icon="plus" data-role="button" data-mini="true">New Volume Profile</button>
-								&nbsp;V = Volume, T = Treble, B = Bass, L = Loudness, SR = Surround, SW = Sub, SWL = Sublevel, MA = Master, ME = Member
-								<!--&nbsp;&nbsp;Volume = (0 to 100)  Treble, Bass = (-6 to 6)  Subwooferlevel = (-15 to 15)-->
+					<td valign="top" style="height: 33px; width: 25%; text-align: left;"></td>	
+					<td valign="top">
+						<table class="formtable"
+							   id="formtable"
+							   style="width:900px; background:rgba(192,192,192,0.2); border-radius:20px; border:1px solid #7e7e7e; padding:0;">
+							<tr>
+								<td style="text-align:left; padding:10px 0 0 0;">
+
+									<div style="padding-left:8px;">
+										<button onclick="create_new_profile(); return false;"
+												type="button"
+												class="lb-btn lb-btn-sm lb-btn-icon"
+												id="btnscan"
+												data-role="none">
+											<i class="pi pi-plus"></i>
+											New Audio Profile
+										</button>
+									</div>
+									<div style="padding:8px 8px 2px 8px; margin:0; line-height:1.05;">
+										V = Volume, T = Treble, B = Bass, L = Loudness, SR = Surround, SW = Sub, SWL = Sublevel, MA = Master, ME = Member
+									</div>
 									<TMPL_VAR ROWSVOLPLAYER>
-							</td>
+								</td>
+							</tr>
 						</table>
 					</td>
 				</tr>
+			</tbody>
 			</table>
-		</tbody>
 		</div>
 		
-        <p>
-            <center>
-                <button type="submit" form="main_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SAVE.SAVE_BUTTON></button>
-            </center>
-        </p>
+        <div style="text-align:center; margin:1em 0;">
+                <button type="submit" form="main_form" id="btnsubmit" data-role="none" data-inline="true" data-mini="true" data-icon="check" class="lb-btn lb-btn-sm lb-btn-primary"><TMPL_VAR SAVE.SAVE_BUTTON></button>
+        </div>
 </form>	
 <TMPL_INCLUDE NAME="profiles.js">		
 </TMPL_IF>
 
+
+
+
+<TMPL_IF TESTING>
+    <!-- form 'TESTING' START - TESTING_JSON_EDITOR_HTML_V02_2026_06_03 -->
+    <form method="post" data-ajax="false" accept-charset="utf-8" name="testing_form" id="testing_form" action="./testing.cgi" onsubmit="return confirmTestingSubmit(this);">
+        <input type="hidden" name="testing_action" id="testing_action" value="">
+		<TMPL_IF NAME="LBV4">
+			<TMPL_IF NAME="THEMEMAC">
+			<TMPL_ELSE>
+				<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table/table.css"/>
+			</TMPL_IF>
+		<TMPL_ELSE>
+			<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table/table.css"/>
+			<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/switch/flipswitch.css"/>
+		</TMPL_IF>
+        <link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.min.css"/>
+        <link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.css"/>
+        <script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.min.js"></script>
+        <script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.js"></script>
+
+        <div class="form-group testing-page">
+            <table class="formtable testing-layout" border="0" width="90%" cellpadding="10">
+                <tr>
+                    <td colspan="5" style="height: 150px; position: relative; vertical-align: middle; padding: 0;">
+                        <h2 class="auto-style3"
+                            style="position: absolute; left: 0; top: 50%; transform: translateY(-50%); margin: 0;">
+                            <TMPL_VAR TESTING.TITLE>
+                        </h2>
+
+                        <div style="width: 100%; text-align: center;">
+                            <TMPL_IF NAME="THEMEGLASS">
+								<img class="ico_sonos"
+									 src="/plugins/<TMPL_VAR PLUGINDIR>/images/sonos_logo_white.svg"
+									 border="0"
+									 width="186"
+									 height="125"
+									 align="absmiddle">
+							<TMPL_ELSE>
+								<TMPL_IF NAME="THEMEMAC">
+									<img class="ico_sonos"
+										 src="/plugins/<TMPL_VAR PLUGINDIR>/images/sonos_mac_classic.svg"
+										 border="0"
+										 width="186"
+										 height="125"
+										 align="absmiddle">
+								<TMPL_ELSE>
+									<img class="ico_sonos"
+										 src="/plugins/<TMPL_VAR PLUGINDIR>/images/sonos_logo_black.svg"
+										 border="0"
+										 width="186"
+										 height="125"
+										 align="absmiddle">
+								</TMPL_IF>
+							</TMPL_IF>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td colspan="5" style="padding:0;">
+                        <table class="tables testing-table" id="testing_table" name="testing_table">
+                            <tr>
+                                <th class="testing-name-col" align="left"><TMPL_VAR TESTING.NAME_LABEL></th>
+                                <th class="testing-scenario-col" align="left"><TMPL_VAR TESTING.SCENARIO_LABEL></th>
+                                <th class="testing-zone-col" align="left"><TMPL_VAR TESTING.ZONE_LABEL></th>
+                                <th class="testing-member-col" align="left"><TMPL_VAR TESTING.MEMBER_LABEL></th>
+                                <th class="testing-button-col" align="left">&nbsp;</th>
+                            </tr>
+                            <tr>
+                                <td class="testing-name-cell">
+                                    <label for="testing_scenario"><TMPL_VAR TESTING.RUN_LABEL></label>
+                                </td>
+                                <td class="testing-scenario-cell">
+                                    <select id="testing_scenario"
+                                            name="testing_scenario"
+                                            data-mini="true"
+                                            data-native-menu="true"
+                                            <TMPL_IF NAME="LBV4">data-role="none"</TMPL_IF>
+                                            class="lb-select testing-scenario-select">
+                                        <TMPL_VAR TESTING_SCENARIO_OPTIONS>
+                                    </select>
+                                </td>
+                                <td class="testing-zone-cell">
+                                    <TMPL_VAR TESTING_ZONE_DROPDOWN>
+                                </td>
+                                <td class="testing-member-cell">
+                                    <TMPL_VAR TESTING_MEMBER_DROPDOWN>
+                                </td>
+                                <td class="testing-button-cell">
+                                    <button type="submit"
+                                            id="btnexecute_testing"
+                                            name="execute_testing"
+                                            value="1"
+                                            data-role="none"
+                                            onclick="setTestingAction('execute');"
+                                            class="lb-btn lb-btn-sm lb-btn-primary lb-btn-icon testing-execute-btn">
+                                        <i class="pi pi-play"></i>
+                                        <TMPL_VAR TESTING.BUTTON_EXECUTE>
+                                    </button>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <TMPL_IF TESTING_SHOW_DESCRIPTION>
+                <tr>
+                    <td colspan="5" class="testing-description-cell">
+                        <label class="testing-description-label" for="testing_description">
+                            <TMPL_VAR TESTING.DESCRIPTION_LABEL>
+                        </label>
+                        <textarea id="testing_description"
+                                  class="testing-description-text lb-input"
+                                  data-role="none"
+                                  readonly="readonly"><TMPL_VAR TESTING_DESCRIPTION_TEXT></textarea>
+                    </td>
+                </tr>
+                </TMPL_IF>
+
+                <TMPL_IF TESTING_HAS_RESULT>
+                <tr>
+                    <td colspan="5">
+                        <div class="testing-result <TMPL_IF TESTING_RESULT_OK>testing-result-ok<TMPL_ELSE>testing-result-failed</TMPL_IF>">
+                            <div class="testing-result-text"><TMPL_VAR TESTING_RESULT_TEXT></div>
+                            <div class="testing-result-command"><TMPL_VAR TESTING.RESULT_COMMAND_LABEL>: <code><TMPL_VAR TESTING_RESULT_COMMAND></code></div>
+                            <div class="testing-result-links">
+                                <a href="<TMPL_VAR TESTING_TESTLOG_URL>" target="_blank"><TMPL_VAR TESTING.OPEN_TESTLOG></a>
+                                &nbsp;|&nbsp;
+                                <a href="<TMPL_VAR TESTING_SONOSLOG_URL>" target="_blank"><TMPL_VAR TESTING.OPEN_SONOSLOG></a>
+                            </div>
+                            <TMPL_IF TESTING_RESULT_OUTPUT>
+                                <pre class="testing-result-output"><TMPL_VAR TESTING_RESULT_OUTPUT></pre>
+                            </TMPL_IF>
+                        </div>
+                    </td>
+                </tr>
+                </TMPL_IF>
+
+                <TMPL_IF TESTING_JSON_SAVE_FAILED>
+				<tr>
+					<td colspan="5">
+						<div class="testing-json-save-message testing-result-failed">
+							<TMPL_VAR TESTING_JSON_SAVE_TEXT>
+						</div>
+					</td>
+				</tr>
+				</TMPL_IF>
+				
+				<TMPL_IF TESTING_JSON_SAVE_OK>
+					<script>
+						$(function () {
+							timeout('<TMPL_VAR SAVE.SAVE_MESSAGE>', 'OK', 'info', '<TMPL_VAR SAVE.SAVE_ALL_OK>', '3000');
+						});
+					</script>
+				</TMPL_IF>
+
+                <tr>
+                    <td colspan="5" class="testing-json-cell">
+                        <div class="testing-json-collapsible">
+
+							<TMPL_IF LBV4>
+
+								<div class="testing-json-toggle-row">
+									<label class="lb-toggle" for="testing_json_toggle">
+										<input
+											type="checkbox"
+											id="testing_json_toggle"
+											class="no-jqm-flipswitch"
+											data-role="none">
+										<span class="lb-toggle-slider"></span>
+									</label>
+
+									<label for="testing_json_toggle" class="testing-json-toggle-label">
+										<TMPL_VAR TESTING.JSON_EDIT_TESTS_LABEL>
+									</label>
+								</div>
+
+							<TMPL_ELSE>
+
+								<input
+									type="checkbox"
+									id="testing_json_toggle"
+									class="testing-json-toggle-input"
+									data-role="none">
+
+								<div class="testing-json-toggle-row">
+									<label for="testing_json_toggle" class="testing-json-switch" aria-hidden="true">
+										<span></span>
+									</label>
+
+									<label for="testing_json_toggle" class="testing-json-toggle-label">
+										<TMPL_VAR TESTING.JSON_EDIT_TESTS_LABEL>
+									</label>
+								</div>
+
+							</TMPL_IF>
+
+							<div class="testing-json-toggle-content">
+
+                            <input type="hidden" name="testing_json_count" id="testing_json_count" value="<TMPL_VAR TESTING_JSON_COUNT>">
+
+                            <table class="tables testing-json-table" id="testing_json_table" width="100%">
+								<tr>
+									<th class="testing-json-delete-col"><img class="ico_delete" src="/plugins/<TMPL_VAR PLUGINDIR>/images/recycle-bin.png" border="0" width="24" height="24"></th>
+									<th class="testing-json-number-col" align="left"><TMPL_VAR TESTING.JSON_HEADER_NUMBER></th>
+									<th class="testing-json-status-col" align="left"><TMPL_VAR TESTING.JSON_HEADER_STATUS></th>
+									<th class="testing-json-name-col" align="left"><TMPL_VAR TESTING.JSON_HEADER_NAME></th>
+									<th class="testing-json-risk-col" align="left"><TMPL_VAR TESTING.JSON_HEADER_RISK></th>
+									<th class="testing-json-url-col" align="left"><TMPL_VAR TESTING.JSON_HEADER_URL></th>
+									<th class="testing-json-timeout-col" align="left"><TMPL_VAR TESTING.JSON_HEADER_TIMEOUT></th>
+									<th class="testing-json-category-col testing-json-source-col" align="left"><TMPL_VAR TESTING.JSON_HEADER_SOURCE></th>
+								</tr>
+
+								<TMPL_LOOP TESTING_JSON_ROWS>
+								<tr class="testing-json-row">
+									<td class="testing-json-delete-cell">
+										<a href="#" class="jsDelTestingJson" data-role="none" title="<TMPL_VAR TESTING.JSON_DELETE_TITLE>">
+											<img class="ico_delete" src="/plugins/<TMPL_VAR PLUGINDIR>/images/recycle-bin.png" border="0" width="24" height="24">
+										</a>
+									</td>
+									<td class="testing-json-number-cell"><span class="testing-json-number"><TMPL_VAR TEST_NUMBER></span></td>
+									<td class="testing-json-status-cell">
+										<select name="testing_status_<TMPL_VAR ROW_INDEX>" class="lb-select testing-json-status" data-role="none">
+											<TMPL_VAR STATUS_OPTIONS>
+										</select>
+									</td>
+									<td class="testing-json-name-cell">
+										<input type="text" name="testing_name_<TMPL_VAR ROW_INDEX>" value="<TMPL_VAR NAME>" class="lb-input testing-json-name" data-role="none">
+									</td>
+									<td class="testing-json-risk-cell">
+										<select name="testing_risk_<TMPL_VAR ROW_INDEX>" class="lb-select testing-json-risk" data-role="none">
+											<TMPL_VAR RISK_OPTIONS>
+										</select>
+									</td>
+									<td class="testing-json-url-cell">
+										<input type="text" name="testing_url_<TMPL_VAR ROW_INDEX>" value="<TMPL_VAR URL>" class="lb-input testing-json-url" data-role="none">
+									</td>
+									<td class="testing-json-timeout-cell">
+										<input type="number" name="testing_timeout_<TMPL_VAR ROW_INDEX>" value="<TMPL_VAR TIMEOUT_SEC>" min="1" max="300" class="lb-input testing-json-timeout" data-role="none">
+									</td>
+									<td class="testing-json-category-cell testing-json-source-cell <TMPL_VAR SOURCE_ROW_CLASS>">
+										<input type="hidden" name="testing_category_<TMPL_VAR ROW_INDEX>" value="<TMPL_VAR HIDDEN_CATEGORY>" data-role="none">
+										<input
+											type="text"
+											name="testing_source_<TMPL_VAR ROW_INDEX>"
+											value="<TMPL_VAR SOURCE>"
+											class="lb-input testing-json-source"
+											data-role="none"
+											placeholder="SOURCE"
+											style="<TMPL_VAR SOURCE_STYLE>"
+											<TMPL_VAR SOURCE_DISABLED>>
+									</td>
+								</tr>
+								</TMPL_LOOP>
+							</table>
+
+                            <a onClick="AddTestingJsonRow();return false;"
+                               id="btnaddtestingjson"
+                               href="#"
+                               class="lb-btn lb-btn-sm lb-btn-icon testing-json-add-btn"
+                               data-role="none">
+                                <i class="pi pi-plus"></i>
+                                <TMPL_VAR TESTING.BUTTON_ADD_TEST>
+                            </a>
+
+                            <div class="testing-json-save-wrap">
+                                <button type="submit"
+                                        id="btnsave_testing_json"
+                                        name="save_testing_json"
+                                        value="1"
+                                        data-role="none"
+                                        onclick="setTestingAction('save_json');"
+                                        class="lb-btn lb-btn-sm lb-btn-primary lb-btn-icon testing-json-save-btn">
+                                    <i class="pi pi-save"></i>
+                                    <TMPL_VAR TESTING.BUTTON_SAVE_TESTS>
+                                </button>
+                            </div>
+                            </div>
+						</div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <span id="testing_confirm_title" style="display:none;"><TMPL_VAR TESTING.CONFIRM_TITLE></span>
+        <span id="testing_confirm_text" style="display:none;"><TMPL_VAR TESTING.CONFIRM_TEXT></span>
+        <span id="testing_confirm_button" style="display:none;"><TMPL_VAR TESTING.BUTTON_CONFIRM></span>
+        <span id="testing_cancel_button" style="display:none;"><TMPL_VAR TESTING.BUTTON_CANCEL></span>
+        <span id="testing_error_title" style="display:none;"><TMPL_VAR TESTING.ERROR_TITLE></span>
+        <span id="testing_error_scenario_required" style="display:none;"><TMPL_VAR TESTING.ERROR_SCENARIO_REQUIRED></span>
+        <span id="testing_error_zone_required" style="display:none;"><TMPL_VAR TESTING.ERROR_ZONE_REQUIRED></span>
+        <span id="testing_json_delete_title" style="display:none;"><TMPL_VAR TESTING.JSON_DELETE_TITLE></span>
+        <span id="testing_json_delete_text" style="display:none;"><TMPL_VAR TESTING.JSON_DELETE_TEXT></span>
+    </form>
+
+    <!-- form 'TESTING' END -->
+<TMPL_INCLUDE NAME="main.js">
+</TMPL_IF>
 
 
 
@@ -1144,10 +1589,17 @@
         <input type="hidden" name="saveformdata2" value="1">
 
         <!-- CSS / JS includes -->
-		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table/table.css"/>
 		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.min.css"/>
+		<TMPL_IF NAME="LBV4">
+			<TMPL_IF NAME="THEMEMAC">
+			<TMPL_ELSE>
+				<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table/table.css"/>
+			</TMPL_IF>
+		<TMPL_ELSE>
+			<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table/table.css"/>
+			<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/switch/flipswitch.css"/>
+		</TMPL_IF>
 		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.css"/>
-		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/switch/flipswitch.css"/>
 		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.min.js"></script>
 		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.js"></script>
 		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/slider/ion.rangeSlider.js"></script>
@@ -1156,28 +1608,57 @@
         <div class="form-group">
             <table class="formtable" border="0" width="90%" cellpadding="10">
                 <tr>
-                    <td valign="middle" style="height: 33px; width: 25%; text-align: left;">
-                        <h2 class="auto-style3" style="width: 100%">
-                            <TMPL_VAR ZONES.SONOS_OPTIONS>
-                        </h2>
-                    </td>
+					<td colspan="2" style="height: 150px; position: relative; vertical-align: middle; padding: 0;">
+						<h2 class="auto-style3"
+							style="position: absolute; left: 0; top: 50%; transform: translateY(-50%); margin: 0;">
+							<TMPL_VAR ZONES.SONOS_OPTIONS>
+						</h2>
 
-                    <td style="height: 33px; text-align: center; width: 800px;">
-                        <img class='ico_sonos' src='/plugins/<TMPL_VAR PLUGINDIR>/images/sonos_logo.png' border='0' width='186' height='125' align="absmiddle">
-                    </td>
-                </tr>
+						<div style="width: 100%; text-align: center;">
+							<TMPL_IF NAME="THEMEGLASS">
+								<img class="ico_sonos"
+									 src="/plugins/<TMPL_VAR PLUGINDIR>/images/sonos_logo_white.svg"
+									 border="0"
+									 width="186"
+									 height="125"
+									 align="absmiddle">
+							<TMPL_ELSE>
+								<TMPL_IF NAME="THEMEMAC">
+									<img class="ico_sonos"
+										 src="/plugins/<TMPL_VAR PLUGINDIR>/images/sonos_mac_classic.svg"
+										 border="0"
+										 width="186"
+										 height="125"
+										 align="absmiddle">
+								<TMPL_ELSE>
+									<img class="ico_sonos"
+										 src="/plugins/<TMPL_VAR PLUGINDIR>/images/sonos_logo_black.svg"
+										 border="0"
+										 width="186"
+										 height="125"
+										 align="absmiddle">
+								</TMPL_IF>
+							</TMPL_IF>
+						</div>
+					</td>
+				</tr>
 
                 <tr>
-                    <td style="height: 50px; width: 15%;">
-                        <label id="lcheckonline"><TMPL_VAR T2S_DETAILS.LABEL_ZAPZONE></label>
-                    </td>
+					<td style="height: 50px; width: 15%;">
+						<label id="lcheckonline"><TMPL_VAR T2S_DETAILS.LABEL_ZAPZONE></label>
+					</td>
 
-                    <td style="height: 50px; width: 85%;">
-                        <table border="0" style="width:100%; table-layout:fixed;">
+					<td style="height: 50px; width: 85%;">
+						<table border="0" style="width:100%; table-layout:fixed; border-collapse:collapse;">
 							<tr>
-								<td class="func-list-cell">
-									<div class="func-list-wrap">
-										<select id="func_list" name="func_list" data-mini="true" data-native-menu="true">
+								<td class="func-list-cell" style="width:275px; max-width:275px; height:50px; vertical-align:middle; padding-right:14px;">
+									<div id="func_list_wrap" class="func-list-wrap" style="width:260px !important; max-width:260px !important;">
+										<select id="func_list"
+												name="func_list"
+												data-mini="true"
+												data-native-menu="true"
+												class="lb-select"
+												style="width:260px !important; max-width:260px !important;">
 											<option selected="selected" disabled value="">*** Select Function ***</option>
 											<option value="">None</option>
 											<option value="nextradio">Nextradio</option>
@@ -1186,56 +1667,90 @@
 											<option value="radiofavorites">Radio Favorites</option>
 										</select>
 									</div>
-
 									<script>
-										$('#func_list').val('<TMPL_VAR VARIOUS.selfunction>');
-										$('#func_list').trigger('change');
+										$(function () {
+											$('#func_list').val('<TMPL_VAR VARIOUS.selfunction>');
+											$('#func_list').trigger('change');
+
+											/*
+											 * Fix for LoxBerry V4:
+											 * The enhanced select wrapper may otherwise stretch to 100%.
+											 */
+											setTimeout(function () {
+												var el = document.getElementById('func_list');
+												var wrap = document.getElementById('func_list_wrap');
+
+												if (wrap) {
+													wrap.style.setProperty('width', '260px', 'important');
+													wrap.style.setProperty('max-width', '260px', 'important');
+												}
+
+												if (el) {
+													el.style.setProperty('width', '260px', 'important');
+													el.style.setProperty('max-width', '260px', 'important');
+
+													var jqmWrap = $(el).closest('.ui-select');
+													if (jqmWrap.length) {
+														jqmWrap[0].style.setProperty('width', '260px', 'important');
+														jqmWrap[0].style.setProperty('max-width', '260px', 'important');
+													}
+
+													var jqmBtn = jqmWrap.find('.ui-btn');
+													if (jqmBtn.length) {
+														jqmBtn[0].style.setProperty('width', '260px', 'important');
+														jqmBtn[0].style.setProperty('max-width', '260px', 'important');
+														jqmBtn[0].style.setProperty('box-sizing', 'border-box', 'important');
+													}
+												}
+											}, 100);
+										});
 									</script>
 								</td>
 
-								<td id="cron_label_cell" style="width: 85px; height: 50px; white-space: nowrap; padding-left: 14px;">
+								<td id="cron_label_cell" style="width:95px; height:50px; vertical-align:middle; white-space:nowrap; padding-left:0; padding-right:8px;">
 									<label id="lcron"><TMPL_VAR T2S_DETAILS.LABEL_ZAPZONE_RESET></label>
 								</td>
 
-								<td id="cron_slider_cell" style="width: auto; padding-left: 8px;">
-									<div style="width: 100%;">
+								<td id="cron_slider_cell" style="width:auto; height:50px; vertical-align:middle; padding-left:0;">
+									<div style="width:100%;">
 										<input type="hidden" id="cron" name="cron" value="<TMPL_VAR VARIOUS.cron>" />
+
 										<script>
-										$(function () {
-											var $cron = $("#cron");
-											var allowedValues = [1, 3, 5, 10, 15, 30];
-											var savedValue = parseInt($cron.val(), 10);
+											$(function () {
+												var $cron = $("#cron");
+												var allowedValues = [1, 3, 5, 10, 15, 30];
+												var savedValue = parseInt($cron.val(), 10);
 
-											// Fallback, falls nichts Gültiges gespeichert ist
-											if (allowedValues.indexOf(savedValue) === -1) {
-												savedValue = 3;
-											}
-
-											var startIndex = allowedValues.indexOf(savedValue);
-
-											$cron.ionRangeSlider({
-												skin: "big",
-												grid: true,
-												values: allowedValues,
-												from: startIndex,
-												postfix: " Min.",
-												onStart: function (data) {
-													console.log("Initial data: " + data.from_value);
-												},
-												onChange: function (data) {
-													console.log("Current selected data: " + data.from_value);
+												// Fallback, falls nichts Gültiges gespeichert ist
+												if (allowedValues.indexOf(savedValue) === -1) {
+													savedValue = 3;
 												}
-											});
 
-											$cron.hide();
-										});
+												var startIndex = allowedValues.indexOf(savedValue);
+
+												$cron.ionRangeSlider({
+													skin: "big",
+													grid: true,
+													values: allowedValues,
+													from: startIndex,
+													postfix: " Min.",
+													onStart: function (data) {
+														console.log("Initial data: " + data.from_value);
+													},
+													onChange: function (data) {
+														console.log("Current selected data: " + data.from_value);
+													}
+												});
+
+												$cron.hide();
+											});
 										</script>
 									</div>
 								</td>
 							</tr>
 						</table>
-                    </td>
-                </tr>
+					</td>
+				</tr>
 
                 <tr>
                     <td style="height: 50px; width: 25%;">
@@ -1292,15 +1807,13 @@
 								   id="announceradio_hidden"
 								   value="<TMPL_VAR VARIOUS.announceradio>">
 
-							<input type="checkbox"
-								   id="announceradio"
-								   class="lb-flipswitch-checkbox no-jqm-flipswitch"
-								   data-role="none"
-								   onchange="toggleRadioAnnounce()">
-
-							<label class="lb-flipswitch-label" for="announceradio">
-								<span class="lb-flipswitch-inner"></span>
-								<span class="lb-flipswitch-switch"></span>
+							<label class="lb-toggle" for="announceradio">
+								<input type="checkbox"
+									   id="announceradio"
+									   class="lb-flipswitch-checkbox no-jqm-flipswitch"
+									   data-role="none"
+									   onchange="toggleRadioAnnounce()">
+								<span class="lb-toggle-slider"></span>
 							</label>
 						</div>
 
@@ -1324,15 +1837,13 @@
 								   id="announceradio_always_hidden"
 								   value="<TMPL_VAR VARIOUS.announceradio_always>">
 
-							<input type="checkbox"
-								   id="announceradio_always"
-								   class="lb-flipswitch-checkbox no-jqm-flipswitch"
-								   data-role="none"
-								   onchange="toggleRadioAnnounce()">
-
-							<label class="lb-flipswitch-label" for="announceradio_always">
-								<span class="lb-flipswitch-inner"></span>
-								<span class="lb-flipswitch-switch"></span>
+							<label class="lb-toggle" for="announceradio_always">
+								<input type="checkbox"
+									   id="announceradio_always"
+									   class="lb-flipswitch-checkbox no-jqm-flipswitch"
+									   data-role="none"
+									   onchange="toggleRadioAnnounce()">
+								<span class="lb-toggle-slider"></span>
 							</label>
 						</div>
 
@@ -1389,19 +1900,58 @@
 						<table border="0" style="width:100%;">
 							<tr>
 								<td style="width: 26%; height: 45px; vertical-align: middle; white-space: nowrap;">
-									<fieldset id="rampto-selector" data-role="controlgroup" data-type="horizontal" style="margin:0;">
-										<input type="radio" name="rampto" id="rmpsleep" value="sleep">
-										<label for="rmpsleep">Sleep</label>
+									<TMPL_IF LBV4>
+										<div id="rampto-selector"
+											 data-role="none"
+											 class="lb-btn-group tts-engine-group">
 
-										<input type="radio" name="rampto" id="rmpalarm" value="alarm">
-										<label for="rmpalarm">Alarm</label>
+											<input type="radio" name="rampto" id="rmpsleep" value="sleep" data-role="none">
+											<label for="rmpsleep" class="lb-btn lb-btn-sm">Sleep</label>
 
-										<input type="radio" name="rampto" id="rmpauto" value="auto">
-										<label for="rmpauto">Auto</label>
-									</fieldset>
+											<input type="radio" name="rampto" id="rmpalarm" value="alarm" data-role="none">
+											<label for="rmpalarm" class="lb-btn lb-btn-sm">Alarm</label>
+
+											<input type="radio" name="rampto" id="rmpauto" value="auto" data-role="none">
+											<label for="rmpauto" class="lb-btn lb-btn-sm">Auto</label>
+										</div>
+									<TMPL_ELSE>
+										<fieldset id="rampto-selector"
+												  data-role="controlgroup"
+												  data-type="horizontal"
+												  style="margin:0;"
+												  class="lb-btn-group">
+
+											<input type="radio" name="rampto" id="rmpsleep" value="sleep">
+											<label for="rmpsleep">Sleep</label>
+
+											<input type="radio" name="rampto" id="rmpalarm" value="alarm">
+											<label for="rmpalarm">Alarm</label>
+
+											<input type="radio" name="rampto" id="rmpauto" value="auto">
+											<label for="rmpauto">Auto</label>
+										</fieldset>
+										<script>
+											$("input[name=rampto]").val(['<TMPL_VAR TTS.rampto>']);
+										</script>
+									</TMPL_IF>
 
 									<script>
-										$("input[name=rampto]").val(['<TMPL_VAR TTS.rampto>']);
+										
+										$(function () {
+											var rampto = '<TMPL_VAR TTS.rampto>' || 'auto';
+
+											$("input[name='rampto']").prop("checked", false);
+											$("input[name='rampto'][value='" + rampto + "']").prop("checked", true);
+
+											/* Same visible active state as engine selector */
+											$("#rampto-selector label.lb-btn").removeClass("ui-btn-active");
+											$("input[name='rampto'][value='" + rampto + "'] + label.lb-btn").addClass("ui-btn-active");
+
+											$("input[name='rampto']").off("change.rampto").on("change.rampto", function () {
+												$("#rampto-selector label.lb-btn").removeClass("ui-btn-active");
+												$(this).next("label.lb-btn").addClass("ui-btn-active");
+											});
+										});
 									</script>
 								</td>
 
@@ -1465,7 +2015,7 @@
 										</label>
 
 										<div style="width:180px; min-width:180px; max-width:180px;">
-											<select id="follow_host" name="follow_host" data-mini="true" data-native-menu="true" style="width:100%;">
+											<select id="follow_host" name="follow_host" data-mini="true" data-native-menu="true" style="width:100%;" class="lb-select">
 												<option selected="selected" value="false"><TMPL_VAR ZONES.FOLLOW_HOST_OPTION></option>
 												<TMPL_VAR ROWSHOSTPLAYER>
 											</select>
@@ -1550,15 +2100,13 @@
 									   id="hw_update_hidden"
 									   value="<TMPL_VAR SYSTEM.hw_update>">
 
-								<input type="checkbox"
-									   id="hw_update"
-									   class="lb-flipswitch-checkbox no-jqm-flipswitch"
-									   data-role="none"
-									   onchange="select_update()">
-
-								<label class="lb-flipswitch-label" for="hw_update">
-									<span class="lb-flipswitch-inner"></span>
-									<span class="lb-flipswitch-switch"></span>
+								<label class="lb-toggle" for="hw_update">
+									<input type="checkbox"
+										   id="hw_update"
+										   class="lb-flipswitch-checkbox no-jqm-flipswitch"
+										   data-role="none"
+										   onchange="select_update()">
+									<span class="lb-toggle-slider"></span>
 								</label>
 							</div>
 
@@ -1566,7 +2114,7 @@
 							<div class="update" style="display:flex; align-items:center; gap:10px; white-space:nowrap;">
 								<label id="lstartupdate" style="margin:0;">Start:</label>
  								<fieldset style="margin:0; width:130px;">
-									<select id="hw_update_day" name="hw_update_day" data-mini="true" data-native-menu="true" style="width:100%;">
+									<select id="hw_update_day" name="hw_update_day" data-mini="true" data-native-menu="true" style="width:100%;" class="lb-select">
 										<option selected="selected" value="10"><TMPL_VAR TEMPLATE.UPDATE_DAILY></option>
 										<option disabled value="7"><TMPL_VAR TEMPLATE.UPDATE_WEEKLY></option>
 										<option value="1"><TMPL_VAR TEMPLATE.UPDATE_MONDAY></option>
@@ -1580,7 +2128,7 @@
 								</fieldset>
 
 								<fieldset style="margin:0; width:100px;">
-									<select id="hw_update_time" name="hw_update_time" data-mini="true" data-native-menu="true" style="width:100%;">
+									<select id="hw_update_time" name="hw_update_time" data-mini="true" data-native-menu="true" style="width:100%;" class="lb-select">
 										<option value="0">0:00</option>
 										<option value="1">1:00</option>
 										<option value="2">2:00</option>
@@ -1618,14 +2166,12 @@
 										   id="hw_update_power_hidden"
 										   value="<TMPL_VAR SYSTEM.hw_update_power>">
 
-									<input type="checkbox"
-										   id="hw_update_power"
-										   class="lb-flipswitch-checkbox no-jqm-flipswitch"
-										   data-role="none">
-
-									<label class="lb-flipswitch-label" for="hw_update_power">
-										<span class="lb-flipswitch-inner"></span>
-										<span class="lb-flipswitch-switch"></span>
+									<label class="lb-toggle" for="hw_update_power">
+										<input type="checkbox"
+											   id="hw_update_power"
+											   class="lb-flipswitch-checkbox no-jqm-flipswitch"
+											   data-role="none">
+										<span class="lb-toggle-slider"></span>
 									</label>
 								</div>
 							</div>
@@ -1642,14 +2188,12 @@
 										   id="volmax_hidden"
 										   value="<TMPL_VAR VARIOUS.volmax>">
 
-									<input type="checkbox"
-										   id="volmax"
-										   class="lb-flipswitch-checkbox no-jqm-flipswitch"
-										   data-role="none">
-
-									<label class="lb-flipswitch-label" for="volmax">
-										<span class="lb-flipswitch-inner"></span>
-										<span class="lb-flipswitch-switch"></span>
+									<label class="lb-toggle" for="volmax">
+										<input type="checkbox"
+											   id="volmax"
+											   class="lb-flipswitch-checkbox no-jqm-flipswitch"
+											   data-role="none">
+										<span class="lb-toggle-slider"></span>
 									</label>
 								</div>
 							</div>
@@ -1713,7 +2257,7 @@
 						<div style="display:flex; align-items:center; gap:12px; width:460px; white-space:nowrap;">
 							<div style="flex:0 0 280px;">
 								<fieldset style="margin:0; width:100%;">
-									<select name="sonos_release" id="sonos_release" data-mini="true" data-native-menu="true" style="width:100%;">
+									<select name="sonos_release" id="sonos_release" data-mini="true" data-native-menu="true" style="width:100%;" class="lb-select">
 										<option value="">Loading releases...</option>
 									</select>
 								</fieldset>
@@ -1725,7 +2269,7 @@
 									id="btn_sonos_release_install"
 									data-mini="true"
 									value="Installation"
-									onclick="openSonosReleaseInstall()">
+									onclick="openSonosReleaseInstall()" class="lb-btn lb-btn-sm" data-role="none">
 							</div>
 						</div>
 					</td>
@@ -1735,11 +2279,9 @@
 
             <td></td>
 
-            <p>
-                <center>
-                    <button onclick="message()" type="submit" form="detail_form" id="btnsubmit" data-role="button" data-inline="true" data-mini="true" data-icon="check"><TMPL_VAR SAVE.SAVE_BUTTON></button>
-                </center>
-            </p>
+            <div style="text-align:center; margin:1em 0;">
+                    <button onclick="message()" type="submit" form="detail_form" id="btnsubmit" data-role="none" data-inline="true" data-mini="true" data-icon="check" class="lb-btn lb-btn-sm lb-btn-primary"><TMPL_VAR SAVE.SAVE_BUTTON></button>
+            </div>
         </div>
     </form>
 	

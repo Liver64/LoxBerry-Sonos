@@ -54,7 +54,7 @@ $(document).on('pageinit', function() {
  * Visual constants for SubLevel field
  * ========================================================================================= */
 var SBASS_DISABLED_BG = 'rgba(192,192,192, 0.2)';
-var SBASS_ENABLED_BG  = '#ffffff';
+var SBASS_ENABLED_BG  = '';
 
 
 /* =========================================================================================
@@ -391,8 +391,12 @@ function setSbassFieldState(playerIdx, profileIdx, enabled, subLevelValue) {
 			.removeAttr('disabled')
 			.prop('disabled', false)
 			.prop('readonly', false)
-			.css('background', '#ffffff')
-			.css('color', '');
+			.css('background', '')
+			.css('background-color', '')
+			.css('color', '')
+			.css('-webkit-text-fill-color', '')
+			.css('caret-color', '')
+			.css('text-shadow', '');
 
 		if (typeof subLevelValue !== 'undefined') {
 			$sbass.val(subLevelValue);
@@ -407,14 +411,17 @@ function setSbassFieldState(playerIdx, profileIdx, enabled, subLevelValue) {
 		$uiWrap
 			.removeClass('ui-state-disabled ui-disabled')
 			.attr('aria-disabled', 'false')
-			.css('background', '#ffffff');
+			.css('background', '')
+			.css('background-color', '')
+			.css('color', '')
+			.css('text-shadow', '');
 
 	} else {
 		$sbass
 			.val('')
 			.attr('disabled', 'disabled')
 			.prop('disabled', true)
-			.css('background', 'rgba(192,192,192, 0.2)')
+			.css('background', SBASS_DISABLED_BG)
 			.css('color', '');
 
 		if ($sbass.data('mobile-textinput')) {
@@ -426,7 +433,7 @@ function setSbassFieldState(playerIdx, profileIdx, enabled, subLevelValue) {
 		$uiWrap
 			.addClass('ui-state-disabled ui-disabled')
 			.attr('aria-disabled', 'true')
-			.css('background', 'rgba(192,192,192, 0.2)');
+			.css('background', SBASS_DISABLED_BG);
 	}
 
 	if ($sbass.data('mobile-textinput')) {
@@ -562,6 +569,7 @@ function getvolprofiles() {
 }
 
 
+
 /* =========================================================================================
  * Create a new profile dynamically (builds a new table block)
  * ========================================================================================= */
@@ -573,20 +581,29 @@ function create_new_profile() {
 	var iteration = 0;
 	var trHTML = '';
 
+	/* Keep MA/ME width aligned with index.cgi and sonos_lbv4.css */
+	var profile_check_col_width = 50;
+
 	$.ajax({
 		url: 'index.cgi',
 		type: 'post',
-		data: { action: 'soundbars'},
+		data: { action: 'soundbars' },
 		dataType: 'json',
 		async: false,
-		success: function(data, textStatus, jqXHR) {
+		success: function (data, textStatus, jqXHR) {
+
 			trHTML += "<div class='" + new_id + "'>";
-			trHTML += "<table class='tables' style='width:100%' id='tblvol_prof" + new_id + "' name='tblvol_prof" + new_id + "'>\n";
-			trHTML += "<th align='left' style='height: 25px; width:150px'>&nbsp;Profile #" + new_id + "</th>\n";
-			trHTML += "<th align='middle' colspan='8'><div style='width: 180px; align: left'>\n";
-			trHTML += "<input class='textfield' type='text' style='align: middle; width: 100%' id='profile" + new_id + "' name='profile" + new_id + "' value='' placeholder='Volume Profile Name'/>\n";
-			trHTML += "<td valign='left'>";
-			trHTML += "<span style='position:relative; display:inline-block; margin-right:8px;'>"
+			trHTML += "<table class='tables' style='width:100%; margin-top:0 !important;' id='tblvol_prof" + new_id + "' name='tblvol_prof" + new_id + "'>\n";
+
+			/*
+			 * Profile header row
+			 * Keep this structure aligned with the server-side index.cgi output.
+			 * The profile input gets its own fixed-width cell so the green header
+			 * background does not look like a second oversized input behind it.
+			 */
+			var profileActions = "";
+
+			profileActions += "<span style='position:relative; display:inline-block; margin-right:8px;'>"
 				+ "<img onclick='NewSonosData()' "
 				+ "value='" + new_id + "' "
 				+ "id='btnload" + new_id + "' "
@@ -603,9 +620,9 @@ function create_new_profile() {
 				+ "<div style='position:absolute; left:50%; transform:translateX(-50%); bottom:-8px; width:0; height:0; "
 				+ "border-left:8px solid transparent; border-right:8px solid transparent; border-top:8px solid #6db33f;'></div>"
 				+ "</div>"
-				+ "</span>\n";
+				+ "</span>";
 
-			trHTML += "<span style='position:relative; display:inline-block;'>"
+			profileActions += "<span style='position:relative; display:inline-block;'>"
 				+ "<img onclick='cloneprofile()' "
 				+ "value='" + new_id + "' "
 				+ "id='btnclone" + new_id + "' "
@@ -623,28 +640,64 @@ function create_new_profile() {
 				+ "<div style='position:absolute; left:50%; transform:translateX(-50%); bottom:-8px; width:0; height:0; "
 				+ "border-left:8px solid transparent; border-right:8px solid transparent; border-top:8px solid #6db33f;'></div>"
 				+ "</div>"
-				+ "</span></td>\n";
-			trHTML += "</th><tr><th style='background-color: #6dac20;' align='left'>&nbsp;Rooms</th><div class='form-group col-7'>\n";
-			trHTML += "<th class='form-control' style='background-color: #6dac20; align: center'>V</th>\n";
-			trHTML += "<th class='form-control' style='background-color: #6dac20; align: center'>T</th>\n";
-			trHTML += "<th class='form-control' style='background-color: #6dac20; align: center'>B</th>\n";
-			trHTML += "<th class='form-control' style='background-color: #6dac20; align: center'>L</th>\n";
-			trHTML += "<th class='form-control' style='background-color: #6dac20; align: center'>SR</th>\n";
-			trHTML += "<th class='form-control' style='background-color: #6dac20; align: center'>SW</th>\n";
-			trHTML += "<th class='form-control' style='background-color: #6dac20; align: center'>SWL</th>\n";
-			trHTML += "<th class='form-control' style='background-color: #6dac20; align: center'>MA</th>\n";
-			trHTML += "<th class='form-control' style='background-color: #6dac20; align: center'>ME</th>\n";
-			trHTML += "</div></tr>";
+				+ "</span>";
+
+			trHTML += "<tr>\n";
+
+			trHTML += "<td style='height:36px; width:190px; padding:4px 8px; background:#6dac20; color:#ffffff; white-space:nowrap;'>"
+				+ "&nbsp;Profile #" + new_id
+				+ "</td>\n";
+
+			trHTML += "<td colspan='3' style='height:36px; width:200px; max-width:200px; padding:4px 4px; background:#6dac20; text-align:left; white-space:nowrap;'>\n";
+
+			trHTML += "<input "
+				+ "type='text' "
+				+ "id='profile" + new_id + "' "
+				+ "name='profile" + new_id + "' "
+				+ "value='' "
+				+ "placeholder='Audio Profile Name' "
+				+ "data-role='none' "
+				+ "class='form-validation' "
+				+ "style='width:180px !important; min-width:180px !important; max-width:180px !important; "
+				+ "height:32px !important; margin:0 !important; padding:0 10px !important; "
+				+ "box-sizing:border-box !important; text-align:left;'>\n";
+
+			trHTML += "</td>\n";
+
+			trHTML += "<td colspan='4' style='height:36px; padding:4px 4px; background:#6dac20;'>&nbsp;</td>\n";
+
+			trHTML += "<td colspan='2' style='height:36px; padding:4px 6px; text-align:right; white-space:nowrap; background:#6dac20;'>"
+				+ profileActions
+				+ "</td>\n";
+
+			trHTML += "</tr>\n";
+
+			/*
+			 * Column header row
+			 * No div inside tr. Only th elements are allowed here.
+			 */
+			trHTML += "<tr>\n";
+			trHTML += "<th style='background-color: #6dac20;' align='left'>&nbsp;Rooms</th>\n";
+			trHTML += "<th class='form-control' style='background-color: #6dac20; text-align: center;'>V</th>\n";
+			trHTML += "<th class='form-control' style='background-color: #6dac20; text-align: center;'>T</th>\n";
+			trHTML += "<th class='form-control' style='background-color: #6dac20; text-align: center;'>B</th>\n";
+			trHTML += "<th class='form-control' style='background-color: #6dac20; text-align: center;'>L</th>\n";
+			trHTML += "<th class='form-control' style='background-color: #6dac20; text-align: center;'>SR</th>\n";
+			trHTML += "<th class='form-control' style='background-color: #6dac20; text-align: center;'>SW</th>\n";
+			trHTML += "<th class='form-control' style='background-color: #6dac20; text-align: center;'>SWL</th>\n";
+			trHTML += "<th class='form-control' style='background-color: #6dac20; text-align: center; width:" + profile_check_col_width + "px; min-width:" + profile_check_col_width + "px; max-width:" + profile_check_col_width + "px;'>MA</th>\n";
+			trHTML += "<th class='form-control' style='background-color: #6dac20; text-align: center; width:" + profile_check_col_width + "px; min-width:" + profile_check_col_width + "px; max-width:" + profile_check_col_width + "px;'>ME</th>\n";
+			trHTML += "</tr>\n";
 
 			const sorted = Object.keys(data).sort().reduce(
-				function(obj, key) {
+				function (obj, key) {
 					obj[key] = data[key];
 					return obj;
 				},
 				{}
 			);
 
-			$.each(sorted, function(j, value) {
+			$.each(sorted, function (j, value) {
 				iteration++;
 
 				var surroundDisabledAttr = (value[10] == 'NOSUR') ? " disabled='disabled'" : "";
@@ -654,43 +707,110 @@ function create_new_profile() {
 				var subWrapClass = (value[8] == 'NOSUB') ? "lb-flipswitch is-disabled" : "lb-flipswitch";
 
 				trHTML += "<tr>";
-				trHTML += "<td style='height: 25px; width: 160px;'><input type='text' id='zone_" + iteration + "_" + new_id + "' name='zone_" + iteration + "_" + new_id + "' readonly='true' value='" + j + "' style='width: 100%; background-color: #e6e6e6;'></td>";
-				trHTML += "<td style='width: 45px; height: 15px;'><input type='text' id='vol_" + iteration + "_" + new_id + "' name='vol_" + iteration + "_" + new_id + "' size='100' data-validation-rule='special:number-min-max-value:0:100' data-validation-error-msg='<TMPL_VAR T2S.ERROR_VOLUME_PLAYER>' value=''></td>";
-				trHTML += "<td style='width: 45px; height: 15px;'><input type='text' id='treble_" + iteration + "_" + new_id + "' name='treble_" + iteration + "_" + new_id + "' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='<TMPL_VAR VOLUME_PROFILES.ERROR_TREBLE_BASS_PLAYER>' value=''></td>\n";
-				trHTML += "<td style='width: 45px; height: 15px;'><input type='text' id='bass_" + iteration + "_" + new_id + "' name='bass_" + iteration + "_" + new_id + "' size='100' data-validation-rule='special:number-min-max-value:-10:10' data-validation-error-msg='<TMPL_VAR VOLUME_PROFILES.ERROR_TREBLE_BASS_PLAYER>' value=''></td>\n";
 
-				trHTML += "<td style='height: 10px; width: 70px; text-align:center; vertical-align:middle;'>";
+				/* No fixed background here - let the theme decide */
+				trHTML += "<td style='height: 25px; width: 160px;'>"
+					+ "<input type='text' id='zone_" + iteration + "_" + new_id + "' "
+					+ "name='zone_" + iteration + "_" + new_id + "' "
+					+ "readonly='true' "
+					+ "value='" + j + "' "
+					+ "style='width: 100%;'>"
+					+ "</td>";
+
+				trHTML += "<td style='width: 45px; height: 15px;'>"
+					+ "<input type='text' id='vol_" + iteration + "_" + new_id + "' "
+					+ "name='vol_" + iteration + "_" + new_id + "' "
+					+ "size='100' "
+					+ "data-validation-rule='special:number-min-max-value:0:100' "
+					+ "data-validation-error-msg='<TMPL_VAR T2S.ERROR_VOLUME_PLAYER>' "
+					+ "value=''>"
+					+ "</td>";
+
+				trHTML += "<td style='width: 45px; height: 15px;'>"
+					+ "<input type='text' id='treble_" + iteration + "_" + new_id + "' "
+					+ "name='treble_" + iteration + "_" + new_id + "' "
+					+ "size='100' "
+					+ "data-validation-rule='special:number-min-max-value:-10:10' "
+					+ "data-validation-error-msg='<TMPL_VAR VOLUME_PROFILES.ERROR_TREBLE_BASS_PLAYER>' "
+					+ "value=''>"
+					+ "</td>\n";
+
+				trHTML += "<td style='width: 45px; height: 15px;'>"
+					+ "<input type='text' id='bass_" + iteration + "_" + new_id + "' "
+					+ "name='bass_" + iteration + "_" + new_id + "' "
+					+ "size='100' "
+					+ "data-validation-rule='special:number-min-max-value:-10:10' "
+					+ "data-validation-error-msg='<TMPL_VAR VOLUME_PROFILES.ERROR_TREBLE_BASS_PLAYER>' "
+					+ "value=''>"
+					+ "</td>\n";
+
+				trHTML += "<td style='height: 10px; width: 50px; text-align:center; vertical-align:middle;'>";
 				trHTML += "<div class='lb-flipswitch' data-input='loudness_" + iteration + "_" + new_id + "' data-value='false'>";
 				trHTML += "<input type='hidden' name='loudness_" + iteration + "_" + new_id + "' id='loudness_" + iteration + "_" + new_id + "_hidden' value='false'>";
+				trHTML += "<label class='lb-toggle' for='loudness_" + iteration + "_" + new_id + "'>";
 				trHTML += "<input type='checkbox' id='loudness_" + iteration + "_" + new_id + "' class='lb-flipswitch-checkbox no-jqm-flipswitch' data-role='none'>";
-				trHTML += "<label class='lb-flipswitch-label' for='loudness_" + iteration + "_" + new_id + "'><span class='lb-flipswitch-inner'></span><span class='lb-flipswitch-switch'></span></label>";
+				trHTML += "<span class='lb-toggle-slider'></span></label>";
 				trHTML += "</div>";
 				trHTML += "</td>\n";
 
-				trHTML += "<td style='height: 10px; width: 70px; text-align:center; vertical-align:middle;'>";
+				trHTML += "<td style='height: 10px; width: 50px; text-align:center; vertical-align:middle;'>";
 				trHTML += "<div class='" + surroundWrapClass + "' data-input='surround_" + iteration + "_" + new_id + "' data-value='false'>";
 				trHTML += "<input type='hidden' name='surround_" + iteration + "_" + new_id + "' id='surround_" + iteration + "_" + new_id + "_hidden' value='false'>";
+				trHTML += "<label class='lb-toggle' for='surround_" + iteration + "_" + new_id + "'>";
 				trHTML += "<input type='checkbox' id='surround_" + iteration + "_" + new_id + "' class='lb-flipswitch-checkbox no-jqm-flipswitch' data-role='none'" + surroundDisabledAttr + ">";
-				trHTML += "<label class='lb-flipswitch-label' for='surround_" + iteration + "_" + new_id + "'><span class='lb-flipswitch-inner'></span><span class='lb-flipswitch-switch'></span></label>";
+				trHTML += "<span class='lb-toggle-slider'></span></label>";
 				trHTML += "</div>";
 				trHTML += "</td>\n";
 
-				trHTML += "<td style='height: 10px; width: 70px; text-align:center; vertical-align:middle;'>";
+				trHTML += "<td style='height: 10px; width: 50px; text-align:center; vertical-align:middle;'>";
 				trHTML += "<div class='" + subWrapClass + "' data-input='subwoofer_" + iteration + "_" + new_id + "' data-value='false'>";
 				trHTML += "<input type='hidden' name='subwoofer_" + iteration + "_" + new_id + "' id='subwoofer_" + iteration + "_" + new_id + "_hidden' value='false'>";
+				trHTML += "<label class='lb-toggle' for='subwoofer_" + iteration + "_" + new_id + "'>";
 				trHTML += "<input type='checkbox' id='subwoofer_" + iteration + "_" + new_id + "' class='lb-flipswitch-checkbox no-jqm-flipswitch' data-role='none'" + subDisabledAttr + ">";
-				trHTML += "<label class='lb-flipswitch-label' for='subwoofer_" + iteration + "_" + new_id + "'><span class='lb-flipswitch-inner'></span><span class='lb-flipswitch-switch'></span></label>";
+				trHTML += "<span class='lb-toggle-slider'></span></label>";
 				trHTML += "</div>";
 				trHTML += "</td>\n";
 
 				if (value[8] == 'NOSUB') {
-					trHTML += "<td style='width: 55px; height: 15px;'><input disabled type='text' id='sbass_" + iteration + "_" + new_id + "' name='sbass_" + iteration + "_" + new_id + "' size='100' value='' style='background: " + SBASS_DISABLED_BG + ";'></td>\n";
+					trHTML += "<td style='width: 45px; height: 15px;'>"
+						+ "<input disabled type='text' id='sbass_" + iteration + "_" + new_id + "' "
+						+ "name='sbass_" + iteration + "_" + new_id + "' "
+						+ "size='100' "
+						+ "value='' "
+						+ "style='background: " + SBASS_DISABLED_BG + ";'>"
+						+ "</td>\n";
 				} else {
-					trHTML += "<td style='width: 55px; height: 15px;'><input type='text' id='sbass_" + iteration + "_" + new_id + "' name='sbass_" + iteration + "_" + new_id + "' size='100' data-validation-rule='special:number-min-max-value:-15:15' data-validation-error-msg='<TMPL_VAR VOLUME_PROFILES.ERROR_SUB_LEVEL_PLAYER>' value='' style='background: " + SBASS_ENABLED_BG + ";'></td>\n";
+					trHTML += "<td style='width: 45px; height: 15px;'>"
+						+ "<input type='text' id='sbass_" + iteration + "_" + new_id + "' "
+						+ "name='sbass_" + iteration + "_" + new_id + "' "
+						+ "size='100' "
+						+ "data-validation-rule='special:number-min-max-value:-15:15' "
+						+ "data-validation-error-msg='<TMPL_VAR VOLUME_PROFILES.ERROR_SUB_LEVEL_PLAYER>' "
+						+ "value='' "
+						+ "style='background: " + SBASS_ENABLED_BG + ";'>"
+						+ "</td>\n";
 				}
 
-				trHTML += "<td style='width: 60px; height: 15px'><input type='checkbox' id='master_" + iteration + "_" + new_id + "' name='master_" + iteration + "_" + new_id + "' class='" + new_id + "'></td>\n";
-				trHTML += "<td style='width: 60px; height: 15px'><input type='checkbox' id='member_" + iteration + "_" + new_id + "' name='member_" + iteration + "_" + new_id + "' class='member_" + new_id + "'></td>\n";
+				trHTML += "<td class='checkbox-cell'>"
+					+ "<div class='checkbox-positioner'>"
+					+ "<input type='checkbox' "
+					+ "id='master_" + iteration + "_" + new_id + "' "
+					+ "name='master_" + iteration + "_" + new_id + "' "
+					+ "class='" + new_id + " checkbox-input' "
+					+ "data-role='none'>"
+					+ "</div>"
+					+ "</td>\n";
+
+				trHTML += "<td class='checkbox-cell'>"
+					+ "<div class='checkbox-positioner'>"
+					+ "<input type='checkbox' "
+					+ "id='member_" + iteration + "_" + new_id + "' "
+					+ "name='member_" + iteration + "_" + new_id + "' "
+					+ "class='member_" + new_id + " checkbox-input' "
+					+ "data-role='none'>"
+					+ "</div>"
+					+ "</td>\n";
+
 				trHTML += "</tr>";
 			});
 
@@ -715,11 +835,10 @@ function create_new_profile() {
 	.fail(function (jqXHR, textStatus, errorThrown) {
 		console.log(errorThrown);
 	})
-	.always(function(data) {
+	.always(function (data) {
 		console.log("Action New Volume Profile executed", data);
 	});
 }
-
 
 /* =========================================================================================
  * Clone values from last saved profile into the newly created profile
@@ -1033,12 +1152,37 @@ $(document).ready(function(e) {
 		console.log("Submit");
 
 		function showFail(sel, msg) {
-			setTimeout(function () { $(sel).focus(); }, 50);
-			$(sel).css('background-color','#FFFFC0');
-			timeout(msg, 'OK', 'info', 'Sound Profile', '2000');
-			e.preventDefault();
-			return false;
+		var $field = $(sel);
+		var $wrap  = $field.closest('.ui-input-text');
+
+		function setImportant($el, prop, value) {
+			if ($el && $el.length && $el[0] && $el[0].style) {
+				$el[0].style.setProperty(prop, value, 'important');
+			}
 		}
+
+		setImportant($field, 'background', '#FFFFC0');
+		setImportant($field, 'background-color', '#FFFFC0');
+		setImportant($field, 'color', '#000000');
+		setImportant($field, '-webkit-text-fill-color', '#000000');
+		setImportant($field, 'caret-color', '#000000');
+		setImportant($field, 'text-shadow', 'none');
+
+		setImportant($wrap, 'background', '#FFFFC0');
+		setImportant($wrap, 'background-color', '#FFFFC0');
+		setImportant($wrap, 'color', '#000000');
+		setImportant($wrap, '-webkit-text-fill-color', '#000000');
+		setImportant($wrap, 'caret-color', '#000000');
+		setImportant($wrap, 'text-shadow', 'none');
+
+		setTimeout(function () {
+			$field.focus().select();
+		}, 50);
+
+		timeout(msg, 'OK', 'info', 'Sound Profile', '2000');
+		e.preventDefault();
+		return false;
+	}
 
 		function isIntUnsigned(s) { return /^\d+$/.test(s); }
 		function isIntSigned(s)   { return /^-?\d+$/.test(s); }

@@ -3,9 +3,13 @@
    ========================================================= */
 
 .lb-flipswitch {
-    --lb-switch-width: 70px;
-    --lb-switch-height: 28px;
-    --lb-switch-radius: 33px;
+    --lb-switch-width: 50px;
+    --lb-switch-height: 24px;
+    --lb-switch-radius: 999px;
+
+    --lb-switch-knob-size: 20px;
+    --lb-switch-knob-offset: 2px;
+
     --lb-switch-on-bg: #6DB33F;
     --lb-switch-off-bg: #EEEEEE;
     --lb-switch-on-color: #FFFFFF;
@@ -19,6 +23,10 @@
     width: var(--lb-switch-width);
     min-width: var(--lb-switch-width);
     max-width: var(--lb-switch-width);
+    height: var(--lb-switch-height);
+    min-height: var(--lb-switch-height);
+    max-height: var(--lb-switch-height);
+
     flex: 0 0 var(--lb-switch-width);
     display: inline-block;
     user-select: none;
@@ -33,7 +41,9 @@
 }
 
 .lb-flipswitch-label {
+    position: relative;
     width: 100%;
+    height: var(--lb-switch-height);
     display: block;
     overflow: hidden;
     cursor: pointer;
@@ -58,14 +68,14 @@
     height: var(--lb-switch-height);
     line-height: var(--lb-switch-height);
     box-sizing: border-box;
-    font-size: 15px;
+    font-size: 12px;
     font-weight: bold;
     font-family: Trebuchet, Arial, sans-serif;
 }
 
 .lb-flipswitch-inner:before {
     content: var(--lb-switch-on-text);
-    padding-left: 14px;
+    padding-left: 10px;
     background-color: var(--lb-switch-on-bg);
     color: var(--lb-switch-on-color);
     border-radius: var(--lb-switch-radius);
@@ -73,7 +83,7 @@
 
 .lb-flipswitch-inner:after {
     content: var(--lb-switch-off-text);
-    padding-right: 19px;
+    padding-right: 10px;
     background-color: var(--lb-switch-off-bg);
     color: var(--lb-switch-off-color);
     text-align: right;
@@ -82,24 +92,155 @@
 }
 
 .lb-flipswitch-switch {
-    --knob-size: 36px;
     display: block;
-    width: var(--knob-size);
-    height: var(--knob-size);
+    width: var(--lb-switch-knob-size);
+    height: var(--lb-switch-knob-size);
+
     background: var(--lb-switch-knob-bg);
     position: absolute;
-    top: calc((var(--lb-switch-height) - var(--knob-size)) / 2);
-    left: -1px;
-    border: 2px solid var(--lb-switch-border);
+
+    top: var(--lb-switch-knob-offset);
+    left: var(--lb-switch-knob-offset);
+
+    border: 1px solid var(--lb-switch-border);
     border-radius: 50%;
     box-sizing: border-box;
+
     transition: left 0.3s ease;
 }
 
 .lb-flipswitch-checkbox:checked + .lb-flipswitch-label .lb-flipswitch-switch {
-    left: calc(var(--lb-switch-width) - var(--knob-size) + 1px);
+    left: calc(var(--lb-switch-width) - var(--lb-switch-knob-size) - var(--lb-switch-knob-offset));
 }
 
 .lb-flipswitch-checkbox:checked + .lb-flipswitch-label .lb-flipswitch-inner {
     margin-left: 0;
 }
+
+/* =========================================================
+   Flipswitch settings - LoxBerry lb-toggle markup fallback
+   ---------------------------------------------------------
+   Supports the newer markup:
+
+   <div class="lb-flipswitch" data-input="...">
+       <input type="hidden" ...>
+       <label class="lb-toggle" for="...">
+           <input type="checkbox" class="lb-flipswitch-checkbox no-jqm-flipswitch" data-role="none">
+           <span class="lb-toggle-slider"></span>
+       </label>
+   </div>
+
+   The original .lb-flipswitch-label / .lb-flipswitch-inner /
+   .lb-flipswitch-switch markup above remains supported.
+   This section intentionally uses no !important rules so that
+   LoxBerry v4 core/theme toggle styling can still win when present.
+   ========================================================= */
+
+.lb-flipswitch .lb-toggle {
+    position: relative;
+    display: block;
+    width: 100%;
+    min-width: var(--lb-switch-width);
+    max-width: var(--lb-switch-width);
+    height: var(--lb-switch-height);
+    min-height: var(--lb-switch-height);
+    max-height: var(--lb-switch-height);
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: var(--lb-switch-radius);
+    box-shadow: none;
+    cursor: pointer;
+    user-select: none;
+    vertical-align: middle;
+}
+
+.lb-flipswitch .lb-toggle .lb-flipswitch-checkbox {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.lb-flipswitch .lb-toggle-slider {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: var(--lb-switch-height);
+    min-height: var(--lb-switch-height);
+    max-height: var(--lb-switch-height);
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--lb-switch-off-bg);
+    background-color: var(--lb-switch-off-bg);
+    border-radius: var(--lb-switch-radius);
+    box-shadow: inset 0 0 0 1px #7f7f7f;
+    box-sizing: border-box;
+    transition: background-color 0.3s ease;
+}
+
+.lb-flipswitch .lb-toggle-slider::before {
+    content: "";
+    position: absolute;
+    top: var(--lb-switch-knob-offset);
+    left: var(--lb-switch-knob-offset);
+    display: block;
+    width: var(--lb-switch-knob-size);
+    height: var(--lb-switch-knob-size);
+    background: var(--lb-switch-knob-bg);
+    border: 1px solid var(--lb-switch-border);
+    border-radius: 50%;
+    box-sizing: border-box;
+    transition: left 0.3s ease;
+}
+
+.lb-flipswitch .lb-toggle-slider::after {
+    content: var(--lb-switch-off-text);
+    position: absolute;
+    top: 0;
+    right: 10px;
+    height: var(--lb-switch-height);
+    line-height: var(--lb-switch-height);
+    color: var(--lb-switch-off-color);
+    font-size: 12px;
+    font-weight: bold;
+    font-family: Trebuchet, Arial, sans-serif;
+    text-align: right;
+    box-sizing: border-box;
+}
+
+.lb-flipswitch .lb-toggle .lb-flipswitch-checkbox:checked + .lb-toggle-slider,
+.lb-flipswitch.is-on .lb-toggle .lb-toggle-slider {
+    background: var(--lb-switch-on-bg);
+    background-color: var(--lb-switch-on-bg);
+    box-shadow: none;
+}
+
+.lb-flipswitch .lb-toggle .lb-flipswitch-checkbox:checked + .lb-toggle-slider::before,
+.lb-flipswitch.is-on .lb-toggle .lb-toggle-slider::before {
+    left: calc(var(--lb-switch-width) - var(--lb-switch-knob-size) - var(--lb-switch-knob-offset));
+}
+
+.lb-flipswitch .lb-toggle .lb-flipswitch-checkbox:checked + .lb-toggle-slider::after,
+.lb-flipswitch.is-on .lb-toggle .lb-toggle-slider::after {
+    content: var(--lb-switch-on-text);
+    left: 10px;
+    right: auto;
+    color: var(--lb-switch-on-color);
+    text-align: left;
+}
+
+.lb-flipswitch.is-disabled .lb-toggle,
+.lb-flipswitch .lb-toggle .lb-flipswitch-checkbox:disabled + .lb-toggle-slider {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+

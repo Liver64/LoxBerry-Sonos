@@ -12,7 +12,7 @@ function muellkalender() {
 	$TL = LOAD_T2S_TEXT();
 
 	if (!file_exists("$home/webfrontend/html/plugins/caldav4lox/caldav.php")) {
-		LOGGING('waste-calendar-to-speech.php: The required Caldav-4-Lox Plugin is already not installed. Please install Plugin!', 3);
+		LOGGING('waste-calendar-to-speech.php: The required Caldav-4-Lox Plugin is already not installed. Please install Plugin!', 4);
 		exit;
 	}
 

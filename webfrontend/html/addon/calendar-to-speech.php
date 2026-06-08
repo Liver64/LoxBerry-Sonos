@@ -13,9 +13,8 @@ function calendar() {
 	global $config, $home, $myIP;
 	
 	$TL = LOAD_T2S_TEXT();
-	
 	if (!file_exists("$home/webfrontend/html/plugins/caldav4lox/caldav.php")) {
-		LOGGING('calendar-to-speech.php: The required Caldav-4-Lox Plugin is already not installed. Please install Plugin!',3);
+		LOGGING('calendar-to-speech.php: The required Caldav-4-Lox Plugin is already not installed. Please install Plugin!',4);
 		exit;
 	}
 	if(substr($home,0,4) !== "/opt") {
@@ -26,7 +25,7 @@ function calendar() {
 	$checklength = strlen($url).'<br>';
 	$checkdebug = @substr($url,$checklength - 5,$checklength);
 	if ($checkdebug == "debug") {
-		LOGGING('calendar-to-speech.php: Please remove &debug from your syntax in Sonos4lox Calendar URL!',3);
+		LOGGING('calendar-to-speech.php: Please remove &debug from your syntax in Sonos4lox Calendar URL!',4);
 		exit;
 	}
 	$callurlcal = trim($config['VARIOUS']['CALDav2'].'&debug');

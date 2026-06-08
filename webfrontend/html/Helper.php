@@ -1892,7 +1892,7 @@ function vversion()    {
 	$url = 'https://raw.githubusercontent.com/Liver64/LoxBerry-Sonos/master/webfrontend/html/release/release.cfg';
 	$as = is_file($url);
 	var_dump($as);
-	$file = "REPLACELBHOMEDIR/data/plugins/sonos4lox/plugin.cfg";
+	$file = "/opt/loxberry/data/plugins/sonos4lox/plugin.cfg";
 	file_put_contents($file, file_get_contents($url));
 	$wq = json_decode(file_get_contents($file, TRUE));
 	#print_r($wq);
@@ -2382,7 +2382,7 @@ if (!function_exists('update_sonos_health')) {
 
         // Fallback, falls $lbpconfigdir nicht gesetzt ist
         if (empty($lbpconfigdir)) {
-            $lbpconfigdir = 'REPLACELBHOMEDIR/config/plugins/sonos4lox';
+            $lbpconfigdir = '/opt/loxberry/config/plugins/sonos4lox';
         }
 
         $healthFile = $lbpconfigdir . '/health.json';

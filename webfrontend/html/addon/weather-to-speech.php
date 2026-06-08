@@ -12,24 +12,25 @@ function w2s()
 				
 		// Einlesen der Daten vom Weather4Lox Plugin
 		if (!file_exists("$home/data/plugins/weather4lox/current.dat")) {
-			LOGGING('weather-to-speech.php: Data from Weather4Lox could not be obtainend. Please check if Plugin is active!',3);
-			LOGGING('weather-to-speech.php: The file current.dat could not been opened. Please check Weather4Lox Plugin!',3);
+			LOGGING('weather-to-speech.php: Data from Weather4Lox could not be obtainend. Please check if Plugin is active!',4);
+			LOGGING('weather-to-speech.php: The file current.dat could not been opened. Please check Weather4Lox Plugin!',4);
 			exit;
+			
 		} else {
 			$current = file_get_contents("$home/data/plugins/weather4lox/current.dat");
 			$current = explode('|',$current);
 		}
 		if (!file_exists("$home/data/plugins/weather4lox/dailyforecast.dat")) {
-			LOGGING('weather-to-speech.php: Data from Weather4Lox could not be obtainend. Please check if Plugin is active!',3);
-			LOGGING('weather-to-speech.php: The file dailyforecast.dat could not been opened. Please check Weather4Lox Plugin!',3);
+			LOGGING('weather-to-speech.php: Data from Weather4Lox could not be obtainend. Please check if Plugin is active!',4);
+			LOGGING('weather-to-speech.php: The file dailyforecast.dat could not been opened. Please check Weather4Lox Plugin!',4);
 			exit;
 		} else {
 			$dailyforecast = file_get_contents("$home/data/plugins/weather4lox/dailyforecast.dat");
 			$dailyforecast = explode('|',$dailyforecast);
 		}
 		if (!file_exists("$home/data/plugins/weather4lox/hourlyforecast.dat")) {
-			LOGGING('weather-to-speech.php: Data from Weather4Lox could not be obtainend. Please check if Plugin is active!',3);
-			LOGGING('weather-to-speech.php: The file hourlyforecast.dat could not been opened. Please check Weather4Lox Plugin!',3);
+			LOGGING('weather-to-speech.php: Data from Weather4Lox could not be obtainend. Please check if Plugin is active!',4);
+			LOGGING('weather-to-speech.php: The file hourlyforecast.dat could not been opened. Please check Weather4Lox Plugin!',4);
 			exit;
 		} else {
 			$hourlyforecast = file_get_contents("$home/data/plugins/weather4lox/hourlyforecast.dat");

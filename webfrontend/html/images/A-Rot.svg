@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="90" height="210" viewBox="0 0 90 210" role="img" aria-label="Ampel Rot">
+  <title>Ampel Rot</title>
+  <desc>Vector traffic light graphic with transparent background.</desc>
+  <g fill="none" fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round">
+    <!-- housing -->
+    <rect x="15" y="8" width="60" height="190" rx="30" ry="30" fill="#c9cecc" stroke="#000000" stroke-width="4"/>
+    <path d="M26 32 C36 20, 54 20, 64 32" stroke="#000000" stroke-width="4"/>
+
+    <!-- top light -->
+    <circle cx="45" cy="52" r="22" fill="#ff4545" stroke="#000000" stroke-width="4"/>
+    <path d="M50 36 C58 38, 62 44, 62 52" stroke="#ffffff" stroke-width="2" opacity="0.95"/>
+
+    <!-- middle light -->
+    <path d="M26 88 C36 77, 54 77, 64 88" stroke="#000000" stroke-width="4"/>
+    <circle cx="45" cy="108" r="22" fill="#9fa4a2" stroke="#000000" stroke-width="4"/>
+    <path d="M50 92 C58 94, 62 100, 62 108" stroke="#ffffff" stroke-width="2" opacity="0.95"/>
+
+    <!-- bottom light -->
+    <path d="M26 144 C36 133, 54 133, 64 144" stroke="#000000" stroke-width="4"/>
+    <circle cx="45" cy="164" r="22" fill="#9fa4a2" stroke="#000000" stroke-width="4"/>
+    <path d="M50 148 C58 150, 62 156, 62 164" stroke="#ffffff" stroke-width="2" opacity="0.95"/>
+  </g>
+</svg>

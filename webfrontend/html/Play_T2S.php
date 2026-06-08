@@ -1306,7 +1306,7 @@ function handle_message($zones, $source)
     if (isset($_GET['messageid'])) {
         $messageid = $_GET['messageid'];
 
-        $mp3 = "REPLACELBHOMEDIR/data/plugins/sonos4lox/tts/mp3/{$messageid}.mp3";
+        $mp3 = "/opt/loxberry/data/plugins/sonos4lox/tts/mp3/{$messageid}.mp3";
         $duration = get_mp3_duration($mp3);
 		#wait_for_global_audio_lock($duration);
 
@@ -1332,7 +1332,7 @@ function handle_message($zones, $source)
         LOGGING("play_t2s.php: Audioclip messageid played", 7);
 
     } else {
-        $mp3 = "REPLACELBHOMEDIR/data/plugins/sonos4lox/tts/{$filename}.mp3";
+        $mp3 = "/opt/loxberry/data/plugins/sonos4lox/tts/{$filename}.mp3";
         $duration = get_mp3_duration($mp3);
 		#wait_for_global_audio_lock($duration);
 

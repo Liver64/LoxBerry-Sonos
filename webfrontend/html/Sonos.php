@@ -376,25 +376,25 @@ if(isset($_GET['timer'])) {
 
 if(isset($_GET['rampto'])) {
 		switch($_GET['rampto'])	{
-			case 'sleep';
+			case 'sleep':
 				#$config['TTS']['rampto'] = "SLEEP_TIMER_RAMP_TYPE";
 				break;
-			case 'alarm';
+			case 'alarm':
 				#$config['TTS']['rampto'] = "ALARM_RAMP_TYPE";
 				break;
-			case 'auto';
+			case 'auto':
 				#$config['TTS']['rampto'] = "AUTOPLAY_RAMP_TYPE";
 				break;
 		}
 	} else {
 		switch($config['TTS']['rampto']) {
-			case 'sleep';
+			case 'sleep':
 				#$config['TTS']['rampto'] = "SLEEP_TIMER_RAMP_TYPE";
 				break;
-			case 'alarm';
+			case 'alarm':
 				#$config['TTS']['rampto'] = "ALARM_RAMP_TYPE";
 				break;
-			case 'auto';
+			case 'auto':
 				#$config['TTS']['rampto'] = "AUTOPLAY_RAMP_TYPE";
 				break;
 		}
@@ -409,7 +409,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 	$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
 	switch($_GET['action'])	{
 		
-		case 'play';
+		case 'play':
 			$posinfo = $sonos->GetPositionInfo();
 			$trackrunning = $sonos->GetTransportInfo();
 			if(!empty($posinfo['TrackURI'])) {
@@ -433,18 +433,72 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			}
 		break;
 		
-		case 'stop';
+		case 'stop':
 			checkifmaster($master);
-			$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
-			$sonos->Pause();
-			LOGGING("sonos.php: Stop been executed.", 7);
-		break; 
+
+			$sonos = new SonosAccess($sonoszone[$master][0]); // Sonos IP address
+
+			try {
+				$sonos->Stop();
+				LOGGING("sonos.php: Stop has been executed.", 7);
+			}
+			catch (Exception $e) {
+				LOGGING("sonos.php: Stop failed, trying Pause instead. Error: " . $e->getMessage(), 4);
+
+				try {
+					$sonos->Pause();
+					LOGGING("sonos.php: Pause has been executed as fallback for Stop.", 7);
+				}
+				catch (Exception $pause_e) {
+					$pause_error = $pause_e->getMessage();
+
+					if (
+						strpos($pause_error, "701") !== false ||
+						strpos($pause_error, "INVALID_TRANSITION") !== false ||
+						strpos($pause_error, "ERROR_AV_UPNP_AVT_INVALID_TRANSITION") !== false
+					) {
+						LOGGING("sonos.php: Pause fallback ignored. Sonos returned invalid transition: " . $pause_error, 4);
+					}
+					else {
+						throw $pause_e;
+					}
+				}
+			}
+
+		break;
 		
-		case 'pause';
+		case 'pause':
 			checkifmaster($master);
-			$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
-			$sonos->Pause();
-			LOGGING("sonos.php: Pause been executed.", 7);
+
+			$sonos = new SonosAccess($sonoszone[$master][0]); // Sonos IP address
+
+			try {
+				$sonos->Pause();
+				LOGGING("sonos.php: Pause has been executed.", 7);
+			}
+			catch (Exception $e) {
+				LOGGING("sonos.php: Pause failed, trying Stop instead. Error: " . $e->getMessage(), 4);
+
+				try {
+					$sonos->Stop();
+					LOGGING("sonos.php: Stop has been executed as fallback for Pause.", 7);
+				}
+				catch (Exception $stop_e) {
+					$stop_error = $stop_e->getMessage();
+
+					if (
+						strpos($stop_error, "701") !== false ||
+						strpos($stop_error, "INVALID_TRANSITION") !== false ||
+						strpos($stop_error, "ERROR_AV_UPNP_AVT_INVALID_TRANSITION") !== false
+					) {
+						LOGGING("sonos.php: Stop fallback ignored. Sonos returned invalid transition: " . $stop_error, 4);
+					}
+					else {
+						throw $stop_e;
+					}
+				}
+			}
+
 		break;
 		
 		case 'toggle':
@@ -458,7 +512,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			LOGGING("sonos.php: Toggle been executed.", 7);
 		break; 
 
-		case 'next';
+		case 'next':
 			$titelgesammt = $sonos->GetPositionInfo();
 			$titelaktuel = $titelgesammt["Track"];
 			$playlistgesammt = count($sonos->GetCurrentPlaylist());
@@ -474,10 +528,10 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			#	LOGGING("sonos.php: Last track been played.", 7);
 			}
 			#LOGGING("sonos.php: Next been executed.", 7);
-		break;
+		break; 
 		
 		
-		case 'previous';
+		case 'previous':
 			$titelgesammt = $sonos->GetPositionInfo();
 			$titelaktuel = $titelgesammt["Track"];
 			$playlistgesammt = count($sonos->GetCurrentPlaylist());
@@ -503,7 +557,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		
 		
-		case 'mute';
+		case 'mute':
 			if($_GET['mute'] == 'false') {
 				$sonos->SetMute(false);
 			}
@@ -516,7 +570,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 			LOGGING("sonos.php: Mute/Unmute been executed.", 7);
 		break;
 		
-		case 'togglemute';
+		case 'togglemute':
 			$mute = $sonos->GetMute();
 			if($mute === true) {
 				$sonos->SetMute(false);
@@ -527,17 +581,17 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		
 		
-		case 'phonemute';
+		case 'phonemute':
 			phonemute();
 		break;
 		
 		
-		case 'phoneunmute';
+		case 'phoneunmute':
 			phoneunmute();
 		break;
 		
 		
-		case 'stopall';
+		case 'stopall':
 			foreach ($sonoszone as $zone => $player) {
 				checkifmaster($zone);
 				$sonos = new SonosAccess($sonoszone[$zone][0]);
@@ -597,7 +651,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break; 
 		
 					
-		case 'playmode';
+		case 'playmode':
 			// see valid_playmodes under Configuration section for a list of valid modes
 			if (in_array($playmode, $valid_playmodes)) {
 				$mode = SetPlaymodes($master, $playmode);
@@ -748,34 +802,65 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		
 		case 'nextpush':
 			checkifmaster($master);
-			$sonos = new SonosAccess($sonoszone[$master][0]); //Sonos IP Adresse
+
+			$sonos = new SonosAccess($sonoszone[$master][0]); // Sonos IP address
 			$posinfo = $sonos->GetPositionInfo();
-			#print_r($posinfo);
-			
-			// Nichts läuft
-			if ((empty($posinfo['TrackURI'])) and (empty($posinfo["UpnpClass"])))  {
+
+			// Nothing is playing
+			if ((empty($posinfo['TrackURI'])) and (empty($posinfo["UpnpClass"]))) {
 				nextradio();
 				LOGDEB("sonos.php Nextpush has been executed. Queue was empty");
 			}
-			// Radio läuft
-			if ($posinfo["UpnpClass"] === "object.item")  {
+
+			// Radio is playing
+			elseif (isset($posinfo["UpnpClass"]) && $posinfo["UpnpClass"] === "object.item") {
 				nextradio();
 				LOGDEB("sonos.php Nextpush has been executed. Radio Station was running");
 			}
-			// TV läuft
-			if (substr($posinfo["TrackURI"], 0, 18) === "x-sonos-htastream:")  {
+
+			// TV is playing
+			elseif (isset($posinfo["TrackURI"]) && substr($posinfo["TrackURI"], 0, 18) === "x-sonos-htastream:") {
 				nextradio();
 				LOGDEB("sonos.php Nextpush has been executed. TV was running");
 			}
-			// Playliste läuft
-			if ((!empty($posinfo['TrackURI'])) and (!empty($posinfo['TrackDuration'])))  {
+
+			// Playlist is playing
+			elseif ((!empty($posinfo['TrackURI'])) and (!empty($posinfo['TrackDuration']))) {
 				LOGDEB("sonos.php Nextpush has been executed. Playlist was running");
-				next_dynamic();
+
+				try {
+					next_dynamic();
+				}
+				catch (Exception $e) {
+					$error_message = $e->getMessage();
+
+					if (
+						strpos($error_message, "701") !== false ||
+						strpos($error_message, "INVALID_TRANSITION") !== false ||
+						strpos($error_message, "ERROR_AV_UPNP_AVT_INVALID_TRANSITION") !== false
+					) {
+						LOGWARN("sonos.php Nextpush ignored. Sonos returned invalid transition: " . $error_message);
+					}
+					else {
+						throw $e;
+					}
+				}
 			}
-			if (isset($_GET['profile']) or isset($_GET['Profile']))    {
+
+			// Fallback
+			else {
+				nextradio();
+				LOGDEB("sonos.php Nextpush has been executed. Unknown player state, fallback to radio");
+			}
+
+			if (isset($_GET['profile']) or isset($_GET['Profile'])) {
 				$volume = $profile_selected[0]['Player'][$master][0]['Volume'];
-			} 
-			$sonos->SetVolume($volume);
+			}
+
+			if (isset($volume) && $volume !== "") {
+				$sonos->SetVolume($volume);
+			}
+
 		break;
 		
 		
@@ -1502,7 +1587,7 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		
 		
-		case 'networkstatus';
+		case 'networkstatus':
 			networkstatus();
 		break;  
 		
@@ -1838,8 +1923,13 @@ if(array_key_exists($_GET['zone'], $sonoszone)){
 		break;
 		  
 		default:
+			s4l_log_application_error(
+				"Invalid or unknown Sonos4Lox command. Required parameter action is missing or invalid.",
+				__FILE__,
+				__LINE__
+			);
 			LOGGING("sonos.php: Please use syntax as: 'http://<IP or HOSTENAME>/plugins/sonos4lox/index.php/?zone=<SONOSPLAYERNAME>&action=<FUNCTION>&value=-OPTION>'", 3);
-			LOGGING("sonos.php: Your entered command ".$myIP."".urldecode($syntax)." is not known ",3);
+			#LOGGING("sonos.php: Your entered command ".$myIP."".urldecode($syntax)." is not known ",3);
 		} 
 	} else 	{
 	LOGGING("sonos.php: The Zone ".$master." is not available or offline. Please check and if necessary add zone to Config", 4);
@@ -2208,6 +2298,46 @@ function presence_detection()   {
 
 }
 
+function s4l_log_application_error($message, $file = null, $line = null) {
+
+    $requestUri  = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+    $queryString = isset($_SERVER['QUERY_STRING']) ? $_SERVER['QUERY_STRING'] : '';
+    $remoteAddr  = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
+    $getKeys     = !empty($_GET) ? implode(', ', array_keys($_GET)) : 'none';
+
+    if ($file === null || $line === null) {
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+        if (isset($trace[1])) {
+            $file = isset($trace[1]['file']) ? $trace[1]['file'] : '';
+            $line = isset($trace[1]['line']) ? $trace[1]['line'] : '';
+        }
+    }
+
+    /*
+     * Use Sonos4Lox/LoxBerry logging standard:
+     * LOGGING(message, level)
+     * Level 3 is used like existing Sonos4Lox error messages.
+     */
+    LOGGING("sonos.php: " . $message, 3);
+
+    if ($file !== '' || $line !== '') {
+        LOGGING("sonos.php: Location: " . $file . ", line " . $line, 3);
+    }
+
+    if ($requestUri !== '') {
+        LOGGING("sonos.php: REQUEST_URI: " . substr($requestUri, 0, 500), 3);
+    }
+
+    if ($queryString !== '') {
+        LOGGING("sonos.php: QUERY_STRING: " . substr($queryString, 0, 500), 3);
+    }
+
+    LOGGING("sonos.php: Available GET keys: " . substr($getKeys, 0, 500), 3);
+
+    if ($remoteAddr !== '') {
+        LOGGING("sonos.php: Remote address: " . $remoteAddr, 3);
+    }
+}
 
 function shutdown()
 {

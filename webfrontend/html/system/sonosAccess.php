@@ -1953,6 +1953,21 @@ class SonosAccess
             ]
         );
     }
+	
+	/**
+	 * Alias for SetCrossfade()
+	 *
+	 * Compatibility wrapper for older/other Sonos4Lox code paths
+	 * that call SetCrossfadeMode().
+	 *
+	 * @param string|bool|int $crossfade Enable/Disable = 1/0
+	 *
+	 * @return void
+	 */
+	public function SetCrossfadeMode($crossfade)
+	{
+		$this->SetCrossfade($crossfade);
+	}
 
 
 	/**
