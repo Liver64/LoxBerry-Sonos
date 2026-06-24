@@ -52,7 +52,7 @@ my $helplink             = "http://www.loxwiki.eu/display/LOXBERRY/Sonos4Loxone"
 # Testing data files are intentionally stored outside the web frontend.
 # url_tests.json is now maintained directly from the Testing page and belongs
 # to the plugin config directory so it is part of the normal plugin configuration.
-# Example: /opt/loxberry/config/plugins/sonos4lox/url_tests.json
+# Example: REPLACELBHOMEDIR/config/plugins/sonos4lox/url_tests.json
 my $testing_script_version = "TESTING_CGI_V26_2026_06_22_SONOS_THEME_WALLPAPER_PATHFIX";
 my $testing_json_file      = $lbpconfigdir . "/url_tests.json";
 my $testing_log_file       = $lbplogdir . "/regression_test.log";
