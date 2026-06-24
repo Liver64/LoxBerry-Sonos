@@ -1,0 +1,17 @@
+[
+    {
+        "name": "thorsten",
+        "language": "de_DE",
+        "filename": "de_DE-thorsten-low.onnx"
+    },
+    {
+        "name": "thorsten_emotional",
+        "language": "de_DE",
+        "filename": "de_DE-thorsten_emotional-medium.onnx"
+    },
+    {
+        "name": "thorsten_hessisch",
+        "language": "de_DE",
+        "filename": "Thorsten-Voice_Hessisch_Piper_high-Oct2023.onnx"
+    }
+]

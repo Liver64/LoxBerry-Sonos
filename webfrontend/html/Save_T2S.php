@@ -1,13 +1,15 @@
 <?php
 
 /**
- * Submodul: Save_T2S
+ * Sonos4Lox - Save_T2S.php
+ * Version: T2S_SAVE_RESTORE_LOG_HARDENING_V01_2026_06_19
  *
- * Speichert den aktuellen Zustand der relevanten Zonen für T2S.
- * Fast-Path:
- *   - member=all      → alle Zonen sichern
- *   - member=<liste>  → nur Master + explizite Member + bestehende Gruppierung
- *   - kein member     → Master + bestehende Gruppierung
+ * Saves the current state of the relevant Sonos zones before TTS playback.
+ *
+ * Fast path:
+ *   - member=all      -> save all zones
+ *   - member=<list>   -> save master, explicit members and existing grouping
+ *   - no member       -> save master and existing grouping
  */
 
 /**
@@ -206,9 +208,14 @@ function saveZonesStatus()
 
     // Ermitteln, welche Zonen überhaupt gesichert werden sollen
     $zonesToSave = getZonesToSaveForT2S();
-    $zonesList   = implode(',', $zonesToSave);
+    if (empty($zonesToSave)) {
+        LOGWARN("Save_T2S.php: No valid zones found for TTS snapshot.");
+        return $actual;
+    }
 
-    LOGGING("save_t2s.php: Snapshot will cover zones: ".$zonesList, 5);
+    $zonesList = implode(',', $zonesToSave);
+
+    LOGINF("Save_T2S.php: Snapshot will cover zones: " . $zonesList);
 
     // ------------------------------------------------------------------
     // Status der relevanten Zonen auslesen
@@ -221,43 +228,62 @@ function saveZonesStatus()
 
         $player = $zoneName;
 
-        // SonosAccess für diese Zone
-        $sonos = new SonosAccess($sonoszone[$player][0]);
+        if (empty($sonoszone[$player][0])) {
+            LOGWARN("Save_T2S.php: Zone '" . $player . "' has no valid Sonos IP address and will be skipped.");
+            continue;
+        }
 
-        // 1) Basis-Status
-        $actual[$player]['Mute']              = $sonos->GetMute($player);
-        $actual[$player]['Volume']            = $sonos->GetVolume($player);
-        $actual[$player]['MediaInfo']         = $sonos->GetMediaInfo($player);
-        $actual[$player]['PositionInfo']      = $sonos->GetPositionInfo($player);
-        $actual[$player]['TransportInfo']     = $sonos->GetTransportInfo($player);
-        $actual[$player]['TransportSettings'] = $sonos->GetTransportSettings($player);
+        try {
+            $sonos = new SonosAccess($sonoszone[$player][0]);
 
-        // Koordinator bleibt wie bisher am Szenario-Master orientiert
+            // Basic state snapshot.
+            $actual[$player]['Mute']              = $sonos->GetMute($player);
+            $actual[$player]['Volume']            = $sonos->GetVolume($player);
+            $actual[$player]['MediaInfo']         = $sonos->GetMediaInfo($player);
+            $actual[$player]['PositionInfo']      = $sonos->GetPositionInfo($player);
+            $actual[$player]['TransportInfo']     = $sonos->GetTransportInfo($player);
+            $actual[$player]['TransportSettings'] = $sonos->GetTransportSettings($player);
+        } catch (Exception $e) {
+            LOGWARN("Save_T2S.php: Could not read snapshot data for zone '" . $player . "': " . $e->getMessage());
+            unset($actual[$player]);
+            continue;
+        }
+
+        // Keep the coordinator semantics aligned with the current scenario master.
         $actual[$player]['Coordinator'] = $master;
 
-        // Gruppenzugehörigkeit (bestehende Logik aus getGroup() weiterverwenden)
-        $actual[$player]['Grouping'] = getGroup($player);
+        // Keep the existing grouping detection logic.
+        $group = getGroup($player);
+        $actual[$player]['Grouping'] = is_array($group) ? $group : array();
 
-        // ZoneStatus (master/member/single)
+        // ZoneStatus (master/member/single).
         $zonestatus                    = getZoneStatus($player);
         $actual[$player]['ZoneStatus'] = $zonestatus;
 
-        // Typ-Erkennung nur für Master / Single-Zonen
+        // Type detection is only relevant for master/single zones.
         if ($zonestatus != "member") {
 
-            $posinfo = $actual[$player]['PositionInfo'];
-            $media   = $actual[$player]['MediaInfo'];
+            $posinfo = (isset($actual[$player]['PositionInfo']) && is_array($actual[$player]['PositionInfo']))
+                ? $actual[$player]['PositionInfo']
+                : array();
+            $media = (isset($actual[$player]['MediaInfo']) && is_array($actual[$player]['MediaInfo']))
+                ? $actual[$player]['MediaInfo']
+                : array();
 
-            if (substr($posinfo["TrackURI"], 0, 18) == "x-sonos-htastream:") {
+            $trackUri = isset($posinfo['TrackURI']) ? (string)$posinfo['TrackURI'] : '';
+            $metadata = isset($posinfo['CurrentURIMetaData']) ? (string)$posinfo['CurrentURIMetaData'] : '';
+            $upnpClass = isset($media['UpnpClass']) ? (string)$media['UpnpClass'] : '';
+
+            if (substr($trackUri, 0, 18) == "x-sonos-htastream:") {
                 $actual[$player]['Type'] = "TV";
 
-            } elseif (substr($media['UpnpClass'], 0, 36) == "object.item.audioItem.audioBroadcast") {
+            } elseif (substr($upnpClass, 0, 36) == "object.item.audioItem.audioBroadcast") {
                 $actual[$player]['Type'] = "Radio";
 
-            } elseif (substr($posinfo["TrackURI"], 0, 15) == "x-rincon-stream") {
+            } elseif (substr($trackUri, 0, 15) == "x-rincon-stream") {
                 $actual[$player]['Type'] = "LineIn";
 
-            } elseif (empty($posinfo["CurrentURIMetaData"])) {
+            } elseif ($metadata === '') {
                 $actual[$player]['Type'] = "Nothing";
 
             } else {
@@ -272,9 +298,8 @@ function saveZonesStatus()
     $elapsed = microtime(true) - $start;
     $elapsed = round($elapsed, 3);
 
-    LOGGING("save_t2s.php: All relevant zone settings have been saved successfully (" . $elapsed . " seconds).", 5);
+    LOGINF("Save_T2S.php: All relevant zone settings have been saved successfully (" . $elapsed . " seconds).");
 
     return $actual;
 }
 
-?>

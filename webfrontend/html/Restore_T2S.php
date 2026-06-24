@@ -3,7 +3,7 @@
 /**
  * Submodule: Restore_T2S
  * Optimized restore of previous Sonos state after Text-to-Speech
- * Version: 2025-11-19-2
+ * Version: T2S_SAVE_RESTORE_LOG_HARDENING_V01_2026_06_19
  *
  * This file provides:
  *  - restoreSingleZone()  – for single-zone T2S
@@ -17,6 +17,31 @@
 if (!function_exists('restoreSingleZone')) {
 
 /**
+ * Returns true if a saved transport state represents active playback.
+ * The legacy Sonos wrapper may return either an integer-like value or an array.
+ */
+function s4lox_restore_t2s_was_playing($transportInfo)
+{
+    if (is_array($transportInfo)) {
+        $state = isset($transportInfo['CurrentTransportState'])
+            ? strtoupper((string)$transportInfo['CurrentTransportState'])
+            : '';
+
+        return ($state === 'PLAYING');
+    }
+
+    return ((string)$transportInfo === '1' || strtoupper((string)$transportInfo) === 'PLAYING');
+}
+
+/**
+ * Safely returns an array snapshot section.
+ */
+function s4lox_restore_t2s_array($value)
+{
+    return is_array($value) ? $value : array();
+}
+
+/**
  * Restore previous settings for a single zone T2S.
  */
 function restoreSingleZone() {
@@ -24,12 +49,12 @@ function restoreSingleZone() {
     global $sonoszone, $sonos, $actual, $master, $tts_stat;
 
     if (empty($master) || !isset($sonoszone[$master])) {
-        LOGGING("restore_t2s.php: Cannot restore single zone – master is not set or unknown.", 3);
+        LOGERR("Restore_T2S.php: Cannot restore single zone – master is not set or unknown.");
         return;
     }
 
     if (!isset($actual[$master])) {
-        LOGGING("restore_t2s.php: No snapshot data for master '$master' – nothing to restore.", 4);
+        LOGWARN("Restore_T2S.php: No snapshot data for master '$master' – nothing to restore.");
         return;
     }
 
@@ -59,17 +84,17 @@ function restoreSingleZone() {
                 $sonos->SetMute($actual[$master]['Mute']);
             }
 
-            // Nur dann wieder starten, wenn vor T2S wirklich gespielt wurde
-            if (isset($actual[$master]['TransportInfo']) && $actual[$master]['TransportInfo'] == 1) {
+            // Resume only if the zone was really playing before TTS
+            if (s4lox_restore_t2s_was_playing($actual[$master]['TransportInfo'] ?? null)) {
                 try {
                     $sonos->Play();
                     RestoreShuffle($master);
-                    LOGGING("restore_t2s.php: Single zone '$master' playback has been resumed.", 6);
+                    LOGOK("Restore_T2S.php: Single zone '$master' playback has been resumed.");
                 } catch (Exception $e) {
-                    LOGGING("restore_t2s.php: Single zone '$master' could not resume playback: ".$e->getMessage(), 3);
+                    LOGERR("Restore_T2S.php: Single zone '$master' could not resume playback: ".$e->getMessage());
                 }
             } else {
-                LOGGING("restore_t2s.php: Single zone '$master' has been restored (was not playing before T2S).", 6);
+                LOGOK("Restore_T2S.php: Single zone '$master' has been restored (was not playing before T2S).");
             }
             break;
 
@@ -77,7 +102,7 @@ function restoreSingleZone() {
         // Zone war vorher Mitglied einer Gruppe
         // ------------------------------------------------------------
         case 'member':
-            $pos = isset($actual[$master]['PositionInfo']) ? $actual[$master]['PositionInfo'] : array();
+            $pos = s4lox_restore_t2s_array($actual[$master]['PositionInfo'] ?? array());
             if (!empty($pos) && !empty($pos['TrackURI'])) {
                 $sonos->SetAVTransportURI($pos['TrackURI']);
             }
@@ -94,7 +119,7 @@ function restoreSingleZone() {
             if (isset($actual[$master]['Mute'])) {
                 $sonos->SetMute($actual[$master]['Mute']);
             }
-            LOGGING("restore_t2s.php: Member zone '$master' has been added back to its group (single-mode restore).", 6);
+            LOGOK("Restore_T2S.php: Member zone '$master' has been added back to its group (single-mode restore).");
             break;
 
         // ------------------------------------------------------------
@@ -117,32 +142,32 @@ function restoreSingleZone() {
                 $sonos->SetMute($actual[$master]['Mute']);
             }
 
-            if (isset($actual[$master]['TransportInfo']) && $actual[$master]['TransportInfo'] == 1) {
+            if (s4lox_restore_t2s_was_playing($actual[$master]['TransportInfo'] ?? null)) {
                 try {
                     $sonos->Play();
                     RestoreShuffle($master);
-                    LOGGING("restore_t2s.php: Master zone '$master' playback has been resumed (single-mode restore).", 6);
+                    LOGOK("Restore_T2S.php: Master zone '$master' playback has been resumed (single-mode restore).");
                 } catch (Exception $e) {
-                    LOGGING("restore_t2s.php: Master zone '$master' could not resume playback: ".$e->getMessage(), 3);
+                    LOGERR("Restore_T2S.php: Master zone '$master' could not resume playback: ".$e->getMessage());
                 }
             } else {
-                LOGGING("restore_t2s.php: Master zone '$master' has been restored (was not playing before T2S).", 6);
+                LOGOK("Restore_T2S.php: Master zone '$master' has been restored (was not playing before T2S).");
             }
             break;
 
         default:
-            LOGGING("restore_t2s.php: Unknown previous status for '$master' – no restore performed.", 4);
+            LOGWARN("Restore_T2S.php: Unknown previous status for '$master' – no restore performed.");
             break;
     }
 
-    // T2S Ende signalisieren
+    // Signal TTS end
     if (function_exists('send_tts_source')) {
         $tts_stat = 0;
         send_tts_source($tts_stat);
     }
 
     $elapsed = microtime(true) - $t0;
-    LOGGING("Restore.php: (Single) Zone restore took ".round($elapsed, 3)." seconds.", 6);
+    LOGINF("Restore_T2S.php: (Single) Zone restore took ".round($elapsed, 3)." seconds.");
 }
 
 
@@ -158,12 +183,12 @@ function restoreGroupZone() {
     global $sonoszone, $sonos, $actual, $master, $member, $tts_stat;
 
     if (empty($master) || !isset($sonoszone[$master])) {
-        LOGGING("restore_t2s.php: Cannot restore group – master is not set or unknown.", 3);
+        LOGERR("Restore_T2S.php: Cannot restore group – master is not set or unknown.");
         return;
     }
 
     if (empty($actual) || !isset($actual[$master])) {
-        LOGGING("restore_t2s.php: No snapshot data – group restore skipped.", 4);
+        LOGWARN("Restore_T2S.php: No snapshot data – group restore skipped.");
         return;
     }
 
@@ -208,8 +233,8 @@ function restoreGroupZone() {
     }
 
     if (empty($zonesToRestore)) {
-        LOGGING("restore_t2s.php: restoreGroupZone: No target zones found – nothing to restore.", 4);
-        // trotzdem T2S Ende signalisieren
+        LOGWARN("Restore_T2S.php: restoreGroupZone: No target zones found – nothing to restore.");
+        // Still signal TTS end
         if (function_exists('send_tts_source')) {
             $tts_stat = 0;
             send_tts_source($tts_stat);
@@ -218,7 +243,7 @@ function restoreGroupZone() {
     }
 
     $zonesList = implode(',', array_keys($zonesToRestore));
-    LOGGING("restore_t2s.php: Group restore for zones: ".$zonesList, 6);
+    LOGINF("Restore_T2S.php: Group restore for zones: ".$zonesList);
 
     // ------------------------------------------------------------
     // 2) Alle betroffenen Player erstmal in Single-Zonen auflösen
@@ -233,7 +258,7 @@ function restoreGroupZone() {
             $s = new SonosAccess($sonoszone[$player][0]);
             $s->BecomeCoordinatorOfStandaloneGroup();
         } catch (Exception $e) {
-            LOGGING("restore_t2s.php: Ungroup of '$player' failed: ".$e->getMessage(), 4);
+            LOGWARN("Restore_T2S.php: Ungroup of '$player' failed: ".$e->getMessage());
         }
     }
 
@@ -255,7 +280,7 @@ function restoreGroupZone() {
         try {
             $sonos = new SonosAccess($sonoszone[$player][0]);
         } catch (Exception $e) {
-            LOGGING("restore_t2s.php: Zone '$player' could not be restored (no Sonos access): ".$e->getMessage(), 3);
+            LOGERR("Restore_T2S.php: Zone '$player' could not be restored (no Sonos access): ".$e->getMessage());
             continue;
         }
 
@@ -281,17 +306,17 @@ function restoreGroupZone() {
 				$sonos->SetMute($actual[$player]['Mute']);
 			}
 
-			// War der Player vorher aktiv?
-			if (isset($actual[$player]['TransportInfo']) && $actual[$player]['TransportInfo'] == 1) {
+			// Was the player active before TTS?
+			if (s4lox_restore_t2s_was_playing($actual[$player]['TransportInfo'] ?? null)) {
 				try {
 					$sonos->Play();
 					RestoreShuffle($player);
-					LOGGING("restore_t2s.php: Single zone '$player' has been restored and playback resumed.", 6);
+					LOGOK("Restore_T2S.php: Single zone '$player' has been restored and playback resumed.");
 				} catch (Exception $e) {
-					LOGGING("restore_t2s.php: Single zone '$player' could not resume playback: ".$e->getMessage(), 3);
+					LOGERR("Restore_T2S.php: Single zone '$player' could not resume playback: ".$e->getMessage());
 				}
 			} else {
-				LOGGING("restore_t2s.php: Single zone '$player' has been restored (was not playing before T2S).", 6);
+				LOGOK("Restore_T2S.php: Single zone '$player' has been restored (was not playing before T2S).");
 			}
 			break;
 
@@ -300,12 +325,12 @@ function restoreGroupZone() {
             // Player war vorher Member einer Gruppe
             // ----------------------------------------------------
             case 'member':
-                $pos = isset($actual[$player]['PositionInfo']) ? $actual[$player]['PositionInfo'] : array();
+                $pos = s4lox_restore_t2s_array($actual[$player]['PositionInfo'] ?? array());
                 if (!empty($pos) && !empty($pos['TrackURI'])) {
                     try {
                         $sonos->SetAVTransportURI($pos['TrackURI']);
                     } catch (Exception $e) {
-                        LOGGING("restore_t2s.php: Member '$player' could not re-attach to group: ".$e->getMessage(), 3);
+                        LOGERR("Restore_T2S.php: Member '$player' could not re-attach to group: ".$e->getMessage());
                     }
                 }
 
@@ -322,7 +347,7 @@ function restoreGroupZone() {
                     $sonos->SetMute($actual[$player]['Mute']);
                 }
 
-                LOGGING("restore_t2s.php: Member zone '$player' has been added back to its group.", 6);
+                LOGOK("Restore_T2S.php: Member zone '$player' has been added back to its group.");
                 break;
 
             // ----------------------------------------------------
@@ -355,7 +380,7 @@ function restoreGroupZone() {
                                 $sMem->SetMute($actual[$groupmem]['Mute']);
                             }
                         } catch (Exception $e) {
-                            LOGGING("restore_t2s.php: Master '$player' – member '$groupmem' could not be restored: ".$e->getMessage(), 3);
+                            LOGERR("Restore_T2S.php: Master '$player' – member '$groupmem' could not be restored: ".$e->getMessage());
                         }
                     }
                 }
@@ -375,35 +400,35 @@ function restoreGroupZone() {
                 }
 
                 // Und ggf. wieder starten
-                if (isset($actual[$player]['TransportInfo']) && $actual[$player]['TransportInfo'] == 1) {
+                if (s4lox_restore_t2s_was_playing($actual[$player]['TransportInfo'] ?? null)) {
                     try {
                         $sonos->Play();
                         RestoreShuffle($player);
-                        LOGGING("restore_t2s.php: Master zone '$player' has been added back to group and playback resumed.", 6);
+                        LOGOK("Restore_T2S.php: Master zone '$player' has been added back to group and playback resumed.");
                     } catch (Exception $e) {
-                        LOGGING("restore_t2s.php: Master zone '$player' could not resume playback: ".$e->getMessage(), 3);
+                        LOGERR("Restore_T2S.php: Master zone '$player' could not resume playback: ".$e->getMessage());
                     }
                 } else {
-                    LOGGING("restore_t2s.php: Master zone '$player' has been added back to group (was not playing before T2S).", 6);
+                    LOGOK("Restore_T2S.php: Master zone '$player' has been added back to group (was not playing before T2S).");
                 }
                 break;
 
             // ----------------------------------------------------
             default:
-                LOGGING("restore_t2s.php: Unknown ZoneStatus '$restoreState' for '$player' – basic restore only.", 4);
+                LOGWARN("Restore_T2S.php: Unknown ZoneStatus '$restoreState' for '$player' – basic restore only.");
                 restore_details($player);
                 break;
         }
     }
 
-    // T2S Ende signalisieren (virtueller Text-Eingang zurück auf 0)
+    // Signal TTS end (virtueller Text-Eingang zurück auf 0)
     if (function_exists('send_tts_source')) {
         $tts_stat = 0;
         send_tts_source($tts_stat);
     }
 
     $elapsed = microtime(true) - $t0;
-    LOGGING("Restore.php: (Group) Restore took ".round($elapsed, 3)." seconds.", 6);
+    LOGINF("Restore_T2S.php: (Group) Restore took ".round($elapsed, 3)." seconds.");
 }
 
 
@@ -416,12 +441,12 @@ function restore_details($zone) {
     global $sonoszone, $sonos, $actual;
 
     if (!isset($sonoszone[$zone]) || !isset($actual[$zone])) {
-        LOGGING("restore_t2s.php: restore_details() – no data for zone '$zone'.", 4);
+        LOGWARN("Restore_T2S.php: restore_details() – no data for zone '$zone'.");
         return;
     }
 
-    // Sicherstellen, dass wir einen gültigen SonosAccess haben
-    if (!($sonos instanceof SonosAccess)) {
+    // Ensure that a valid SonosAccess instance is available
+    if (!isset($sonos) || !($sonos instanceof SonosAccess)) {
         $sonos = new SonosAccess($sonoszone[$zone][0]);
     }
 
@@ -433,94 +458,104 @@ function restore_details($zone) {
     // --------------------------------------------------------
     if ($type === "Track") {
 
-    $pos = $actual[$zone]['PositionInfo'];
+        $pos = s4lox_restore_t2s_array($actual[$zone]['PositionInfo'] ?? array());
 
-    // Nur wenn Track existiert
-    if (!empty($pos['Track']) &&
-        $pos['Track'] !== "0" &&
-        $pos['Track'] !== "NOT_IMPLEMENTED")
-    {
-        try {
-            // Queue setzen wie in PROD
-            $sonos->SetQueue("x-rincon-queue:" . trim($sonoszone[$zone][1]) . "#0");
+        // Restore queue position only if a valid track number exists.
+        if (!empty($pos['Track']) &&
+            $pos['Track'] !== "0" &&
+            $pos['Track'] !== "NOT_IMPLEMENTED")
+        {
+            try {
+                $sonos->SetQueue("x-rincon-queue:" . trim($sonoszone[$zone][1]) . "#0");
+                $sonos->SetTrack($pos['Track']);
 
-            // Auf Titel springen
-            $sonos->SetTrack($pos['Track']);
+                if (!empty($pos['RelTime']) && $pos['RelTime'] !== "NOT_IMPLEMENTED") {
+                    $sonos->Seek("REL_TIME", $pos['RelTime']);
+                }
 
-            // Zeitpunkt im Titel
-            if (!empty($pos['RelTime']) && $pos['RelTime'] !== "NOT_IMPLEMENTED") {
-                $sonos->Seek("REL_TIME", $pos['RelTime']);
+                LOGOK("Restore_T2S.php: Source 'Track' has been set for '$zone'.");
+
+            } catch (Exception $e) {
+                LOGWARN("Restore_T2S.php: Source 'Track' for '$zone' could not be restored: " . $e->getMessage());
             }
-
-            LOGGING("restore_t2s.php: Source 'Track' has been set for '$zone'.", 6);
-
-        } catch (Exception $e) {
-            LOGGING("restore_t2s.php: Source 'Track' for '$zone' could not be restored: ".$e->getMessage(), 4);
+        } else {
+            LOGWARN("Restore_T2S.php: Source 'Track' for '$zone' could not be restored because no valid track number was saved.");
         }
-    }
 
-    // WICHTIG: sauberer return
-    return;
-
-
-
-
-
+        return;
 
     // --------------------------------------------------------
     // TV
     // --------------------------------------------------------
     } elseif ($type === "TV") {
-        $pos = $actual[$zone]['PositionInfo'];
-        try {
-            $sonos->SetAVTransportURI($pos["TrackURI"]);
-            LOGGING("restore_t2s.php: Source 'TV' has been set for '$zone'.", 6);
-        } catch (Exception $e) {
-            LOGGING("restore_t2s.php: Source 'TV' for '$zone' could not be restored: ".$e->getMessage(), 4);
+        $pos = s4lox_restore_t2s_array($actual[$zone]['PositionInfo'] ?? array());
+        $trackUri = (string)($pos["TrackURI"] ?? "");
+
+        if ($trackUri === "") {
+            LOGWARN("Restore_T2S.php: Source 'TV' for '$zone' could not be restored because no TrackURI was saved.");
+        } else {
+            try {
+                $sonos->SetAVTransportURI($trackUri);
+                LOGOK("Restore_T2S.php: Source 'TV' has been set for '$zone'.");
+            } catch (Exception $e) {
+                LOGWARN("Restore_T2S.php: Source 'TV' for '$zone' could not be restored: " . $e->getMessage());
+            }
         }
 
     // --------------------------------------------------------
     // Line-In
     // --------------------------------------------------------
     } elseif ($type === "LineIn") {
-        $pos = $actual[$zone]['PositionInfo'];
-        try {
-            $sonos->SetAVTransportURI($pos["TrackURI"]);
-            LOGGING("restore_t2s.php: Source 'LineIn' has been set for '$zone'.", 6);
-        } catch (Exception $e) {
-            LOGGING("restore_t2s.php: Source 'LineIn' for '$zone' could not be restored: ".$e->getMessage(), 4);
+        $pos = s4lox_restore_t2s_array($actual[$zone]['PositionInfo'] ?? array());
+        $trackUri = (string)($pos["TrackURI"] ?? "");
+
+        if ($trackUri === "") {
+            LOGWARN("Restore_T2S.php: Source 'LineIn' for '$zone' could not be restored because no TrackURI was saved.");
+        } else {
+            try {
+                $sonos->SetAVTransportURI($trackUri);
+                LOGOK("Restore_T2S.php: Source 'LineIn' has been set for '$zone'.");
+            } catch (Exception $e) {
+                LOGWARN("Restore_T2S.php: Source 'LineIn' for '$zone' could not be restored: " . $e->getMessage());
+            }
         }
 
     // --------------------------------------------------------
     // Radio
     // --------------------------------------------------------
     } elseif ($type === "Radio") {
-        $media = $actual[$zone]['MediaInfo'];
-        try {
-            $sonos->SetAVTransportURI(
-                $media["CurrentURI"],
-                htmlspecialchars_decode($media["CurrentURIMetaData"])
-            );
-            LOGGING("restore_t2s.php: Source 'Radio' has been set for '$zone'.", 6);
-        } catch (Exception $e) {
-            LOGGING("restore_t2s.php: Source 'Radio' for '$zone' could not be restored: ".$e->getMessage(), 4);
+        $media = s4lox_restore_t2s_array($actual[$zone]['MediaInfo'] ?? array());
+        $currentUri = (string)($media["CurrentURI"] ?? "");
+
+        if ($currentUri === "") {
+            LOGWARN("Restore_T2S.php: Source 'Radio' for '$zone' could not be restored because no CurrentURI was saved.");
+        } else {
+            try {
+                $sonos->SetAVTransportURI(
+                    $currentUri,
+                    htmlspecialchars_decode((string)($media["CurrentURIMetaData"] ?? ""))
+                );
+                LOGOK("Restore_T2S.php: Source 'Radio' has been set for '$zone'.");
+            } catch (Exception $e) {
+                LOGWARN("Restore_T2S.php: Source 'Radio' for '$zone' could not be restored: " . $e->getMessage());
+            }
         }
 
     // --------------------------------------------------------
-    // Keine Queue / Idle
+    // No queue / idle
     // --------------------------------------------------------
     } elseif ($type === "Nothing") {
-        LOGGING("restore_t2s.php: Player '$zone' had no queue (Nothing).", 6);
+        LOGINF("Restore_T2S.php: Player '$zone' had no queue (Nothing).");
 
     // --------------------------------------------------------
     // Fallback
     // --------------------------------------------------------
     } else {
-        LOGGING("restore_t2s.php: Unexpected type for player '$zone' – attempting basic queue restore.", 4);
+        LOGWARN("Restore_T2S.php: Unexpected type for player '$zone' – attempting basic queue restore.");
         try {
             $sonos->SetQueue("x-rincon-queue:" . trim($sonoszone[$zone][1]) . "#0");
         } catch (Exception $e) {
-            LOGGING("restore_t2s.php: Basic queue restore for '$zone' failed: " . $e->getMessage(), 4);
+            LOGWARN("Restore_T2S.php: Basic queue restore for '$zone' failed: " . $e->getMessage());
         }
     }
 }
@@ -544,17 +579,19 @@ function RestoreShuffle($player) {
 
     try {
         $pl = $sonos->GetCurrentPlaylist();
+        if (!is_array($pl)) {
+            $pl = array();
+        }
     } catch (Exception $e) {
-        LOGGING("restore_t2s.php: RestoreShuffle('$player') failed to get playlist: ".$e->getMessage(), 4);
+        LOGWARN("Restore_T2S.php: RestoreShuffle('$player') failed to get playlist: ".$e->getMessage());
         return;
     }
 
     if (count($pl) > 1 && $mode != 0) {
         $modereal = playmode_detection($player, $mode);
-        LOGGING("restore_t2s.php: Previous playmode '$modereal' for '$player' has been restored.", 6);
+        LOGOK("Restore_T2S.php: Previous playmode '$modereal' for '$player' has been restored.");
     }
 }
 
 } // function_exists guard
 
-?>

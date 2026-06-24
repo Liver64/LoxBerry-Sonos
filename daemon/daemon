@@ -1,8 +1,9 @@
 #!/bin/bash
 
-# updateplayer
-/usr/bin/php -q REPLACELBPHTMLDIR/bin/updateplayer.php &
-# check if Player is On and available
-/usr/bin/php -q REPLACELBPHTMLDIR/bin/check_on_state.php &
+# update player configuration
+/usr/bin/php -q REPLACELBPHTMLDIR/src/Core/Runtime/Updateplayer.php
+
+# check if players are online and available
+/usr/bin/php -q REPLACELBPHTMLDIR/src/Core/Runtime/CheckState.php
 
 exit 0

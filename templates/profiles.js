@@ -1,6 +1,7 @@
 <script>
 /* =========================================================================================
  * Sonos4Lox - Volume Profiles UI (VOLUME page)
+ * Sonos Theme Selector: V02.0 2026-06-21
  * -----------------------------------------------------------------------------------------
  * IMPORTANT:
  * - This file is included by the template engine (TMPL_INCLUDE).
@@ -470,24 +471,79 @@ function applySubwooferCapability(playerIdx, profileIdx, roomName, savedValue, s
 }
 
 /**
- * Shows custom tooltip and applies its visual styling.
- * The tooltip uses the plugin green color and removes any text shadow.
+ * getSonosTooltipStyle()
+ * -----------------------------------------------------------------------------
+ * Returns the inline tooltip style for the currently effective Sonos theme.
+ * This is intentionally handled here and not as a CSS override because many
+ * tooltips are generated as inline HTML snippets with their own base style.
+ *
+ * SonosThemeSelector V07:
+ * - liquid-glass: light blue background with black text
+ * - classic-mac: white background with black text
+ * - all other themes: plugin green background with white text
  */
-function showGreenTooltip(selector) {
+function getSonosTooltipStyle() {
+	var body = document.body;
+	var isLiquidGlass = !!(body && body.classList && body.classList.contains('theme-liquid-glass'));
+	var isClassicMac = !!(body && body.classList && body.classList.contains('theme-classic-mac'));
+
+	if (isLiquidGlass) {
+		return {
+			background: '#8fc7ff',
+			color: '#000000',
+			border: 'none',
+			borderRadius: '6px',
+			boxShadow: '0 2px 10px rgba(0,0,0,0.18)',
+			arrowColor: '#8fc7ff'
+		};
+	}
+
+	if (isClassicMac) {
+		return {
+			background: '#ffffff',
+			color: '#000000',
+			border: '2px solid #000000',
+			borderRadius: '0',
+			boxShadow: '2px 2px 0 #000000',
+			arrowColor: '#ffffff'
+		};
+	}
+
+	return {
+		background: '#6dac20',
+		color: '#ffffff',
+		border: 'none',
+		borderRadius: '6px',
+		boxShadow: '0 2px 10px rgba(0,0,0,0.18)',
+		arrowColor: '#6dac20'
+	};
+}
+
+/**
+ * Shows custom tooltip and applies its visual styling.
+ */
+function showTooltip(selector) {
+	var style = getSonosTooltipStyle();
+
 	$(selector).css({
-		"background": "#6db33f",
-		"color": "#ffffff",
+		"background": style.background,
+		"background-color": style.background,
+		"color": style.color,
+		"-webkit-text-fill-color": style.color,
+		"border": style.border,
+		"border-radius": style.borderRadius,
 		"text-shadow": "none",
-		"box-shadow": "0 2px 10px rgba(0,0,0,0.18)",
+		"box-shadow": style.boxShadow,
 		"display": "inline-block",
 		"width": "max-content",
 		"min-width": "220px",
 		"max-width": "420px",
-		"white-space": "normal"
+		"white-space": "normal",
+		"pointer-events": "none"
 	});
 
 	$(selector + " div").css({
-		"border-top-color": "#6db33f"
+		"border-top-color": style.arrowColor
 	});
 
 	$(selector).stop(true, true).fadeIn(120);
@@ -609,7 +665,7 @@ function create_new_profile() {
 				+ "id='btnload" + new_id + "' "
 				+ "name='btnload" + new_id + "' "
 				+ "style='cursor:pointer;' "
-				+ "onmouseenter=\"showGreenTooltip('#btnload_tip_" + new_id + "')\" "
+				+ "onmouseenter=\"showTooltip('#btnload_tip_" + new_id + "')\" "
 				+ "onmouseleave=\"hideTooltip('#btnload_tip_" + new_id + "')\" "
 				+ "src='/plugins/<TMPL_VAR PLUGINDIR>/images/musik-note.png' "
 				+ "border='0' width='28' height='28'>"
@@ -629,7 +685,7 @@ function create_new_profile() {
 				+ "name='btnclone" + new_id + "' "
 				+ "class='ico_clone' "
 				+ "style='cursor:pointer;' "
-				+ "onmouseenter=\"showGreenTooltip('#btnclone_tip_" + new_id + "')\" "
+				+ "onmouseenter=\"showTooltip('#btnclone_tip_" + new_id + "')\" "
 				+ "onmouseleave=\"hideTooltip('#btnclone_tip_" + new_id + "')\" "
 				+ "src='/plugins/<TMPL_VAR PLUGINDIR>/images/clone.svg' "
 				+ "border='0' width='33' height='33'>"
@@ -642,13 +698,27 @@ function create_new_profile() {
 				+ "</div>"
 				+ "</span>";
 
+			var isClassicMac = document.body && document.body.classList.contains('theme-classic-mac');
+			var profileLabelStyle = isClassicMac
+				? "height:36px; width:190px; padding:4px 8px; background:transparent; color:#000000; white-space:nowrap;"
+				: "height:36px; width:190px; padding:4px 8px; background:#6dac20; color:#ffffff; white-space:nowrap;";
+			var profileNameCellStyle = isClassicMac
+				? "height:36px; width:200px; max-width:200px; padding:4px 4px; background:transparent; text-align:left; white-space:nowrap;"
+				: "height:36px; width:200px; max-width:200px; padding:4px 4px; background:#6dac20; text-align:left; white-space:nowrap;";
+			var profileSpacerStyle = isClassicMac
+				? "height:36px; padding:4px 4px; background:transparent;"
+				: "height:36px; padding:4px 4px; background:#6dac20;";
+			var profileActionsStyle = isClassicMac
+				? "height:36px; padding:4px 6px; text-align:right; white-space:nowrap; background:transparent;"
+				: "height:36px; padding:4px 6px; text-align:right; white-space:nowrap; background:#6dac20;";
+
 			trHTML += "<tr>\n";
 
-			trHTML += "<td style='height:36px; width:190px; padding:4px 8px; background:#6dac20; color:#ffffff; white-space:nowrap;'>"
+			trHTML += "<td style='" + profileLabelStyle + "'>"
 				+ "&nbsp;Profile #" + new_id
 				+ "</td>\n";
 
-			trHTML += "<td colspan='3' style='height:36px; width:200px; max-width:200px; padding:4px 4px; background:#6dac20; text-align:left; white-space:nowrap;'>\n";
+			trHTML += "<td colspan='3' style='" + profileNameCellStyle + "'>\n";
 
 			trHTML += "<input "
 				+ "type='text' "
@@ -664,9 +734,9 @@ function create_new_profile() {
 
 			trHTML += "</td>\n";
 
-			trHTML += "<td colspan='4' style='height:36px; padding:4px 4px; background:#6dac20;'>&nbsp;</td>\n";
+			trHTML += "<td colspan='4' style='" + profileSpacerStyle + "'>&nbsp;</td>\n";
 
-			trHTML += "<td colspan='2' style='height:36px; padding:4px 6px; text-align:right; white-space:nowrap; background:#6dac20;'>"
+			trHTML += "<td colspan='2' style='" + profileActionsStyle + "'>"
 				+ profileActions
 				+ "</td>\n";
 
@@ -926,7 +996,7 @@ function obtainSonosData(load) {
 
 	fetchCurrentCapabilities(function() {
 		$.ajax({
-			url: '/plugins/<TMPL_VAR PLUGINDIR>/bin/vol_prof_ini.php',
+			url: '/plugins/<TMPL_VAR PLUGINDIR>/src/Support/VolumeProfileInitializer.php',
 			type: 'post',
 			dataType: "json",
 			data: { 'new_id': 'true'}
@@ -982,7 +1052,7 @@ function obtainSonosData(load) {
 function timeout(text, ButtonText, Icon='', Title, timeout) {
 	silverBox({
 		timer: timeout,
-		customIcon: "/plugins/<TMPL_VAR PLUGINDIR>/web/images/info.svg",
+		customIcon: "/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/images/info.svg",
 		text: text,
 		centerContent: true,
 		title: {
@@ -1022,7 +1092,7 @@ function deletedialog(text, ButtonText, Icon='', Title, del) {
 		},
 		cancelButton: {
 			text: "<TMPL_VAR SAVE.CANCEL_BUTTON>",
-			iconStart: "/plugins/<TMPL_VAR PLUGINDIR>/web/images/cancel.svg",
+			iconStart: "/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/images/cancel.svg",
 			onClick: () => { return; },
 		},
 	});

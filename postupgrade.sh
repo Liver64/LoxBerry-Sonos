@@ -1,91 +1,214 @@
 #!/bin/sh
 
-# Bash script which is executed in case of an update (if this plugin is already
-# installed on the system). This script is executed as very last step (*AFTER*
-# postinstall) and can be for example used to save back or convert saved
-# userfiles from /tmp back to the system. Use with caution and remember, that
-# all systems may be different!
+# Sonos4Lox postupgrade.sh
+# Version: POSTUPGRADE_ROBUST_RESTORE_V01_2026_06_15
 #
-# Exit code must be 0 if executed successfull. 
-# Exit code 1 gives a warning but continues installation.
-# Exit code 2 cancels installation.
-#
-# Will be executed as user "loxberry".
-#
-# You can use all vars from /etc/environment in this script.
-#
-# We add 5 additional arguments when executing this script:
-# command <TEMPFOLDER> <NAME> <FOLDER> <VERSION> <BASEFOLDER>
-#
-# For logging, print to STDOUT. You can use the following tags for showing
-# different colorized information during plugin installation:
-#
-# <OK> This was ok!"
-# <INFO> This is just for your information."
-# <WARNING> This is a warning!"
-# <ERROR> This is an error!"
-# <FAIL> This is a fail!"
+# Executed after postinstall if the plugin is already installed.
+# Runs as user "loxberry".
+# Exit code 0: success
+# Exit code 1: warning, installation continues
+# Exit code 2: cancel installation
 
-# To use important variables from command line use the following code:
-COMMAND=$0    # Zero argument is shell command
-PTEMPDIR=$1   # First argument is temp folder during install
-PSHNAME=$2    # Second argument is Plugin-Name for scipts etc.
-PDIR=$3       # Third argument is Plugin installation folder
-PVERSION=$4   # Forth argument is Plugin version
-LBHOMEDIR=$5  # Comes from /etc/environment now. Fifth argument is
-              # Base folder of LoxBerry
+COMMAND=$0
+PTEMPDIR=$1
+PSHNAME=$2
+PDIR=$3
+PVERSION=$4
+LBHOMEDIR=$5
 
-# Combine them with /etc/environment
 PCGI=$LBPCGI/$PDIR
 PHTML=$LBPHTML/$PDIR
 PTEMPL=$LBPTEMPL/$PDIR
 PDATA=$LBPDATA/$PDIR
-PLOG=$LBPLOG/$PDIR # Note! This is stored on a Ramdisk now!
+PLOG=$LBPLOG/$PDIR
 PCONFIG=$LBPCONFIG/$PDIR
 PSBIN=$LBPSBIN/$PDIR
 PBIN=$LBPBIN/$PDIR
 
-echo "<INFO> Copy back config files"
-cp -p -v -r /tmp/$1\_upgrade/config/$3/* $5/config/plugins/$3/ 
+log_info() { echo "<INFO> $1"; }
+log_ok() { echo "<OK> $1"; }
+log_warning() { echo "<WARNING> $1"; }
+log_error() { echo "<ERROR> $1"; }
 
-echo "<INFO> Copy back log files"
-cp -p -v -r /tmp/$1\_upgrade/log/$3/* $5/log/plugins/$3/ 
+abort_install_keep_backup() {
+	log_error "$1"
+	log_error "Keeping temporary upgrade backup folder for manual recovery: $UPGRADE_DIR"
+	exit 2
+}
 
-echo "<INFO> Copy back MP3 and Plugin Backup files"
-cp -p -v -r /tmp/$1\_upgrade/data/$3/* $5/data/plugins/$3/ 
+copy_dir_contents_required() {
+	SRC_DIR=$1
+	DST_DIR=$2
+	LABEL=$3
 
-echo "<INFO> Copy back Text files"
-cp -v /tmp/$1\_upgrade/templates/* $5/templates/plugins/$3/lang/ 
+	if [ ! -d "$SRC_DIR" ]; then
+		abort_install_keep_backup "$LABEL backup folder is missing: $SRC_DIR"
+	fi
 
-echo "<INFO> Copy back Sonos image files"
-cp -v /tmp/$1\_upgrade/webfrontend/images/* $5/webfrontend/html/plugins/$3/images/ 
+	mkdir -p "$DST_DIR" || abort_install_keep_backup "Could not create $LABEL destination folder: $DST_DIR"
 
-if [ -d /tmp/$1\_upgrade/webfrontend/piper-voices ]; then
-	echo "<INFO> Copy back Piper files"
-	mkdir -p $5/webfrontend/html/plugins/$3/voice_engines/piper-voices
-	cp -p -v -r /tmp/$1\_upgrade/webfrontend/piper-voices/* $5/webfrontend/html/plugins/$3/voice_engines/
+	cp -p -v -r "$SRC_DIR/." "$DST_DIR/"
+	RC=$?
+
+	if [ $RC -ne 0 ]; then
+		abort_install_keep_backup "$LABEL restore failed from $SRC_DIR to $DST_DIR (exit code $RC)"
+	fi
+
+	log_ok "$LABEL restore completed: $DST_DIR"
+}
+
+copy_dir_contents_optional() {
+	SRC_DIR=$1
+	DST_DIR=$2
+	LABEL=$3
+
+	if [ ! -d "$SRC_DIR" ]; then
+		log_warning "$LABEL backup folder does not exist, skipping: $SRC_DIR"
+		return 0
+	fi
+
+	mkdir -p "$DST_DIR" || {
+		log_warning "Could not create $LABEL destination folder, skipping: $DST_DIR"
+		return 1
+	}
+
+	cp -p -v -r "$SRC_DIR/." "$DST_DIR/"
+	RC=$?
+
+	if [ $RC -ne 0 ]; then
+		log_warning "$LABEL restore failed from $SRC_DIR to $DST_DIR (exit code $RC)"
+		return 1
+	fi
+
+	log_ok "$LABEL restore completed: $DST_DIR"
+	return 0
+}
+
+copy_files_from_dir_optional() {
+	SRC_DIR=$1
+	DST_DIR=$2
+	LABEL=$3
+	FOUND=0
+	ERRORS=0
+
+	if [ ! -d "$SRC_DIR" ]; then
+		log_warning "$LABEL backup folder does not exist, skipping: $SRC_DIR"
+		return 0
+	fi
+
+	mkdir -p "$DST_DIR" || {
+		log_warning "Could not create $LABEL destination folder, skipping: $DST_DIR"
+		return 1
+	}
+
+	for FILE in "$SRC_DIR"/*; do
+		if [ ! -e "$FILE" ]; then
+			continue
+		fi
+		FOUND=1
+		cp -p -v "$FILE" "$DST_DIR/" || ERRORS=1
+	done
+
+	if [ $FOUND -eq 0 ]; then
+		log_warning "$LABEL backup folder is empty, skipping: $SRC_DIR"
+		return 0
+	fi
+
+	if [ $ERRORS -ne 0 ]; then
+		log_warning "$LABEL restore had copy errors."
+		return 1
+	fi
+
+	log_ok "$LABEL restore completed: $DST_DIR"
+	return 0
+}
+
+run_optional_php() {
+	LABEL=$1
+	SCRIPT=$2
+
+	if [ ! -f "$SCRIPT" ]; then
+		log_warning "$LABEL skipped, script not found: $SCRIPT"
+		return 0
+	fi
+
+	log_info "$LABEL"
+	/usr/bin/php -q "$SCRIPT"
+	RC=$?
+
+	if [ $RC -ne 0 ]; then
+		log_warning "$LABEL returned exit code $RC"
+		return 1
+	fi
+
+	log_ok "$LABEL completed."
+	return 0
+}
+
+if [ -z "$PTEMPDIR" ] || [ -z "$PDIR" ] || [ -z "$LBHOMEDIR" ]; then
+	UPGRADE_DIR="/tmp/${PTEMPDIR}_upgrade"
+	abort_install_keep_backup "Missing required upgrade arguments. PTEMPDIR='$PTEMPDIR' PDIR='$PDIR' LBHOMEDIR='$LBHOMEDIR'"
 fi
 
-echo "<INFO> Update of MP3 Files in tts/mp3"
-cp -v $5/data/plugins/$3/tts/mp3/update/* $5/data/plugins/$3/tts/mp3/
+UPGRADE_DIR="/tmp/${PTEMPDIR}_upgrade"
 
-echo "<INFO> Remove temporary/update folders"
-rm -r /tmp/$1\_upgrade
-rm -r $5/data/plugins/$3/tts/mp3/update
+if [ ! -d "$UPGRADE_DIR" ]; then
+	abort_install_keep_backup "Temporary upgrade backup folder is missing: $UPGRADE_DIR"
+fi
 
-echo "<INFO> Check/create new Config file in JSON Format if required"
-/usr/bin/php -q REPLACELBPHTMLDIR/bin/create_config.php
+if [ ! -f "$UPGRADE_DIR/PREUPGRADE_OK" ]; then
+	log_warning "Preupgrade marker is missing: $UPGRADE_DIR/PREUPGRADE_OK"
+	log_warning "Continuing restore attempt, but backup may be incomplete."
+fi
 
-echo "<INFO> Start update Player Configuration"
-/usr/bin/php -q REPLACELBPHTMLDIR/bin/updateplayer.php
+log_info "Copy back config files"
+copy_dir_contents_required "$UPGRADE_DIR/config/$PDIR" "$LBHOMEDIR/config/plugins/$PDIR" "Config"
 
-echo "<INFO> Check T2S Announcement Configuration"
-/usr/bin/php -q REPLACELBPHTMLDIR/bin/notify.php
+if [ ! -f "$LBHOMEDIR/config/plugins/$PDIR/s4lox_config.json" ]; then
+	abort_install_keep_backup "Restored config does not contain s4lox_config.json: $LBHOMEDIR/config/plugins/$PDIR/s4lox_config.json"
+fi
 
-echo "<INFO> Start update Player Online Status"
-/usr/bin/php -q REPLACELBPHTMLDIR/bin/check_on_state.php
+chown -R loxberry:loxberry "$LBHOMEDIR/config/plugins/$PDIR" 2>/dev/null || true
+chmod 0755 "$LBHOMEDIR/config/plugins/$PDIR" 2>/dev/null || true
+find "$LBHOMEDIR/config/plugins/$PDIR" -type f -exec chmod 0644 {} \; 2>/dev/null || true
 
-echo "<INFO> Call t2s-text update check"
-/usr/bin/php -q REPLACELBPHTMLDIR/bin/update_text.php
+log_info "Copy back log files"
+copy_dir_contents_optional "$UPGRADE_DIR/log/$PDIR" "$LBHOMEDIR/log/plugins/$PDIR" "Log"
+
+log_info "Copy back MP3 and plugin data files"
+copy_dir_contents_optional "$UPGRADE_DIR/data/$PDIR" "$LBHOMEDIR/data/plugins/$PDIR" "Data"
+
+log_info "Copy back text files"
+copy_files_from_dir_optional "$UPGRADE_DIR/templates" "$LBHOMEDIR/templates/plugins/$PDIR/lang" "Text"
+
+log_info "Copy back Sonos image files"
+copy_files_from_dir_optional "$UPGRADE_DIR/webfrontend/images" "$LBHOMEDIR/webfrontend/html/plugins/$PDIR/images" "Sonos image"
+
+if [ -d "$UPGRADE_DIR/webfrontend/piper-voices" ]; then
+	log_info "Copy back Piper files"
+	copy_dir_contents_optional "$UPGRADE_DIR/webfrontend/piper-voices" "$LBHOMEDIR/webfrontend/html/plugins/$PDIR/VoiceEngines/piper-voices" "Piper"
+else
+	log_info "No Piper backup folder found, skipping Piper restore."
+fi
+
+if [ -d "$LBHOMEDIR/data/plugins/$PDIR/tts/mp3/update" ]; then
+	log_info "Update MP3 files in tts/mp3"
+	copy_files_from_dir_optional "$LBHOMEDIR/data/plugins/$PDIR/tts/mp3/update" "$LBHOMEDIR/data/plugins/$PDIR/tts/mp3" "MP3 update"
+else
+	log_info "No MP3 update folder found, skipping MP3 update copy."
+fi
+
+log_info "Remove temporary/update folders"
+rm -rf "$UPGRADE_DIR"
+if [ -d "$LBHOMEDIR/data/plugins/$PDIR/tts/mp3/update" ]; then
+	rm -rf "$LBHOMEDIR/data/plugins/$PDIR/tts/mp3/update"
+fi
+
+run_optional_php "Start update player configuration" "REPLACELBPHTMLDIR/src/Core/Runtime/Updateplayer.php"
+run_optional_php "Check T2S announcement configuration" "REPLACELBPHTMLDIR/src/Support/NotificationCheck.php"
+run_optional_php "Start update player online status" "REPLACELBPHTMLDIR/src/Core/Runtime/CheckState.php"
+run_optional_php "Call t2s-text update check" "REPLACELBPHTMLDIR/src/Support/TextUpdate.php"
+
+log_ok "Postupgrade restore finished."
 
 exit 0

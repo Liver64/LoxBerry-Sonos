@@ -1,0 +1,266 @@
+<?php
+
+/*
+ * Sonos4Lox addon TTS helper
+ * Version: ADDON_TTS_SUPPORT_ADDON_RELOCATION_V04_2026_06_12
+ * Notes: moved to src/Support/AddOn with centralized S4L_Logger based logging and defensive input/fetch handling.
+ */
+
+require_once dirname(__DIR__) . '/Logger.php';
+
+
+
+if (!function_exists('s4lox_addon_fetch_url')) {
+    function s4lox_addon_fetch_url($url, $timeout = 8)
+    {
+        if (!is_string($url) || trim($url) === '') {
+            return false;
+        }
+        $context = stream_context_create(array(
+            'http' => array('timeout' => $timeout, 'ignore_errors' => true),
+            'https' => array('timeout' => $timeout, 'ignore_errors' => true),
+        ));
+        return @file_get_contents($url, false, $context);
+    }
+}
+
+if (!function_exists('s4lox_addon_decode_json')) {
+    function s4lox_addon_decode_json($json)
+    {
+        if (!is_string($json) || trim($json) === '') {
+            return null;
+        }
+        $data = json_decode($json, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return null;
+        }
+        return $data;
+    }
+}
+
+
+function w2s()
+// weather-to-speech: Builds a Weather4Lox based weather forecast for TTS generation.
+// Parameter: $text from Sonos TTS processing
+ 	{
+		global $config, $debug, $town, $home, $psubfolder, $myIP;
+		
+		$TL = load_t2s_text();
+		#print_r($TL);
+		#exit;
+				
+		// Einlesen der Daten vom Weather4Lox Plugin
+		if (!file_exists("$home/data/plugins/weather4lox/current.dat")) {
+			S4L_Logger::write('Data from Weather4Lox could not be obtainend. Please check if Plugin is active!',4, __FILE__);
+			S4L_Logger::write('The file current.dat could not been opened. Please check Weather4Lox Plugin!',4, __FILE__);
+			exit;
+			
+		} else {
+			$current = @file_get_contents("$home/data/plugins/weather4lox/current.dat");
+			if ($current === false) {
+				S4L_Logger::write('The file current.dat could not be read. Please check Weather4Lox Plugin!',4, __FILE__);
+				exit;
+			}
+			$current = explode('|',$current);
+		}
+		if (!file_exists("$home/data/plugins/weather4lox/dailyforecast.dat")) {
+			S4L_Logger::write('Data from Weather4Lox could not be obtainend. Please check if Plugin is active!',4, __FILE__);
+			S4L_Logger::write('The file dailyforecast.dat could not been opened. Please check Weather4Lox Plugin!',4, __FILE__);
+			exit;
+		} else {
+			$dailyforecast = @file_get_contents("$home/data/plugins/weather4lox/dailyforecast.dat");
+			if ($dailyforecast === false) {
+				S4L_Logger::write('The file dailyforecast.dat could not be read. Please check Weather4Lox Plugin!',4, __FILE__);
+				exit;
+			}
+			$dailyforecast = explode('|',$dailyforecast);
+		}
+		if (!file_exists("$home/data/plugins/weather4lox/hourlyforecast.dat")) {
+			S4L_Logger::write('Data from Weather4Lox could not be obtainend. Please check if Plugin is active!',4, __FILE__);
+			S4L_Logger::write('The file hourlyforecast.dat could not been opened. Please check Weather4Lox Plugin!',4, __FILE__);
+			exit;
+		} else {
+			$hourlyforecast = @file_get_contents("$home/data/plugins/weather4lox/hourlyforecast.dat");
+			if ($hourlyforecast === false) {
+				S4L_Logger::write('The file hourlyforecast.dat could not be read. Please check Weather4Lox Plugin!',4, __FILE__);
+				exit;
+			}
+			$hourlyforecast = explode('|',$hourlyforecast);
+		}
+		if (count($current) < 30 || count($dailyforecast) < 67 || count($hourlyforecast) < 18) {
+			S4L_Logger::write('Weather4Lox data is incomplete. Please check Weather4Lox Plugin output files.',4, __FILE__);
+			exit;
+		}
+		S4L_Logger::write('Data from Weather4Lox has been successfully retrieved.',7, __FILE__);
+		#print_r($current);
+		#print_r($dailyforecast);
+		#print_r($hourlyforecast);
+		
+		$Stunden = intval(strftime("%H"));
+		$Minuten = intval(strftime("%M"));
+		$regenschwelle = '10';
+		$windschwelle = '10';
+			
+		#-- Aufbereiten der Wetterdaten ---------------------------------------------------------------------
+		$temp_c = $current[11]; 
+		$high0 = $dailyforecast[11]; // H�chsttemperatur heute
+		$high1 = $dailyforecast[50]; // H�chsttemperatur morgen
+		$low0 = $dailyforecast[12]; // Tiefsttemperatur heute
+		$low1 = $dailyforecast[51]; // Tiefsttemperatur morgen
+		$wind = $dailyforecast[16]; // max. Windgeschwindigkeit heute
+		$wetter_hc = $current[29]; // Wetterkonditionen
+		$windspeed = $hourlyforecast[17]; // maximale Windgeschwindigkeit n�chste Stunde
+		$windtxt = $windspeed;
+		$wind_dir = $hourlyforecast[15]; // Windrichtung f�r die n�chste Stunde
+		$wetter = $current[29]; // Wetterkonditionen aktuell
+		$conditions0 = $dailyforecast[27]; // allgemeine Wetterdaten heute
+		$conditions1 = $dailyforecast[66]; // allgemeine Wetterdaten morgen
+		$forecast0 = $dailyforecast[27]; // Wetterlage heute
+		$forecast1 = $dailyforecast[66]; // Wetterlage morgen
+		$regenwahrscheinlichkeit0 = $dailyforecast[13]; // Regenwahrscheinlichkeit heute
+		$regenwahrscheinlichkeit1 = $dailyforecast[52]; // Regenwahrscheinlichkeit morgen
+		# Pr�fen ob Wetterk�rzel vorhanden, wenn ja durch W�rter ersetzen
+		if(ctype_upper($wind_dir)) 
+		{
+			# Ersetzen der Windrichtungsk�rzel f�r Windrichtung
+			$search = array("W","S","N","O");
+			$replace = array($TL['WEATHER-TO-SPEECH']['DIRECTION_WEST'],$TL['WEATHER-TO-SPEECH']['DIRECTION_SOUTH'],$TL['WEATHER-TO-SPEECH']['DIRECTION_NORTH'],$TL['WEATHER-TO-SPEECH']['DIRECTION_EAST']);
+			$wind_dir = str_replace($search,$replace,$wind_dir);
+		}
+		
+		if (isset($_GET['greet']))  {
+			$TL = LOAD_T2S_TEXT();
+			switch ($Stunden) {
+				# Gru� von 01:00 bis 10:00h
+				case $Stunden >=1 && $Stunden <10:
+					$greet = $TL['GREETINGS']['MORNING_'.mt_rand (1, 5)];
+				break;
+				# Gru� von 10:00 bis 17:00h
+				case $Stunden >=10 && $Stunden <17:
+					$greet = $TL['GREETINGS']['DAY_'.mt_rand (1, 5)];
+				break;
+				# Gru� von 17:00 bis 22:00h
+				case $Stunden >=17 && $Stunden <22:
+					$greet = $TL['GREETINGS']['EVENING_'.mt_rand (1, 5)];
+				break;
+				# Gru� nach 22:00h bis Mitternacht
+				case $Stunden >=22 or $Stunden <24:
+					$greet = $TL['GREETINGS']['NIGHT_'.mt_rand (1, 5)];
+				break;
+				default:
+					$greet = "";
+				break;
+			}
+		} else {
+			$greet = "";
+		}
+		
+		# Erstellen der Windtexte basierend auf der Windgeschwindigkeit
+		## Quelle der Daten: http://www.brennstoffzellen-heiztechnik.de/windenergie-daten-infos/windtabelle-windrichtungen.html
+		switch ($windtxt) 
+		{
+			case $windspeed >=1 && $windspeed <=5:
+				$WindText= $TL['WEATHER-TO-SPEECH']['WINDSPEED_KM/H_1_TO_5'];
+				break;
+			case $windspeed >5 && $windspeed <=11:
+				$WindText= $TL['WEATHER-TO-SPEECH']['WINDSPEED_KM/H_5_TO_11'];
+				break;
+			case $windspeed >11 && $windspeed <=19:
+				$WindText= $TL['WEATHER-TO-SPEECH']['WINDSPEED_KM/H_11_TO_19'];
+				break;
+			case $windspeed >19 && $windspeed <=28:
+				$WindText= $TL['WEATHER-TO-SPEECH']['WINDSPEED_KM/H_19_TO_28'];
+				break;
+			case $windspeed >28 && $windspeed <=38:
+				$WindText= $TL['WEATHER-TO-SPEECH']['WINDSPEED_KM/H_28_TO_38'];
+				break;
+			case $windspeed >38 && $windspeed <=49:
+				$WindText= $TL['WEATHER-TO-SPEECH']['WINDSPEED_KM/H_38_TO_49'];
+				break;
+			case $windspeed >49 && $windspeed <=61:
+				$WindText= $TL['WEATHER-TO-SPEECH']['WINDSPEED_KM/H_49_TO_61'];
+				break;
+			case $windspeed >61 && $windspeed <=74:
+				$WindText= $TL['WEATHER-TO-SPEECH']['WINDSPEED_KM/H_61_TO_74'];
+				break;
+			case $windspeed >74 && $windspeed <=88:
+				$WindText= $TL['WEATHER-TO-SPEECH']['WINDSPEED_KM/H_74_TO_88'];
+				break;
+			case $windspeed >88 && $windspeed <=102:
+				$WindText= $TL['WEATHER-TO-SPEECH']['WINDSPEED_KM/H_88_TO_102'];
+				break;
+			case $windspeed >102:
+				$WindText= $TL['WEATHER-TO-SPEECH']['WINDSPEED_KM/H_GREATER_THEN_102'];
+				break;
+			default:
+				$WindText= "";
+				break;
+			break;
+		}
+		# Windinformationen werden nur ausgeben wenn Windgeschwindigkeit gr��er dem Schwellwert ist
+			switch ($windspeed) 
+			{
+				case $windspeed <$windschwelle:
+					$WindAnsage = "";
+					break;
+				case $windspeed >=$windschwelle:
+					$WindAnsage = ". ".$TL['WEATHER-TO-SPEECH']['WIND_ANNOUNCEMENT_1']." ".$WindText." ".$TL['WEATHER-TO-SPEECH']['WIND_ANNOUNCEMENT_2']." ".$wind_dir." ".$TL['WEATHER-TO-SPEECH']['WIND_ANNOUNCEMENT_3']." ".round($windspeed)." ".$TL['WEATHER-TO-SPEECH']['WIND_ANNOUNCEMENT_4'];
+					break;
+				default:
+					$WindAnsage="";
+					break;
+			
+			break;
+			}
+		
+		# Rain announcement only if the probability is above the configured threshold.
+		if ((float)$regenwahrscheinlichkeit0 >= (float)$regenschwelle) {
+			$RegenAnsage=". ".$TL['WEATHER-TO-SPEECH']['RAIN_ANNOUNCEMENT_1']." ".$regenwahrscheinlichkeit0." ".$TL['WEATHER-TO-SPEECH']['RAIN_ANNOUNCEMENT_2']." ";
+		} else {
+			$RegenAnsage="";
+		}
+		
+		# Aufbereitung der TTS Ansage
+		# 
+		# Aufpassen das bei Text�nderungen die Werte nicht �berschrieben werden
+		###############################################################################################
+		switch ($Stunden) {
+			# Wettervorhersage f�r die Zeit zwischen 01:00 und 10:00h
+			case $Stunden >=1 && $Stunden <10:
+				$text=($greet." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_1_HOUR_FROM_6AM_TO_10AM']." ". ($wetter). ", ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_2_HOUR_FROM_6AM_TO_10AM']." ".formatTemperatureForTTS($high0)." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_3_HOUR_FROM_6AM_TO_10AM']." ". formatTemperatureForTTS($temp_c)." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_4_HOUR_FROM_6AM_TO_10AM']." ". $RegenAnsage." ".$WindAnsage.". ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_5_HOUR_FROM_6AM_TO_10AM']);
+				break;
+			# Wettervorhersage f�r die Zeit zwischen 10:00 und 17:00h
+			case $Stunden >=10 && $Stunden <17:
+				$text=($greet." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_1_HOUR_FROM_10AM_TO_5PM']." ". ($wetter_hc).". ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_2_HOUR_FROM_10AM_TO_5PM']." ". formatTemperatureForTTS($temp_c)." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_3_HOUR_FROM_10AM_TO_5PM']."".$RegenAnsage." ".$WindAnsage.". ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_4_HOUR_FROM_10AM_TO_5PM']);
+				break;
+			# Wettervorhersage f�r die Zeit zwischen 17:00 und 22:00h
+			case $Stunden >=17 && $Stunden <22:
+				$text=$greet." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_1_HOUR_FROM_5PM_TO_10PM']." ". ($wetter). ". ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_2_HOUR_FROM_5PM_TO_10PM']." ". formatTemperatureForTTS($temp_c)." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_3_HOUR_FROM_5PM_TO_10PM']." ". formatTemperatureForTTS($low0). " ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_4_HOUR_FROM_5PM_TO_10PM']."". $RegenAnsage." ".$WindAnsage.". ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_5_HOUR_FROM_5PM_TO_10PM'].". ";
+				break;
+			# Wettervorhersage f�r den morgigen Tag nach 22:00h bis Mitternacht
+			case $Stunden >=22 or $Stunden <=24:
+				$text=$greet." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_1_HOUR_AFTER_10PM']." ".($conditions1). ", ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_2_HOUR_AFTER_10PM']." ". formatTemperatureForTTS($high1) ." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_3_HOUR_AFTER_10PM']." ". formatTemperatureForTTS($low1)." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_4_HOUR_AFTER_10PM']." ".$regenwahrscheinlichkeit1." ".$TL['WEATHER-TO-SPEECH']['WEATHERTEXT_5_HOUR_AFTER_10PM'].".";
+				break;
+			default:
+				$text="";
+				S4L_Logger::write('Request could not be processed, please try again!',5, __FILE__);
+				break;
+		}
+		$textcode = ($text);
+		#echo $textcode;
+		S4L_Logger::write('Weather announcement: '.($text),5, __FILE__);
+		S4L_Logger::write('Message been generated and pushed to T2S creation',7, __FILE__);
+		return $textcode;
+	}
+	
+// Temperatur korrekt f�r TTS vorbereiten
+function formatTemperatureForTTS($temp) {
+    $tempRounded = round($temp);
+    if ($tempRounded < 0) {
+        return "minus " . abs($tempRounded);
+    } else {
+        return $tempRounded;
+    }
+}
+
+?>

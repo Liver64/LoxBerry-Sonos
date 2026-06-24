@@ -1,22 +1,16 @@
 <?php
 header('Content-Type: text/html; charset=utf-8');
 
-include "loxberry_system.php";
-include "loxberry_io.php";
-require_once "loxberry_log.php";
-include "system/error.php";
+include "REPLACELBHOMEDIR/libs/phplib/loxberry_system.php";
+include "REPLACELBHOMEDIR/libs/phplib/loxberry_io.php";
+require_once "REPLACELBHOMEDIR/libs/phplib/loxberry_log.php";
+include "src/Support/ErrorHandler.php";
 
 error_reporting(E_ALL & ~E_NOTICE);
 ini_set("display_errors", "off");
 define('ERROR_LOG_FILE', "$lbplogdir/sonos.log");
 
-//calling custom error handler
 set_error_handler("handleError");
-
-// Testcases
-#print_r($arra); // undefined variable
-#print_r($dssdfdfgg); // undefined variable
-#include_once 'file.php'; // No such file or directory
 
 require_once 'Sonos.php';
 ?>

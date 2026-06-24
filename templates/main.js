@@ -1,10 +1,10 @@
 <script>
 /* =================================================================================================
- * Sonos4Lox UI Script (structured, NO functional changes)
+ * Sonos4Lox UI Script
  * -------------------------------------------------------------------------------------------------
- * Goal of this version:
- * - Same behavior, same logic, same selectors, same AJAX calls
- * - Only: better structure + detailed English documentation + clearer sectioning
+ * Version note:
+ * - V11.0 2026-06-23: Hide Liquid Glass wallpaper controls immediately when
+ *   the Sonos theme selector is changed away from plugin-local Liquid Glass.
  *
  * Sections:
  *   1) Page lifecycle / init
@@ -774,7 +774,7 @@ function populateVoice() {
 			$('#voice').empty();
 			$('#voice').removeClass('ui-disabled');
 
-			const url = "/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/langfiles/voicerss_voices.json";
+			const url = "/plugins/<TMPL_VAR PLUGINDIR>/VoiceEngines/langfiles/voicerss_voices.json";
 			$.getJSON(url, function(listvoice) {
 				$('#voice').append(
 					'<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>'
@@ -809,7 +809,7 @@ function populateVoice() {
 		if (selectedlanguage) {
 			$('#voice').empty();
 			$('#voice').removeClass('ui-disabled');
-			const url = "/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/langfiles/polly_voices.json";
+			const url = "/plugins/<TMPL_VAR PLUGINDIR>/VoiceEngines/langfiles/polly_voices.json";
 			$.getJSON(url, function(listvoice) {
 				$('#voice').append(
 					'<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>'
@@ -846,7 +846,7 @@ function populateVoice() {
 		if (selectedlanguage) {
 			$('#voice').empty();
 			$('#voice').removeClass('ui-disabled');
-			const url = "/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/langfiles/piper_voices.json";
+			const url = "/plugins/<TMPL_VAR PLUGINDIR>/VoiceEngines/langfiles/piper_voices.json";
 			$.getJSON(url, function(listvoice) {
 				$('#voice').append(
 					'<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>'
@@ -892,7 +892,7 @@ function piperInfo(event) {
 
 	var lbhost   = window.location.hostname;
 	var hfUrl    = "https://huggingface.co/rhasspy/piper-voices/tree/main";
-	var localUrl = "http://" + lbhost + "/plugins/sonos4lox/bin/piper-voices.php";
+	var localUrl = "http://" + lbhost + "/plugins/sonos4lox/src/Support/PiperVoiceIndex.php";
 
 	var text = "<TMPL_VAR T2S.PIPER_DIA1><br><br>"
 	+ "<div style='text-align:center;'>"
@@ -906,7 +906,7 @@ function piperInfo(event) {
 	+ "</div><br>"
 	+ "<TMPL_VAR T2S.PIPER_DIA5><br><br>"
 	+ "<code style='font-size:14px;font-weight:bold'>"
-	+ "/opt/loxberry/webfrontend/html/voice_engines/piper-voices"
+	+ "/opt/loxberry/webfrontend/html/VoiceEngines/piper-voices"
 	+ "</code><br><br>"
 	+ "<TMPL_VAR T2S.PIPER_DIA4><br><br>"
 	+ "<a href='" + localUrl + "' "
@@ -1626,7 +1626,7 @@ function populateLanguageAndVoiceFields() {
 	$('#t2slang').empty();
 	$('#voice').empty();
 
-	var url = "/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/langfiles/";
+	var url = "/plugins/<TMPL_VAR PLUGINDIR>/VoiceEngines/langfiles/";
 
 	switch (selectedEngine.val()) {
 		case '1001':
@@ -1666,8 +1666,8 @@ function populateLanguageAndVoiceFields() {
 
 	$('#t2slang').selectmenu('refresh', true);
 	$('#voice').selectmenu('refresh', true);
-	$('select').selectmenu();
-	$('select').selectmenu('refresh', true);
+	$('select').not('[data-role="none"]').selectmenu();
+	$('select').not('[data-role="none"]').selectmenu('refresh', true);
 
 	var isocode = '<TMPL_VAR CODE>'.substr(0, 2);
 	$('#langiso').val(isocode);
@@ -1850,7 +1850,7 @@ $(function () {
 		var secretkey  = $("#seckey").val()    || "";
 
 		$.ajax({
-			url: '/plugins/<TMPL_VAR PLUGINDIR>/bin/player_on_test.php',
+			url: '/plugins/<TMPL_VAR PLUGINDIR>/src/Support/PlayerOnTest.php',
 			type: 'post',
 			dataType: 'json',
 			data: {
@@ -1874,7 +1874,7 @@ $(function () {
 		})
 		.fail(function (jqXHR, textStatus, errorThrown) {
 			console.log("AJAX error:", textStatus, errorThrown);
-			console.warn("Fehler beim Aufruf von player_on_test.php: " + textStatus);
+			console.warn("Fehler beim Aufruf von src/Support/PlayerOnTest.php: " + textStatus);
 		})
 		.always(function () {
 			console.log("Action Test Text-to-speech finished");
@@ -1945,13 +1945,28 @@ function getsbconfig() {
 
 		$select.prop("disabled", !enabled);
 
+		/*
+		 * LBV4 / native select handling:
+		 * TV Monitor level dropdowns use data-role="none" and must not be
+		 * touched by jQuery Mobile selectmenu. Otherwise the visible selected
+		 * value can disappear in Classic Mac.
+		 */
+		if ($select.attr("data-role") === "none") {
+			$select.trigger("change");
+			return;
+		}
+
 		try {
-			if (enabled) {
-				$select.selectmenu("enable");
+			if ($select.data("mobile-selectmenu")) {
+				if (enabled) {
+					$select.selectmenu("enable");
+				} else {
+					$select.selectmenu("disable");
+				}
+				$select.selectmenu("refresh", true);
 			} else {
-				$select.selectmenu("disable");
+				$select.trigger("change");
 			}
-			$select.selectmenu("refresh", true);
 		} catch (e) {
 			$select.trigger("change");
 		}
@@ -2627,15 +2642,103 @@ $(window).on("beforeunload pagehide", function () {
 });
 
 /**
- * Shows custom tooltip and applies its visual styling.
- * The tooltip uses the plugin green color and removes any text shadow.
+ * getSonosTooltipStyle()
+ * -----------------------------------------------------------------------------
+ * Returns the inline tooltip style for the currently effective Sonos theme.
+ * This is intentionally handled here and not as a CSS override because many
+ * tooltips are generated as inline HTML snippets with their own base style.
+ *
+ * SonosThemeSelector V07:
+ * - liquid-glass: light blue background with black text
+ * - classic-mac: white background with black text
+ * - all other themes: plugin green background with white text
  */
-function showGreenTooltip(selector) {
+function getSonosTooltipStyle() {
+	var body = document.body;
+	var isLiquidGlass = !!(body && body.classList && body.classList.contains('theme-liquid-glass'));
+	var isClassicMac = !!(body && body.classList && body.classList.contains('theme-classic-mac'));
+
+	if (isLiquidGlass) {
+		return {
+			background: '#8fc7ff',
+			color: '#000000',
+			border: 'none',
+			borderRadius: '6px',
+			boxShadow: '0 2px 10px rgba(0,0,0,0.18)',
+			arrowColor: '#8fc7ff'
+		};
+	}
+
+	if (isClassicMac) {
+		return {
+			background: '#ffffff',
+			color: '#000000',
+			border: '2px solid #000000',
+			borderRadius: '0',
+			boxShadow: '2px 2px 0 #000000',
+			arrowColor: '#ffffff'
+		};
+	}
+
+	return {
+		background: '#6dac20',
+		color: '#ffffff',
+		border: 'none',
+		borderRadius: '6px',
+		boxShadow: '0 2px 10px rgba(0,0,0,0.18)',
+		arrowColor: '#6dac20'
+	};
+}
+
+function saveSonosThemeImmediately(selectElement) {
+	var form = document.getElementById('detail_form');
+
+	if (!form || !selectElement) {
+		return;
+	}
+
+	var marker = document.getElementById('s4lox_auto_theme_save');
+
+	if (!marker) {
+		marker = document.createElement('input');
+		marker.type = 'hidden';
+		marker.name = 's4lox_auto_theme_save';
+		marker.id = 's4lox_auto_theme_save';
+		form.appendChild(marker);
+	}
+
+	marker.value = '1';
+
+	var wallpaperFile = document.getElementById('sonos_wallpaper_file');
+	if (wallpaperFile) {
+		wallpaperFile.value = '';
+	}
+
+	form.action = './index.cgi?do=details';
+	form.submit();
+}
+
+$(document)
+	.off('change.s4lSonosThemeAutoSave', '#sonostheme')
+	.on('change.s4lSonosThemeAutoSave', '#sonostheme', function () {
+		saveSonosThemeImmediately(this);
+	});
+
+/**
+ * Shows custom tooltip and applies its visual styling.
+ */
+function showTooltip(selector) {
+	var style = getSonosTooltipStyle();
+
 	$(selector).css({
-		"background": "#6db33f",
-		"color": "#ffffff",
+		"background": style.background,
+		"background-color": style.background,
+		"color": style.color,
+		"-webkit-text-fill-color": style.color,
+		"border": style.border,
+		"border-radius": style.borderRadius,
 		"text-shadow": "none",
-		"box-shadow": "0 2px 10px rgba(0,0,0,0.18)",
+		"box-shadow": style.boxShadow,
 		"display": "inline-block",
 		"width": "max-content",
 		"min-width": "220px",
@@ -2645,7 +2748,7 @@ function showGreenTooltip(selector) {
 	});
 
 	$(selector + " div").css({
-		"border-top-color": "#6db33f"
+		"border-top-color": style.arrowColor
 	});
 
 	$(selector).stop(true, true).fadeIn(120);
@@ -2882,7 +2985,7 @@ function confirmDelete(title, text, onConfirm, opts) {
 			borderColor: btnColor,
 			textColor: "#fff",
 			text: delText,
-			iconStart: "/plugins/<TMPL_VAR PLUGINDIR>/web/images/confirm.svg",
+			iconStart: "/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/images/confirm.svg",
 			closeOnClick: true,
 			onClick: function () {
 				if (typeof onConfirm === "function") {
@@ -2897,7 +3000,7 @@ function confirmDelete(title, text, onConfirm, opts) {
 			borderColor: btnColor,
 			textColor: "#fff",
 			text: cancelText,
-			iconStart: "/plugins/<TMPL_VAR PLUGINDIR>/web/images/cancel.svg",
+			iconStart: "/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/images/cancel.svg",
 			closeOnClick: true
 		}
 	};
@@ -2954,6 +3057,7 @@ function timeout(text, ButtonText, Icon = 'info', Title, timeout) {
 	var boxOptions = {
 		timer: timeout,
 		text: text,
+		html: '<div style="font-weight:400 !important; color:#000000 !important; -webkit-text-fill-color:#000000 !important; text-shadow:none !important;">' + text + '</div>',
 		centerContent: true,
 		title: {
 			text: Title
@@ -2961,7 +3065,7 @@ function timeout(text, ButtonText, Icon = 'info', Title, timeout) {
 	};
 
 	if (Icon === 'info') {
-		boxOptions.customIcon = "/plugins/<TMPL_VAR PLUGINDIR>/web/images/info.svg";
+		boxOptions.customIcon = "/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/images/info.svg";
 	} else if (Icon === 'warning') {
 		boxOptions.alertIcon = 'warning';
 	} else if (Icon) {
@@ -3050,7 +3154,7 @@ function discover() {
             borderColor: "#6dac20",
             textColor: "#fff",
             text: '<TMPL_VAR ZONES.BUTTON_NEXT>',
-            iconStart: "/plugins/<TMPL_VAR PLUGINDIR>/web/images/confirm.svg",
+            iconStart: "/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/images/confirm.svg",
             closeOnClick: false,
             onClick: () => {
 				const form = document.createElement('form');
@@ -3074,7 +3178,7 @@ function discover() {
             borderColor: "#6dac20",
             textColor: "#fff",
             text: '<TMPL_VAR ZONES.BUTTON_BACK>',
-            iconStart: "/plugins/<TMPL_VAR PLUGINDIR>/web/images/cancel.svg",
+            iconStart: "/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/images/cancel.svg",
             closeOnClick: true
         },
     });
@@ -3173,33 +3277,47 @@ function refresh() {
  * 14) Download helpers (XML export)
  * ================================================================================================ */
 
-function downloadFile(filename) {
-	var element = document.createElement('a');
-	element.setAttribute('href','/plugins/<TMPL_VAR PLUGINDIR>/system/'  + filename);
-	element.setAttribute('download', filename);
-	document.body.appendChild(element);
-	element.click();
-	return;
+function downloadFileFromUrl(url, filename) {
+	var link = document.createElement('a');
+	link.href = url;
+	link.download = filename;
+	document.body.appendChild(link);
+	link.click();
+	document.body.removeChild(link);
 }
 
 function checkfile(filename, e) {
-	$.post("/plugins/<TMPL_VAR PLUGINDIR>/system/ms_inbound.php");
-	var url = '/plugins/<TMPL_VAR PLUGINDIR>/system/'  + filename;
-	var http = new XMLHttpRequest();
-	http.open('GET', url, false);
-	http.send();
-	//console.log("http status: " + http.status);
-	if (http.status !== 200)  {
-		dialog('<TMPL_VAR ERRORS.ERR_XM_TEMP>', 'OK', 'error', 'Check filename');
-		$('html, body').animate({
-			scrollTop: $("#zone1").offset().top
-		}, 500);
-		$("#zone1").focus();
-		if (e) e.preventDefault();
-	} else {
-		//console.log("Filename: " + filename);
-		downloadFile(filename);
+	if (e) {
+		e.preventDefault();
 	}
+
+	var basePath = '/plugins/<TMPL_VAR PLUGINDIR>/src/Core/Communication/';
+	var buildUrl = basePath + 'MsInbound.php';
+	var fileUrl = basePath + filename;
+
+	$.post(buildUrl)
+		.done(function () {
+			var http = new XMLHttpRequest();
+			http.open('GET', fileUrl, false);
+			http.send();
+
+			if (http.status !== 200) {
+				dialog('<TMPL_VAR ERRORS.ERR_XM_TEMP>', 'OK', 'error', 'Check filename');
+				$('html, body').animate({
+					scrollTop: $("#zone1").offset().top
+				}, 500);
+				$("#zone1").focus();
+			} else {
+				downloadFileFromUrl(fileUrl, filename);
+			}
+		})
+		.fail(function () {
+			dialog('<TMPL_VAR ERRORS.ERR_XM_TEMP>', 'OK', 'error', 'Check filename');
+			$('html, body').animate({
+				scrollTop: $("#zone1").offset().top
+			}, 500);
+			$("#zone1").focus();
+		});
 }
 
 
@@ -3875,10 +3993,112 @@ function details_init() {
 	load_radio_favorites_into_func_list();
 
 	toggleRadioAnnounce();
+	initLiquidGlassWallpaperBrightness();
 
 	setTimeout(function () {
 		toggleRadioAnnounce();
+		initLiquidGlassWallpaperBrightness();
 	}, 50);
+}
+
+function applyLiquidGlassWallpaperBrightness(value) {
+	var brightness = parseInt(value, 10);
+	if (isNaN(brightness)) {
+		brightness = 32;
+	}
+	brightness = Math.max(0, Math.min(100, brightness));
+
+	var dimPrimary = (100 - brightness) / 100;
+	var dimSecondary = Math.max(0, dimPrimary - 0.10);
+
+	document.body.style.setProperty('--s4lox-liquid-glass-wallpaper-dim-primary', dimPrimary.toFixed(2));
+	document.body.style.setProperty('--s4lox-liquid-glass-wallpaper-dim-secondary', dimSecondary.toFixed(2));
+}
+
+function updateSonosThemeWallpaperVisibility() {
+	var $select = $('#sonostheme');
+	var $wallpaperControls = $('.sonos-wallpaper-wrap, .sonos-wallpaper-brightness-wrap');
+
+	if (!$select.length || !$wallpaperControls.length) {
+		return;
+	}
+
+	var selectedTheme = String($select.val() || 'system').toLowerCase();
+	var showWallpaperControls = (selectedTheme === 'liquid-glass');
+
+	$wallpaperControls.each(function () {
+		this.style.display = showWallpaperControls ? 'flex' : 'none';
+	});
+
+	if (showWallpaperControls) {
+		initLiquidGlassWallpaperBrightness();
+	}
+}
+
+$(document).off('change.s4lSonosThemeWallpaper', '#sonostheme').on('change.s4lSonosThemeWallpaper', '#sonostheme', function () {
+	updateSonosThemeWallpaperVisibility();
+});
+
+$(document).on('pageinit.s4lSonosThemeWallpaper pageshow.s4lSonosThemeWallpaper', function () {
+	setTimeout(updateSonosThemeWallpaperVisibility, 0);
+});
+
+$(function () {
+	updateSonosThemeWallpaperVisibility();
+});
+
+function initLiquidGlassWallpaperBrightness() {
+	var $slider = $('#liquid_glass_wallpaper_brightness_slider');
+	var $hidden = $('#liquid_glass_wallpaper_brightness');
+
+	if (!$slider.length || !$hidden.length) {
+		return;
+	}
+
+	if ($slider.data('s4l-brightness-initialized') === true) {
+		applyLiquidGlassWallpaperBrightness($hidden.val());
+		return;
+	}
+
+	var savedValue = parseInt($hidden.val(), 10);
+	if (isNaN(savedValue)) {
+		savedValue = 32;
+	}
+	savedValue = Math.max(0, Math.min(100, savedValue));
+
+	applyLiquidGlassWallpaperBrightness(savedValue);
+
+	if (typeof $slider.ionRangeSlider === 'function') {
+		$slider.ionRangeSlider({
+			skin: 'big',
+			grid: false,
+			min: 0,
+			max: 100,
+			from: savedValue,
+			step: 1,
+			postfix: ' %',
+			onStart: function (data) {
+				$hidden.val(data.from);
+				applyLiquidGlassWallpaperBrightness(data.from);
+			},
+			onChange: function (data) {
+				$hidden.val(data.from);
+				applyLiquidGlassWallpaperBrightness(data.from);
+			},
+			onFinish: function (data) {
+				$hidden.val(data.from);
+				applyLiquidGlassWallpaperBrightness(data.from);
+			}
+		});
+	} else {
+		$slider.attr('type', 'range').attr('min', '0').attr('max', '100').attr('step', '1').val(savedValue);
+		$slider.off('input.s4lBrightness change.s4lBrightness').on('input.s4lBrightness change.s4lBrightness', function () {
+			$hidden.val(this.value);
+			applyLiquidGlassWallpaperBrightness(this.value);
+		});
+	}
+
+	$slider.data('s4l-brightness-initialized', true);
 }
 
 function select_update() {
@@ -4203,7 +4423,7 @@ $(document).on('pageinit', function () {
 
 /* -----------------------------------------------------------------------------
  * Testing Page
- * Version: TESTING_JSON_EDITOR_JS_V03_2026_06_08_REINDEX_AFTER_DELETE
+ * Version: TESTING_JSON_EDITOR_JS_V22_2026_06_19_COMPLETION_POPUP
  * ----------------------------------------------------------------------------- */
 (function () {
         'use strict';
@@ -4254,33 +4474,33 @@ $(document).on('pageinit', function () {
         }
 
         function formatTestingConfirmText(value) {
-            value = String(value || '').trim();
+			value = String(value || '').trim();
 
-            var markerPos = value.indexOf('!!');
-            var mainText = value;
-            var warningText = '';
+			var markerPos = value.indexOf('!!');
+			var mainText = value;
+			var warningText = '';
 
-            if (markerPos >= 0) {
-                mainText = value.substring(0, markerPos).trim();
-                warningText = value.substring(markerPos).trim();
-            }
+			if (markerPos >= 0) {
+				mainText = value.substring(0, markerPos).trim();
+				warningText = value.substring(markerPos).trim();
+			}
 
-            var html = '';
+			var html = '';
 
-            if (mainText !== '') {
-                html += '<p style="margin:0 0 10px 0;">' + escapeHtml(mainText) + '</p>';
-            }
+			if (mainText !== '') {
+				html += '<p style="margin:0 0 10px 0; font-weight:400 !important; color:#000000 !important; -webkit-text-fill-color:#000000 !important;">'
+					+ escapeHtml(mainText)
+					+ '</p>';
+			}
 
-            if (warningText !== '') {
-                html += '<p style="margin:18px 0 0 0;">'
-                    + '<span style="font-weight:700 !important; color:red;">'
-                    + escapeHtml(warningText)
-                    + '</span>'
-                    + '</p>';
-            }
+			if (warningText !== '') {
+				html += '<p style="margin:18px 0 0 0; font-weight:700 !important; color:#ff0000 !important; -webkit-text-fill-color:#ff0000 !important;">'
+					+ escapeHtml(warningText)
+					+ '</p>';
+			}
 
-            return html;
-        }
+			return html;
+		}
 
         function updateTestingDropdown(details) {
             if (!details) {
@@ -4366,11 +4586,20 @@ $(document).on('pageinit', function () {
             }
 
             if (!zone) {
-                showTestingAlert(textOf('testing_error_zone_required', 'Please select one online zone.'));
-                return false;
-            }
+				showTestingAlert(textOf('testing_error_zone_required', 'Please select one online zone.'));
+				return false;
+			}
 
-            if (typeof silverBox !== 'function') {
+			/*
+			 * Close open Zone/Member dropdowns before the confirmation dialog is shown.
+			 * Otherwise the opened dropdown can remain visible behind/next to SilverBox.
+			 */
+			document.querySelectorAll('#testing_form details.testing_player_details[open]').forEach(function (details) {
+				details.removeAttribute('open');
+				updateTestingDropdown(details);
+			});
+
+			if (typeof silverBox !== 'function') {
                 var fallbackConfirmText = textOf(
                     'testing_confirm_text',
                     'Do you really want to execute this test scenario?'
@@ -4959,6 +5188,226 @@ $(document).on('pageinit', function () {
             return false;
         };
 
+        var testingStatusTimer = null;
+        var testingStatusPollHadRunning = false;
+        var testingStatusCurrentToken = '';
+        var testingStatusStorageCurrent = 'sonos4lox_testing_current_token';
+        var testingStatusStorageNotified = 'sonos4lox_testing_notified_token';
+		
+		var testingRunningHintId = 'sonos4lox_testing_running_hint';
+
+		function ensureTestingRunningHint() {
+			var hint = document.getElementById(testingRunningHintId);
+
+			if (hint) {
+				return hint;
+			}
+
+			var description = document.getElementById('testing_description');
+			var target = description && description.parentNode ? description.parentNode : null;
+
+			hint = document.createElement('div');
+			hint.id = testingRunningHintId;
+			hint.style.display = 'none';
+			hint.style.textAlign = 'center';
+			hint.style.margin = '10px 0 8px 0';
+			hint.style.fontWeight = '700';
+			hint.style.color = '#ff0000';
+			hint.style.webkitTextFillColor = '#ff0000';
+			hint.style.textShadow = 'none';
+			hint.textContent = '*** Test is actually running ***';
+
+			if (target) {
+				target.insertBefore(hint, description);
+			} else {
+				document.body.appendChild(hint);
+			}
+
+			return hint;
+		}
+
+		function showTestingRunningHint() {
+			var hint = ensureTestingRunningHint();
+			hint.style.display = 'block';
+		}
+
+		function hideTestingRunningHint() {
+			var hint = document.getElementById(testingRunningHintId);
+
+			if (hint) {
+				hint.style.display = 'none';
+			}
+		}
+
+        function formatTestingDuration(durationMs) {
+            var ms = parseInt(durationMs, 10);
+            if (!isFinite(ms) || ms < 0) {
+                return '';
+            }
+
+            var seconds = Math.round(ms / 1000);
+            var minutes = Math.floor(seconds / 60);
+            var remaining = seconds % 60;
+
+            if (minutes > 0) {
+                return minutes + ':' + String(remaining).padStart(2, '0') + ' min';
+            }
+
+            return seconds + ' sec';
+        }
+
+        function testingValue(value, fallback) {
+            if (value === null || typeof value === 'undefined' || value === '') {
+                return fallback;
+            }
+            return value;
+        }
+
+        function resetTestingExecutionSelection() {
+			hideTestingRunningHint();
+            var actionEl = document.getElementById('testing_action');
+            if (actionEl) {
+                actionEl.value = '';
+            }
+
+            var scenario = document.getElementById('testing_scenario');
+            if (scenario) {
+                scenario.selectedIndex = 0;
+                scenario.value = '';
+            }
+
+            document.querySelectorAll('input[name="testing_zone"], input[name="testing_member"]').forEach(function (checkbox) {
+                checkbox.checked = false;
+            });
+
+            document.querySelectorAll('.testing_player_details').forEach(updateTestingDropdown);
+            syncTestingMemberOptions();
+
+            if (window.history && typeof window.history.replaceState === 'function') {
+                try {
+                    window.history.replaceState(null, document.title, './testing.cgi');
+                } catch (e) {}
+            }
+        }
+
+        function showTestingCompletionDialog(status) {
+            status = status || {};
+
+            var isOk = status.result === 'ok';
+            var title = isOk ? 'Regression test finished' : 'Regression test finished with errors';
+            var icon = isOk ? 'info' : 'warning';
+            var duration = formatTestingDuration(status.duration_ms);
+
+            var html = '';
+            html += '<div style="text-align:left;">';
+            html += '<p style="margin:0 0 10px 0; font-weight:700;">' + escapeHtml(status.message || title) + '</p>';
+            html += '<table style="width:100%; border-collapse:collapse;">';
+            html += '<tr><td>OK</td><td style="text-align:right; font-weight:700;">' + escapeHtml(testingValue(status.ok, '-')) + '</td></tr>';
+            html += '<tr><td>Failed</td><td style="text-align:right; font-weight:700;">' + escapeHtml(testingValue(status.failed, '-')) + '</td></tr>';
+            html += '<tr><td>Timeout</td><td style="text-align:right; font-weight:700;">' + escapeHtml(testingValue(status.timeout, '-')) + '</td></tr>';
+            html += '<tr><td>Selected</td><td style="text-align:right; font-weight:700;">' + escapeHtml(testingValue(status.selected, '-')) + '</td></tr>';
+            if (duration !== '') {
+                html += '<tr><td>Duration</td><td style="text-align:right; font-weight:700;">' + escapeHtml(duration) + '</td></tr>';
+            }
+            html += '</table>';
+            html += '<p style="margin:12px 0 0 0;">';
+            html += '<a href="./testing.cgi?action=view_testing_log&type=test" target="_blank">Open test log</a>';
+            html += '&nbsp;|&nbsp;';
+            html += '<a href="./testing.cgi?action=view_testing_log&type=sonos" target="_blank">Open Sonos log</a>';
+            html += '</p>';
+            html += '</div>';
+
+            if (typeof silverBox === 'function') {
+                silverBox({
+                    alertIcon: icon,
+                    html: html,
+                    centerContent: true,
+                    title: { text: title },
+                    confirmButton: {
+                        bgColor: '#6dac20',
+                        border: '10px',
+                        borderColor: '#6dac20',
+                        textColor: '#fff',
+                        text: 'OK',
+                        closeOnClick: true
+                    }
+                });
+            } else {
+                alert((status.message || title) + '\n\nOK: ' + testingValue(status.ok, '-') + '\nFailed: ' + testingValue(status.failed, '-') + '\nTimeout: ' + testingValue(status.timeout, '-'));
+            }
+        }
+
+        function pollTestingStatus() {
+            var form = document.getElementById('testing_action');
+            if (!form) {
+                return;
+            }
+
+            fetch('./testing.cgi?action=testing_status&_=' + Date.now(), { cache: 'no-store' })
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('status request failed');
+                    }
+                    return response.json();
+                })
+                .then(function (status) {
+                    var token = String(status && status.token ? status.token : '');
+                    var state = String(status && status.state ? status.state : 'idle');
+
+                    if (state === 'running') {
+                        testingStatusPollHadRunning = true;
+						showTestingRunningHint();
+                        testingStatusCurrentToken = token;
+                        try {
+                            localStorage.setItem(testingStatusStorageCurrent, token);
+                        } catch (e) {}
+
+                        if (!testingStatusTimer) {
+                            testingStatusTimer = window.setInterval(pollTestingStatus, 5000);
+                        }
+                        return;
+                    }
+
+                    if (state === 'finished') {
+						hideTestingRunningHint();
+						
+                        var storedCurrent = '';
+                        var storedNotified = '';
+                        try {
+                            storedCurrent = localStorage.getItem(testingStatusStorageCurrent) || '';
+                            storedNotified = localStorage.getItem(testingStatusStorageNotified) || '';
+                        } catch (e) {}
+
+                        if (token !== '' && storedNotified !== token && (testingStatusPollHadRunning || storedCurrent === token || testingStatusCurrentToken === token)) {
+                            resetTestingExecutionSelection();
+                            showTestingCompletionDialog(status);
+                            try {
+                                localStorage.setItem(testingStatusStorageNotified, token);
+                                localStorage.removeItem(testingStatusStorageCurrent);
+                            } catch (e) {}
+                        }
+                    }
+
+                    if (testingStatusTimer) {
+                        window.clearInterval(testingStatusTimer);
+                        testingStatusTimer = null;
+                    }
+                })
+                .catch(function () {
+                    if (!testingStatusTimer) {
+                        return;
+                    }
+                    /* Keep polling quietly; the test itself continues in the background. */
+                });
+        }
+
+        function startTestingStatusPolling() {
+            if (!document.getElementById('testing_action')) {
+                return;
+            }
+            pollTestingStatus();
+        }
+
         document.addEventListener('input', function (event) {
             if (!event.target || !event.target.matches('input.testing-json-url')) {
                 return;
@@ -5013,6 +5462,7 @@ $(document).on('pageinit', function () {
         document.querySelectorAll('.testing_player_details').forEach(updateTestingDropdown);
         syncTestingMemberOptions();
         updateTestingSourceVisibility();
+        startTestingStatusPolling();
     }());
 
 </script>

@@ -22,18 +22,18 @@ fi
 LOXONE="$(jq -r '.LOXONE.LoxDaten // "false"' "$CFG")"
 
 # check_on_state ausführen
-/usr/bin/php /opt/loxberry/webfrontend/html/plugins/sonos4lox/bin/check_on_state.php
+/usr/bin/php /opt/loxberry/webfrontend/html/plugins/sonos4lox/src/Core/Runtime/CheckState.php >/dev/null 2>&1 &
 
 #---- AUSFÜHRUNG ALLE 10 SEKUNDEN ----
 i=0
 while [[ $i -lt 6 ]]; do
   # /usr/bin/php REPLACELBPHTMLDIR/bin/push_loxone.php &
   sleep 2
-  /usr/bin/php REPLACELBPHTMLDIR/bin/push_maxvol.php &
+  /usr/bin/php REPLACELBPHTMLDIR/src/Support/MaxVolumeEnforcer.php &
   sleep 2
-  /usr/bin/php REPLACELBPHTMLDIR/bin/tv_monitor.php &
+  /usr/bin/php REPLACELBPHTMLDIR/src/Support/TvMonitor.php run &
   sleep 2
-  /usr/bin/php REPLACELBPHTMLDIR/bin/on_time.php &
+  /usr/bin/php REPLACELBPHTMLDIR/src/Support/TimeRestrictionEnforcer.php &
   sleep 4
   i=$(( i + 1 ))
 done

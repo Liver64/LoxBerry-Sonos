@@ -537,8 +537,4 @@
  6.1.6		[BUGFIX] time restrictions gefixed
 			[IMPROVEMENT] Möglichkeit das Plugin downgraden oder auch upgraden (siehe Tab Optionen)
 			[IMPROVEMENT] Hinzufügen von Playern wieder aktiviert, zusätzlich für Probleme im VLAN die Möglichkeit eines UNICAST Scans
- 6.1.7		[IMPROVEMENT] Plugin Debian Trixie (13) kompatibel
-			[IMPROVEMENT] Readiness für LoxBerry v4
-			[IMPROVEMENT] Regression-/Massentest verfügbar (nur im Debug Modus des Plugins)
-			[IMPROVEMENT] UI angepasst
-			[BUGFIX] Radio/Playlist Ansage gefixt
+			

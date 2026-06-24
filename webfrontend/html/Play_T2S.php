@@ -2,16 +2,23 @@
 
 /**
 * Submodul: Play_T2S
+* Version: PLAY_T2S_AUDIOCLIP_CURL_RETRY_TUNING_V02_2026_06_20
 *
 **/
 
-require_once "loxberry_system.php";
+require_once "REPLACELBHOMEDIR/libs/phplib/loxberry_system.php";
+if (file_exists(__DIR__ . '/src/Support/Logger.php')) {
+	require_once __DIR__ . '/src/Support/Logger.php';
+}
+if (file_exists(__DIR__ . '/src/Support/PresenceGuard.php')) {
+	require_once __DIR__ . '/src/Support/PresenceGuard.php';
+}
 
 $lbhostname = lbhostname();
 $lbwebport  = lbwebserverport();
 $myLBip     = LBSystem::get_localip();
 if (!defined('T2S_BATCHFILE')) {
-    // Batch-Datei im RAM (/dev/shm) pro Plugin
+    // Batch file in RAM (/dev/shm) per plugin
     define('T2S_BATCHFILE', "/dev/shm/".LBPPLUGINDIR."/t2s_batch.txt");
 }
 if (!function_exists('check_zone_time')) {
@@ -19,6 +26,419 @@ if (!function_exists('check_zone_time')) {
         return defined('SONOSZONE') && isset(SONOSZONE[$zone]);
     }
 }
+
+
+if (!function_exists('s4lox_play_t2s_log')) {
+    function s4lox_play_t2s_log($message = "", $loglevel = 7, $raw = 0): void {
+        $message = (string)$message;
+        if (strpos($message, 'Play_T2S.php:') !== 0) {
+            $message = 'Play_T2S.php: ' . $message;
+        }
+
+        $level = (int)$loglevel;
+
+        if ($level <= 3 && function_exists('LOGERR')) {
+            LOGERR($message);
+        } elseif ($level === 4 && function_exists('LOGWARN')) {
+            LOGWARN($message);
+        } elseif ($level === 5 && function_exists('LOGINF')) {
+            LOGINF($message);
+        } elseif ($level === 6 && function_exists('LOGOK')) {
+            LOGOK($message);
+        } elseif ($level >= 7 && function_exists('LOGDEB')) {
+            LOGDEB($message);
+        } elseif (function_exists('LOGINF')) {
+            LOGINF($message);
+        } else {
+            error_log($message);
+        }
+    }
+}
+
+
+
+
+if (!defined('S4L_PLAY_T2S_CURL_CONNECT_TIMEOUT')) {
+    define('S4L_PLAY_T2S_CURL_CONNECT_TIMEOUT', 6);
+}
+if (!defined('S4L_PLAY_T2S_CURL_REQUEST_TIMEOUT')) {
+    define('S4L_PLAY_T2S_CURL_REQUEST_TIMEOUT', 20);
+}
+if (!defined('S4L_PLAY_T2S_CURL_MULTI_TOTAL_TIMEOUT')) {
+    define('S4L_PLAY_T2S_CURL_MULTI_TOTAL_TIMEOUT', 30);
+}
+if (!defined('S4L_PLAY_T2S_CURL_MULTI_RETRY_COUNT')) {
+    define('S4L_PLAY_T2S_CURL_MULTI_RETRY_COUNT', 1);
+}
+if (!defined('S4L_PLAY_T2S_CURL_MULTI_RETRY_DELAY_US')) {
+    define('S4L_PLAY_T2S_CURL_MULTI_RETRY_DELAY_US', 350000);
+}
+
+if (!function_exists('s4lox_play_t2s_transport_is_playing')) {
+    function s4lox_play_t2s_transport_is_playing($state): bool {
+        if (is_array($state)) {
+            $cur = strtoupper((string)($state['CurrentTransportState'] ?? $state['currenttransportstate'] ?? ''));
+            return $cur === 'PLAYING' || $cur === 'TRANSITIONING';
+        }
+
+        if ($state === 1 || $state === '1') {
+            return true;
+        }
+
+        $stateString = strtoupper(trim((string)$state));
+        return $stateString === 'PLAYING' || $stateString === 'TRANSITIONING';
+    }
+}
+
+if (!function_exists('s4lox_play_t2s_call_without_php_warning')) {
+    function s4lox_play_t2s_call_without_php_warning(callable $callback, &$warning = null) {
+        $warning = null;
+        set_error_handler(function ($severity, $message) use (&$warning) {
+            $warning = (string)$message;
+            return true;
+        });
+
+        try {
+            return $callback();
+        } finally {
+            restore_error_handler();
+        }
+    }
+}
+
+if (!function_exists('s4lox_play_t2s_safe_mkdir')) {
+    function s4lox_play_t2s_safe_mkdir(string $dir, int $mode, string $label): bool {
+        if ($dir === '' || $dir === '.') {
+            return true;
+        }
+
+        if (is_dir($dir)) {
+            return true;
+        }
+
+        $warning = null;
+        $result = s4lox_play_t2s_call_without_php_warning(
+            function () use ($dir, $mode) {
+                return mkdir($dir, $mode, true);
+            },
+            $warning
+        );
+
+        if ($result !== true && !is_dir($dir)) {
+            $suffix = $warning !== null ? ' (' . $warning . ')' : '';
+            s4lox_play_t2s_log("Play_T2S.php: Could not create " . $label . " '" . $dir . "'." . $suffix, 4);
+            return false;
+        }
+
+        return true;
+    }
+}
+
+if (!function_exists('s4lox_play_t2s_safe_unlink')) {
+    function s4lox_play_t2s_safe_unlink(string $file, string $label): bool {
+        if (!file_exists($file) && !is_link($file)) {
+            return true;
+        }
+
+        if (!is_file($file) && !is_link($file)) {
+            s4lox_play_t2s_log("Play_T2S.php: Refusing to delete " . $label . " because it is not a regular file or symlink: '" . $file . "'.", 4);
+            return false;
+        }
+
+        $warning = null;
+        $result = s4lox_play_t2s_call_without_php_warning(
+            function () use ($file) {
+                return unlink($file);
+            },
+            $warning
+        );
+
+        if ($result !== true) {
+            $suffix = $warning !== null ? ' (' . $warning . ')' : '';
+            s4lox_play_t2s_log("Play_T2S.php: Could not delete " . $label . " '" . $file . "'." . $suffix, 4);
+            return false;
+        }
+
+        return true;
+    }
+}
+
+if (!function_exists('s4lox_play_t2s_safe_copy')) {
+    function s4lox_play_t2s_safe_copy(string $src, string $dst, string $label): bool {
+        if (!is_readable($src)) {
+            s4lox_play_t2s_log("Play_T2S.php: Could not copy " . $label . " because source file is missing or not readable: '" . $src . "'.", 4);
+            return false;
+        }
+
+        if (!s4lox_play_t2s_safe_mkdir(dirname($dst), 0775, $label . ' target directory')) {
+            return false;
+        }
+
+        $warning = null;
+        $result = s4lox_play_t2s_call_without_php_warning(
+            function () use ($src, $dst) {
+                return copy($src, $dst);
+            },
+            $warning
+        );
+
+        if ($result !== true) {
+            $suffix = $warning !== null ? ' (' . $warning . ')' : '';
+            s4lox_play_t2s_log("Play_T2S.php: Could not copy " . $label . " from '" . $src . "' to '" . $dst . "'." . $suffix, 4);
+            return false;
+        }
+
+        return true;
+    }
+}
+
+if (!function_exists('s4lox_play_t2s_safe_file_get_contents')) {
+    function s4lox_play_t2s_safe_file_get_contents(string $path, string $label, bool $logFailure = true) {
+        $context = null;
+        if (preg_match('~^https?://~i', $path)) {
+            $context = stream_context_create([
+                'http' => ['timeout' => 3],
+                'https' => ['timeout' => 3],
+            ]);
+        }
+
+        $warning = null;
+        $result = s4lox_play_t2s_call_without_php_warning(
+            function () use ($path, $context) {
+                return $context === null ? file_get_contents($path) : file_get_contents($path, false, $context);
+            },
+            $warning
+        );
+
+        if ($result === false && $logFailure) {
+            $suffix = $warning !== null ? ' (' . $warning . ')' : '';
+            s4lox_play_t2s_log("Play_T2S.php: Could not read " . $label . " from '" . $path . "'." . $suffix, 4);
+        }
+
+        return $result;
+    }
+}
+
+if (!function_exists('s4lox_play_t2s_safe_get_file_content')) {
+    function s4lox_play_t2s_safe_get_file_content(string $url, string $label) {
+        if (!function_exists('get_file_content')) {
+            s4lox_play_t2s_log("Play_T2S.php: Could not call " . $label . " because get_file_content() is not available.", 4);
+            return false;
+        }
+
+        $warning = null;
+        $result = s4lox_play_t2s_call_without_php_warning(
+            function () use ($url) {
+                return get_file_content($url);
+            },
+            $warning
+        );
+
+        if ($result === false && $warning !== null) {
+            s4lox_play_t2s_log("Play_T2S.php: Could not read " . $label . ". " . $warning, 4);
+        }
+
+        return $result;
+    }
+}
+
+if (!function_exists('s4lox_play_t2s_is_standard_playgong_request')) {
+    function s4lox_play_t2s_is_standard_playgong_request($value): bool {
+        $value = strtolower(trim((string)$value));
+        return $value === '' || $value === 'yes' || $value === 'true' || $value === '1' || $value === 'on';
+    }
+}
+
+if (!function_exists('s4lox_play_t2s_is_invalid_disabled_playgong_request')) {
+    function s4lox_play_t2s_is_invalid_disabled_playgong_request($value): bool {
+        $value = strtolower(trim((string)$value));
+        return $value === 'no' || $value === 'false' || $value === '0' || $value === 'off';
+    }
+}
+
+
+if (!function_exists('s4lox_play_t2s_log_safe_value')) {
+    function s4lox_play_t2s_log_safe_value($value, int $maxLength = 120): string {
+        $value = str_replace(["
+", "
+", "	"], ' ', (string)$value);
+        if (strlen($value) > $maxLength) {
+            return substr($value, 0, $maxLength) . '...';
+        }
+        return $value;
+    }
+}
+
+if (!function_exists('s4lox_play_t2s_validate_messageid_parameter')) {
+    function s4lox_play_t2s_validate_messageid_parameter(): bool {
+        if (!array_key_exists('messageid', $_GET)) {
+            return true;
+        }
+
+        $originalMessageId = trim((string)$_GET['messageid']);
+        $messageid = $originalMessageId;
+        $messageidForLog = s4lox_play_t2s_log_safe_value($messageid);
+
+        if ($messageid === '') {
+            s4lox_play_t2s_log("Play_T2S.php: Invalid messageid parameter. The messageid must not be empty. Please provide the stored message name without path. A trailing '.mp3' suffix is accepted and removed automatically.", 3);
+            return false;
+        }
+
+        if (preg_match('/\.mp3\z/i', $messageid)) {
+            $messageid = substr($messageid, 0, -4);
+            if ($messageid !== '') {
+                s4lox_play_t2s_log("Play_T2S.php: Messageid parameter '" . s4lox_play_t2s_log_safe_value($originalMessageId) . "' has been normalized to '" . s4lox_play_t2s_log_safe_value($messageid) . "'.", 6);
+            }
+        }
+
+        if ($messageid === '') {
+            s4lox_play_t2s_log("Play_T2S.php: Invalid messageid parameter '" . $messageidForLog . "'. Please provide the stored message name without path. A trailing '.mp3' suffix is accepted and removed automatically.", 3);
+            return false;
+        }
+
+        if (!preg_match('/\A[A-Za-z0-9_-]+\z/', $messageid)) {
+            s4lox_play_t2s_log("Play_T2S.php: Invalid messageid parameter '" . $messageidForLog . "'. Allowed characters are letters, digits, underscore and hyphen. A trailing '.mp3' suffix is accepted, but slashes, spaces, path components and dots inside the name are not allowed.", 3);
+            return false;
+        }
+
+        $_GET['messageid'] = $messageid;
+        $GLOBALS['messageid'] = $messageid;
+        return true;
+    }
+}
+
+if (!function_exists('s4lox_include_addon')) {
+    function s4lox_include_addon(string $filename): bool {
+        $path = __DIR__ . '/src/Support/AddOn/' . $filename;
+
+        if (!is_readable($path)) {
+            s4lox_play_t2s_log("AddOn file 'src/Support/AddOn/" . $filename . "' is missing or not readable.", 4);
+            return false;
+        }
+
+        include_once $path;
+        return true;
+    }
+
+
+/*
+ * TTS helper functions relocated from Helper.php.
+ * Keep the global function names for legacy URL compatibility.
+ */
+
+/**
+ * Function : select_t2s_engine --> includes the configured t2s engine file
+ *
+ * @param int|null $engineCode  Optional explicit engine code
+ *                              (falls null, wird Config-Wert verwendet)
+ * @return int  Effektiv verwendeter Engine-Code
+ */
+function select_t2s_engine(int $engineCode = null): array
+{
+    global $config;
+
+    if ($engineCode === null || $engineCode === 0) {
+        $engineCode = (int)($config['TTS']['t2s_engine'] ?? 0);
+    }
+
+    // Engine Registry
+    $engines = [
+        1001 => ['name' => 'VoiceRSS',        'file' => 'VoiceRSS.php'],
+        6001 => ['name' => 'ResponsiveVoice', 'file' => 'ResponsiveVoice.php'],
+        9012 => ['name' => 'Piper',           'file' => 'Piper.php'],
+        4001 => ['name' => 'Polly',           'file' => 'Polly.php'],
+        9001 => ['name' => 'MS_Azure',        'file' => 'MS_Azure.php'],
+        9011 => ['name' => 'ElevenLabs',      'file' => 'ElevenLabs.php'],
+        8001 => ['name' => 'GoogleCloud',     'file' => 'GoogleCloud.php']
+    ];
+
+    if (!isset($engines[$engineCode])) {
+
+        if (function_exists('LOGERR')) {
+            LOGERR("Play_T2S.php: select_t2s_engine(): Unknown TTS engine code '$engineCode'.");
+        }
+
+        return [
+            'code' => $engineCode,
+            'name' => 'Unknown'
+        ];
+    }
+
+    $engine = $engines[$engineCode];
+
+    $engineFile = "VoiceEngines/" . $engine['file'];
+
+    if (!file_exists($engineFile)) {
+
+        if (function_exists('LOGERR')) {
+            LOGERR("Play_T2S.php: select_t2s_engine(): Engine file missing: $engineFile");
+        }
+
+    } else {
+        include_once($engineFile);
+    }
+
+    return [
+        'code' => $engineCode,
+        'name' => $engine['name']
+    ];
+}
+
+/**
+* Function : mp3_files --> check if playgong mp3 file is valid in ../tts/mp3/
+*
+* @param: 
+* @return: array 
+**/
+
+function mp3_files($playgongfile) {
+	global $config;
+	
+	$scanned_directory = array_diff(scandir($config['SYSTEM']['mp3path'], SCANDIR_SORT_DESCENDING), array('..', '.'));
+	$file_only = array();
+	foreach ($scanned_directory as $file) {
+		$extension = pathinfo($file, PATHINFO_EXTENSION);
+		if ($extension == 'mp3') {
+			array_push($file_only, $file);
+		}
+	}
+	#print_r($file_only);
+	return (in_array($playgongfile, $file_only));
+}
+}
+
+
+/*
+ * TTS text helper relocated from Helper.php.
+ * Keep the global function name for legacy AddOn compatibility.
+ */
+
+
+
+
+
+
+/**
+* Function : load_t2s_text --> check if translation file exit and load into array
+*
+* @param: 
+* @return: array 
+**/
+
+function load_t2s_text(){
+	global $config, $t2s_langfile, $t2s_text_stand, $templatepath;
+	
+	$templatepath.'/lang/'.$t2s_langfile;
+	if (file_exists($templatepath.'/lang/'.$t2s_langfile)) {
+		$TL = parse_ini_file($templatepath.'/lang/'.$t2s_langfile, true);
+	} else {
+		s4lox_play_t2s_log("Play_T2S.php: For selected T2S language no translation file still exist! Please go to LoxBerry Plugin translation and create a file for selected language ".substr($config['TTS']['messageLang'],0,2),4);
+		$TL = "";
+		#exit;
+	}
+	return $TL;
+}
+
 
 
 /**
@@ -32,21 +452,25 @@ function say() {
 	
 	global $sonos, $tts_stat, $sonoszone, $profile, $master, $lbpconfigdir, $config, $vol_config, $group, $textstring, $result;
 	
-	presence_detection();
+	if (!s4lox_play_t2s_validate_messageid_parameter()) {
+		exit();
+	}
+
+	S4L_PresenceGuard::assertTtsAllowed();
 	#print_r($sonoszone);
 	
 	if (!isset($sonoszone[$master])) {
-        LOGGING("play_t2s.php: Zone '$master' is currently not available. Maybe '$master' ist offline or Time restrictions are valid", 5);
+        s4lox_play_t2s_log("Play_T2S.php: Zone '$master' is currently not available. Maybe '$master' ist offline or Time restrictions are valid", 5);
         exit();
     }
 	
 	if ((empty($config['TTS']['t2s_engine'])) or (empty($config['TTS']['messageLang'])))  {
-		LOGGING("play_t2s.php: There is no T2S engine/language selected in Plugin config. Please select before using T2S functionality.", 3);
+		s4lox_play_t2s_log("Play_T2S.php: There is no T2S engine/language selected in Plugin config. Please select before using T2S functionality.", 3);
 		exit();
 	}
 	if(isset($_GET['profile']) and isset($_GET['member']))  {
 		$tocall = "Error!! Both parameters where entered";
-		LOGGING("play_t2s.php: Parameter 'member' and 'profile' could not be used in conjunction! Please correct your syntax/URL", 3);
+		s4lox_play_t2s_log("Play_T2S.php: Parameter 'member' and 'profile' could not be used in conjunction! Please correct your syntax/URL", 3);
 		exit();
 	}
 	check_S1_player();
@@ -55,34 +479,34 @@ function say() {
 		$textstring = "Hallo Oliver";
 		require_once("bin/interface.php");
 		$result = send_data_curl();
-		LOGGING("play_t2s.php: T2S Interface has been called");
+		s4lox_play_t2s_log("Play_T2S.php: T2S Interface has been called");
 	}
 	$profile = false;
 	if(!isset($_GET['member']) && !isset($_GET['profile'])) {
 		if ((!isset($_GET['text'])) && (!isset($_GET['messageid'])) && (!isset($errortext)) && (!isset($_GET['sonos'])) &&
 			(!isset($_GET['text'])) && (!isset($_GET['weather'])) && (!isset($_GET['abfall'])) && (!isset($_GET['pollen'])) && (!isset($_GET['warning'])) &&
 			(!isset($_GET['distance'])) && (!isset($_GET['clock'])) && 
-			(!isset($_GET['calendar'])) && (!$_GET['action'] == "playbatch")) {
+			(!isset($_GET['calendar'])) && (($_GET['action'] ?? '') !== "playbatch")) {
 			$tocall = "Error!! Data/Input is missing";
-			LOGGING("play_t2s.php: Wrong Syntax, please correct! Even 'say&text=' or 'say&messageid=' in combination with &clip are necessary to play an anouncement. (check Wiki)", 3);	
+			s4lox_play_t2s_log("Play_T2S.php: Wrong Syntax, please correct! Even 'say&text=' or 'say&messageid=' in combination with &clip are necessary to play an anouncement. (check Wiki)", 3);	
 			exit;
 		}
 		if (isset($_GET['playbatch'])) {
 			$tocall = "Playbatch T2S";
-			LOGGING("play_t2s.php: 'Playbatch T2S' has been identified", 6);
+			s4lox_play_t2s_log("Play_T2S.php: 'Playbatch T2S' has been identified", 6);
 			#$tts_stat = 1;
 			#send_tts_source($tts_stat);
 			sendmessage();
 		} else {
 			if(isset($_GET['clip']))  {
 				$tocall = "Single Clip";
-				LOGGING("play_t2s.php: 'Single Clip' has been identified", 6);
+				s4lox_play_t2s_log("Play_T2S.php: 'Single Clip' has been identified", 6);
 				#$tts_stat = 1;
 				#send_tts_source($tts_stat);				
 				sendAudioSingleClip();
 			} else {
 				$tocall = "Single T2S";
-				LOGGING("play_t2s.php: 'Single T2S' has been identified", 6);
+				s4lox_play_t2s_log("Play_T2S.php: 'Single T2S' has been identified", 6);
 				#$tts_stat = 1;
 				#send_tts_source($tts_stat);
 				sendmessage();			
@@ -91,7 +515,7 @@ function say() {
 	} else {
 		if(isset($_GET['clip']) and !isset($_GET['profile']) and isset($_GET['member']))  {
 			$tocall = "Multi Clip Member";
-			LOGGING("play_t2s.php: 'Multi Clip Member' has been identified", 6);
+			s4lox_play_t2s_log("Play_T2S.php: 'Multi Clip Member' has been identified", 6);
 			$profile = true;
 			#$tts_stat = 1;
 			#send_tts_source($tts_stat);
@@ -100,20 +524,20 @@ function say() {
 			$group = checkGroupProfile();
 			if ($group == true)   {
 				$tocall = "Multi Clip Profile";
-				LOGGING("play_t2s.php: 'Multi Clip Profile' has been identified", 6);
+				s4lox_play_t2s_log("Play_T2S.php: 'Multi Clip Profile' has been identified", 6);
 				#$tts_stat = 1;
 				#send_tts_source($tts_stat);
 				sendAudioMultiClip();
 			} else {
 				$tocall = "Single Clip Profile";
-				LOGGING("play_t2s.php: 'Single Clip Profile' has been identified", 6);
+				s4lox_play_t2s_log("Play_T2S.php: 'Single Clip Profile' has been identified", 6);
 				#$tts_stat = 1;
 				#send_tts_source($tts_stat);				
 				sendAudioSingleClip();
 			}
 		} elseif(!isset($_GET['clip']) and isset($_GET['member']) and !isset($_GET['profile'])) {
 			$tocall = "Group T2S";
-			LOGGING("play_t2s.php: 'Group T2S' has been identified", 6);	
+			s4lox_play_t2s_log("Play_T2S.php: 'Group T2S' has been identified", 6);	
 			$profile = true;
 			#$tts_stat = 1;
 			#send_tts_source($tts_stat);
@@ -122,14 +546,14 @@ function say() {
 			$group = checkGroupProfile();
 			if ($group == true)   {
 				$tocall = "Group T2S Profile";
-				LOGGING("play_t2s.php: 'Group T2S Profile' has been identified", 6);
+				s4lox_play_t2s_log("Play_T2S.php: 'Group T2S Profile' has been identified", 6);
 				$profile = true;
 				#$tts_stat = 1;
 				#send_tts_source($tts_stat);				
 				sendgroupmessage();
 			} else {
 				$tocall = "Single T2S Profile";
-				LOGGING("play_t2s.php: 'Single T2S Profile' has been identified", 6);
+				s4lox_play_t2s_log("Play_T2S.php: 'Single T2S Profile' has been identified", 6);
 				createArrayFromGroupProfile();				
 				#$tts_stat = 1;
 				#send_tts_source($tts_stat);
@@ -180,16 +604,16 @@ if (!function_exists('t2s_basic_say')) {
     /**
      * t2s_basic_say
      *
-     * Einfacher Wrapper für:
-     *   - TTS-Parameter aus Config/GET/Overrides bauen
-     *   - MP3 erzeugen (t2s)
-     *   - per eigener Queue abspielen und WARTEN bis fertig
+     * Lightweight wrapper for:
+     *   - building TTS parameters from config/GET/overrides
+     *   - generating the MP3 file via t2s()
+     *   - playing it through a temporary Sonos queue and waiting until it ends
      *
-     * KEIN Snapshot/Restore der Sonos-Zonen!
-     * KEINE Abhängigkeit von $actual / play_tts()
+     * No Sonos zone snapshot/restore is performed here.
+     * No dependency on $actual / play_tts().
      *
-     * @param string $textstring  Text, der gesprochen werden soll
-     * @param array  $override    Optionale Overrides (wie bei create_t2s_param):
+     * @param string $textstring  Text to announce.
+     * @param array  $override    Optional overrides, similar to create_t2s_param():
      *                             - 't2sengine' : int
      *                             - 'language'  : string
      *                             - 'voice'     : string
@@ -197,166 +621,182 @@ if (!function_exists('t2s_basic_say')) {
      *                             - 'secretkey' : string
      *                             - 'region'    : string
      *                             - 'ignore_get': bool
-     * @param string $log_context  (wird nur aus Kompatibilitätsgründen akzeptiert,
-     *                             für Logging aber NICHT verwendet)
+     *                             - 'minimum_wait_seconds': float
+     * @param string $log_context  Accepted for compatibility only; not used for logging.
      */
     function t2s_basic_say(
         string $textstring,
         array $override = [],
-        string $log_context = 'helper.php:'
+        string $log_context = 'Play_T2S.php:'
     ): array {
         global $config, $sonos, $master, $sonoszone, $volume;
 
-        // Sicherstellen, dass wir überhaupt etwas zu sagen haben
+        // Make sure there is something to say.
         $textstring = trim($textstring);
         if ($textstring === '') {
-            LOGWARN("helper.php: Empty text received – skipping TTS.");
+            LOGWARN("Play_T2S.php: Empty text received – skipping TTS.");
             return [];
         }
 
-        // Dateiname deterministisch aus Text
+        $minimum_wait_seconds = 0.0;
+        if (isset($override['minimum_wait_seconds']) && is_numeric($override['minimum_wait_seconds'])) {
+            $minimum_wait_seconds = (float)$override['minimum_wait_seconds'];
+            if ($minimum_wait_seconds < 0.0) {
+                $minimum_wait_seconds = 0.0;
+            } elseif ($minimum_wait_seconds > 10.0) {
+                $minimum_wait_seconds = 10.0;
+            }
+        }
+
+        // Build a deterministic filename from the text.
         $filename = md5($textstring);
 
-        // Zentrales T2S-Parameter-Array baut alles (Engine-Code, Sprache, Voice, ttspath, usw.)
-        // Für die interne Engine-Logik geben wir einen statischen Kontext-String mit.
+        // Build the central T2S parameter array.
         $t2s_param = create_t2s_param(
             $textstring,
             $filename,
             $override,
-            #'helper.php: t2s_basic_say()'
+            #'Play_T2S.php: t2s_basic_say()'
         );
 
-        // Engine-Datei einbinden, damit t2s() existiert
+        // Load the selected engine file so t2s() is available.
         select_t2s_engine();
 
         if (!function_exists('t2s')) {
-            LOGERR("helper.php: t2s() is not defined after select_t2s_engine().");
+            LOGERR("Play_T2S.php: t2s() is not defined after select_t2s_engine().");
             return $t2s_param;
         }
 
-        // MP3 erzeugen
-        LOGDEB("helper.php: Generating TTS file '$filename.mp3'.");
+        // Generate the MP3 file.
+        LOGDEB("Play_T2S.php: Generating TTS file '$filename.mp3'.");
         t2s($t2s_param);
 
-        // Pfad zum MP3, wie in create_tts/create_t2s_param verwendet
+        // MP3 path as used by create_tts/create_t2s_param.
         $ttspath  = rtrim($config['SYSTEM']['ttspath'] ?? '/tmp', '/');
         $mp3_file = $ttspath . "/" . $filename . ".mp3";
 
         if (!is_file($mp3_file) || filesize($mp3_file) === 0) {
-            LOGERR("helper.php: TTS MP3 file '$mp3_file' does not exist or is empty.");
+            LOGERR("Play_T2S.php: TTS MP3 file '$mp3_file' does not exist or is empty.");
             return $t2s_param;
         }
 
         // ===========================
-        // Schlankes Abspielen auf Sonos per Queue
+        // Lightweight Sonos queue playback
         // ===========================
         if (!isset($sonoszone[$master])) {
-            LOGERR("helper.php: Master zone '$master' not found in \$sonoszone.");
+            LOGERR("Play_T2S.php: Master zone '$master' not found in \$sonoszone.");
             return $t2s_param;
         }
 
-        // Koordinator-IP & RINCON der Master-Zone
+        // Coordinator IP and RINCON of the master zone.
         $coord_ip   = $sonoszone[$master][0];
         $coord_rinc = $sonoszone[$master][1];
 
         try {
             $sonos = new SonosAccess($coord_ip);
         } catch (Exception $e) {
-            LOGERR("helper.php: Could not create SonosAccess for '$coord_ip': " . $e->getMessage());
+            LOGERR("Play_T2S.php: Could not create SonosAccess for '$coord_ip': " . $e->getMessage());
             return $t2s_param;
         }
 
         try {
-            // Queue leeren, nur unsere TTS-Nachricht rein
+            // Clear the queue and add only the TTS announcement.
             $sonos->ClearQueue();
 
             // MP3 aus CIFS-Share hinzufügen (für Sonos erreichbar!)
             // Beispiel: \\LOXBERRY\sonos4lox\tts\<filename>.mp3
             $cifs_mp3 = rtrim($config['SYSTEM']['cifsinterface'], '/') . "/" . $t2s_param['filename'] . ".mp3";
-            LOGDEB("helper.php: Adding TTS file to queue: " . $cifs_mp3);
+            LOGDEB("Play_T2S.php: Adding TTS file to queue: " . $cifs_mp3);
             $sonos->AddToQueue($cifs_mp3);
 
-            // Queue der Zone setzen
+            // Set the zone queue.
             $sonos->SetQueue("x-rincon-queue:" . trim($coord_rinc) . "#0");
             $sonos->SetPlayMode('0');
-            LOGGING("helper.php: Playmode has been set to NORMAL", 7);
+            LOGDEB("Play_T2S.php: Playmode has been set to NORMAL");
 
-            // Unsere Nachricht ist das erste (und einzige) Element
+            // The announcement is the first and only queue item.
             $message_pos = 1;
             $sonos->SetTrack($message_pos);
-            LOGGING("helper.php: Message has been set to position '$message_pos' in current queue", 7);
+            LOGDEB("Play_T2S.php: Message has been set to position '$message_pos' in current queue");
 
-            // Mute aus, Lautstärke setzen (kommt von außen, z.B. aus say_radio_station())
+            // Unmute and set volume if it is not controlled by member/profile handling.
             $sonos->SetMute(false);
             if (!isset($_GET['member']) && !isset($_GET['profile'])) {
                 $sonos->SetVolume((int)$volume);
             }
-            LOGGING("helper.php:  Mute for relevant player(s) has been turned off", 7);
+            LOGDEB("Play_T2S.php: Mute for relevant player(s) has been turned off");
 
-            // Abspielen starten
+            // Start playback.
             try {
                 $sonos->Play();
-                LOGOK("helper.php: TTS playback started successfully.");
+                LOGOK("Play_T2S.php: TTS playback started successfully.");
             } catch (Exception $e) {
-                LOGERR("helper.php: Failed to start TTS playback: " . $e->getMessage());
+                LOGERR("Play_T2S.php: Failed to start TTS playback: " . $e->getMessage());
                 return $t2s_param;
             }
 
             // ===========================
-            // WARTEN, bis die Ansage fertig ist
+            // Wait until the announcement has finished.
             // ===========================
-            // Max. Wartezeit heuristisch aus Textlänge ableiten
-            // (ca. 12 Zeichen ~ 1 Sekunde, plus Puffer, begrenzt auf 2–30s)
+            // Estimate the maximum wait time from text length.
             $approxSeconds = max(2, min(30, (int)ceil(strlen($textstring) / 12) + 1));
-            $max_wait      = $approxSeconds;
+            $max_wait      = max($approxSeconds, (int)ceil($minimum_wait_seconds) + 1);
             $start         = microtime(true);
+            $seen_playing  = false;
 
-            LOGDEB("helper.php: Waiting up to {$max_wait}s for TTS playback to finish.");
+            if ($minimum_wait_seconds > 0.0) {
+                LOGDEB("Play_T2S.php: Waiting up to {$max_wait}s for TTS playback to finish; minimum observation window is {$minimum_wait_seconds}s.");
+            } else {
+                LOGDEB("Play_T2S.php: Waiting up to {$max_wait}s for TTS playback to finish.");
+            }
 
             while (true) {
-                usleep(200000); // alle 200ms prüfen
+                usleep(200000); // Check every 200ms.
 
-                // Timeout-Schutz
+                // Timeout guard.
                 $elapsed = microtime(true) - $start;
                 if ($elapsed > $max_wait) {
-                    LOGWARN("helper.php: Wait timeout ({$max_wait}s) reached while TTS was playing – continuing.");
+                    LOGWARN("Play_T2S.php: Wait timeout ({$max_wait}s) reached while TTS was playing – continuing.");
                     break;
                 }
 
                 try {
                     $state = $sonos->GetTransportInfo();
                 } catch (Exception $e) {
-                    LOGERR("helper.php: GetTransportInfo() failed during wait loop: " . $e->getMessage());
+                    LOGERR("Play_T2S.php: GetTransportInfo() failed during wait loop: " . $e->getMessage());
                     break;
                 }
 
-                $playing = false;
+                $playing = s4lox_play_t2s_transport_is_playing($state);
 
-                if (is_array($state)) {
-                    // Typischer Rückgabewert:
-                    // ['CurrentTransportState' => 'PLAYING'|'STOPPED'|'PAUSED_PLAYBACK'|'TRANSITIONING', ...]
-                    $cur = strtoupper($state['CurrentTransportState'] ?? '');
-                    if ($cur === 'PLAYING' || $cur === 'TRANSITIONING') {
-                        $playing = true;
-                    }
-                } else {
-                    // Fallback: alte Implementierung, z.B. int oder string
-                    if ($state === 1 || $state === '1' || strtoupper((string)$state) === 'PLAYING') {
-                        $playing = true;
-                    }
+                if ($playing) {
+                    $seen_playing = true;
+                    continue;
                 }
 
-                if (!$playing) {
-                    LOGDEB("helper.php: Transport state no longer PLAYING – TTS finished or stopped.");
-                    $sonos->ClearQueue();
-                    break;
+                // Radio announcements are often followed immediately by SetRadio().
+                // Some Sonos players briefly report STOPPED while switching from a
+                // radio stream to queue playback. Do not clear the queue during this
+                // minimum observation window, otherwise the generated MP3 can be
+                // removed before it becomes audible.
+                if ($minimum_wait_seconds > 0.0 && $elapsed < $minimum_wait_seconds) {
+                    LOGDEB("Play_T2S.php: Transport state is not PLAYING yet; keeping TTS queue active during the minimum observation window.");
+                    continue;
                 }
+
+                if (!$seen_playing && $minimum_wait_seconds > 0.0) {
+                    LOGWARN("Play_T2S.php: TTS playback was not observed as PLAYING within the minimum observation window; continuing carefully.");
+                }
+
+                LOGDEB("Play_T2S.php: Transport state no longer PLAYING – TTS finished or stopped.");
+                $sonos->ClearQueue();
+                break;
             }
 
-            LOGOK("helper.php: TTS playback finished (or timeout reached).");
+            LOGOK("Play_T2S.php: TTS playback finished (or timeout reached).");
 
         } catch (Exception $e) {
-            LOGERR("helper.php: Error while preparing/playing TTS queue: " . $e->getMessage());
+            LOGERR("Play_T2S.php: Error while preparing/playing TTS queue: " . $e->getMessage());
         }
 
         return $t2s_param;
@@ -375,13 +815,26 @@ if (!function_exists('t2s_basic_say')) {
 function handle_prio() {
 	
 	global $prio, $time_start;
+
+	$high_enabled = false;
+
+	if (array_key_exists('high', $_GET)) {
+		$high_value = $_GET['high'];
+
+		if (is_array($high_value)) {
+			$high_value = reset($high_value);
+		}
+
+		$high_value = strtolower(trim((string)$high_value));
+		$high_enabled = ($high_value === '' || !in_array($high_value, array('0', 'false', 'off', 'no'), true));
+	}
 	
-	if(isset($_GET['high']) and isset($_GET['clip'])) {
+	if($high_enabled) {
 		$prio = "HIGH";
-		LOGDEB("play_t2s.php: Audioclip: Priority for Notification has been set to HIGH");
+		LOGDEB("Play_T2S.php: Audioclip: Priority for Notification has been set to HIGH");
 	} else {
 		$prio = "LOW";
-		LOGDEB("play_t2s.php: Audioclip: Standard Priority LOW for Notification will be used ");
+		LOGDEB("Play_T2S.php: Audioclip: Standard Priority LOW for Notification will be used " );
 	}
 	return $prio;
 }
@@ -400,7 +853,7 @@ function check_file() {
     
     // Für playbatch gibt es keine einzelne TTS-Datei – Batch wird später über Queue abgearbeitet
     if (isset($_GET['playbatch'])) {
-        LOGDEB("play_t2s.php: Audioclip: check_file() skipped for playbatch – batch entries will be used directly.");
+        LOGDEB("Play_T2S.php: Audioclip: check_file() skipped for playbatch – batch entries will be used directly.");
         return;
     }
 
@@ -414,7 +867,7 @@ function check_file() {
 
     // Schutz: Wenn kein sinnvoller Dateiname vorhanden ist, nicht stumpf auf '.mp3' warten
     if (!isset($_GET['messageid']) && (empty($filename) || $filename === '')) {
-        LOGDEB("play_t2s.php: Audioclip: check_file() called without filename and no messageid – skipping wait loop.");
+        LOGDEB("Play_T2S.php: Audioclip: check_file() called without filename and no messageid – skipping wait loop.");
         return;
     }
 
@@ -428,11 +881,11 @@ function check_file() {
 
 		// Datei existiert und hat > 0 Byte -> fertig
 		if (file_exists($filenamecheck) && filesize($filenamecheck) > 0) {
-			LOGINF("play_t2s.php: Audioclip: Notification file '$filenamecheck' is ready after ~" . ($wait_loops * 0.2) . " seconds.");
+			LOGINF("Play_T2S.php: Audioclip: Notification file '$filenamecheck' is ready after ~" . ($wait_loops * 0.2) . " seconds.");
 			break;
 		}
 
-		LOGDEB("play_t2s.php: Audioclip: Notification creation not yet finished, we have to wait...");
+		LOGDEB("Play_T2S.php: Audioclip: Notification creation not yet finished, we have to wait...");
 		usleep(200000); // 200ms
 		$wait_loops++;
 
@@ -441,7 +894,7 @@ function check_file() {
 	// Nach der Schleife: final prüfen
 	clearstatcache(false, $filenamecheck);
 	if (!file_exists($filenamecheck) || filesize($filenamecheck) == 0) {
-		LOGERR("play_t2s.php: Audioclip: Giving up waiting for notification file '$filenamecheck' after ~" . ($wait_loops * 0.2) . " seconds.");
+		LOGERR("Play_T2S.php: Audioclip: Giving up waiting for notification file '$filenamecheck' after ~" . ($wait_loops * 0.2) . " seconds.");
 		// Optional: hier könntest du noch $filename auf 't2s_not_available' umbiegen
 		// oder die Notification ganz abbrechen
 	}
@@ -497,9 +950,9 @@ function create_tts($text ='') {
     if (isset($_GET['messageid'])) {
         $messageid = $_GET['messageid'];
         if (file_exists($config['SYSTEM']['mp3path']."/".$messageid.".mp3") === true)  {
-            LOGGING("play_t2s.php: Messageid '".$messageid."' has been entered", 7);
+            s4lox_play_t2s_log("Play_T2S.php: Messageid '".$messageid."' has been entered", 7);
         } else {
-            LOGGING("play_t2s.php: The corrosponding messageid file '".$messageid.".mp3' does not exist or could not be played. Please check your directory or syntax!", 3);
+            s4lox_play_t2s_log("Play_T2S.php: The corrosponding messageid file '".$messageid.".mp3' does not exist or could not be played. Please check your directory or syntax!", 3);
             exit;
         }
         return;
@@ -520,62 +973,74 @@ function create_tts($text ='') {
     // Addon-Handler (weather, clock, pollen, ...)
     // ----------------------------------------------------------
     if(isset($_GET['weather'])) {
-        if(isset($_GET['lang']) and $_GET['lang'] == "nb-NO" or @$_GET['voice'] == "Liv") {
-            include_once("addon/weather-to-speech_no.php");
-        } else {
-            include_once("addon/weather-to-speech.php");
+        if (!s4lox_include_addon('weather-to-speech.php')) {
+            exit;
         }
         $textstring = substr(w2s(), 0, 500);
-        LOGGING("play_t2s.php: weather-to-speech plugin has been called", 7);
+        s4lox_play_t2s_log("Play_T2S.php: weather-to-speech addon has been called", 7);
 
     } elseif (isset($_GET['clock'])) {
-        include_once("addon/clock-to-speech.php");
+        if (!s4lox_include_addon('clock-to-speech.php')) {
+            exit;
+        }
         $textstring = c2s();
-        LOGGING("play_t2s.php: clock-to-speech plugin has been called", 7);
+        s4lox_play_t2s_log("Play_T2S.php: clock-to-speech addon has been called", 7);
 
     } elseif (isset($_GET['pollen'])) {
-        include_once("addon/pollen-to-speach.php");
+        if (!s4lox_include_addon('pollen-to-speach.php')) {
+            exit;
+        }
         $textstring = substr(p2s(), 0, 500);
-        LOGGING("play_t2s.php: pollen-to-speech plugin has been called", 7);
+        s4lox_play_t2s_log("Play_T2S.php: pollen-to-speech addon has been called", 7);
 
     } elseif (isset($_GET['warning'])) {
-        include_once("addon/weather-warning-to-speech.php");
+        if (!s4lox_include_addon('weather-warning-to-speech.php')) {
+            exit;
+        }
         $textstring = substr(ww2s(), 0, 500);
-        LOGGING("play_t2s.php: weather warning-to-speech plugin has been called", 7);
+        s4lox_play_t2s_log("Play_T2S.php: weather-warning-to-speech addon has been called", 7);
 
     } elseif (isset($_GET['distance'])) {
-        include_once("addon/time-to-destination-speech.php");
+        if (!s4lox_include_addon('time-to-destination-speech.php')) {
+            exit;
+        }
         $textstring = substr(tt2t(), 0, 500);
-        LOGGING("play_t2s.php: time-to-distance speech plugin has been called", 7);
+        s4lox_play_t2s_log("Play_T2S.php: time-to-destination-speech addon has been called", 7);
 
     } elseif (isset($_GET['abfall'])) {
-        include_once("addon/waste-calendar-to-speech.php");
+        if (!s4lox_include_addon('waste-calendar-to-speech.php')) {
+            exit;
+        }
         $textstring = substr(muellkalender(), 0, 500);
-        LOGGING("play_t2s.php: waste calendar-to-speech  plugin has been called", 7);
+        s4lox_play_t2s_log("Play_T2S.php: waste-calendar-to-speech addon has been called", 7);
 
     } elseif (isset($_GET['calendar'])) {
-        include_once("addon/waste-calendar-to-speech.php");
+        if (!s4lox_include_addon('calendar-to-speech.php')) {
+            exit;
+        }
         $textstring = substr(calendar(), 0, 500);
-        LOGGING("play_t2s.php: calendar-to-speech plugin has been called", 7);
+        s4lox_play_t2s_log("Play_T2S.php: calendar-to-speech addon has been called", 7);
 
     } elseif (isset($_GET['sonos'])) {
-        include_once("addon/sonos-to-speech.php");
+        if (!s4lox_include_addon('sonos-to-speech.php')) {
+            exit;
+        }
         $textstring = s2s();
         $rampsleep = false;
-        LOGGING("play_t2s.php: sonos-to-speech plugin has been called", 7);
+        s4lox_play_t2s_log("Play_T2S.php: sonos-to-speech addon has been called", 7);
 
     } elseif ((!isset($_GET['text'])) && isset($_GET['playbatch'])) {
         // Batch-Playback: es sollen nur vorhandene MP3s aus der Batchdatei gespielt werden
-        LOGGING("play_t2s.php: create_tts(): Skipping TTS generation for playbatch – using batch file only.", 7);
+        s4lox_play_t2s_log("Play_T2S.php: create_tts(): Skipping TTS generation for playbatch – using batch file only.", 7);
         return;
 
     } elseif ($text <> '') {
         if (empty($greet))  {
             $textstring = $text;
-            LOGGING("play_t2s.php: Textstring has been entered", 7);
+            s4lox_play_t2s_log("Play_T2S.php: Textstring has been entered", 7);
         } else {
             $textstring = $greet.". ".$text;
-            LOGGING("play_t2s.php: Greeting + Textstring has been entered", 7);
+            s4lox_play_t2s_log("Play_T2S.php: Greeting + Textstring has been entered", 7);
         }
     }
 
@@ -583,7 +1048,7 @@ function create_tts($text ='') {
     // Kein Text → Ende
     // ----------------------------------------------------------
     if (empty($textstring)) {
-        LOGGING("play_t2s.php: No T2S text available after input processing. Aborting.", 3);
+        s4lox_play_t2s_log("Play_T2S.php: No T2S text available after input processing. Aborting.", 3);
         return;
     }
 
@@ -601,7 +1066,7 @@ function create_tts($text ='') {
         $textstring,
         $filename,
         [], // keine Overrides
-        'play_t2s.php: create_tts()'
+        'Play_T2S.php: create_tts()'
     );
 
     $primary_engine_code = (int)($t2s_param['t2sengine'] ?? ($config['TTS']['t2s_engine'] ?? 0));
@@ -616,24 +1081,24 @@ function create_tts($text ='') {
     // ----------------------------------------------------------
     if (file_exists($mp3_file) && !$nocache) {
 
-        LOGGING("play_t2s.php: MP3 grabbed from cache: '$textstring' ", 6);
+        s4lox_play_t2s_log("Play_T2S.php: MP3 grabbed from cache: '$textstring' ", 6);
 
     } elseif (file_exists($wav_file) && !$nocache) {
 
-        LOGGING("play_t2s.php: WAV grabbed from cache: '$textstring' ", 6);
+        s4lox_play_t2s_log("Play_T2S.php: WAV grabbed from cache: '$textstring' ", 6);
 
     } else {
 
         // ======================================================
         // 1. Primäre TTS-Engine ausführen
         // ======================================================
-        LOGGING("play_t2s.php: Primary TTS engine '$primary_engine_name' will be used for '$textstring'.", 6);
+        s4lox_play_t2s_log("Play_T2S.php: Primary TTS engine '$primary_engine_name' will be used for '$textstring'.", 6);
 
         if (function_exists('t2s')) {
             // Für ALLE Engines (inkl. Piper) gilt: t2s($t2s_param)
             t2s($t2s_param);
         } else {
-            LOGERR("play_t2s.php: t2s() is not defined for engine '$primary_engine_name'. Did you include the correct voice_engines file?");
+            LOGERR("Play_T2S.php: t2s() is not defined for engine '$primary_engine_name'. Did you include the correct VoiceEngines file?");
         }
 
         // ======================================================
@@ -648,9 +1113,9 @@ function create_tts($text ='') {
                 $time       = date("His");
                 $failedname = $ttspath."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3";
                 rename($mp3_file, $failedname);
-                LOGERR("play_t2s.php: Primary TTS engine failed, bad file has been renamed to: ".$failedname);
+                LOGERR("Play_T2S.php: Primary TTS engine failed, bad file has been renamed to: ".$failedname);
             } else {
-                LOGERR("play_t2s.php: Primary TTS engine failed, no MP3 file has been created at all.");
+                LOGERR("Play_T2S.php: Primary TTS engine failed, no MP3 file has been created at all.");
             }
 
             // --------------------------------------------------
@@ -662,11 +1127,11 @@ function create_tts($text ='') {
 
             // Piper nur versuchen, wenn das Binary auch wirklich existiert
             if (is_executable($piperBinary)) {
-                LOGGING("play_t2s.php: Trying local Piper fallback engine (code 9012)...", 5);
+                s4lox_play_t2s_log("Play_T2S.php: Trying local Piper fallback engine (code 9012)...", 5);
                 if (file_exists($fallback_mp3)) {
-                    @unlink($fallback_mp3);
+                    s4lox_play_t2s_safe_unlink($fallback_mp3, 'Piper fallback MP3');
                 }
-                include_once("voice_engines/Piper.php");
+                include_once("VoiceEngines/Piper.php");
 
                 if (function_exists('t2s_piper')) {
                     t2s_piper($textstring, $fallback_filename);
@@ -678,30 +1143,32 @@ function create_tts($text ='') {
                 clearstatcache(false, $fallback_mp3);
 
                 if (file_exists($fallback_mp3) && filesize($fallback_mp3) > 0) {
-                    LOGOK("play_t2s.php: Piper fallback succeeded, using offline file '".$fallback_filename.".mp3'.");
+                    LOGOK("Play_T2S.php: Piper fallback succeeded, using offline file '".$fallback_filename.".mp3'.");
                     $filename = $fallback_filename;
                 } else {
-                    LOGERR("play_t2s.php: Piper fallback failed (no valid MP3). Using fallback file 't2s_not_available.mp3' if available.");
+                    LOGERR("Play_T2S.php: Piper fallback failed (no valid MP3). Using fallback file 't2s_not_available.mp3' if available.");
                     $filename = "t2s_not_available";
                     $src      = $config['SYSTEM']['mp3path']."/t2s_not_available.mp3";
                     $dst      = $ttspath."/t2s_not_available.mp3";
                     if (file_exists($src)) {
-                        @copy($src, $dst);
-                        LOGINF("play_t2s.php: Fallback file 't2s_not_available.mp3' has been copied to TTS path.");
+                        if (s4lox_play_t2s_safe_copy($src, $dst, "fallback file 't2s_not_available.mp3'")) {
+                            LOGINF("Play_T2S.php: Fallback file 't2s_not_available.mp3' has been copied to TTS path.");
+                        }
                     } else {
-                        LOGERR("play_t2s.php: Fallback file 't2s_not_available.mp3' not found. No audio will be played.");
+                        LOGERR("Play_T2S.php: Fallback file 't2s_not_available.mp3' not found. No audio will be played.");
                     }
                 }
             } else {
-                LOGWARN("play_t2s.php: Piper fallback skipped – binary '$piperBinary' not found or not executable. Using fallback file 't2s_not_available.mp3' if available.");
+                LOGWARN("Play_T2S.php: Piper fallback skipped – binary '$piperBinary' not found or not executable. Using fallback file 't2s_not_available.mp3' if available.");
                 $filename = "t2s_not_available";
                 $src      = $config['SYSTEM']['mp3path']."/t2s_not_available.mp3";
                 $dst      = $ttspath."/t2s_not_available.mp3";
                 if (file_exists($src)) {
-                    @copy($src, $dst);
-                    LOGINF("play_t2s.php: Fallback file 't2s_not_available.mp3' has been copied to TTS path.");
+                    if (s4lox_play_t2s_safe_copy($src, $dst, "fallback file 't2s_not_available.mp3'")) {
+                        LOGINF("Play_T2S.php: Fallback file 't2s_not_available.mp3' has been copied to TTS path.");
+                    }
                 } else {
-                    LOGERR("play_t2s.php: Fallback file 't2s_not_available.mp3' not found. No audio will be played.");
+                    LOGERR("Play_T2S.php: Fallback file 't2s_not_available.mp3' not found. No audio will be played.");
                 }
             }
         }
@@ -732,17 +1199,17 @@ function play_tts($filename) {
 		$sonos = new SonosAccess($coord[0]);
 		if (isset($_GET['messageid'])) {
 			// Set path if messageid
-			LOGGING("play_t2s.php: Path for messageid's been adopted", 7);
+			s4lox_play_t2s_log("Play_T2S.php: Path for messageid's been adopted", 7);
 			$messageid = $_GET['messageid'];
 		} else {
 			// Set path if T2S
-			LOGGING("play_t2s.php: Path for T2S been adopted", 7);	
+			s4lox_play_t2s_log("Play_T2S.php: Path for T2S been adopted", 7);	
 		}
 		#print_r($actual);
 		// if BEAM etc. is in Modus TV switch to Playlist 1st
 		if (substr($actual[$master]['PositionInfo']["TrackURI"], 0, 18) == "x-sonos-htastream:")  {  
 			$sonos->SetQueue("x-rincon-queue:".$coord[1]."#0");
-			LOGGING("play_t2s.php: TV was playing", 7);		
+			s4lox_play_t2s_log("Play_T2S.php: TV was playing", 7);		
 		}
 		// Playlist is playing
 		$save_plist = count($sonos->GetCurrentPlaylist());
@@ -752,9 +1219,9 @@ function play_tts($filename) {
 			// save temporally playlist
 			SavePlaylist();
 			$sonos->ClearQueue();
-			LOGGING("play_t2s.php: Queue has been cleared", 7);		
+			s4lox_play_t2s_log("Play_T2S.php: Queue has been cleared", 7);		
 			$message_pos = 1;
-			LOGGING("play_t2s.php: Playlist has more then 998 songs", 6);		
+			s4lox_play_t2s_log("Play_T2S.php: Playlist has more then 998 songs", 6);		
 		}
 		// if Playlist has more then 1 or less then 999 entries
 		if ($save_plist >= 1 && $save_plist <= 998) {
@@ -766,30 +1233,31 @@ function play_tts($filename) {
 			
 		// Playgong/jingle to be played upfront
 		if(isset($_GET['playgong'])) {
-			if ($_GET['playgong'] == 'no')	{
-				LOGGING("play_t2s.php: 'playgong=no' could not be used in syntax, only 'playgong=yes' or 'playgong=file' are allowed", 3);
+			$playgongValue = trim((string)($_GET['playgong'] ?? ''));
+			if (s4lox_play_t2s_is_invalid_disabled_playgong_request($playgongValue))	{
+				s4lox_play_t2s_log("Play_T2S.php: 'playgong=no' could not be used in syntax, only 'playgong=yes', 'playgong' or 'playgong=file' are allowed", 3);
 				exit;
 			}
 			if(empty($config['MP3']['file_gong'])) {
-				LOGGING("play_t2s.php: Standard file for jingle is missing in Plugin config. Please maintain before usage.", 3);
+				s4lox_play_t2s_log("Play_T2S.php: Standard file for jingle is missing in Plugin config. Please maintain before usage.", 3);
 				exit;	
 			}
-			if (($_GET['playgong'] != "yes") and ($_GET['playgong'] != "no") and ($_GET['playgong'] != " ")) {
-				$file = $_GET['playgong'];
+			if (!s4lox_play_t2s_is_standard_playgong_request($playgongValue)) {
+				$file = $playgongValue;
 				$file = $file.'.mp3';
 				$valid = mp3_files($file);
 				if ($valid === true) {
 					$jinglepath = $config['SYSTEM']['cifsinterface']."/mp3/".trim($file);
 					$sonos->AddToQueue($jinglepath);
-					LOGGING("play_t2s.php: Individual jingle '".trim($file)."' added to Queue", 7);	
+					s4lox_play_t2s_log("Play_T2S.php: Individual jingle '".trim($file)."' added to Queue", 7);	
 				} else {
-					LOGGING("play_t2s.php: Entered jingle '".$file."' for playgong is not valid or nothing has been entered. Please correct your syntax", 3);
+					s4lox_play_t2s_log("Play_T2S.php: Entered jingle '".$file."' for playgong is not valid or nothing has been entered. Please correct your syntax", 3);
 					exit;
 				}
 			} else {
 				$jinglepath = $config['SYSTEM']['cifsinterface']."/mp3/".trim($config['MP3']['file_gong']);
 				$sonos->AddToQueue($jinglepath);
-				LOGGING("play_t2s.php: Standard jingle '".trim($config['MP3']['file_gong'])."' added to Queue", 7);	
+				s4lox_play_t2s_log("Play_T2S.php: Standard jingle '".trim($config['MP3']['file_gong'])."' added to Queue", 7);	
 			}
 		}
 
@@ -805,7 +1273,7 @@ function play_tts($filename) {
 				$sonos->AddToQueue($t2s_value . ".mp3");
 			}
 
-			LOGGING("play_t2s.php: Messages from batch file '".$filenamebatch."' have been added to Queue", 7);
+			s4lox_play_t2s_log("Play_T2S.php: Messages from batch file '".$filenamebatch."' have been added to Queue", 7);
 
 		} else {
 			// if no batch has been created add single T2S
@@ -819,56 +1287,56 @@ function play_tts($filename) {
 						$time = date("His"); 
 						if (is_enabled($config['SYSTEM']['checkt2s']))  {
 							rename($config['SYSTEM']['ttspath']."/".$filename.".mp3", $config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");
-							LOGERR("play_t2s.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");	
-							LOGERR("play_t2s.php: Please check...");
-							LOGERR("play_t2s.php: ...your internet connection");	
-							LOGERR("play_t2s.php: ...your storage device");	
-							LOGERR("play_t2s.php: ...your T2S Engine settings");	
-							LOGERR("play_t2s.php: Please try your requested URL in a browser or change temporally the T2S provider.");	
-							LOGINF("play_t2s.php: If no success at all please add a thread in Loxone Forum");	
-							LOGOK("play_t2s.php: Exception message has been announced!");	
+							LOGERR("Play_T2S.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");	
+							LOGERR("Play_T2S.php: Please check...");
+							LOGERR("Play_T2S.php: ...your internet connection");	
+							LOGERR("Play_T2S.php: ...your storage device");	
+							LOGERR("Play_T2S.php: ...your T2S Engine settings");	
+							LOGERR("Play_T2S.php: Please try your requested URL in a browser or change temporally the T2S provider.");	
+							LOGINF("Play_T2S.php: If no success at all please add a thread in Loxone Forum");	
+							LOGOK("Play_T2S.php: Exception message has been announced!");	
 							$filename = "t2s_not_available";
-							copy($config['SYSTEM']['mp3path']."/t2s_not_available.mp3", $config['SYSTEM']['ttspath']."/t2s_not_available.mp3");
+							s4lox_play_t2s_safe_copy($config['SYSTEM']['mp3path']."/t2s_not_available.mp3", $config['SYSTEM']['ttspath']."/t2s_not_available.mp3", "TTS error fallback file 't2s_not_available.mp3'");
 						} else {
 							rename($config['SYSTEM']['ttspath']."/".$filename.".mp3", $config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");
-							LOGERR("play_t2s.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");	
-							LOGERR("play_t2s.php: Please check...");
-							LOGERR("play_t2s.php: ...your internet connection");	
-							LOGERR("play_t2s.php: ...your storage device");	
-							LOGERR("play_t2s.php: ...your T2S Engine settings");	
-							LOGERR("play_t2s.php: Please try your requested URL in a browser or change temporally the T2S provider.");	
-							LOGINF("play_t2s.php: If no success at all please add a thread in Loxone Forum");	
+							LOGERR("Play_T2S.php: Something went wrong :-( the message has not been saved. The bad file has been renamed to: ".$config['SYSTEM']['ttspath']."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3");	
+							LOGERR("Play_T2S.php: Please check...");
+							LOGERR("Play_T2S.php: ...your internet connection");	
+							LOGERR("Play_T2S.php: ...your storage device");	
+							LOGERR("Play_T2S.php: ...your T2S Engine settings");	
+							LOGERR("Play_T2S.php: Please try your requested URL in a browser or change temporally the T2S provider.");	
+							LOGINF("Play_T2S.php: If no success at all please add a thread in Loxone Forum");	
 							exit;
 						}						
 					}
 					$sonos->AddToQueue($config['SYSTEM']['cifsinterface']."/".$filename.".mp3");
-					LOGGING("play_t2s.php: T2S '".trim($filename).".mp3' has been added to Queue", 7);
+					s4lox_play_t2s_log("Play_T2S.php: T2S '".trim($filename).".mp3' has been added to Queue", 7);
 				} else {
 					$sonos->AddToQueue($config['SYSTEM']['cifsinterface']."/mp3/".$messageid.".mp3");
-					LOGGING("play_t2s.php: MP3 File '".trim($messageid).".mp3' has been added to Queue", 7);
+					s4lox_play_t2s_log("Play_T2S.php: MP3 File '".trim($messageid).".mp3' has been added to Queue", 7);
 					$filename = $messageid;
 				}
 			} else {
-				LOGGING("play_t2s.php: The file '".trim($filename).".mp3' does not exist or could not be played. Please check your directory or your T2S settings!", 3);
+				s4lox_play_t2s_log("Play_T2S.php: The file '".trim($filename).".mp3' does not exist or could not be played. Please check your directory or your T2S settings!", 3);
 				exit;
 			}
 		}
 		$sonos->SetQueue("x-rincon-queue:".trim($sonoszone[$master][1])."#0");
 		$sonos->SetPlayMode('0');
-		LOGGING("play_t2s.php: Playmode has been set to NORMAL", 7);		
+		s4lox_play_t2s_log("Play_T2S.php: Playmode has been set to NORMAL", 7);		
 		$sonos->SetTrack($message_pos);
-		LOGGING("play_t2s.php: Message has been set to Position '".$message_pos."' in current Queue", 7);		
+		s4lox_play_t2s_log("Play_T2S.php: Message has been set to Position '".$message_pos."' in current Queue", 7);		
 		$sonos->SetMute(false);
 		if(!isset($_GET['member']) && !isset($_GET['profile'])) {
 			$sonos->SetVolume($volume);
 		}
-		LOGGING("play_t2s.php: Mute for relevant Player(s) has been turned off", 7);		
+		s4lox_play_t2s_log("Play_T2S.php: Mute for relevant Player(s) has been turned off", 7);		
 		try {
 			$try_play = $sonos->Play();
-			LOGGING("play_t2s.php: T2S has been passed to Sonos Application", 5);	
-			LOGGING("play_t2s.php: In case the announcement wasn't played please check any Messages appearing in the Sonos App during processing the request.", 5);	
+			s4lox_play_t2s_log("Play_T2S.php: T2S has been passed to Sonos Application", 5);	
+			s4lox_play_t2s_log("Play_T2S.php: In case the announcement wasn't played please check any Messages appearing in the Sonos App during processing the request.", 5);	
 		} catch (Exception $e) {
-			LOGGING("play_t2s.php: The requested T2S message ".trim($messageid).".mp3 could not be played!", 3);
+			s4lox_play_t2s_log("Play_T2S.php: The requested T2S message ".trim($messageid).".mp3 could not be played!", 3);
 			$notification = array(
 				"PACKAGE"  => LBPPLUGINDIR,
 				"NAME"     => "Sonos",
@@ -882,7 +1350,24 @@ function play_tts($filename) {
 		$abort = false;
 		$sleeptimegong = "3";
 		sleep($sleeptimegong); // wait according to config
-		while ($sonos->GetTransportInfo() == 1) {
+		$transportWaitStart = microtime(true);
+		while (true) {
+			try {
+				$transportState = $sonos->GetTransportInfo();
+			} catch (Exception $e) {
+				s4lox_play_t2s_log("Play_T2S.php: GetTransportInfo() failed after queue TTS playback: " . $e->getMessage(), 4);
+				break;
+			}
+
+			if (!s4lox_play_t2s_transport_is_playing($transportState)) {
+				break;
+			}
+
+			if ((microtime(true) - $transportWaitStart) > 30) {
+				s4lox_play_t2s_log("Play_T2S.php: Wait timeout reached while queue TTS was still reported as playing – continuing cleanup.", 4);
+				break;
+			}
+
 			usleep(200000); // check every 200ms
 		}
 		// If batch T2S has been be played
@@ -894,31 +1379,31 @@ function play_tts($filename) {
 				$i++;
 			} 
 			unlink ($filenamebatch);
-			LOGGING("play_t2s.php: T2S batch files has been removed from Queue", 7);	
+			s4lox_play_t2s_log("Play_T2S.php: T2S batch files has been removed from Queue", 7);	
 		} else {
 			// If single T2S has been be played
 			$sonos->RemoveFromQueue($message_pos);
-			LOGGING("play_t2s.php: T2S has been removed from Queue", 7);	
+			s4lox_play_t2s_log("Play_T2S.php: T2S has been removed from Queue", 7);	
 			if(isset($_GET['playgong'])) {		
 				$sonos->RemoveFromQueue($message_pos);
-				LOGGING("play_t2s.php: Jingle has been removed from Queue", 7);	
+				s4lox_play_t2s_log("Play_T2S.php: Jingle has been removed from Queue", 7);	
 			}	
 		}	
 		
 		// if Playlist has more than 998 entries
 		if ($save_plist > 998) {
 			$sonos->ClearQueue();
-			LOGGING("play_t2s.php: Queue has been cleared", 7);		
+			s4lox_play_t2s_log("Play_T2S.php: Queue has been cleared", 7);		
 			LoadPlaylist("temp_t2s");
-			LOGGING("play_t2s.php: Temporary saved playlist 'temp_t2s' has been loaded back into Queue", 7);		
+			s4lox_play_t2s_log("Play_T2S.php: Temporary saved playlist 'temp_t2s' has been loaded back into Queue", 7);		
 			DelPlaylist();
-			LOGGING("play_t2s.php: Temporary playlist 'temp_t2s' has been finally deleted", 7);		
+			s4lox_play_t2s_log("Play_T2S.php: Temporary playlist 'temp_t2s' has been finally deleted", 7);		
 		}
 		
 		$time_end = microtime(true);
 		$t2s_time = $time_end - $time_start;
-		LOGGING("play_t2s.php: The requested T2S tooks ".round($t2s_time, 2)." seconds to be played.", 5);	
-		LOGGING("play_t2s.php: T2S play process has been successful finished", 6);
+		s4lox_play_t2s_log("Play_T2S.php: The requested T2S took ".round($t2s_time, 2)." seconds to be played.", 5);	
+		s4lox_play_t2s_log("Play_T2S.php: T2S play process has been successful finished", 6);
 		return $actual;
 }
 
@@ -933,10 +1418,10 @@ function play_tts($filename) {
 function sendmessage($errortext = "") {
 	global $text, $dist, $master, $messageid, $errortext, $logging, $textstring, $voice, $config, $actual, $zones, $volume, $source, $sonos, $coord, $time_start, $filename, $sonoszone, $sonoszonen, $tmp_batch, $mode, $MP3path, $tts_stat;
 			
-	presence_detection();
+	S4L_PresenceGuard::assertTtsAllowed();
 	if(isset($_GET['member'])) {
 		sendgroupmessage();
-		LOGGING("play_t2s.php: Member has been entered for a single Zone function, we switch to 'sendgroupmessage'. Please correct your syntax!", 4);
+		s4lox_play_t2s_log("Play_T2S.php: Member has been entered for a single Zone function, we switch to 'sendgroupmessage'. Please correct your syntax!", 4);
 	}	
 
 	$time_start = microtime(true);
@@ -953,8 +1438,8 @@ function sendmessage($errortext = "") {
 		}
 
 		if (zone_supports_audioclip($autoMaster)) {
-			LOGGING(
-				"play_t2s.php: Audioclip: Master '" . $autoMaster .
+			s4lox_play_t2s_log(
+				"Play_T2S.php: Audioclip: Master '" . $autoMaster .
 				"' supports Audio Clip – switching to AudioClip single mode (AUTO).",
 				6
 			);
@@ -971,7 +1456,7 @@ function sendmessage($errortext = "") {
 	// if batch has been choosed save filenames to a txt file and exit
 	if(isset($_GET['batch'])) {
 		if((isset($_GET['volume'])) or (isset($_GET['rampto'])) or (isset($_GET['playmode'])) or (isset($_GET['playgong']))) {
-			LOGGING("play_t2s.php: The parameter volume, rampto, playmode or playgong are not allowed to be used in conjunction with batch. Please remove from syntax!", 4);
+			s4lox_play_t2s_log("Play_T2S.php: The parameter volume, rampto, playmode or playgong are not allowed to be used in conjunction with batch. Please remove from syntax!", 4);
 			exit;
 		}
 		if (isset($_GET['messageid'])) {
@@ -980,22 +1465,25 @@ function sendmessage($errortext = "") {
 			create_tts();
 		}
 		// creates file to store T2S filenames
-		@mkdir(dirname(T2S_BATCHFILE), 0775, true);
+		if (!s4lox_play_t2s_safe_mkdir(dirname(T2S_BATCHFILE), 0775, 'T2S batch directory')) {
+			s4lox_play_t2s_log("Play_T2S.php: There is no T2S batch directory to be written!", 3);
+			exit();
+		}
 		$filenamebatch = T2S_BATCHFILE;
 		$file = fopen($filenamebatch, "a+");
 
 		if($file == false ) {
-			LOGGING("play_t2s.php: There is no T2S batch file to be written!", 3);
+			s4lox_play_t2s_log("Play_T2S.php: There is no T2S batch file to be written!", 3);
 			exit();
 		}
 		if (strlen($filename) == '32') {
 			fwrite($file, $config['SYSTEM']['cifsinterface']."/".$filename."\r\n");
-			LOGGING("play_t2s.php: T2S '".$filename.".mp3' has been added to batch", 7);
-			LOGGING("play_t2s.php: Please ensure to call later '...action=playbatch', otherwise the messages could be played uncontrolled", 5);					
+			s4lox_play_t2s_log("Play_T2S.php: T2S '".$filename.".mp3' has been added to batch", 7);
+			s4lox_play_t2s_log("Play_T2S.php: Please ensure to call later '...action=playbatch', otherwise the messages could be played uncontrolled", 5);					
 		} else {
 			fwrite($file, $config['SYSTEM']['cifsinterface']."/".$MP3path."/".$messageid."\r\n");
-			LOGGING("play_t2s.php: Messageid '".$messageid."' has been added to batch", 7);
-			LOGGING("play_t2s.php: Please ensure to call later '...action=playbatch', otherwise the messages could be played uncontrolled", 5);										
+			s4lox_play_t2s_log("Play_T2S.php: Messageid '".$messageid."' has been added to batch", 7);
+			s4lox_play_t2s_log("Play_T2S.php: Please ensure to call later '...action=playbatch', otherwise the messages could be played uncontrolled", 5);										
 		}
 		fclose($file);
 		exit;
@@ -1008,7 +1496,7 @@ function sendmessage($errortext = "") {
 	$save = saveZonesStatus(); // saves all Zones Status
 	if($return == 'member') {
 		if(isset($_GET['sonos'])) { // check if Zone is Group Member, then abort
-			LOGGING("play_t2s.php: The specified zone is part of a group! There are no information available.", 4);
+			s4lox_play_t2s_log("Play_T2S.php: The specified zone is part of a group! There are no information available.", 4);
 			exit;
 		}
 	}
@@ -1018,12 +1506,12 @@ function sendmessage($errortext = "") {
 	$test = $sonos->GetPositionInfo();
 	if ($return == 'member') {
 		$sonos->BecomeCoordinatorOfStandaloneGroup();  // in case Member then remove Zone from Group
-		LOGGING("play_t2s.php: Zone '$master' has been removed from group", 6);		
+		s4lox_play_t2s_log("Play_T2S.php: Zone '$master' has been removed from group", 6);		
 	}
 			
 	if (substr($test['TrackURI'], 0, 18) == "x-sonos-htastream:") {
 		$sonos->SetQueue("x-rincon-queue:". $sonoszone[$master][1] ."#0");
-		LOGGING("play_t2s.php: Streaming/TV end successful", 7);		
+		s4lox_play_t2s_log("Play_T2S.php: Streaming/TV end successful", 7);		
 	}
 	if (!isset($_GET['sonos']))  {
 		$sonos->Stop();
@@ -1061,9 +1549,9 @@ function sendAudioSingleClip($errortext = "") {
 
 	// determine if Player supports AUDIO_CLIP function
 	if (isset($zones[11]) && is_enabled($zones[11]) && $zones[9] <> "1") {
-		LOGDEB("play_t2s.php: Audioclip: Player '". $master ."' does support Audio Clip.");
+		LOGDEB("Play_T2S.php: Audioclip: Player '". $master ."' does support Audio Clip.");
 	} else {
-		LOGERR("play_t2s.php: Audioclip: Player '". $master ."' does not support Audio Clip! Please remove player from URL (zone=". $master ."&action= ....) or from Sound Profile");
+		LOGERR("Play_T2S.php: Audioclip: Player '". $master ."' does not support Audio Clip! Please remove player from URL (zone=". $master ."&action= ....) or from Sound Profile");
 		exit;
 	}
 	create_tts($errortext);
@@ -1084,7 +1572,7 @@ function sendAudioMultiClip($errortext = "") {
 	
 	global $config, $volume, $master, $filename, $messageid, $sonoszone, $sonos, $time_start, $zones, $playstat, $roomcord, $profile_details, $zones_all;
 	
-	LOGDEB("play_t2s.php: Audioclip: Notification for Player has been called.");
+	LOGDEB("Play_T2S.php: Audioclip: Notification for Player has been called.");
 	
 	$zones     = array();
 	$tmp_zones = array();
@@ -1094,11 +1582,11 @@ function sendAudioMultiClip($errortext = "") {
 
 		$zones = getProfileZonesForAudioclip();
 		if (empty($zones)) {
-			LOGWARN("play_t2s.php: Audioclip: No players resolved from Sound Profile '".$_GET['profile']."'. Falling back to legacy group path.");
+			LOGWARN("Play_T2S.php: Audioclip: No players resolved from Sound Profile '".$_GET['profile']."'. Falling back to legacy group path.");
 			return; // sendgroupmessage() fällt dann in den klassischen Pfad zurück
 		}
 		$r = implode(',', $zones);
-		LOGGING("play_t2s.php: Audioclip: Players ".$r." for audioclip retrieved from Profile (AUTO).", 7);
+		s4lox_play_t2s_log("Play_T2S.php: Audioclip: Players ".$r." for audioclip retrieved from Profile (AUTO).", 7);
 
 	// === Bestehende Logik: member=... ===
 	} elseif (isset($_GET['member']) and !isset($_GET['paused'])) {
@@ -1107,14 +1595,14 @@ function sendAudioMultiClip($errortext = "") {
 		$zones = array_merge($zones, audioclip_handle_members($zones_all));
 		$zones = array_keys($zones);
 		$r = implode(',', $zones);
-		LOGGING("play_t2s.php: Audioclip: Players ".$r." for audioclip retrieved from URL", 7);
+		s4lox_play_t2s_log("Play_T2S.php: Audioclip: Players ".$r." for audioclip retrieved from URL", 7);
 
 	// === Bestehende Logik: profile=... + clip (alte Multi-Clip-Profile) ===
 	} elseif (isset($_GET['profile']) and !isset($_GET['paused']))   {
 
 		$zones = createArrayFromGroupProfile();	
 		$r = implode(',', $zones);
-		LOGGING("play_t2s.php: Audioclip: Players ".$r." for audioclip retrieved from Profile", 7);
+		s4lox_play_t2s_log("Play_T2S.php: Audioclip: Players ".$r." for audioclip retrieved from Profile", 7);
 
 	// === Bestehende Logik: paused=1 ===
 	} 
@@ -1122,16 +1610,16 @@ function sendAudioMultiClip($errortext = "") {
 		$zones = IdentPausedPlayers();
 		$zones = array_keys($zones);
 		$r = implode(',', $zones);
-		LOGGING("play_t2s.php: Audioclip: Players ".$r." for audioclip retrieved from currently not streaming player", 7);
+		s4lox_play_t2s_log("Play_T2S.php: Audioclip: Players ".$r." for audioclip retrieved from currently not streaming player", 7);
 	}
 
 	// Fähigkeiten prüfen + S1 rausfiltern (wie gehabt)
 	foreach ($zones as $key)   {
 		if(isset($sonoszone[$key][11]) && is_enabled($sonoszone[$key][11]) && $sonoszone[$key][9] <> "1") {
-			LOGDEB("play_t2s.php: Audioclip: Player '". $key ."' does support Audio Clip");
+			LOGDEB("Play_T2S.php: Audioclip: Player '". $key ."' does support Audio Clip");
 			array_push($tmp_zones, $key);
 		} else {
-			LOGWARN("play_t2s.php: Audioclip: Player '". $key ."' does not support Audio Clip. The Player has been removed by plugin!");
+			LOGWARN("Play_T2S.php: Audioclip: Player '". $key ."' does not support Audio Clip. The Player has been removed by plugin!");
 		}
 	}
 	$zones = $tmp_zones;
@@ -1155,7 +1643,7 @@ function doorbell() {
 	global $config, $master, $sonos, $sonoszone, $zone_volumes, $time_start, $masterzone;
 
 	if(isset($_GET['playgong'])) {
-		LOGERR("play_t2s.php: Audioclip: playgong could not be used im combination with function 'doorbell'");
+		LOGERR("Play_T2S.php: Audioclip: playgong could not be used in combination with function 'doorbell'");
 		exit;
 	}
 
@@ -1168,11 +1656,11 @@ function doorbell() {
 		$zonesdoor = array_merge($zonesdoor, audioclip_handle_members($zones_all));
 		$zones = array_keys($zonesdoor);
 		$r = implode(',', $zones);
-		LOGGING("play_t2s.php: Audioclip: Players for doorbell ".$r." retrieved from URL", 7);
+		s4lox_play_t2s_log("Play_T2S.php: Audioclip: Players for doorbell ".$r." retrieved from URL", 7);
 	} elseif (isset($_GET['profile']) and !isset($_GET['paused']))   {
 		$zones = createArrayFromGroupProfile();	
 		$r = implode(',', $zones);
-		LOGGING("play_t2s.php: Audioclip: Players for doorbell ".$r." retrieved from Profile", 7);
+		s4lox_play_t2s_log("Play_T2S.php: Audioclip: Players for doorbell ".$r." retrieved from Profile", 7);
 	} else {
 		$zones[0] = MASTER;
 	}
@@ -1180,7 +1668,7 @@ function doorbell() {
 		$zones = IdentPausedPlayers();
 		$zones = array_keys($zones);
 		$r = implode(',', $zones);
-		LOGGING("play_t2s.php: Audioclip: Players for doorbell ".$r." retrieved from currently not streaming player", 7);
+		s4lox_play_t2s_log("Play_T2S.php: Audioclip: Players for doorbell ".$r." retrieved from currently not streaming player", 7);
 	}
 	
 	$tmp_zones = array();
@@ -1188,9 +1676,9 @@ function doorbell() {
 		// determine if Player is fully supported/partial supported  for AUDIO_CLIP
 		if(isset($sonoszone[$key][11]) && is_enabled($sonoszone[$key][11]) && $sonoszone[$key][9] <> "1")    {
 			array_push($tmp_zones, $key);
-			LOGDEB("play_t2s.php: Audioclip: Player '$key' does support Audio Clip (Doorbell)");
+			LOGDEB("Play_T2S.php: Audioclip: Player '$key' does support Audio Clip (Doorbell)");
 		} else {
-			LOGWARN("play_t2s.php: Audioclip: Player '". $key ."' does not support Audio Clip. The Player has been removed by plugin!");
+			LOGWARN("Play_T2S.php: Audioclip: Player '". $key ."' does not support Audio Clip. The Player has been removed by plugin!");
 		}
 	}
 	$zones = $tmp_zones;
@@ -1201,24 +1689,31 @@ function doorbell() {
 		$valid = mp3_files($file);
 		if ($valid === true) {
 			$jinglepath = $config['SYSTEM']['cifsinterface']."/mp3/".trim($file);
-			LOGGING("play_t2s.php: Audioclip: Doorbell '".trim($file)."' with Priority HIGH has been announced", 7);	
+			s4lox_play_t2s_log("Play_T2S.php: Audioclip: Doorbell '".trim($file)."' with Priority HIGH has been announced", 7);	
 			audioclip_multi_post_request($zones, "CUSTOM", $prio, $jinglepath);
 		} else {
 			if ($_GET['file'] == "chime")   {
-				LOGGING("play_t2s.php: Audioclip: Sonos build-in Doorbell CHIME with Priority HIGH has been announced", 7);	
+				s4lox_play_t2s_log("Play_T2S.php: Audioclip: Sonos build-in Doorbell CHIME with Priority HIGH has been announced", 7);	
 				audioclip_multi_post_request($zones, "CHIME", $prio);
 			} else {
-				LOGGING("play_t2s.php: Audioclip: Entered file '".$file."' for doorbell is not valid or nothing has been entered. Please correct your syntax", 3);
+				s4lox_play_t2s_log("Play_T2S.php: Audioclip: Entered file '".$file."' for doorbell is not valid or nothing has been entered. Please correct your syntax", 3);
 				exit;
 			}
 		}
 		sleep(3);
-		foreach ($zone_volumes as $key => $value)   {
-			$sonos = new SonosAccess($sonoszone[$key][0]);
-			$sonos->SetVolume($value);
+		if (isset($zone_volumes) && is_array($zone_volumes)) {
+			foreach ($zone_volumes as $key => $value)   {
+				if (!isset($sonoszone[$key][0])) {
+					continue;
+				}
+				$sonos = new SonosAccess($sonoszone[$key][0]);
+				$sonos->SetVolume($value);
+			}
+		} else {
+			s4lox_play_t2s_log("Play_T2S.php: Audioclip: Doorbell volume restore skipped because no previous zone volumes were captured.", 7);
 		}
 	} else {
-		LOGGING("play_t2s.php: Audioclip: File for Doorbell is missing! Use even ...action=doorbell&file=chime or ...action=doorbell&file=<MP3 File from tts/mp3 Folder>", 3);
+		s4lox_play_t2s_log("Play_T2S.php: Audioclip: File for Doorbell is missing! Use even ...action=doorbell&file=chime or ...action=doorbell&file=<MP3 File from tts/mp3 Folder>", 3);
 		exit;		
 	}
 	proccessing_time();
@@ -1239,16 +1734,17 @@ function handle_playgong($zones, $source) {
 		
 	if(isset($_GET['playgong'])) {
 			
-		if ($_GET['playgong'] == 'no')	{
-			LOGGING("play_t2s.php: Audioclip: 'playgong=no' could not be used in syntax, only 'playgong=yes' or 'playgong=<file>' are allowed", 3);
+		$playgongValue = trim((string)($_GET['playgong'] ?? ''));
+		if (s4lox_play_t2s_is_invalid_disabled_playgong_request($playgongValue))	{
+			s4lox_play_t2s_log("Play_T2S.php: Audioclip: 'playgong=no' could not be used in syntax, only 'playgong=yes', 'playgong' or 'playgong=<file>' are allowed", 3);
 			exit;
 		}
 		if(empty($config['MP3']['file_gong'])) {
-			LOGGING("play_t2s.php: Audioclip: Standard file for jingle is missing in Plugin config. Please maintain before usage.", 3);
+			s4lox_play_t2s_log("Play_T2S.php: Audioclip: Standard file for jingle is missing in Plugin config. Please maintain before usage.", 3);
 			exit;	
 		}
-		if (($_GET['playgong'] != "yes") and ($_GET['playgong'] != "no") and ($_GET['playgong'] != " ")) {
-			$file = $_GET['playgong'];
+		if (!s4lox_play_t2s_is_standard_playgong_request($playgongValue)) {
+			$file = $playgongValue;
 			$file = $file.'.mp3';
 			$valid = mp3_files($file);
 			if ($valid === true) {
@@ -1256,8 +1752,8 @@ function handle_playgong($zones, $source) {
 				$name = str_replace(" ", '%20', $file);
 				$jinglepath = $config['SYSTEM']['cifsinterface']."/mp3/".trim($file);
 				// check upfront if file is accessable
-				if (@file_get_contents($config['SYSTEM']['httpinterface']."/mp3/".$name) === false)    {
-					LOGGING("play_t2s.php: Audioclip: The provided playgong file could not be played due to unsupported characters or whitespaces in filename!! Please change filename accordingly", 3);	
+				if (s4lox_play_t2s_safe_file_get_contents($config['SYSTEM']['httpinterface']."/mp3/".$name, 'individual playgong file', false) === false)    {
+					s4lox_play_t2s_log("Play_T2S.php: Audioclip: The provided playgong file could not be played due to unsupported characters or whitespaces in filename!! Please change filename accordingly", 3);	
 					exit;
 				}
 				$duration = round(\falahati\PHPMP3\MpegAudio::fromFile($config['SYSTEM']['httpinterface']."/mp3/".$name)->getTotalDuration());
@@ -1266,16 +1762,16 @@ function handle_playgong($zones, $source) {
 				} else {
 					audioclip_post_request($zones[0], $zones[1], "CUSTOM", $prio, $jinglepath);
 				}
-				LOGGING("play_t2s.php: Audioclip: Individual jingle '".trim($file)."' has been played as Playgong", 7);	
+				s4lox_play_t2s_log("Play_T2S.php: Audioclip: Individual jingle '".trim($file)."' has been played as Playgong", 7);	
 			} else {
-				LOGGING("play_t2s.php: Audioclip: Entered jingle '".$file."' for playgong is not valid or nothing has been entered. Please correct your syntax", 3);
+				s4lox_play_t2s_log("Play_T2S.php: Audioclip: Entered jingle '".$file."' for playgong is not valid or nothing has been entered. Please correct your syntax", 3);
 				exit;
 			}
 		} else {
 			$jinglepath = $config['SYSTEM']['cifsinterface']."/mp3/".trim($config['MP3']['file_gong']);
 			$name = str_replace(" ", '%20', $config['MP3']['file_gong']);
-			if (@file_get_contents($config['SYSTEM']['httpinterface']."/mp3/".$name) === false)    {
-				LOGGING("play_t2s.php: Audioclip: The standard playgong file could not be played due to unsupported characters or whitespaces in filename!! Please change filename accordingly", 3);	
+			if (s4lox_play_t2s_safe_file_get_contents($config['SYSTEM']['httpinterface']."/mp3/".$name, 'standard playgong file', false) === false)    {
+				s4lox_play_t2s_log("Play_T2S.php: Audioclip: The standard playgong file could not be played due to unsupported characters or whitespaces in filename!! Please change filename accordingly", 3);	
 				exit;
 			}
 			$duration = round(\falahati\PHPMP3\MpegAudio::fromFile($config['SYSTEM']['httpinterface']."/mp3/".$name)->getTotalDuration());
@@ -1284,7 +1780,7 @@ function handle_playgong($zones, $source) {
 			} else {
 				audioclip_post_request($zones[0], $zones[1], "CUSTOM", $prio, $jinglepath);
 			}
-			LOGGING("play_t2s.php: Audioclip: Standard file '".trim($config['MP3']['file_gong'])."' has been played as Playgong", 7);	
+			s4lox_play_t2s_log("Play_T2S.php: Audioclip: Standard file '".trim($config['MP3']['file_gong'])."' has been played as Playgong", 7);	
 		}
 		sleep($duration);
 	}
@@ -1306,7 +1802,7 @@ function handle_message($zones, $source)
     if (isset($_GET['messageid'])) {
         $messageid = $_GET['messageid'];
 
-        $mp3 = "/opt/loxberry/data/plugins/sonos4lox/tts/mp3/{$messageid}.mp3";
+        $mp3 = "REPLACELBHOMEDIR/data/plugins/sonos4lox/tts/mp3/{$messageid}.mp3";
         $duration = get_mp3_duration($mp3);
 		#wait_for_global_audio_lock($duration);
 
@@ -1329,10 +1825,10 @@ function handle_message($zones, $source)
 		usleep($duration);
 		$tts_stat = 0;
 		send_tts_source($tts_stat);
-        LOGGING("play_t2s.php: Audioclip messageid played", 7);
+        s4lox_play_t2s_log("Play_T2S.php: Audioclip messageid played", 7);
 
     } else {
-        $mp3 = "/opt/loxberry/data/plugins/sonos4lox/tts/{$filename}.mp3";
+        $mp3 = "REPLACELBHOMEDIR/data/plugins/sonos4lox/tts/{$filename}.mp3";
         $duration = get_mp3_duration($mp3);
 		#wait_for_global_audio_lock($duration);
 
@@ -1359,7 +1855,7 @@ function handle_message($zones, $source)
 		usleep($duration);
 		$tts_stat = 0;
 		send_tts_source($tts_stat);
-        LOGDEB("play_t2s.php: TTS '{$filename}' played");
+        LOGDEB("Play_T2S.php: TTS '{$filename}' played");
 		
     }
 	
@@ -1384,7 +1880,7 @@ function audioclip_can_handle_group()
 
     // Batch- und Playbatch-Aufrufe NICHT per AudioClip abwickeln
     if (isset($_GET['batch']) || isset($_GET['playbatch'])) {
-        LOGDEB("play_t2s.php: Audioclip: batch/playbatch detected – falling back to classic T2S queue path.");
+        LOGDEB("Play_T2S.php: Audioclip: batch/playbatch detected – falling back to classic T2S queue path.");
         return array(false, array());
     }
 
@@ -1446,11 +1942,11 @@ function audioclip_can_handle_group()
     // Fähigkeiten prüfen: jeder Player muss AudioClip können
     foreach ($zones as $z) {
 		if (!isset($sonoszone[$z])) {
-			LOGGING("play_t2s.php: Zone '$z' is currently not available. Maybe '$z' ist offline or Time restrictions are valid", 4);
+			s4lox_play_t2s_log("Play_T2S.php: Zone '$z' is currently not available. Maybe '$z' ist offline or Time restrictions are valid", 4);
 			continue; // ← nicht return false, sondern überspringen
 		}
 		if (!zone_supports_audioclip($z)) {
-			LOGINF("play_t2s.php: Audioclip: Zone '$z' kein AudioClip → classic T2S path.");
+			LOGINF("Play_T2S.php: Audioclip: Zone '$z' kein AudioClip → classic T2S path.");
 			return array(false, $zones);
 		}
 	}
@@ -1465,11 +1961,11 @@ function sendgroupmessage() {
         
 	global $coord, $sonos, $text, $folfilePlOn, $sonoszone, $sonoszonen, $errortext, $member, $master, $zone, $messageid, $logging, $textstring, $voice, $config, $mute, $volume, $membermaster, $getgroup, $checkgroup, $time_start, $mode, $modeback, $actual, $errortext;
             
-	presence_detection();
+	S4L_PresenceGuard::assertTtsAllowed();
 	$time_start = microtime(true);
             
 	if(isset($_GET['batch'])) {
-		LOGGING("play_t2s.php: The parameter batch is not allowed to be used in groups. Please use single message to prepare your batch!", 4);
+		s4lox_play_t2s_log("Play_T2S.php: The parameter batch is not allowed to be used in groups. Please use single message to prepare your batch!", 4);
 		exit;
 	}
 
@@ -1477,19 +1973,19 @@ function sendgroupmessage() {
 	if(isset($_GET['volume']) or isset($_GET['groupvolume']))  { 
 		isset($_GET['volume']) ? $groupvolume = $_GET['volume'] : $groupvolume = $_GET['groupvolume'];
 		if ((!is_numeric($groupvolume)) or ($groupvolume < 0) or ($groupvolume > 200)) {
-			LOGGING("play_t2s.php: The entered volume of ".$groupvolume." must be even numeric or between 0 and 200! Please correct", 4);	
+			s4lox_play_t2s_log("Play_T2S.php: The entered volume of ".$groupvolume." must be even numeric or between 0 and 200! Please correct", 4);	
 		} else {
 			$volume = $groupvolume;
 		}
 	}
 
 	if(isset($_GET['sonos'])) {
-		LOGGING("play_t2s.php: The parameter 'sonos' couldn't be used for group T2S!", 4);
+		s4lox_play_t2s_log("Play_T2S.php: The parameter 'sonos' couldn't be used for group T2S!", 4);
 		exit;
 	}
 
 	if($sonoszone[$master][9] == "1") {
-		LOGERR("play_t2s.php: Player '". $master ."' is an Generation S1 player and can't be Master of a group! Please remove player from URL (zone=". $master ."&action= ....) or from Sound Profile marked as Master!");
+		LOGERR("Play_T2S.php: Player '". $master ."' is an Generation S1 player and can't be Master of a group! Please remove player from URL (zone=". $master ."&action= ....) or from Sound Profile marked as Master!");
 		exit;
 	}
 
@@ -1501,9 +1997,9 @@ function sendgroupmessage() {
 	if ($canClip) {
 		if (!empty($zonesClip)) {
 			$targets = implode(',', $zonesClip);
-			LOGINF("play_t2s.php: Audioclip: All target players (".$targets.") support Audio Clip – switching to AudioClip group mode (AUTO).");
+			LOGINF("Play_T2S.php: Audioclip: All target players (".$targets.") support Audio Clip – switching to AudioClip group mode (AUTO).");
 		} else {
-			LOGINF("play_t2s.php: Audioclip: All target players support Audio Clip – switching to AudioClip group mode (AUTO).");
+			LOGINF("Play_T2S.php: Audioclip: All target players support Audio Clip – switching to AudioClip group mode (AUTO).");
 		}
 
 		sendAudioMultiClip($errortext);
@@ -1544,9 +2040,9 @@ function sendgroupmessage() {
 	try {
 		$sonos = new SonosAccess($sonoszone[$master][0]);
 		$sonos->BecomeCoordinatorOfStandaloneGroup();
-		LOGINF("play_t2s.php: Player '".$master."' has been removed from existing Group (standalone for Group T2S).");
+		LOGINF("Play_T2S.php: Player '".$master."' has been removed from existing Group (standalone for Group T2S).");
 	} catch (Exception $e) {
-		LOGWARN("play_t2s.php: Could not prepare master '".$master."' as standalone group. Reason: ".$e->getMessage());
+		LOGWARN("Play_T2S.php: Could not prepare master '".$master."' as standalone group. Reason: ".$e->getMessage());
 	}
 
 	// ----------------------------------------------------------------------
@@ -1561,7 +2057,7 @@ function sendgroupmessage() {
 			$file = $folfilePlOn . $zone . ".txt";
 			if (is_file($file)) {
 				if (!isset($sonoszone[$zone])) { // ← NEU
-					LOGGING("play_t2s.php: Zone '$master' is currently not available. Maybe '$master' ist offline or Time restrictions are valid", 5);
+					s4lox_play_t2s_log("Play_T2S.php: Zone '$master' is currently not available. Maybe '$master' ist offline or Time restrictions are valid", 5);
 					continue;
 				}
 
@@ -1574,20 +2070,20 @@ function sendgroupmessage() {
 
 						if ($zmState == "master" || $zmState == "member") {
 							$zSonos->BecomeCoordinatorOfStandaloneGroup();
-							LOGINF("play_t2s.php: Player '".$zone."' has been removed from existing Group before grouping to master '".$master."'.");
+							LOGINF("Play_T2S.php: Player '".$zone."' has been removed from existing Group before grouping to master '".$master."'.");
 						}
 
 						// Jetzt erst an neuen Master anhängen
 						$zSonos->SetAVTransportURI("x-rincon:" . $masterrincon);
-						LOGGING("play_t2s.php: Member '$zone' is now connected to Master Zone '$master'", 6);
+						s4lox_play_t2s_log("Play_T2S.php: Member '$zone' is now connected to Master Zone '$master'", 6);
 						$zSonos->SetMute(false);
 
 					} catch (Exception $e) {
-						LOGWARN("play_t2s.php: Member '$zone' could not be added to Master $master. Reason: ".$e->getMessage());
+						LOGWARN("Play_T2S.php: Member '$zone' could not be added to Master $master. Reason: ".$e->getMessage());
 					}
 				}
 			} else {
-				LOGDEB("play_t2s.php: Player status file '$file' NOT found for zone '$zone' – skipping grouping.");
+				LOGDEB("Play_T2S.php: Player status file '$file' NOT found for zone '$zone' – skipping grouping.");
 			}
 		}
 
@@ -1621,9 +2117,9 @@ function sendgroupmessage() {
 	play_tts($messageid);
 
 	// Ursprungszustände wiederherstellen
-	LOGGING("play_t2s.php: *** Restore previous settings will be called ***", 6);	
+	s4lox_play_t2s_log("Play_T2S.php: *** Restore previous settings will be called ***", 6);	
 	restoreGroupZone();		
-	LOGGING("play_t2s.php: *** Text-to-speech successful processed ***", 6);	
+	s4lox_play_t2s_log("Play_T2S.php: *** Text-to-speech successful processed ***", 6);	
 	proccessing_time();
 }
 
@@ -1640,7 +2136,7 @@ function t2s_playbatch() {
     $filenamebatch = "/dev/shm/".LBPPLUGINDIR."/t2s_batch.txt";
 
     if (!file_exists($filenamebatch)) {
-        LOGGING("play_t2s.php: There is no T2S batch file to be played! (".$filenamebatch.")", 4);
+        s4lox_play_t2s_log("Play_T2S.php: There is no T2S batch file to be played! (".$filenamebatch.")", 4);
         exit();
     }
 
@@ -1654,7 +2150,7 @@ if (!function_exists('create_t2s_param')) {
     /**
      * create_t2s_param
      *
-     * Zentraler Builder für das TTS-Parameter-Array, wie bisher in play_t2s.php.
+     * Zentraler Builder für das TTS-Parameter-Array, wie bisher in Play_T2S.php.
      *
      * Priorität (pro Feld):
      *   1. $override[...] (explizit vom Aufrufer)
@@ -1672,7 +2168,7 @@ if (!function_exists('create_t2s_param')) {
      *                              - 'secretkey' : string
      *                              - 'region'    : string
      *                              - 'ignore_get': bool (default false → GET darf überschreiben)
-     * @param string $log_context  Kontext-String für LOGGING (z.B. "play_t2s.php: create_tts()")
+     * @param string $log_context  Kontext-String für s4lox_play_t2s_log(z.B. "Play_T2S.php: create_tts()")
      *
      * @return array $t2s_param
      */
@@ -1680,7 +2176,7 @@ if (!function_exists('create_t2s_param')) {
         string $textstring,
         string $filename,
         array $override = [],
-        string $log_context = 'T2S Helper'
+        string $log_context = 'Play_T2S.php'
     ): array {
         global $config;
 
@@ -1789,10 +2285,12 @@ if (!function_exists('create_t2s_param')) {
         }
 
         // ----------------------------------------------------------
-        // Debug-Log (konfigurierbarer Kontext)
+        // Debug log
+        // Keep the primary prefix stable so log-based tests can verify
+        // that the old "T2S Helper" context is gone.
         // ----------------------------------------------------------
-        LOGGING(
-            $log_context . ": Effective TTS params: engine=" . $primary_engine_code .
+        s4lox_play_t2s_log(
+            "Play_T2S.php: Effective TTS params: engine=" . $primary_engine_code .
             ", lang=" . $language . ", voice=" . $voice,
             7
         );
@@ -1827,15 +2325,15 @@ function send_tts_source($tts_stat)  {
 	
 	global $config, $tmp_tts, $sonoszone, $time_start, $sonoszonen, $master, $ms, $lbphtmldir;
 	
-	require_once "$lbphtmldir/system/io-modul.php";
-	require_once "$lbphtmldir/bin/phpmqtt/phpMQTT.php";
-	require_once "$lbphtmldir/bin/communication_ms.php";
+	require_once $lbphtmldir . "/src/Core/Communication/io-modul.php";
+	require_once $lbphtmldir . "/src/Core/Mqtt/phpMQTT.php";
+	require_once "$lbphtmldir/src/Core/CommunicationMS.php";
 
 	$tmp_tts = "/run/shm/s4lox_tmp_tts";
 	#var_dump($tts_stat);
 	if ($tts_stat == 1)  {
 		if(!touch($tmp_tts)) {
-			LOGGING("play_t2s.php: No permission to write file", 3);
+			s4lox_play_t2s_log("Play_T2S.php: No permission to write file", 3);
 			return;
 		}
 		$handle = fopen ($tmp_tts, 'w');
@@ -1862,7 +2360,7 @@ function send_tts_source($tts_stat)  {
 	
 	// check if MS is fully configured
 	if (!isset($ms[$config['LOXONE']['Loxone']])) {
-		LOGERR ("play_t2s.php: Your selected Miniserver from Sonos4lox Plugin config seems not to be fully configured. Please check your LoxBerry Miniserver config!") ;
+		LOGERR ("Play_T2S.php: Your selected Miniserver from Sonos4lox Plugin config seems not to be fully configured. Please check your LoxBerry Miniserver config!") ;
 		return;
 	}
 	
@@ -1889,14 +2387,14 @@ function send_tts_source($tts_stat)  {
 				$err  = $mqtt->publish('Sonos4lox/t2s/'.$value, $data['t2s_'.$value], 0, 1);
 				$err1 = $mqtt->publish('s4lox/t2s/'.$value, $data['t2s_'.$value], 0, 1);
 			} else {			
-				$handle = @get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/t2s_$value/$tts_stat");
+				$handle = s4lox_play_t2s_safe_get_file_content("http://$loxuser:$loxpassword@$loxip/dev/sps/io/t2s_$value/$tts_stat", 'Loxone T2S status update');
 			}
 			// UDP senden, wenn Port konfiguriert
 			if (!empty($config['LOXONE']['UDP'])) {
 				sendUDP($tts_stat, 't2s_'.$value);
 			}
 		} catch (Exception $e) {
-			LOGWARN("play_t2s.php: Sending T2S notification for Zone '".$value."' failed, we skip here...");	
+			LOGWARN("Play_T2S.php: Sending T2S notification for Zone '".$value."' failed, we skip here...");	
 			return;
 		}
 	}
@@ -1936,18 +2434,114 @@ function audioclip_handle_members($member) {
 	foreach (SONOSZONE as $zone => $zoneData) {
 		if ($zone == $master)   {
 			$memberon[$master] = $zoneData;
-			LOGGING("play_t2s.php: Audioclip: Player '".$master."' has been added", 5);
+			s4lox_play_t2s_log("Play_T2S.php: Audioclip: Player '".$master."' has been added", 5);
 		}
 		if ($member === 'all' || ($members && in_array($zone, $members))) {
 			$zoneon = checkZoneOnline($zone);
 			if ($zoneon === true and $master != $zone)  {
 				$memberon[$zone] = $zoneData;
-				LOGGING("play_t2s.php: Audioclip: Member '".$zone."' has been added", 5);
+				s4lox_play_t2s_log("Play_T2S.php: Audioclip: Member '".$zone."' has been added", 5);
 			}
 		} 
 	}
-	LOGGING("play_t2s.php: Audioclip: ".count($memberon)." Member has been identified (plus Master)", 7);
+	$memberCount = max(0, count($memberon) - 1);
+	s4lox_play_t2s_log("Play_T2S.php: Audioclip: ".$memberCount." Member has been identified (plus Master)", 7);
 	return $memberon;
+}
+
+/**
+ * Resolve the requested AudioClip volume for one target zone.
+ *
+ * Rules:
+ * 1) Sound profile volume wins if present.
+ * 2) Explicit URL volume/groupvolume is used for every target zone.
+ * 3) keepvolume keeps the current volume per target zone.
+ * 4) Without explicit volume, every target zone uses its own configured T2S volume.
+ */
+function audioclip_resolve_zone_volume($zone, $fallbackVolume = null) {
+
+	global $sonoszone, $profile_zone_volumes, $min_vol;
+
+	if (isset($profile_zone_volumes[$zone]) && is_numeric($profile_zone_volumes[$zone])) {
+		return (int)$profile_zone_volumes[$zone];
+	}
+
+	if (isset($_GET['volume']) && $_GET['volume'] !== '' && is_numeric($_GET['volume'])) {
+		return (int)$_GET['volume'];
+	}
+
+	if (isset($_GET['groupvolume']) && $_GET['groupvolume'] !== '' && is_numeric($_GET['groupvolume'])) {
+		return (int)$_GET['groupvolume'];
+	}
+
+	if (isset($_GET['keepvolume']) && isset($sonoszone[$zone][0])) {
+		try {
+			$sonos = new SonosAccess($sonoszone[$zone][0]);
+			$currentVolume = (int)$sonos->GetVolume();
+			$minimumVolume = isset($min_vol) ? (int)$min_vol : 0;
+
+			if ($currentVolume >= $minimumVolume) {
+				return $currentVolume;
+			}
+			LOGINF("Play_T2S.php: Audioclip: Current volume for zone '".$zone."' is below threshold; using configured T2S volume.");
+		} catch (Exception $e) {
+			LOGWARN("Play_T2S.php: Audioclip: Could not read current volume for zone '".$zone."'; using configured T2S volume.");
+		}
+	}
+
+	if (isset($sonoszone[$zone][3]) && is_numeric($sonoszone[$zone][3])) {
+		return (int)$sonoszone[$zone][3];
+	}
+
+	if ($fallbackVolume !== null && is_numeric($fallbackVolume)) {
+		return (int)$fallbackVolume;
+	}
+
+	return 20;
+}
+
+function s4lox_play_t2s_create_audioclip_curl_handle($url, $jsonData, array $headers) {
+	$worker = curl_init();
+	curl_setopt_array($worker, [
+		CURLOPT_URL              => $url,
+		CURLOPT_CONNECTTIMEOUT   => S4L_PLAY_T2S_CURL_CONNECT_TIMEOUT,
+		CURLOPT_TIMEOUT          => S4L_PLAY_T2S_CURL_REQUEST_TIMEOUT,
+		CURLOPT_NOSIGNAL         => true,
+		CURLOPT_HEADER           => 0,
+		CURLOPT_FOLLOWLOCATION   => 1,
+		CURLOPT_POST             => 1,
+		CURLOPT_POSTFIELDS       => $jsonData,
+		CURLOPT_HTTPHEADER       => $headers,
+		CURLOPT_SSL_VERIFYHOST   => false,
+		CURLOPT_SSL_VERIFYPEER   => false,
+		CURLOPT_SSL_VERIFYSTATUS => false,
+		CURLOPT_RETURNTRANSFER   => 1,
+		CURLOPT_USERAGENT        => "PHP",
+		CURLOPT_SSL_ENABLE_ALPN  => false,
+		CURLOPT_SSL_ENABLE_NPN   => false,
+		CURLOPT_SSL_FALSESTART   => true,
+		CURLOPT_TCP_NODELAY      => true,
+		CURLOPT_IPRESOLVE        => CURL_IPRESOLVE_V4,
+		CURLOPT_TCP_FASTOPEN     => true,
+	]);
+	return $worker;
+}
+
+function s4lox_play_t2s_audioclip_post_once($zoneName, $url, $jsonData, array $headers) {
+	$ch = s4lox_play_t2s_create_audioclip_curl_handle($url, $jsonData, $headers);
+	$result = curl_exec($ch);
+	$httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+	$error = curl_error($ch);
+	curl_close($ch);
+
+	return [
+		'ok'       => ($result !== false && $httpCode === 200),
+		'zone'     => $zoneName,
+		'url'      => $url,
+		'httpCode' => $httpCode,
+		'error'    => $error,
+		'content'  => $result,
+	];
 }
 
 function audioclip_multi_post_request($zones, $clipType="CUSTOM", $priority="LOW", $tts="") {
@@ -1962,6 +2556,7 @@ function audioclip_multi_post_request($zones, $clipType="CUSTOM", $priority="LOW
 	];
 
 	$mh = curl_multi_init();
+	$handles = [];
 
 	foreach ($zones as $zone) {
 		
@@ -1971,81 +2566,93 @@ function audioclip_multi_post_request($zones, $clipType="CUSTOM", $priority="LOW
 		}
 
 		// ------------------------------------------------------
-		// Effektive Lautstärke bestimmen:
-		//  1) Profil-Lautstärke (falls vorhanden)
-		//  2) URL-Parameter &volume (falls gesetzt)
-		//  3) globales $volume (Fallback)
+		// Effective volume handling:
+		//  1) sound profile volume, if available
+		//  2) explicit URL parameter &volume / &groupvolume
+		//  3) &keepvolume reads the current volume per target zone
+		//  4) without explicit volume: T2S volume per target zone
 		// ------------------------------------------------------
-		$baseVolume = null;
-
-		if (isset($profile_zone_volumes[$zone]) && is_numeric($profile_zone_volumes[$zone])) {
-			$baseVolume = (int)$profile_zone_volumes[$zone];
-		} elseif (isset($_GET['volume']) && $_GET['volume'] !== '') {
-			$baseVolume = (int)$_GET['volume'];
-		} elseif (isset($volume)) {
-			$baseVolume = (int)$volume;
-		} else {
-			// Minimaler Fallback, falls nix gesetzt ist
-			$baseVolume = 20;
-		}
-
-		// Auf zonenspezifisches Max-Volume clampen
+		$baseVolume = audioclip_resolve_zone_volume($zone, $volume ?? null);
 		$volForJson = audioclip_zone_max_volume($zone, $baseVolume);
-
-		// JSON für diesen Player bauen
 		$jsonData = audiclip_json_data($volForJson, $clipType, $priority, $tts);
 
-		$worker = curl_init();
-		curl_setopt_array($worker, [
-			CURLOPT_URL            => $url,
-			CURLOPT_TIMEOUT        => 20,
-			CURLOPT_HEADER         => 0,
-			CURLOPT_FOLLOWLOCATION => 1,
-			CURLOPT_POST           => 1,
-			CURLOPT_POSTFIELDS     => $jsonData,
-			CURLOPT_HTTPHEADER     => $headers,
-			CURLOPT_SSL_VERIFYHOST => false,
-			CURLOPT_SSL_VERIFYPEER => false,
-			CURLOPT_SSL_VERIFYSTATUS => false,
-			CURLOPT_RETURNTRANSFER => 1,
-			// try to speed up things
-			CURLOPT_USERAGENT      => "PHP",
-			CURLOPT_SSL_ENABLE_ALPN=> false,
-			CURLOPT_SSL_ENABLE_NPN => false,
-			CURLOPT_SSL_FALSESTART => true,
-			CURLOPT_TCP_NODELAY    => true,
-			CURLOPT_IPRESOLVE      => CURL_IPRESOLVE_V4, // do not use ipv6 resolve
-			CURLOPT_TCP_FASTOPEN   => true,
-		]);
+		$worker = s4lox_play_t2s_create_audioclip_curl_handle($url, $jsonData, $headers);
+		$handleKey = (int)$worker;
+		$handles[$handleKey] = [
+			'zone' => (string)$zone,
+			'url'  => $url,
+			'json' => $jsonData,
+		];
 		curl_multi_add_handle($mh, $worker);
 	}
 
+	$curlMultiStarted = microtime(true);
 	for (;;) {
 		$still_running = null;
 		do {
 			$err = curl_multi_exec($mh, $still_running);
 		} while ($err === CURLM_CALL_MULTI_PERFORM);
 		if ($err !== CURLM_OK) {
-			// handle curl multi error?
-		}
-		if ($still_running < 1) {
-			// all downloads completed
+			s4lox_play_t2s_log("Play_T2S.php: Audioclip: cURL multi execution returned error code " . $err . ".", 4);
 			break;
 		}
-		// some haven't finished downloading, sleep until more data arrives:
-		curl_multi_select($mh, 1);
+		if ($still_running < 1) {
+			break;
+		}
+		if ((microtime(true) - $curlMultiStarted) > S4L_PLAY_T2S_CURL_MULTI_TOTAL_TIMEOUT) {
+			s4lox_play_t2s_log("Play_T2S.php: Audioclip: cURL multi request timeout reached after " . S4L_PLAY_T2S_CURL_MULTI_TOTAL_TIMEOUT . " seconds.", 4);
+			break;
+		}
+		$selectResult = curl_multi_select($mh, 1);
+		if ($selectResult === -1) {
+			usleep(100000);
+		}
 	}
 
 	$results = [];
+	$failedRequests = [];
 	while (false !== ($info = curl_multi_info_read($mh))) {
-		if ($info["result"] !== CURLE_OK) {
-			// handle download error?
+		$handle = $info["handle"];
+		$handleKey = (int)$handle;
+		$meta = $handles[$handleKey] ?? [
+			'zone' => 'unknown',
+			'url'  => curl_getinfo($handle, CURLINFO_EFFECTIVE_URL),
+			'json' => '',
+		];
+		$httpCode = (int)curl_getinfo($handle, CURLINFO_HTTP_CODE);
+		$content = curl_multi_getcontent($handle);
+
+		if ($info["result"] !== CURLE_OK || $httpCode !== 200) {
+			$errorText = curl_error($handle);
+			if ($errorText === '') {
+				$errorText = 'HTTP ' . $httpCode;
+			}
+			s4lox_play_t2s_log("Play_T2S.php: Audioclip: cURL multi request failed for player '" . $meta['zone'] . "': " . $errorText . ". A single retry will be attempted.", 4);
+			$failedRequests[] = $meta;
 		}
-		$results[curl_getinfo($info["handle"], CURLINFO_EFFECTIVE_URL)] = curl_multi_getcontent($info["handle"]);
-		curl_multi_remove_handle($mh, $info["handle"]);
-		curl_close($info["handle"]);
+
+		$results[$meta['url']] = $content;
+		curl_multi_remove_handle($mh, $handle);
+		curl_close($handle);
+		unset($handles[$handleKey]);
 	}
 	curl_multi_close($mh);
+
+	foreach ($failedRequests as $failedRequest) {
+		for ($attempt = 1; $attempt <= S4L_PLAY_T2S_CURL_MULTI_RETRY_COUNT; $attempt++) {
+			usleep(S4L_PLAY_T2S_CURL_MULTI_RETRY_DELAY_US);
+			s4lox_play_t2s_log("Play_T2S.php: Audioclip: Retry " . $attempt . " for player '" . $failedRequest['zone'] . "'.", 6);
+			$retry = s4lox_play_t2s_audioclip_post_once($failedRequest['zone'], $failedRequest['url'], $failedRequest['json'], $headers);
+			$results[$failedRequest['url']] = $retry['content'];
+			if ($retry['ok']) {
+				s4lox_play_t2s_log("Play_T2S.php: Audioclip: Retry " . $attempt . " for player '" . $failedRequest['zone'] . "' was successful.", 7);
+				break;
+			}
+			$errorText = $retry['error'] !== '' ? $retry['error'] : ('HTTP ' . $retry['httpCode']);
+			s4lox_play_t2s_log("Play_T2S.php: Audioclip: Retry " . $attempt . " for player '" . $failedRequest['zone'] . "' failed: " . $errorText . ".", 4);
+		}
+	}
+
 	return $results;
 }
 
@@ -2189,7 +2796,7 @@ function audioclip_zone_max_volume($zone, $requestedVolume) {
 
 		// Detail-Log pro Zone
 		LOGDEB(
-			"play_t2s.php: Audioclip: Effective volume for '".$zone.
+			"Play_T2S.php: Audioclip: Effective volume for '".$zone.
 			"' is ".$effective." (requested=".$requestedVolume.
 			", max=".$maxVolume.")"
 		);
@@ -2199,7 +2806,7 @@ function audioclip_zone_max_volume($zone, $requestedVolume) {
 
 	// Fallback, falls Zone nicht in sonoszone[] gefunden wird
 	LOGDEB(
-		"play_t2s.php: Audioclip: No max volume known for zone '".$zone.
+		"Play_T2S.php: Audioclip: No max volume known for zone '".$zone.
 		"' – using requested volume ".$requestedVolume
 	);
 
@@ -2292,6 +2899,9 @@ function audioclip_post_request($ip, $rincon, $clipType="CUSTOM", $priority="LOW
 	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
 	
 	// Request response from Call
+	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, S4L_PLAY_T2S_CURL_CONNECT_TIMEOUT);
+	curl_setopt($ch, CURLOPT_TIMEOUT, S4L_PLAY_T2S_CURL_REQUEST_TIMEOUT);
+	curl_setopt($ch, CURLOPT_NOSIGNAL, true);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		
 	// Execute the request
@@ -2311,10 +2921,10 @@ function audioclip_post_request($ip, $rincon, $clipType="CUSTOM", $priority="LOW
 					$msg = $split[2];
 				}
 			}
-			LOGGING("play_t2s.php: cURL AudioClip error: ".$result['errorCode']." ".$msg, 3);
+			s4lox_play_t2s_log("Play_T2S.php: cURL AudioClip error: ".$result['errorCode']." ".$msg, 3);
 			exit;
 		} else {
-			LOGGING("play_t2s.php: cURL AudioClip error: ".curl_error($ch), 3);
+			s4lox_play_t2s_log("Play_T2S.php: cURL AudioClip error: ".curl_error($ch), 3);
 			exit;
 		}
 	}
@@ -2373,7 +2983,7 @@ function createArrayFromGroupProfile($applyVolume = true)   {
 				if ($state == "master")   {
 					$sonos = new SonosAccess(SONOSZONE[$zone][0]);
 					$sonos->BecomeCoordinatorOfStandaloneGroup();
-					LOGINF("play_t2s.php: Player '".$zone."' has been removed from existing Group");
+					LOGINF("Play_T2S.php: Player '".$zone."' has been removed from existing Group");
 				}
 				$masterzone = $zone;
 			}
@@ -2400,7 +3010,7 @@ function createArrayFromGroupProfile($applyVolume = true)   {
 		if (!defined('T2SMASTER')) {
 			define("T2SMASTER", $master);
 		}
-		LOGOK("play_t2s.php: Array of Speakers from Sound Profile '".$_GET['profile']."' has been created");
+		LOGOK("Play_T2S.php: Array of Speakers from Sound Profile '".$_GET['profile']."' has been created");
 		return $memberincl;
 	break;
 	
@@ -2456,12 +3066,12 @@ function VolumeProfile($memberincl)   {
 			if ($profile_details[0]['Player'][$key][0]['Volume'] != "")	{
 				$sonos->SetVolume($profile_details[0]['Player'][$key][0]['Volume']);
 				$volume = $profile_details[0]['Player'][$key][0]['Volume'];
-				LOGINF("play_t2s.php: Volume for '".$key."' has been set to: ".$profile_details[0]['Player'][$key][0]['Volume']);
+				LOGINF("Play_T2S.php: Volume for '".$key."' has been set to: ".$profile_details[0]['Player'][$key][0]['Volume']);
 			} else {
-				LOGWARN("play_t2s.php: No Volume entered in Profile, so we could not set Volume");
+				LOGWARN("Play_T2S.php: No Volume entered in Profile, so we could not set Volume");
 			}
 		} catch (Exception $e) {
-			LOGERR("play_t2s.php: Player '".$key."' does not respond. Please check your settings");
+			LOGERR("Play_T2S.php: Player '".$key."' does not respond. Please check your settings");
 			continue;
 		}
 	}	
@@ -2477,10 +3087,10 @@ function get_profile_details()   {
 	$volconfig = json_decode(file_get_contents($lbpconfigdir . "/" . $vol_config.".json"), TRUE);
 	$profile_details = array_multi_search(strtolower($volprofil), $volconfig, $sKey = "");
 	if (!$profile_details)   {
-		LOGERR("play_t2s.php: Entered Sound Profile '".$_GET['profile']."' in URL could not be found. Please check your entry!");
+		LOGERR("Play_T2S.php: Entered Sound Profile '".$_GET['profile']."' in URL could not be found. Please check your entry!");
 		exit(1);
 	} else {
-		LOGINF("play_t2s.php: Sound Profile '".$_GET['profile']."' has been selected!");
+		LOGINF("Play_T2S.php: Sound Profile '".$_GET['profile']."' has been selected!");
 	}
 	return $profile_details;
 }
@@ -2508,7 +3118,7 @@ function getProfileZonesForAudioclip()
     $profile_details = array_multi_search(strtolower($volprofil), $volconfig, $sKey = "");
 
     if (!$profile_details) {
-        LOGERR("play_t2s.php: Entered Sound Profile '".$_GET['profile']."' in URL could not be found. Please check your entry!");
+        LOGERR("Play_T2S.php: Entered Sound Profile '".$_GET['profile']."' in URL could not be found. Please check your entry!");
         return array();
     }
 
@@ -2558,7 +3168,7 @@ function getProfileZonesForAudioclip()
 
 function get_mp3_duration(string $mp3_file): int
 {
-    require_once("system/bin/getid3/getid3.php");
+    require_once __DIR__ . "/src/Support/MP3/getid3/getid3.php";
 
     $add_time = 1; // safety buffer in seconds
     $getID3 = new getID3();
@@ -2576,11 +3186,12 @@ function wait_for_global_audio_lock(int $duration_ms): void
     $now = (int)round(microtime(true) * 1000);
 
     // ensure directory exists
-    @mkdir(dirname($lockfile), 0777, true);
+    s4lox_play_t2s_safe_mkdir(dirname($lockfile), 0777, 'global audio lock directory');
 
     // --- Phase 1: wait for previous playback ---
     if (file_exists($lockfile)) {
-        $until = (int)trim(@file_get_contents($lockfile));
+        $lockContent = s4lox_play_t2s_safe_file_get_contents($lockfile, 'global audio lock file', false);
+        $until = $lockContent === false ? 0 : (int)trim($lockContent);
         if ($until > $now) {
             usleep(($until - $now) * 1000);
         }
@@ -2588,7 +3199,9 @@ function wait_for_global_audio_lock(int $duration_ms): void
 
     // --- Phase 2: set new lock ---
     $new_until = (int)round(microtime(true) * 1000) + $duration_ms;
-    file_put_contents($lockfile, $new_until, LOCK_EX);
+    if (file_put_contents($lockfile, $new_until, LOCK_EX) === false) {
+        s4lox_play_t2s_log("Play_T2S.php: Could not write global audio lock file '" . $lockfile . "'.", 4);
+    }
 }
 
 
@@ -2599,7 +3212,5 @@ function proccessing_time()
 
     $elapsed = microtime(true) - $GLOBALS['time_start'];
     $t2s_time = isset($duration) ? $elapsed - ($duration / 1000000) : $elapsed;
-    LOGGING("play_t2s.php: The requested T2S/AudioClip tooks ".round($t2s_time, 2)." seconds to be processed completly.", 5);
+    s4lox_play_t2s_log("Play_T2S.php: The requested T2S/AudioClip took ".round($t2s_time, 2)." seconds to be processed completely.", 5);
 }
-
-?>

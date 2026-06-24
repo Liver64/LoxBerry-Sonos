@@ -1,24 +1,25 @@
 <TMPL_IF SETTINGS>
     <!-- form 'FORM' START -->
 	 
-    <form method="post" data-ajax="false" accept-charset="utf-8" name="main_form" id="main_form" action="./index.cgi?form">
+    <form method="post" data-ajax="false" accept-charset="utf-8" enctype="multipart/form-data" name="main_form" id="main_form" action="./index.cgi?form">
         <input type="hidden" name="saveformdata1" value="1">
 		<input type="hidden" name="regionOptions" id="regionOptions" value="<TMPL_VAR TTS.regionms>">
 		<TMPL_IF NAME="LBV4">
 			<TMPL_IF NAME="THEMEMAC">
 			<TMPL_ELSE>
-				<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table/table.css"/>
+				<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/table/table.css"/>
 			</TMPL_IF>
 		<TMPL_ELSE>
-			<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table/table.css"/>
-			<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/switch/flipswitch.css"/>
+			<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/table/table.css"/>
+			<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/switch/flipswitch.css"/>
 		</TMPL_IF>
-		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.min.css"/>
-		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.css"/>
-		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.min.js"></script>
-		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.js"></script>
-		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/slider/ion.rangeSlider.js"></script>
-		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/slider/ion.rangeSlider.css?v=8">
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/silverBox/silverBox.min.css"/>
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/silverBox/silverBox.css"/>
+		<script src="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/silverBox/silverBox.min.js"></script>
+		<script src="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/silverBox/silverBox.js"></script>
+		<script src="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/slider/ion.rangeSlider.js"></script>
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/slider/ion.rangeSlider.css?v=8">
+		
 		
         <div class="form-group">
             <font COLOR="blue">
@@ -199,12 +200,14 @@
                     </td>
                     <td style="height: 48px; vertical-align: top;">
                         <textarea
-                            placeholder="<TMPL_VAR ZONES.SONOS_TEST_PLAYER_PH>"
-                            maxlength="500"
-                            id="testtext"
-                            name="testtext"
-                            rows="3"
-                            style="width: calc(98% - 100px); box-sizing: border-box; overflow-y: auto; margin: 0; border-radius: 12px;"></textarea>
+							placeholder="<TMPL_VAR ZONES.SONOS_TEST_PLAYER_PH>"
+							maxlength="500"
+							id="testtext"
+							name="testtext"
+							rows="3"
+							class="lb-input"
+							data-role="none"
+							style="width: calc(98% - 100px); box-sizing: border-box; overflow-y: auto; margin: 0; border-radius: 12px;"></textarea>
                     </td>
                 </tr>
                 </TMPL_IF>			
@@ -414,7 +417,7 @@
 						
 						<div class="ttsconfig azureinfo 9001">
                              <font size="-1" align="middle">
-                                <a id="linkazureapi" href="/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/bin/Azure_Account.pdf" target="_blank">
+                                <a id="linkazureapi" href="/plugins/<TMPL_VAR PLUGINDIR>/VoiceEngines/Azure_Account.pdf" target="_blank">
                                     <TMPL_VAR T2S.AZURE_API_LINK>
                                 </a>
                             </font>
@@ -549,7 +552,6 @@
 									id="mp3store"
 									name="mp3store"
 									class="lb-select"
-									data-role="none"
 									data-mini="true"
 									style="width:100%; box-sizing:border-box;">
 									<option value="1"><TMPL_VAR T2S.1DAY_MP3_STORE></option>
@@ -660,7 +662,7 @@
 									<div class="lb-flipswitch"
 										 data-input="sendlox"
 										 data-value="<TMPL_VAR LOXONE.LoxDaten>"
-										 onmouseenter="showGreenTooltip('#sendlox_tooltip')"
+										 onmouseenter="showTooltip('#sendlox_tooltip')"
 										 onmouseleave="hideTooltip('#sendlox_tooltip')">
 										 
 										<input type="hidden" name="sendlox" id="sendlox_hidden" value="false">
@@ -693,7 +695,7 @@
 											<td id="udpPortCell" style="padding:0 0 0 18px; vertical-align:middle; white-space:nowrap;">
 												<div id="udpPortHelpWrap"
 													 style="position:relative; display:inline-flex; align-items:center;"
-													 onmouseenter="showGreenTooltip('#udpPortTooltip')"
+													 onmouseenter="showTooltip('#udpPortTooltip')"
 													 onmouseleave="hideTooltip('#udpPortTooltip')">
 													
 													<div id="udpPortTooltip"
@@ -710,8 +712,8 @@
 														   data-role="none"
 														   inputmode="numeric"
 														   maxlength="5"
-														   onfocus="showUdpPortTooltip();"
-														   onblur="hideUdpPortTooltip();"
+														   onfocus="showTooltip('#udpPortTooltip');"
+														   onblur="hideTooltip('#udpPortTooltip');"
 														   style="display:inline-block; vertical-align:middle; width:72px; min-width:72px; max-width:72px; height:32px; line-height:32px; margin:0; padding:0 6px; box-sizing:border-box; text-align:center;">
 												</div>
 											</td>
@@ -730,7 +732,7 @@
 													</div>
 
 													<div style="cursor:pointer; position:relative; display:inline-block;"
-														 onmouseenter="showGreenTooltip('#sonosHealthTooltip')"
+														 onmouseenter="showTooltip('#sonosHealthTooltip')"
 														 onmouseleave="hideTooltip('#sonosHealthTooltip')">
 
 														<img id="sonosHealthAmpel"
@@ -793,7 +795,7 @@
 
 							<div class="pdfinfo" style="display:flex; align-items:center; white-space:nowrap;">
 								<a
-									href="/plugins/<TMPL_VAR PLUGINDIR>/web/images/sonos4lox%20-%20virtual%20Inputs.pdf"
+									href="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/images/sonos4lox%20-%20virtual%20Inputs.pdf"
 									target="_blank"
 									rel="noopener noreferrer"
 									style="text-decoration:none; font-size:14px; display:inline-flex; align-items:center; gap:6px;
@@ -1170,7 +1172,7 @@
 	
 
 <!-- Speech SDK reference sdk. -->
-<script src="/plugins/<TMPL_VAR PLUGINDIR>/voice_engines/bin/Microsoft/microsoft.cognitiveservices.speech.sdk.bundle.js"></script>
+<script src="/plugins/<TMPL_VAR PLUGINDIR>/VoiceEngines/Vendor/MicrosoftSpeechSdk/microsoft.cognitiveservices.speech.sdk.bundle.js"></script>
 <TMPL_INCLUDE NAME="main.js">
 </TMPL_IF>
 
@@ -1183,19 +1185,19 @@
 		<TMPL_IF NAME="LBV4">
 			<TMPL_IF NAME="THEMEMAC">
 			<TMPL_ELSE>
-				<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table/table.css"/>
+				<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/table/table.css"/>
 			</TMPL_IF>
 		<TMPL_ELSE>
-			<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table/table.css"/>
-			<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/switch/flipswitch.css"/>
+			<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/table/table.css"/>
+			<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/switch/flipswitch.css"/>
 		</TMPL_IF>
-		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.min.css"/>
-		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.css"/>
-		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.min.js"></script>
-		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.js"></script>
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/silverBox/silverBox.min.css"/>
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/silverBox/silverBox.css"/>
+		<script src="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/silverBox/silverBox.min.js"></script>
+		<script src="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/silverBox/silverBox.js"></script>
 				
-		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/slider/ion.rangeSlider.js"></script>
-		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/slider/ion.rangeSlider.css?v=8">
+		<script src="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/slider/ion.rangeSlider.js"></script>
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/slider/ion.rangeSlider.css?v=8">
 		
         <div class="form-group">
 			<!--<tbody>-->
@@ -1282,16 +1284,16 @@
 		<TMPL_IF NAME="LBV4">
 			<TMPL_IF NAME="THEMEMAC">
 			<TMPL_ELSE>
-				<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table/table.css"/>
+				<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/table/table.css"/>
 			</TMPL_IF>
 		<TMPL_ELSE>
-			<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table/table.css"/>
-			<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/switch/flipswitch.css"/>
+			<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/table/table.css"/>
+			<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/switch/flipswitch.css"/>
 		</TMPL_IF>
-        <link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.min.css"/>
-        <link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.css"/>
-        <script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.min.js"></script>
-        <script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.js"></script>
+        <link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/silverBox/silverBox.min.css"/>
+        <link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/silverBox/silverBox.css"/>
+        <script src="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/silverBox/silverBox.min.js"></script>
+        <script src="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/silverBox/silverBox.js"></script>
 
         <div class="form-group testing-page">
             <table class="formtable testing-layout" border="0" width="90%" cellpadding="10">
@@ -1585,28 +1587,33 @@
 
 <TMPL_IF DETAILS>
     <!-- form 'FORM' DETAILS -->
-    <form method="post" data-ajax="false" accept-charset="utf-8" name="detail_form" id="detail_form" action="./index.cgi?do=details">
+    <form method="post" data-ajax="false" accept-charset="utf-8" enctype="multipart/form-data" name="detail_form" id="detail_form" action="./index.cgi?do=details">
         <input type="hidden" name="saveformdata2" value="1">
 
         <!-- CSS / JS includes -->
-		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.min.css"/>
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/silverBox/silverBox.min.css"/>
 		<TMPL_IF NAME="LBV4">
 			<TMPL_IF NAME="THEMEMAC">
 			<TMPL_ELSE>
-				<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table/table.css"/>
+				<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/table/table.css"/>
 			</TMPL_IF>
 		<TMPL_ELSE>
-			<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/table/table.css"/>
-			<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/switch/flipswitch.css"/>
+			<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/table/table.css"/>
+			<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/switch/flipswitch.css"/>
 		</TMPL_IF>
-		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.css"/>
-		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.min.js"></script>
-		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/silverBox/silverBox.js"></script>
-		<script src="/plugins/<TMPL_VAR PLUGINDIR>/web/slider/ion.rangeSlider.js"></script>
-		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/web/slider/ion.rangeSlider.css?v=8">
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/silverBox/silverBox.css"/>
+		<script src="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/silverBox/silverBox.min.js"></script>
+		<script src="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/silverBox/silverBox.js"></script>
+		<script src="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/slider/ion.rangeSlider.js"></script>
+		<link rel="stylesheet" href="/plugins/<TMPL_VAR PLUGINDIR>/LayoutUI/slider/ion.rangeSlider.css?v=8">
 
         <div class="form-group">
-            <table class="formtable" border="0" width="90%" cellpadding="10">
+            <table class="formtable s4lox-details-formtable" border="0" width="95%" cellpadding="10">
+			<colgroup>
+				<col style="width: 400px;">
+				<col style="width: auto;">
+				<col style="width: 1px;">
+			</colgroup>
                 <tr>
 					<td colspan="2" style="height: 150px; position: relative; vertical-align: middle; padding: 0;">
 						<h2 class="auto-style3"
@@ -1799,25 +1806,34 @@
                     </td>
 
                     <td style="width: 400px">
-						<div class="lb-flipswitch"
-							 data-input="announceradio"
-							 data-value="<TMPL_VAR VARIOUS.announceradio>">
-							<input type="hidden"
-								   name="announceradio"
-								   id="announceradio_hidden"
-								   value="<TMPL_VAR VARIOUS.announceradio>">
+						<!-- SONOS_THEME_SELECTOR_V04_2026_06_21: HTML table keeps the note beside the flipswitch in all LBV4 themes. -->
+						<table border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse; width:100%;">
+							<tr>
+								<td style="width:64px; min-width:64px; vertical-align:middle; padding:0 12px 0 0;">
+									<div class="lb-flipswitch"
+										 data-input="announceradio"
+										 data-value="<TMPL_VAR VARIOUS.announceradio>">
+										<input type="hidden"
+											   name="announceradio"
+											   id="announceradio_hidden"
+											   value="<TMPL_VAR VARIOUS.announceradio>">
 
-							<label class="lb-toggle" for="announceradio">
-								<input type="checkbox"
-									   id="announceradio"
-									   class="lb-flipswitch-checkbox no-jqm-flipswitch"
-									   data-role="none"
-									   onchange="toggleRadioAnnounce()">
-								<span class="lb-toggle-slider"></span>
-							</label>
-						</div>
+										<label class="lb-toggle" for="announceradio">
+											<input type="checkbox"
+												   id="announceradio"
+												   class="lb-flipswitch-checkbox no-jqm-flipswitch"
+												   data-role="none"
+												   onchange="toggleRadioAnnounce()">
+											<span class="lb-toggle-slider"></span>
+										</label>
+									</div>
+								</td>
 
-						<span class="auto-style4"><TMPL_VAR RADIO.NOTE_RADIO_ANNOUNCE></span>
+								<td style="vertical-align:middle; padding:0;">
+									<span class="auto-style4"><TMPL_VAR RADIO.NOTE_RADIO_ANNOUNCE></span>
+								</td>
+							</tr>
+						</table>
 						<input id="maxzap" name="maxzap" type="hidden" class="textfield" value="<TMPL_VAR MAXZAP>">
 					</td>
                 </tr>
@@ -1828,26 +1844,35 @@
                     </td>
 
                     <td style="width: 800px">
-                        <div class="lb-flipswitch"
-							data-input="announceradio_always"
-							data-value="<TMPL_VAR VARIOUS.announceradio_always>">
+						<!-- SONOS_THEME_SELECTOR_V04_2026_06_21: HTML table keeps the note beside the flipswitch in all LBV4 themes. -->
+						<table border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse; width:100%;">
+							<tr>
+								<td style="width:64px; min-width:64px; vertical-align:middle; padding:0 12px 0 0;">
+									<div class="lb-flipswitch"
+										data-input="announceradio_always"
+										data-value="<TMPL_VAR VARIOUS.announceradio_always>">
 
-							<input type="hidden"
-								   name="announceradio_always"
-								   id="announceradio_always_hidden"
-								   value="<TMPL_VAR VARIOUS.announceradio_always>">
+										<input type="hidden"
+											   name="announceradio_always"
+											   id="announceradio_always_hidden"
+											   value="<TMPL_VAR VARIOUS.announceradio_always>">
 
-							<label class="lb-toggle" for="announceradio_always">
-								<input type="checkbox"
-									   id="announceradio_always"
-									   class="lb-flipswitch-checkbox no-jqm-flipswitch"
-									   data-role="none"
-									   onchange="toggleRadioAnnounce()">
-								<span class="lb-toggle-slider"></span>
-							</label>
-						</div>
+										<label class="lb-toggle" for="announceradio_always">
+											<input type="checkbox"
+												   id="announceradio_always"
+												   class="lb-flipswitch-checkbox no-jqm-flipswitch"
+												   data-role="none"
+												   onchange="toggleRadioAnnounce()">
+											<span class="lb-toggle-slider"></span>
+										</label>
+									</div>
+								</td>
 
-						<span class="auto-style4"><TMPL_VAR RADIO.NOTE_RADIO_ANNOUNCE_ALWAYS></span>
+								<td style="vertical-align:middle; padding:0;">
+									<span class="auto-style4"><TMPL_VAR RADIO.NOTE_RADIO_ANNOUNCE_ALWAYS></span>
+								</td>
+							</tr>
+						</table>
                     </td>
                 </tr>
 
@@ -2014,7 +2039,7 @@
 											<TMPL_VAR ZONES.FOLLOW_HOST_LABEL>
 										</label>
 
-										<div style="width:180px; min-width:180px; max-width:180px;">
+										<div style="width:220px; min-width:220px; max-width:220px;">
 											<select id="follow_host" name="follow_host" data-mini="true" data-native-menu="true" style="width:100%;" class="lb-select">
 												<option selected="selected" value="false"><TMPL_VAR ZONES.FOLLOW_HOST_OPTION></option>
 												<TMPL_VAR ROWSHOSTPLAYER>
@@ -2113,7 +2138,7 @@
 							<!-- Update block -->
 							<div class="update" style="display:flex; align-items:center; gap:10px; white-space:nowrap;">
 								<label id="lstartupdate" style="margin:0;">Start:</label>
- 								<fieldset style="margin:0; width:130px;">
+ 								<fieldset class="hw-update-day-wrap" style="margin:0; width:170px;">
 									<select id="hw_update_day" name="hw_update_day" data-mini="true" data-native-menu="true" style="width:100%;" class="lb-select">
 										<option selected="selected" value="10"><TMPL_VAR TEMPLATE.UPDATE_DAILY></option>
 										<option disabled value="7"><TMPL_VAR TEMPLATE.UPDATE_WEEKLY></option>
@@ -2127,7 +2152,7 @@
 									</select>
 								</fieldset>
 
-								<fieldset style="margin:0; width:100px;">
+								<fieldset class="hw-update-time-wrap" style="margin:0; width:130px;">
 									<select id="hw_update_time" name="hw_update_time" data-mini="true" data-native-menu="true" style="width:100%;" class="lb-select">
 										<option value="0">0:00</option>
 										<option value="1">1:00</option>
@@ -2254,7 +2279,7 @@
 					</td>
 
 					<td style="height: 50px; width: 800px; vertical-align: middle;">
-						<div style="display:flex; align-items:center; gap:12px; width:460px; white-space:nowrap;">
+						<div style="display:flex; align-items:center; gap:16px; width:100%; max-width:none; white-space:nowrap; flex-wrap:nowrap;">
 							<div style="flex:0 0 280px;">
 								<fieldset style="margin:0; width:100%;">
 									<select name="sonos_release" id="sonos_release" data-mini="true" data-native-menu="true" style="width:100%;" class="lb-select">
@@ -2274,6 +2299,110 @@
 						</div>
 					</td>
 				</tr>
+
+				<TMPL_IF NAME="SONOS_THEME_SHOW_SELECTOR">
+					<tr>
+						<td style="height: 50px; width: 25%; vertical-align: middle;">
+							<label id="lsonostheme">Sonos Themes:</label>
+						</td>
+
+						<td style="height: 50px; width: 800px; vertical-align: middle;">
+							<div class="sonos-theme-line-wrap" style="display:flex; align-items:center; gap:16px; width:100%; max-width:none; white-space:nowrap; flex-wrap:nowrap;">
+								<div class="sonos-theme-selector-wrap" style="display:flex; align-items:center; gap:8px; flex:0 0 auto;">
+									<select
+										name="sonostheme"
+										id="sonostheme"
+										data-mini="true"
+										data-native-menu="true"
+										data-role="none"
+										style="width:180px;"
+										class="lb-select">
+										<TMPL_VAR SONOS_THEME_OPTIONS_HTML>
+									</select>
+								</div>
+								
+
+								<TMPL_IF NAME="SONOS_WALLPAPER_SHOW">
+									<div class="sonos-wallpaper-wrap" style="display:flex; align-items:center; gap:8px; flex:0 0 auto; min-width:0; white-space:nowrap;">
+										<label for="sonos_wallpaper_file" id="lsonoswallpaper" style="margin:0; white-space:nowrap;">Wallpaper:</label>
+										<input
+											type="file"
+											name="sonos_wallpaper_file"
+											id="sonos_wallpaper_file"
+											accept="image/png,image/jpeg,image/webp"
+											data-role="none"
+											style="display:none;"
+											onchange="document.getElementById('sonos_wallpaper_filename').textContent = this.files && this.files.length ? this.files[0].name : '';">
+										<button type="button" class="lb-btn lb-btn-sm" data-role="none" onclick="document.getElementById('sonos_wallpaper_file').click();">Open file</button>
+										<button type="submit" name="sonos_wallpaper_upload" value="1" class="lb-btn lb-btn-sm" data-role="none">Upload</button>
+										<TMPL_IF NAME="SONOS_WALLPAPER_CUSTOM_ACTIVE">
+											<button type="submit" name="sonos_wallpaper_reset" value="1" class="lb-btn lb-btn-sm" data-role="none">Default</button>
+										</TMPL_IF>
+										<span id="sonos_wallpaper_filename" style="font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:160px;"></span>
+										<TMPL_IF NAME="SONOS_WALLPAPER_CUSTOM_ACTIVE">
+											<span style="font-size:12px;">Custom active</span>
+										</TMPL_IF>
+										<TMPL_IF NAME="SONOS_WALLPAPER_MESSAGE">
+											<span style="font-size:12px;"><TMPL_VAR SONOS_WALLPAPER_MESSAGE></span>
+										</TMPL_IF>
+									</div>
+
+									<div class="sonos-wallpaper-brightness-wrap" style="display:flex; align-items:center; gap:8px; flex:1 1 360px; min-width:300px; max-width:860px; white-space:nowrap; margin-top:0;">
+										<label for="liquid_glass_wallpaper_brightness_slider" id="lliquidglassbrightness" style="margin:0; white-space:nowrap;">Brightness:</label>
+										<div style="flex:1 1 auto; min-width:240px; max-width:860px;">
+											<input type="hidden" name="liquid_glass_wallpaper_brightness" id="liquid_glass_wallpaper_brightness" value="<TMPL_VAR SONOS_WALLPAPER_BRIGHTNESS>">
+											<input type="text" id="liquid_glass_wallpaper_brightness_slider" value="<TMPL_VAR SONOS_WALLPAPER_BRIGHTNESS>" data-role="none" style="width:100%; min-width:240px; max-width:340px;">
+										</div>
+									</div>
+								</TMPL_IF>
+							</div>
+						</td>
+					</tr>
+				<TMPL_ELSE>
+					<TMPL_IF NAME="SONOS_WALLPAPER_SHOW">
+						<tr>
+							<td style="height: 50px; width: 25%; vertical-align: middle;">
+								<label id="lsonostheme">Sonos Themes:</label>
+							</td>
+
+							<td style="height: 50px; width: 800px; vertical-align: middle;">
+								<div class="sonos-theme-line-wrap" style="display:flex; align-items:center; gap:16px; width:100%; max-width:none; white-space:nowrap; flex-wrap:nowrap;">
+									<div class="sonos-wallpaper-wrap" style="display:flex; align-items:center; gap:8px; flex:0 0 auto; min-width:0; white-space:nowrap;">
+										<label for="sonos_wallpaper_file" id="lsonoswallpaper" style="margin:0; white-space:nowrap;">Wallpaper:</label>
+										<input
+											type="file"
+											name="sonos_wallpaper_file"
+											id="sonos_wallpaper_file"
+											accept="image/png,image/jpeg,image/webp"
+											data-role="none"
+											style="display:none;"
+											onchange="document.getElementById('sonos_wallpaper_filename').textContent = this.files && this.files.length ? this.files[0].name : '';">
+										<button type="button" class="lb-btn lb-btn-sm" data-role="none" onclick="document.getElementById('sonos_wallpaper_file').click();">Open file</button>
+										<button type="submit" name="sonos_wallpaper_upload" value="1" class="lb-btn lb-btn-sm" data-role="none">Upload</button>
+										<TMPL_IF NAME="SONOS_WALLPAPER_CUSTOM_ACTIVE">
+											<button type="submit" name="sonos_wallpaper_reset" value="1" class="lb-btn lb-btn-sm" data-role="none">Default</button>
+										</TMPL_IF>
+										<span id="sonos_wallpaper_filename" style="font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:160px;"></span>
+										<TMPL_IF NAME="SONOS_WALLPAPER_CUSTOM_ACTIVE">
+											<span style="font-size:12px;">Custom active</span>
+										</TMPL_IF>
+										<TMPL_IF NAME="SONOS_WALLPAPER_MESSAGE">
+											<span style="font-size:12px;"><TMPL_VAR SONOS_WALLPAPER_MESSAGE></span>
+										</TMPL_IF>
+									</div>
+
+									<div class="sonos-wallpaper-brightness-wrap" style="display:flex; align-items:center; gap:8px; flex:1 1 360px; min-width:300px; max-width:860px; white-space:nowrap; margin-top:0;">
+										<label for="liquid_glass_wallpaper_brightness_slider" id="lliquidglassbrightness" style="margin:0; white-space:nowrap;">Brightness:</label>
+										<div style="flex:1 1 auto; min-width:240px; max-width:860px;">
+											<input type="hidden" name="liquid_glass_wallpaper_brightness" id="liquid_glass_wallpaper_brightness" value="<TMPL_VAR SONOS_WALLPAPER_BRIGHTNESS>">
+											<input type="text" id="liquid_glass_wallpaper_brightness_slider" value="<TMPL_VAR SONOS_WALLPAPER_BRIGHTNESS>" data-role="none" style="width:100%; min-width:240px; max-width:340px;">
+										</div>
+									</div>
+								</div>
+							</td>
+						</tr>
+					</TMPL_IF>
+				</TMPL_IF>
 				
             </table>
 

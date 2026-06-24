@@ -1,6 +1,9 @@
 #!/usr/bin/perl -w
 # =============================================================================
 # Sonos4Lox / Sonos UI - index.cgi
+# Refactor InterfaceSelfCheck: V01.0 2026-06-09
+# Consolidated index.cgi: V01.0 2026-06-10 (Logik base + CSS/liquid-glass adjustments)
+# Sonos Theme Selector: V11.0 2026-06-23
 # =============================================================================
 # Copyright 2026 Oliver Lewald
 #
@@ -32,6 +35,7 @@ use CGI qw/:standard/;
 use CGI ();
 use LWP::UserAgent;
 use File::Copy qw(copy);
+use File::Path qw(make_path);
 use File::Compare;
 use Time::HiRes qw(time);
 use POSIX qw(strftime);
@@ -70,8 +74,8 @@ my $pluginlogfile         = "sonos.log";
 my $ttsfolder             = "tts";
 my $mp3folder             = "mp3";
 # --- System scripts/files ---
-my $scanzonesfile         = "network.php";
-my $udp_file              = "ms_inbound.php";
+my $scanzonesfile         = "src/Core/Discovery/Discovery.php";
+my $udp_file              = "src/Core/Communication/MsInbound.php";
 # --- Defaults ---
 my $azureregion           = "westeurope";
 # --- (Legacy) Remote info file (currently not used) ---
@@ -247,6 +251,18 @@ if (exists $cfg->{vlan_static_ips}) {
     delete $cfg->{vlan_static_ips};
     $defaultSave = "true";
 }
+if (!defined $cfg->{UI} || ref($cfg->{UI}) ne 'HASH') {
+    $cfg->{UI} = {};
+    $defaultSave = "true";
+}
+if (!defined $cfg->{UI}->{sonostheme}) {
+    $cfg->{UI}->{sonostheme} = "system";
+    $defaultSave = "true";
+}
+if (!defined $cfg->{UI}->{liquid_glass_wallpaper_brightness}) {
+    $cfg->{UI}->{liquid_glass_wallpaper_brightness} = 43;
+    $defaultSave = "true";
+}
 if (is_enabled($defaultSave)) {
     $jsonobj->write();
 }
@@ -261,17 +277,15 @@ my ($lbv) = $lbversion =~ /^(\d+)/;
 $lbv //= 0;
 
 our $theme = $generalcfg->{Base}->{Theme};
+our $sonos_theme_info = s4l_get_sonos_theme_info();
 
 $cgi = CGI->new;
 $cgi->import_names('R');
 $mqttcred = LoxBerry::IO::mqtt_connectiondetails();
 
-our $htmlhead;
-if ($lbv < 4)  {
-	$htmlhead = '<link rel="stylesheet" href="/plugins/'.$lbpplugindir.'/web/sonos_lbv3.css"/>';
-} else {
-	$htmlhead = '<link rel="stylesheet" href="/plugins/'.$lbpplugindir.'/web/sonos_lbv4.css"/>';
-}
+our $s4l_wallpaper_message = "";
+our $htmlhead = s4l_build_htmlhead();
+
 #########################################################################
 # Handle AJAX requests
 #########################################################################
@@ -306,13 +320,14 @@ if ($q->{action} && $q->{action} ne 'save_vlan_ip') {   # <-- nur hier ne 'save_
         exit;
     }
     if ($AJAX_ACTION eq "profiles") {
-        $vcfg = $jsonobj->open(
-            filename     => $lbpconfigdir . "/s4lox_vol_profiles.json",
-            writeonclose => 0
-        );
-        print JSON::encode_json($vcfg);
-        exit;
-    }
+		my $jsonobjvol = LoxBerry::JSON->new();
+		$vcfg = $jsonobjvol->open(
+			filename     => $lbpconfigdir . "/s4lox_vol_profiles.json",
+			writeonclose => 0
+		);
+		print JSON::encode_json($vcfg);
+		exit;
+	}
     if ($AJAX_ACTION eq "getradio") {
         print JSON::encode_json($cfg->{RADIO}->{radio});
         exit;
@@ -518,6 +533,7 @@ if (!-r $lbpconfigdir . "/" . $configfile) {
     error();
 } else {
     LOGDEB "The Sonos config file has been loaded";
+    s4l_check_system_interfaces('Plugin GUI open', 0);
 }
 LOGDEB "LoxBerry Version: $lbversion";
 ##########################################################################
@@ -554,7 +570,20 @@ if ($log->loglevel() eq "7") {
 ##########################################################################
 # Handle form submits
 ##########################################################################
-if ($R::saveformdata1) {
+if ((defined $cgi->param('sonos_wallpaper_upload') && $cgi->param('sonos_wallpaper_upload'))
+    || (defined $cgi->param('sonos_wallpaper_reset') && $cgi->param('sonos_wallpaper_reset'))) {
+    $template->param(FORMNO => 'form');
+
+    # Sonos4Lox_SonosThemeSelector_V12
+    # Wallpaper submit is handled before the normal settings save routine.
+    # The upload controls are part of the main multipart form; this branch
+    # prevents the regular settings save from running for Upload/Default only.
+    s4l_handle_liquid_glass_wallpaper_upload();
+
+    $sonos_theme_info = s4l_get_sonos_theme_info();
+    $htmlhead = s4l_build_htmlhead();
+}
+elsif ($R::saveformdata1) {
     $template->param(FORMNO => 'form');
     save();
 }
@@ -651,6 +680,430 @@ error();
 exit;
 
 #####################################################
+# Sonos theme selector helpers
+#####################################################
+sub s4l_normalize_theme_name
+{
+    my ($value) = @_;
+    $value = '' if !defined $value;
+    $value = lc($value);
+    $value =~ s/^\s+|\s+$//g;
+    $value =~ s/_/-/g;
+    $value =~ s/\.css$//;
+    $value =~ s/^theme-//;
+
+    # SONOS_THEME_SELECTOR_V05_2026_06_21:
+    # Keep native LoxBerry theme names such as "glass" instead of collapsing
+    # them to "system". The saved Sonos plugin-theme value is still validated
+    # later against the explicit allow-list, but the effective system theme
+    # must remain detectable so the white Sonos logo is used for theme-glass.
+    return 'system' if $value eq '' || $value eq 'default' || $value eq 'auto';
+    return 'classic-mac' if $value eq 'mac-classic';
+    return $value;
+}
+
+sub s4l_system_theme_css_exists
+{
+    my ($theme_name) = @_;
+    $theme_name = s4l_normalize_theme_name($theme_name);
+    return 0 if $theme_name eq 'system';
+    my @css_files = (
+        "$lbhomedir/webfrontend/html/system/css/theme-$theme_name.css",
+        "$lbhomedir/webfrontend/html/system/theme-$theme_name.css",
+    );
+
+    foreach my $css_file (@css_files) {
+        return 1 if -e $css_file;
+    }
+    return 0;
+}
+
+sub s4l_can_use_plugin_liquid_glass_wallpaper
+{
+    # SONOS_THEME_SELECTOR_V11_2026_06_23:
+    # Wallpaper controls and the plugin-local wallpaper background are only
+    # valid for the plugin-local Liquid Glass fallback. If Liquid Glass exists
+    # as a real LoxBerry system theme, the system theme owns the complete
+    # background handling and everything from "Wallpaper" to the right must
+    # remain hidden. Classic Mac never uses the wallpaper controls either.
+    return 0 if $lbv < 4;
+    return 0 if s4l_system_theme_css_exists('liquid-glass');
+
+    my $effective_theme = s4l_effective_theme_lc();
+    return ($effective_theme eq 'liquid-glass') ? 1 : 0;
+}
+
+sub s4l_get_sonos_theme_info
+{
+    my $saved_theme = 'system';
+    if (ref($cfg) eq 'HASH' && ref($cfg->{UI}) eq 'HASH') {
+        $saved_theme = s4l_normalize_theme_name($cfg->{UI}->{sonostheme});
+    }
+
+    my %plugin_theme_allowed = (
+        'classic-mac'  => ($lbv >= 4 && !s4l_system_theme_css_exists('classic-mac')) ? 1 : 0,
+        'liquid-glass' => ($lbv >= 4 && !s4l_system_theme_css_exists('liquid-glass')) ? 1 : 0,
+    );
+
+    my $show_selector = ($lbv >= 4 && ($plugin_theme_allowed{'classic-mac'} || $plugin_theme_allowed{'liquid-glass'})) ? 1 : 0;
+    my $effective_theme = ($show_selector && $plugin_theme_allowed{$saved_theme}) ? $saved_theme : 'system';
+
+    return {
+        saved          => $saved_theme,
+        effective      => $effective_theme,
+        show_selector  => $show_selector,
+        allowed        => \%plugin_theme_allowed,
+    };
+}
+
+sub s4l_validate_sonos_theme_for_save
+{
+    my ($requested_theme) = @_;
+    $requested_theme = s4l_normalize_theme_name($requested_theme);
+    my $info = s4l_get_sonos_theme_info();
+    return $requested_theme if $requested_theme eq 'system';
+    return $requested_theme if $info->{show_selector} && $info->{allowed}->{$requested_theme};
+    return 'system';
+}
+
+sub s4l_effective_theme_lc
+{
+    my $system_theme = s4l_normalize_theme_name($theme);
+    if (ref($sonos_theme_info) eq 'HASH' && ($sonos_theme_info->{effective} // 'system') ne 'system') {
+        return $sonos_theme_info->{effective};
+    }
+    return $system_theme;
+}
+
+sub s4l_render_sonos_theme_options_html
+{
+    return '' if ref($sonos_theme_info) ne 'HASH';
+
+    my $effective = $sonos_theme_info->{effective} // 'system';
+    my @options = ({ value => 'system', label => 'System' });
+
+    if ($sonos_theme_info->{allowed}->{'classic-mac'}) {
+        push @options, { value => 'classic-mac', label => 'Classic Mac' };
+    }
+    if ($sonos_theme_info->{allowed}->{'liquid-glass'}) {
+        push @options, { value => 'liquid-glass', label => 'Liquid Glass' };
+    }
+
+    my $html = '';
+    for my $option (@options) {
+        my $selected = ($option->{value} eq $effective) ? ' selected="selected"' : '';
+        $html .= '<option value="' . $option->{value} . '"' . $selected . '>' . $option->{label} . '</option>';
+    }
+    return $html;
+}
+
+sub s4l_set_sonos_theme_template_params
+{
+    return if !$template || ref($sonos_theme_info) ne 'HASH';
+    $template->param('SONOS_THEME_SHOW_SELECTOR' => $sonos_theme_info->{show_selector} ? 1 : 0);
+    $template->param('SONOS_THEME_OPTIONS_HTML'  => s4l_render_sonos_theme_options_html());
+    $template->param('SONOS_THEME_SELECTED'      => $sonos_theme_info->{effective} // 'system');
+}
+
+sub s4l_get_liquid_glass_wallpaper_brightness
+{
+    my $value = 43;
+    if (ref($cfg) eq 'HASH' && ref($cfg->{UI}) eq 'HASH' && defined $cfg->{UI}->{liquid_glass_wallpaper_brightness}) {
+        $value = $cfg->{UI}->{liquid_glass_wallpaper_brightness};
+    }
+
+    $value = 43 if $value !~ /^\d+(?:\.\d+)?$/;
+    $value = int($value + 0.5);
+    $value = 0 if $value < 0;
+    $value = 100 if $value > 100;
+    return $value;
+}
+
+sub s4l_save_liquid_glass_wallpaper_brightness
+{
+    my ($value) = @_;
+    return if !defined $value;
+    $value = 43 if $value !~ /^\d+(?:\.\d+)?$/;
+    $value = int($value + 0.5);
+    $value = 0 if $value < 0;
+    $value = 100 if $value > 100;
+    $cfg->{UI}->{liquid_glass_wallpaper_brightness} = $value;
+}
+
+sub s4l_liquid_glass_wallpaper_dim_values
+{
+    my $brightness = s4l_get_liquid_glass_wallpaper_brightness();
+    my $primary = (100 - $brightness) / 100;
+    my $secondary = $primary - 0.10;
+    $secondary = 0 if $secondary < 0;
+    return (sprintf('%.2f', $primary), sprintf('%.2f', $secondary));
+}
+
+
+sub s4l_wallpaper_dir
+{
+    return $lbpdatadir . "/themes";
+}
+
+sub s4l_custom_wallpaper_files
+{
+    my $dir = s4l_wallpaper_dir();
+    return map { "$dir/liquid-glass-background.$_" } qw(png jpg jpeg webp);
+}
+
+sub s4l_find_custom_wallpaper
+{
+    for my $file (s4l_custom_wallpaper_files()) {
+        return $file if -r $file;
+    }
+    return '';
+}
+
+sub s4l_delete_custom_wallpaper
+{
+    for my $file (s4l_custom_wallpaper_files()) {
+        unlink $file if -e $file;
+    }
+}
+
+sub s4l_wallpaper_cache_buster
+{
+    my $file = s4l_find_custom_wallpaper();
+    if (!$file) {
+        $file = $lbphtmldir . "/LayoutUI/themes/theme-liquid-glass-background.png";
+    }
+    my @stat = stat($file);
+    return $stat[9] || time();
+}
+
+sub s4l_liquid_glass_wallpaper_style_tag
+{
+    return '' if $lbv < 4;
+
+    my $url = '/plugins/' . $lbpplugindir . '/LayoutUI/themes/theme-wallpaper.cgi?v=' . s4l_wallpaper_cache_buster();
+    my ($dim_primary, $dim_secondary) = s4l_liquid_glass_wallpaper_dim_values();
+
+    return '<style id="s4lox-liquid-glass-wallpaper-style">' . "\n"
+        . 'body.theme-liquid-glass {' . "\n"
+        . '--s4lox-liquid-glass-wallpaper-dim-primary: ' . $dim_primary . ';' . "\n"
+        . '--s4lox-liquid-glass-wallpaper-dim-secondary: ' . $dim_secondary . ';' . "\n"
+        . '}' . "\n"
+        . 'body.theme-liquid-glass::before {' . "\n"
+        . 'content: "";' . "\n"
+        . 'position: fixed;' . "\n"
+        . 'inset: 0;' . "\n"
+        . 'z-index: -2;' . "\n"
+        . 'pointer-events: none;' . "\n"
+        . 'background:' . "\n"
+        . 'linear-gradient(135deg, rgba(3, 8, 16, var(--s4lox-liquid-glass-wallpaper-dim-primary, 0.68)), rgba(10, 24, 38, var(--s4lox-liquid-glass-wallpaper-dim-secondary, 0.58))),' . "\n"
+        . 'radial-gradient(900px 500px at 15% 10%, rgba(96, 130, 165, 0.10), transparent 52%),' . "\n"
+        . 'radial-gradient(900px 500px at 85% 90%, rgba(73, 102, 133, 0.08), transparent 54%),' . "\n"
+        . 'radial-gradient(700px 420px at 65% 15%, rgba(109, 172, 32, 0.035), transparent 58%),' . "\n"
+        . 'url("' . $url . '") center center / cover fixed no-repeat !important;' . "\n"
+        . '}' . "\n"
+        . '</style>' . "\n";
+}
+
+sub s4l_detect_wallpaper_magic
+{
+    my ($file) = @_;
+    return '' if !$file || !-r $file;
+
+    open(my $fh, '<:raw', $file) or return '';
+    read($fh, my $head, 16);
+    close($fh);
+
+    return 'png'  if $head =~ /^\x89PNG\r\n\x1a\n/s;
+    return 'jpg'  if $head =~ /^\xff\xd8\xff/s;
+    return 'webp' if $head =~ /^RIFF.{4}WEBP/s;
+    return '';
+}
+
+sub s4l_handle_liquid_glass_wallpaper_upload
+{
+    return if !s4l_can_use_plugin_liquid_glass_wallpaper();
+
+    my $reset_requested  = defined $cgi->param('sonos_wallpaper_reset')  && $cgi->param('sonos_wallpaper_reset');
+    my $upload_requested = defined $cgi->param('sonos_wallpaper_upload') && $cgi->param('sonos_wallpaper_upload');
+
+    if ($reset_requested) {
+        s4l_delete_custom_wallpaper();
+        $s4l_wallpaper_message = 'Liquid Glass wallpaper reset to default.';
+        return;
+    }
+
+    return if !$upload_requested;
+
+    my $upload = $cgi->upload('sonos_wallpaper_file');
+    if (!$upload) {
+        $s4l_wallpaper_message = 'Wallpaper upload failed: no file was received by index.cgi.';
+        return;
+    }
+
+    my $filename = $cgi->param('sonos_wallpaper_file') // '';
+    my ($ext) = lc($filename) =~ /\.([a-z0-9]+)$/;
+    $ext = '' if !defined $ext;
+
+    if ($ext eq 'jpeg') {
+        $ext = 'jpg';
+    }
+
+    if ($ext !~ /^(png|jpg|webp)$/) {
+        $s4l_wallpaper_message = 'Wallpaper upload rejected: allowed formats are PNG, JPG and WEBP.';
+        return;
+    }
+
+    my $max_size = 5 * 1024 * 1024;
+    my $dir = s4l_wallpaper_dir();
+    eval { make_path($dir) if !-d $dir; };
+    if ($@ || !-d $dir) {
+        $s4l_wallpaper_message = 'Wallpaper upload failed: could not create data directory.';
+        return;
+    }
+
+    my $tmp = "$dir/liquid-glass-background.upload";
+
+    open(my $out, '>:raw', $tmp) or do {
+        $s4l_wallpaper_message = 'Wallpaper upload failed: could not write uploaded file.';
+        return;
+    };
+
+    binmode($upload);
+    eval { seek($upload, 0, 0); };
+    my $size = 0;
+    my $too_large = 0;
+    while (1) {
+        my $buffer = '';
+        my $read = read($upload, $buffer, 8192);
+        if (!defined $read) {
+            close($out);
+            unlink $tmp if -e $tmp;
+            $s4l_wallpaper_message = 'Wallpaper upload failed: could not read uploaded file.';
+            return;
+        }
+        last if $read == 0;
+        $size += $read;
+        if ($size > $max_size) {
+            $too_large = 1;
+            last;
+        }
+        print {$out} $buffer;
+    }
+    close($out);
+
+    if ($too_large) {
+        unlink $tmp if -e $tmp;
+        $s4l_wallpaper_message = 'Wallpaper upload rejected: maximum size is 5 MB.';
+        return;
+    }
+
+    my $detected_ext = s4l_detect_wallpaper_magic($tmp);
+    if ($size <= 0 || $detected_ext eq '') {
+        unlink $tmp if -e $tmp;
+        $s4l_wallpaper_message = 'Wallpaper upload rejected: invalid image file.';
+        return;
+    }
+
+    # Use the detected image type for the stored filename. This avoids false
+    # rejects when browsers/devices provide a valid image with a misleading
+    # or normalized filename extension.
+    $ext = $detected_ext;
+    my $target = "$dir/liquid-glass-background.$ext";
+
+    s4l_delete_custom_wallpaper();
+    rename($tmp, $target) or do {
+        unlink $tmp if -e $tmp;
+        $s4l_wallpaper_message = 'Wallpaper upload failed: could not activate uploaded file.';
+        return;
+    };
+
+    chmod 0644, $target;
+    $s4l_wallpaper_message = 'Liquid Glass wallpaper uploaded successfully.';
+}
+
+sub s4l_build_htmlhead
+{
+    my $head = '';
+
+    if ($lbv < 4) {
+        return '<link rel="stylesheet" href="/plugins/'.$lbpplugindir.'/LayoutUI/sonos_lbv3.css"/>';
+    }
+
+    my $effective_theme = (ref($sonos_theme_info) eq 'HASH') ? ($sonos_theme_info->{effective} // 'system') : 'system';
+    if ($effective_theme eq 'classic-mac' || $effective_theme eq 'liquid-glass') {
+        $head .= '<link rel="stylesheet" href="/plugins/'.$lbpplugindir.'/LayoutUI/themes/theme-'.$effective_theme.'.css?v='.$sversion.'"/>' . "\n";
+        $head .= '<script>(function(){var themeClass="theme-'.$effective_theme.'";function applySonosTheme(){var body=document.body;if(!body){window.setTimeout(applySonosTheme,0);return;}Array.prototype.slice.call(body.classList).forEach(function(cls){if(/^theme-/.test(cls)){body.classList.remove(cls);}});body.classList.add(themeClass);}applySonosTheme();})();</script>' . "\n";
+    }
+
+    if (s4l_can_use_plugin_liquid_glass_wallpaper()) {
+        $head .= s4l_liquid_glass_wallpaper_style_tag();
+    }
+
+    $head .= '<link rel="stylesheet" href="/plugins/'.$lbpplugindir.'/LayoutUI/sonos_lbv4.css"/>';
+    return $head;
+}
+
+#####################################################
+# Interface self-check / refresh
+#####################################################
+sub s4l_expected_system_interfaces
+{
+    return (
+        httpinterface => "http://$host:$lbport/plugins/$lbpplugindir/interfacedownload",
+        smbinterface  => "smb://$lbip:$lbport/plugindata/$lbpplugindir/interfacedownload",
+        cifsinterface => "x-file-cifs://$lbip/plugindata/$lbpplugindir/interfacedownload",
+    );
+}
+
+sub s4l_extract_interface_host
+{
+    my ($value) = @_;
+    return '' if !defined $value || $value eq '';
+    if ($value =~ m#^[a-zA-Z][a-zA-Z0-9+.-]*://([^/:]+)#) {
+        return $1;
+    }
+    return '';
+}
+
+sub s4l_is_ipv4
+{
+    my ($value) = @_;
+    return 0 if !defined $value;
+    return ($value =~ /^(?:\d{1,3}\.){3}\d{1,3}$/) ? 1 : 0;
+}
+
+sub s4l_check_system_interfaces
+{
+    my ($context, $refresh) = @_;
+    $context = 'Plugin GUI' if !defined $context || $context eq '';
+    $refresh = 0 if !defined $refresh;
+
+    my %expected = s4l_expected_system_interfaces();
+    my @keys = qw(httpinterface smbinterface cifsinterface);
+
+    foreach my $key (@keys) {
+        my $current = $cfg->{SYSTEM}->{$key} // '';
+        my $wanted  = $expected{$key};
+        my $current_host = s4l_extract_interface_host($current);
+
+        # Only IP based stale checks are enforced. Hostname based httpinterface
+        # values are allowed because LoxBerry may intentionally use lbhostname().
+        if ($current ne '' && s4l_is_ipv4($current_host) && $current_host ne $lbip) {
+            LOGWARN("index.cgi: $context: SYSTEM.$key uses stale IP '$current_host', current LoxBerry IP is '$lbip'.");
+            if ($refresh) {
+                LOGINF("index.cgi: $context: SYSTEM.$key refreshed from '$current' to '$wanted'.");
+                $cfg->{SYSTEM}->{$key} = $wanted;
+            }
+        } elsif ($refresh) {
+            if ($current ne $wanted) {
+                LOGINF("index.cgi: $context: SYSTEM.$key set to '$wanted'.");
+            }
+            $cfg->{SYSTEM}->{$key} = $wanted;
+        }
+    }
+}
+
+#####################################################
 # Form (main page renderer)
 #####################################################
 sub form
@@ -661,15 +1114,26 @@ sub form
         $cfg->{SYSTEM}->{path} = "$lbpdatadir";
         LOGINF("Default path has been added to config");
     }
+	my $theme_lc = s4l_effective_theme_lc();
+	s4l_set_sonos_theme_template_params();
+
 	if ($lbv >= 4) {
 		$template->param("LBV4", 1);
+	}
 
-		if (defined $theme && lc($theme) eq "glass") {
-			$template->param("THEMEGLASS", 1);
-		}
-		if (defined $theme && lc($theme) eq "classic-mac") {
-			$template->param("THEMEMAC", 1);
-		}
+	if ($lbv >= 4 && $theme_lc =~ /glass/ && $theme_lc ne "classic-mac") {
+		$template->param("THEMEGLASS", 1);
+	}
+
+	if ($lbv >= 4 && $theme_lc eq "classic-mac") {
+		$template->param("THEMEMAC", 1);
+	}
+
+	if (s4l_can_use_plugin_liquid_glass_wallpaper()) {
+		$template->param("SONOS_WALLPAPER_SHOW", 1);
+		$template->param("SONOS_WALLPAPER_CUSTOM_ACTIVE", s4l_find_custom_wallpaper() ? 1 : 0);
+		$template->param("SONOS_WALLPAPER_MESSAGE", $s4l_wallpaper_message) if $s4l_wallpaper_message ne '';
+		$template->param("SONOS_WALLPAPER_BRIGHTNESS", s4l_get_liquid_glass_wallpaper_brightness());
 	}
 	my $storage = LoxBerry::Storage::get_storage_html(
 					formid => 'STORAGEPATH',
@@ -733,7 +1197,7 @@ sub form
 
     # Build failed IP text from:
     # 1) failed manual validation in manual_unicast_ip_handler()
-    # 2) optional unicast_failed hint returned by network.php
+    # 2) optional unicast_failed hint returned by Discovery.php
     my $failed_ip_text = $vlan_unicast_failed_text // '';
 
     if ($vlan_hint_reason eq 'unicast_failed') {
@@ -798,9 +1262,13 @@ sub form
 						  . "</a>"
 						  . "</td>\n";
 		if (-e $statusfile) {
+			my $zone_input_class = ($theme_lc eq "classic-mac")
+				? "player-zone-input"
+				: "player-zone-input player-zone-online";
+
 			$rowssonosplayer .= "<td style='height: 28px; width: 16%;'>"
 							  . "<input type='text' "
-							  . "class='player-zone-input player-zone-online' "
+							  . "class='$zone_input_class' "
 							  . "id='zone$countplayers' "
 							  . "name='zone$countplayers' "
 							  . "size='40' "
@@ -841,7 +1309,7 @@ sub form
 		}
 		$rowssonosplayer .= "<td style='height: 28px; width: 19%;'><input type='text' id='ip$countplayers' name='ip$countplayers' size='30' readonly='true' value='" . ($zone->[0] // '') . "'</td>\n";
 		my $audioclip_ok = ($zone->[11]) ? 1 : 0;
-		my $is_classic_mac = (defined $theme && lc($theme) eq "classic-mac") ? 1 : 0;
+		my $is_classic_mac = ($theme_lc eq "classic-mac") ? 1 : 0;
 
 		my $audioclip_symbol = "";
 		my $audioclip_font_size = $is_classic_mac ? "27px" : "20px";
@@ -948,7 +1416,22 @@ sub form
 				style    => "margin:0;"
 			);
 			$rowssoundbar .= "</div>\n</div>\n</div>\n</td>\n</tr>\n";
-			$rowssoundbar .= "<tr class='tvmon_header' id='soundbar_header_$room' style='background-color:#6db33f;'>\n";
+						my $tvmon_header_style = "";
+
+				# Use the effective Sonos theme here, not only the global LoxBerry theme.
+				# Otherwise the TV monitor header may still get the legacy green
+				# background when the plugin-local Liquid Glass theme is active.
+				if ($lbv >= 4 && ($theme_lc eq 'glass' || $theme_lc eq 'rounded-glass' || $theme_lc eq 'liquid-glass')) {
+					$tvmon_header_style = '';
+				}
+				elsif ($lbv >= 4 && $theme_lc eq 'classic-mac') {
+					$tvmon_header_style = " style='background-color:#000000;'";
+				}
+				else {
+					$tvmon_header_style = " style='background-color:#6db33f;'";
+				}
+
+				$rowssoundbar .= "<tr class='tvmon_header' id='soundbar_header_$room'$tvmon_header_style>\n";
 			$rowssoundbar .= "<th class='sb_col_switch'>$SL{'SOUNDBARS.LABEL_SPEECH'}</th>\n";
 			$rowssoundbar .= "<th class='sb_col_switch'>$SL{'SOUNDBARS.LABEL_SURROUND'}</th>\n";
 			$rowssoundbar .= "<th class='sb_col_level sb_tvsurrlevel_col_$room' style='$surrlevel_style'>SurLev</th>\n";
@@ -991,7 +1474,7 @@ sub form
 			my @saved_players = @{ (ref($sbcfg->{tvgrpstop}) eq 'ARRAY') ? $sbcfg->{tvgrpstop} : [] };
 
 			$rowssoundbar .= "<td class='sb_col_group sb_select_wrap sb_player_select_wrap'>\n";
-			$rowssoundbar .= "<div class='sb_player_dropdown_wrap' onmouseenter='showGreenTooltip(\"#$tip_id\")' onmouseleave='hideTooltip(\"#$tip_id\")' onmousedown='hideTooltip(\"#$tip_id\")' onclick='hideTooltip(\"#$tip_id\")'>\n";
+			$rowssoundbar .= "<div class='sb_player_dropdown_wrap' onmouseenter='showTooltip(\"#$tip_id\")' onmouseleave='hideTooltip(\"#$tip_id\")' onmousedown='hideTooltip(\"#$tip_id\")' onclick='hideTooltip(\"#$tip_id\")'>\n";
 			if ($lbv >= 4) {
 				$rowssoundbar .= "<details class='sb_player_details'>\n";
 				$rowssoundbar .= "<summary>$SL{'SOUNDBARS.LABEL_SELECT'}</summary>\n";
@@ -1044,13 +1527,10 @@ sub form
         $rowssonosplayer .= "<tr><td colspan=10>" . $SL{'ZONES.SONOS_EMPTY_ZONES'} . "</td></tr>\n";
     }
     $rowssonosplayer .= "<input type='hidden' id='countplayers' name='countplayers' value='$countplayers'>\n";
-	my $scan_row_style = "";
-
-	my $theme_lc = defined $theme ? lc($theme) : '';
 	my $scan_row_style = '';
 
-	if ($lbv >= 4 && $theme_lc eq 'glass') {
-		# Glass theme: no colored scan row background
+	if ($lbv >= 4 && ($theme_lc eq 'glass' || $theme_lc eq 'rounded-glass' || $theme_lc eq 'liquid-glass')) {
+		# Glass / Liquid Glass theme: no colored scan row background
 		$scan_row_style = '';
 	}
 	elsif ($lbv >= 4 && $theme_lc eq 'classic-mac') {
@@ -1095,34 +1575,37 @@ sub form
     LOGDEB "Sonos soundbars have been discovered.";
 	
     my $mshtml = LoxBerry::Web::mslist_select_html(
-	FORMID    => 'ms',
-	SELECTED  => $jsonobj->{LOXONE}->{Loxone},
-	DATA_MINI => 1,
-	LABEL     => "",
-);
+		FORMID    => 'ms',
+		SELECTED  => $jsonobj->{LOXONE}->{Loxone},
+		DATA_MINI => 1,
+		LABEL     => "",
+	);
 
-# LBV4: Use native LoxBerry theme select instead of jQuery Mobile selectmenu
-if ($lbv >= 4) {
 
-	# Add lb-select class to the generated <select>
-	if ($mshtml =~ /<select\b[^>]*\bclass=/i) {
-		$mshtml =~ s/(<select\b[^>]*\bclass=["'])([^"']*)/$1$2 lb-select/i;
-	} else {
-		$mshtml =~ s/<select\b/<select class="lb-select"/i;
+	# LBV4: Use native LoxBerry theme select instead of jQuery Mobile selectmenu
+	if ($lbv >= 4) {
+
+		# Add lb-select class to the generated <select>
+		if ($mshtml =~ /<select\b[^>]*\bclass=/i) {
+			$mshtml =~ s/(<select\b[^>]*\bclass=["'])([^"']*)/$1$2 lb-select/i;
+		} else {
+			$mshtml =~ s/<select\b/<select class="lb-select"/i;
+		}
+
+		# Prevent jQuery Mobile enhancement in LBV4
+		if ($mshtml =~ /<select\b[^>]*\bdata-role=/i) {
+			$mshtml =~ s/(<select\b[^>]*\bdata-role=["'])[^"']*(["'])/$1none$2/i;
+		} else {
+			$mshtml =~ s/<select\b/<select data-role="none"/i;
+		}
+
+		# Optional: data-mini is only relevant for jQuery Mobile
+		$mshtml =~ s/\sdata-mini=["'][^"']*["']//ig;
 	}
 
-	# Prevent jQuery Mobile enhancement in LBV4
-	if ($mshtml =~ /<select\b[^>]*\bdata-role=/i) {
-		$mshtml =~ s/(<select\b[^>]*\bdata-role=["'])[^"']*(["'])/$1none$2/i;
-	} else {
-		$mshtml =~ s/<select\b/<select data-role="none"/i;
-	}
-
-	# Optional: data-mini is only relevant for jQuery Mobile
-	$mshtml =~ s/\sdata-mini=["'][^"']*["']//ig;
-}
-
-$template->param('MS', $mshtml);
+	$template->param('MS', $mshtml);
+	
+	
     LOGDEB "List of available Miniserver(s) has been loaded.";
     my $dir = $lbpdatadir . '/' . $ttsfolder . '/' . $mp3folder . '/';
     my $mp3_list = '';
@@ -1227,7 +1710,7 @@ sub scan
         LOGINF "Auto-Discovery: Manual VLAN IP scan requested – using UNICAST-ONLY mode.";
     }
 
-    my $cmd = "/usr/bin/php $lbphtmldir/system/$scanzonesfile --ttl=$ttl --mcast-ttl=$mcast_ttl$extra_args";
+    my $cmd = "/usr/bin/php $lbphtmldir/$scanzonesfile --ttl=$ttl --mcast-ttl=$mcast_ttl$extra_args";
 
     LOGDEB "Auto-Discovery: Executing command: $cmd";
 
@@ -1235,7 +1718,7 @@ sub scan
     $response =~ s/^\s+|\s+$//g;
 
     if ($response eq "") {
-        LOGWARN "Auto-Discovery: Empty response from network.php. Manual Sonos IP input will be shown.";
+        LOGWARN "Auto-Discovery: Empty response from Discovery.php. Manual Sonos IP input will be shown.";
 
         $vlan_hint        = 1;
         $vlan_hint_reason = 'empty_scan_result';
@@ -1263,11 +1746,11 @@ sub scan
         return($countplayers);
     }
 
-    LOGOK "Auto-Discovery: JSON data received from network.php.";
+    LOGOK "Auto-Discovery: JSON data received from Discovery.php.";
 
     my $newzones;
     eval { $newzones = decode_json($response); 1; } or do {
-        LOGERR "Auto-Discovery: Invalid JSON from network.php: $@";
+        LOGERR "Auto-Discovery: Invalid JSON from Discovery.php: $@";
         $error_message = $SL{'ERRORS.ERR_SCAN'};
         error();
         return($countplayers);
@@ -1286,7 +1769,7 @@ sub scan
         $vlan_hint_reason = $newzones->{'reason'}    // 'ssdp_failed_no_static_ips';
         $vlan_hint_ips    = $newzones->{'tried_ips'} // [];
 
-        LOGWARN "Auto-Discovery: VLAN hint received from network.php (reason: $vlan_hint_reason).";
+        LOGWARN "Auto-Discovery: VLAN hint received from Discovery.php (reason: $vlan_hint_reason).";
         LOGWARN "Auto-Discovery: SSDP discovery failed completely or unicast fallback failed.";
         LOGWARN "Auto-Discovery: Manual Sonos IP input will be shown.";
 
@@ -1520,10 +2003,10 @@ sub manual_unicast_ip_handler
 
     LOGINF "Auto-Discovery: Clearing discovery cache and running UNICAST scan...";
 
-    # Clear cache so network.php does not return an old empty result
+    # Clear cache so Discovery.php does not return an old empty result
     unlink($cache_file) if defined $cache_file && -e $cache_file;
 
-    # Run network.php in unicast-only mode using vlan_static_ips from config
+    # Run Discovery.php in unicast-only mode using vlan_static_ips from config
     $FORCE_UNICAST_SCAN = 1;
 	scan(@{ $result->{valid} // [] });
 	$FORCE_UNICAST_SCAN = 0;
@@ -1572,9 +2055,17 @@ sub save_details
     $cfg->{SYSTEM}->{hw_update_day} = "$R::hw_update_day";
     $cfg->{SYSTEM}->{hw_update_time} = "$R::hw_update_time";
     $cfg->{SYSTEM}->{hw_update_power} = "$R::hw_update_power";
+    if (defined $R::sonostheme) {
+        $cfg->{UI}->{sonostheme} = s4l_validate_sonos_theme_for_save($R::sonostheme);
+    }
+    if (defined $R::liquid_glass_wallpaper_brightness) {
+        s4l_save_liquid_glass_wallpaper_brightness($R::liquid_glass_wallpaper_brightness);
+    }
     $jsonobj->write();
+    $sonos_theme_info = s4l_get_sonos_theme_info();
+    $htmlhead = s4l_build_htmlhead();
     if ($R::cron eq "1") {
-        system("ln -s $lbphtmldir/bin/cron/cronjob.sh $lbhomedir/system/cron/cron.01min/$lbpplugindir");
+        system("ln -s $lbphtmldir/src/Core/systemd/cronjob.sh $lbhomedir/system/cron/cron.01min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.03min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
@@ -1583,7 +2074,7 @@ sub save_details
         LOGOK "Cron job (each minute) created";
     }
     if ($R::cron eq "3") {
-        system("ln -s $lbphtmldir/bin/cron/cronjob.sh $lbhomedir/system/cron/cron.03min/$lbpplugindir");
+        system("ln -s $lbphtmldir/src/Core/systemd/cronjob.sh $lbhomedir/system/cron/cron.03min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
@@ -1592,7 +2083,7 @@ sub save_details
         LOGOK "Cron job (every 3 minutes) created";
     }
     if ($R::cron eq "5") {
-        system("ln -s $lbphtmldir/bin/cron/cronjob.sh $lbhomedir/system/cron/cron.05min/$lbpplugindir");
+        system("ln -s $lbphtmldir/src/Core/systemd/cronjob.sh $lbhomedir/system/cron/cron.05min/$lbpplugindir");
 		unlink("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.03min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.10min/$lbpplugindir");
@@ -1601,7 +2092,7 @@ sub save_details
         LOGOK "Cron job (every 5 minutes) created";
     }
     if ($R::cron eq "10") {
-        system("ln -s $lbphtmldir/bin/cron/cronjob.sh $lbhomedir/system/cron/cron.10min/$lbpplugindir");
+        system("ln -s $lbphtmldir/src/Core/systemd/cronjob.sh $lbhomedir/system/cron/cron.10min/$lbpplugindir");
 		unlink("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.03min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
@@ -1610,7 +2101,7 @@ sub save_details
         LOGOK "Cron job (every 10 minutes) created";
     }
 	if ($R::cron eq "15") {
-        system("ln -s $lbphtmldir/bin/cron/cronjob.sh $lbhomedir/system/cron/cron.15min/$lbpplugindir");
+        system("ln -s $lbphtmldir/src/Core/systemd/cronjob.sh $lbhomedir/system/cron/cron.15min/$lbpplugindir");
 		unlink("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.03min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
@@ -1619,7 +2110,7 @@ sub save_details
         LOGOK "Cron job (every 15 minutes) created";
     }
     if ($R::cron eq "30") {
-        system("ln -s $lbphtmldir/bin/cron/cronjob.sh $lbhomedir/system/cron/cron.30min/$lbpplugindir");
+        system("ln -s $lbphtmldir/src/Core/systemd/cronjob.sh $lbhomedir/system/cron/cron.30min/$lbpplugindir");
 		unlink("$lbhomedir/system/cron/cron.01min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.03min/$lbpplugindir");
         unlink("$lbhomedir/system/cron/cron.05min/$lbpplugindir");
@@ -1647,13 +2138,13 @@ sub save
     my $countradios     	= param('countradios');
     my $LoxDaten        	= param('sendlox');
     my $selminiserver   	= param('ms');
-    my $sel_ms = substr($selminiserver, -1, 1);
-    my $gcfg = Config::Simple->new("$lbsconfigdir/general.cfg");
-    my $miniservers = $gcfg->param("BASE.MINISERVERS");
-    my $MiniServer  = $gcfg->param("MINISERVER$selminiserver.IPADDRESS");
-    my $MSWebPort   = $gcfg->param("MINISERVER$selminiserver.PORT");
-    my $MSUser      = $gcfg->param("MINISERVER$selminiserver.ADMIN");
-    my $MSPass      = $gcfg->param("MINISERVER$selminiserver.PASS");
+    my $sel_ms 				= substr($selminiserver, -1, 1);
+    my $gcfg 				= Config::Simple->new("$lbsconfigdir/general.cfg");
+    my $miniservers 		= $gcfg->param("BASE.MINISERVERS");
+    my $MiniServer  		= $gcfg->param("MINISERVER$selminiserver.IPADDRESS");
+    my $MSWebPort   		= $gcfg->param("MINISERVER$selminiserver.PORT");
+    my $MSUser      		= $gcfg->param("MINISERVER$selminiserver.ADMIN");
+    my $MSPass      		= $gcfg->param("MINISERVER$selminiserver.PASS");
     if ($LoxDaten eq "true") {
         LOGDEB "Communication to Miniserver is switched ON";
     } else {
@@ -1718,9 +2209,7 @@ sub save
     $cfg->{SYSTEM}->{mp3path}       = "$R::STORAGEPATH/$ttsfolder/$mp3folder";
     $cfg->{SYSTEM}->{ttspath}       = "$R::STORAGEPATH/$ttsfolder";
     $cfg->{SYSTEM}->{path}          = "$R::STORAGEPATH";
-    $cfg->{SYSTEM}->{httpinterface} = "http://$host:$lbport/plugins/$lbpplugindir/interfacedownload";
-    $cfg->{SYSTEM}->{smbinterface}  = "smb://$lbip:$lbport/plugindata/$lbpplugindir/interfacedownload";
-    $cfg->{SYSTEM}->{cifsinterface} = "x-file-cifs://$lbip/plugindata/$lbpplugindir/interfacedownload";
+    s4l_check_system_interfaces('Plugin GUI save', 1);
     LOGINF "Start writing settings to configuration file";
     my $copy_needed = 0;
     if (!-e "$R::STORAGEPATH/$ttsfolder/$mp3folder") {
@@ -1883,7 +2372,16 @@ sub save
     if (-r $lbpconfigdir . "/" . $volumeconfigfile && $del eq "true") {
         $jsonparser->write();
     }
+    if (defined $R::sonostheme) {
+        $cfg->{UI}->{sonostheme} = s4l_validate_sonos_theme_for_save($R::sonostheme);
+    }
+    if (defined $R::liquid_glass_wallpaper_brightness) {
+        s4l_save_liquid_glass_wallpaper_brightness($R::liquid_glass_wallpaper_brightness);
+    }
+    s4l_handle_liquid_glass_wallpaper_upload();
     $jsonobj->write();
+    $sonos_theme_info = s4l_get_sonos_theme_info();
+    $htmlhead = s4l_build_htmlhead();
     LOGDEB "Sonos Zones have been saved.";
 	if ($listener_config_changed) {
 		my $healthfile = "/dev/shm/$lbpplugindir/health.json";
@@ -1893,7 +2391,7 @@ sub save
     if ($R::sendlox eq "true") {
         prep_XML();
     }
-    my $tv = qx(/usr/bin/php $lbphtmldir/bin/tv_monitor_conf.php);
+    my $tv = qx(/usr/bin/php $lbphtmldir/src/Support/TvMonitor.php configure);
     LOGOK "Main settings have been saved successfully";
     return;
 }
@@ -2009,12 +2507,12 @@ sub volumes {
     if (-e $lbpconfigdir . "/" . $volumeconfigfile) {
         LOGDEB("Volume Profiles config already exists");
     } else {
-        my $volfile = qx(/usr/bin/php $lbphtmldir/bin/vol_prof_ini.php);
+        my $volfile = qx(/usr/bin/php $lbphtmldir/src/Support/VolumeProfileInitializer.php);
         LOGDEB("New Volume Profiles config has been created");
     }
     my $rowsvolplayer = '';
-    my $jsonobjvol    = LoxBerry::JSON->new();
-    my $vcfg_local    = $jsonobj->open(filename => $lbpconfigdir . "/" . $volumeconfigfile);
+	my $jsonobjvol    = LoxBerry::JSON->new();
+	my $vcfg_local    = $jsonobjvol->open(filename => $lbpconfigdir . "/" . $volumeconfigfile);
     my $last_id = (keys @$vcfg_local);
     my $config  = $cfg->{sonoszonen};
 	my $profile_check_col_width = 50;
@@ -2034,7 +2532,9 @@ sub volumes {
             . "</label>"
             . "</div>";
     };
-	my $volume_is_classic_mac = (defined $theme && lc($theme) eq "classic-mac") ? 1 : 0;
+	my $volume_theme_lc = s4l_effective_theme_lc();
+	my $volume_is_classic_mac = ($lbv >= 4 && $volume_theme_lc eq "classic-mac") ? 1 : 0;
+	my $volume_is_liquid_glass = ($lbv >= 4 && $volume_theme_lc eq "liquid-glass") ? 1 : 0;
 
 	my $vol_profile_label_style = $volume_is_classic_mac
 		? "height:36px; width:190px; padding:4px 8px; background:transparent; color:#000000; white-space:nowrap;"
@@ -2059,7 +2559,7 @@ sub volumes {
 			. "<span style='position:relative; display:inline-block; margin-right:8px;'>"
 			. "<img value='$id' id='btnload$id' name='btnload$id' class='ico-load' "
 			. "style='cursor:pointer;' "
-			. "onmouseenter='showGreenTooltip(\"#btnload_tip_$id\")' "
+			. "onmouseenter='showTooltip(\"#btnload_tip_$id\")' "
 			. "onmouseleave='hideTooltip(\"#btnload_tip_$id\")' "
 			. "src='/plugins/$lbpplugindir/images/musik-note.png' border='0' width='30' height='30'>"
 			. "<div id='btnload_tip_$id' "
@@ -2076,7 +2576,7 @@ sub volumes {
 				. "<span style='position:relative; display:inline-block;'>"
 				. "<img onclick='' value='$id' id='btndel$id' name='btndel$id' class='ico-delete' "
 				. "style='cursor:pointer;' "
-				. "onmouseenter='showGreenTooltip(\"#btndel_tip_$id\")' "
+				. "onmouseenter='showTooltip(\"#btndel_tip_$id\")' "
 				. "onmouseleave='hideTooltip(\"#btndel_tip_$id\")' "
 				. "src='/plugins/$lbpplugindir/images/recycle-bin.png' border='0' width='30' height='30'>"
 				. "<div id='btndel_tip_$id' "
@@ -2093,22 +2593,22 @@ sub volumes {
 						. "&nbsp;Profile #$id"
 						. "</td>\n";
 		$rowsvolplayer .= "<td colspan='3' style='$vol_profile_name_cell_style'>\n";
-my $profile_name_class = "volume-profile-name-input lb-input";
-my $profile_name_style_extra = "";
+		my $profile_name_class = "volume-profile-name-input lb-input";
+		my $profile_name_style_extra = "";
 
-if ($lbv >= 4 && defined $theme && lc($theme) eq "glass") {
-	$profile_name_class .= " volume-profile-name-input-glass";
-	$profile_name_style_extra =
-			  "background:#526970 !important; "
-			. "background-color:#526970 !important; "
-			. "background-image:none !important; "
-			. "color:#ffffff !important; "
-			. "-webkit-text-fill-color:#ffffff !important; "
-			. "caret-color:#ffffff !important; "
-			. "border-color:rgba(255,255,255,0.35) !important; "
-			. "box-shadow:none !important; "
-			. "text-shadow:none !important; ";
-		}
+		if ($lbv >= 4 && defined $theme && lc($theme) eq "glass") {
+			$profile_name_class .= " volume-profile-name-input-glass";
+			$profile_name_style_extra =
+					  "background:#526970 !important; "
+					. "background-color:#526970 !important; "
+					. "background-image:none !important; "
+					. "color:#ffffff !important; "
+					. "-webkit-text-fill-color:#ffffff !important; "
+					. "caret-color:#ffffff !important; "
+					. "border-color:rgba(255,255,255,0.35) !important; "
+					. "box-shadow:none !important; "
+					. "text-shadow:none !important; ";
+				}
 		$rowsvolplayer .= "<input "
 						. "type='text' "
 						. "id='profile$id' "
@@ -2126,6 +2626,19 @@ if ($lbv >= 4 && defined $theme && lc($theme) eq "glass") {
 		$rowsvolplayer .= "<td colspan='2' style='$vol_profile_actions_style'>"
 						. "$profile_actions"
 						. "</td>\n";
+		$rowsvolplayer .= "</tr>\n";
+
+		$rowsvolplayer .= "<tr class='volume-profile-column-header'>\n";
+		$rowsvolplayer .= "<th class='volume-profile-header-room'>&nbsp;Rooms</th>\n";
+		$rowsvolplayer .= "<th class='volume-profile-header-value'>V</th>\n";
+		$rowsvolplayer .= "<th class='volume-profile-header-value'>T</th>\n";
+		$rowsvolplayer .= "<th class='volume-profile-header-value'>B</th>\n";
+		$rowsvolplayer .= "<th class='volume-profile-header-toggle'>L</th>\n";
+		$rowsvolplayer .= "<th class='volume-profile-header-toggle'>SR</th>\n";
+		$rowsvolplayer .= "<th class='volume-profile-header-toggle'>SW</th>\n";
+		$rowsvolplayer .= "<th class='volume-profile-header-value'>SWL</th>\n";
+		$rowsvolplayer .= "<th class='volume-profile-header-check'>MA</th>\n";
+		$rowsvolplayer .= "<th class='volume-profile-header-check'>ME</th>\n";
 		$rowsvolplayer .= "</tr>\n";
 	
         foreach my $key (sort keys %$config) {
@@ -2151,9 +2664,18 @@ if ($lbv >= 4 && defined $theme && lc($theme) eq "glass") {
 				? "volume-zone-input"
 				: "volume-zone-input volume-zone-online";
 
-			my $volume_zone_style = $volume_is_classic_mac
-				? "width:100%; box-sizing:border-box;"
-				: "width:100%; box-sizing:border-box; background:#6dac20 !important; background-color:#6dac20 !important; background-image:none !important; color:#ffffff !important; -webkit-text-fill-color:#ffffff !important; caret-color:#ffffff !important; text-shadow:none !important;";
+			my $volume_zone_style = "width:100%; box-sizing:border-box;";
+
+			if (!$volume_is_classic_mac && !$volume_is_liquid_glass) {
+				$volume_zone_style .= " "
+					. "background:#6dac20 !important; "
+					. "background-color:#6dac20 !important; "
+					. "background-image:none !important; "
+					. "color:#ffffff !important; "
+					. "-webkit-text-fill-color:#ffffff !important; "
+					. "caret-color:#ffffff !important; "
+					. "text-shadow:none !important;";
+			}
 
 				$rowsvolplayer .= "<td style='height: 15px; width: 160px;'>"
 								. "<input type='text' "
@@ -2674,7 +3196,7 @@ sub getkeys
 #####################################################
 sub prep_XML
 {
-    my $udp_temp = qx(/usr/bin/php $lbphtmldir/system/$udp_file);
+    my $udp_temp = qx(/usr/bin/php $lbphtmldir/$udp_file);
     LOGOK "XML template file generation has been called";
     return();
 }

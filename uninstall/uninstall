@@ -1,65 +1,210 @@
 #!/bin/sh
+#
+# Sonos4Lox - uninstall
+# Version: UNINSTALL_ROBUSTNESS_V01_2026_06_15
+#
+# Purpose:
+# - Preserve the plugin config before uninstall.
+# - Remove Sonos4Lox-owned systemd units, timers, sudoers and cron entries.
+# - Remove Sonos4Lox runtime RAM logs/state without touching unrelated files.
+# - Be conservative with shared/global binaries such as /usr/bin/piper.
+#
 
-echo "<INFO> Creating Plugin Backup folder 'webfrontend/html/XL/sonos4lox_backup'"
-mkdir -p "$5/webfrontend/html/XL/sonos4lox_backup"
+PLUGIN="${3:-sonos4lox}"
+LBHOME="${5:-REPLACELBHOMEDIR}"
 
-echo "<INFO> Copy existing CONFIG files to 'webfrontend/html/XL' folder for further installations"
-cp -p -v -r "$5/config/plugins/$3/" "$5/webfrontend/html/XL/sonos4lox_backup" 2>/dev/null || true
+BACKUP_DIR="$LBHOME/webfrontend/html/XL/${PLUGIN}_backup"
+CONFIG_SRC="$LBHOME/config/plugins/$PLUGIN"
 
-echo "<INFO> Delete Piper symlink from '/usr/bin'"
-piper='/usr/bin/piper'
-if [ -L "$piper" ]; then
-	rm -f "$piper"
-fi
+log_info() {
+	echo "<INFO> $*"
+}
 
-echo "<INFO> Stopping and removing systemd units (service+timer) if present"
+log_ok() {
+	echo "<OK> $*"
+}
 
-# Check if systemctl exists
-if command -v systemctl >/dev/null 2>&1; then
+log_warning() {
+	echo "<WARNING> $*"
+}
 
-	# ---- Units to remove (EXACT names) ----
+log_error() {
+	echo "<ERROR> $*"
+}
+
+safe_mkdir() {
+	dir="$1"
+	mode="${2:-0755}"
+
+	if [ -z "$dir" ]; then
+		return 1
+	fi
+
+	if [ ! -d "$dir" ]; then
+		mkdir -p "$dir" 2>/dev/null || return 1
+	fi
+
+	chmod "$mode" "$dir" 2>/dev/null || true
+	return 0
+}
+
+copy_dir_contents_optional() {
+	src="$1"
+	dst="$2"
+	label="$3"
+
+	if [ ! -d "$src" ]; then
+		log_info "$label source directory does not exist, skipping: $src"
+		return 0
+	fi
+
+	if ! safe_mkdir "$dst" 0755; then
+		log_warning "Could not create $label backup directory: $dst"
+		return 1
+	fi
+
+	if cp -p -r "$src/." "$dst/" 2>/dev/null; then
+		log_ok "$label backup completed: $dst"
+		return 0
+	fi
+
+	log_warning "$label backup failed from $src to $dst"
+	return 1
+}
+
+remove_file_if_exists() {
+	file="$1"
+	label="$2"
+
+	if [ -e "$file" ] || [ -L "$file" ]; then
+		log_info "Removing $label: $file"
+		rm -f "$file" 2>/dev/null || log_warning "Could not remove $label: $file"
+	else
+		log_info "$label not found, skipping: $file"
+	fi
+}
+
+remove_dir_if_exists() {
+	dir="$1"
+	label="$2"
+
+	if [ -d "$dir" ]; then
+		log_info "Removing $label: $dir"
+		rm -rf "$dir" 2>/dev/null || log_warning "Could not remove $label: $dir"
+	else
+		log_info "$label directory not found, skipping: $dir"
+	fi
+}
+
+remove_piper_symlink_if_plugin_owned() {
+	piper="/usr/bin/piper"
+
+	if [ ! -L "$piper" ]; then
+		log_info "No /usr/bin/piper symlink found, skipping"
+		return 0
+	fi
+
+	target="$(readlink "$piper" 2>/dev/null || true)"
+
+	case "$target" in
+		"$LBHOME/webfrontend/html/plugins/$PLUGIN/"*|"$LBHOME/webfrontend/html/plugins/$PLUGIN/VoiceEngines/"*|*/sonos4lox/VoiceEngines/*|*/sonos4lox/voice_engines/*|/usr/local/bin/piper/piper)
+			log_info "Removing Sonos4Lox-related Piper symlink: $piper -> $target"
+			rm -f "$piper" 2>/dev/null || log_warning "Could not remove Piper symlink: $piper"
+			;;
+		"")
+			log_warning "Could not resolve /usr/bin/piper symlink target, leaving it untouched"
+			;;
+		*)
+			log_info "Leaving unrelated Piper symlink untouched: $piper -> $target"
+			;;
+	esac
+}
+
+remove_systemd_units() {
 	UNITS="sonos_check_on_state.service sonos_check_on_state.timer sonos_event_listener.service sonos_watchdog.service sonos_watchdog.timer"
 
-	# Stop + disable units if systemd knows them
+	if ! command -v systemctl >/dev/null 2>&1; then
+		log_warning "'systemctl' not found, skipping removal of systemd units"
+		return 0
+	fi
+
+	log_info "Stopping and removing Sonos4Lox systemd units"
+
 	for unit in $UNITS; do
 		if systemctl list-unit-files "$unit" --no-legend 2>/dev/null | grep -q "^${unit}[[:space:]]"; then
-			echo "<INFO> Stopping '${unit}' (if active)"
+			log_info "Stopping '$unit' if active"
 			systemctl stop "$unit" 2>/dev/null || true
 
-			echo "<INFO> Disabling '${unit}' (if enabled)"
+			log_info "Disabling '$unit' if enabled"
 			systemctl disable "$unit" 2>/dev/null || true
 		else
-			echo "<INFO> Unit '${unit}' not registered – skipping stop/disable"
+			log_info "Unit '$unit' is not registered, skipping stop/disable"
 		fi
 	done
 
-	# Remove unit files (cover common locations)
-	REMOVED_ANY=false
+	removed_any=false
+
 	for unit in $UNITS; do
 		for path in "/etc/systemd/system/$unit" "/lib/systemd/system/$unit" "/usr/lib/systemd/system/$unit"; do
-			if [ -f "$path" ]; then
-				echo "<INFO> Removing unit file '$path'"
-				rm -f "$path"
-				REMOVED_ANY=true
+			if [ -f "$path" ] || [ -L "$path" ]; then
+				log_info "Removing unit file: $path"
+				rm -f "$path" 2>/dev/null || log_warning "Could not remove unit file: $path"
+				removed_any=true
 			fi
 		done
 	done
 
-	# Reload daemon only if something changed
-	if [ "$REMOVED_ANY" = "true" ]; then
-		echo "<INFO> Reloading systemd daemon"
+	if [ "$removed_any" = "true" ]; then
+		log_info "Reloading systemd daemon"
 		systemctl daemon-reload 2>/dev/null || true
 
-		# Optional cleanup: clear failed state for removed units
 		for unit in $UNITS; do
 			systemctl reset-failed "$unit" 2>/dev/null || true
 		done
 
-		echo "<OK> Systemd units removed: $UNITS"
+		log_ok "Systemd units removed"
 	else
-		echo "<INFO> No unit files found to remove – nothing to do"
+		log_info "No Sonos4Lox systemd unit files found to remove"
 	fi
+}
 
-else
-	echo "<WARNING> 'systemctl' not found – skipping removal of systemd units"
-fi
+remove_sudoers() {
+	for file in "/etc/sudoers.d/sonos4lox" "/etc/sudoers.d/Sonos4Lox"; do
+		if [ -f "$file" ] || [ -L "$file" ]; then
+			log_info "Removing sudoers file: $file"
+			rm -f "$file" 2>/dev/null || log_warning "Could not remove sudoers file: $file"
+		fi
+	done
+}
+
+remove_cron_entries() {
+	# Sonos4Lox used generated runtime cron files in the LoxBerry system cron tree.
+	# Remove only the known plugin-owned files, not the whole cron directories.
+	remove_file_if_exists "$LBHOME/system/cron/cron.01min/Sonos" "Sonos4Lox cron.01min entry"
+	remove_file_if_exists "$LBHOME/system/cron/cron.hourly/Sonos" "Sonos4Lox cron.hourly entry"
+	remove_file_if_exists "$LBHOME/system/cron/cron.d/Sonos" "legacy Sonos4Lox cron.d entry"
+}
+
+remove_runtime_logs_and_state() {
+	# These are RAM/runtime files only. The visible plugin log paths are symlinks.
+	remove_file_if_exists "$LBHOME/log/plugins/$PLUGIN/sonos_watchdog.log" "Watchdog log symlink/file"
+	remove_file_if_exists "$LBHOME/log/plugins/$PLUGIN/sonos_events.log" "Sonos event log symlink/file"
+
+	remove_dir_if_exists "/run/shm/$PLUGIN" "Sonos4Lox runtime RAM directory"
+	remove_dir_if_exists "/dev/shm/$PLUGIN" "Sonos4Lox runtime RAM directory"
+}
+
+log_info "Creating plugin backup folder: $BACKUP_DIR"
+safe_mkdir "$BACKUP_DIR" 0755 || log_warning "Could not create backup folder: $BACKUP_DIR"
+
+log_info "Backing up existing config files for future installations"
+copy_dir_contents_optional "$CONFIG_SRC" "$BACKUP_DIR/config" "Config"
+
+remove_piper_symlink_if_plugin_owned
+remove_systemd_units
+remove_sudoers
+remove_cron_entries
+remove_runtime_logs_and_state
+
+log_ok "Sonos4Lox uninstall cleanup finished"
+exit 0

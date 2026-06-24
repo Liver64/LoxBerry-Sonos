@@ -2,6 +2,7 @@
 
 /**
 * Submodul: Alarm
+* Version: LOG_NORMALIZATION_V01_2026_06_19
 *
 **/
 
@@ -24,7 +25,7 @@ function turn_off_alarms() {
 		$alarm[$i]['Enabled'] = 0, $alarm[$i]['RoomUUID'], $alarm[$i]['ProgramURI'], $alarm[$i]['ProgramMetaData'], 
 		$alarm[$i]['PlayMode'], $alarm[$i]['Volume'], $alarm[$i]['IncludeLinkedZones']);
 	}
-	LOGGING("alarm.php: All Sonos alarms has been turned off.", 6);
+	LOGOK("Alarm.php: All Sonos alarms have been turned off.");
 }
 
 
@@ -39,7 +40,7 @@ function restore_alarms() {
 	
 	$sonos = new SonosAccess($sonoszone[$master][0]);
 	if (file_get_contents($alarm_off_file) === false)   {
-		LOGGING("alarm.php: Sonos alarms could not be restored, can't open file!", 6);
+		LOGERR("Alarm.php: Sonos alarms could not be restored because the backup file could not be opened.");
 		exit;
 	} else {
 		$alarm = json_decode(file_get_contents($alarm_off_file), TRUE);
@@ -51,7 +52,7 @@ function restore_alarms() {
 		$alarm[$i]['PlayMode'], $alarm[$i]['Volume'], $alarm[$i]['IncludeLinkedZones']);
 	}
 	@unlink($alarm_off_file);
-	LOGGING("alarm.php: Previous saved Sonos alarms has been restored.", 6);
+	LOGOK("Alarm.php: Previously saved Sonos alarms have been restored.");
 		
 }
 
@@ -89,9 +90,9 @@ function sleeptimer() {
 		}
 		$sonos = new SonosAccess($sonoszone[$master][0]);
 		$sonos->SetSleeptimer($hours, $minutes, $seconds);
-		LOGGING("alarm.php: Sleeptimer has been switched on. Time to sleep for Zone '".$master."' is '".$timer."' Minutes.", 6);
+		LOGOK("Alarm.php: Sleep timer has been switched on. Time to sleep for zone '".$master."' is '".$timer."' minute(s).");
 	} else {
-		LOGGING('alarm.php: The entered time is not correct, please correct (minutes between 0 and 120 are allowed)', 4);
+		LOGWARN('Alarm.php: The entered time is not correct. Please use minutes between 1 and 120.');
 	}
 }
 
@@ -110,9 +111,9 @@ function delay() {
 		$timer = $_GET['wait'];
 		$sonos = new SonosAccess($sonoszone[$master][0]);
 		sleep($timer);
-		LOGGING("alarm.php: Delay for Zone '".$master."' is '".$timer."' seconds.", 6);
+		LOGOK("Alarm.php: Delay for zone '".$master."' finished after '".$timer."' second(s).");
 	} else {
-		LOGGING('alarm.php: The entered delay is not correct, please correct (seconds between 1 and 900 are allowed)', 4);
+		LOGWARN('Alarm.php: The entered delay is not correct. Please use seconds between 1 and 900.');
 	}
 }
 
@@ -145,17 +146,17 @@ function turn_off_alarm() {
 	foreach ($alarmarr as $alarmid)  {
 		$arrid = recursive_array_search($alarmid, $alarm);
 		if ($arrid === false) {
-			LOGGING("alarm.php: The entered Alarm-ID 'ID=".$alarmid."' seems to be not valid. Please run '...action=listalarms' in Browser and doublecheck your syntax!", 3);
+			LOGWARN("Alarm.php: The entered alarm ID 'ID=".$alarmid."' seems to be invalid. Please run '...action=listalarms' in the browser and check your syntax.");
 			continue;
 		}
 		$sonos->UpdateAlarm($alarm[$arrid]['ID'], $alarm[$arrid]['StartTime'], $alarm[$arrid]['Duration'], $alarm[$arrid]['Recurrence'], 
 		$alarm[$arrid]['Enabled'] = 0, $alarm[$arrid]['RoomUUID'], ($alarm[$arrid]['ProgramURI']), ($alarm[$arrid]['ProgramMetaData']), 
 		$alarm[$arrid]['PlayMode'], $alarm[$arrid]['Volume'], $alarm[$arrid]['IncludeLinkedZones']);
-		LOGGING("alarm.php: Sonos Alarm-ID='".$alarmid."' for Player '".$alarm[$arrid]['Room']."' has been turned off.", 6);
+		LOGOK("Alarm.php: Sonos alarm ID '".$alarmid."' for player '".$alarm[$arrid]['Room']."' has been turned off.");
 	}
 	#print_r($alarm);
 	file_put_contents($single_alarm_off, json_encode($alarm, JSON_PRETTY_PRINT));
-	LOGGING("alarm.php: File has been saved.", 6);
+	LOGOK("Alarm.php: Alarm backup file has been saved.");
 }
 
 
@@ -172,7 +173,7 @@ function restore_alarm() {
 	$alarmid = $_GET['id'];
 	$single_alarm_off = $lbpdatadir."/s4lox_alarm_ID_".$alarmid."_off.json";				// path/file for specific Alarm turned off
 	if (!file_exists($single_alarm_off))   {
-		LOGERR("alarm.php: File for Alarm-ID '".$alarmid."' does not exist. We have to abort :-(", 6);
+		LOGERR("Alarm.php: File for alarm ID '".$alarmid."' does not exist. The request was aborted.");
 		exit(1);
 	}
 	$alarm = json_decode(file_get_contents($single_alarm_off), TRUE);
@@ -183,13 +184,13 @@ function restore_alarm() {
 	foreach ($alarmarr as $alarmid)  {
 		$arrid = recursive_array_search($alarmid, $alarm);
 		if ($arrid === false) {
-			LOGGING("alarm.php: The entered Alarm-ID 'ID=".$alarmid."' seems to be not valid. Please run '...action=listalarms' in Browser and doublecheck your syntax!", 3);
+			LOGWARN("Alarm.php: The entered alarm ID 'ID=".$alarmid."' seems to be invalid. Please run '...action=listalarms' in the browser and check your syntax.");
 			continue;
 		}
 		$sonos->UpdateAlarm($alarm[$arrid]['ID'], $alarm[$arrid]['StartTime'], $alarm[$arrid]['Duration'], $alarm[$arrid]['Recurrence'], 
 		$alarm[$arrid]['Enabled'] = 1, $alarm[$arrid]['RoomUUID'], ($alarm[$arrid]['ProgramURI']), ($alarm[$arrid]['ProgramMetaData']), 
 		$alarm[$arrid]['PlayMode'], $alarm[$arrid]['Volume'], $alarm[$arrid]['IncludeLinkedZones']);
-		LOGGING("alarm.php: Sonos Alarm-ID='".$alarmid."' for Player '".$alarm[$arrid]['Room']."' has been enabled.", 6);
+		LOGOK("Alarm.php: Sonos alarm ID '".$alarmid."' for player '".$alarm[$arrid]['Room']."' has been enabled.");
 	}
 	#print_r($alarm);
 	@unlink($single_alarm_off);

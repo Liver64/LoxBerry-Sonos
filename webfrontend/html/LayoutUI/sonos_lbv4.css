@@ -1,0 +1,2631 @@
+/* =========================================================
+   Player time inputs - LBV4 native time + theme input design
+   ========================================================= */
+
+.player-time-cell {
+    width: 9%;
+    height: 28px;
+    vertical-align: middle;
+}
+
+/* Normal + Outside: identical dimensions */
+input[type="time"].player-time-input,
+/* Outside state: orange only for non Classic Mac themes */
+body:not(.theme-classic-mac) .player-time-outside input[type="time"].player-time-input {
+    background: orange !important;
+    background-color: orange !important;
+    background-image: none !important;
+
+    border-color: #b36b00 !important;
+
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    caret-color: #000000 !important;
+    text-shadow: none !important;
+}
+
+/* Classic Mac: no orange outside-state background */
+body.theme-classic-mac .player-time-outside input[type="time"].player-time-input {
+    background: var(--lb-input-bg, #ffffff) !important;
+    background-color: var(--lb-input-bg, #ffffff) !important;
+    background-image: none !important;
+
+    border-color: var(--lb-input-border, #000000) !important;
+
+    color: var(--lb-input-text, #000000) !important;
+    -webkit-text-fill-color: var(--lb-input-text, #000000) !important;
+    caret-color: var(--lb-input-text, #000000) !important;
+    text-shadow: none !important;
+}
+
+/* Normal theme state */
+input[type="time"].player-time-input {
+    background: var(--lb-input-bg, #ffffff) !important;
+    background-color: var(--lb-input-bg, #ffffff) !important;
+    border-color: var(--lb-input-border, #d0d7de) !important;
+
+    color: var(--lb-input-text, inherit) !important;
+    -webkit-text-fill-color: var(--lb-input-text, inherit) !important;
+
+    box-shadow: none !important;
+    text-shadow: none !important;
+}
+
+/* Outside state: only colors differ */
+.player-time-outside input[type="time"].player-time-input {
+    background: orange !important;
+    background-color: orange !important;
+    background-image: none !important;
+
+    border-color: #b36b00 !important;
+
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    caret-color: #000000 !important;
+    text-shadow: none !important;
+}
+
+/* Keep native clock icon / picker active */
+input[type="time"].player-time-input::-webkit-calendar-picker-indicator,
+.player-time-outside input[type="time"].player-time-input::-webkit-calendar-picker-indicator {
+    opacity: 1 !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+}
+
+/* =========================================================
+   Main player checkbox column
+   ========================================================= */
+
+.mainchk-cell {
+    width: 34px !important;
+    min-width: 34px !important;
+    max-width: 34px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    text-align: center !important;
+    vertical-align: middle !important;
+    overflow: visible !important;
+}
+
+.mainchk-positioner {
+    position: relative !important;
+
+    width: 34px !important;
+    min-width: 34px !important;
+    max-width: 34px !important;
+
+    height: 42px !important;
+    min-height: 42px !important;
+
+    margin: 0 auto !important;
+    padding: 0 !important;
+}
+
+.mainchk-positioner input[type="checkbox"].mainchk-input {
+    position: absolute !important;
+
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    display: block !important;
+    float: none !important;
+
+    appearance: auto !important;
+    -webkit-appearance: auto !important;
+
+    accent-color: var(--lb-primary, #6db33f) !important;
+}
+
+/* =========================================================
+   Player zone / room input
+   ========================================================= */
+
+.player-zone-input {
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Online player: green background with readable white text */
+.player-zone-online {
+    background: #6dac20 !important;
+    background-color: #6dac20 !important;
+    background-image: none !important;
+
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    caret-color: #ffffff !important;
+    text-shadow: none !important;
+
+    font-weight: normal !important;
+}
+
+/* jQuery Mobile wrapper fallback */
+.ui-input-text input.player-zone-online {
+    background: #6dac20 !important;
+    background-color: #6dac20 !important;
+    background-image: none !important;
+
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    caret-color: #ffffff !important;
+    text-shadow: none !important;
+}
+
+
+/* =========================================================
+   Centered native checkboxes in table cells
+   ========================================================= */
+
+.checkbox-cell {
+    width: 50px !important;
+    min-width: 50px !important;
+    max-width: 50px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    text-align: center !important;
+    vertical-align: middle !important;
+    overflow: visible !important;
+}
+
+.checkbox-positioner {
+    position: relative !important;
+
+    width: 50px !important;
+    min-width: 50px !important;
+    max-width: 50px !important;
+
+    height: 42px !important;
+    min-height: 42px !important;
+
+    margin: 0 auto !important;
+    padding: 0 !important;
+}
+
+.checkbox-positioner input[type="checkbox"].checkbox-input {
+    position: absolute !important;
+
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    display: block !important;
+    float: none !important;
+
+    appearance: auto !important;
+    -webkit-appearance: auto !important;
+
+    accent-color: var(--lb-primary, #6db33f) !important;
+}
+
+/* =========================================================
+   TV Monitor / Soundbar dynamic table - LBV4 compatible
+   ========================================================= */
+
+.tvmon_switch_row > td {
+    vertical-align: middle !important;
+    height: 60px !important;
+}
+
+.tvmon_label_cell {
+    width: 25% !important;
+    vertical-align: middle !important;
+}
+
+.tvmon_content_cell {
+    vertical-align: middle !important;
+}
+
+.tvmon_inline_wrap {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    min-height: 60px !important;
+    flex-wrap: nowrap !important;
+}
+
+.tvmon_fieldset {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.tvmon_time_wrap {
+    display: flex !important;
+    align-items: center !important;
+    position: relative !important;
+    top: -3px !important;
+}
+
+.tvmon_time_wrap input[type="time"] {
+    margin: 0 !important;
+    height: 32px !important;
+    box-sizing: border-box !important;
+}
+
+#lfunc_list,
+#lstart,
+#lend {
+    margin: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    white-space: nowrap !important;
+}
+
+/* =========================================================
+   Soundbar top line
+   ========================================================= */
+
+.sb_topline_wrap {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+.sb_topline_label {
+    font-weight: bold !important;
+    margin: 0 !important;
+    line-height: normal !important;
+    display: inline-flex !important;
+    align-items: center !important;
+}
+
+.sb_topline_input_wrap {
+    display: flex !important;
+    align-items: center !important;
+    position: relative !important;
+    top: -7px !important;
+}
+
+.sb_topline_input {
+    width: 140px !important;
+    margin: 0 !important;
+    padding: 6px 8px !important;
+    height: auto !important;
+    box-sizing: border-box !important;
+}
+
+.sb_topline_switch_wrap {
+    display: inline-flex !important;
+    align-items: center !important;
+    margin: 0 !important;
+    width: 76px !important;
+    min-width: 76px !important;
+    max-width: 76px !important;
+    overflow: visible !important;
+}
+
+/* =========================================================
+   Soundbar table layout
+   ========================================================= */
+
+.sb_tables_wrap {
+    display: block !important;
+    width: 100% !important;
+}
+
+table.sb_single_table,
+table.sb_single_table.tables {
+    display: table !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    table-layout: auto !important;
+    margin: 0 0 10px 0 !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+}
+
+table.sb_single_table:last-child,
+table.sb_single_table.tables:last-child {
+    margin-bottom: 0 !important;
+}
+
+.sb_topcell {
+    padding: 4px 6px 2px 6px !important;
+    border: none !important;
+    background: transparent !important;
+    vertical-align: middle !important;
+}
+
+.sb_topline_inner {
+    background: var(--lb-input-bg, #ffffff) !important;
+    border-radius: 10px 10px 0 0 !important;
+    padding: 0 !important;
+}
+
+.sb_topcell.sb_topcell_collapsed .sb_topline_inner {
+    border-bottom-left-radius: 10px !important;
+    border-bottom-right-radius: 10px !important;
+}
+
+/* =========================================================
+   Soundbar columns
+   ========================================================= */
+
+.tvmon_body td,
+.tvmon_body_header td,
+.tvmon_header th {
+    height: 22px !important;
+    line-height: 22px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    vertical-align: middle !important;
+}
+
+.tvmon_body td {
+    padding-top: 7px !important;
+}
+
+.tvmon_header th,
+.tvmon_body td {
+    padding-left: 3px !important;
+    padding-right: 3px !important;
+}
+
+.tvmon_header th {
+    font-size: 13px !important;
+    white-space: nowrap !important;
+    text-align: center !important;
+}
+
+.sb_col_switch {
+    width: 76px !important;
+    min-width: 76px !important;
+    max-width: 76px !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    vertical-align: middle !important;
+}
+
+.sb_col_level {
+    width: 74px !important;
+    min-width: 74px !important;
+    max-width: 74px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+.sb_col_num {
+    width: 58px !important;
+    min-width: 58px !important;
+    max-width: 58px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+.sb_col_group {
+    width: 190px !important;
+    min-width: 190px !important;
+    max-width: 190px !important;
+    vertical-align: middle !important;
+    text-align: center !important;
+}
+
+.sb_col_time {
+    width: 98px !important;
+    min-width: 98px !important;
+    max-width: 98px !important;
+    vertical-align: middle !important;
+}
+
+/* =========================================================
+   Soundbar inputs / selects / time
+   ========================================================= */
+
+.sb_input_wrap {
+    position: relative !important;
+    top: -4px !important;
+}
+
+.sb_input_wrap input {
+    text-align: center !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+    height: 30px !important;
+    min-height: 30px !important;
+    line-height: 30px !important;
+    box-sizing: border-box !important;
+}
+
+
+.sb_select_wrap {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    position: relative !important;
+    top: -4px !important;
+}
+
+.sb_select_wrap select.lb-select {
+    width: 100% !important;
+    height: 30px !important;
+    min-height: 30px !important;
+    line-height: 30px !important;
+    margin: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+}
+
+.sb_col_level select.lb-select {
+    text-align: center !important;
+}
+
+/* =========================================================
+   Soundbar switch alignment
+   ========================================================= */
+
+.sb_switch_wrap {
+    width: 76px !important;
+    min-width: 76px !important;
+    max-width: 76px !important;
+    margin: 0 auto !important;
+    overflow: visible !important;
+}
+
+/* =========================================================
+   Compact soundbar table variant
+   ========================================================= */
+
+table.sb_table_compact .sb_col_switch {
+    width: 72px !important;
+    min-width: 72px !important;
+    max-width: 72px !important;
+}
+
+table.sb_table_compact .sb_col_level {
+    width: 64px !important;
+    min-width: 64px !important;
+    max-width: 64px !important;
+}
+
+table.sb_table_compact .sb_col_num {
+    width: 48px !important;
+    min-width: 48px !important;
+    max-width: 48px !important;
+}
+
+table.sb_table_compact .sb_col_group {
+    width: 205px !important;
+    min-width: 205px !important;
+    max-width: 205px !important;
+}
+
+table.sb_table_compact .sb_col_time {
+    width: 92px !important;
+    min-width: 92px !important;
+    max-width: 92px !important;
+}
+
+table.sb_table_compact .tvmon_header th,
+table.sb_table_compact .tvmon_body td,
+table.sb_table_compact .tvmon_body_header td {
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+}
+
+table.sb_table_compact .sb_switch_wrap {
+    width: 72px !important;
+    min-width: 72px !important;
+    max-width: 72px !important;
+}
+
+table.sb_table_compact .sb_topline_input {
+    width: 130px !important;
+    padding: 5px 8px !important;
+}
+
+table.sb_table_compact .sb_topline_switch_wrap {
+    width: 72px !important;
+    min-width: 72px !important;
+    max-width: 72px !important;
+}
+
+table.sb_table_compact .sb_time_wrap input[type="time"] {
+    width: 92px !important;
+    min-width: 92px !important;
+    max-width: 92px !important;
+}
+
+table.sb_table_compact .sb_input_wrap input {
+    text-align: center !important;
+    padding-left: 3px !important;
+    padding-right: 3px !important;
+}
+
+/* =========================================================
+   Soundbar V4 player selector
+   ---------------------------------------------------------
+   Consolidated selector:
+   - Width 190px is the final effective value.
+   - top: 9px is kept from the previous first override block.
+   ========================================================= */
+
+.sb_player_select_wrap {
+	top: 9px !important;
+	position: relative !important;
+	overflow: visible !important;
+	z-index: 5000 !important;
+}
+
+.sb_player_details {
+	width: 190px !important;
+	margin: 0 auto !important;
+	position: relative !important;
+	z-index: 5001 !important;
+}
+
+.sb_player_details summary {
+	height: 30px !important;
+	min-height: 30px !important;
+	line-height: 30px !important;
+	padding: 0 24px 0 8px !important;
+	box-sizing: border-box !important;
+
+	background: var(--lb-btn-bg, #eeeeee) !important;
+	color: var(--lb-btn-text, #000000) !important;
+	border: 1px solid var(--lb-btn-border, #999999) !important;
+	border-radius: var(--lb-radius, 12px) !important;
+
+	cursor: pointer !important;
+	list-style: none !important;
+	text-align: center !important;
+	white-space: nowrap !important;
+	user-select: none !important;
+}
+
+.sb_player_details summary::-webkit-details-marker {
+	display: none !important;
+}
+
+.sb_player_details summary::after {
+	content: "▾";
+	position: absolute;
+	right: 9px;
+	top: 0;
+	line-height: 30px;
+	font-size: 12px;
+}
+
+.sb_player_details[open] summary::after {
+	content: "▴";
+}
+
+.sb_player_details_content {
+	position: absolute !important;
+	left: 0 !important;
+	top: 32px !important;
+	width: 190px !important;
+
+	background: var(--lb-input-bg, #ffffff) !important;
+	color: var(--lb-input-text, #000000) !important;
+
+	border: 1px solid var(--lb-input-border, #cccccc) !important;
+	border-radius: var(--lb-radius, 10px) !important;
+
+	padding: 6px 8px !important;
+	box-sizing: border-box !important;
+
+	z-index: 5002 !important;
+	text-align: left !important;
+	box-shadow: 0 3px 10px rgba(0,0,0,0.25) !important;
+}
+
+.sb_player_details_content label {
+	display: block !important;
+	cursor: pointer !important;
+	white-space: nowrap !important;
+	margin: 3px 0 !important;
+}
+
+/* =========================================================
+   Soundbar V4 time fields
+   ---------------------------------------------------------
+   Consolidated time input styling:
+   - Width 92px is the final effective value.
+   - Native browser time picker remains enabled.
+   ========================================================= */
+
+.sb_time_wrap {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	position: relative !important;
+	top: -4px !important;
+}
+
+.sb_time_input,
+.sb_time_wrap input[type="time"] {
+	width: 92px !important;
+	min-width: 92px !important;
+	max-width: 92px !important;
+
+	height: 30px !important;
+	min-height: 30px !important;
+	line-height: 30px !important;
+
+	margin: 0 !important;
+	padding: 0 6px !important;
+	box-sizing: border-box !important;
+
+	background: var(--lb-input-bg, #ffffff) !important;
+	color: var(--lb-input-text, #000000) !important;
+	border: 1px solid var(--lb-input-border, #d0d7de) !important;
+	border-radius: var(--lb-radius, 12px) !important;
+
+	text-align: center !important;
+	box-shadow: none !important;
+	text-shadow: none !important;
+
+	appearance: auto !important;
+	-webkit-appearance: auto !important;
+}
+
+.sb_time_input::-webkit-calendar-picker-indicator {
+	opacity: 1 !important;
+	cursor: pointer !important;
+}
+
+/* =========================================================
+   TV Monitor main time fields - LBV4 native time input
+   ========================================================= */
+
+.tvmon_time_input,
+.tvmon_time_wrap input[type="time"].tvmon_time_input {
+	width: 100px !important;
+	min-width: 100px !important;
+	max-width: 100px !important;
+
+	height: 32px !important;
+	min-height: 32px !important;
+	line-height: 32px !important;
+
+	margin: 0 !important;
+	padding: 0 8px !important;
+	box-sizing: border-box !important;
+
+	background: var(--lb-input-bg, #ffffff) !important;
+	background-color: var(--lb-input-bg, #ffffff) !important;
+	background-image: none !important;
+
+	color: var(--lb-input-text, #000000) !important;
+	-webkit-text-fill-color: var(--lb-input-text, #000000) !important;
+
+	border: 1px solid var(--lb-input-border, #d0d7de) !important;
+	border-radius: var(--lb-radius, 12px) !important;
+
+	text-align: center !important;
+	box-shadow: none !important;
+	text-shadow: none !important;
+
+	appearance: auto !important;
+	-webkit-appearance: auto !important;
+}
+
+.tvmon_time_input::-webkit-calendar-picker-indicator {
+	opacity: 1 !important;
+	cursor: pointer !important;
+}
+
+/* =========================================================
+   TV Monitor main time fields - reuse Soundbar time styling
+   ========================================================= */
+
+#tvmon_addstart.sb_time_wrap,
+#tvmon_addend.sb_time_wrap {
+	top: 0 !important;
+	justify-content: flex-start !important;
+}
+
+#tvmon_addstart input[type="time"].sb_time_input,
+#tvmon_addend input[type="time"].sb_time_input,
+#starttime.sb_time_input,
+#endtime.sb_time_input {
+	width: 100px !important;
+	min-width: 100px !important;
+	max-width: 100px !important;
+}
+
+/* =========================================================
+   Soundbar top line - online room text white 
+   ========================================================= */
+
+.sb_topline_input_wrap input.sb_topline_input[style*="#6dac20"],
+.sb_topline_input_wrap input.sb_topline_input[style*="#6DAC20"],
+.sb_topline_input_wrap input.sb_topline_input[style*="rgb(109, 172, 32)"] {
+	color: #ffffff !important;
+	-webkit-text-fill-color: #ffffff !important;
+	caret-color: #ffffff !important;
+	text-shadow: none !important;
+}
+
+/* =========================================================
+   Soundbar top line room field - LBV4 colors
+   ========================================================= */
+
+.sb_topline_input.sb_topline_input_online {
+	background: #6dac20 !important;
+	background-color: #6dac20 !important;
+	background-image: none !important;
+
+	color: #ffffff !important;
+	-webkit-text-fill-color: #ffffff !important;
+	caret-color: #ffffff !important;
+
+	border-color: #5f9d1c !important;
+	text-shadow: none !important;
+	box-shadow: none !important;
+}
+
+.sb_topline_input.sb_topline_input_offline {
+	background: var(--lb-input-bg, inherit) !important;
+	background-color: var(--lb-input-bg, inherit) !important;
+	background-image: none !important;
+
+	color: var(--lb-input-text, inherit) !important;
+	-webkit-text-fill-color: var(--lb-input-text, inherit) !important;
+	caret-color: var(--lb-input-text, inherit) !important;
+
+	border-color: var(--lb-input-border, #d0d7de) !important;
+	text-shadow: none !important;
+	box-shadow: none !important;
+}
+
+
+/* =========================================================
+   Testing page
+   ========================================================= */
+/* =========================================================
+   Testing page final layout tuning
+   ========================================================= */
+
+.testing-layout {
+	width: 80% !important;
+	margin: 0 auto !important;
+}
+
+.testing-name-col,
+.testing-name-cell {
+	width: 10% !important;
+}
+
+.testing-scenario-col,
+.testing-scenario-cell {
+	width: 34% !important;
+}
+
+.testing-zone-col,
+.testing-zone-cell {
+	width: 20% !important;
+}
+
+.testing-member-col,
+.testing-member-cell {
+	width: 20% !important;
+}
+
+.testing-button-col,
+.testing-button-cell {
+	width: 16% !important;
+	padding-left: 28px !important;
+	padding-right: 12px !important;
+	white-space: nowrap !important;
+	text-align: right !important;
+}
+
+.testing-zone-cell,
+.testing-member-cell {
+	text-align: left !important;
+}
+
+/* Test scenario dropdown */
+.testing-scenario-select {
+	width: 100% !important;
+	max-width: 100% !important;
+}
+
+/* Zone dropdown width */
+.testing-zone-cell .testing_player_details,
+.testing-zone-cell .testing_player_details summary,
+.testing-zone-cell .testing_player_details_content {
+	width: 200px !important;
+}
+
+/* Member dropdown width */
+.testing-member-cell .testing_player_details,
+.testing-member-cell .testing_player_details summary,
+.testing-member-cell .testing_player_details_content {
+	width: 230px !important;
+}
+
+/* Keep Zone/Member dropdowns left aligned inside their cells */
+.testing-zone-cell .testing_player_details,
+.testing-member-cell .testing_player_details {
+	margin-left: 0 !important;
+	margin-right: auto !important;
+}
+
+.testing-scenario-select {
+	width: 100% !important;
+	max-width: 100% !important;
+}
+
+.testing_player_details {
+	width: 190px !important;
+	margin: 0 auto !important;
+	position: relative !important;
+	z-index: 100 !important;
+}
+
+.testing_player_details summary {
+	height: 30px !important;
+	min-height: 30px !important;
+	line-height: 30px !important;
+	padding: 0 24px 0 8px !important;
+	box-sizing: border-box !important;
+
+	background: var(--lb-btn-bg, #eeeeee) !important;
+	color: var(--lb-btn-text, #000000) !important;
+	border: 1px solid var(--lb-btn-border, #999999) !important;
+	border-radius: var(--lb-radius, 12px) !important;
+
+	cursor: pointer !important;
+	list-style: none !important;
+	text-align: center !important;
+	white-space: nowrap !important;
+	overflow: hidden !important;
+	text-overflow: ellipsis !important;
+	user-select: none !important;
+}
+
+.testing_player_details summary::-webkit-details-marker {
+	display: none !important;
+}
+
+.testing_player_details summary::after {
+	content: "▾";
+	position: absolute;
+	right: 9px;
+	top: 0;
+	line-height: 30px;
+	font-size: 12px;
+}
+
+.testing_player_details[open] summary::after {
+	content: "▴";
+}
+
+.testing_player_details_content {
+	position: absolute !important;
+	left: 0 !important;
+	top: 32px !important;
+	width: 190px !important;
+
+	background: var(--lb-input-bg, #ffffff) !important;
+	color: var(--lb-input-text, #000000) !important;
+	border: 1px solid var(--lb-input-border, #cccccc) !important;
+	border-radius: var(--lb-radius, 10px) !important;
+
+	padding: 6px 8px !important;
+	box-sizing: border-box !important;
+	z-index: 101 !important;
+	text-align: left !important;
+	box-shadow: 0 3px 10px rgba(0,0,0,0.25) !important;
+}
+
+.testing_player_check_label {
+	display: block !important;
+	cursor: pointer !important;
+	white-space: nowrap !important;
+	margin: 3px 0 !important;
+}
+
+.testing-result-links a {
+	font-weight: bold !important;
+}
+
+.testing-result {
+	margin: 12px 0 !important;
+	padding: 12px !important;
+	border-radius: 12px !important;
+	border: 1px solid var(--lb-input-border, #cccccc) !important;
+}
+
+.testing-result-ok {
+	background: rgba(109, 172, 32, 0.18) !important;
+}
+
+.testing-result-failed {
+	background: rgba(255, 152, 0, 0.18) !important;
+}
+
+.testing-result-command {
+	margin-top: 8px !important;
+}
+
+.testing-result-output {
+	max-height: 260px !important;
+	overflow: auto !important;
+	margin-top: 10px !important;
+	padding: 8px !important;
+	border-radius: 8px !important;
+	background: var(--lb-input-bg, #ffffff) !important;
+	color: var(--lb-input-text, #000000) !important;
+	border: 1px solid var(--lb-input-border, #cccccc) !important;
+	white-space: pre-wrap !important;
+}
+
+/* =========================================================
+   Testing page final layout - LBV4
+   Member dropdown extended up to Execute button
+   ========================================================= */
+
+.testing-layout {
+	width: 90% !important;
+	margin: 0 auto !important;
+}
+
+/* Column layout */
+.testing-name-col,
+.testing-name-cell {
+	width: 20% !important;
+}
+
+.testing-scenario-col,
+.testing-scenario-cell {
+	width: 24% !important;
+}
+
+.testing-zone-col,
+.testing-zone-cell {
+	width: 15% !important;
+}
+
+.testing-member-col,
+.testing-member-cell {
+	width: 20% !important;
+}
+
+.testing-button-col,
+.testing-button-cell {
+	width: 12% !important;
+	padding-left: 12px !important;
+	padding-right: 18px !important;
+	white-space: nowrap !important;
+	text-align: right !important;
+}
+
+/* Keep controls left aligned */
+.testing-zone-cell,
+.testing-member-cell {
+	text-align: left !important;
+}
+
+/* Scenario dropdown */
+.testing-scenario-select {
+	width: 100% !important;
+	max-width: 100% !important;
+}
+
+/* Zone dropdown: fixed width */
+.testing-zone-cell .testing_player_details,
+.testing-zone-cell .testing_player_details summary,
+.testing-zone-cell .testing_player_details_content {
+	width: 240px !important;
+	min-width: 240px !important;
+	max-width: 240px !important;
+}
+
+/* Member dropdown: stretch to available cell width */
+.testing-member-cell .testing_player_details,
+.testing-member-cell .testing_player_details summary,
+.testing-member-cell .testing_player_details_content {
+	width: 100% !important;
+	min-width: 0 !important;
+	max-width: none !important;
+}
+
+/* Align dropdowns inside cells */
+.testing-zone-cell .testing_player_details,
+.testing-member-cell .testing_player_details {
+	margin-left: 0 !important;
+	margin-right: 0 !important;
+}
+
+/* Give the member field a little breathing room before the Execute button */
+.testing-member-cell {
+	padding-right: 10px !important;
+}
+
+
+/* Testing description shown only on PageInit - TESTING_DESCRIPTION_CSS_V02_2026_06_03 */
+.testing-description-cell {
+    padding-top: 18px !important;
+    padding-bottom: 8px !important;
+}
+
+.testing-description-label {
+    display: block !important;
+    font-weight: bold !important;
+    margin-bottom: 8px !important;
+}
+
+.testing-description-text {
+    display: block !important;
+    width: 100% !important;
+    min-height: 170px !important;
+    box-sizing: border-box !important;
+    resize: vertical !important;
+    padding: 8px 10px !important;
+    border: 1px solid var(--lb-input-border, #999999) !important;
+    border-radius: var(--lb-radius, 10px) !important;
+    background: var(--lb-input-bg, #ffffff) !important;
+    color: var(--lb-input-text, #000000) !important;
+    font-size: 14px !important;
+    line-height: 1.45 !important;
+}
+
+/* JSON test editor - TESTING_JSON_EDITOR_CSS_V01_2026_06_03 */
+.testing-json-cell {
+    padding-top: 18px !important;
+}
+
+.testing-json-collapsible {
+    margin-top: 8px !important;
+}
+
+.testing-json-collapsible > summary::-webkit-details-marker {
+    display: none !important;
+}
+
+.testing-json-table {
+    width: 100% !important;
+    table-layout: fixed !important;
+}
+
+.testing-json-delete-col,
+.testing-json-delete-cell {
+    width: 42px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+.testing-json-number-col,
+.testing-json-number-cell {
+    width: 44px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+.testing-json-status-col,
+.testing-json-status-cell {
+    width: 92px !important;
+}
+
+.testing-json-name-col,
+.testing-json-name-cell {
+    width: 120px !important;
+}
+
+.testing-json-risk-col,
+.testing-json-risk-cell {
+    width: 95px !important;
+}
+
+.testing-json-timeout-col,
+.testing-json-timeout-cell {
+    width: 80px !important;
+}
+
+.testing-json-category-col,
+.testing-json-category-cell {
+    width: 130px !important;
+}
+
+.testing-json-url-col,
+.testing-json-url-cell {
+	width: 42% !important;
+	max-width: 42% !important;
+}
+
+.testing-json-table input,
+.testing-json-table select {
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.testing-json-timeout {
+    text-align: center !important;
+}
+
+.testing-json-add-btn {
+    margin-top: 12px !important;
+}
+
+.testing-json-save-wrap {
+    text-align: center !important;
+    margin-top: 24px !important;
+}
+
+.testing-json-save-message {
+    margin: 12px 0 !important;
+    padding: 12px !important;
+    border-radius: 8px !important;
+    border: 1px solid #cccccc !important;
+}
+
+.testing-json-source-col,
+.testing-json-source-cell {
+	width: 12% !important;
+	min-width: 180px !important;
+	max-width: 12% !important;
+}
+
+.testing-json-url,
+.testing-json-source {
+	width: 100% !important;
+	box-sizing: border-box !important;
+}
+
+/* =========================================================
+   Testing JSON editor switch
+   ========================================================= */
+
+.testing-json-collapsible {
+    margin-top: 22px !important;
+}
+
+.testing-json-toggle-row {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin-bottom: 12px !important;
+    cursor: pointer !important;
+    user-select: none !important;
+}
+
+.testing-json-toggle-row .lb-toggle {
+    margin: 0 !important;
+    vertical-align: middle !important;
+}
+
+.testing-json-toggle-label {
+    font-weight: bold !important;
+    cursor: pointer !important;
+}
+
+.testing-json-toggle-content {
+    display: none;
+}
+
+.testing-json-collapsible:has(#testing_json_toggle:checked) .testing-json-toggle-content {
+    display: block;
+}
+
+/* =========================================================
+   Classic Mac - fix duplicated jQuery Mobile selects
+   Some plugin pages use jQuery Mobile enhanced selects.
+   Do not make the original select transparent, otherwise
+   the opened native/dropdown option list gets unreadable.
+   ========================================================= */
+
+body.theme-classic-mac .ui-select select,
+body.theme-classic-mac .ui-select select.lb-select,
+body.theme-classic-mac .ui-select select[data-native-menu],
+body.theme-classic-mac .ui-select select[data-role] {
+	border: 0 !important;
+	box-shadow: none !important;
+	background: transparent !important;
+	background-image: none !important;
+
+	color: #000000 !important;
+	-webkit-text-fill-color: #000000 !important;
+	text-shadow: none !important;
+
+	appearance: auto !important;
+	-webkit-appearance: auto !important;
+	-moz-appearance: auto !important;
+}
+
+/* =========================================================
+   Classic Mac - jQuery Mobile select collapsed state
+   Keep collapsed plugin selects readable.
+   Must be placed after generic button / active rules.
+   ========================================================= */
+
+body.theme-classic-mac .ui-select,
+body.theme-classic-mac .ui-select .ui-btn,
+body.theme-classic-mac .ui-select .ui-btn:link,
+body.theme-classic-mac .ui-select .ui-btn:visited,
+body.theme-classic-mac .ui-select .ui-btn:hover,
+body.theme-classic-mac .ui-select .ui-btn:focus,
+body.theme-classic-mac .ui-select .ui-btn:active,
+body.theme-classic-mac .ui-select .ui-btn.ui-focus,
+body.theme-classic-mac .ui-select .ui-btn.ui-btn-active,
+body.theme-classic-mac .ui-select .ui-btn.ui-state-active,
+body.theme-classic-mac .ui-select .ui-btn.ui-state-hover {
+	background: #ffffff !important;
+	background-color: #ffffff !important;
+	background-image: none !important;
+
+	color: #000000 !important;
+	-webkit-text-fill-color: #000000 !important;
+	text-shadow: none !important;
+
+	border-color: #000000 !important;
+	box-shadow: 3px 3px 0 #000000 !important;
+}
+
+body.theme-classic-mac .ui-select .ui-btn span,
+body.theme-classic-mac .ui-select .ui-btn .ui-btn-text,
+body.theme-classic-mac .ui-select .ui-btn .ui-selectmenu-text {
+	color: #000000 !important;
+	-webkit-text-fill-color: #000000 !important;
+	text-shadow: none !important;
+	background: transparent !important;
+	background-color: transparent !important;
+}
+
+/* =========================================================
+   Classic Mac - ion.rangeSlider
+   Sonos4Lox uses ion.rangeSlider with skin "big".
+   This block only affects the Classic Mac theme.
+   ========================================================= */
+
+body.theme-classic-mac .irs,
+body.theme-classic-mac .irs * {
+	text-shadow: none !important;
+	box-sizing: border-box !important;
+}
+
+body.theme-classic-mac .irs--big {
+	font-family: var(--lb-font, inherit) !important;
+	color: #000000 !important;
+}
+
+/* Slider rail */
+body.theme-classic-mac .irs--big .irs-line {
+	height: 12px !important;
+	top: 34px !important;
+
+	background: #ffffff !important;
+	background-color: #ffffff !important;
+	background-image: none !important;
+
+	border-style: solid !important;
+	border-color: #000000 !important;
+	border-width: 1px 3px 3px 1px !important;
+	border-radius: 0 !important;
+
+	box-shadow: none !important;
+}
+
+/* Selected range */
+body.theme-classic-mac .irs--big .irs-bar {
+	height: 12px !important;
+	top: 34px !important;
+
+	background: #000000 !important;
+	background-color: #000000 !important;
+	background-image: none !important;
+
+	border: 0 !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+}
+
+/* Handle / knob */
+body.theme-classic-mac .irs--big .irs-handle {
+	top: 28px !important;
+	width: 22px !important;
+	height: 22px !important;
+
+	background: #ffffff !important;
+	background-color: #ffffff !important;
+	background-image: none !important;
+
+	border-style: solid !important;
+	border-color: #000000 !important;
+	border-width: 1px 3px 3px 1px !important;
+	border-radius: 0 !important;
+
+	box-shadow: none !important;
+	cursor: pointer !important;
+}
+
+body.theme-classic-mac .irs--big .irs-handle > i:first-child,
+body.theme-classic-mac .irs--big .irs-handle > i {
+	display: none !important;
+}
+
+/* Value bubbles */
+body.theme-classic-mac .irs--big .irs-single,
+body.theme-classic-mac .irs--big .irs-from,
+body.theme-classic-mac .irs--big .irs-to,
+body.theme-classic-mac .irs--big .irs-min,
+body.theme-classic-mac .irs--big .irs-max {
+	background: #ffffff !important;
+	background-color: #ffffff !important;
+	background-image: none !important;
+
+	color: #000000 !important;
+	-webkit-text-fill-color: #000000 !important;
+
+	border: 1px solid #000000 !important;
+	border-radius: 0 !important;
+
+	box-shadow: none !important;
+	font-family: var(--lb-font, inherit) !important;
+	font-size: 12px !important;
+	font-weight: normal !important;
+	line-height: 16px !important;
+	padding: 1px 5px !important;
+}
+
+/* Current value should look selected */
+body.theme-classic-mac .irs--big .irs-single,
+body.theme-classic-mac .irs--big .irs-from,
+body.theme-classic-mac .irs--big .irs-to {
+	background: #000000 !important;
+	background-color: #000000 !important;
+
+	color: #ffffff !important;
+	-webkit-text-fill-color: #ffffff !important;
+
+	border-color: #000000 !important;
+}
+
+/* Remove speech-bubble arrows */
+body.theme-classic-mac .irs--big .irs-single::before,
+body.theme-classic-mac .irs--big .irs-from::before,
+body.theme-classic-mac .irs--big .irs-to::before {
+	display: none !important;
+}
+
+/* Grid ticks and labels */
+body.theme-classic-mac .irs--big .irs-grid-pol {
+	background: #000000 !important;
+	background-color: #000000 !important;
+}
+
+body.theme-classic-mac .irs--big .irs-grid-text {
+	color: #000000 !important;
+	-webkit-text-fill-color: #000000 !important;
+	font-family: var(--lb-font, inherit) !important;
+	font-size: 11px !important;
+	text-shadow: none !important;
+}
+
+/* Disabled state */
+body.theme-classic-mac .irs--big.irs-disabled,
+body.theme-classic-mac .irs--big.irs-disabled * {
+	opacity: 0.55 !important;
+	filter: none !important;
+	cursor: not-allowed !important;
+}
+
+/* =========================================================
+   Classic Mac - Add player row
+   ========================================================= */
+
+body.theme-classic-mac #tblzonen .player-add-row,
+body.theme-classic-mac #tblzonen .player-add-row td,
+body.theme-classic-mac #tblzonen .player-add-cell {
+	background: #000000 !important;
+	background-color: #000000 !important;
+	background-image: none !important;
+
+	color: #ffffff !important;
+	-webkit-text-fill-color: #ffffff !important;
+	text-shadow: none !important;
+}
+
+/* =========================================================
+   Classic Mac - black frame for plugin tables
+   ========================================================= */
+
+body.theme-classic-mac table.tables {
+	border: 2px solid #000000 !important;
+	box-shadow: 3px 3px 0 #000000 !important;
+	border-radius: 0 !important;
+
+	border-collapse: separate !important;
+	border-spacing: 0 !important;
+
+	background: #ffffff !important;
+	background-color: #ffffff !important;
+}
+
+/* =========================================================
+   Classic Mac - Testing tables
+   ---------------------------------------------------------
+   Testing does not load table.css for Classic Mac.
+   Therefore the testing tables need their own width handling.
+   ========================================================= */
+
+body.theme-classic-mac table.tables.testing-table,
+body.theme-classic-mac table.tables.testing-json-table {
+	width: 100% !important;
+	max-width: 100% !important;
+	box-sizing: border-box !important;
+
+	border: 2px solid #000000 !important;
+	box-shadow: 3px 3px 0 #000000 !important;
+	border-radius: 0 !important;
+
+	border-collapse: separate !important;
+	border-spacing: 0 !important;
+
+	background: #ffffff !important;
+	background-color: #ffffff !important;
+
+	margin: 0 3px 3px 0 !important;
+}
+
+/* Classic Mac: preserve black/white Mac table header style */
+body.theme-classic-mac table.tables .volume-profile-column-header th {
+	background: #000000 !important;
+	background-color: #000000 !important;
+	background-image: none !important;
+
+	color: #ffffff !important;
+	-webkit-text-fill-color: #ffffff !important;
+
+	border-color: #000000 !important;
+	font-family: var(--lb-font, inherit) !important;
+	font-weight: 400 !important;
+	text-shadow: none !important;
+}
+
+/* =========================================================
+   Volume profiles - LBV4 spacing between B and L
+   ---------------------------------------------------------
+   Do not move the full right block with left/relative,
+   otherwise MA/ME can overflow beyond the table border.
+   ========================================================= */
+
+/* Reset previous relative shift if it was added */
+table[id^="tblvol_prof"] .volume-profile-column-header th:nth-child(n+5),
+table[id^="tblvol_prof"] > tbody > tr:not(:first-child):not(.volume-profile-column-header) > td:nth-child(n+5) {
+	position: static !important;
+	left: auto !important;
+}
+
+/* Add visual space only before the L column */
+table[id^="tblvol_prof"] .volume-profile-column-header th:nth-child(5) {
+	padding-left: 18px !important;
+}
+
+table[id^="tblvol_prof"] > tbody > tr:not(:first-child):not(.volume-profile-column-header) > td:nth-child(5) {
+	padding-left: 18px !important;
+}
+
+/* =========================================================
+   Sonos4Lox - Liquid Glass
+   ---------------------------------------------------------
+   - remove outer formtable glass card
+   - remove green Sonos table headers / inline green rows
+   - make online player fields transparent with blue text
+   - tune ion.rangeSlider
+   - force fallback black Sonos logo to white
+   - keep Testing dropdown content above description
+   ========================================================= */
+
+/* Outer Sonos form table: remove Liquid Glass card/frame */
+body.theme-liquid-glass table.formtable {
+	background: transparent !important;
+	background-color: transparent !important;
+	background-image: none !important;
+
+	border: none !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+
+	backdrop-filter: none !important;
+	-webkit-backdrop-filter: none !important;
+}
+
+/* Sonos table headers and old inline green rows/cells */
+body.theme-liquid-glass table.tables th,
+body.theme-liquid-glass table.tables tr[style*="#6db33f"],
+body.theme-liquid-glass table.tables tr[style*="#6DB33F"],
+body.theme-liquid-glass table.tables tr[style*="#6dac20"],
+body.theme-liquid-glass table.tables tr[style*="#6DAC20"],
+body.theme-liquid-glass table.tables td[style*="#6db33f"],
+body.theme-liquid-glass table.tables td[style*="#6DB33F"],
+body.theme-liquid-glass table.tables td[style*="#6dac20"],
+body.theme-liquid-glass table.tables td[style*="#6DAC20"] {
+	background: transparent !important;
+	background-color: transparent !important;
+	background-image: none !important;
+
+	color: #ffffff !important;
+	-webkit-text-fill-color: #ffffff !important;
+	text-shadow: none !important;
+}
+
+/* Online player fields: normal Liquid Glass input background with blue online text */
+body.theme-liquid-glass .player-zone-online,
+body.theme-liquid-glass input.player-zone-online,
+body.theme-liquid-glass .ui-input-text input.player-zone-online,
+body.theme-liquid-glass input.volume-zone-input.volume-zone-online,
+body.theme-liquid-glass .volume-zone-input.volume-zone-online,
+body.theme-liquid-glass table.tables input.volume-zone-input.volume-zone-online {
+	background: var(--lb-input-bg, rgba(255, 255, 255, 0.008)) !important;
+	background-color: var(--lb-input-bg, rgba(255, 255, 255, 0.008)) !important;
+	background-image: none !important;
+
+	color: var(--lb-primary, #8cc8ff) !important;
+	-webkit-text-fill-color: var(--lb-primary, #8cc8ff) !important;
+	caret-color: var(--lb-primary, #8cc8ff) !important;
+
+	text-shadow: none !important;
+	box-shadow: none !important;
+}
+
+/* ion.rangeSlider: selected range left of handle transparent */
+/* ion.rangeSlider: selected range left of handle */
+body.theme-liquid-glass .irs--big .irs-bar,
+body.theme-liquid-glass .irs--big .irs-bar-edge {
+	background: #8fc7ff !important;
+	background-color: #8fc7ff !important;
+	background-image: linear-gradient(180deg, #bde2ff, #8fc7ff) !important;
+
+	border: none !important;
+	box-shadow:
+		inset 0 1px 1px rgba(255,255,255,0.55),
+		0 0 10px rgba(143,199,255,0.35) !important;
+}
+
+/* ion.rangeSlider: selected value bubble */
+/* ion.rangeSlider: selected value bubble */
+body.theme-liquid-glass .irs--big .irs-single {
+	background: #8fc7ff !important;
+	background-color: #8fc7ff !important;
+	background-image: linear-gradient(180deg, #bde2ff, #8fc7ff) !important;
+
+	color: #000000 !important;
+	-webkit-text-fill-color: #000000 !important;
+
+	border: 1px solid rgba(255, 255, 255, 0.85) !important;
+	border-radius: 8px !important;
+
+	text-shadow: none !important;
+	box-shadow:
+		0 3px 8px rgba(0,0,0,0.28),
+		inset 0 1px 1px rgba(255,255,255,0.65) !important;
+
+	font-weight: bold !important;
+}
+
+/* ion.rangeSlider: remove small arrow below selected value */
+body.theme-liquid-glass .irs--big .irs-single::before {
+	display: none !important;
+}
+
+/* ion.rangeSlider: scale numbers and tick marks */
+body.theme-liquid-glass .irs--big .irs-grid-text {
+	color: var(--lb-primary, #8cc8ff) !important;
+	-webkit-text-fill-color: var(--lb-primary, #8cc8ff) !important;
+
+	text-shadow: none !important;
+	font-weight: normal !important;
+}
+
+body.theme-liquid-glass .irs--big .irs-grid-pol {
+	background: var(--lb-primary, #8cc8ff) !important;
+	background-color: var(--lb-primary, #8cc8ff) !important;
+}
+
+/* Fallback: if black Sonos logo is still rendered, make it white */
+body.theme-liquid-glass img.ico_sonos[src*="sonos_logo_black.svg"] {
+	filter: brightness(0) invert(1) !important;
+}
+
+/* =========================================================
+   Sonos4Lox - Testing: Zone/Member dropdowns in foreground
+   ---------------------------------------------------------
+   CSS only. No JS.
+   No width, no margin, no movement.
+   While a Zone/Member dropdown is open, the description
+   textarea layer is pushed behind the opened dropdown.
+   ========================================================= */
+
+/* Open dropdown itself */
+body.theme-liquid-glass .testing_player_details {
+	position: relative !important;
+	z-index: 1000 !important;
+}
+
+body.theme-liquid-glass .testing_player_details[open] {
+	position: relative !important;
+	z-index: 99999 !important;
+}
+
+body.theme-liquid-glass .testing_player_details[open] .testing_player_details_content {
+	position: absolute !important;
+	z-index: 100000 !important;
+
+	background: #ffffff !important;
+	background-color: #ffffff !important;
+	background-image: none !important;
+
+	color: #000000 !important;
+	-webkit-text-fill-color: #000000 !important;
+
+	border: 1px solid rgba(0, 0, 0, 0.35) !important;
+	border-radius: 8px !important;
+
+	box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55) !important;
+
+	backdrop-filter: none !important;
+	-webkit-backdrop-filter: none !important;
+}
+
+/* Dropdown labels black on white */
+body.theme-liquid-glass .testing_player_details[open] .testing_player_check_label,
+body.theme-liquid-glass .testing_player_details[open] .testing_player_check_label * {
+	color: #000000 !important;
+	-webkit-text-fill-color: #000000 !important;
+	text-shadow: none !important;
+}
+
+/* The important part:
+   While any Zone/Member details dropdown is open,
+   push the description textarea layer behind it. */
+body.theme-liquid-glass #testing_form:has(.testing_player_details[open]) .testing-description-cell,
+body.theme-liquid-glass #testing_form:has(.testing_player_details[open]) .testing-description-text {
+	position: relative !important;
+	z-index: -1 !important;
+}
+
+/* Keep the upper testing table above the description row */
+body.theme-liquid-glass #testing_form:has(.testing_player_details[open]) .testing-dropdown-layer,
+body.theme-liquid-glass #testing_form:has(.testing_player_details[open]) .testing-table,
+body.theme-liquid-glass #testing_form:has(.testing_player_details[open]) .testing-zone-cell,
+body.theme-liquid-glass #testing_form:has(.testing_player_details[open]) .testing-member-cell {
+	position: relative !important;
+	z-index: 99998 !important;
+}
+/* =========================================================
+   Volume profiles - LBV4 Design System
+   ---------------------------------------------------------
+   HTML only provides semantic classes.
+   Styling follows LoxBerry DS theme variables.
+   ========================================================= */
+
+.volume-profile-name-input.lb-input {
+	width: 180px !important;
+	min-width: 180px !important;
+	max-width: 180px !important;
+
+	height: 32px !important;
+	min-height: 32px !important;
+
+	margin: 0 !important;
+	padding: 0 10px !important;
+	box-sizing: border-box !important;
+
+	text-shadow: none !important;
+}
+
+.volume-profile-spacer-cell {
+	background: transparent !important;
+	background-color: transparent !important;
+	background-image: none !important;
+	border: none !important;
+}
+
+.volume-profile-actions-cell {
+	text-align: right !important;
+	vertical-align: middle !important;
+	white-space: nowrap !important;
+}
+
+.volume-profile-column-header th {
+	padding: 4px 6px 6px 6px !important;
+	text-align: center !important;
+	vertical-align: middle !important;
+
+	font: inherit !important;
+	font-weight: inherit !important;
+
+	text-shadow: none !important;
+}
+
+.volume-profile-column-header .volume-profile-header-room {
+	text-align: left !important;
+	padding-left: 12px !important;
+}
+
+/* Default LBV4 / DS look */
+body:not(.theme-liquid-glass):not(.theme-classic-mac) table.tables .volume-profile-column-header th {
+	background: var(--lb-btn-bg, #eeeeee) !important;
+	background-color: var(--lb-btn-bg, #eeeeee) !important;
+	background-image: none !important;
+
+	color: var(--lb-text-secondary, #404040) !important;
+	-webkit-text-fill-color: var(--lb-text-secondary, #404040) !important;
+
+	border-bottom: 1px solid var(--lb-border-color, #d0d7de) !important;
+}
+
+/* Liquid Glass: keep it glass/transparent, no old green header */
+body.theme-liquid-glass table.tables .volume-profile-column-header th {
+	background: transparent !important;
+	background-color: transparent !important;
+	background-image: none !important;
+
+	color: var(--lb-text, #e8eef8) !important;
+	-webkit-text-fill-color: var(--lb-text, #e8eef8) !important;
+
+	border-top: 1px solid rgba(255,255,255,0.08) !important;
+	border-bottom: 1px solid rgba(255,255,255,0.12) !important;
+}
+
+body.theme-liquid-glass table.tables input.volume-profile-name-input.lb-input {
+	background: var(--lb-input-bg, rgba(255,255,255,0.075)) !important;
+	background-color: var(--lb-input-bg, rgba(255,255,255,0.075)) !important;
+	background-image: none !important;
+
+	color: var(--lb-input-text, #edf3fb) !important;
+	-webkit-text-fill-color: var(--lb-input-text, #edf3fb) !important;
+	caret-color: var(--lb-input-text, #edf3fb) !important;
+
+	border: 1px solid var(--lb-input-border, rgba(255,255,255,0.18)) !important;
+	border-radius: var(--lb-radius, 18px) !important;
+
+	box-shadow: none !important;
+	text-shadow: none !important;
+}
+
+/* =========================================================
+   Liquid Glass - Soundbar player dropdown in foreground
+   ---------------------------------------------------------
+   Same idea as Testing dropdown:
+   - dropdown content above surrounding UI
+   - white background while open
+   - black text while open
+   - CSS only, no JS
+   ========================================================= */
+
+body.theme-liquid-glass .sb_player_select_wrap,
+body.theme-liquid-glass .sb_player_details,
+body.theme-liquid-glass .sb_player_details_content {
+	overflow: visible !important;
+}
+
+body.theme-liquid-glass .sb_player_select_wrap {
+	position: relative !important;
+	z-index: 90000 !important;
+}
+
+body.theme-liquid-glass .sb_player_details {
+	position: relative !important;
+	z-index: 90001 !important;
+}
+
+body.theme-liquid-glass .sb_player_details[open] {
+	position: relative !important;
+	z-index: 99999 !important;
+}
+
+body.theme-liquid-glass .sb_player_details[open] summary {
+	position: relative !important;
+	z-index: 100000 !important;
+}
+
+body.theme-liquid-glass .sb_player_details[open] .sb_player_details_content {
+	position: absolute !important;
+	z-index: 100001 !important;
+
+	background: #ffffff !important;
+	background-color: #ffffff !important;
+	background-image: none !important;
+
+	color: #000000 !important;
+	-webkit-text-fill-color: #000000 !important;
+	text-shadow: none !important;
+
+	border: 1px solid rgba(0, 0, 0, 0.35) !important;
+	border-radius: 8px !important;
+
+	box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55) !important;
+
+	backdrop-filter: none !important;
+	-webkit-backdrop-filter: none !important;
+}
+
+body.theme-liquid-glass .sb_player_details[open] .sb_player_details_content label,
+body.theme-liquid-glass .sb_player_details[open] .sb_player_details_content label *,
+body.theme-liquid-glass .sb_player_details[open] .sb_player_details_content input {
+	color: #000000 !important;
+	-webkit-text-fill-color: #000000 !important;
+	text-shadow: none !important;
+}
+/* =========================================================
+   Liquid Glass - Soundbar player dropdown above following rows
+   ---------------------------------------------------------
+   Raises the complete Soundbar table stack while the dropdown
+   is open, so following Voice/TTS button rows cannot cover it.
+   CSS only, no JS.
+   ========================================================= */
+
+body.theme-liquid-glass .sb_tables_wrap,
+body.theme-liquid-glass table.sb_single_table,
+body.theme-liquid-glass table.sb_single_table tbody,
+body.theme-liquid-glass table.sb_single_table tr,
+body.theme-liquid-glass table.sb_single_table td,
+body.theme-liquid-glass .sb_col_group,
+body.theme-liquid-glass .sb_player_select_wrap,
+body.theme-liquid-glass .sb_player_details {
+	overflow: visible !important;
+}
+
+body.theme-liquid-glass .sb_tables_wrap:has(.sb_player_details[open]),
+body.theme-liquid-glass table.sb_single_table:has(.sb_player_details[open]) {
+	position: relative !important;
+	z-index: 999900 !important;
+	overflow: visible !important;
+}
+
+body.theme-liquid-glass table.sb_single_table:has(.sb_player_details[open]) tr,
+body.theme-liquid-glass table.sb_single_table:has(.sb_player_details[open]) td,
+body.theme-liquid-glass table.sb_single_table:has(.sb_player_details[open]) .sb_col_group,
+body.theme-liquid-glass table.sb_single_table:has(.sb_player_details[open]) .sb_player_select_wrap {
+	position: relative !important;
+	z-index: 999901 !important;
+	overflow: visible !important;
+}
+
+body.theme-liquid-glass table.sb_single_table:has(.sb_player_details[open]) .sb_player_details {
+	position: relative !important;
+	z-index: 999902 !important;
+}
+
+body.theme-liquid-glass table.sb_single_table:has(.sb_player_details[open]) .sb_player_details_content {
+	position: absolute !important;
+	z-index: 999999 !important;
+}
+
+/* =========================================================
+   Sonos4Lox - Liquid Glass dropdown arrows
+   ---------------------------------------------------------
+   Add a small right-side triangle to custom details dropdowns
+   and native select fields.
+   ========================================================= */
+
+/* Custom <details>/<summary> dropdowns */
+body.theme-liquid-glass .testing_player_details summary,
+body.theme-liquid-glass .sb_player_details summary {
+	position: relative !important;
+	padding-right: 34px !important;
+}
+
+/* Remove older triangle variants if already defined */
+body.theme-liquid-glass .testing_player_details summary::after,
+body.theme-liquid-glass .sb_player_details summary::after {
+	content: "▾" !important;
+
+	position: absolute !important;
+	right: 10px !important;
+	top: 50% !important;
+	transform: translateY(-50%) !important;
+
+	width: 20px !important;
+	height: 20px !important;
+	line-height: 20px !important;
+
+	text-align: center !important;
+	font-size: 11px !important;
+	font-weight: normal !important;
+
+	color: var(--lb-input-text, #ffffff) !important;
+	-webkit-text-fill-color: var(--lb-input-text, #ffffff) !important;
+
+	background: rgba(255, 255, 255, 0.12) !important;
+	background-color: rgba(255, 255, 255, 0.12) !important;
+	border: 1px solid rgba(255, 255, 255, 0.20) !important;
+	border-radius: 8px !important;
+
+	text-shadow: none !important;
+	box-sizing: border-box !important;
+	pointer-events: none !important;
+}
+
+/* Open state */
+body.theme-liquid-glass .testing_player_details[open] summary::after,
+body.theme-liquid-glass .sb_player_details[open] summary::after {
+	content: "▴" !important;
+}
+
+/* Native selects */
+body.theme-liquid-glass select.lb-select,
+body.theme-liquid-glass select.testing-scenario-select {
+	appearance: none !important;
+	-webkit-appearance: none !important;
+	-moz-appearance: none !important;
+
+	padding-right: 34px !important;
+
+	background-image:
+		linear-gradient(45deg, transparent 50%, currentColor 50%),
+		linear-gradient(135deg, currentColor 50%, transparent 50%) !important;
+	background-position:
+		calc(100% - 16px) 50%,
+		calc(100% - 11px) 50% !important;
+	background-size:
+		5px 5px,
+		5px 5px !important;
+	background-repeat: no-repeat !important;
+}
+
+/* =========================================================
+   Testing page - Liquid Glass dropdown visual alignment
+   ---------------------------------------------------------
+   Make Zone/Member custom dropdowns look like the native
+   Test Scenario select field.
+   ========================================================= */
+
+body.theme-liquid-glass .testing_player_details summary {
+	height: 40px !important;
+	min-height: 40px !important;
+	line-height: 40px !important;
+
+	padding: 0 42px 0 14px !important;
+	box-sizing: border-box !important;
+
+	background: var(--lb-input-bg, rgba(255,255,255,0.10)) !important;
+	background-color: var(--lb-input-bg, rgba(255,255,255,0.10)) !important;
+	background-image: none !important;
+
+	color: var(--lb-input-text, #ffffff) !important;
+	-webkit-text-fill-color: var(--lb-input-text, #ffffff) !important;
+
+	border: 1px solid var(--lb-input-border, rgba(255,255,255,0.24)) !important;
+	border-radius: var(--lb-radius, 18px) !important;
+
+	box-shadow: none !important;
+	text-shadow: none !important;
+
+	font-family: var(--lb-font, inherit) !important;
+	font-size: inherit !important;
+	font-weight: normal !important;
+
+	text-align: center !important;
+	white-space: nowrap !important;
+	overflow: hidden !important;
+	text-overflow: ellipsis !important;
+}
+
+/* Keep the arrow visually aligned inside the summary field */
+body.theme-liquid-glass .testing_player_details summary::after {
+	right: 10px !important;
+	top: 50% !important;
+	transform: translateY(-50%) !important;
+}
+
+/* Zone field text may stay left/shortened if needed */
+body.theme-liquid-glass .testing-zone-cell .testing_player_details summary {
+	text-align: left !important;
+}
+
+/* Member field like screenshot: centered placeholder */
+body.theme-liquid-glass .testing-member-cell .testing_player_details summary {
+	text-align: center !important;
+}
+
+/* =========================================================
+   Sonos4Lox - Glass theme Testing dropdowns
+   ---------------------------------------------------------
+   Same behavior as Liquid Glass:
+   - Zone/Member custom dropdowns look like Test Scenario
+   - opened dropdown is white with black text
+   - opened dropdown is above description/UI
+   CSS only, no JS.
+   ========================================================= */
+
+/* Base: make custom Zone/Member dropdowns look like the Test Scenario select */
+body.theme-glass .testing_player_details summary {
+	position: relative !important;
+
+	height: 40px !important;
+	min-height: 40px !important;
+	line-height: 40px !important;
+
+	padding: 0 42px 0 14px !important;
+	box-sizing: border-box !important;
+
+	background: var(--lb-input-bg, rgba(255,255,255,0.10)) !important;
+	background-color: var(--lb-input-bg, rgba(255,255,255,0.10)) !important;
+	background-image: none !important;
+
+	color: var(--lb-input-text, #ffffff) !important;
+	-webkit-text-fill-color: var(--lb-input-text, #ffffff) !important;
+
+	border: 1px solid var(--lb-input-border, rgba(255,255,255,0.24)) !important;
+	border-radius: var(--lb-radius, 18px) !important;
+
+	box-shadow: none !important;
+	text-shadow: none !important;
+
+	font-family: var(--lb-font, inherit) !important;
+	font-size: inherit !important;
+	font-weight: normal !important;
+
+	text-align: center !important;
+	white-space: nowrap !important;
+	overflow: hidden !important;
+	text-overflow: ellipsis !important;
+}
+
+/* Right-side dropdown arrow */
+body.theme-glass .testing_player_details summary::after {
+	content: "▾" !important;
+
+	position: absolute !important;
+	right: 10px !important;
+	top: 50% !important;
+	transform: translateY(-50%) !important;
+
+	width: 20px !important;
+	height: 20px !important;
+	line-height: 20px !important;
+
+	text-align: center !important;
+	font-size: 11px !important;
+	font-weight: normal !important;
+
+	color: var(--lb-input-text, #ffffff) !important;
+	-webkit-text-fill-color: var(--lb-input-text, #ffffff) !important;
+
+	background: rgba(255, 255, 255, 0.12) !important;
+	background-color: rgba(255, 255, 255, 0.12) !important;
+	border: 1px solid rgba(255, 255, 255, 0.20) !important;
+	border-radius: 8px !important;
+
+	text-shadow: none !important;
+	box-sizing: border-box !important;
+	pointer-events: none !important;
+}
+
+body.theme-glass .testing_player_details[open] summary::after {
+	content: "▴" !important;
+}
+
+/* Foreground handling */
+body.theme-glass .testing_player_details {
+	position: relative !important;
+	z-index: 1000 !important;
+}
+
+body.theme-glass .testing_player_details[open] {
+	position: relative !important;
+	z-index: 99999 !important;
+}
+
+body.theme-glass .testing_player_details[open] .testing_player_details_content {
+	position: absolute !important;
+	z-index: 100000 !important;
+
+	background: #ffffff !important;
+	background-color: #ffffff !important;
+	background-image: none !important;
+
+	color: #000000 !important;
+	-webkit-text-fill-color: #000000 !important;
+
+	border: 1px solid rgba(0, 0, 0, 0.35) !important;
+	border-radius: 8px !important;
+
+	box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55) !important;
+
+	backdrop-filter: none !important;
+	-webkit-backdrop-filter: none !important;
+}
+
+/* Dropdown labels black on white */
+body.theme-glass .testing_player_details[open] .testing_player_check_label,
+body.theme-glass .testing_player_details[open] .testing_player_check_label * {
+	color: #000000 !important;
+	-webkit-text-fill-color: #000000 !important;
+	text-shadow: none !important;
+}
+
+/* Push the description layer behind the opened Zone/Member dropdown */
+body.theme-glass #testing_form:has(.testing_player_details[open]) .testing-description-cell,
+body.theme-glass #testing_form:has(.testing_player_details[open]) .testing-description-text {
+	position: relative !important;
+	z-index: -1 !important;
+}
+
+/* Keep the upper testing table above the description row */
+body.theme-glass #testing_form:has(.testing_player_details[open]) .testing-dropdown-layer,
+body.theme-glass #testing_form:has(.testing_player_details[open]) .testing-table,
+body.theme-glass #testing_form:has(.testing_player_details[open]) .testing-zone-cell,
+body.theme-glass #testing_form:has(.testing_player_details[open]) .testing-member-cell {
+	position: relative !important;
+	z-index: 99998 !important;
+}
+
+/* Glass / Liquid Glass - keep checkboxes always visible in opened Testing dropdowns */
+body.theme-glass .testing_player_details[open] .testing_player_details_content input[type="checkbox"],
+body.theme-liquid-glass .testing_player_details[open] .testing_player_details_content input[type="checkbox"] {
+	appearance: auto !important;
+	-webkit-appearance: checkbox !important;
+	-moz-appearance: checkbox !important;
+
+	display: inline-block !important;
+	visibility: visible !important;
+	opacity: 1 !important;
+
+	width: 16px !important;
+	height: 16px !important;
+	min-width: 16px !important;
+	min-height: 16px !important;
+
+	margin: 0 8px 0 0 !important;
+	padding: 0 !important;
+
+	vertical-align: middle !important;
+
+	background: #ffffff !important;
+	background-color: #ffffff !important;
+	background-image: none !important;
+
+	border: 1px solid #6b7280 !important;
+	border-radius: 2px !important;
+
+	accent-color: var(--lb-primary, #6db33f) !important;
+
+	box-shadow: none !important;
+	text-shadow: none !important;
+	filter: none !important;
+}
+
+/* =========================================================
+   Sonos4Lox - Liquid Glass radio button groups
+   ========================================================= */
+
+body.theme-liquid-glass .lb-btn-group.tts-engine-group,
+body.theme-liquid-glass .lb-btn-group.mpto-selector {
+	display: inline-flex !important;
+	gap: 0 !important;
+	padding: 0 !important;
+
+	background: rgba(255,255,255,0.14) !important;
+	border: 1px solid rgba(255,255,255,0.22) !important;
+	border-radius: 999px !important;
+
+	overflow: hidden !important;
+	box-shadow: none !important;
+}
+
+body.theme-liquid-glass .lb-btn-group.tts-engine-group label,
+body.theme-liquid-glass .lb-btn-group.mpto-selector label {
+	margin: 0 !important;
+	padding: 8px 18px !important;
+
+	background: transparent !important;
+	background-color: transparent !important;
+	background-image: none !important;
+
+	color: var(--lb-text, #ffffff) !important;
+	-webkit-text-fill-color: var(--lb-text, #ffffff) !important;
+
+	border: none !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	text-shadow: none !important;
+}
+
+body.theme-liquid-glass .lb-btn-group.tts-engine-group label.ui-btn-active,
+body.theme-liquid-glass .lb-btn-group.tts-engine-group label.lb-checked,
+body.theme-liquid-glass .lb-btn-group.tts-engine-group input[type="radio"]:checked + label,
+body.theme-liquid-glass .lb-btn-group.mpto-selector label.ui-btn-active,
+body.theme-liquid-glass .lb-btn-group.mpto-selector label.lb-checked,
+body.theme-liquid-glass .lb-btn-group.mpto-selector input[type="radio"]:checked + label {
+	background: var(--lb-primary, #8fc7ff) !important;
+	background-color: var(--lb-primary, #8fc7ff) !important;
+	background-image: none !important;
+
+	color: #000000 !important;
+	-webkit-text-fill-color: #000000 !important;
+
+	border-radius: 0 !important;
+	box-shadow: none !important;
+}
+
+body.theme-liquid-glass .lb-btn-group.tts-engine-group label:first-of-type,
+body.theme-liquid-glass .lb-btn-group.mpto-selector label:first-of-type {
+	border-top-left-radius: 999px !important;
+	border-bottom-left-radius: 999px !important;
+}
+
+body.theme-liquid-glass .lb-btn-group.tts-engine-group label:last-of-type,
+body.theme-liquid-glass .lb-btn-group.mpto-selector label:last-of-type {
+	border-top-right-radius: 999px !important;
+	border-bottom-right-radius: 999px !important;
+}
+
+/* =========================================================
+   Sonos4Lox - Liquid Glass toggle ON color
+   ---------------------------------------------------------
+   Override green DS toggle color only inside Sonos pages.
+   ========================================================= */
+
+body.theme-liquid-glass .lb-toggle input:checked + .lb-toggle-slider {
+	background:
+		linear-gradient(145deg, rgba(255,255,255,0.36), rgba(255,255,255,0.10)),
+		rgba(90,180,255,0.82) !important;
+
+	border-color: rgba(90,180,255,0.95) !important;
+
+	box-shadow:
+		inset 0 1px 1px rgba(255,255,255,0.70),
+		inset 0 -1px 2px rgba(0,0,0,0.12),
+		0 0 18px rgba(143,199,255,0.38),
+		0 6px 18px rgba(0,0,0,0.18) !important;
+}
+
+/* =========================================================
+   Sonos4Lox - SilverBox title text color
+   ---------------------------------------------------------
+   Keep SilverBox popup titles readable on light dialog cards.
+   Example: "Alles in Ordnung!" after saving.
+   ========================================================= */
+
+body.theme-liquid-glass [class*="silver" i] [class*="title" i],
+body.theme-liquid-glass [class*="silver" i] [class*="title" i] *,
+body.theme-liquid-glass [class*="silverbox" i] [class*="title" i],
+body.theme-liquid-glass [class*="silverbox" i] [class*="title" i] *,
+body.theme-liquid-glass [class*="silver-box" i] [class*="title" i],
+body.theme-liquid-glass [class*="silver-box" i] [class*="title" i] * {
+	color: #000000 !important;
+	-webkit-text-fill-color: #000000 !important;
+	text-shadow: none !important;
+}
+
+/* =========================================================
+   Sonos4Lox - SilverBox content text color
+   ---------------------------------------------------------
+   Keep popup content readable on light SilverBox dialog cards.
+   This fixes the Testing completion popup result rows.
+   ========================================================= */
+
+body.theme-liquid-glass [class*="silver" i],
+body.theme-liquid-glass [class*="silver" i] *,
+body.theme-liquid-glass [class*="silverbox" i],
+body.theme-liquid-glass [class*="silverbox" i] *,
+body.theme-liquid-glass [class*="silver-box" i],
+body.theme-liquid-glass [class*="silver-box" i] * {
+	color: #000000 !important;
+	-webkit-text-fill-color: #000000 !important;
+	text-shadow: none !important;
+}
+
+/* Keep SilverBox links blue/readable */
+body.theme-liquid-glass [class*="silver" i] a,
+body.theme-liquid-glass [class*="silverbox" i] a,
+body.theme-liquid-glass [class*="silver-box" i] a {
+	color: #1d73d4 !important;
+	-webkit-text-fill-color: #1d73d4 !important;
+	text-shadow: none !important;
+	font-weight: 600 !important;
+}
+
+/* Keep SilverBox primary/action buttons readable */
+body.theme-liquid-glass [class*="silver" i] button,
+body.theme-liquid-glass [class*="silver" i] .lb-btn,
+body.theme-liquid-glass [class*="silverbox" i] button,
+body.theme-liquid-glass [class*="silverbox" i] .lb-btn,
+body.theme-liquid-glass [class*="silver-box" i] button,
+body.theme-liquid-glass [class*="silver-box" i] .lb-btn {
+	color: #ffffff !important;
+	-webkit-text-fill-color: #ffffff !important;
+	text-shadow: none !important;
+}
+
+
+/* =========================================================
+   Classic Mac - select spacing and arrow placement
+   ---------------------------------------------------------
+   Keep generated jQuery Mobile select arrows inside the
+   Classic Mac select frame and add breathing room after the
+   custom flipswitch in the Loxone transfer row.
+   ========================================================= */
+body.theme-classic-mac #s4l_ms_wrap {
+	margin-left: 18px !important;
+}
+
+body.theme-classic-mac #s4l_ms_wrap .ui-select,
+body.theme-classic-mac #s4l_ms_wrap .ui-select .ui-btn,
+body.theme-classic-mac #func_list_wrap .ui-select,
+body.theme-classic-mac #func_list_wrap .ui-select .ui-btn,
+body.theme-classic-mac .func-list-wrap .ui-select,
+body.theme-classic-mac .func-list-wrap .ui-select .ui-btn {
+	box-sizing: border-box !important;
+	overflow: hidden !important;
+}
+
+body.theme-classic-mac #s4l_ms_wrap .ui-select .ui-btn,
+body.theme-classic-mac #func_list_wrap .ui-select .ui-btn,
+body.theme-classic-mac .func-list-wrap .ui-select .ui-btn {
+	padding-right: 34px !important;
+}
+
+body.theme-classic-mac #s4l_ms_wrap .ui-select .ui-btn::after,
+body.theme-classic-mac #func_list_wrap .ui-select .ui-btn::after,
+body.theme-classic-mac .func-list-wrap .ui-select .ui-btn::after,
+body.theme-classic-mac #s4l_ms_wrap .ui-btn-icon-right::after,
+body.theme-classic-mac #func_list_wrap .ui-btn-icon-right::after,
+body.theme-classic-mac .func-list-wrap .ui-btn-icon-right::after {
+	right: 12px !important;
+	margin-right: 0 !important;
+}
+
+body.theme-classic-mac #s4l_ms_wrap .ui-select .ui-btn span,
+body.theme-classic-mac #s4l_ms_wrap .ui-select .ui-selectmenu-text,
+body.theme-classic-mac #func_list_wrap .ui-select .ui-btn span,
+body.theme-classic-mac #func_list_wrap .ui-select .ui-selectmenu-text,
+body.theme-classic-mac .func-list-wrap .ui-select .ui-btn span,
+body.theme-classic-mac .func-list-wrap .ui-select .ui-selectmenu-text {
+	padding-right: 22px !important;
+	box-sizing: border-box !important;
+}
+
+body.theme-classic-mac #func_list_wrap select.lb-select,
+body.theme-classic-mac .func-list-wrap select.lb-select {
+	padding-right: 28px !important;
+}
+
+/* =========================================================
+   Classic Mac - Loxone transfer row spacing
+   ---------------------------------------------------------
+   Move the UDP port / health / restart block to the right so
+   it no longer sits too close to the Miniserver dropdown.
+   ========================================================= */
+body.theme-classic-mac #udpPortCell {
+	padding-left: 48px !important;
+}
+
+body.theme-classic-mac #udpPortHelpWrap {
+	margin-left: 0 !important;
+}
+
+/* =========================================================
+   Classic Mac - TV Monitor small native select arrow
+   ---------------------------------------------------------
+   The TV Monitor level selects are native selects now
+   because data-role="none" is required to keep the selected
+   value visible. This block only replaces the oversized
+   browser arrow with a smaller Classic-Mac-style arrow.
+   ========================================================= */
+
+body.theme-classic-mac select[id^="tvsurrlevel_"],
+body.theme-classic-mac select[id^="tvsublevel_"],
+body.theme-classic-mac select[id^="tvmonnightsublevel_"] {
+	appearance: none !important;
+	-webkit-appearance: none !important;
+	-moz-appearance: none !important;
+
+	background-color: #ffffff !important;
+	background-image:
+		linear-gradient(45deg, transparent 50%, #000000 50%),
+		linear-gradient(135deg, #000000 50%, transparent 50%) !important;
+	background-position:
+		calc(100% - 14px) 50%,
+		calc(100% - 9px) 50% !important;
+	background-size:
+		5px 5px,
+		5px 5px !important;
+	background-repeat: no-repeat !important;
+
+	color: #000000 !important;
+	-webkit-text-fill-color: #000000 !important;
+
+	padding-right: 22px !important;
+}
+
+/* =========================================================
+   Classic Mac - Sonos firmware update dropdowns
+   ---------------------------------------------------------
+   Wider day/time dropdowns and arrow aligned right.
+   ========================================================= */
+
+body.theme-classic-mac .hw-update-day-wrap,
+body.theme-classic-mac .hw-update-day-wrap .ui-select,
+body.theme-classic-mac #hw_update_day-button {
+	width: 170px !important;
+	min-width: 170px !important;
+	max-width: 170px !important;
+	box-sizing: border-box !important;
+}
+
+body.theme-classic-mac .hw-update-time-wrap,
+body.theme-classic-mac .hw-update-time-wrap .ui-select,
+body.theme-classic-mac #hw_update_time-button {
+	width: 130px !important;
+	min-width: 130px !important;
+	max-width: 130px !important;
+	box-sizing: border-box !important;
+}
+
+body.theme-classic-mac #hw_update_day-button,
+body.theme-classic-mac #hw_update_time-button {
+	padding-right: 34px !important;
+	overflow: hidden !important;
+}
+
+body.theme-classic-mac #hw_update_day-button::after,
+body.theme-classic-mac #hw_update_time-button::after,
+body.theme-classic-mac #hw_update_day-button.ui-btn-icon-right::after,
+body.theme-classic-mac #hw_update_time-button.ui-btn-icon-right::after {
+	right: 10px !important;
+	margin-right: 0 !important;
+}
+
+body.theme-classic-mac #hw_update_day-button span,
+body.theme-classic-mac #hw_update_day-button .ui-btn-text,
+body.theme-classic-mac #hw_update_day-button .ui-selectmenu-text,
+body.theme-classic-mac #hw_update_time-button span,
+body.theme-classic-mac #hw_update_time-button .ui-btn-text,
+body.theme-classic-mac #hw_update_time-button .ui-selectmenu-text {
+	padding-right: 22px !important;
+	box-sizing: border-box !important;
+}
+
+/* =========================================================
+   Classic Mac - Follow function dropdown arrow
+   ---------------------------------------------------------
+   The jQM arrow is not reliably visible for func_list.
+   Therefore draw a small Classic-Mac-style triangle explicitly.
+   ========================================================= */
+
+body.theme-classic-mac #func_list_wrap,
+body.theme-classic-mac #func_list_wrap .ui-select,
+body.theme-classic-mac #func_list-button {
+	width: 260px !important;
+	min-width: 260px !important;
+	max-width: 260px !important;
+	box-sizing: border-box !important;
+}
+
+body.theme-classic-mac #func_list-button,
+body.theme-classic-mac #func_list_wrap .ui-select .ui-btn {
+	position: relative !important;
+	padding-right: 36px !important;
+	overflow: hidden !important;
+	box-sizing: border-box !important;
+}
+
+body.theme-classic-mac #func_list-button span,
+body.theme-classic-mac #func_list-button .ui-btn-text,
+body.theme-classic-mac #func_list-button .ui-selectmenu-text,
+body.theme-classic-mac #func_list_wrap .ui-select .ui-btn span,
+body.theme-classic-mac #func_list_wrap .ui-select .ui-selectmenu-text {
+	padding-right: 24px !important;
+	box-sizing: border-box !important;
+}
+
+/* Hide/remove the unreliable jQM icon background */
+body.theme-classic-mac #func_list-button::after,
+body.theme-classic-mac #func_list-button.ui-btn-icon-right::after,
+body.theme-classic-mac #func_list_wrap .ui-select .ui-btn::after,
+body.theme-classic-mac #func_list_wrap .ui-btn-icon-right::after {
+	content: "" !important;
+
+	position: absolute !important;
+	right: 14px !important;
+	top: 50% !important;
+
+	width: 0 !important;
+	height: 0 !important;
+
+	margin: -2px 0 0 0 !important;
+	padding: 0 !important;
+
+	border-left: 5px solid transparent !important;
+	border-right: 5px solid transparent !important;
+	border-top: 6px solid #000000 !important;
+
+	background: transparent !important;
+	background-color: transparent !important;
+	background-image: none !important;
+
+	box-shadow: none !important;
+	opacity: 1 !important;
+	display: block !important;
+}
+
+/* =========================================================
+   Details / Options page - stable label column
+   ---------------------------------------------------------
+   The column widths are primarily defined by the colgroup in
+   sonos.html. This CSS only prevents inline td widths from
+   overriding the fixed layout too strongly.
+   ========================================================= */
+
+#detail_form table.s4lox-details-formtable {
+	table-layout: fixed !important;
+	width: 95% !important;
+}
+
+#detail_form table.s4lox-details-formtable > tbody > tr > td:first-child:not([colspan]) {
+	width: 400px !important;
+	min-width: 400px !important;
+	max-width: 400px !important;
+	box-sizing: border-box !important;
+}
+
+#detail_form table.s4lox-details-formtable > tbody > tr > td:nth-child(2):not([colspan]) {
+	width: auto !important;
+	box-sizing: border-box !important;
+}
+
+/* =========================================================
+   Regression result dialog - visible log links
+   ---------------------------------------------------------
+   Keep "Open test log" and "Open Sonos log" recognizable
+   as links in all LoxBerry/Sonos themes, including rounded.
+   ========================================================= */
+
+.silverBox a,
+.silverBox a:link,
+.silverBox a:visited,
+.silverBox a:hover,
+.silverBox a:active,
+.silverbox a,
+.silverbox a:link,
+.silverbox a:visited,
+.silverbox a:hover,
+.silverbox a:active,
+.swal2-popup a,
+.swal2-popup a:link,
+.swal2-popup a:visited,
+.swal2-popup a:hover,
+.swal2-popup a:active {
+	color: #006fe6 !important;
+	-webkit-text-fill-color: #006fe6 !important;
+	text-decoration: none !important;
+	text-shadow: none !important;
+	font-weight: normal !important;
+}
+
+.silverBox a:hover,
+.silverbox a:hover,
+.swal2-popup a:hover {
+	text-decoration: underline !important;
+}

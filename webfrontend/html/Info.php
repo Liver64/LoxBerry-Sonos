@@ -195,7 +195,7 @@ function debugInfo()     {
 	
 	global $config, $sonos, $actual, $sonoszone, $master, $lbversion, $plugindata, $level, $ms, $heute, $lbpdatadir, $debuggingfile, $lbplogdir;
 	
-	require_once(LBPHTMLDIR.'/system/bin/XmlToArray.php');
+	require_once(LBPHTMLDIR . '/src/Support/Xml/XmlToArray.php');
 	
 	$debugconfig = $config;
 	#print_r($debugconfig);

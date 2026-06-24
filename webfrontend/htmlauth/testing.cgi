@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 # =============================================================================
 # Sonos4Lox / Sonos UI - testing.cgi
-# Version: TESTING_CGI_V19_2026_06_07_TIMEOUT_AS_DELAY
+# Version: TESTING_CGI_V26_2026_06_22_SONOS_THEME_WALLPAPER_PATHFIX
 # =============================================================================
 # Dedicated Testing page for Sonos4Lox.
 # The page is available only in debug loglevel (7).
@@ -53,9 +53,12 @@ my $helplink             = "http://www.loxwiki.eu/display/LOXBERRY/Sonos4Loxone"
 # url_tests.json is now maintained directly from the Testing page and belongs
 # to the plugin config directory so it is part of the normal plugin configuration.
 # Example: /opt/loxberry/config/plugins/sonos4lox/url_tests.json
-my $testing_script_version = "TESTING_CGI_V19_2026_06_07_TIMEOUT_AS_DELAY";
+my $testing_script_version = "TESTING_CGI_V26_2026_06_22_SONOS_THEME_WALLPAPER_PATHFIX";
 my $testing_json_file      = $lbpconfigdir . "/url_tests.json";
 my $testing_log_file       = $lbplogdir . "/regression_test.log";
+my $testing_launcher_log_file = $lbplogdir . "/regression_test_launcher.log";
+my $testing_status_dir       = "/run/shm/sonos4lox";
+my $testing_status_file      = $testing_status_dir . "/regression_test_status.json";
 
 # Placeholder handling for playlist/radio/favorite regression tests.
 # The URL keeps SOURCE as placeholder, while the real playlist/radio/favorite
@@ -97,17 +100,13 @@ our $theme = '';
 if (ref($generalcfg) eq 'HASH' && ref($generalcfg->{Base}) eq 'HASH') {
     $theme = $generalcfg->{Base}->{Theme} // '';
 }
+our $sonos_theme_info = s4l_get_sonos_theme_info();
 
 $cgi = CGI->new;
 $cgi->import_names('R');
 our $q = $cgi->Vars;
 
-our $htmlhead = '';
-if ($lbv < 4) {
-    $htmlhead = '<link rel="stylesheet" href="/plugins/'.$lbpplugindir.'/web/sonos_lbv3.css?v='.$sversion.'"/>';
-} else {
-    $htmlhead = '<link rel="stylesheet" href="/plugins/'.$lbpplugindir.'/web/sonos_lbv4.css?v='.$sversion.'"/>';
-}
+our $htmlhead = s4l_build_htmlhead();
 ##########################################################################
 # Debug-only gate
 ##########################################################################
@@ -116,6 +115,175 @@ if ($log->loglevel() ne "7") {
     print "Content-Type: text/plain; charset=utf-8\n\n";
     print "Testing is only available when plugin loglevel is set to 7 (Debug).\n";
     exit;
+}
+
+##########################################################################
+# Sonos theme selector helpers
+##########################################################################
+sub s4l_normalize_theme_name
+{
+    my ($value) = @_;
+    $value = '' if !defined $value;
+    $value = lc($value);
+    $value =~ s/^\s+|\s+$//g;
+    $value =~ s/_/-/g;
+    $value =~ s/\.css$//;
+    $value =~ s/^theme-//;
+
+    # SONOS_THEME_SELECTOR_V05_2026_06_21:
+    # Keep native LoxBerry theme names such as "glass" instead of collapsing
+    # them to "system". The saved Sonos plugin-theme value is still validated
+    # later against the explicit allow-list, but the effective system theme
+    # must remain detectable so the white Sonos logo is used for theme-glass.
+    return 'system' if $value eq '' || $value eq 'default' || $value eq 'auto';
+    return 'classic-mac' if $value eq 'mac-classic';
+    return $value;
+}
+
+sub s4l_system_theme_css_exists
+{
+    my ($theme_name) = @_;
+    $theme_name = s4l_normalize_theme_name($theme_name);
+    return 0 if $theme_name eq 'system';
+    my $css_file = "$lbhomedir/webfrontend/html/system/css/theme-$theme_name.css";
+    return -e $css_file ? 1 : 0;
+}
+
+sub s4l_get_sonos_theme_info
+{
+    my $saved_theme = 'system';
+    if (ref($cfg) eq 'HASH' && ref($cfg->{UI}) eq 'HASH') {
+        $saved_theme = s4l_normalize_theme_name($cfg->{UI}->{sonostheme});
+    }
+
+    my %plugin_theme_allowed = (
+        'classic-mac'  => ($lbv >= 4 && !s4l_system_theme_css_exists('classic-mac')) ? 1 : 0,
+        'liquid-glass' => ($lbv >= 4 && !s4l_system_theme_css_exists('liquid-glass')) ? 1 : 0,
+    );
+
+    my $show_selector = ($lbv >= 4 && ($plugin_theme_allowed{'classic-mac'} || $plugin_theme_allowed{'liquid-glass'})) ? 1 : 0;
+    my $effective_theme = ($show_selector && $plugin_theme_allowed{$saved_theme}) ? $saved_theme : 'system';
+
+    return {
+        saved          => $saved_theme,
+        effective      => $effective_theme,
+        show_selector  => $show_selector,
+        allowed        => \%plugin_theme_allowed,
+    };
+}
+
+sub s4l_effective_theme_lc
+{
+    my $system_theme = s4l_normalize_theme_name($theme);
+    if (ref($sonos_theme_info) eq 'HASH' && ($sonos_theme_info->{effective} // 'system') ne 'system') {
+        return $sonos_theme_info->{effective};
+    }
+    return $system_theme;
+}
+
+
+sub s4l_wallpaper_dir
+{
+    return $lbpdatadir . "/themes";
+}
+
+sub s4l_custom_wallpaper_files
+{
+    my $dir = s4l_wallpaper_dir();
+    return map { "$dir/liquid-glass-background.$_" } qw(png jpg jpeg webp);
+}
+
+sub s4l_find_custom_wallpaper
+{
+    for my $file (s4l_custom_wallpaper_files()) {
+        return $file if -r $file;
+    }
+    return '';
+}
+
+sub s4l_wallpaper_cache_buster
+{
+    my $file = s4l_find_custom_wallpaper();
+    if (!$file) {
+        $file = $lbphtmldir . "/LayoutUI/themes/theme-liquid-glass-background.png";
+    }
+    my @stat = stat($file);
+    return $stat[9] || time();
+}
+
+
+sub s4l_get_liquid_glass_wallpaper_brightness
+{
+    my $value = 32;
+    if (ref($cfg) eq 'HASH' && ref($cfg->{UI}) eq 'HASH' && defined $cfg->{UI}->{liquid_glass_wallpaper_brightness}) {
+        $value = $cfg->{UI}->{liquid_glass_wallpaper_brightness};
+    }
+
+    $value = 32 if $value !~ /^\d+(?:\.\d+)?$/;
+    $value = int($value + 0.5);
+    $value = 0 if $value < 0;
+    $value = 100 if $value > 100;
+    return $value;
+}
+
+sub s4l_liquid_glass_wallpaper_dim_values
+{
+    my $brightness = s4l_get_liquid_glass_wallpaper_brightness();
+    my $primary = (100 - $brightness) / 100;
+    my $secondary = $primary - 0.10;
+    $secondary = 0 if $secondary < 0;
+    return (sprintf('%.2f', $primary), sprintf('%.2f', $secondary));
+}
+
+sub s4l_liquid_glass_wallpaper_style_tag
+{
+    return '' if $lbv < 4;
+
+    my $url = '/plugins/' . $lbpplugindir . '/LayoutUI/themes/theme-wallpaper.cgi?v=' . s4l_wallpaper_cache_buster();
+    my ($dim_primary, $dim_secondary) = s4l_liquid_glass_wallpaper_dim_values();
+
+    return '<style id="s4lox-liquid-glass-wallpaper-style">' . "\n"
+        . 'body.theme-liquid-glass {' . "\n"
+        . '--s4lox-liquid-glass-wallpaper-dim-primary: ' . $dim_primary . ';' . "\n"
+        . '--s4lox-liquid-glass-wallpaper-dim-secondary: ' . $dim_secondary . ';' . "\n"
+        . '}' . "\n"
+        . 'body.theme-liquid-glass::before {' . "\n"
+        . 'content: "";' . "\n"
+        . 'position: fixed;' . "\n"
+        . 'inset: 0;' . "\n"
+        . 'z-index: -2;' . "\n"
+        . 'pointer-events: none;' . "\n"
+        . 'background:' . "\n"
+        . 'linear-gradient(135deg, rgba(3, 8, 16, var(--s4lox-liquid-glass-wallpaper-dim-primary, 0.68)), rgba(10, 24, 38, var(--s4lox-liquid-glass-wallpaper-dim-secondary, 0.58))),' . "\n"
+        . 'radial-gradient(900px 500px at 15% 10%, rgba(96, 130, 165, 0.10), transparent 52%),' . "\n"
+        . 'radial-gradient(900px 500px at 85% 90%, rgba(73, 102, 133, 0.08), transparent 54%),' . "\n"
+        . 'radial-gradient(700px 420px at 65% 15%, rgba(109, 172, 32, 0.035), transparent 58%),' . "\n"
+        . 'url("' . $url . '") center center / cover fixed no-repeat !important;' . "\n"
+        . '}' . "\n"
+        . '</style>' . "\n";
+}
+
+sub s4l_build_htmlhead
+{
+    my $head = '';
+
+    if ($lbv < 4) {
+        return '<link rel="stylesheet" href="/plugins/'.$lbpplugindir.'/LayoutUI/sonos_lbv3.css?v='.$sversion.'"/>';
+    }
+
+    my $effective_theme = (ref($sonos_theme_info) eq 'HASH') ? ($sonos_theme_info->{effective} // 'system') : 'system';
+    if ($effective_theme eq 'classic-mac' || $effective_theme eq 'liquid-glass') {
+        $head .= '<link rel="stylesheet" href="/plugins/'.$lbpplugindir.'/LayoutUI/themes/theme-'.$effective_theme.'.css?v='.$sversion.'"/>' . "\n";
+        $head .= '<script>(function(){var themeClass="theme-'.$effective_theme.'";function applySonosTheme(){var body=document.body;if(!body){window.setTimeout(applySonosTheme,0);return;}Array.prototype.slice.call(body.classList).forEach(function(cls){if(/^theme-/.test(cls)){body.classList.remove(cls);}});body.classList.add(themeClass);}applySonosTheme();})();</script>' . "\n";
+    }
+
+    my $theme_lc_for_wallpaper = s4l_effective_theme_lc();
+    if ($theme_lc_for_wallpaper eq 'liquid-glass') {
+        $head .= s4l_liquid_glass_wallpaper_style_tag();
+    }
+
+    $head .= '<link rel="stylesheet" href="/plugins/'.$lbpplugindir.'/LayoutUI/sonos_lbv4.css?v='.$sversion.'"/>';
+    return $head;
 }
 
 ##########################################################################
@@ -153,6 +321,14 @@ if (defined $q->{action} && $q->{action} eq 'view_testing_log') {
     } else {
         print "Could not open log file: $file ($!)\n";
     }
+    exit;
+}
+
+##########################################################################
+# JSON status endpoint for background regression tests
+##########################################################################
+if (defined $q->{action} && ($q->{action} eq 'testing_status' || $q->{action} eq 'status')) {
+    print_testing_status_json();
     exit;
 }
 
@@ -201,18 +377,18 @@ $navbar{99}{URL}  = './index.cgi?do=logfiles';
 
 my $mqttcred = LoxBerry::IO::mqtt_connectiondetails();
 if ($mqttcred && ref($cfg) eq 'HASH' && ref($cfg->{LOXONE}) eq 'HASH' && ($cfg->{LOXONE}->{LoxDaten} // '') eq 'true') {
-    $navbar{4}{Name} = $SL{'BASIS.MENU_MQTT'} || 'MQTT';
+    $navbar{5}{Name} = $SL{'BASIS.MENU_MQTT'} || 'MQTT';
     if ($lbv < 3) {
-        $navbar{4}{URL} = '/admin/plugins/mqttgateway/index.cgi';
+        $navbar{5}{URL} = '/admin/plugins/mqttgateway/index.cgi';
     } else {
-        $navbar{4}{URL} = '/admin/system/mqtt.cgi';
+        $navbar{5}{URL} = '/admin/system/mqtt.cgi';
     }
-    $navbar{4}{target} = '_blank';
+    $navbar{5}{target} = '_blank';
 }
 
-$navbar{5}{Name}   = $SL{'BASIS.MENU_TESTING'} || 'Testing';
-$navbar{5}{URL}    = './testing.cgi';
-$navbar{5}{active} = 1;
+$navbar{4}{Name}   = $SL{'BASIS.MENU_TESTING'} || 'Testing';
+$navbar{4}{URL}    = './testing.cgi';
+$navbar{4}{active} = 1;
 
 ##########################################################################
 # Render Testing page
@@ -232,13 +408,14 @@ sub testing
     $template->param(FORMNO => 'TESTING');
 
     if ($lbv >= 4) {
+        my $theme_lc = s4l_effective_theme_lc();
         $template->param("LBV4", 1);
-        if (defined $theme && lc($theme) eq "glass") {
+        if ($theme_lc =~ /glass/ && $theme_lc ne "classic-mac") {
             $template->param("THEMEGLASS", 1);
         }
-		if (defined $theme && lc($theme) eq "classic-mac") {
-			$template->param("THEMEMAC", 1);
-		}
+        if ($theme_lc eq "classic-mac") {
+            $template->param("THEMEMAC", 1);
+        }
     }
 
     my $testing_action    = scalar($cgi->param('testing_action'))    // '';
@@ -249,9 +426,10 @@ sub testing
     my $is_save_action    = ($testing_action eq 'save_json' || defined scalar($cgi->param('save_testing_json')));
     my $is_execute_action = ((defined $R::execute_testing && $R::execute_testing) || $testing_action eq 'execute');
 
-    # The description is only meant as PageInit help. After a save or test run
-    # the result/status area should get the focus and the description is hidden.
-    if (!$is_save_action && !$is_execute_action) {
+    # Keep the description visible on initial page load and after saving the JSON editor.
+    # Only hide it while a test execution result is displayed, so the execution output
+    # remains the visual focus after a real regression run.
+    if (!$is_execute_action) {
         $template->param("TESTING_SHOW_DESCRIPTION" => 1);
     }
     $template->param("TESTING_DESCRIPTION_TEXT" => html_escape(build_testing_description_text()));
@@ -274,6 +452,13 @@ sub testing
         $selected_scenario = '';
         $selected_zone     = '';
         @selected_members  = ();
+    }
+
+    my $testing_started_notice = scalar($cgi->param('testing_started')) // '';
+    if ($testing_started_notice eq '1') {
+        $template->param("TESTING_HAS_RESULT" => 1);
+        $template->param("TESTING_RESULT_OK" => 1);
+        $template->param("TESTING_RESULT_TEXT" => $SL{'TESTING.RESULT_STARTED_BACKGROUND'} || 'Test execution was started in the background. The browser page is released immediately to avoid a gateway timeout. Open the test log to follow the progress.');
     }
 
     my @online_rooms = get_online_player_rooms();
@@ -336,20 +521,22 @@ sub testing
             return;
         }
 
-        my $result_ref = run_testing_scenario(
+        my $result_ref = start_testing_scenario_background(
             scenario => $scenario_map_ref->{$selected_scenario},
             zone     => $selected_zone,
             members  => \@selected_members,
         );
 
-        $template->param("TESTING_HAS_RESULT" => 1);
         if ($result_ref->{ok}) {
-            $template->param("TESTING_RESULT_OK" => 1);
-            $template->param("TESTING_RESULT_TEXT" => $SL{'TESTING.RESULT_OK'} || 'Test execution finished successfully.');
-        } else {
-            $template->param("TESTING_RESULT_FAILED" => 1);
-            $template->param("TESTING_RESULT_TEXT" => ($SL{'TESTING.RESULT_FAILED'} || 'Test execution finished with errors.') . " Exit code: " . $result_ref->{exit_code});
+            print "Status: 303 See Other\r\n";
+            print "Location: ./testing.cgi?testing_started=1\r\n";
+            print "Cache-Control: no-store, no-cache, must-revalidate\r\n\r\n";
+            exit;
         }
+
+        $template->param("TESTING_HAS_RESULT" => 1);
+        $template->param("TESTING_RESULT_FAILED" => 1);
+        $template->param("TESTING_RESULT_TEXT" => ($SL{'TESTING.RESULT_FAILED'} || 'Test execution could not be started.') . " Exit code: " . $result_ref->{exit_code});
         $template->param("TESTING_RESULT_COMMAND" => html_escape($result_ref->{command}));
         $template->param("TESTING_RESULT_OUTPUT"  => html_escape($result_ref->{output}));
     }
@@ -900,7 +1087,7 @@ sub render_testing_player_dropdown
     return $html;
 }
 
-sub run_testing_scenario
+sub start_testing_scenario_background
 {
     my (%args) = @_;
     my $scenario = $args{scenario};
@@ -913,7 +1100,7 @@ sub run_testing_scenario
         @members = unique_values(@members);
     }
 
-    my $tests_dir = $lbphtmldir . '/tests';
+    my $tests_dir = $lbphtmldir . '/src/Support/Testing';
     my $script    = $tests_dir . '/regression_test.pl';
 
     if (!-r $script) {
@@ -931,17 +1118,217 @@ sub run_testing_scenario
     my $member_string = join(',', @members);
     push @cmd, "--member=$member_string" if $member_string ne '';
 
-    my ($exit_code, $output) = run_command_capture($tests_dir, @cmd);
     my $command = join(' ', map { shell_display_quote($_) } @cmd);
+    my $token = time() . '-' . $$ . '-' . int(rand(100000));
+    my $status_ref = {
+        state      => 'running',
+        result     => '',
+        token      => $token,
+        pid        => 0,
+        started_at => strftime('%Y-%m-%d %H:%M:%S', localtime),
+        updated_at => strftime('%Y-%m-%d %H:%M:%S', localtime),
+        command    => $command,
+        test_log   => $testing_log_file,
+        sonos_log  => $lbplogdir . '/' . $pluginlogfile,
+        message    => 'Regression test is running in the background.',
+    };
 
-    LOGINF "Testing command executed: $command (exit code $exit_code)";
+    my $pid = start_background_command($tests_dir, $status_ref, @cmd);
+
+    if (!$pid) {
+        return {
+            ok        => 0,
+            exit_code => 127,
+            command   => $command,
+            output    => "Could not start background test command.",
+        };
+    }
+
+    $status_ref->{pid} = $pid;
+    write_testing_status_file($status_ref);
+
+    LOGINF "Testing command started in background: $command (pid $pid)";
 
     return {
-        ok        => ($exit_code == 0 ? 1 : 0),
-        exit_code => $exit_code,
+        ok        => 1,
+        exit_code => 0,
         command   => $command,
-        output    => $output,
+        output    => "Background test process started. PID: $pid\nTest log: $testing_log_file\nSonos log: " . $lbplogdir . "/" . $pluginlogfile . "\nThe test continues even if this browser page is closed or refreshed.",
     };
+}
+
+sub start_background_command
+{
+    my ($workdir, $status_ref, @cmd) = @_;
+
+    my $pid = fork();
+    if (!defined $pid) {
+        LOGERR "Could not fork background test command: $!";
+        return 0;
+    }
+
+    if ($pid) {
+        return $pid;
+    }
+
+    # Child process: detach from the CGI request so long regression runs do not
+    # keep the web request open and do not trigger a reverse proxy timeout.
+    chdir $workdir or do {
+        _write_launcher_log("Could not change to test directory '$workdir': $!");
+        exit 127;
+    };
+
+    eval { POSIX::setsid(); };
+
+    open(STDIN, '<', '/dev/null');
+    open(STDOUT, '>>:encoding(UTF-8)', $testing_launcher_log_file);
+    open(STDERR, '>&', STDOUT);
+
+    print "\n" . strftime('%d-%m-%Y %H:%M:%S', localtime) . " Background regression test started.\n";
+    print "Command: " . join(' ', map { shell_display_quote($_) } @cmd) . "\n";
+
+    if (ref($status_ref) eq 'HASH') {
+        $status_ref->{pid} = $$;
+        $status_ref->{updated_at} = strftime('%Y-%m-%d %H:%M:%S', localtime);
+        write_testing_status_file($status_ref);
+    }
+
+    my $rc = system @cmd;
+    my $exit_code = ($rc == -1) ? 127 : (($rc & 127) ? 128 + ($rc & 127) : ($rc >> 8));
+
+    my $finished_ref = build_testing_finished_status($status_ref, $exit_code);
+    write_testing_status_file($finished_ref);
+
+    print strftime('%d-%m-%Y %H:%M:%S', localtime) . " Background regression test finished with exit code $exit_code.\n";
+    exit $exit_code;
+}
+
+sub print_testing_status_json
+{
+    my $status_ref = read_testing_status_file();
+    if (!$status_ref) {
+        $status_ref = {
+            state      => 'idle',
+            result     => '',
+            token      => '',
+            message    => 'No regression test is running.',
+            updated_at => strftime('%Y-%m-%d %H:%M:%S', localtime),
+        };
+    }
+
+    print "Content-Type: application/json; charset=utf-8\n";
+    print "Cache-Control: no-store, no-cache, must-revalidate\n\n";
+    print JSON::PP->new->utf8->canonical->encode($status_ref);
+}
+
+sub read_testing_status_file
+{
+    return undef if !-r $testing_status_file;
+	
+	my $fh;
+	my $content = '';
+	
+    if (!open($fh, '<:encoding(UTF-8)', $testing_status_file)) {
+        return undef;
+    }
+    local $/;
+    $content = <$fh> // '';
+    close($fh);
+
+    my $status_ref = eval { JSON::PP::decode_json($content) };
+    return undef if $@ || ref($status_ref) ne 'HASH';
+    return $status_ref;
+}
+
+sub write_testing_status_file
+{
+    my ($status_ref) = @_;
+    return if ref($status_ref) ne 'HASH';
+
+    eval { make_path($testing_status_dir) if !-d $testing_status_dir; };
+    return if !-d $testing_status_dir;
+
+    $status_ref->{updated_at} = strftime('%Y-%m-%d %H:%M:%S', localtime);
+
+    my $json = eval { JSON::PP->new->utf8->canonical->pretty->encode($status_ref) };
+    return if $@ || !defined $json;
+
+    my $tmp = $testing_status_file . '.' . $$ . '.tmp';
+    if (open(my $fh, '>:encoding(UTF-8)', $tmp)) {
+        print {$fh} $json;
+        close($fh);
+        rename($tmp, $testing_status_file);
+    }
+}
+
+sub build_testing_finished_status
+{
+    my ($status_ref, $exit_code) = @_;
+    $status_ref = {} if ref($status_ref) ne 'HASH';
+
+    my $summary_ref = parse_testing_log_summary($testing_log_file);
+    my $failed  = defined $summary_ref->{failed}  ? int($summary_ref->{failed})  : undef;
+    my $timeout = defined $summary_ref->{timeout} ? int($summary_ref->{timeout}) : undef;
+
+    my $result = 'failed';
+    if ($exit_code == 0 && defined $failed && defined $timeout && $failed == 0 && $timeout == 0) {
+        $result = 'ok';
+    } elsif ($exit_code == 0 && !defined $failed && !defined $timeout) {
+        $result = 'ok';
+    }
+
+    my $message = ($result eq 'ok')
+        ? 'Regression test finished successfully.'
+        : 'Regression test finished with errors. Please open the regression test log for details.';
+
+    return {
+        %{$status_ref},
+        state       => 'finished',
+        result      => $result,
+        exit_code   => $exit_code,
+        finished_at => strftime('%Y-%m-%d %H:%M:%S', localtime),
+        message     => $message,
+        ok          => $summary_ref->{ok},
+        failed      => $summary_ref->{failed},
+        timeout     => $summary_ref->{timeout},
+        skipped     => $summary_ref->{skipped},
+        selected    => $summary_ref->{selected},
+        total       => $summary_ref->{total},
+        duration_ms => $summary_ref->{duration_ms},
+    };
+}
+
+sub parse_testing_log_summary
+{
+    my ($file) = @_;
+    my %summary;
+    return \%summary if !-r $file;
+
+    my $content = '';
+    if (open(my $fh, '<:encoding(UTF-8)', $file)) {
+        local $/;
+        $content = <$fh> // '';
+        close($fh);
+    }
+
+    while ($content =~ /Total tests in JSON:\s*(\d+)/g) { $summary{total} = int($1); }
+    while ($content =~ /Selected tests:\s*(\d+)/g)    { $summary{selected} = int($1); }
+    while ($content =~ /OK:\s*(\d+)/g)                { $summary{ok} = int($1); }
+    while ($content =~ /FAILED:\s*(\d+)/g)            { $summary{failed} = int($1); }
+    while ($content =~ /TIMEOUT:\s*(\d+)/g)           { $summary{timeout} = int($1); }
+    while ($content =~ /Inactive skipped:\s*(\d+)/g)  { $summary{skipped} = int($1); }
+    while ($content =~ /Duration:\s*(\d+)\s*ms/g)     { $summary{duration_ms} = int($1); }
+
+    return \%summary;
+}
+
+sub _write_launcher_log
+{
+    my ($message) = @_;
+    if (open(my $fh, '>>:encoding(UTF-8)', $testing_launcher_log_file)) {
+        print {$fh} strftime('%d-%m-%Y %H:%M:%S', localtime) . " $message\n";
+        close($fh);
+    }
 }
 
 sub run_command_capture

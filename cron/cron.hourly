@@ -9,8 +9,8 @@
 
 # Will be executed as user "loxberry".
 
-/usr/bin/php REPLACELBPHTMLDIR/bin/battery.php
-/usr/bin/php REPLACELBPHTMLDIR/bin/SW_Update.php
+/usr/bin/php REPLACELBPHTMLDIR/src/Support/BatteryMonitor.php &
+/usr/bin/php REPLACELBPHTMLDIR/src/Support/SoftwareUpdateCheck.php &
 
 if [ -e /run/shm/s4lox_errorMP3Stream.json ]
 then
