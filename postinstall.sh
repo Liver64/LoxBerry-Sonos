@@ -1,6 +1,6 @@
 #!/bin/bash
 # Sonos4Lox postinstall.sh
-# Version: INSTALL_SCRIPT_ROBUSTNESS_V01_2026_06_15
+# Version: POSTINSTALL_MEMORY_SAFE_V02_2026_06_24
 # Will be executed as user "loxberry".
 
 COMMAND="$0"
@@ -30,13 +30,15 @@ log_error() { echo "<ERROR> $*"; }
 
 VOICE_DIR="$LBHOME/webfrontend/html/plugins/$PDIR/VoiceEngines/piper-voices"
 UPGRADE_VOICE_BACKUP="/tmp/${PTEMPDIR}_upgrade/webfrontend/piper-voices"
+PERSISTENT_UPGRADE_VOICE_BACKUP="$LBHOME/data/plugins/${PDIR}_upgrade_${PTEMPDIR}/piper-voices"
 PIPER_INDEX="$LBHOME/webfrontend/html/plugins/$PDIR/src/Support/PiperVoiceIndex.php"
 
 mkdir -p "$VOICE_DIR"
 
 # During upgrades, preupgrade/postupgrade preserves existing voices.
 # Do not redownload them in postinstall if an upgrade backup is present.
-if [ -d "$UPGRADE_VOICE_BACKUP" ]; then
+# V02 also checks the persistent backup folder used to avoid zram-backed /tmp pressure.
+if [ -d "$UPGRADE_VOICE_BACKUP" ] || [ -d "$PERSISTENT_UPGRADE_VOICE_BACKUP" ]; then
     log_info "Piper voice backup exists for upgrade; skipping voice download in postinstall."
     exit 0
 fi

@@ -1,6 +1,6 @@
 #!/bin/sh
 # Sonos4Lox preroot.sh
-# Version: INSTALL_SCRIPT_ROBUSTNESS_V01_2026_06_15
+# Version: PREROOT_MEMORY_SAFE_V02_2026_06_24
 # Will be executed as user "root".
 
 COMMAND="$0"
@@ -36,19 +36,29 @@ else
 fi
 
 # ---------------------------------------------------------
-# Remove old plugin-owned Piper installation folder.
-# postroot.sh installs/validates Piper again using the current layout.
+# Piper installation folder
 # ---------------------------------------------------------
+# V02: Do NOT delete the existing Piper folder during every upgrade.
+# postroot.sh validates the existing binary and only installs Piper when
+# needed. This avoids unnecessary large downloads/extractions and keeps
+# installation memory/disk pressure lower on systems using zram.
 PIPER_DIR="$LBHOME/bin/plugins/$PDIR/piper"
 
+PIPER_BINARY="$PIPER_DIR/piper"
+
 if [ -d "$PIPER_DIR" ]; then
-    if rm -rf "$PIPER_DIR"; then
-        log_ok "Legacy Piper folder has been deleted: $PIPER_DIR"
+    if [ -x "$PIPER_BINARY" ] && "$PIPER_BINARY" --help >/dev/null 2>&1; then
+        log_info "Existing Piper folder will be kept; binary is executable: $PIPER_BINARY"
     else
-        log_warning "Could not delete legacy Piper folder: $PIPER_DIR"
+        log_warning "Existing Piper folder is missing a valid binary and will be removed so postroot can reinstall it: $PIPER_DIR"
+        if rm -rf "$PIPER_DIR"; then
+            log_ok "Invalid Piper folder has been deleted: $PIPER_DIR"
+        else
+            log_warning "Could not delete invalid Piper folder: $PIPER_DIR"
+        fi
     fi
 else
-    log_info "Legacy Piper folder was not present: $PIPER_DIR"
+    log_info "No existing Piper folder present: $PIPER_DIR"
 fi
 
 # ---------------------------------------------------------

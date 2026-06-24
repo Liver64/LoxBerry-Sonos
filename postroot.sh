@@ -1,6 +1,6 @@
 #!/bin/sh
 # Sonos4Lox postroot.sh
-# Version: INSTALL_SCRIPT_ROBUSTNESS_V01_2026_06_15
+# Version: POSTROOT_MEMORY_SAFE_V02_2026_06_24
 # Will be executed as user "root".
 
 COMMAND="$0"
@@ -104,9 +104,9 @@ install_or_validate_piper() {
 
             rm -f "$PIPER_DIR/$TARBALL" "$PIPER_DIR/$TARBALL.download"
 
-            if wget -O "$PIPER_DIR/$TARBALL.download" "$URL"; then
+            if wget --no-verbose -O "$PIPER_DIR/$TARBALL.download" "$URL"; then
                 mv -f "$PIPER_DIR/$TARBALL.download" "$PIPER_DIR/$TARBALL"
-                if tar -xvzf "$PIPER_DIR/$TARBALL" --strip-components=1 -C "$PIPER_DIR"; then
+                if tar -xzf "$PIPER_DIR/$TARBALL" --strip-components=1 -C "$PIPER_DIR"; then
                     log_ok "Piper archive $TARBALL extracted successfully (flattened)."
                     rm -f "$PIPER_DIR/$TARBALL"
                 else
