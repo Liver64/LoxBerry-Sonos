@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 /**
  * Sonos Event Listener (raum-zentriert, vollständig)
- * Version: EVENT_HANDLER_MQTT_CLI_HEALTH_FIX_V01_2026_06_19
- * - liest Räume/Player aus REPLACELBHOMEDIR/config/plugins/sonos4lox/s4lox_config.json
+ * Version: EVENT_HANDLER_MQTT_CONFIG_FALLBACK_OFFLINE_RECOVERY_V03_2026_07_17
+ * - MQTT CLI fallback reads persisted LoxBerry MQTT credentials directly
+ * - powered-off rooms are subscribed automatically after they become reachable
+ * - liest Räume/Player aus /opt/loxberry/config/plugins/sonos4lox/s4lox_config.json
  * - SUBSCRIBE: AVTransport, RenderingControl, ZoneGroupTopology
  * - NOTIFY -> MQTT je Raum:
  *     state   (retain, QoS1)
@@ -61,8 +63,8 @@ declare(strict_types=1);
  * - Members verwenden ihre individuelle Volume
  */
 
-require_once "REPLACELBHOMEDIR/libs/phplib/loxberry_system.php";
-require_once "REPLACELBHOMEDIR/libs/phplib/loxberry_io.php";
+require_once "/opt/loxberry/libs/phplib/loxberry_system.php";
+require_once "/opt/loxberry/libs/phplib/loxberry_io.php";
 require_once $lbphtmldir . "/src/Core/Mqtt/SonosMqttClient.php";
 require_once $lbphtmldir . "/src/Core/Sonos/sonosAccess.php";
 
@@ -75,7 +77,7 @@ if (function_exists('pcntl_async_signals')) {
 const S4L_EVENTHANDLER_CONTEXT = 'src/Core/Event/EventHandler.php';
 
 // --------------------------------- Pfade ---------------------------------
-const S4L_CFG     = "REPLACELBHOMEDIR/config/plugins/sonos4lox/s4lox_config.json";
+const S4L_CFG     = "/opt/loxberry/config/plugins/sonos4lox/s4lox_config.json";
 $ramLogDir        = '/run/shm/sonos4lox';
 $LogFile          = 'sonos_events.log';
 $loglevel 	  	  = LBSystem::pluginloglevel();
@@ -561,7 +563,7 @@ function get_miniserver_target_from_general_cached(string $msId): ?array
         'general' => null,
     ];
 
-    $path  = 'REPLACELBHOMEDIR/config/system/general.json';
+    $path  = '/opt/loxberry/config/system/general.json';
     $mtime = @filemtime($path) ?: 0;
 
     // Reload only if changed (or first time)
@@ -1435,6 +1437,138 @@ function rebuild_all_subscriptions(
             usleep(100000);
         }
     }
+}
+
+
+/**
+ * Retry only rooms that currently have no active subscription.
+ * A single device-description probe prevents four long SUBSCRIBE timeouts while
+ * a physically powered-off Sonos player is unavailable.
+ */
+function retry_missing_room_subscriptions(
+    array &$subs,
+    array &$rooms,
+    string $CALLBACK_URL,
+    int $TIMEOUT_SEC,
+    int $RENEW_MARGIN
+): void {
+    $services = ['AVTransport', 'RenderingControl', 'GroupRenderingControl', 'ZoneGroupTopology'];
+    $subscribed = [];
+
+    foreach ($subs as $s) {
+        $room = (string)($s['room'] ?? '');
+        $svc  = (string)($s['service'] ?? '');
+        if ($room !== '' && $svc !== '') {
+            $subscribed[$room][$svc] = true;
+        }
+    }
+
+    foreach ($rooms as $room => &$meta) {
+        $missing = [];
+        foreach ($services as $svc) {
+            if (empty($subscribed[$room][$svc])) {
+                $missing[] = $svc;
+            }
+        }
+
+        if (empty($missing)) {
+            continue;
+        }
+
+        $base = rtrim((string)($meta['base'] ?? ''), '/');
+        if ($base === '') {
+            continue;
+        }
+
+        // One cheap reachability/provisioning probe per missing room.
+        $desc = http_get($base . '/xml/device_description.xml', 3);
+        if ($desc === null) {
+            continue;
+        }
+
+        // Refresh event URLs when the player has returned after being powered off.
+        libxml_use_internal_errors(true);
+        $sx = @simplexml_load_string($desc);
+        if ($sx) {
+            $sx->registerXPathNamespace('d', 'urn:schemas-upnp-org:device-1-0');
+            $evs = [];
+            foreach (($sx->xpath('//d:serviceList/d:service') ?: []) as $svcNode) {
+                $serviceId = (string)$svcNode->serviceId;
+                $eventPath = (string)$svcNode->eventSubURL;
+                if ($eventPath === '') {
+                    continue;
+                }
+
+                $full = (strpos($eventPath, 'http') === 0)
+                    ? $eventPath
+                    : $base . '/' . ltrim($eventPath, '/');
+
+                if (stripos($serviceId, 'AVTransport') !== false) {
+                    $evs['AVTransport'] = $full;
+                } elseif (stripos($serviceId, 'GroupRenderingControl') !== false) {
+                    $evs['GroupRenderingControl'] = $full;
+                } elseif (stripos($serviceId, 'RenderingControl') !== false) {
+                    $evs['RenderingControl'] = $full;
+                } elseif (stripos($serviceId, 'ZoneGroupTopology') !== false) {
+                    $evs['ZoneGroupTopology'] = $full;
+                }
+            }
+            if (!empty($evs)) {
+                $meta['events'] = $evs;
+            }
+        }
+
+        $added = 0;
+        foreach ($missing as $svc) {
+            $evUrl = (string)($meta['events'][$svc] ?? '');
+            if ($evUrl === '') {
+                continue;
+            }
+
+            $host = parse_url($evUrl, PHP_URL_HOST);
+            $port = parse_url($evUrl, PHP_URL_PORT) ?: 1400;
+            [$resH, ] = http_req('SUBSCRIBE', $evUrl, [
+                "HOST: $host:$port",
+                "CALLBACK: <{$CALLBACK_URL}>",
+                'NT: upnp:event',
+                "TIMEOUT: Second-{$TIMEOUT_SEC}",
+                'Connection: close',
+            ]);
+
+            $sid  = header_value($resH, 'SID') ?: header_value($resH, 'Sid');
+            $tout = header_value($resH, 'TIMEOUT') ?: header_value($resH, 'Timeout');
+            if (!$sid) {
+                continue;
+            }
+
+            $ttl = (preg_match('~Second-(\d+)~i', (string)$tout, $m) ? (int)$m[1] : $TIMEOUT_SEC);
+            $subs[$sid] = [
+                'service'  => $svc,
+                'eventUrl' => $evUrl,
+                'room'     => $room,
+                'renewAt'  => time() + max(60, $ttl) - $RENEW_MARGIN,
+            ];
+            $subscribed[$room][$svc] = true;
+            $added++;
+            logln('ok', "SUBSCRIBE $svc @ {$meta['ip']} ($room) -> SID=$sid (late recovery)");
+            usleep(100000);
+        }
+
+        if ($added > 0) {
+            $remaining = 0;
+            foreach ($services as $svc) {
+                if (empty($subscribed[$room][$svc])) {
+                    $remaining++;
+                }
+            }
+            if ($remaining === 0) {
+                logln('ok', "Previously unavailable Sonos room '$room' is now fully subscribed");
+            } else {
+                logln('info', "Sonos room '$room' recovered partially; {$remaining} subscription(s) still missing");
+            }
+        }
+    }
+    unset($meta);
 }
 
 
@@ -2337,32 +2471,12 @@ if (!function_exists('s4lox_eventhandler_mqtt_value')) {
     }
 }
 
-if (!function_exists('s4lox_eventhandler_load_mqtt_config')) {
+if (!function_exists('s4lox_eventhandler_normalize_mqtt_config')) {
     /**
-     * Load MQTT details without letting LoxBerry CLI notices break the listener.
-     * If the LoxBerry MQTT config cannot be resolved safely, MQTT publishing is
-     * disabled but the Sonos HTTP listener and health.json continue to run.
+     * Normalize the different key casing used by LoxBerry generations.
      */
-    function s4lox_eventhandler_load_mqtt_config(): array
+    function s4lox_eventhandler_normalize_mqtt_config($mqttconf, string $source, array $errors = []): array
     {
-        $errors = [];
-        $previousHandler = set_error_handler(
-            function (int $errno, string $errstr, string $errfile = '', int $errline = 0) use (&$errors): bool {
-                $errors[] = basename($errfile) . ':' . $errline . ' ' . $errstr;
-                return true;
-            }
-        );
-
-        try {
-            $mqttconf = function_exists('mqtt_connectiondetails') ? mqtt_connectiondetails() : null;
-        } catch (Throwable $e) {
-            $mqttconf = null;
-            $errors[] = get_class($e) . ': ' . $e->getMessage();
-        }
-
-        restore_error_handler();
-        unset($previousHandler);
-
         if (is_object($mqttconf)) {
             $mqttconf = (array)$mqttconf;
         }
@@ -2370,28 +2484,22 @@ if (!function_exists('s4lox_eventhandler_load_mqtt_config')) {
         if (!is_array($mqttconf) || empty($mqttconf)) {
             return [
                 'enabled' => false,
-                'reason'  => 'LoxBerry mqtt_connectiondetails() returned no usable configuration.',
+                'reason'  => "No usable MQTT configuration from {$source}.",
+                'source'  => $source,
                 'errors'  => $errors,
             ];
         }
 
-        $host = (string)s4lox_eventhandler_mqtt_value($mqttconf, ['brokerhost', 'Brokerhost', 'BrokerHost'], 'localhost');
+        $host = trim((string)s4lox_eventhandler_mqtt_value($mqttconf, ['brokerhost', 'Brokerhost', 'BrokerHost'], ''));
         $port = (int)s4lox_eventhandler_mqtt_value($mqttconf, ['brokerport', 'Brokerport', 'BrokerPort'], 1883);
         $user = (string)s4lox_eventhandler_mqtt_value($mqttconf, ['brokeruser', 'Brokeruser', 'BrokerUser'], '');
         $pass = (string)s4lox_eventhandler_mqtt_value($mqttconf, ['brokerpass', 'Brokerpass', 'BrokerPass'], '');
 
-        if ($host === '' || $port <= 0) {
+        if ($host === '' || $port <= 0 || $port > 65535) {
             return [
                 'enabled' => false,
-                'reason'  => 'MQTT broker host or port is missing.',
-                'errors'  => $errors,
-            ];
-        }
-
-        if (!empty($errors) && $user === '' && $pass === '') {
-            return [
-                'enabled' => false,
-                'reason'  => 'MQTT credentials could not be loaded in CLI/systemd context. MQTT publishing is disabled to avoid reconnect loops with user=none.',
+                'reason'  => "MQTT broker host or port is missing/invalid in {$source}.",
+                'source'  => $source,
                 'errors'  => $errors,
             ];
         }
@@ -2402,6 +2510,103 @@ if (!function_exists('s4lox_eventhandler_load_mqtt_config')) {
             'port'    => $port,
             'user'    => $user,
             'pass'    => $pass,
+            'source'  => $source,
+            'errors'  => $errors,
+        ];
+    }
+}
+
+if (!function_exists('s4lox_eventhandler_read_mqtt_json')) {
+    /**
+     * Read MQTT settings directly from a LoxBerry JSON file.
+     * This is required because mqtt_connectiondetails() can depend on web-request
+     * globals that are not available in a systemd/CLI listener context.
+     */
+    function s4lox_eventhandler_read_mqtt_json(string $path): ?array
+    {
+        if (!is_readable($path)) {
+            return null;
+        }
+
+        $raw = @file_get_contents($path);
+        if ($raw === false || trim($raw) === '') {
+            return null;
+        }
+
+        $json = json_decode($raw, true);
+        if (!is_array($json)) {
+            return null;
+        }
+
+        foreach (['Mqtt', 'MQTT', 'mqtt'] as $section) {
+            if (isset($json[$section]) && is_array($json[$section])) {
+                return $json[$section];
+            }
+        }
+
+        return $json;
+    }
+}
+
+if (!function_exists('s4lox_eventhandler_load_mqtt_config')) {
+    /**
+     * Load MQTT details safely in both web and systemd/CLI contexts.
+     * Primary source is mqtt_connectiondetails(). If that emits warnings or loses
+     * credentials, read the persisted LoxBerry MQTT section directly.
+     */
+    function s4lox_eventhandler_load_mqtt_config(): array
+    {
+        $errors = [];
+        $mqttconf = null;
+
+        set_error_handler(
+            function (int $errno, string $errstr, string $errfile = '', int $errline = 0) use (&$errors): bool {
+                $errors[] = basename($errfile) . ':' . $errline . ' ' . $errstr;
+                return true;
+            }
+        );
+
+        try {
+            $mqttconf = function_exists('mqtt_connectiondetails') ? mqtt_connectiondetails() : null;
+        } catch (Throwable $e) {
+            $errors[] = get_class($e) . ': ' . $e->getMessage();
+        } finally {
+            restore_error_handler();
+        }
+
+        $runtime = s4lox_eventhandler_normalize_mqtt_config($mqttconf, 'mqtt_connectiondetails()', $errors);
+        $runtimeHasCredentials = !empty($runtime['user']) || !empty($runtime['pass']);
+
+        // Direct fallback paths, newest/current LoxBerry first.
+        if (!empty($errors) || empty($runtime['enabled']) || !$runtimeHasCredentials) {
+            $jsonPaths = [
+                '/opt/loxberry/config/system/general.json',
+                '/opt/loxberry/config/system/mqttgateway.json',
+                '/opt/loxberry/config/plugins/mqttgateway/mqtt.json',
+            ];
+
+            foreach ($jsonPaths as $path) {
+                $direct = s4lox_eventhandler_read_mqtt_json($path);
+                if ($direct === null) {
+                    continue;
+                }
+
+                $candidate = s4lox_eventhandler_normalize_mqtt_config($direct, $path, $errors);
+                if (!empty($candidate['enabled'])) {
+                    return $candidate;
+                }
+            }
+        }
+
+        // Anonymous MQTT remains valid when mqtt_connectiondetails() completed cleanly.
+        if (!empty($runtime['enabled']) && (empty($errors) || $runtimeHasCredentials)) {
+            return $runtime;
+        }
+
+        return [
+            'enabled' => false,
+            'reason'  => 'MQTT credentials could not be resolved safely in the systemd/CLI context.',
+            'source'  => $runtime['source'] ?? 'unknown',
             'errors'  => $errors,
         ];
     }
@@ -2420,7 +2625,8 @@ if (!empty($mqttRuntimeConfig['enabled'])) {
 
     $mqttClientId = 'sonos_events_' . gethostname() . '_' . uniqid();
     $mqttClient   = new SonosMqttClient($mqttHost, $mqttPort, $mqttClientId, $mqttUser !== '' ? $mqttUser : null, $mqttPass !== '' ? $mqttPass : null);
-    logln('info', "MQTT publishing enabled for broker {$mqttHost}:{$mqttPort} (user=" . ($mqttUser !== '' ? 'configured' : 'none') . ").");
+    $mqttSource = (string)($mqttRuntimeConfig['source'] ?? 'unknown');
+    logln('info', "MQTT publishing enabled for broker {$mqttHost}:{$mqttPort} (user=" . ($mqttUser !== '' ? 'configured' : 'none') . ", source={$mqttSource}).");
 } else {
     logln('warn', 'MQTT publishing disabled: ' . (string)($mqttRuntimeConfig['reason'] ?? 'unknown reason'));
     $mqttClient = null;
@@ -2591,6 +2797,8 @@ logln('ok', "HTTP listener bound on {$LISTEN_HOST}:{$LISTEN_PORT} (path {$CALLBA
 // --------------------------------- Main Loop ---------------------------------
 $clients = [];
 $bufs    = [];
+$MISSING_SUB_RETRY_INTERVAL = 30;
+$lastMissingSubRetry = time();
 
 while (true) {
     $read = [$server]; foreach ($clients as $c) $read[] = $c;
@@ -2701,13 +2909,26 @@ while (true) {
         try {
             $mqttClient->loop();
         } catch (Throwable $e) {
-            logln('warn', 'MQTT loop failed: ' . $e->getMessage() . ' - MQTT publishing disabled for this listener run.');
-            $mqttClient = null;
+            // Keep the client object: SonosMqttClient owns the reconnect/backoff state.
+            logln('warn', 'MQTT loop failed: ' . $e->getMessage() . ' - keeping client for reconnect.');
         }
     }
 
-    // --------------------------------- Health-Publish ---------------------------------
     $now = time();
+
+    // Rooms that were physically off during listener startup are subscribed later.
+    if ($now - $lastMissingSubRetry >= $MISSING_SUB_RETRY_INTERVAL) {
+        $lastMissingSubRetry = $now;
+        retry_missing_room_subscriptions(
+            $subs,
+            $rooms,
+            $CALLBACK_URL,
+            $TIMEOUT_SEC,
+            $RENEW_MARGIN
+        );
+    }
+
+    // --------------------------------- Health-Publish ---------------------------------
     if ($now - $lastHealthPublish >= $HEALTH_INTERVAL) {
         $lastHealthPublish = $now;
 
@@ -2798,8 +3019,7 @@ while (true) {
                         logln('warn', "MQTT publish failed: $healthTopic");
                     }
                 } catch (Throwable $e) {
-                    logln('warn', 'MQTT health publish failed: ' . $e->getMessage() . ' - MQTT publishing disabled for this listener run.');
-                    $mqttClient = null;
+                    logln('warn', 'MQTT health publish failed: ' . $e->getMessage() . ' - keeping client for reconnect.');
                 }
             }
 
@@ -2849,8 +3069,7 @@ while (true) {
                                 logln('warn', "MQTT publish failed: $eqTopic");
                             }
                         } catch (Throwable $e) {
-                            logln('warn', 'MQTT eq publish failed: ' . $e->getMessage() . ' - MQTT publishing disabled for this listener run.');
-                            $mqttClient = null;
+                            logln('warn', 'MQTT eq publish failed: ' . $e->getMessage() . ' - keeping client for reconnect.');
                         }
                     }
 
