@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 /**
  * Sonos Event Listener (raum-zentriert, vollständig)
- * Version: EVENT_HANDLER_MQTT_CONFIG_FALLBACK_OFFLINE_RECOVERY_V03_2026_07_17
+ * Version: EVENT_HANDLER_TRACK_TITLE_CLEAR_V10_2026_07_17
  * - MQTT CLI fallback reads persisted LoxBerry MQTT credentials directly
  * - powered-off rooms are subscribed automatically after they become reachable
+ * - legacy radio is latched while PLAYING; empty follow-up metadata cannot erase the station
+ * - legacy artist/int is cleared reliably for PAUSED and STOPPED
+ * - modern s4lox track metadata follows the same PLAYING/PAUSED/STOPPED lifecycle
+ * - modern s4lox nexttrack and track titles are cleared for PAUSED/STOPPED and cannot be restored by stale metadata
+ * - source classification combines GetMediaInfo CurrentURI with GetPositionInfo track metadata
  * - liest Räume/Player aus /opt/loxberry/config/plugins/sonos4lox/s4lox_config.json
  * - SUBSCRIBE: AVTransport, RenderingControl, ZoneGroupTopology
  * - NOTIFY -> MQTT je Raum:
@@ -31,8 +36,8 @@ declare(strict_types=1);
  *     - role_name ("single"|"master"|"member")
  *     - role_code (1/2/3)
  *   track:
- *     - source_text ("Radio"|"TV"|"Track"|"LineIn"|"Nothing")
- *     - source      (int) 0=Nothing,1=Radio,2=Track,3=TV,4=LineIn
+ *     - source_text ("Radio"|"Playlist/Stream"|"TV"|"LineIn"|"Nothing")
+ *     - source      (int) 0=Nothing,1=Radio,2=Playlist/Stream,3=TV,4=LineIn
  *     - tit         (Titel)
  *     - int         (Interpret)
  *     - titint      ("Artist - Title")
@@ -747,46 +752,169 @@ function hms_to_seconds(?string $str): ?int {
 }
 
 // -------------------------------------------------------------
-// Source-Erkennung (TV / Radio / LineIn / Track / Nothing)
+// Source-Erkennung (TV / Radio / Playlist/Stream / LineIn / Nothing)
 // -------------------------------------------------------------
 
-// Einfacher Classifier basierend auf GetPositionInfo()-Array
-function classify_source_from_posinfo(array $posinfo): string {
-    $uri       = (string)($posinfo['TrackURI']          ?? $posinfo['URI'] ?? '');
-    $upnpClass = (string)($posinfo['UpnpClass']         ?? '');
-    $meta      = (string)($posinfo['CurrentURIMetaData']?? '');
-    $protocol  = (string)($posinfo['ProtocolInfo']      ?? '');
+/**
+ * Return the first non-empty Sonos value for one of the supplied keys.
+ * SonosAccess versions use slightly different names/casing.
+ */
+function sonos_source_value(array $data, array $keys): string
+{
+    foreach ($keys as $key) {
+        if (array_key_exists($key, $data)) {
+            $value = trim((string)$data[$key]);
+            if ($value !== '') {
+                return $value;
+            }
+        }
+    }
+    return '';
+}
 
-    $uri_l       = strtolower($uri);
-    $upnpClass_l = strtolower($upnpClass);
-    $protocol_l  = strtolower($protocol);
+/**
+ * Normalize URI/metadata text for deterministic source matching.
+ */
+function sonos_source_normalize(string $value): string
+{
+    $value = html_entity_decode($value, ENT_QUOTES | ENT_XML1, 'UTF-8');
+    return strtolower(trim($value));
+}
 
-    // TV (Sonos HT-Stream)
-    if (strpos($uri_l, 'x-sonos-htastream:') === 0) {
+/**
+ * Test whether any supplied URI starts with one of the known Sonos schemes.
+ */
+function sonos_source_has_prefix(array $uris, array $prefixes): bool
+{
+    foreach ($uris as $uri) {
+        $uri = sonos_source_normalize((string)$uri);
+        if ($uri === '') {
+            continue;
+        }
+        foreach ($prefixes as $prefix) {
+            if (strpos($uri, strtolower($prefix)) === 0) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/**
+ * Classify the active Sonos source using both transport-level information
+ * (GetMediaInfo/CurrentURI) and item-level information
+ * (GetPositionInfo/TrackURI + UPnP class).
+ *
+ * Priority is intentional:
+ *   1. TV
+ *   2. Radio
+ *   3. Line-In
+ *   4. Playlist/Stream
+ *   5. Nothing
+ */
+function classify_source_from_sonos(array $posinfo, array $mediainfo): string
+{
+    $transportUri = sonos_source_value($mediainfo, [
+        'CurrentURI', 'AVTransportURI', 'URI', 'current_uri', 'av_transport_uri'
+    ]);
+    $trackUri = sonos_source_value($posinfo, [
+        'TrackURI', 'CurrentTrackURI', 'URI', 'track_uri', 'current_track_uri'
+    ]);
+
+    $mediaClass = sonos_source_normalize(sonos_source_value($mediainfo, [
+        'UpnpClass', 'UPnPClass', 'upnpClass', 'upnp_class'
+    ]));
+    $trackClass = sonos_source_normalize(sonos_source_value($posinfo, [
+        'UpnpClass', 'UPnPClass', 'upnpClass', 'upnp_class'
+    ]));
+    $protocol = sonos_source_normalize(sonos_source_value($posinfo, [
+        'ProtocolInfo', 'protocolInfo', 'protocol_info'
+    ]));
+
+    $mediaMeta = sonos_source_normalize(sonos_source_value($mediainfo, [
+        'CurrentURIMetaData', 'AVTransportURIMetaData', 'current_uri_metadata'
+    ]));
+    $trackMeta = sonos_source_normalize(sonos_source_value($posinfo, [
+        'CurrentURIMetaData', 'TrackMetaData', 'current_uri_metadata', 'track_metadata'
+    ]));
+
+    $uris = [$transportUri, $trackUri];
+    $allText = implode(' ', [
+        sonos_source_normalize($transportUri),
+        sonos_source_normalize($trackUri),
+        $mediaClass,
+        $trackClass,
+        $protocol,
+        $mediaMeta,
+        $trackMeta,
+    ]);
+
+    // 1) TV / home-theatre input. Check both transport and current track URI.
+    if (
+        sonos_source_has_prefix($uris, ['x-sonos-htastream:']) ||
+        strpos($allText, 'x-sonos-htastream:') !== false
+    ) {
         return 'TV';
     }
 
-    // Line-In (Analog / Digital-In)
-    if (strpos($uri_l, 'x-rincon-stream') === 0) {
-        return 'LineIn';
-    }
-
-    // Radio / Stream (TuneIn, Sonos Radio, etc.)
+    // 2) Radio. CurrentURI is the authoritative discriminator for Sonos Radio,
+    // TuneIn and other radio services. Item-level audioBroadcast remains a
+    // fallback for direct MP3/AAC radio streams.
     if (
-        strpos($uri_l, 'x-rincon-mp3radio') === 0 ||
-        strpos($protocol_l, 'x-rincon-mp3radio') === 0 ||
-        strpos($upnpClass_l, 'object.item.audioitem.audiobroadcast') === 0
+        sonos_source_has_prefix($uris, [
+            'x-sonosapi-radio:',
+            'x-sonosapi-stream:',
+            'x-rincon-mp3radio:',
+            'x-rincon-webstream:',
+        ]) ||
+        strpos($mediaClass, 'object.item.audioitem.audiobroadcast') === 0 ||
+        strpos($trackClass, 'object.item.audioitem.audiobroadcast') === 0 ||
+        strpos($protocol, 'x-rincon-mp3radio') !== false
     ) {
         return 'Radio';
     }
 
-    // Nichts / Idle
-    if ($uri === '' && $meta === '') {
-        return 'Nothing';
+    // 3) Physical/digital line input keeps its existing compatibility code 4.
+    if (sonos_source_has_prefix($uris, ['x-rincon-stream:'])) {
+        return 'LineIn';
     }
 
-    // Default: normale Track-/Playlist-Wiedergabe
-    return 'Track';
+    // 4) Queue, Sonos playlist, container, saved queue, music-service track,
+    // file and ordinary HTTP/HLS playback all belong to Playlist/Stream (code 2).
+    if (
+        sonos_source_has_prefix($uris, [
+            'x-rincon-queue:',
+            'x-rincon-playlist:',
+            'x-rincon-cpcontainer:',
+            'file:///jffs/settings/savedqueues.rsq',
+            'x-sonosapi-hls-static:',
+            'x-sonos-http:',
+            'x-file-cifs:',
+            'http://',
+            'https://',
+        ]) ||
+        strpos($trackClass, 'object.item.audioitem.musictrack') === 0 ||
+        strpos($mediaClass, 'object.container') === 0 ||
+        strpos($mediaClass, 'object.item.audioitem.musictrack') === 0
+    ) {
+        return 'Playlist/Stream';
+    }
+
+    // A group follower may expose x-rincon:<coordinator> as transport URI while
+    // GetPositionInfo still carries the playable item. Treat any remaining
+    // non-empty playback URI/metadata as Playlist/Stream rather than Radio.
+    if ($transportUri !== '' || $trackUri !== '' || $mediaMeta !== '' || $trackMeta !== '') {
+        return 'Playlist/Stream';
+    }
+
+    return 'Nothing';
+}
+
+// Backward-compatible wrapper for any external/local call that still passes
+// only GetPositionInfo data.
+function classify_source_from_posinfo(array $posinfo): string
+{
+    return classify_source_from_sonos($posinfo, []);
 }
 
 // Cache für SonosAccess-Objekte pro Raum
@@ -808,12 +936,38 @@ function get_source_for_room(string $room, array $rooms): ?string {
         if (!isset($__sonos_clients[$room])) {
             $__sonos_clients[$room] = new SonosAccess($ip);
         }
-        $sonos    = $__sonos_clients[$room];
-        $posinfo  = $sonos->GetPositionInfo();
-        if (!is_array($posinfo)) {
+        $sonos = $__sonos_clients[$room];
+
+        // GetMediaInfo contains the transport-level CurrentURI, which is the
+        // reliable discriminator between radio and queue/playlist playback.
+        // GetPositionInfo contains the current playable item and is required
+        // for TV, music-service tracks and grouped/follower playback.
+        $posinfo = [];
+        $mediainfo = [];
+
+        try {
+            $pos = $sonos->GetPositionInfo();
+            if (is_array($pos)) {
+                $posinfo = $pos;
+            }
+        } catch (Throwable $e) {
+            logln('warn', "get_source_for_room($room): GetPositionInfo failed: " . $e->getMessage());
+        }
+
+        try {
+            $media = $sonos->GetMediaInfo();
+            if (is_array($media)) {
+                $mediainfo = $media;
+            }
+        } catch (Throwable $e) {
+            logln('warn', "get_source_for_room($room): GetMediaInfo failed: " . $e->getMessage());
+        }
+
+        if (empty($posinfo) && empty($mediainfo)) {
             return null;
         }
-        return classify_source_from_posinfo($posinfo);
+
+        return classify_source_from_sonos($posinfo, $mediainfo);
     } catch (Exception $e) {
         logln('warn', "get_source_for_room($room): " . $e->getMessage());
         return null;
@@ -1576,6 +1730,18 @@ function retry_missing_room_subscriptions(
 // global cache to deduplicate group events: room|group_id => signature
 $lastGroupState 	= [];
 $lastEqByRoom 		= [];
+// Last normalized transport state per room. Used to suppress stale metadata
+// that Sonos may append to the same LastChange after PAUSED/STOPPED.
+$lastTransportStateByRoom = [];
+// Last non-empty radio station per room. While state=PLAYING this value is
+// latched so a delayed/partial Sonos metadata event cannot erase it again.
+$lastRadioStationByRoom = [];
+// Last retained modern s4lox track payload per room. Used to publish immediate
+// metadata clears on PAUSED/STOPPED and a stable radio station on PLAYING.
+$lastTrackPayloadByRoom = [];
+// Last retained modern s4lox nexttrack payload per room. Used to clear the
+// flattened nexttrack_title value immediately on PAUSED/STOPPED.
+$lastNextTrackPayloadByRoom = [];
 // group cache: room => ['group_id'=>..., 'members'=>[...], 'is_coordinator'=>0/1, 'ts'=>...]
 $groupByRoom 		= [];
 
@@ -1592,7 +1758,8 @@ function publish_room_event(
     int $qos
 ): void {
 
-    global $lastEqByRoom, $groupByRoom, $useUdp, $loxMsId, $LoxoneUDPPort, $LoxoneUDPPrefix;
+    global $lastEqByRoom, $groupByRoom, $lastTransportStateByRoom, $lastRadioStationByRoom, $lastTrackPayloadByRoom, $lastNextTrackPayloadByRoom,
+           $useUdp, $loxMsId, $LoxoneUDPPort, $LoxoneUDPPrefix, $loxTarget, $LOXONE_HTTP_PUBLISH;
 
     // CENTRAL: always lowercase room everywhere downstream
     $room = strtolower($room);
@@ -1643,6 +1810,7 @@ function publish_room_event(
             'TRANSITIONING' => 4,
         ];
         $data['state_code'] = $map[$data['state']] ?? 0;
+        $lastTransportStateByRoom[$room] = (int)$data['state_code'];
     }
 
     // --- Volume: einfach direkt publishen (GroupVolume wird separat ignoriert) ---
@@ -1737,16 +1905,17 @@ function publish_room_event(
 
     // --- Source-Erkennung + alte Sonos4lox-Kompatibilität (track) ---
     if ($type === 'track') {
-        // Source erkennen (TV / Radio / Track / LineIn / Nothing)
+        // Source erkennen (TV / Radio / Playlist/Stream / LineIn / Nothing)
         $src = get_source_for_room($room, $rooms);
         if ($src !== null) {
             $data['source_text'] = $src;
             $map = [
-                'Nothing' => 0,
-                'Radio'   => 1,
-                'Track'   => 2,
-                'TV'      => 3,
-                'LineIn'  => 4,
+                'Nothing'         => 0,
+                'Radio'           => 1,
+                'Playlist/Stream' => 2,
+                'Track'           => 2, // compatibility fallback
+                'TV'              => 3,
+                'LineIn'          => 4,
             ];
             $data['source'] = $map[$src] ?? 0; // wie früher source_<room>
         }
@@ -1773,9 +1942,21 @@ function publish_room_event(
 		// Radio-Sender + Song sauber trennen
 		if (($data['source_text'] ?? '') === 'Radio') {
 
-			// 1) Sender IMMER aus CurrentURIMetaData (GetMediaInfo)
-			$station = get_radio_station_for_room($room, $rooms);
-			$station = trim((string)($station ?? ''));
+			// 1) Sender bevorzugt direkt aus dem Event. Falls Sonos dort keinen
+			//    Sender liefert, CurrentURIMetaData aktiv per GetMediaInfo lesen.
+			$station = trim((string)($data['radioStationName'] ?? ''));
+			if ($station === '') {
+				$station = trim((string)(get_radio_station_for_room($room, $rooms) ?? ''));
+			}
+
+			// Sonos sends partial follow-up metadata shortly after PLAYING. If that
+			// packet has no station name, retain the last valid station while state=1.
+			$cachedState = (int)($lastTransportStateByRoom[$room] ?? 0);
+			if ($station !== '') {
+				$lastRadioStationByRoom[$room] = $station;
+			} elseif ($cachedState === 1 && !empty($lastRadioStationByRoom[$room])) {
+				$station = (string)$lastRadioStationByRoom[$room];
+			}
 
 			// 2) Song/NowPlaying: bevorzugt streamContent, sonst Artist-Title, sonst title
 			$song = trim((string)($data['streamContent'] ?? ''));
@@ -1788,12 +1969,27 @@ function publish_room_event(
 
 			// 3) MQTT Felder
 			$data['radio'] = $station;              // Sendername
-			$data['streamContent'] = $song;    		// NowPlaying
+			$data['streamContent'] = $song;          // NowPlaying
 
 		} else {
-
 			$data['radio'] = '';
 		}
+
+        // Sonos kann im gleichen LastChange nach PAUSED/STOPPED noch die alten
+        // CurrentTrackMetaData mitsenden. Diese dürfen die zuvor geleerten
+        // Legacy-Anzeigen nicht erneut befüllen.
+        $cachedState = (int)($lastTransportStateByRoom[$room] ?? 0);
+        if ($cachedState === 2 || $cachedState === 3) {
+            // Clear both the compatibility aliases and the original JSON fields.
+            // Otherwise a delayed track event could restore flattened values such
+            // as s4lox_*_track_title after the state-driven retained clear.
+            $data['title']  = '';
+            $data['artist'] = '';
+            $data['tit']    = '';
+            $data['int']    = '';
+            $data['titint'] = '';
+            $data['radio']  = '';
+        }
 
 
         // Cover / SID / TV-State
@@ -1809,6 +2005,15 @@ function publish_room_event(
 
         // Platzhalter (0) – könnte später mit echtem HTAudioIn ersetzt werden
         $data['tvstate'] = 0;
+    }
+
+    // Sonos may append stale next-track metadata after PAUSED/STOPPED.
+    // Keep the retained modern nexttrack topic cleared until playback resumes.
+    if ($type === 'nexttrack') {
+        $cachedState = (int)($lastTransportStateByRoom[$room] ?? 0);
+        if ($cachedState === 2 || $cachedState === 3) {
+            $data['title'] = '';
+        }
     }
 
     // --- Group-Rolle (single/master/member) ---
@@ -1919,6 +2124,15 @@ function publish_room_event(
 			$published++;
 		}
 
+		// Keep the last modern track snapshot per target room. The state handler
+		// uses this to clear/latch the retained s4lox track topic immediately.
+		if ($ok && $type === 'track') {
+			$lastTrackPayloadByRoom[$tr] = $payloadT;
+		}
+		if ($ok && $type === 'nexttrack') {
+			$lastNextTrackPayloadByRoom[$tr] = $payloadT;
+		}
+
 		if ($useUdp) {
 			udp_publish_for_event(
 				$type,
@@ -1942,7 +2156,190 @@ function publish_room_event(
                 }
 
                 if ($type === 'state' && isset($payloadT['state_code'])) {
-                    $mqttClient->publish($legacyPrefix . '/stat/' . $tr, (string)$payloadT['state_code'], true, 0);
+                    $stateCode = (int)$payloadT['state_code'];
+                    $mqttClient->publish($legacyPrefix . '/stat/' . $tr, (string)$stateCode, true, 0);
+
+                    // Send the numeric s4lox state input first. The final generic
+                    // publisher call is deduplicated, so this does not create spam.
+                    loxone_publish_for_event('state', $payloadT, $loxTarget, $LOXONE_HTTP_PUBLISH);
+
+                    // Resolve the active source/station once and reuse it for both
+                    // modern s4lox and legacy Sonos4lox topics.
+                    $sourceNow = null;
+                    $stationNow = '';
+                    if ($stateCode === 1) {
+                        for ($attempt = 1; $attempt <= 3; $attempt++) {
+                            $sourceNow = get_source_for_room($tr, $rooms);
+                            if ($sourceNow === 'Radio') {
+                                $stationNow = trim((string)(get_radio_station_for_room($tr, $rooms) ?? ''));
+                                if ($stationNow !== '') {
+                                    break;
+                                }
+                            }
+                            if ($attempt < 3) {
+                                usleep(150000);
+                            }
+                        }
+                    }
+
+                    // ------------------------------------------------------------
+                    // Modern retained s4lox/sonos/<room>/track lifecycle
+                    // ------------------------------------------------------------
+                    $modernTrackTopic = rtrim($prefix, '/') . '/' . $tr . '/track';
+
+                    if ($stateCode === 2 || $stateCode === 3) {
+                        $modernTrack = $lastTrackPayloadByRoom[$tr] ?? [
+                            'type'    => 'track',
+                            'room'    => $tr,
+                            'ip'      => $metaT['ip'] ?? '',
+                            'rincon'  => $metaT['rincon'] ?? '',
+                            'model'   => $metaT['model'] ?? '',
+                            'service' => 'AVTransport',
+                        ];
+
+                        // Same display rules as the legacy topics. Clear both the
+                        // compatibility aliases and the underlying metadata fields,
+                        // so JSON consumers cannot keep stale title/artist content.
+                        foreach (['title','artist','tit','int','titint','radio'] as $field) {
+                            $modernTrack[$field] = '';
+                        }
+                        $modernTrack['type'] = 'track';
+                        $modernTrack['room'] = $tr;
+                        $modernTrack['ip'] = $metaT['ip'] ?? ($modernTrack['ip'] ?? '');
+                        $modernTrack['rincon'] = $metaT['rincon'] ?? ($modernTrack['rincon'] ?? '');
+                        $modernTrack['model'] = $metaT['model'] ?? ($modernTrack['model'] ?? '');
+                        $modernTrack['service'] = $modernTrack['service'] ?? 'AVTransport';
+                        $modernTrack['ts'] = time();
+
+                        $modernJson = json_encode($modernTrack, JSON_UNESCAPED_UNICODE);
+                        if ($modernJson !== false) {
+                            if ($mqttClient->publish($modernTrackTopic, $modernJson, true, $qos)) {
+                                $lastTrackPayloadByRoom[$tr] = $modernTrack;
+                                logln('dbg', "$tr modern s4lox metadata cleared for state=$stateCode");
+                            } else {
+                                logln('warn', "MQTT publish failed: $modernTrackTopic (state clear)");
+                            }
+                        } else {
+                            logln('warn', "JSON encode failed for $tr/track state clear");
+                        }
+
+                        // Apply the identical lifecycle to Loxone HTTP inputs:
+                        // s4lox_<room>_current_title/current_artist/current_titint/current_radio.
+                        loxone_publish_for_event('track_state_clear', $modernTrack, $loxTarget, $LOXONE_HTTP_PUBLISH);
+
+                        // Clear the retained modern nexttrack title as well. MQTT Gateway
+                        // flattening therefore clears s4lox_*_nexttrack_title immediately.
+                        $modernNextTrackTopic = rtrim($prefix, '/') . '/' . $tr . '/nexttrack';
+                        $modernNextTrack = $lastNextTrackPayloadByRoom[$tr] ?? [
+                            'type'    => 'nexttrack',
+                            'room'    => $tr,
+                            'ip'      => $metaT['ip'] ?? '',
+                            'rincon'  => $metaT['rincon'] ?? '',
+                            'model'   => $metaT['model'] ?? '',
+                            'service' => 'AVTransport',
+                        ];
+                        $modernNextTrack['type'] = 'nexttrack';
+                        $modernNextTrack['room'] = $tr;
+                        $modernNextTrack['ip'] = $metaT['ip'] ?? ($modernNextTrack['ip'] ?? '');
+                        $modernNextTrack['rincon'] = $metaT['rincon'] ?? ($modernNextTrack['rincon'] ?? '');
+                        $modernNextTrack['model'] = $metaT['model'] ?? ($modernNextTrack['model'] ?? '');
+                        $modernNextTrack['service'] = $modernNextTrack['service'] ?? 'AVTransport';
+                        $modernNextTrack['title'] = '';
+                        $modernNextTrack['ts'] = time();
+
+                        $modernNextJson = json_encode($modernNextTrack, JSON_UNESCAPED_UNICODE);
+                        if ($modernNextJson !== false) {
+                            if ($mqttClient->publish($modernNextTrackTopic, $modernNextJson, true, $qos)) {
+                                $lastNextTrackPayloadByRoom[$tr] = $modernNextTrack;
+                                logln('dbg', "$tr modern s4lox nexttrack title cleared for state=$stateCode");
+                            } else {
+                                logln('warn', "MQTT publish failed: $modernNextTrackTopic (state clear)");
+                            }
+                        } else {
+                            logln('warn', "JSON encode failed for $tr/nexttrack state clear");
+                        }
+
+                        // Clear the existing direct Loxone HTTP next-title input too.
+                        loxone_publish_for_event('nexttrack_state_clear', $modernNextTrack, $loxTarget, $LOXONE_HTTP_PUBLISH);
+
+                        // Legacy PAUSED/STOPPED: stale display values immediately clear.
+                        $mqttClient->publish($legacyPrefix . '/tit/'    . $tr, '', true, 0);
+                        $mqttClient->publish($legacyPrefix . '/int/'    . $tr, '', true, 0);
+                        $mqttClient->publish($legacyPrefix . '/titint/' . $tr, '', true, 0);
+                        $mqttClient->publish($legacyPrefix . '/radio/'  . $tr, '', true, 0);
+                        unset($lastRadioStationByRoom[$tr]);
+                        logln('dbg', "$tr legacy metadata cleared for state=$stateCode");
+                    } elseif ($stateCode === 1) {
+                        if ($stationNow !== '') {
+                            $lastRadioStationByRoom[$tr] = $stationNow;
+
+                            // Publish/refresh the retained modern track snapshot so
+                            // the flattened s4lox_* radio value remains available
+                            // for the complete PLAYING period.
+                            $modernTrack = $lastTrackPayloadByRoom[$tr] ?? [
+                                'type'    => 'track',
+                                'room'    => $tr,
+                                'ip'      => $metaT['ip'] ?? '',
+                                'rincon'  => $metaT['rincon'] ?? '',
+                                'model'   => $metaT['model'] ?? '',
+                                'service' => 'AVTransport',
+                                'title'   => '',
+                                'artist'  => '',
+                                'album'   => '',
+                                'tit'     => '',
+                                'int'     => '',
+                                'titint'  => '',
+                            ];
+                            $modernTrack['type'] = 'track';
+                            $modernTrack['room'] = $tr;
+                            $modernTrack['ip'] = $metaT['ip'] ?? ($modernTrack['ip'] ?? '');
+                            $modernTrack['rincon'] = $metaT['rincon'] ?? ($modernTrack['rincon'] ?? '');
+                            $modernTrack['model'] = $metaT['model'] ?? ($modernTrack['model'] ?? '');
+                            $modernTrack['service'] = $modernTrack['service'] ?? 'AVTransport';
+                            $modernTrack['source_text'] = 'Radio';
+                            $modernTrack['source'] = 1;
+                            $modernTrack['radio'] = $stationNow;
+                            $modernTrack['sid'] = 'Radio';
+                            $modernTrack['ts'] = time();
+
+                            $modernJson = json_encode($modernTrack, JSON_UNESCAPED_UNICODE);
+                            if ($modernJson !== false) {
+                                if ($mqttClient->publish($modernTrackTopic, $modernJson, true, $qos)) {
+                                    $lastTrackPayloadByRoom[$tr] = $modernTrack;
+                                    logln('dbg', "$tr modern s4lox radio latched for PLAYING: $stationNow");
+                                } else {
+                                    logln('warn', "MQTT publish failed: $modernTrackTopic (radio latch)");
+                                }
+                            } else {
+                                logln('warn', "JSON encode failed for $tr/track radio latch");
+                            }
+
+                            // Keep s4lox_<room>_current_radio set for the whole PLAYING period.
+                            loxone_publish_for_event('track_radio_latch', $modernTrack, $loxTarget, $LOXONE_HTTP_PUBLISH);
+
+                            $mqttClient->publish($legacyPrefix . '/radio/' . $tr, $stationNow, true, 0);
+                            logln('dbg', "$tr legacy radio latched for PLAYING: $stationNow");
+                        } elseif (!empty($lastRadioStationByRoom[$tr])) {
+                            // No empty update while PLAYING: keep both retained topic families.
+                            $keptStation = (string)$lastRadioStationByRoom[$tr];
+                            $mqttClient->publish($legacyPrefix . '/radio/' . $tr, $keptStation, true, 0);
+
+                            if (!empty($lastTrackPayloadByRoom[$tr])) {
+                                $modernTrack = $lastTrackPayloadByRoom[$tr];
+                                $modernTrack['radio'] = $keptStation;
+                                $modernTrack['ts'] = time();
+                                $modernJson = json_encode($modernTrack, JSON_UNESCAPED_UNICODE);
+                                if ($modernJson !== false && $mqttClient->publish($modernTrackTopic, $modernJson, true, $qos)) {
+                                    $lastTrackPayloadByRoom[$tr] = $modernTrack;
+                                }
+                                loxone_publish_for_event('track_radio_latch', $modernTrack, $loxTarget, $LOXONE_HTTP_PUBLISH);
+                            }
+                            logln('dbg', "$tr radio kept for PLAYING: $keptStation");
+                        } else {
+                            // No station is known yet. Publish no empty retained value.
+                            logln('dbg', "$tr radio not yet available for PLAYING; retained values unchanged");
+                        }
+                    }
                 }
 
                 if ($type === 'group' && isset($payloadT['role_code'])) {
@@ -1957,7 +2354,19 @@ function publish_room_event(
                     $mqttClient->publish($legacyPrefix . '/titint/' . $tr, (string)($payloadT['titint'] ?? ''), true, 0);
                     $mqttClient->publish($legacyPrefix . '/tit/'    . $tr, (string)($payloadT['tit']    ?? ''), true, 0);
                     $mqttClient->publish($legacyPrefix . '/int/'    . $tr, (string)($payloadT['int']    ?? ''), true, 0);
-                    $mqttClient->publish($legacyPrefix . '/radio/'  . $tr, (string)($payloadT['radio']  ?? ''), true, 0);
+
+                    $trackState = (int)($lastTransportStateByRoom[$tr] ?? $lastTransportStateByRoom[$room] ?? 0);
+                    $trackRadio = trim((string)($payloadT['radio'] ?? ''));
+                    if ($trackRadio !== '') {
+                        $lastRadioStationByRoom[$tr] = $trackRadio;
+                        $mqttClient->publish($legacyPrefix . '/radio/' . $tr, $trackRadio, true, 0);
+                    } elseif ($trackState === 1 && !empty($lastRadioStationByRoom[$tr])) {
+                        // PLAYING latch: a partial track event must not delete the station.
+                        $mqttClient->publish($legacyPrefix . '/radio/' . $tr, (string)$lastRadioStationByRoom[$tr], true, 0);
+                        logln('dbg', "$tr ignored empty legacy radio update while PLAYING");
+                    } elseif ($trackState !== 1) {
+                        $mqttClient->publish($legacyPrefix . '/radio/' . $tr, '', true, 0);
+                    }
 
                     if (isset($payloadT['source'])) {
                         $mqttClient->publish($legacyPrefix . '/source/' . $tr, (string)$payloadT['source'], true, 0);
@@ -1989,122 +2398,8 @@ function publish_room_event(
     }
 
 
-    // ----------------------------------------------------
-    // Legacy-Kompatibilität: alte Sonos4lox-Topics weiter bedienen
-    // ----------------------------------------------------
-    if ($mqttClient) {
-        $legacyPrefix = 'Sonos4lox';
-
-        try {
-            // 1) Volume -> Sonos4lox/vol/<room>
-            if ($type === 'volume' && isset($payload['volume'])) {
-                $mqttClient->publish(
-                    $legacyPrefix . '/vol/' . $room,
-                    (string)$payload['volume'],
-                    true,   // retain wie früher
-                    0       // QoS 0 wie im alten push_loxone.php
-                );
-            }
-
-            // 2) State -> Sonos4lox/stat/<room> (GetTransportInfo-Code)
-            if ($type === 'state' && isset($payload['state_code'])) {
-                $mqttClient->publish(
-                    $legacyPrefix . '/stat/' . $room,
-                    (string)$payload['state_code'],
-                    true,
-                    0
-                );
-            }
-
-            // 3) Group-Role -> Sonos4lox/grp/<room> (1=single,2=master,3=member)
-            if ($type === 'group' && isset($payload['role_code'])) {
-                $mqttClient->publish(
-                    $legacyPrefix . '/grp/' . $room,
-                    (string)$payload['role_code'],
-                    true,
-                    0
-                );
-            }
-
-            // 4) Mute -> Sonos4lox/mute/<room> (0/1)
-            if ($type === 'mute' && array_key_exists('mute_int', $payload)) {
-                $mqttClient->publish(
-                    $legacyPrefix . '/mute/' . $room,
-                    (string)$payload['mute_int'],
-                    true,
-                    0
-                );
-            }
-
-            // 5) Track-Infos -> Sonos4lox/tit*, /radio, /source, /sid, /cover, /tvstate
-            if ($type === 'track') {
-                $mqttClient->publish(
-                    $legacyPrefix . '/titint/' . $room,
-                    (string)($payload['titint'] ?? ''),
-                    true,
-                    0
-                );
-                $mqttClient->publish(
-                    $legacyPrefix . '/tit/' . $room,
-                    (string)($payload['tit'] ?? ''),
-                    true,
-                    0
-                );
-                $mqttClient->publish(
-                    $legacyPrefix . '/int/' . $room,
-                    (string)($payload['int'] ?? ''),
-                    true,
-                    0
-                );
-                $mqttClient->publish(
-                    $legacyPrefix . '/radio/' . $room,
-                    (string)($payload['radio'] ?? ''),
-                    true,
-                    0
-                );
-
-                if (isset($payload['source'])) {
-                    $mqttClient->publish(
-                        $legacyPrefix . '/source/' . $room,
-                        (string)$payload['source'],   // 0..4 wie früher
-                        true,
-                        0
-                    );
-                }
-
-                $mqttClient->publish(
-                    $legacyPrefix . '/sid/' . $room,
-                    (string)($payload['sid'] ?? ''),
-                    true,
-                    0
-                );
-                $mqttClient->publish(
-                    $legacyPrefix . '/cover/' . $room,
-                    (string)($payload['cover'] ?? ''),
-                    true,
-                    0
-                );
-
-                if (isset($payload['tvstate'])) {
-                    $mqttClient->publish(
-                        $legacyPrefix . '/tvstate/' . $room,
-                        (string)$payload['tvstate'],
-                        true,
-                        0
-                    );
-                }
-            }
-
-        } catch (Throwable $e) {
-            logln('warn', "Legacy MQTT publish failed for $room/$type: " . $e->getMessage());
-        }
-    }
-	
-	// ----------------------------------------------------
-    // Loxone HTTP push (optional)
-    // ----------------------------------------------------
-    global $loxTarget, $LOXONE_HTTP_PUBLISH;
-    loxone_publish_for_event($type, $payload, $loxTarget, $LOXONE_HTTP_PUBLISH);
+    // Legacy- und Loxone-Ausgaben erfolgen bereits im targetRooms-Loop oben.
+    // Kein zweiter Publish hier: verhindert doppelte Telegramme und Reihenfolgeeffekte.
 
 
     // Log kompakt
@@ -2417,6 +2712,18 @@ $LOXONE_HTTP_PUBLISH = [
         ['input' => $LOXONE_HTTP_PREFIX . '_{room}_current_cover',  'value' => '{cover}'],
     ],
 
+    // State-driven display lifecycle. These narrow maps intentionally touch
+    // only the four values that mirror Sonos4lox/tit,int,titint,radio.
+    'track_state_clear' => [
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_current_title',  'value' => '{title}'],
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_current_artist', 'value' => '{artist}'],
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_current_titint', 'value' => '{titint}'],
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_current_radio',  'value' => '{radio}'],
+    ],
+    'track_radio_latch' => [
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_current_radio',  'value' => '{radio}'],
+    ],
+
     // publish next track meta
     'nexttrack' => [
         ['input' => $LOXONE_HTTP_PREFIX . '_{room}_next_title',  'value' => '{title}'],
@@ -2424,6 +2731,9 @@ $LOXONE_HTTP_PUBLISH = [
         ['input' => $LOXONE_HTTP_PREFIX . '_{room}_next_album',  'value' => '{album}'],
         ['input' => $LOXONE_HTTP_PREFIX . '_{room}_next_cover',  'value' => '{albumArtUri}'],
         ['input' => $LOXONE_HTTP_PREFIX . '_{room}_next_uri',    'value' => '{uri}'],
+    ],
+    'nexttrack_state_clear' => [
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_next_title',  'value' => '{title}'],
     ],
 
     // examples for numeric events (optional)
