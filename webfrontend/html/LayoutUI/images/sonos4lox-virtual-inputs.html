@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sonos4Lox - relevant MQTT/UDP inputs</title>
+<style>
+:root {
+    --title: #1f4e78;
+    --header: #5b9bd5;
+    --section: #d9e5f0;
+    --both: #e2f0d9;
+    --mqtt-only: #fce4d6;
+    --grid: #d9d9d9;
+    --note: #f3f6f8;
+    --text: #595959;
+    --topic: #9c6500;
+    --example: #0000ff;
+    --command: #008000;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: #fff; }
+body { font-family: Arial, Helvetica, sans-serif; color: var(--text); font-size: 12px; }
+.page { padding: 46px 16px 32px; min-width: 980px; }
+.titlebar {
+    background: var(--title);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.2;
+    padding: 6px 4px;
+}
+.note {
+    min-height: 46px;
+    padding: 10px 4px 6px;
+    background: var(--note);
+    font-size: 11px;
+    font-style: italic;
+    color: #666;
+}
+.legend {
+    display: grid;
+    grid-template-columns: auto 165px;
+    justify-content: center;
+    align-items: stretch;
+    background: var(--note);
+    padding: 0 0 2px;
+    font-size: 11px;
+}
+.legend-label {
+    grid-row: span 2;
+    align-self: center;
+    padding-right: 6px;
+    font-style: italic;
+    text-align: right;
+}
+.legend-both, .legend-mqtt { padding: 2px 4px; }
+.legend-both { background: var(--both); color: var(--command); }
+.legend-mqtt { background: var(--mqtt-only); color: var(--topic); }
+.table-wrap { overflow-x: auto; border-bottom: 1px solid var(--grid); }
+table { width: 100%; min-width: 1480px; border-collapse: collapse; table-layout: fixed; }
+col:nth-child(1) { width: 22%; }
+col:nth-child(2) { width: 12%; }
+col:nth-child(3) { width: 3%; }
+col:nth-child(4) { width: 11%; }
+col:nth-child(5) { width: 17.5%; }
+col:nth-child(6) { width: 22%; }
+col:nth-child(7) { width: 12.5%; }
+th {
+    background: var(--header);
+    color: #fff;
+    border: 1px solid #fff;
+    padding: 5px 4px;
+    text-align: left;
+    vertical-align: top;
+    font-size: 11px;
+    line-height: 1.25;
+    font-weight: 700;
+}
+td {
+    border: 1px solid var(--grid);
+    padding: 3px 4px;
+    text-align: left;
+    vertical-align: top;
+    line-height: 1.22;
+    overflow-wrap: anywhere;
+    background: #fff;
+}
+.section td {
+    background: var(--section);
+    color: #333;
+    font-weight: 700;
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+.availability-both { background: var(--both); }
+.availability-mqtt-only { background: var(--mqtt-only); }
+.technical { color: var(--topic); white-space: nowrap; }
+.example, .input-type { color: var(--example); }
+.command { color: var(--command); }
+.possible { color: #666; }
+a { color: var(--example); text-decoration: underline; }
+.footer-note {
+    margin-top: 12px;
+    padding: 8px 10px;
+    border-left: 4px solid var(--title);
+    background: var(--note);
+    font-size: 11px;
+}
+.footer-note code { font-family: Consolas, "Courier New", monospace; color: var(--topic); }
+@media (max-width: 1100px) {
+    .page { padding-top: 16px; min-width: 0; }
+    .titlebar { font-size: 14px; }
+}
+@media print {
+    @page { size: A3 landscape; margin: 8mm; }
+    .page { padding: 0; min-width: 0; }
+    .table-wrap { overflow: visible; }
+    table { min-width: 0; font-size: 7pt; }
+    th, td { font-size: 7pt; }
+    .footer-note { break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<main class="page">
+    <div class="titlebar">sonos4lox - relevant MQTT/UDP inputs (Room)</div>
+    <div class="note">Focus on actually useful Sonos status and media fields. Pure metadata fields (ip, model, room, rincon, service, ts, type, health) are removed. Text/URI fields remain included, but their generic Loxone command recognition is intentionally left blank.</div>
+    <div class="legend" aria-label="Colours legend">
+        <div class="legend-label">Colours Legend:</div>
+        <div class="legend-both">Usable via MQTT or UDP</div>
+        <div class="legend-mqtt">Usable only via MQTT</div>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <colgroup><col><col><col><col><col><col><col></colgroup>
+            <thead>
+                <tr>
+                    <th>Loxone MQTT Command Recognition<br>(copy/paste from MQTT client into Loxone Input)</th>
+                    <th>value examples</th>
+                    <th>Loxone<br>Input</th>
+                    <th>Template Title<br>(in XML Templates included)</th>
+                    <th>Loxone UDP Command Recognition<br>(usage of XML template)</th>
+                    <th>Loxone MQTT UDP Command Recognition<br>(usage of XML template)</th>
+                    <th>possible values</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="section"><td colspan="7">STATE</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_state_state</td><td class="example availability-mqtt-only">PLAYING</td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">PLAYING | PAUSED | STOPPED | TRANSITIONING</td></tr><tr><td class="technical availability-both">s4lox_sonos_ROOM_state_state##_code</td><td class="example availability-both">1</td><td class="input-type">VI</td><td>State_code ROOM</td><td class="command availability-both">\is4lox: ROOM_state_code@\i\v</td><td class="command availability-both">MQTT:\is4lox/sonos/ROOM/state/state_code=\i\v</td><td class="possible">1 PLAYING | 2 PAUSED | 3 STOPPED | 4 TRANSITIONING | 0 unknown</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_state_playback##_storage</td><td class="example availability-mqtt-only">NETWORK</td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">NETWORK | TV | ...</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_state_transport##_status</td><td class="example availability-mqtt-only">OK</td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">OK | ...</td></tr><tr><td class="technical availability-both">s4lox_t2s_ROOM</td><td class="example availability-both">0</td><td class="input-type">VTI</td><td>T2S running</td><td class="command availability-both">\is4lox: ROOM_t2s@\i\v</td><td class="command availability-both">MQTT:\is4lox/t2s/ROOM=\i\v</td><td class="possible">0 | 1</td></tr><tr class="section"><td colspan="7">VOLUME</td></tr><tr><td class="technical availability-both">s4lox_sonos_ROOM_volume_volume</td><td class="example availability-both">0</td><td class="input-type">VI</td><td>Volume ROOM</td><td class="command availability-both">\is4lox: ROOM_volume@\i\v</td><td class="command availability-both">MQTT:\is4lox/sonos/ROOM/volume/volume=\i\v</td><td class="possible">0..100</td></tr><tr class="section"><td colspan="7">MUTE</td></tr><tr><td class="technical availability-both">s4lox_sonos_ROOM_mute_mute</td><td class="example availability-both">0</td><td class="input-type">VI</td><td>Mute ROOM</td><td class="command availability-both">\is4lox: ROOM_mute@\i\v</td><td class="command availability-both">MQTT:\is4lox/sonos/ROOM/mute/mute=\i\v</td><td class="possible">0 | 1</td></tr><tr class="section"><td colspan="7">EQ</td></tr><tr><td class="technical availability-both">s4lox_sonos_ROOM_eq_balance</td><td class="example availability-both">0</td><td class="input-type">VI</td><td>EQ balance ROOM</td><td class="command availability-both">\is4lox: ROOM_balance@\i\v</td><td class="command availability-both">MQTT:\is4lox/sonos/ROOM/eq/balance=\i\v</td><td class="possible">Integer</td></tr><tr><td class="technical availability-both">s4lox_sonos_ROOM_eq_bass</td><td class="example availability-both">4</td><td class="input-type">VI</td><td>EQ bass ROOM</td><td class="command availability-both">\is4lox: ROOM_bass@\i\v</td><td class="command availability-both">MQTT:\is4lox/sonos/ROOM/eq/bass=\i\v</td><td class="possible">Integer</td></tr><tr><td class="technical availability-both">s4lox_sonos_ROOM_eq_treble</td><td class="example availability-both">4</td><td class="input-type">VI</td><td>EQ treble ROOM</td><td class="command availability-both">\is4lox: ROOM_treble@\i\v</td><td class="command availability-both">MQTT:\is4lox/sonos/ROOM/eq/treble=\i\v</td><td class="possible">Integer</td></tr><tr><td class="technical availability-both">s4lox_sonos_ROOM_eq_loudness</td><td class="example availability-both">1</td><td class="input-type">VI</td><td>EQ loudness ROOM</td><td class="command availability-both">\is4lox: ROOM_loudness@\i\v</td><td class="command availability-both">MQTT:\is4lox/sonos/ROOM/eq/loudness=\i\v</td><td class="possible">0 | 1</td></tr><tr><td class="technical availability-both">s4lox_sonos_ROOM_eq_nightmode</td><td class="example availability-both">0</td><td class="input-type">VI</td><td></td><td class="command availability-both">\is4lox: ROOM_nightmode@\i\v</td><td class="command availability-both">MQTT:\is4lox/sonos/ROOM/eq/nightmode=\i\v</td><td class="possible">0 | 1</td></tr><tr><td class="technical availability-both">s4lox_sonos_ROOM_eq_subgain</td><td class="example availability-both">3</td><td class="input-type">VI</td><td>EQ subgain ROOM</td><td class="command availability-both">\is4lox: ROOM_subgain@\i\v</td><td class="command availability-both">MQTT:\is4lox/sonos/ROOM/eq/subgain=\i\v</td><td class="possible">Integer</td></tr><tr><td class="technical availability-both">s4lox_sonos_ROOM_eq_dialoglevel</td><td class="example availability-both">1</td><td class="input-type">VI</td><td></td><td class="command availability-both">\is4lox: ROOM_dialoglevel@\i\v</td><td class="command availability-both">MQTT:\is4lox/sonos/ROOM/eq/dialoglevel=\i\v</td><td class="possible">Integer</td></tr><tr class="section"><td colspan="7">GROUP</td></tr><tr><td class="technical availability-both">s4lox_sonos_ROOM_group_is##_coordinator</td><td class="example availability-both">1</td><td class="input-type">VI</td><td></td><td class="command availability-both">\is4lox: ROOM_group_is_coordinator@\i\v</td><td class="command availability-both">MQTT:\is4lox/sonos/ROOM/group/is_coordinator=\i\v</td><td class="possible">0 | 1</td></tr><tr><td class="technical availability-both">s4lox_sonos_ROOM_group_role##_code</td><td class="example availability-both">1</td><td class="input-type">VI</td><td></td><td class="command availability-both">\is4lox: ROOM_group_role@\i\v</td><td class="command availability-both">MQTT:\is4lox/sonos/ROOM/group/role_code=\i\v</td><td class="possible">1 single | 2 master | 3 member</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_group_role##_name</td><td class="example availability-mqtt-only">single</td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">single | master | member</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_group_coordinator##_room</td><td class="example availability-mqtt-only">ROOM</td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">Room name</td></tr><tr class="section"><td colspan="7">PLAYMODE</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_playmode_mode##_raw</td><td class="example availability-mqtt-only">NORMAL</td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">NORMAL | REPEAT_ALL | REPEAT_ONE | SHUFFLE_*</td></tr><tr><td class="technical availability-both">s4lox_sonos_ROOM_playmode_code</td><td class="example availability-both">0</td><td class="input-type">VI</td><td>Playmode_code ROOM</td><td class="command availability-both">\is4lox: ROOM_playmode_code@\i\v</td><td class="command availability-both">MQTT:\is4lox/sonos/ROOM/playmode/code=\i\v</td><td class="possible">0 NORMAL | 1 REPEAT_ALL | 2 REPEAT_ONE | 3 SHUFFLE_NOREPEAT | 4 SHUFFLE_REPEAT_ALL | 5 SHUFFLE_REPEAT_ONE | 99 unknown</td></tr><tr><td class="technical availability-both">s4lox_sonos_ROOM_playmode_shuffle</td><td class="example availability-both">0</td><td class="input-type">VI</td><td>Shuffle ROOM</td><td class="command availability-both">\is4lox: ROOM_shuffle@\i\v</td><td class="command availability-both">MQTT:\is4lox/sonos/ROOM/playmode/shuffle=\i\v</td><td class="possible">0 | 1</td></tr><tr><td class="technical availability-both">s4lox_sonos_ROOM_playmode_repeat</td><td class="example availability-both">0</td><td class="input-type">VI</td><td>Repeat ROOM</td><td class="command availability-both">\is4lox: ROOM_repeat@\i\v</td><td class="command availability-both">MQTT:\is4lox/sonos/ROOM/playmode/repeat=\i\v</td><td class="possible">0 | 1</td></tr><tr><td class="technical availability-both">s4lox_sonos_ROOM_playmode_repeat##_one</td><td class="example availability-both">0</td><td class="input-type">VI</td><td>Repeat one ROOM</td><td class="command availability-both">\is4lox: ROOM_repeat_one@\i\v</td><td class="command availability-both">MQTT:\is4lox/sonos/ROOM/playmode/repeat_one=\i\v</td><td class="possible">0 | 1</td></tr><tr><td class="technical availability-both">s4lox_sonos_ROOM_playmode_crossfade</td><td class="example availability-both">0</td><td class="input-type">VI</td><td></td><td class="command availability-both">\is4lox: ROOM_crossfade@\i\v</td><td class="command availability-both">MQTT:\is4lox/sonos/ROOM/playmode/crossfade=\i\v</td><td class="possible">0 | 1</td></tr><tr class="section"><td colspan="7">POSITION</td></tr><tr><td class="technical availability-both">s4lox_sonos_ROOM_position_position##_sec</td><td class="example availability-both">34</td><td class="input-type">VI</td><td></td><td class="command availability-both">\is4lox: ROOM_position_sec@\i\v</td><td class="command availability-both">MQTT:\is4lox/sonos/ROOM/position/position_sec=\i\v</td><td class="possible">Seconds</td></tr><tr><td class="technical availability-both">s4lox_sonos_ROOM_position_duration##_sec</td><td class="example availability-both">121</td><td class="input-type">VI</td><td></td><td class="command availability-both">\is4lox: ROOM_duration_sec@\i\v</td><td class="command availability-both">MQTT:\is4lox/sonos/ROOM/position/duration_sec=\i\v</td><td class="possible">Seconds</td></tr><tr><td class="technical availability-both">s4lox_sonos_ROOM_position_progress##_pct</td><td class="example availability-both">80</td><td class="input-type">VI</td><td></td><td class="command availability-both">\is4lox: ROOM_progress_pct@\i\v</td><td class="command availability-both">MQTT:\is4lox/sonos/ROOM/position/progress_pct=\i\v</td><td class="possible">0..100</td></tr><tr><td class="technical availability-both">s4lox_sonos_ROOM_position_track##_no</td><td class="example availability-both">2</td><td class="input-type">VI</td><td>Pos track_no ROOM</td><td class="command availability-both">\is4lox: ROOM_track_no@\i\v</td><td class="command availability-both">MQTT:\is4lox/sonos/ROOM/position/track_no=\i\v</td><td class="possible">Integer</td></tr><tr><td class="technical availability-both">s4lox_sonos_ROOM_position_track##_count</td><td class="example availability-both">5</td><td class="input-type">VI</td><td>Pos track_count ROOM</td><td class="command availability-both">\is4lox: ROOM_track_count@\i\v</td><td class="command availability-both">MQTT:\is4lox/sonos/ROOM/position/track_count=\i\v</td><td class="possible">Integer</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_position_av##_uri</td><td class="example availability-mqtt-only"></td><td class="input-type"></td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">URI / may be empty</td></tr><tr class="section"><td colspan="7">TRACK</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_track_title</td><td class="example availability-mqtt-only">Let it be</td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">Text / may be empty</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_track_artist</td><td class="example availability-mqtt-only">Beatles</td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">Text / may be empty</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_track_album</td><td class="example availability-mqtt-only">Let it be</td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">Text / may be empty</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_track_tit</td><td class="example availability-mqtt-only">Let it be</td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">Text / may be empty</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_track_int</td><td class="example availability-mqtt-only">Beatles</td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">Text / may be empty</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_track_titint</td><td class="example availability-mqtt-only">Let it be - Beatles</td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">Text / may be empty</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_track_radio</td><td class="example availability-mqtt-only">FFH Die 80er</td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">Text / may be empty</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_track_radioStationName</td><td class="example availability-mqtt-only">FFH Die 80er</td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">Text / may be empty</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_track_streamContent</td><td class="example availability-mqtt-only">Indeep - Last Night A DJ Saved My Life</td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">Text / may be empty</td></tr><tr><td class="technical availability-both">s4lox_sonos_ROOM_track_source</td><td class="example availability-both">2</td><td class="input-type">VI</td><td></td><td class="command availability-both">\is4lox: ROOM_current_source@\i\v</td><td class="command availability-both">MQTT:\is4lox/sonos/ROOM/track/source=\i\v</td><td class="possible">0 Nothing | 1 Radio | 2 Playlist/Stream | 3 TV | 4 LineIn</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_track_source##_text</td><td class="example availability-mqtt-only">Playlist/Stream</td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">Nothing | Radio | Playlist/Stream | TV | LineIn</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_track_sid</td><td class="example availability-mqtt-only">Music</td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">TV | Radio | Music</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_track_cover</td><td class="example availability-mqtt-only"><a href="http://192.168.50.65:1400/getaa?s=1&amp;u=x-sonosapi-stream%3As84481%3Fsid%3D333%26flags%3D8232%26sn%3D30" target="_blank" rel="noopener noreferrer">http://192.168.50.65:1400/getaa?s=1&amp;u=x-sonosapi-stream%3As84481%3Fsid%3D333%26flags%3D8232%26sn%3D30</a></td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">URL / may be empty</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_track_albumArtUri</td><td class="example availability-mqtt-only"><a href="http://192.168.50.65:1400/getaa?s=1&amp;u=x-sonosapi-stream%3As84481%3Fsid%3D333%26flags%3D8232%26sn%3D30" target="_blank" rel="noopener noreferrer">http://192.168.50.65:1400/getaa?s=1&amp;u=x-sonosapi-stream%3As84481%3Fsid%3D333%26flags%3D8232%26sn%3D30</a></td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">URL / may be empty</td></tr><tr><td class="technical availability-both">s4lox_sonos_ROOM_track_tvstate</td><td class="example availability-both">0</td><td class="input-type">VI</td><td></td><td class="command availability-both">\is4lox: ROOM_tvstate@\i\v</td><td class="command availability-both">MQTT:\is4lox/sonos/ROOM/track/tvstate=\i\v</td><td class="possible">0 TV off/no signal | 1 TV active (HT stream + HTAudioIn &gt; 21)</td></tr><tr class="section"><td colspan="7">NEXTTRACK</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_nexttrack_title</td><td class="example availability-mqtt-only">Radioname or Nexttitle (Playlist)</td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">Text / may be empty</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_nexttrack_artist</td><td class="example availability-mqtt-only">Beatles</td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">Text / may be empty</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_nexttrack_album</td><td class="example availability-mqtt-only">Let it be</td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">Text / may be empty</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_nexttrack_streamContent</td><td class="example availability-mqtt-only"></td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">Text / may be empty</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_nexttrack_radioStationName</td><td class="example availability-mqtt-only"></td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">Text / may be empty</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_nexttrack_albumArtUri</td><td class="example availability-mqtt-only"><a href="https://cdn-profiles.tunein.com/s84481/images/logoq.jpg" target="_blank" rel="noopener noreferrer">https://cdn-profiles.tunein.com/s84481/images/logoq.jpg</a></td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">URL / may be empty</td></tr><tr><td class="technical availability-mqtt-only">s4lox_sonos_ROOM_nexttrack_uri</td><td class="example availability-mqtt-only"><a href="https://cdn-profiles.tunein.com/s84481/images/logoq.jpg" target="_blank" rel="noopener noreferrer">https://cdn-profiles.tunein.com/s84481/images/logoq.jpg</a></td><td class="input-type">VTI</td><td></td><td class="command availability-mqtt-only"></td><td class="command availability-mqtt-only"></td><td class="possible">URI / may be empty</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="footer-note"><strong>ROOM</strong> must be replaced by the configured Sonos4Lox room name. Entries marked with <code>##</code> reflect the MQTT Gateway name conversion used by Loxone inputs.</div>
+</main>
+</body>
+</html>
