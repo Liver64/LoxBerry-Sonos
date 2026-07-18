@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 /**
  * Sonos Event Listener (raum-zentriert, vollständig)
- * Version: EVENT_HANDLER_HTAUDIOIN_TV_DETECTION_V11_2026_07_18
+ * Version: EVENT_HANDLER_LOXONE_EMPTY_TEXT_CLEAR_V13_2026_07_18
  * - MQTT CLI fallback reads persisted LoxBerry MQTT credentials directly
  * - powered-off rooms are subscribed automatically after they become reachable
  * - legacy radio is latched while PLAYING; empty follow-up metadata cannot erase the station
@@ -13,6 +13,8 @@ declare(strict_types=1);
  * - modern s4lox nexttrack and track titles are cleared for PAUSED/STOPPED and cannot be restored by stale metadata
  * - source classification combines CurrentURI/TrackURI with GetZoneInfo HTAudioIn
  * - TV is active only when x-sonos-htastream is present and HTAudioIn > 21
+ * - active TV clears retained radio fields and nexttrack_title in both topic lifecycles
+ * - direct s4lox HTTP text clears use an explicit encoded blank value instead of a missing URL value
  * - liest Räume/Player aus /opt/loxberry/config/plugins/sonos4lox/s4lox_config.json
  * - SUBSCRIBE: AVTransport, RenderingControl, ZoneGroupTopology
  * - NOTIFY -> MQTT je Raum:
@@ -714,16 +716,26 @@ function loxone_publish_for_event(string $type, array $payload, ?array $loxTarge
         $input = loxone_apply_placeholders($inTpl, $payload);
         $value = loxone_apply_placeholders($valTpl, $payload);
 
-        // Dedup: don't spam unchanged values
+        // Loxone interprets /dev/sps/io/<input>/ without a value as a read.
+        // Only explicitly marked text-clear rules therefore transmit one blank
+        // character (%20) when their logical value is empty. This remains
+        // deliberately opt-in so album, cover, numeric and ordinary metadata
+        // publishing keep their previous behavior unchanged.
+        $isExplicitTextClear = ($value === '' && !empty($rule['blank_on_empty']));
+        $wireValue = $isExplicitTextClear ? ' ' : $value;
+
+        // Dedup by the value that is actually sent to the Miniserver.
         $key = $input;
-        if (isset($lastSent[$key]) && $lastSent[$key] === $value) {
+        if (isset($lastSent[$key]) && $lastSent[$key] === $wireValue) {
             continue;
         }
-        $lastSent[$key] = $value;
+        $lastSent[$key] = $wireValue;
 
-        $ok = loxone_http_set_io($loxTarget, $input, $value, 3);
+        $ok = loxone_http_set_io($loxTarget, $input, $wireValue, 3);
         if (!$ok) {
             logln('warn', "Loxone HTTP set failed: input='$input'");
+        } elseif ($isExplicitTextClear) {
+            logln('dbg', "Loxone HTTP text clear sent: input='$input'");
         }
     }
 }
@@ -1776,10 +1788,85 @@ $lastRadioStationByRoom = [];
 // metadata clears on PAUSED/STOPPED and a stable radio station on PLAYING.
 $lastTrackPayloadByRoom = [];
 // Last retained modern s4lox nexttrack payload per room. Used to clear the
-// flattened nexttrack_title value immediately on PAUSED/STOPPED.
+// flattened nexttrack_title value immediately on PAUSED/STOPPED or active TV.
 $lastNextTrackPayloadByRoom = [];
+// Last authoritative source per room. This guards delayed nexttrack events:
+// while TV is active, stale Sonos metadata must not restore nexttrack_title.
+$lastSourceByRoom = [];
 // group cache: room => ['group_id'=>..., 'members'=>[...], 'is_coordinator'=>0/1, 'ts'=>...]
 $groupByRoom 		= [];
+
+
+/**
+ * Clear only the retained modern nexttrack title for one room.
+ *
+ * This helper intentionally leaves artist/album/cover/URI untouched. It is used
+ * for PAUSED/STOPPED and for an actively detected TV source, where Sonos can
+ * otherwise leave a stale queue title in the retained nexttrack JSON.
+ */
+function clear_modern_nexttrack_title_for_room(
+    string $room,
+    array $meta,
+    ?SonosMqttClient $mqttClient,
+    string $prefix,
+    int $qos,
+    ?array $loxTarget,
+    array $loxoneMap,
+    string $reason
+): void {
+    global $lastNextTrackPayloadByRoom;
+
+    if (!$mqttClient) {
+        return;
+    }
+
+    $room = strtolower(trim($room));
+    if ($room === '') {
+        return;
+    }
+
+    $topic = rtrim($prefix, '/') . '/' . $room . '/nexttrack';
+    $payload = $lastNextTrackPayloadByRoom[$room] ?? [
+        'type'    => 'nexttrack',
+        'room'    => $room,
+        'ip'      => $meta['ip'] ?? '',
+        'rincon'  => $meta['rincon'] ?? '',
+        'model'   => $meta['model'] ?? '',
+        'service' => 'AVTransport',
+    ];
+
+    $alreadyEmpty = array_key_exists('title', $payload)
+        && trim((string)$payload['title']) === '';
+
+    $payload['type'] = 'nexttrack';
+    $payload['room'] = $room;
+    $payload['ip'] = $meta['ip'] ?? ($payload['ip'] ?? '');
+    $payload['rincon'] = $meta['rincon'] ?? ($payload['rincon'] ?? '');
+    $payload['model'] = $meta['model'] ?? ($payload['model'] ?? '');
+    $payload['service'] = $payload['service'] ?? 'AVTransport';
+    $payload['title'] = '';
+    $payload['ts'] = time();
+
+    // On first use after a daemon restart we must publish even without a cache,
+    // because an old retained nexttrack title may still exist in MQTT.
+    if (!$alreadyEmpty || !isset($lastNextTrackPayloadByRoom[$room])) {
+        $json = json_encode($payload, JSON_UNESCAPED_UNICODE);
+        if ($json === false) {
+            logln('warn', "JSON encode failed for $room/nexttrack clear ($reason)");
+        } elseif ($mqttClient->publish($topic, $json, true, $qos)) {
+            $lastNextTrackPayloadByRoom[$room] = $payload;
+            logln('dbg', "$room modern s4lox nexttrack title cleared ($reason)");
+        } else {
+            logln('warn', "MQTT publish failed: $topic (nexttrack clear: $reason)");
+        }
+    } else {
+        // Keep metadata fresh in memory without generating identical MQTT traffic.
+        $lastNextTrackPayloadByRoom[$room] = $payload;
+    }
+
+    // The HTTP publisher deduplicates identical values itself.
+    loxone_publish_for_event('nexttrack_state_clear', $payload, $loxTarget, $loxoneMap);
+}
 
 
 
@@ -1794,7 +1881,7 @@ function publish_room_event(
     int $qos
 ): void {
 
-    global $lastEqByRoom, $groupByRoom, $lastTransportStateByRoom, $lastRadioStationByRoom, $lastTrackPayloadByRoom, $lastNextTrackPayloadByRoom,
+    global $lastEqByRoom, $groupByRoom, $lastTransportStateByRoom, $lastRadioStationByRoom, $lastTrackPayloadByRoom, $lastNextTrackPayloadByRoom, $lastSourceByRoom,
            $useUdp, $loxMsId, $LoxoneUDPPort, $LoxoneUDPPrefix, $loxTarget, $LOXONE_HTTP_PUBLISH;
 
     // CENTRAL: always lowercase room everywhere downstream
@@ -1956,6 +2043,7 @@ function publish_room_event(
                 'LineIn'          => 4,
             ];
             $data['source'] = $map[$src] ?? 0; // wie früher source_<room>
+            $lastSourceByRoom[$room] = $src;
         }
 
         $title  = (string)($data['title']  ?? '');
@@ -2013,6 +2101,14 @@ function publish_room_event(
 			$data['radio'] = '';
 		}
 
+        // A TV source must never inherit a previously latched radio station.
+        // Clear the original Sonos radio field as well as the compatibility alias.
+        if (($data['source_text'] ?? '') === 'TV') {
+            $data['radio'] = '';
+            $data['radioStationName'] = '';
+            unset($lastRadioStationByRoom[$room]);
+        }
+
         // Sonos kann im gleichen LastChange nach PAUSED/STOPPED noch die alten
         // CurrentTrackMetaData mitsenden. Diese dürfen die zuvor geleerten
         // Legacy-Anzeigen nicht erneut befüllen.
@@ -2049,7 +2145,8 @@ function publish_room_event(
     // Keep the retained modern nexttrack topic cleared until playback resumes.
     if ($type === 'nexttrack') {
         $cachedState = (int)($lastTransportStateByRoom[$room] ?? 0);
-        if ($cachedState === 2 || $cachedState === 3) {
+        $cachedSource = (string)($lastSourceByRoom[$room] ?? '');
+        if ($cachedState === 2 || $cachedState === 3 || $cachedSource === 'TV') {
             $data['title'] = '';
         }
     }
@@ -2142,6 +2239,13 @@ function publish_room_event(
         $payloadT['rincon'] = $metaT['rincon'] ?? ($payload['rincon'] ?? '');
         $payloadT['model']  = $metaT['model']  ?? ($payload['model'] ?? '');
 
+        if ($type === 'track' && !empty($payloadT['source_text'])) {
+            $lastSourceByRoom[$tr] = (string)$payloadT['source_text'];
+            if ($lastSourceByRoom[$tr] === 'TV') {
+                unset($lastRadioStationByRoom[$tr]);
+            }
+        }
+
         $topicT = rtrim($prefix, '/') . "/{$tr}/{$type}";
 
 		if (!$mqttClient) {
@@ -2170,6 +2274,31 @@ function publish_room_event(
 		if ($ok && $type === 'nexttrack') {
 			$lastNextTrackPayloadByRoom[$tr] = $payloadT;
 		}
+
+        // Active TV has no meaningful queued "next title". Clear an older
+        // retained queue title immediately, even if Sonos sends no nexttrack event.
+        if ($type === 'track' && (($payloadT['source_text'] ?? '') === 'TV')) {
+            // The modern MQTT JSON already contains radio="". Direct Loxone HTTP
+            // needs an explicit text-clear command as well, even if no separate
+            // transport-state event accompanies the TV source change.
+            loxone_publish_for_event(
+                'track_radio_latch',
+                ['room' => $tr, 'radio' => ''],
+                $loxTarget,
+                $LOXONE_HTTP_PUBLISH
+            );
+
+            clear_modern_nexttrack_title_for_room(
+                $tr,
+                $metaT,
+                $mqttClient,
+                $prefix,
+                $qos,
+                $loxTarget,
+                $LOXONE_HTTP_PUBLISH,
+                'TV track'
+            );
+        }
 
 		if ($useUdp) {
 			udp_publish_for_event(
@@ -2239,6 +2368,38 @@ function publish_room_event(
                         ? (int)($sourceCodeMap[$sourceNow] ?? 0)
                         : null;
 
+                    if ($sourceNow !== null && $sourceNow !== '') {
+                        $lastSourceByRoom[$tr] = $sourceNow;
+                    }
+
+                    // A detected TV source is authoritative for the display lifecycle:
+                    // remove any station latched by the previously playing radio and
+                    // clear an old retained queue title immediately.
+                    if ($sourceNow === 'TV') {
+                        unset($lastRadioStationByRoom[$tr]);
+                        $mqttClient->publish($legacyPrefix . '/radio/' . $tr, '', true, 0);
+
+                        // Keep the direct Loxone input aligned with both MQTT topic
+                        // families even when no separate track event follows.
+                        loxone_publish_for_event(
+                            'track_radio_latch',
+                            ['room' => $tr, 'radio' => ''],
+                            $loxTarget,
+                            $LOXONE_HTTP_PUBLISH
+                        );
+
+                        clear_modern_nexttrack_title_for_room(
+                            $tr,
+                            $metaT,
+                            $mqttClient,
+                            $prefix,
+                            $qos,
+                            $loxTarget,
+                            $LOXONE_HTTP_PUBLISH,
+                            'TV state'
+                        );
+                    }
+
                     // Keep legacy numeric source/TV state synchronized even when no
                     // separate track metadata event follows the transport state event.
                     if ($sourceCodeNow !== null) {
@@ -2305,38 +2466,16 @@ function publish_room_event(
 
                         // Clear the retained modern nexttrack title as well. MQTT Gateway
                         // flattening therefore clears s4lox_*_nexttrack_title immediately.
-                        $modernNextTrackTopic = rtrim($prefix, '/') . '/' . $tr . '/nexttrack';
-                        $modernNextTrack = $lastNextTrackPayloadByRoom[$tr] ?? [
-                            'type'    => 'nexttrack',
-                            'room'    => $tr,
-                            'ip'      => $metaT['ip'] ?? '',
-                            'rincon'  => $metaT['rincon'] ?? '',
-                            'model'   => $metaT['model'] ?? '',
-                            'service' => 'AVTransport',
-                        ];
-                        $modernNextTrack['type'] = 'nexttrack';
-                        $modernNextTrack['room'] = $tr;
-                        $modernNextTrack['ip'] = $metaT['ip'] ?? ($modernNextTrack['ip'] ?? '');
-                        $modernNextTrack['rincon'] = $metaT['rincon'] ?? ($modernNextTrack['rincon'] ?? '');
-                        $modernNextTrack['model'] = $metaT['model'] ?? ($modernNextTrack['model'] ?? '');
-                        $modernNextTrack['service'] = $modernNextTrack['service'] ?? 'AVTransport';
-                        $modernNextTrack['title'] = '';
-                        $modernNextTrack['ts'] = time();
-
-                        $modernNextJson = json_encode($modernNextTrack, JSON_UNESCAPED_UNICODE);
-                        if ($modernNextJson !== false) {
-                            if ($mqttClient->publish($modernNextTrackTopic, $modernNextJson, true, $qos)) {
-                                $lastNextTrackPayloadByRoom[$tr] = $modernNextTrack;
-                                logln('dbg', "$tr modern s4lox nexttrack title cleared for state=$stateCode");
-                            } else {
-                                logln('warn', "MQTT publish failed: $modernNextTrackTopic (state clear)");
-                            }
-                        } else {
-                            logln('warn', "JSON encode failed for $tr/nexttrack state clear");
-                        }
-
-                        // Clear the existing direct Loxone HTTP next-title input too.
-                        loxone_publish_for_event('nexttrack_state_clear', $modernNextTrack, $loxTarget, $LOXONE_HTTP_PUBLISH);
+                        clear_modern_nexttrack_title_for_room(
+                            $tr,
+                            $metaT,
+                            $mqttClient,
+                            $prefix,
+                            $qos,
+                            $loxTarget,
+                            $LOXONE_HTTP_PUBLISH,
+                            'state=' . $stateCode
+                        );
 
                         // Legacy PAUSED/STOPPED: stale display values immediately clear.
                         $mqttClient->publish($legacyPrefix . '/tit/'    . $tr, '', true, 0);
@@ -2376,6 +2515,7 @@ function publish_room_event(
                             if ($sourceNow === 'TV') {
                                 $modernTrack['sid'] = 'TV';
                                 $modernTrack['radio'] = '';
+                                $modernTrack['radioStationName'] = '';
                             } elseif ($sourceNow === 'Radio') {
                                 $modernTrack['sid'] = 'Radio';
                             } else {
@@ -2391,7 +2531,11 @@ function publish_room_event(
                             }
                         }
 
-                        if ($stationNow !== '') {
+                        if ($sourceNow === 'TV') {
+                            // TV clearing was already published above. Never fall
+                            // through to the PLAYING radio latch with an old station.
+                            unset($lastRadioStationByRoom[$tr]);
+                        } elseif ($stationNow !== '') {
                             $lastRadioStationByRoom[$tr] = $stationNow;
 
                             // Publish/refresh the retained modern track snapshot so
@@ -2478,7 +2622,14 @@ function publish_room_event(
 
                     $trackState = (int)($lastTransportStateByRoom[$tr] ?? $lastTransportStateByRoom[$room] ?? 0);
                     $trackRadio = trim((string)($payloadT['radio'] ?? ''));
-                    if ($trackRadio !== '') {
+                    $trackIsTv = (($payloadT['source_text'] ?? '') === 'TV')
+                        || ((int)($payloadT['source'] ?? 0) === 3)
+                        || ((int)($payloadT['tvstate'] ?? 0) === 1);
+
+                    if ($trackIsTv) {
+                        unset($lastRadioStationByRoom[$tr]);
+                        $mqttClient->publish($legacyPrefix . '/radio/' . $tr, '', true, 0);
+                    } elseif ($trackRadio !== '') {
                         $lastRadioStationByRoom[$tr] = $trackRadio;
                         $mqttClient->publish($legacyPrefix . '/radio/' . $tr, $trackRadio, true, 0);
                     } elseif ($trackState === 1 && !empty($lastRadioStationByRoom[$tr])) {
@@ -2836,13 +2987,13 @@ $LOXONE_HTTP_PUBLISH = [
     // State-driven display lifecycle. These narrow maps intentionally touch
     // only the four values that mirror Sonos4lox/tit,int,titint,radio.
     'track_state_clear' => [
-        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_current_title',  'value' => '{title}'],
-        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_current_artist', 'value' => '{artist}'],
-        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_current_titint', 'value' => '{titint}'],
-        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_current_radio',  'value' => '{radio}'],
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_current_title',  'value' => '{title}',  'blank_on_empty' => true],
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_current_artist', 'value' => '{artist}', 'blank_on_empty' => true],
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_current_titint', 'value' => '{titint}', 'blank_on_empty' => true],
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_current_radio',  'value' => '{radio}',  'blank_on_empty' => true],
     ],
     'track_radio_latch' => [
-        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_current_radio',  'value' => '{radio}'],
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_current_radio',  'value' => '{radio}', 'blank_on_empty' => true],
     ],
 
     // publish next track meta
@@ -2854,7 +3005,7 @@ $LOXONE_HTTP_PUBLISH = [
         ['input' => $LOXONE_HTTP_PREFIX . '_{room}_next_uri',    'value' => '{uri}'],
     ],
     'nexttrack_state_clear' => [
-        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_next_title',  'value' => '{title}'],
+        ['input' => $LOXONE_HTTP_PREFIX . '_{room}_next_title',  'value' => '{title}', 'blank_on_empty' => true],
     ],
 
     // examples for numeric events (optional)
