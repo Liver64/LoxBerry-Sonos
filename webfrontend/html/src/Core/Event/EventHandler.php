@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 /**
  * Sonos Event Listener (raum-zentriert, vollständig)
- * Version: EVENT_HANDLER_TRACK_TITLE_CLEAR_V10_2026_07_17
+ * Version: EVENT_HANDLER_HTAUDIOIN_TV_DETECTION_V11_2026_07_18
  * - MQTT CLI fallback reads persisted LoxBerry MQTT credentials directly
  * - powered-off rooms are subscribed automatically after they become reachable
  * - legacy radio is latched while PLAYING; empty follow-up metadata cannot erase the station
  * - legacy artist/int is cleared reliably for PAUSED and STOPPED
  * - modern s4lox track metadata follows the same PLAYING/PAUSED/STOPPED lifecycle
  * - modern s4lox nexttrack and track titles are cleared for PAUSED/STOPPED and cannot be restored by stale metadata
- * - source classification combines GetMediaInfo CurrentURI with GetPositionInfo track metadata
+ * - source classification combines CurrentURI/TrackURI with GetZoneInfo HTAudioIn
+ * - TV is active only when x-sonos-htastream is present and HTAudioIn > 21
  * - liest Räume/Player aus /opt/loxberry/config/plugins/sonos4lox/s4lox_config.json
  * - SUBSCRIBE: AVTransport, RenderingControl, ZoneGroupTopology
  * - NOTIFY -> MQTT je Raum:
@@ -44,7 +45,7 @@ declare(strict_types=1);
  *     - radio       (Sendername, wenn Radio)
  *     - sid         ("TV"|"Radio"|"Music")
  *     - cover       (AlbumArtUri)
- *     - tvstate     (z.Zt. 0 – Platzhalter)
+ *     - tvstate     (1 only for x-sonos-htastream + HTAudioIn > 21, otherwise 0)
  *   eq:
  *     - bass        (int)
  *     - treble      (int)
@@ -812,7 +813,7 @@ function sonos_source_has_prefix(array $uris, array $prefixes): bool
  *   4. Playlist/Stream
  *   5. Nothing
  */
-function classify_source_from_sonos(array $posinfo, array $mediainfo): string
+function classify_source_from_sonos(array $posinfo, array $mediainfo, ?int $htAudioIn = null): string
 {
     $transportUri = sonos_source_value($mediainfo, [
         'CurrentURI', 'AVTransportURI', 'URI', 'current_uri', 'av_transport_uri'
@@ -839,29 +840,30 @@ function classify_source_from_sonos(array $posinfo, array $mediainfo): string
     ]));
 
     $uris = [$transportUri, $trackUri];
-    $allText = implode(' ', [
-        sonos_source_normalize($transportUri),
-        sonos_source_normalize($trackUri),
-        $mediaClass,
-        $trackClass,
-        $protocol,
-        $mediaMeta,
-        $trackMeta,
-    ]);
+    $hasHtStream = sonos_source_has_prefix($uris, ['x-sonos-htastream:']) ||
+        strpos(implode(' ', [$mediaMeta, $trackMeta]), 'x-sonos-htastream:') !== false;
 
-    // 1) TV / home-theatre input. Check both transport and current track URI.
-    if (
-        sonos_source_has_prefix($uris, ['x-sonos-htastream:']) ||
-        strpos($allText, 'x-sonos-htastream:') !== false
-    ) {
+    // A running TV requires both indicators. Sonos can leave x-sonos-htastream
+    // selected after the TV has gone off, therefore the URI alone is not enough.
+    if ($hasHtStream && $htAudioIn !== null && $htAudioIn > 21) {
         return 'TV';
     }
 
-    // 2) Radio. CurrentURI is the authoritative discriminator for Sonos Radio,
+    // Ignore a stale HT stream for all following source checks. A second real
+    // URI or music metadata can still identify Playlist/Stream playback.
+    $nonHtUris = [];
+    foreach ($uris as $uri) {
+        $normalized = sonos_source_normalize((string)$uri);
+        if ($normalized !== '' && strpos($normalized, 'x-sonos-htastream:') !== 0) {
+            $nonHtUris[] = $uri;
+        }
+    }
+
+    // Radio. CurrentURI is the authoritative discriminator for Sonos Radio,
     // TuneIn and other radio services. Item-level audioBroadcast remains a
     // fallback for direct MP3/AAC radio streams.
     if (
-        sonos_source_has_prefix($uris, [
+        sonos_source_has_prefix($nonHtUris, [
             'x-sonosapi-radio:',
             'x-sonosapi-stream:',
             'x-rincon-mp3radio:',
@@ -874,15 +876,15 @@ function classify_source_from_sonos(array $posinfo, array $mediainfo): string
         return 'Radio';
     }
 
-    // 3) Physical/digital line input keeps its existing compatibility code 4.
-    if (sonos_source_has_prefix($uris, ['x-rincon-stream:'])) {
+    // Physical/digital line input keeps its existing compatibility code 4.
+    if (sonos_source_has_prefix($nonHtUris, ['x-rincon-stream:'])) {
         return 'LineIn';
     }
 
-    // 4) Queue, Sonos playlist, container, saved queue, music-service track,
+    // Queue, Sonos playlist, container, saved queue, music-service track,
     // file and ordinary HTTP/HLS playback all belong to Playlist/Stream (code 2).
     if (
-        sonos_source_has_prefix($uris, [
+        sonos_source_has_prefix($nonHtUris, [
             'x-rincon-queue:',
             'x-rincon-playlist:',
             'x-rincon-cpcontainer:',
@@ -900,10 +902,14 @@ function classify_source_from_sonos(array $posinfo, array $mediainfo): string
         return 'Playlist/Stream';
     }
 
-    // A group follower may expose x-rincon:<coordinator> as transport URI while
-    // GetPositionInfo still carries the playable item. Treat any remaining
-    // non-empty playback URI/metadata as Playlist/Stream rather than Radio.
-    if ($transportUri !== '' || $trackUri !== '' || $mediaMeta !== '' || $trackMeta !== '') {
+    // A lone stale x-sonos-htastream with no recognized playable item means
+    // TV off, not streaming. This covers HTAudioIn=0 and the 1..21 transition range.
+    if ($hasHtStream && empty($nonHtUris)) {
+        return 'Nothing';
+    }
+
+    // A non-HT URI or ordinary item metadata indicates streaming.
+    if (!empty($nonHtUris) || $mediaClass !== '' || $trackClass !== '' || $protocol !== '') {
         return 'Playlist/Stream';
     }
 
@@ -914,7 +920,7 @@ function classify_source_from_sonos(array $posinfo, array $mediainfo): string
 // only GetPositionInfo data.
 function classify_source_from_posinfo(array $posinfo): string
 {
-    return classify_source_from_sonos($posinfo, []);
+    return classify_source_from_sonos($posinfo, [], null);
 }
 
 // Cache für SonosAccess-Objekte pro Raum
@@ -924,7 +930,8 @@ $__sonos_clients = [];
  * Liefert 'source' (TV/Radio/LineIn/Track/Nothing) für einen Raum.
  * Holt sich intern über SonosAccess->GetPositionInfo() die Daten.
  */
-function get_source_for_room(string $room, array $rooms): ?string {
+function get_source_state_for_room(string $room, array $rooms): ?array
+{
     global $__sonos_clients;
 
     if (empty($rooms[$room]['ip'])) {
@@ -938,12 +945,9 @@ function get_source_for_room(string $room, array $rooms): ?string {
         }
         $sonos = $__sonos_clients[$room];
 
-        // GetMediaInfo contains the transport-level CurrentURI, which is the
-        // reliable discriminator between radio and queue/playlist playback.
-        // GetPositionInfo contains the current playable item and is required
-        // for TV, music-service tracks and grouped/follower playback.
         $posinfo = [];
         $mediainfo = [];
+        $zoneinfo = [];
 
         try {
             $pos = $sonos->GetPositionInfo();
@@ -951,7 +955,7 @@ function get_source_for_room(string $room, array $rooms): ?string {
                 $posinfo = $pos;
             }
         } catch (Throwable $e) {
-            logln('warn', "get_source_for_room($room): GetPositionInfo failed: " . $e->getMessage());
+            logln('warn', "get_source_state_for_room($room): GetPositionInfo failed: " . $e->getMessage());
         }
 
         try {
@@ -960,18 +964,50 @@ function get_source_for_room(string $room, array $rooms): ?string {
                 $mediainfo = $media;
             }
         } catch (Throwable $e) {
-            logln('warn', "get_source_for_room($room): GetMediaInfo failed: " . $e->getMessage());
+            logln('warn', "get_source_state_for_room($room): GetMediaInfo failed: " . $e->getMessage());
         }
 
-        if (empty($posinfo) && empty($mediainfo)) {
+        try {
+            $zone = $sonos->GetZoneInfo();
+            if (is_array($zone)) {
+                $zoneinfo = $zone;
+            }
+        } catch (Throwable $e) {
+            logln('warn', "get_source_state_for_room($room): GetZoneInfo failed: " . $e->getMessage());
+        }
+
+        if (empty($posinfo) && empty($mediainfo) && empty($zoneinfo)) {
             return null;
         }
 
-        return classify_source_from_sonos($posinfo, $mediainfo);
-    } catch (Exception $e) {
-        logln('warn', "get_source_for_room($room): " . $e->getMessage());
+        $htAudioIn = null;
+        foreach (['HTAudioIn', 'HTAUDIOIN', 'htAudioIn', 'htaudioin'] as $key) {
+            if (array_key_exists($key, $zoneinfo) && is_numeric($zoneinfo[$key])) {
+                $htAudioIn = (int)$zoneinfo[$key];
+                break;
+            }
+        }
+
+        $source = classify_source_from_sonos($posinfo, $mediainfo, $htAudioIn);
+        $tvstate = ($source === 'TV' && $htAudioIn !== null && $htAudioIn > 21) ? 1 : 0;
+
+        logln('dbg', "$room source=$source HTAudioIn=" . ($htAudioIn === null ? 'unknown' : (string)$htAudioIn) . " tvstate=$tvstate");
+
+        return [
+            'source' => $source,
+            'tvstate' => $tvstate,
+            'htaudioin' => $htAudioIn,
+        ];
+    } catch (Throwable $e) {
+        logln('warn', "get_source_state_for_room($room): " . $e->getMessage());
         return null;
     }
+}
+
+function get_source_for_room(string $room, array $rooms): ?string
+{
+    $state = get_source_state_for_room($room, $rooms);
+    return is_array($state) ? (string)($state['source'] ?? '') : null;
 }
 
 function get_radio_station_for_room(string $room, array $rooms): ?string
@@ -1905,9 +1941,11 @@ function publish_room_event(
 
     // --- Source-Erkennung + alte Sonos4lox-Kompatibilität (track) ---
     if ($type === 'track') {
-        // Source erkennen (TV / Radio / Playlist/Stream / LineIn / Nothing)
-        $src = get_source_for_room($room, $rooms);
-        if ($src !== null) {
+        // Source und echten TV-Audiozustand gemeinsam ermitteln.
+        $sourceState = get_source_state_for_room($room, $rooms);
+        $src = is_array($sourceState) ? (string)($sourceState['source'] ?? '') : null;
+        $tvstate = is_array($sourceState) ? (int)($sourceState['tvstate'] ?? 0) : 0;
+        if ($src !== null && $src !== '') {
             $data['source_text'] = $src;
             $map = [
                 'Nothing'         => 0,
@@ -2003,8 +2041,8 @@ function publish_room_event(
             $data['sid'] = 'Music';
         }
 
-        // Platzhalter (0) – könnte später mit echtem HTAudioIn ersetzt werden
-        $data['tvstate'] = 0;
+        // True only for an active Sonos home-theatre stream with HTAudioIn > 21.
+        $data['tvstate'] = $tvstate;
     }
 
     // Sonos may append stale next-track metadata after PAUSED/STOPPED.
@@ -2163,24 +2201,50 @@ function publish_room_event(
                     // publisher call is deduplicated, so this does not create spam.
                     loxone_publish_for_event('state', $payloadT, $loxTarget, $LOXONE_HTTP_PUBLISH);
 
-                    // Resolve the active source/station once and reuse it for both
-                    // modern s4lox and legacy Sonos4lox topics.
+                    // Resolve source + real TV audio state together. PLAYING gets
+                    // short retries because Sonos may expose URI/HTAudioIn slightly late.
+                    $sourceStateNow = null;
                     $sourceNow = null;
+                    $tvstateNow = 0;
                     $stationNow = '';
-                    if ($stateCode === 1) {
-                        for ($attempt = 1; $attempt <= 3; $attempt++) {
-                            $sourceNow = get_source_for_room($tr, $rooms);
-                            if ($sourceNow === 'Radio') {
-                                $stationNow = trim((string)(get_radio_station_for_room($tr, $rooms) ?? ''));
-                                if ($stationNow !== '') {
-                                    break;
-                                }
+                    $sourceAttempts = ($stateCode === 1) ? 3 : 1;
+                    for ($attempt = 1; $attempt <= $sourceAttempts; $attempt++) {
+                        $sourceStateNow = get_source_state_for_room($tr, $rooms);
+                        if (is_array($sourceStateNow)) {
+                            $sourceNow = (string)($sourceStateNow['source'] ?? '');
+                            $tvstateNow = (int)($sourceStateNow['tvstate'] ?? 0);
+                        }
+                        if ($stateCode === 1 && $sourceNow === 'Radio') {
+                            $stationNow = trim((string)(get_radio_station_for_room($tr, $rooms) ?? ''));
+                            if ($stationNow !== '') {
+                                break;
                             }
-                            if ($attempt < 3) {
-                                usleep(150000);
-                            }
+                        } elseif ($sourceNow !== null && $sourceNow !== '' && $sourceNow !== 'Nothing') {
+                            break;
+                        }
+                        if ($attempt < $sourceAttempts) {
+                            usleep(150000);
                         }
                     }
+
+                    $sourceCodeMap = [
+                        'Nothing'         => 0,
+                        'Radio'           => 1,
+                        'Playlist/Stream' => 2,
+                        'Track'           => 2,
+                        'TV'              => 3,
+                        'LineIn'          => 4,
+                    ];
+                    $sourceCodeNow = ($sourceNow !== null && $sourceNow !== '')
+                        ? (int)($sourceCodeMap[$sourceNow] ?? 0)
+                        : null;
+
+                    // Keep legacy numeric source/TV state synchronized even when no
+                    // separate track metadata event follows the transport state event.
+                    if ($sourceCodeNow !== null) {
+                        $mqttClient->publish($legacyPrefix . '/source/' . $tr, (string)$sourceCodeNow, true, 0);
+                    }
+                    $mqttClient->publish($legacyPrefix . '/tvstate/' . $tr, (string)$tvstateNow, true, 0);
 
                     // ------------------------------------------------------------
                     // Modern retained s4lox/sonos/<room>/track lifecycle
@@ -2202,6 +2266,18 @@ function publish_room_event(
                         // so JSON consumers cannot keep stale title/artist content.
                         foreach (['title','artist','tit','int','titint','radio'] as $field) {
                             $modernTrack[$field] = '';
+                        }
+                        if ($sourceCodeNow !== null) {
+                            $modernTrack['source_text'] = $sourceNow;
+                            $modernTrack['source'] = $sourceCodeNow;
+                        }
+                        $modernTrack['tvstate'] = $tvstateNow;
+                        if ($sourceNow === 'TV') {
+                            $modernTrack['sid'] = 'TV';
+                        } elseif ($sourceNow === 'Radio') {
+                            $modernTrack['sid'] = 'Radio';
+                        } else {
+                            $modernTrack['sid'] = 'Music';
                         }
                         $modernTrack['type'] = 'track';
                         $modernTrack['room'] = $tr;
@@ -2270,6 +2346,51 @@ function publish_room_event(
                         unset($lastRadioStationByRoom[$tr]);
                         logln('dbg', "$tr legacy metadata cleared for state=$stateCode");
                     } elseif ($stateCode === 1) {
+                        // Refresh modern source/tvstate immediately. This is essential
+                        // for TV because HTAudioIn can change without a fresh track packet.
+                        if ($sourceCodeNow !== null) {
+                            $modernTrack = $lastTrackPayloadByRoom[$tr] ?? [
+                                'type'    => 'track',
+                                'room'    => $tr,
+                                'ip'      => $metaT['ip'] ?? '',
+                                'rincon'  => $metaT['rincon'] ?? '',
+                                'model'   => $metaT['model'] ?? '',
+                                'service' => 'AVTransport',
+                                'title'   => '',
+                                'artist'  => '',
+                                'album'   => '',
+                                'tit'     => '',
+                                'int'     => '',
+                                'titint'  => '',
+                                'radio'   => '',
+                            ];
+                            $modernTrack['type'] = 'track';
+                            $modernTrack['room'] = $tr;
+                            $modernTrack['ip'] = $metaT['ip'] ?? ($modernTrack['ip'] ?? '');
+                            $modernTrack['rincon'] = $metaT['rincon'] ?? ($modernTrack['rincon'] ?? '');
+                            $modernTrack['model'] = $metaT['model'] ?? ($modernTrack['model'] ?? '');
+                            $modernTrack['service'] = $modernTrack['service'] ?? 'AVTransport';
+                            $modernTrack['source_text'] = $sourceNow;
+                            $modernTrack['source'] = $sourceCodeNow;
+                            $modernTrack['tvstate'] = $tvstateNow;
+                            if ($sourceNow === 'TV') {
+                                $modernTrack['sid'] = 'TV';
+                                $modernTrack['radio'] = '';
+                            } elseif ($sourceNow === 'Radio') {
+                                $modernTrack['sid'] = 'Radio';
+                            } else {
+                                $modernTrack['sid'] = 'Music';
+                                $modernTrack['radio'] = '';
+                            }
+                            $modernTrack['ts'] = time();
+
+                            $sourceJson = json_encode($modernTrack, JSON_UNESCAPED_UNICODE);
+                            if ($sourceJson !== false && $mqttClient->publish($modernTrackTopic, $sourceJson, true, $qos)) {
+                                $lastTrackPayloadByRoom[$tr] = $modernTrack;
+                                logln('dbg', "$tr modern source=$sourceNow tvstate=$tvstateNow latched for PLAYING");
+                            }
+                        }
+
                         if ($stationNow !== '') {
                             $lastRadioStationByRoom[$tr] = $stationNow;
 
