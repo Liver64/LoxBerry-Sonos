@@ -544,5 +544,6 @@
 			[IMPROVEMENT] Testing optimiert und default Tests hinzugefügt (nur bei Loglevel: Debug) verfügbar
 			[IMPROVEMENT] Speicher optimierte Installation
  7.1.1		[BUGFIX] Bugfix beim Eventhandler gefixed (MQTT brach komplett ab wenn Fehler auftrat)
-			[IMPROVEMENT] Zusätzlich wird jetzt ein retain=0 geschickt wenn streaming/TV beendet wurde.
+			[IMPROVEMENT] Zusätzlich wird jetzt ein retain=0 geschickt wenn streaming/TV beendet wurde
+			[BUGFIX] Auto Discovery SUB gefixed
 			
