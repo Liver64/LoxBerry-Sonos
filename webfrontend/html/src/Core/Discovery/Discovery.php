@@ -1,7 +1,8 @@
 <?php
 /**
  * Sonos4Lox - Core Discovery (Optimized for Auto-Discovery)
- * Version: CORE_DISCOVERY_LOGGER_CLEANUP_V02_2026_06_15
+ * Version: CORE_DISCOVERY_LOGGER_CLEANUP_V03_2026_07_19
+ * - added additional code to discover sub 
  *
  * Goals:
  * - Fast SSDP discovery (fixed window)
@@ -36,6 +37,7 @@
  * https://www.reddit.com/r/sonos/comments/1ggv8dk/sonos_network_troubleshooting_an_unofficial/
  * https://www.reddit.com/r/sonos/comments/t0emv0/the_definitive_sonos_vlan_segregation_post/
  */
+ 
 require_once __DIR__ . "/../Sonos/sonosAccess.php";
 require_once "REPLACELBHOMEDIR/libs/phplib/loxberry_system.php";
 require_once "REPLACELBHOMEDIR/libs/phplib/loxberry_log.php";
@@ -885,21 +887,53 @@ function GetSub($devices, $val) {
 	}
 	$array   = XmlToArray::convert($xml);
 	$interim = $array['ZoneGroupState']['ZoneGroups']['ZoneGroup'] ?? [];
+	
 	$subsur  = [];
-	foreach ($interim as $k => $value) {
-		if (@$value['ZoneGroupMember']['attributes']['HTSatChanMapSet']) {
-			$int = explode(";", $value['ZoneGroupMember']['attributes']['HTSatChanMapSet']);
-			foreach ($int as $a) {
-				$a = substr($a, -2);
-				if ($a == $val) {
-					$subsur[strtolower($value['ZoneGroupMember']['attributes']['ZoneName'])] = $k;
+	foreach ($interim as $groupKey => $group) {
+		if (!isset($group['ZoneGroupMember'])) {
+			continue;
+		}
+		$members = $group['ZoneGroupMember'];
+		if (isset($members['attributes'])) {
+			$members = [$members];
+		}
+		foreach ($members as $member) {
+			$zoneName = strtolower($member['attributes']['ZoneName'] ?? '');
+			$stack = [$member];
+			while (!empty($stack)) {
+				$node = array_pop($stack);
+				if (!is_array($node)) {
+					continue;
+				}
+				if (isset($node['attributes']['HTSatChanMapSet'])) {
+					$map = $node['attributes']['HTSatChanMapSet'];
+					foreach (explode(';', $map) as $entry) {
+						if (substr($entry, -2) === $val) {
+							$subsur[$zoneName] = $groupKey;
+							break 2;
+						}
+					}
+				}
+				foreach ($node as $child) {
+					if (!is_array($child)) {
+						continue;
+					}
+					if (isset($child['attributes'])) {
+						$stack[] = $child;
+					} else {
+						foreach ($child as $c) {
+							if (is_array($c)) {
+								$stack[] = $c;
+							}
+						}
+					}
 				}
 			}
 		}
 	}
 	if (empty($subsur)) {
-		$subsur = "false";
+		return "false";
 	}
-	return $subsur;
+	return $subsur;​
 }
 ?>
