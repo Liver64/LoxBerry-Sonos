@@ -1,8 +1,7 @@
 <?php
 /**
  * Sonos4Lox - Core Discovery (Optimized for Auto-Discovery)
- * Version: CORE_DISCOVERY_LOGGER_CLEANUP_V03_2026_07_19
- * - added additional code to discover sub 
+ * Version: CORE_DISCOVERY_LOGGER_CLEANUP_V02_2026_06_15
  *
  * Goals:
  * - Fast SSDP discovery (fixed window)
@@ -37,10 +36,9 @@
  * https://www.reddit.com/r/sonos/comments/1ggv8dk/sonos_network_troubleshooting_an_unofficial/
  * https://www.reddit.com/r/sonos/comments/t0emv0/the_definitive_sonos_vlan_segregation_post/
  */
- 
 require_once __DIR__ . "/../Sonos/sonosAccess.php";
-require_once "REPLACELBHOMEDIR/libs/phplib/loxberry_system.php";
-require_once "REPLACELBHOMEDIR/libs/phplib/loxberry_log.php";
+require_once "/opt/loxberry/libs/phplib/loxberry_system.php";
+require_once "/opt/loxberry/libs/phplib/loxberry_log.php";
 
 $pluginHtmlDir = defined('LBPHTMLDIR') ? LBPHTMLDIR : (isset($lbphtmldir) ? $lbphtmldir : dirname(__DIR__, 3));
 
@@ -934,6 +932,7 @@ function GetSub($devices, $val) {
 	if (empty($subsur)) {
 		return "false";
 	}
-	return $subsur;​
+	return $subsur;
 }
+
 ?>
