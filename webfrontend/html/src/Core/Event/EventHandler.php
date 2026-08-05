@@ -15,7 +15,7 @@ declare(strict_types=1);
  * - TV is active only when x-sonos-htastream is present and HTAudioIn > 21
  * - active TV clears retained radio fields and nexttrack_title in both topic lifecycles
  * - direct s4lox HTTP text clears use an explicit encoded blank value instead of a missing URL value
- * - liest Räume/Player aus /opt/loxberry/config/plugins/sonos4lox/s4lox_config.json
+ * - liest Räume/Player aus REPLACELBHOMEDIR/config/plugins/sonos4lox/s4lox_config.json
  * - SUBSCRIBE: AVTransport, RenderingControl, ZoneGroupTopology
  * - NOTIFY -> MQTT je Raum:
  *     state   (retain, QoS1)
@@ -71,8 +71,8 @@ declare(strict_types=1);
  * - Members verwenden ihre individuelle Volume
  */
 
-require_once "/opt/loxberry/libs/phplib/loxberry_system.php";
-require_once "/opt/loxberry/libs/phplib/loxberry_io.php";
+require_once "REPLACELBHOMEDIR/libs/phplib/loxberry_system.php";
+require_once "REPLACELBHOMEDIR/libs/phplib/loxberry_io.php";
 require_once $lbphtmldir . "/src/Core/Mqtt/SonosMqttClient.php";
 require_once $lbphtmldir . "/src/Core/Sonos/sonosAccess.php";
 
@@ -85,7 +85,7 @@ if (function_exists('pcntl_async_signals')) {
 const S4L_EVENTHANDLER_CONTEXT = 'src/Core/Event/EventHandler.php';
 
 // --------------------------------- Pfade ---------------------------------
-const S4L_CFG     = "/opt/loxberry/config/plugins/sonos4lox/s4lox_config.json";
+const S4L_CFG     = "REPLACELBHOMEDIR/config/plugins/sonos4lox/s4lox_config.json";
 $ramLogDir        = '/run/shm/sonos4lox';
 $LogFile          = 'sonos_events.log';
 $loglevel 	  	  = LBSystem::pluginloglevel();
@@ -571,7 +571,7 @@ function get_miniserver_target_from_general_cached(string $msId): ?array
         'general' => null,
     ];
 
-    $path  = '/opt/loxberry/config/system/general.json';
+    $path  = 'REPLACELBHOMEDIR/config/system/general.json';
     $mtime = @filemtime($path) ?: 0;
 
     // Reload only if changed (or first time)
@@ -3162,9 +3162,9 @@ if (!function_exists('s4lox_eventhandler_load_mqtt_config')) {
         // Direct fallback paths, newest/current LoxBerry first.
         if (!empty($errors) || empty($runtime['enabled']) || !$runtimeHasCredentials) {
             $jsonPaths = [
-                '/opt/loxberry/config/system/general.json',
-                '/opt/loxberry/config/system/mqttgateway.json',
-                '/opt/loxberry/config/plugins/mqttgateway/mqtt.json',
+                'REPLACELBHOMEDIR/config/system/general.json',
+                'REPLACELBHOMEDIR/config/system/mqttgateway.json',
+                'REPLACELBHOMEDIR/config/plugins/mqttgateway/mqtt.json',
             ];
 
             foreach ($jsonPaths as $path) {
