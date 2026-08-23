@@ -547,4 +547,4 @@
 			[IMPROVEMENT] Zusätzlich wird jetzt ein retain=0 geschickt wenn streaming/TV beendet wurde
 			[BUGFIX] Auto Discovery SUB fixed
  7.1.2		[BUGFIX] Auto Discovery und den EventHandler fixed
-			
+ 7.1.3		[BUGFIX] Added Installation for x86_64
