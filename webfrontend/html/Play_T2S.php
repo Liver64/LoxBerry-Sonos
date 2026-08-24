@@ -2,11 +2,11 @@
 
 /**
 * Submodul: Play_T2S
-* Version: PLAY_T2S_AUDIOCLIP_CURL_RETRY_TUNING_V02_2026_06_20
+* Version: PLAY_T2S_TTS_CREDENTIAL_SSOT_V01_2026_08_24
 *
 **/
 
-require_once "REPLACELBHOMEDIR/libs/phplib/loxberry_system.php";
+require_once "/opt/loxberry/libs/phplib/loxberry_system.php";
 if (file_exists(__DIR__ . '/src/Support/Logger.php')) {
 	require_once __DIR__ . '/src/Support/Logger.php';
 }
@@ -600,6 +600,134 @@ function playAudioClip() {
 	handle_message($zones, $source);
 }
 
+/*
+ * Central TTS generation fallback.
+ * Primary provider errors are resolved/logged by VoiceEngineHelper.php.
+ * If no valid MP3 is created, use local Piper with the fixed German
+ * fallback voice "thorsten". If Piper also fails, use t2s_not_available.mp3.
+ */
+if (!function_exists('s4lox_tts_unavailable_fallback')) {
+    function s4lox_tts_unavailable_fallback(string $ttspath): string
+    {
+        global $config;
+
+        $filename = 't2s_not_available';
+        $src = rtrim((string)($config['SYSTEM']['mp3path'] ?? ''), '/') . '/' . $filename . '.mp3';
+        $dst = rtrim($ttspath, '/') . '/' . $filename . '.mp3';
+
+        clearstatcache(false, $dst);
+        if (is_file($dst) && filesize($dst) > 0) {
+            return $filename;
+        }
+
+        if (is_file($src)) {
+            if (s4lox_play_t2s_safe_copy($src, $dst, "fallback file '$filename.mp3'")) {
+                LOGINF("Play_T2S.php: Fallback file '$filename.mp3' has been copied to TTS path.");
+            }
+        } else {
+            LOGERR("Play_T2S.php: Fallback file '$filename.mp3' not found. No audio will be played.");
+        }
+
+        return $filename;
+    }
+}
+
+if (!function_exists('s4lox_tts_generate_with_piper_fallback')) {
+    function s4lox_tts_generate_with_piper_fallback(
+        array $t2s_param,
+        string $textstring,
+        string $filename,
+        int $primary_engine_code,
+        string $primary_engine_name
+    ): string {
+        global $config;
+
+        $ttspath = rtrim((string)($config['SYSTEM']['ttspath'] ?? ''), '/');
+        $mp3_file = $ttspath . '/' . $filename . '.mp3';
+
+        if (function_exists('s4l_ve_clear_last_error')) {
+            s4l_ve_clear_last_error();
+        }
+
+        s4lox_play_t2s_log("Play_T2S.php: Primary TTS engine '$primary_engine_name' will be used for '$textstring'.", 6);
+
+        if (function_exists('t2s')) {
+            t2s($t2s_param);
+        } else {
+            LOGERR("Play_T2S.php: t2s() is not defined for engine '$primary_engine_name'. Did you include the correct VoiceEngines file?");
+        }
+
+        clearstatcache(false, $mp3_file);
+        if (is_file($mp3_file) && filesize($mp3_file) > 0) {
+            return $filename;
+        }
+
+        if (is_file($mp3_file)) {
+            $failedname = $ttspath . '/' . $filename . '_FAILED_T2S_' . date('Y-m-d_His') . '.mp3';
+            if (@rename($mp3_file, $failedname)) {
+                LOGERR("Play_T2S.php: Primary TTS engine failed, bad file has been renamed to: $failedname");
+            } else {
+                LOGERR("Play_T2S.php: Primary TTS engine failed and created an invalid MP3 file.");
+            }
+        } else {
+            LOGERR("Play_T2S.php: Primary TTS engine failed, no MP3 file has been created at all.");
+        }
+
+        $last_error = function_exists('s4l_ve_get_last_error') ? s4l_ve_get_last_error() : null;
+        $reason = '';
+        if (is_array($last_error)) {
+            $category = trim((string)($last_error['category'] ?? ''));
+            $code = trim((string)($last_error['code'] ?? ''));
+            if ($category !== '') {
+                $reason = $category;
+            }
+            if ($code !== '') {
+                $reason .= ($reason !== '' ? '/' : '') . $code;
+            }
+        }
+
+        // Piper cannot fall back to itself.
+        if ($primary_engine_code === 9012) {
+            LOGERR("Play_T2S.php: Primary Piper engine failed. Using fallback file 't2s_not_available.mp3' if available.");
+            return s4lox_tts_unavailable_fallback($ttspath);
+        }
+
+        $reason_text = $reason !== '' ? " ($reason)" : '';
+        LOGWARN("Play_T2S.php: Primary TTS engine '$primary_engine_name' failed$reason_text. Falling back to local Piper voice 'thorsten'.");
+
+        include_once __DIR__ . '/VoiceEngines/Piper.php';
+
+        if (!function_exists('piper_core')) {
+            LOGERR("Play_T2S.php: Piper fallback is not available. Using fallback file 't2s_not_available.mp3' if available.");
+            return s4lox_tts_unavailable_fallback($ttspath);
+        }
+
+        $fallback_filename = $filename . '_piper';
+        $fallback_mp3 = $ttspath . '/' . $fallback_filename . '.mp3';
+
+        if (is_file($fallback_mp3)) {
+            s4lox_play_t2s_safe_unlink($fallback_mp3, 'Piper fallback MP3');
+        }
+
+        piper_core([
+            'filename'       => $fallback_filename,
+            'text'           => $textstring,
+            'voice'          => 'thorsten',
+            'speaker'        => 4,
+            'encode_profile' => 'fast',
+        ]);
+
+        clearstatcache(false, $fallback_mp3);
+        if (is_file($fallback_mp3) && filesize($fallback_mp3) > 0) {
+            LOGOK("Play_T2S.php: Piper fallback succeeded with voice 'thorsten', using offline file '$fallback_filename.mp3'.");
+            return $fallback_filename;
+        }
+
+        LOGERR("Play_T2S.php: Piper fallback with voice 'thorsten' failed. Using fallback file 't2s_not_available.mp3' if available.");
+        return s4lox_tts_unavailable_fallback($ttspath);
+    }
+}
+
 if (!function_exists('t2s_basic_say')) {
     /**
      * t2s_basic_say
@@ -617,8 +745,6 @@ if (!function_exists('t2s_basic_say')) {
      *                             - 't2sengine' : int
      *                             - 'language'  : string
      *                             - 'voice'     : string
-     *                             - 'apikey'    : string
-     *                             - 'secretkey' : string
      *                             - 'region'    : string
      *                             - 'ignore_get': bool
      *                             - 'minimum_wait_seconds': float
@@ -659,22 +785,26 @@ if (!function_exists('t2s_basic_say')) {
             #'Play_T2S.php: t2s_basic_say()'
         );
 
-        // Load the selected engine file so t2s() is available.
-        select_t2s_engine();
+        // Load the selected engine and generate TTS with the same central
+        // Piper/Thorsten fallback used by create_tts().
+        $primary_engine_code = (int)($t2s_param['t2sengine'] ?? ($config['TTS']['t2s_engine'] ?? 0));
+        $primary_engine = select_t2s_engine($primary_engine_code);
 
-        if (!function_exists('t2s')) {
-            LOGERR("Play_T2S.php: t2s() is not defined after select_t2s_engine().");
-            return $t2s_param;
-        }
-
-        // Generate the MP3 file.
         LOGDEB("Play_T2S.php: Generating TTS file '$filename.mp3'.");
-        t2s($t2s_param);
+        $filename = s4lox_tts_generate_with_piper_fallback(
+            $t2s_param,
+            $textstring,
+            $filename,
+            (int)($primary_engine['code'] ?? $primary_engine_code),
+            (string)($primary_engine['name'] ?? 'Unknown')
+        );
+        $t2s_param['filename'] = $filename;
 
         // MP3 path as used by create_tts/create_t2s_param.
         $ttspath  = rtrim($config['SYSTEM']['ttspath'] ?? '/tmp', '/');
         $mp3_file = $ttspath . "/" . $filename . ".mp3";
 
+        clearstatcache(false, $mp3_file);
         if (!is_file($mp3_file) || filesize($mp3_file) === 0) {
             LOGERR("Play_T2S.php: TTS MP3 file '$mp3_file' does not exist or is empty.");
             return $t2s_param;
@@ -1090,88 +1220,16 @@ function create_tts($text ='') {
     } else {
 
         // ======================================================
-        // 1. Primäre TTS-Engine ausführen
+        // Primary TTS + central Piper/Thorsten fallback
         // ======================================================
-        s4lox_play_t2s_log("Play_T2S.php: Primary TTS engine '$primary_engine_name' will be used for '$textstring'.", 6);
-
-        if (function_exists('t2s')) {
-            // Für ALLE Engines (inkl. Piper) gilt: t2s($t2s_param)
-            t2s($t2s_param);
-        } else {
-            LOGERR("Play_T2S.php: t2s() is not defined for engine '$primary_engine_name'. Did you include the correct VoiceEngines file?");
-        }
-
-        // ======================================================
-        // 2. Prüfung Primär-Engine → Fallback auf Piper
-        // ======================================================
-        clearstatcache(false, $mp3_file);
-
-        if (!file_exists($mp3_file) || filesize($mp3_file) < 1) {
-
-            if (file_exists($mp3_file)) {
-                $heute      = date("Y-m-d");
-                $time       = date("His");
-                $failedname = $ttspath."/".$filename."_FAILED_T2S_".$heute."_".$time.".mp3";
-                rename($mp3_file, $failedname);
-                LOGERR("Play_T2S.php: Primary TTS engine failed, bad file has been renamed to: ".$failedname);
-            } else {
-                LOGERR("Play_T2S.php: Primary TTS engine failed, no MP3 file has been created at all.");
-            }
-
-            // --------------------------------------------------
-            // 3. Piper-Fallback (Offline) – Code 9012
-            // --------------------------------------------------
-            $fallback_filename = $filename . "_piper";
-            $fallback_mp3      = $ttspath."/".$fallback_filename.".mp3";
-            $piperBinary       = '/usr/bin/piper';
-
-            // Piper nur versuchen, wenn das Binary auch wirklich existiert
-            if (is_executable($piperBinary)) {
-                s4lox_play_t2s_log("Play_T2S.php: Trying local Piper fallback engine (code 9012)...", 5);
-                if (file_exists($fallback_mp3)) {
-                    s4lox_play_t2s_safe_unlink($fallback_mp3, 'Piper fallback MP3');
-                }
-                include_once("VoiceEngines/Piper.php");
-
-                if (function_exists('t2s_piper')) {
-                    t2s_piper($textstring, $fallback_filename);
-                } else {
-                    // Fallback auf die Legacy-Signatur t2s($text,$filename) aus deinem Piper.php
-                    t2s($textstring, $fallback_filename);
-                }
-
-                clearstatcache(false, $fallback_mp3);
-
-                if (file_exists($fallback_mp3) && filesize($fallback_mp3) > 0) {
-                    LOGOK("Play_T2S.php: Piper fallback succeeded, using offline file '".$fallback_filename.".mp3'.");
-                    $filename = $fallback_filename;
-                } else {
-                    LOGERR("Play_T2S.php: Piper fallback failed (no valid MP3). Using fallback file 't2s_not_available.mp3' if available.");
-                    $filename = "t2s_not_available";
-                    $src      = $config['SYSTEM']['mp3path']."/t2s_not_available.mp3";
-                    $dst      = $ttspath."/t2s_not_available.mp3";
-                    if (file_exists($src)) {
-                        if (s4lox_play_t2s_safe_copy($src, $dst, "fallback file 't2s_not_available.mp3'")) {
-                            LOGINF("Play_T2S.php: Fallback file 't2s_not_available.mp3' has been copied to TTS path.");
-                        }
-                    } else {
-                        LOGERR("Play_T2S.php: Fallback file 't2s_not_available.mp3' not found. No audio will be played.");
-                    }
-                }
-            } else {
-                LOGWARN("Play_T2S.php: Piper fallback skipped – binary '$piperBinary' not found or not executable. Using fallback file 't2s_not_available.mp3' if available.");
-                $filename = "t2s_not_available";
-                $src      = $config['SYSTEM']['mp3path']."/t2s_not_available.mp3";
-                $dst      = $ttspath."/t2s_not_available.mp3";
-                if (file_exists($src)) {
-                    if (s4lox_play_t2s_safe_copy($src, $dst, "fallback file 't2s_not_available.mp3'")) {
-                        LOGINF("Play_T2S.php: Fallback file 't2s_not_available.mp3' has been copied to TTS path.");
-                    }
-                } else {
-                    LOGERR("Play_T2S.php: Fallback file 't2s_not_available.mp3' not found. No audio will be played.");
-                }
-            }
-        }
+        $filename = s4lox_tts_generate_with_piper_fallback(
+            $t2s_param,
+            $textstring,
+            $filename,
+            $primary_engine_code,
+            $primary_engine_name
+        );
+        $mp3_file = $ttspath . '/' . $filename . '.mp3';
 
         echo $textstring;
         echo "<br>";
@@ -1802,7 +1860,7 @@ function handle_message($zones, $source)
     if (isset($_GET['messageid'])) {
         $messageid = $_GET['messageid'];
 
-        $mp3 = "REPLACELBHOMEDIR/data/plugins/sonos4lox/tts/mp3/{$messageid}.mp3";
+        $mp3 = "/opt/loxberry/data/plugins/sonos4lox/tts/mp3/{$messageid}.mp3";
         $duration = get_mp3_duration($mp3);
 		#wait_for_global_audio_lock($duration);
 
@@ -1828,7 +1886,7 @@ function handle_message($zones, $source)
         s4lox_play_t2s_log("Play_T2S.php: Audioclip messageid played", 7);
 
     } else {
-        $mp3 = "REPLACELBHOMEDIR/data/plugins/sonos4lox/tts/{$filename}.mp3";
+        $mp3 = "/opt/loxberry/data/plugins/sonos4lox/tts/{$filename}.mp3";
         $duration = get_mp3_duration($mp3);
 		#wait_for_global_audio_lock($duration);
 
@@ -2158,6 +2216,9 @@ if (!function_exists('create_t2s_param')) {
      *   3. $config['TTS'][...] inkl. messageLang Fallback-Logik
      *   4. Defaults (z.B. Sprache de-DE)
      *
+     * Credentials are intentionally excluded from override/GET handling:
+     * TTS.apikey and TTS.secretkey are the single runtime source of truth.
+     *
      * @param string $textstring   Text, der gesprochen werden soll
      * @param string $filename     Zieldateiname (ohne Extension)
      * @param array  $override     Optionale Overrides:
@@ -2238,35 +2299,17 @@ if (!function_exists('create_t2s_param')) {
 
         // ----------------------------------------------------------
         // 4) API-Key
-        //    override.apikey > GET.apikey > per-Engine > global
+        //    SINGLE SOURCE OF TRUTH: config TTS.apikey
+        //    TTS.apikeys is storage-only and must never be used at runtime.
         // ----------------------------------------------------------
-        if (isset($override['apikey']) && $override['apikey'] !== '') {
-            $apikey = trim($override['apikey']);
-        } elseif (!$ignore_get && isset($_GET['apikey']) && $_GET['apikey'] !== '') {
-            $apikey = trim($_GET['apikey']);
-        } else {
-            $apikey = $config['TTS']['apikey'] ?? '';
-            if (!empty($config['TTS']['apikeys'][$primary_engine_code])) {
-                $apikey = $config['TTS']['apikeys'][$primary_engine_code];
-            }
-            $apikey = trim($apikey);
-        }
+        $apikey = trim((string)($config['TTS']['apikey'] ?? ''));
 
         // ----------------------------------------------------------
         // 5) SecretKey
-        //    override.secretkey > GET.secretkey > per-Engine > global
+        //    SINGLE SOURCE OF TRUTH: config TTS.secretkey
+        //    TTS.secretkeys is storage-only and must never be used at runtime.
         // ----------------------------------------------------------
-        if (isset($override['secretkey']) && $override['secretkey'] !== '') {
-            $secretkey = trim($override['secretkey']);
-        } elseif (!$ignore_get && isset($_GET['secretkey']) && $_GET['secretkey'] !== '') {
-            $secretkey = trim($_GET['secretkey']);
-        } else {
-            $secretkey = $config['TTS']['secretkey'] ?? '';
-            if (!empty($config['TTS']['secretkeys'][$primary_engine_code])) {
-                $secretkey = $config['TTS']['secretkeys'][$primary_engine_code];
-            }
-            $secretkey = trim($secretkey);
-        }
+        $secretkey = trim((string)($config['TTS']['secretkey'] ?? ''));
 
         // ----------------------------------------------------------
         // 6) Region

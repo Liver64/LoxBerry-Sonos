@@ -1,7 +1,7 @@
 <?php
 /**
  * Sonos4Lox - Google Cloud Text-to-Speech with Chirp3 support
- * Version: VOICE_ENGINE_ROBUSTNESS_V03_2026_06_15
+ * Version: VOICE_ENGINE_ROBUSTNESS_V04_2026_08_24
  */
 
 require_once __DIR__ . '/VoiceEngineHelper.php';
@@ -80,6 +80,7 @@ function t2s(array $t2s_param)
 {
     global $config;
 
+    s4l_ve_clear_last_error();
     s4l_ve_log(S4L_GOOGLE_CONTEXT, 'INFO', 'Start.');
 
     $filename = (string)($t2s_param['filename'] ?? 'tts_output');
@@ -176,11 +177,8 @@ function t2s(array $t2s_param)
         for ($r = 0; $r < $maxRetries; $r++) {
             [$resp, $err, $code, $errno] = s4l_google_call($endpoint, $jsonPayload, $accessToken);
 
-            if ($errno !== 0 || $err !== '') {
-                s4l_ve_log(S4L_GOOGLE_CONTEXT, 'ERROR', "cURL error [$errno]: $err");
-            }
-
-            if ($code === 200 && is_string($resp)) {
+            if ($code === 200 && $errno === 0 && is_string($resp)) {
+                s4l_ve_clear_last_error();
                 $data = json_decode($resp, true);
                 if (!isset($data['audioContent'])) {
                     s4l_ve_log(S4L_GOOGLE_CONTEXT, 'ERROR', 'Google response is missing audioContent.');
@@ -196,17 +194,28 @@ function t2s(array $t2s_param)
                 break;
             }
 
-            if ($code === 429 || $code >= 500) {
-                s4l_ve_log(S4L_GOOGLE_CONTEXT, 'WARNING', "Retry $r HTTP=$code waiting {$wait}s.");
+            $error = s4l_ve_resolve_provider_error(
+                'googlecloud',
+                $code,
+                is_string($resp) ? $resp : '',
+                $errno,
+                $err
+            );
+
+            if (($code === 429 || $code >= 500 || $errno !== 0) && $r < ($maxRetries - 1)) {
+                s4l_ve_log(
+                    S4L_GOOGLE_CONTEXT,
+                    'WARNING',
+                    "Google Cloud TTS failed ({$error['category']}); retry " . ($r + 1) . " waiting {$wait}s."
+                );
                 sleep($wait);
                 $wait *= 2;
                 continue;
             }
 
-            $snippet = is_string($resp) ? substr($resp, 0, 300) : '';
-            s4l_ve_log(S4L_GOOGLE_CONTEXT, 'ERROR', "HTTP $code from Google Cloud TTS.");
-            if ($snippet !== '') {
-                s4l_ve_log(S4L_GOOGLE_CONTEXT, 'DEBUG', 'Google response snippet: ' . $snippet);
+            s4l_ve_log_provider_error(S4L_GOOGLE_CONTEXT, $error);
+            if (is_string($resp) && $resp !== '') {
+                s4l_ve_log(S4L_GOOGLE_CONTEXT, 'DEBUG', 'Google response snippet: ' . substr($resp, 0, 300));
             }
             break;
         }
@@ -226,6 +235,7 @@ function t2s(array $t2s_param)
     }
 
     @chmod($mp3Path, 0664);
+    s4l_ve_clear_last_error();
     s4l_ve_log(S4L_GOOGLE_CONTEXT, 'OK', 'Done (size=' . filesize($mp3Path) . ' bytes).');
     return basename($mp3Path, '.mp3');
 }

@@ -1,7 +1,7 @@
 <?php
 /**
  * Sonos4Lox - VoiceRSS Text-to-Speech
- * Version: VOICE_ENGINE_ROBUSTNESS_V03_2026_06_15
+ * Version: VOICE_ENGINE_ROBUSTNESS_V04_2026_08_24
  */
 
 require_once __DIR__ . '/VoiceEngineHelper.php';
@@ -48,6 +48,8 @@ if (!function_exists('s4l_voicerss_resolve_voice')) {
 function t2s($t2s_param)
 {
     global $config;
+
+    s4l_ve_clear_last_error();
 
     if (!is_array($t2s_param)) {
         s4l_ve_log(S4L_VOICERSS_CONTEXT, 'ERROR', 'Invalid parameter type. Expected array.');
@@ -167,19 +169,27 @@ function t2s($t2s_param)
     $responseSnippet = is_string($audioData) ? substr($audioData, 0, 200) : '';
     $hasErrorString = is_string($audioData) && stripos($audioData, 'ERROR') !== false;
 
-    if ($audioData === false || $httpCode >= 400 || $httpCode === 0 || $hasErrorString || strlen((string)$audioData) < 50) {
-        s4l_ve_log(S4L_VOICERSS_CONTEXT, 'ERROR', "Failed to fetch audio data from VoiceRSS API (HTTP $httpCode, curlErrNo=$curlErrNo).");
-        if ($curlErrNo !== 0 || $curlErrText !== '') {
-            s4l_ve_log(S4L_VOICERSS_CONTEXT, 'ERROR', "cURL error: [$curlErrNo] $curlErrText");
-        }
-        if ($hasErrorString) {
-            s4l_ve_log(S4L_VOICERSS_CONTEXT, 'ERROR', 'API returned error: ' . trim($responseSnippet));
-        } elseif ($responseSnippet !== '') {
+    if ($audioData === false || $httpCode >= 400 || $httpCode === 0 || $hasErrorString) {
+        $error = s4l_ve_resolve_provider_error(
+            'voicerss',
+            $httpCode,
+            is_string($audioData) ? $audioData : '',
+            $curlErrNo,
+            $curlErrText
+        );
+        s4l_ve_log_provider_error(S4L_VOICERSS_CONTEXT, $error);
+        if ($responseSnippet !== '') {
             s4l_ve_log(S4L_VOICERSS_CONTEXT, 'DEBUG', 'VoiceRSS response snippet: ' . $responseSnippet);
         }
         return false;
     }
 
+    if (strlen((string)$audioData) < 50) {
+        s4l_ve_log(S4L_VOICERSS_CONTEXT, 'ERROR', 'VoiceRSS returned an empty or invalid audio response.');
+        return false;
+    }
+
+    s4l_ve_clear_last_error();
     $outputFile = s4l_ve_output_path($config, $filename, S4L_VOICERSS_CONTEXT);
     return s4l_ve_write_mp3($outputFile, $audioData, S4L_VOICERSS_CONTEXT);
 }

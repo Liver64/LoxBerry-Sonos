@@ -1,7 +1,7 @@
 <?php
 /**
  * Sonos4Lox - Amazon Polly Text-to-Speech
- * Version: VOICE_ENGINE_ROBUSTNESS_V04_2026_06_15
+ * Version: VOICE_ENGINE_ROBUSTNESS_V05_2026_08_24
  *
  * Composer-free AWS Signature V4 implementation.
  */
@@ -122,14 +122,19 @@ if (!class_exists('S4L_Polly_TTS', false)) {
             $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
 
-            if ($errno !== 0) {
-                throw new Exception("cURL error [$errno]: $err");
+            if ($errno !== 0 || $httpCode < 200 || $httpCode >= 300) {
+                $error = s4l_ve_resolve_provider_error(
+                    'polly',
+                    $httpCode,
+                    is_string($result) ? $result : '',
+                    $errno,
+                    $err
+                );
+                s4l_ve_log_provider_error(S4L_POLLY_CONTEXT, $error);
+                throw new Exception('Amazon Polly provider request failed.');
             }
 
-            if ($httpCode < 200 || $httpCode >= 300) {
-                $snippet = is_string($result) ? substr($result, 0, 300) : '';
-                throw new Exception("HTTP $httpCode from Polly. Response snippet: $snippet");
-            }
+            s4l_ve_clear_last_error();
 
             if (!is_string($result) || strlen($result) < 32) {
                 throw new Exception('Polly returned empty or too short audio response.');
@@ -150,6 +155,8 @@ if (!class_exists('S4L_Polly_TTS', false)) {
 function t2s(array $t2s_param)
 {
     global $config;
+
+    s4l_ve_clear_last_error();
 
     if (!s4l_ve_require_params($t2s_param, ['apikey', 'secretkey', 'filename', 'text', 'voice'], S4L_POLLY_CONTEXT)) {
         return false;
@@ -196,7 +203,9 @@ function t2s(array $t2s_param)
         $outputPath = s4l_ve_output_path($config, $filename, S4L_POLLY_CONTEXT);
         return s4l_ve_write_mp3($outputPath, $audioData, S4L_POLLY_CONTEXT);
     } catch (Exception $e) {
-        s4l_ve_log(S4L_POLLY_CONTEXT, 'ERROR', 'Failed to create MP3. Error: ' . $e->getMessage());
+        if (s4l_ve_get_last_error() === null) {
+            s4l_ve_log(S4L_POLLY_CONTEXT, 'ERROR', 'Failed to create MP3. Error: ' . $e->getMessage());
+        }
         return false;
     }
 }

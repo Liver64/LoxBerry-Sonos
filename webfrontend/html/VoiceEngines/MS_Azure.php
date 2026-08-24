@@ -1,7 +1,7 @@
 <?php
 /**
  * Microsoft Azure Text-to-Speech engine
- * Version: VOICE_ENGINE_ROBUSTNESS_V01_2026_06_15
+ * Version: VOICE_ENGINE_ROBUSTNESS_V02_2026_08_24
  *
  * Copyright (c) Microsoft Corporation
  * All rights reserved.
@@ -17,6 +17,7 @@ function t2s(array $t2s_param)
     global $config;
 
     $context = 'VoiceEngines/MS_Azure.php';
+    s4l_ve_clear_last_error();
 
     $region     = $t2s_param['region'] ?? ($config['TTS']['regionms'] ?? 'westeurope');
     $apiKey     = $t2s_param['apikey'] ?? '';
@@ -47,10 +48,13 @@ function t2s(array $t2s_param)
             CURLOPT_POST => true,
             CURLOPT_CONNECTTIMEOUT => 10,
             CURLOPT_TIMEOUT => 20,
-        ], $context);
+        ], $context, 'azure');
 
-        if ($accessToken === false || trim((string)$accessToken) === '') {
-            s4l_ve_log($context, 'ERROR', 'Failed to get Azure access token.');
+        if ($accessToken === false) {
+            return false;
+        }
+        if (trim((string)$accessToken) === '') {
+            s4l_ve_log($context, 'ERROR', 'Azure returned an empty access token.');
             return false;
         }
 
@@ -80,10 +84,9 @@ function t2s(array $t2s_param)
             CURLOPT_POSTFIELDS => $ssml,
             CURLOPT_CONNECTTIMEOUT => 10,
             CURLOPT_TIMEOUT => 30,
-        ], $context);
+        ], $context, 'azure');
 
         if ($audioData === false) {
-            s4l_ve_log($context, 'ERROR', 'Failed to create MP3 with Azure TTS.');
             return false;
         }
 

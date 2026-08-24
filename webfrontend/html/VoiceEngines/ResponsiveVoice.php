@@ -1,7 +1,7 @@
 <?php
 /**
  * Text-to-Speech (TTS) with ResponsiveVoice
- * Version: VOICE_ENGINE_ROBUSTNESS_V02_2026_06_15
+ * Version: VOICE_ENGINE_ROBUSTNESS_V03_2026_08_24
  *
  * @return string|false Returns the filename on success or false on failure
  */
@@ -13,6 +13,7 @@ function t2s($t2s_param)
     global $config;
 
     $context = 'VoiceEngines/ResponsiveVoice.php';
+    s4l_ve_clear_last_error();
 
     $filename = s4l_ve_safe_filename((string)($t2s_param['filename'] ?? 'tts_output'));
     $text     = $t2s_param['text'] ?? '';
@@ -69,10 +70,13 @@ function t2s($t2s_param)
         CURLOPT_HTTPHEADER => [
             'Accept: audio/mpeg, audio/*;q=0.9, */*;q=0.8',
         ],
-    ], $context);
+    ], $context, 'responsivevoice');
 
-    if ($mp3Data === false || strlen((string)$mp3Data) < 100) {
-        s4l_ve_log($context, 'WARNING', 'ResponsiveVoice request failed or returned an empty/invalid response. Falling back to next configured TTS engine if available.');
+    if ($mp3Data === false) {
+        return false;
+    }
+    if (strlen((string)$mp3Data) < 100) {
+        s4l_ve_log($context, 'ERROR', 'ResponsiveVoice returned an empty or invalid audio response.');
         return false;
     }
 

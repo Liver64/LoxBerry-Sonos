@@ -1,7 +1,7 @@
 <?php
 /**
  * ElevenLabs TTS Integration
- * Version: VOICE_ENGINE_ROBUSTNESS_V01_2026_06_15
+ * Version: VOICE_ENGINE_ROBUSTNESS_V02_2026_08_24
  *
  * Uses voice_id directly to avoid "voice not found" errors.
  */
@@ -13,6 +13,7 @@ function t2s(array $params)
     global $config;
 
     $context = 'VoiceEngines/ElevenLabs.php';
+    s4l_ve_clear_last_error();
 
     $params['filename'] = $params['filename'] ?? 'tts_output';
 
@@ -91,7 +92,7 @@ function elevenlabs_generate_speech(
             'xi-api-key: ' . $apikey,
         ],
         CURLOPT_TIMEOUT => 45,
-    ], $context);
+    ], $context, 'elevenlabs');
 
     if ($response === false) {
         return false;
@@ -99,14 +100,8 @@ function elevenlabs_generate_speech(
 
     $decoded = json_decode($response, true);
     if (is_array($decoded) && isset($decoded['detail'])) {
-        $detail = $decoded['detail'];
-        if (is_array($detail)) {
-            $message = $detail['message'] ?? json_encode($detail);
-            $status  = $detail['status'] ?? 'unknown';
-            s4l_ve_log($context, 'ERROR', "API error: $message (status $status)");
-        } else {
-            s4l_ve_log($context, 'ERROR', 'API error: ' . (string)$detail);
-        }
+        $error = s4l_ve_resolve_provider_error('elevenlabs', 200, $response);
+        s4l_ve_log_provider_error($context, $error);
         return false;
     }
 
