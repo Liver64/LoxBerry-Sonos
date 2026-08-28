@@ -9,7 +9,7 @@
 			[Feature] Für Non-LoxBerry User besteht nun die Möglichkeit in ihrer Config die pws: für Wunderground anzugeben
  1.0.2		[Bugfix] Fehlernachricht an Loxone und Zurücksetzen des Fehlers korrigiert. Funktion war nicht aktiv.
 			[Bugfix] UDP-Port für Inbound Daten korrigiert. Skript nimmt jetzt UDP-Port aus der Plugin Config statt der MS Config.
- 1.0.3     [Bugfix] Support für XAMPP Windows hinzugefügt
+ 1.0.3      [Bugfix] Support für XAMPP Windows hinzugefügt
 			[Feature] Online Provider Google hinzugefügt
 			[Bugfix] Korrektur bei Einzel T2S aus Gruppe heraus
  1.0.4		[New] Datei grouping.php hinzugefügt
@@ -548,3 +548,4 @@
 			[BUGFIX] Auto Discovery SUB fixed
  7.1.2		[BUGFIX] Auto Discovery und den EventHandler fixed
  7.1.3		[BUGFIX] Added Installation for x86_64
+ 7.2.0 		[IMPROVEMENT] Erweitertes Errorhandling der Online T2S Provider und im Fehlerfall Fallback auf Piper
