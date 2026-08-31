@@ -1,11 +1,12 @@
 <?php
 /**
  * Sonos4Lox TTS Actions
- * Version: V03.0
+ * Version: V03.1
  * Language: EN
  *
  * Purpose:
  * - Extract current Text-to-Speech related cases from legacy Sonos.php.
+ * - V03.1 fixes duplicate detection for text, messageid and TTS add-on announcements.
  * - V03.0 handles deprecated public URL aliases sendmessage/sendgroupmessage by forwarding to action=say logic.
  * - V02.0 moves present/absent to PresenceActions.
  * - Preserve existing public URL syntax and legacy helper behaviour.
@@ -23,7 +24,6 @@
  * - audioclip is not part of the current public command reference; AudioClip stays a parameter of action=say via &clip.
  * - say1, sayradio and ttsp stay legacy/cleanup candidates until explicitly confirmed as current public commands.
  */
-
 class S4L_TtsActions
 {
     private $context;
@@ -49,22 +49,25 @@ class S4L_TtsActions
             case 'say':
                 $this->say();
                 return;
+
             case 'sendmessage':
             case 'sendgroupmessage':
                 $this->deprecatedSayAlias($action);
                 return;
+
             case 'doorbell':
                 $this->doorbell();
                 return;
+
             case 'playbatch':
                 $this->playBatch();
                 return;
+
             case 'mp3rights':
                 $this->mp3Rights();
                 return;
         }
     }
-
 
     private function deprecatedSayAlias($action)
     {
@@ -90,41 +93,92 @@ class S4L_TtsActions
     {
         global $filenst, $min_sec, $tts_stat;
 
-        $oldText = 'old';
-        $newText = 'new';
+        $oldKey = '';
+        $newKey = $this->buildDuplicateCheckKey();
         $last = time();
-        $tts_stat = 1;
 
+        $tts_stat = 1;
         if (function_exists('send_tts_source')) {
             send_tts_source($tts_stat);
         }
 
-        if ($this->request->has('text')) {
-            $newText = $this->request->get('text');
-        }
-
         if (!empty($filenst) && file_exists($filenst)) {
             $last = time() - filemtime($filenst);
+
             $handle = fopen($filenst, 'r');
             if ($handle === false) {
                 S4L_Logger::warning('Unable to open temporary TTS duplicate-check file.');
             } else {
-                $oldText = fread($handle, 8192);
+                $oldKey = fread($handle, 8192);
                 fclose($handle);
             }
-            @unlink($filenst);
         }
 
         $minSeconds = is_numeric($min_sec) ? (int)$min_sec : 0;
 
-        if ((($oldText == $newText) && ($last > $minSeconds)) || ($oldText != $newText)) {
+        // Execute when the announcement differs from the previous one,
+        // or when the configured duplicate-suppression interval has elapsed.
+        if ($oldKey !== $newKey || $last > $minSeconds) {
             say();
-            $this->writeDuplicateCheckFile($newText);
+            $this->writeDuplicateCheckFile($newKey);
             S4L_Logger::debug('Say has been executed.');
             return;
         }
 
-        S4L_Logger::ok('Same text has been announced within the last ' . $minSeconds . ' seconds. We skip this announcement.');
+        // The request was marked as TTS active before the duplicate check.
+        // Reset the status explicitly when the announcement is skipped.
+        $tts_stat = 0;
+        if (function_exists('send_tts_source')) {
+            send_tts_source($tts_stat);
+        }
+
+        S4L_Logger::ok('Same announcement has been requested within the last ' . $minSeconds . ' seconds. We skip this announcement.');
+    }
+
+    /**
+     * Build a deterministic key for duplicate suppression.
+     *
+     * Different announcement sources must never collapse to the same
+     * placeholder value. This keeps e.g. clock -> messageid -> weather
+     * independent while still suppressing a real duplicate of the same
+     * text, messageid or add-on request.
+     */
+    private function buildDuplicateCheckKey()
+    {
+        if ($this->request->has('text')) {
+            return 'text:' . (string)$this->request->get('text');
+        }
+
+        if ($this->request->has('messageid')) {
+            $messageId = trim((string)$this->request->get('messageid'));
+            if (preg_match('/\.mp3\z/i', $messageId)) {
+                $messageId = substr($messageId, 0, -4);
+            }
+            return 'messageid:' . $messageId;
+        }
+
+        // Keep the order aligned with the add-on handling in Play_T2S.php.
+        $addOns = array(
+            'weather',
+            'clock',
+            'pollen',
+            'warning',
+            'distance',
+            'abfall',
+            'calendar',
+            'sonos',
+            'saysonos'
+        );
+
+        foreach ($addOns as $addOn) {
+            if ($this->request->has($addOn)) {
+                return 'addon:' . $addOn;
+            }
+        }
+
+        // Fallback for an otherwise valid say variant not explicitly known here.
+        // It remains deterministic without collapsing all non-text requests to "new".
+        return 'say:generic';
     }
 
     private function doorbell()
