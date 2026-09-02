@@ -367,7 +367,7 @@ if ($q->{action} && $q->{action} ne 'save_vlan_ip') {   # <-- nur hier ne 'save_
 		exit;
 	}
 	if ($AJAX_ACTION eq "getsonosversions") {
-		my $plugindb_file     = "REPLACELBHOMEDIR/data/system/plugindatabase.json";
+		my $plugindb_file     = "/opt/loxberry/data/system/plugindatabase.json";
 		my $release_cfg_url   = "https://raw.githubusercontent.com/Liver64/LoxBerry-Sonos/master/webfrontend/html/release/release.cfg";
 		my $releases_atom_url = "https://github.com/Liver64/LoxBerry-Sonos/releases.atom";
 		my $installed     = '';
@@ -1050,7 +1050,7 @@ sub s4l_expected_system_interfaces
 {
     return (
         httpinterface => "http://$host:$lbport/plugins/$lbpplugindir/interfacedownload",
-        smbinterface  => "smb://$lbip:$lbport/plugindata/$lbpplugindir/interfacedownload",
+        smbinterface  => "smb://$lbip/plugindata/$lbpplugindir/interfacedownload",
         cifsinterface => "x-file-cifs://$lbip/plugindata/$lbpplugindir/interfacedownload",
     );
 }
