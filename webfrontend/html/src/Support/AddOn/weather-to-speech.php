@@ -2,8 +2,8 @@
 
 /*
  * Sonos4Lox addon TTS helper
- * Version: ADDON_TTS_SUPPORT_ADDON_RELOCATION_V04_2026_06_12
- * Notes: moved to src/Support/AddOn with centralized S4L_Logger based logging and defensive input/fetch handling.
+ * Version: ADDON_TTS_WEATHER4LOX_DUALFORMAT_V05_2026_09_07
+ * Notes: supports Weather4Lox v4 JSON output with automatic fallback to legacy DAT files.
  */
 
 require_once dirname(__DIR__) . '/Logger.php';
@@ -39,6 +39,37 @@ if (!function_exists('s4lox_addon_decode_json')) {
 }
 
 
+if (!function_exists('s4lox_weather4lox_read_json_file')) {
+    function s4lox_weather4lox_read_json_file($path)
+    {
+        if (!is_string($path) || $path === '' || !is_readable($path)) {
+            return null;
+        }
+
+        $raw = @file_get_contents($path);
+        if ($raw === false) {
+            return null;
+        }
+
+        return s4lox_addon_decode_json($raw);
+    }
+}
+
+if (!function_exists('s4lox_weather4lox_get')) {
+    function s4lox_weather4lox_get($data, array $path, $default = null)
+    {
+        $value = $data;
+        foreach ($path as $key) {
+            if (!is_array($value) || !array_key_exists($key, $value)) {
+                return $default;
+            }
+            $value = $value[$key];
+        }
+        return $value;
+    }
+}
+
+
 function w2s()
 // weather-to-speech: Builds a Weather4Lox based weather forecast for TTS generation.
 // Parameter: $text from Sonos TTS processing
@@ -49,76 +80,152 @@ function w2s()
 		#print_r($TL);
 		#exit;
 				
-		// Einlesen der Daten vom Weather4Lox Plugin
-		if (!file_exists("$home/data/plugins/weather4lox/current.dat")) {
-			S4L_Logger::write('Data from Weather4Lox could not be obtainend. Please check if Plugin is active!',4, __FILE__);
-			S4L_Logger::write('The file current.dat could not been opened. Please check Weather4Lox Plugin!',4, __FILE__);
-			exit;
-			
-		} else {
-			$current = @file_get_contents("$home/data/plugins/weather4lox/current.dat");
-			if ($current === false) {
-				S4L_Logger::write('The file current.dat could not be read. Please check Weather4Lox Plugin!',4, __FILE__);
+		// ---------------------------------------------------------------------
+		// Weather4Lox data input
+		// New Weather4Lox (v4): JSON in /opt/loxberry/log/plugins/weather4lox
+		// Legacy Weather4Lox:    pipe-delimited DAT in /opt/loxberry/data/plugins/weather4lox
+		// JSON is preferred. If JSON is missing/incomplete, legacy DAT is used.
+		// ---------------------------------------------------------------------
+		$jsonDir   = "$home/log/plugins/weather4lox";
+		$legacyDir = "$home/data/plugins/weather4lox";
+
+		$currentJsonFile = $jsonDir . '/current.json';
+		$dailyJsonFile   = $jsonDir . '/dailyforecast.json';
+		$hourlyJsonFile  = $jsonDir . '/hourlyforecast.json';
+
+		$weatherDataLoaded = false;
+		$jsonFilesPresent = is_file($currentJsonFile) && is_file($dailyJsonFile) && is_file($hourlyJsonFile);
+
+		if ($jsonFilesPresent) {
+			$currentEnvelope = s4lox_weather4lox_read_json_file($currentJsonFile);
+			$dailyEnvelope   = s4lox_weather4lox_read_json_file($dailyJsonFile);
+			$hourlyEnvelope  = s4lox_weather4lox_read_json_file($hourlyJsonFile);
+
+			$currentJson = is_array($currentEnvelope) ? ($currentEnvelope['current'] ?? null) : null;
+			$dailyJson   = is_array($dailyEnvelope) ? ($dailyEnvelope['dailyforecast'] ?? null) : null;
+			$hourlyJson  = is_array($hourlyEnvelope) ? ($hourlyEnvelope['hourlyforecast'] ?? null) : null;
+
+			$todayJson    = (is_array($dailyJson) && isset($dailyJson[0]) && is_array($dailyJson[0])) ? $dailyJson[0] : null;
+			$tomorrowJson = (is_array($dailyJson) && isset($dailyJson[1]) && is_array($dailyJson[1])) ? $dailyJson[1] : null;
+			$nextHourJson = (is_array($hourlyJson) && isset($hourlyJson[0]) && is_array($hourlyJson[0])) ? $hourlyJson[0] : null;
+
+			if (is_array($currentJson) && is_array($todayJson) && is_array($tomorrowJson) && is_array($nextHourJson)) {
+				// Map new JSON schema to the existing internal variables. The TTS
+				// wording below intentionally remains unchanged.
+				$temp_c  = s4lox_weather4lox_get($currentJson, array('temperature', 'air'));
+				$high0   = s4lox_weather4lox_get($todayJson, array('temperature', 'max', 'air'));
+				$high1   = s4lox_weather4lox_get($tomorrowJson, array('temperature', 'max', 'air'));
+				$low0    = s4lox_weather4lox_get($todayJson, array('temperature', 'min', 'air'));
+				$low1    = s4lox_weather4lox_get($tomorrowJson, array('temperature', 'min', 'air'));
+				$wind    = s4lox_weather4lox_get($todayJson, array('wind', 'max', 'speed'), 0);
+				$wetter_hc = s4lox_weather4lox_get($currentJson, array('weatherCode', 'description'));
+				$windspeed = s4lox_weather4lox_get($nextHourJson, array('wind', 'speed'), 0);
+				$windtxt = $windspeed;
+				$wind_dir = s4lox_weather4lox_get($nextHourJson, array('wind', 'dirLabel'), '');
+				$wetter = s4lox_weather4lox_get($currentJson, array('weatherCode', 'description'));
+				$conditions0 = s4lox_weather4lox_get($todayJson, array('weatherCode', 'description'));
+				$conditions1 = s4lox_weather4lox_get($tomorrowJson, array('weatherCode', 'description'));
+				$forecast0 = $conditions0;
+				$forecast1 = $conditions1;
+				$regenwahrscheinlichkeit0 = s4lox_weather4lox_get($todayJson, array('precipitation', 'probability'));
+				$regenwahrscheinlichkeit1 = s4lox_weather4lox_get($tomorrowJson, array('precipitation', 'probability'));
+
+				$requiredJsonValues = array(
+					$temp_c, $high0, $high1, $low0, $low1,
+					$wetter_hc, $wetter, $conditions0, $conditions1,
+					$regenwahrscheinlichkeit0, $regenwahrscheinlichkeit1
+				);
+
+				$jsonComplete = true;
+				foreach ($requiredJsonValues as $requiredValue) {
+					if ($requiredValue === null || $requiredValue === '') {
+						$jsonComplete = false;
+						break;
+					}
+				}
+
+				if ($jsonComplete) {
+					$weatherDataLoaded = true;
+					S4L_Logger::write('Weather4Lox JSON data format detected. Data has been successfully retrieved.', 7, __FILE__);
+				} else {
+					S4L_Logger::write('Weather4Lox JSON files are present but required weather values are incomplete. Trying legacy DAT format.', 4, __FILE__);
+				}
+			} else {
+				S4L_Logger::write('Weather4Lox JSON files could not be decoded or do not contain the expected current/dailyforecast/hourlyforecast data. Trying legacy DAT format.', 4, __FILE__);
+			}
+		}
+
+		if (!$weatherDataLoaded) {
+			$currentFile = $legacyDir . '/current.dat';
+			$dailyFile   = $legacyDir . '/dailyforecast.dat';
+			$hourlyFile  = $legacyDir . '/hourlyforecast.dat';
+
+			if (!file_exists($currentFile)) {
+				S4L_Logger::write('Data from Weather4Lox could not be obtained. Neither usable JSON data nor legacy current.dat is available.', 4, __FILE__);
+				S4L_Logger::write("Checked Weather4Lox JSON path '$jsonDir' and legacy path '$legacyDir'.", 4, __FILE__);
 				exit;
 			}
-			$current = explode('|',$current);
-		}
-		if (!file_exists("$home/data/plugins/weather4lox/dailyforecast.dat")) {
-			S4L_Logger::write('Data from Weather4Lox could not be obtainend. Please check if Plugin is active!',4, __FILE__);
-			S4L_Logger::write('The file dailyforecast.dat could not been opened. Please check Weather4Lox Plugin!',4, __FILE__);
-			exit;
-		} else {
-			$dailyforecast = @file_get_contents("$home/data/plugins/weather4lox/dailyforecast.dat");
-			if ($dailyforecast === false) {
-				S4L_Logger::write('The file dailyforecast.dat could not be read. Please check Weather4Lox Plugin!',4, __FILE__);
+			$currentRaw = @file_get_contents($currentFile);
+			if ($currentRaw === false) {
+				S4L_Logger::write('The file current.dat could not be read. Please check Weather4Lox Plugin!', 4, __FILE__);
 				exit;
 			}
-			$dailyforecast = explode('|',$dailyforecast);
-		}
-		if (!file_exists("$home/data/plugins/weather4lox/hourlyforecast.dat")) {
-			S4L_Logger::write('Data from Weather4Lox could not be obtainend. Please check if Plugin is active!',4, __FILE__);
-			S4L_Logger::write('The file hourlyforecast.dat could not been opened. Please check Weather4Lox Plugin!',4, __FILE__);
-			exit;
-		} else {
-			$hourlyforecast = @file_get_contents("$home/data/plugins/weather4lox/hourlyforecast.dat");
-			if ($hourlyforecast === false) {
-				S4L_Logger::write('The file hourlyforecast.dat could not be read. Please check Weather4Lox Plugin!',4, __FILE__);
+			$current = explode('|', $currentRaw);
+
+			if (!file_exists($dailyFile)) {
+				S4L_Logger::write('The file dailyforecast.dat could not be opened. Please check Weather4Lox Plugin!', 4, __FILE__);
 				exit;
 			}
-			$hourlyforecast = explode('|',$hourlyforecast);
+			$dailyRaw = @file_get_contents($dailyFile);
+			if ($dailyRaw === false) {
+				S4L_Logger::write('The file dailyforecast.dat could not be read. Please check Weather4Lox Plugin!', 4, __FILE__);
+				exit;
+			}
+			$dailyforecast = explode('|', $dailyRaw);
+
+			if (!file_exists($hourlyFile)) {
+				S4L_Logger::write('The file hourlyforecast.dat could not be opened. Please check Weather4Lox Plugin!', 4, __FILE__);
+				exit;
+			}
+			$hourlyRaw = @file_get_contents($hourlyFile);
+			if ($hourlyRaw === false) {
+				S4L_Logger::write('The file hourlyforecast.dat could not be read. Please check Weather4Lox Plugin!', 4, __FILE__);
+				exit;
+			}
+			$hourlyforecast = explode('|', $hourlyRaw);
+
+			if (count($current) < 30 || count($dailyforecast) < 67 || count($hourlyforecast) < 18) {
+				S4L_Logger::write('Weather4Lox legacy DAT data is incomplete. Please check Weather4Lox Plugin output files.', 4, __FILE__);
+				exit;
+			}
+
+			S4L_Logger::write('Weather4Lox legacy DAT data format detected. Data has been successfully retrieved.', 7, __FILE__);
+
+			// Legacy mapping - unchanged from the previous implementation.
+			$temp_c = $current[11];
+			$high0 = $dailyforecast[11];
+			$high1 = $dailyforecast[50];
+			$low0 = $dailyforecast[12];
+			$low1 = $dailyforecast[51];
+			$wind = $dailyforecast[16];
+			$wetter_hc = $current[29];
+			$windspeed = $hourlyforecast[17];
+			$windtxt = $windspeed;
+			$wind_dir = $hourlyforecast[15];
+			$wetter = $current[29];
+			$conditions0 = $dailyforecast[27];
+			$conditions1 = $dailyforecast[66];
+			$forecast0 = $dailyforecast[27];
+			$forecast1 = $dailyforecast[66];
+			$regenwahrscheinlichkeit0 = $dailyforecast[13];
+			$regenwahrscheinlichkeit1 = $dailyforecast[52];
 		}
-		if (count($current) < 30 || count($dailyforecast) < 67 || count($hourlyforecast) < 18) {
-			S4L_Logger::write('Weather4Lox data is incomplete. Please check Weather4Lox Plugin output files.',4, __FILE__);
-			exit;
-		}
-		S4L_Logger::write('Data from Weather4Lox has been successfully retrieved.',7, __FILE__);
-		#print_r($current);
-		#print_r($dailyforecast);
-		#print_r($hourlyforecast);
-		
+
 		$Stunden = intval(strftime("%H"));
 		$Minuten = intval(strftime("%M"));
 		$regenschwelle = '10';
 		$windschwelle = '10';
-			
-		#-- Aufbereiten der Wetterdaten ---------------------------------------------------------------------
-		$temp_c = $current[11]; 
-		$high0 = $dailyforecast[11]; // H�chsttemperatur heute
-		$high1 = $dailyforecast[50]; // H�chsttemperatur morgen
-		$low0 = $dailyforecast[12]; // Tiefsttemperatur heute
-		$low1 = $dailyforecast[51]; // Tiefsttemperatur morgen
-		$wind = $dailyforecast[16]; // max. Windgeschwindigkeit heute
-		$wetter_hc = $current[29]; // Wetterkonditionen
-		$windspeed = $hourlyforecast[17]; // maximale Windgeschwindigkeit n�chste Stunde
-		$windtxt = $windspeed;
-		$wind_dir = $hourlyforecast[15]; // Windrichtung f�r die n�chste Stunde
-		$wetter = $current[29]; // Wetterkonditionen aktuell
-		$conditions0 = $dailyforecast[27]; // allgemeine Wetterdaten heute
-		$conditions1 = $dailyforecast[66]; // allgemeine Wetterdaten morgen
-		$forecast0 = $dailyforecast[27]; // Wetterlage heute
-		$forecast1 = $dailyforecast[66]; // Wetterlage morgen
-		$regenwahrscheinlichkeit0 = $dailyforecast[13]; // Regenwahrscheinlichkeit heute
-		$regenwahrscheinlichkeit1 = $dailyforecast[52]; // Regenwahrscheinlichkeit morgen
+
 		# Pr�fen ob Wetterk�rzel vorhanden, wenn ja durch W�rter ersetzen
 		if(ctype_upper($wind_dir)) 
 		{
