@@ -66,8 +66,8 @@ if ($stadtgemeinde === false || $stadtgemeinde === '') {
 $stadtgemeinde = preg_replace("/<[^>]+>/", "", $stadtgemeinde);
 $townPos = strpos($stadtgemeinde, $town);
 if ($townPos === false) {
-	S4L_Logger::write('Configured town was not found in Deutscher Wetterdienst warning table.',5, __FILE__);
-	return false;
+	S4L_Logger::write('Configured town "'.$town.'" was not found in Deutscher Wetterdienst warning table for region "'.$region.'". Aborting weather warning TTS.',3, __FILE__);
+	exit;
 }
 $stadtgemeinde = substr($stadtgemeinde, $townPos + 18);
 
@@ -86,18 +86,6 @@ if (empty($stadtgemeinde)) {
 	S4L_Logger::write('No usable weather warning data could be retrieved from Deutscher Wetterdienst.',3, __FILE__);
 	exit;
 } else {
-	S4L_Logger::write('Weather warning data has been successfully retrieved from Deutscher Wetterdienst.',6, __FILE__);
-}	
-#print_r(substr($stadtgemeinde,0 , 12));
-
-// Falls kein Wetterhinweis oder Warnung vorliegt abbrechen
-if (substr($stadtgemeinde,0 , 12) == 'er und Klima') {
-	S4L_Logger::write('There are currently no weather warnings for the configured town.',5, __FILE__);
-	exit;
-}
-
-
-// Nach Warnungen zerlegen
 $counter = 0;
 do {
 
