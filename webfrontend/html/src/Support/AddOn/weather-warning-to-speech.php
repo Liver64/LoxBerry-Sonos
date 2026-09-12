@@ -41,10 +41,6 @@ if (!function_exists('s4lox_addon_decode_json')) {
 
 
 function ww2s() {
-// unwetter: Erstellt basierend auf Daten des deutschen Wetterdienstes eine Wetterwarnung
-// TTS Nachricht, �bermittelt sie an die T2S Engine und speichert das zur�ckkommende file lokal ab
-// @Parameter = $text von sonos2.php
-
 global $config, $debug, $town, $region, $tmpsonos;
 
 $town = $config['LOCATION']['town'];
@@ -62,7 +58,6 @@ if ($stadtgemeinde === false || $stadtgemeinde === '') {
 	exit;
 }
 
-// Verarbeitung des zur�ckerhaltenen Strings
 $stadtgemeinde = preg_replace("/<[^>]+>/", "", $stadtgemeinde);
 $townPos = strpos($stadtgemeinde, $town);
 if ($townPos === false) {
@@ -71,10 +66,19 @@ if ($townPos === false) {
 }
 $stadtgemeinde = substr($stadtgemeinde, $townPos + 18);
 
-if (strpos($stadtgemeinde, "Gemeinde") !== false) {
-    $stadtgemeinde = substr($stadtgemeinde, 0, strpos($stadtgemeinde, "Gemeinde"));
-} elseif (strpos($stadtgemeinde, "Stadt") !== false) {
-    $stadtgemeinde = substr($stadtgemeinde, 0, strpos($stadtgemeinde, "Stadt"));
+// Grenze zum nächsten Eintrag auf der Seite finden. Die DWD-Seite nutzt je nach
+// Verwaltungsebene unterschiedliche Präfixe vor dem nächsten Ortsnamen - hier
+// einfach ergänzbar, falls weitere Präfixe auftauchen.
+$boundaryPrefixes = array("Gemeinde", "Stadt", "Landkreis");
+$boundaryPos = false;
+foreach ($boundaryPrefixes as $prefix) {
+    $pos = strpos($stadtgemeinde, $prefix);
+    if ($pos !== false && ($boundaryPos === false || $pos < $boundaryPos)) {
+        $boundaryPos = $pos;
+    }
+}
+if ($boundaryPos !== false) {
+    $stadtgemeinde = substr($stadtgemeinde, 0, $boundaryPos);
 }
 
 $stadtgemeinde = preg_replace("#\(.*?\)#m", "", $stadtgemeinde);
@@ -86,6 +90,19 @@ if (empty($stadtgemeinde)) {
 	S4L_Logger::write('No usable weather warning data could be retrieved from Deutscher Wetterdienst.',3, __FILE__);
 	exit;
 } else {
+	S4L_Logger::write('Weather warning data has been successfully retrieved from Deutscher Wetterdienst.',6, __FILE__);
+}
+
+// Falls für diesen Ort aktuell keine Warnung vorliegt, sauber abbrechen.
+// (Robuster als ein festes Textfragment zu matchen: prüft direkt, wovon
+// die nachfolgende Parsing-Logik abhängt, statt an eine bestimmte
+// DWD-Formulierung für "keine Warnung" gebunden zu sein.)
+if (strpos($stadtgemeinde, "Amtliche WARNUNG") === false) {
+	S4L_Logger::write('There are currently no active weather warnings for "'.$town.'".',5, __FILE__);
+	exit;
+}
+
+// Nach Warnungen zerlegen
 $counter = 0;
 do {
 
@@ -95,7 +112,6 @@ do {
 
 } while (strlen($stadtgemeinde) !== 0);
 
-// Text zusammen schreiben
 $text = "Achtung ! Wetter Hinweis bzw. Warnung! ";
 for ($counter2 = 0; $counter2 < $counter; $counter2++) {
     $uwarr[$counter2] = utf8_decode($uwarr[$counter2]);
@@ -104,13 +120,11 @@ for ($counter2 = 0; $counter2 < $counter; $counter2++) {
 
 $text = html_entity_decode($text);
 
-// Text ansagen
 $text = str_replace("Warnzeitraum", "Warn Zeitraum", $text);
 $text = str_replace(" M ", " Metern ", $text);
 $text = str_replace(" m ", " Metern ", $text);
 
 $url = $text;
-#echo $url;
 S4L_Logger::write('Weather warning announcement: '.($url),7, __FILE__);
 S4L_Logger::write('Message been generated and pushed to T2S creation',5, __FILE__);
 return $url;
@@ -119,10 +133,6 @@ return $url;
 
 
 function check_warning() {
-// unwetter: Erstellt basierend auf Daten des deutschen Wetterdienstes eine Wetterwarnung
-// TTS Nachricht, �bermittelt sie an die T2S Engine und speichert das zur�ckkommende file lokal ab
-// @Parameter = $text von sonos2.php
-
 global $config, $debug, $town, $region, $tmpsonos;
 
 $town = $config['LOCATION']['town'];
@@ -140,7 +150,6 @@ if ($stadtgemeinde === false || $stadtgemeinde === '') {
 	return false;
 }
 
-// Verarbeitung des zur�ckerhaltenen Strings
 $stadtgemeinde = preg_replace("/<[^>]+>/", "", $stadtgemeinde);
 $townPos = strpos($stadtgemeinde, $town);
 if ($townPos === false) {
@@ -149,10 +158,17 @@ if ($townPos === false) {
 }
 $stadtgemeinde = substr($stadtgemeinde, $townPos + 18);
 
-if (strpos($stadtgemeinde, "Gemeinde") !== false) {
-    $stadtgemeinde = substr($stadtgemeinde, 0, strpos($stadtgemeinde, "Gemeinde"));
-} elseif (strpos($stadtgemeinde, "Stadt") !== false) {
-    $stadtgemeinde = substr($stadtgemeinde, 0, strpos($stadtgemeinde, "Stadt"));
+// Grenze zum nächsten Eintrag auf der Seite finden (siehe ww2s()).
+$boundaryPrefixes = array("Gemeinde", "Stadt", "Landkreis");
+$boundaryPos = false;
+foreach ($boundaryPrefixes as $prefix) {
+    $pos = strpos($stadtgemeinde, $prefix);
+    if ($pos !== false && ($boundaryPos === false || $pos < $boundaryPos)) {
+        $boundaryPos = $pos;
+    }
+}
+if ($boundaryPos !== false) {
+    $stadtgemeinde = substr($stadtgemeinde, 0, $boundaryPos);
 }
 
 $stadtgemeinde = preg_replace("#\(.*?\)#m", "", $stadtgemeinde);
@@ -166,11 +182,10 @@ if (empty($stadtgemeinde)) {
 } else {
 	S4L_Logger::write('Weather warning data has been successfully retrieved from Deutscher Wetterdienst.',6, __FILE__);
 }	
-#print_r(substr($stadtgemeinde,0 , 12));
 
-// Falls kein Wetterhinweis oder Warnung vorliegt abbrechen
-if (substr($stadtgemeinde,0 , 12) == 'er und Klima') {
-	S4L_Logger::write('There are currently no weather warnings for the configured town.',5, __FILE__);
+// Falls für diesen Ort aktuell keine Warnung vorliegt, sauber abbrechen.
+if (strpos($stadtgemeinde, "Amtliche WARNUNG") === false) {
+	S4L_Logger::write('There are currently no active weather warnings for "'.$town.'".',5, __FILE__);
 	return false;
 }
 }
