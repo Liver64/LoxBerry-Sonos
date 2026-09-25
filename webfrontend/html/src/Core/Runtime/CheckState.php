@@ -3,7 +3,7 @@
 
 /**
  * Sonos4Lox - Online Check / CheckState
- * Version: CHECKSTATE_ERROR_HANDLER_RELOCATION_V03_2026_06_15
+ * Version: CHECKSTATE_ONLINE_HYSTERESIS_V04_2026_09_25
  *
  * Purpose:
  * - Check configured Sonos players for online/offline state.
@@ -31,8 +31,9 @@ const S4L_CHECKSTATE_CONTEXT = 'src/Core/Runtime/CheckState.php';
 $configfile       = "s4lox_config.json";
 $off_file         = $lbplogdir . "/s4lox_off.tmp";                            // Path/file for script turned off
 $updatefile       = "/run/shm/" . $lbpplugindir . "/Sonos4lox_update.json";   // Status file during Sonos update
-$http_timeout_sec = 3;
-$icon_timeout_sec = 3;
+$http_timeout_sec  = 3;
+$icon_timeout_sec  = 3;
+$offline_grace_sec = 120; // Keep a player online through a single transient failed check.
 
 $GLOBALS['ONLINE_CHECK_STARTED'] = false;
 
@@ -125,11 +126,41 @@ foreach ($sonoszonen as $zonen => $ip) {
             $img = $lbphtmldir . "/images/icon-{$iconKey}.png";
             fetch_icon_if_missing($playerIp, $iconKey, $img, $icon_timeout_sec, $zonen);
             handle_player_autoplay($zonen, $playerIp, $desiredAutoplayVol, $isSoundbar);
+        } else {
+            // Refresh the marker timestamp on every successful check. The timestamp
+            // represents the last confirmed online state and is used as hysteresis
+            // against short HTTP/network dropouts.
+            if (!@touch($onFile)) {
+                s4l_log('WARNING', "Player online file 's4lox_on_{$zonen}.txt' timestamp could not be refreshed.");
+            }
         }
     } else {
         if (file_exists($onFile)) {
+            clearstatcache(true, $onFile);
+            $lastOnline = @filemtime($onFile);
+
+            if ($lastOnline === false) {
+                // Fail safe: do not convert a transient read/stat problem into a
+                // false offline -> online transition with autoplay side effects.
+                s4l_log('WARNING', "Player '{$zonen}' did not answer the online check, but the marker timestamp could not be read. Online marker retained.");
+                continue;
+            }
+
+            $offlineFor = max(0, time() - $lastOnline);
+
+            if ($offlineFor < $offline_grace_sec) {
+                s4l_log(
+                    'WARNING',
+                    "Player '{$zonen}' did not answer the online check. Online marker retained ({$offlineFor}s since last successful check; grace period {$offline_grace_sec}s)."
+                );
+                continue;
+            }
+
             if (@unlink($onFile)) {
-                s4l_log('INFO', "Player online file 's4lox_on_{$zonen}.txt' has been deleted.");
+                s4l_log(
+                    'INFO',
+                    "Player online file 's4lox_on_{$zonen}.txt' has been deleted after {$offlineFor}s without a successful online check."
+                );
             } else {
                 s4l_log('ERROR', "Player online file 's4lox_on_{$zonen}.txt' could not be deleted.");
             }
