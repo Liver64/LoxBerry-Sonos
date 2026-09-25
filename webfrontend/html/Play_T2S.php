@@ -6,7 +6,7 @@
 *
 **/
 
-require_once "/opt/loxberry/libs/phplib/loxberry_system.php";
+require_once "REPLACELBHOMEDIR/libs/phplib/loxberry_system.php";
 if (file_exists(__DIR__ . '/src/Support/Logger.php')) {
 	require_once __DIR__ . '/src/Support/Logger.php';
 }
@@ -468,10 +468,13 @@ function say() {
 		s4lox_play_t2s_log("Play_T2S.php: There is no T2S engine/language selected in Plugin config. Please select before using T2S functionality.", 3);
 		exit();
 	}
-	if(isset($_GET['profile']) and isset($_GET['member']))  {
-		$tocall = "Error!! Both parameters where entered";
-		s4lox_play_t2s_log("Play_T2S.php: Parameter 'member' and 'profile' could not be used in conjunction! Please correct your syntax/URL", 3);
-		exit();
+	if (isset($_GET['profile']) && isset($_GET['member'])) {
+		get_profile_details();
+		if (function_exists('s4lox_profile_has_explicit_grouping') && s4lox_profile_has_explicit_grouping($profile_details)) {
+			$tocall = "Error!! URL member conflicts with profile grouping";
+			s4lox_play_t2s_log("Play_T2S.php: Parameter 'member' cannot be used with Sound Profile '".$_GET['profile']."' because the profile already defines Master/Member players.", 3);
+			exit();
+		}
 	}
 	check_S1_player();
 	if(isset($_GET['ic']))    {
@@ -513,7 +516,12 @@ function say() {
 			}
 		}
 	} else {
-		if(isset($_GET['clip']) and !isset($_GET['profile']) and isset($_GET['member']))  {
+		if (isset($_GET['clip']) && isset($_GET['profile']) && isset($_GET['member'])) {
+			$tocall = "Multi Clip Member Profile";
+			s4lox_play_t2s_log("Play_T2S.php: 'Multi Clip Member Profile' has been identified", 6);
+			$profile = true;
+			sendAudioMultiClip();
+		} elseif(isset($_GET['clip']) and !isset($_GET['profile']) and isset($_GET['member']))  {
 			$tocall = "Multi Clip Member";
 			s4lox_play_t2s_log("Play_T2S.php: 'Multi Clip Member' has been identified", 6);
 			$profile = true;
@@ -535,6 +543,11 @@ function say() {
 				#send_tts_source($tts_stat);				
 				sendAudioSingleClip();
 			}
+		} elseif (!isset($_GET['clip']) && isset($_GET['member']) && isset($_GET['profile'])) {
+			$tocall = "Group T2S Member Profile";
+			s4lox_play_t2s_log("Play_T2S.php: 'Group T2S Member Profile' has been identified", 6);
+			$profile = true;
+			sendgroupmessage();
 		} elseif(!isset($_GET['clip']) and isset($_GET['member']) and !isset($_GET['profile'])) {
 			$tocall = "Group T2S";
 			s4lox_play_t2s_log("Play_T2S.php: 'Group T2S' has been identified", 6);	
@@ -578,7 +591,11 @@ function playAudioClip() {
 
 	if (isset($_GET['profile'])) {
 		get_profile_details();
-		if ($profile_details[0]['Group'] == "Group")   {
+		$profileDefinesGrouping = function_exists('s4lox_profile_has_explicit_grouping')
+			? s4lox_profile_has_explicit_grouping($profile_details)
+			: ($profile_details[0]['Group'] == "Group");
+
+		if ($profileDefinesGrouping || isset($_GET['member'])) {
 			$source = "multi";
 		} else {
 			$source = "Single";
@@ -1860,7 +1877,7 @@ function handle_message($zones, $source)
     if (isset($_GET['messageid'])) {
         $messageid = $_GET['messageid'];
 
-        $mp3 = "/opt/loxberry/data/plugins/sonos4lox/tts/mp3/{$messageid}.mp3";
+        $mp3 = "REPLACELBHOMEDIR/data/plugins/sonos4lox/tts/mp3/{$messageid}.mp3";
         $duration = get_mp3_duration($mp3);
 		#wait_for_global_audio_lock($duration);
 
@@ -1886,7 +1903,7 @@ function handle_message($zones, $source)
         s4lox_play_t2s_log("Play_T2S.php: Audioclip messageid played", 7);
 
     } else {
-        $mp3 = "/opt/loxberry/data/plugins/sonos4lox/tts/{$filename}.mp3";
+        $mp3 = "REPLACELBHOMEDIR/data/plugins/sonos4lox/tts/{$filename}.mp3";
         $duration = get_mp3_duration($mp3);
 		#wait_for_global_audio_lock($duration);
 
@@ -2074,13 +2091,30 @@ function sendgroupmessage() {
 	// Snapshot IMMER vor dem Umbauen der Gruppen
 	$save = saveZonesStatus(); // saves all Zones Status
 
-	// Sound-Profile können Master/Members überschreiben
+	// A profile may either define its own Master/Member topology or only provide
+	// per-player sound values. In the latter case URL zone=/member= remains the
+	// source of the group topology.
+	$profileUsesUrlMembers = false;
 	if (isset($_GET['profile'])) {
-		// legt u.a. T2SMASTER und MEMBER fest, aber NOCH KEINE Volumes setzen
-		$member = createArrayFromGroupProfile(false);
+		get_profile_details();
+		$profileDefinesGrouping = function_exists('s4lox_profile_has_explicit_grouping')
+			? s4lox_profile_has_explicit_grouping($profile_details)
+			: ($profile_details[0]['Group'] == 'Group');
+
+		$profileUsesUrlMembers = isset($_GET['member']) && !$profileDefinesGrouping;
+		if ($profileUsesUrlMembers) {
+			$targets = function_exists('VolumeProfilesArrayURL') ? VolumeProfilesArrayURL() : array($master);
+			$member = array_values(array_filter($targets, function ($zone) use ($master) {
+				return $zone !== $master;
+			}));
+		} else {
+			// Profile topology: resolves T2SMASTER and profile members without
+			// applying volume yet.
+			$member = createArrayFromGroupProfile(false);
+		}
 	}
 
-	// T2SMASTER (aus Profil) übernimmt die Kontrolle über $master
+	// T2SMASTER is only defined by profiles that own the group topology.
 	if (defined('T2SMASTER')) {
 		$master = T2SMASTER;
 	}
@@ -2106,11 +2140,11 @@ function sendgroupmessage() {
 	// ----------------------------------------------------------------------
 	// Gruppierung aufbauen
 	// ----------------------------------------------------------------------
-	if (!isset($_GET['profile'])) {
-		// Klassischer Weg (member=...)
+	if (!isset($_GET['profile']) || $profileUsesUrlMembers) {
+		// Classic URL topology, optionally combined with profile sound values.
 		CreateMember();
 	} else {
-		// Profil-basierte Gruppierung: nur Zonen mit PlayerStatus-File
+		// Profile-owned grouping: only zones with PlayerStatus file.
 		foreach ($member as $zone) {
 			$file = $folfilePlOn . $zone . ".txt";
 			if (is_file($file)) {
@@ -2145,14 +2179,24 @@ function sendgroupmessage() {
 			}
 		}
 
-		// >>> HIER: Profil-Volumes NACH dem Gruppieren anwenden <<<
-		if (!empty($member) && is_array($member)) {
-			VolumeProfile($member);
-		}
 }
 
+	// Apply profile volumes after grouping to both the final master and all
+	// members. This also keeps the later master SetVolume() on the profile value.
+	if (isset($_GET['profile'])) {
+		$profileVolumeTargets = array($master);
+		if (!empty($member) && is_array($member)) {
+			$profileVolumeTargets = array_merge($profileVolumeTargets, $member);
+		}
+		$profileVolumeTargets = array_values(array_unique($profileVolumeTargets));
+		VolumeProfile($profileVolumeTargets);
 
-	
+		if (isset($profile_details[0]['Player'][$master][0]['Volume']) &&
+			$profile_details[0]['Player'][$master][0]['Volume'] !== '' &&
+			is_numeric($profile_details[0]['Player'][$master][0]['Volume'])) {
+			$volume = (int)$profile_details[0]['Player'][$master][0]['Volume'];
+		}
+	}
 
 	// ----------------------------------------------------------------------
 	// Queue vorbereiten und T2S abspielen
@@ -2165,11 +2209,15 @@ function sendgroupmessage() {
 		$sonos->SetVolume($volume);
 	}
 
-	// ggf. Gruppen-Volume setzen
-	if (isset($groupvolume))  {
+	// Apply legacy group-volume handling only when no profile volume set has
+	// already been applied. An explicit groupvolume remains an intentional
+	// override and is therefore propagated to members as before.
+	if (isset($groupvolume)) {
 		$sonos->SetVolume($groupvolume);
+		volume_group();
+	} elseif (!isset($_GET['profile'])) {
+		volume_group();
 	}
-	volume_group();
 
 	// T2S spielen
 	play_tts($messageid);
@@ -2465,14 +2513,18 @@ function guidv4($data = null) {
 
 function audioclip_handle_members($member) {
 	
-	global $sonoszone, $sonoszonen, $time_start, $memberon, $profile_details, $master, $zones_all;
+	global $sonoszone, $sonoszonen, $time_start, $memberon, $profile_details, $master, $zones_all, $profile_zone_volumes;
 
 	$memberon = array();
 	$members  = explode(',', $member);
 
-	if (isset($_GET['profile']))   {
-		checkGroupProfile();
-		exit;
+	if (isset($_GET['profile'])) {
+		get_profile_details();
+		if (function_exists('s4lox_profile_has_explicit_grouping') && s4lox_profile_has_explicit_grouping($profile_details)) {
+			s4lox_play_t2s_log("Play_T2S.php: Parameter 'member' cannot be used with Sound Profile '".$_GET['profile']."' because the profile already defines Master/Member players.", 3);
+			exit;
+		}
+		$profile_zone_volumes = array();
 	}
 	foreach (SONOSZONE as $zone => $zoneData) {
 		if ($zone == $master)   {
@@ -2487,6 +2539,16 @@ function audioclip_handle_members($member) {
 			}
 		} 
 	}
+	if (isset($_GET['profile']) && is_array($profile_details)) {
+		foreach (array_keys($memberon) as $targetZone) {
+			if (isset($profile_details[0]['Player'][$targetZone][0]['Volume']) &&
+				$profile_details[0]['Player'][$targetZone][0]['Volume'] !== '' &&
+				is_numeric($profile_details[0]['Player'][$targetZone][0]['Volume'])) {
+				$profile_zone_volumes[$targetZone] = (int)$profile_details[0]['Player'][$targetZone][0]['Volume'];
+			}
+		}
+	}
+
 	$memberCount = max(0, count($memberon) - 1);
 	s4lox_play_t2s_log("Play_T2S.php: Audioclip: ".$memberCount." Member has been identified (plus Master)", 7);
 	return $memberon;

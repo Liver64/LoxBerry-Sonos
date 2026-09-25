@@ -1,13 +1,22 @@
 <?php
 /**
  * Sonos4Lox Request Preparation Support
- * Version: V03.0
+ * Version: V05.0
  * Language: EN
  *
  * Purpose:
  * - Keep Sonos.php as a slim public entry point.
  * - Move request-wide preparation and legacy global setup into a structured helper.
  * - Preserve the existing global variables, constants and helper expectations.
+ *
+ * V05:
+ * - Treat getvolume as a read-only action: do not resolve/apply a default volume context.
+ * - Keep getvolume from clearing playlist/ONE-click temp state.
+ * - Make temp-file cleanup logging describe what actually happened.
+ *
+ * V04:
+ * - Publish the resolved online-zone map before optional playmode handling.
+ * - Only log playmode success when the legacy helper actually accepted the mode.
  *
  * V02:
  * - Publish legacy global $config and $sonoszonen before calling sonoszonen_on().
@@ -45,6 +54,11 @@ class S4L_RequestPreparation
 
         $sonoszone = self::loadOnlineZones($zone);
 
+        // Legacy playlist helpers such as SetPlaymodes() still read $sonoszone
+        // from global scope. Publish the resolved online-zone map before optional
+        // playmode handling so playlist&playmode=... remains backward compatible.
+        $GLOBALS['sonoszone'] = $sonoszone;
+
         self::assertTtsEnabled($config);
 
         $t2sLangFile = 't2s-text_' . strtolower(substr((string)$config['TTS']['messageLang'], 0, 2) . '.ini');
@@ -57,13 +71,18 @@ class S4L_RequestPreparation
 
         self::assertNoProfileVolumeConflict();
 
-        $volume = S4L_VolumeContext::resolveMasterVolume(
-            $config,
-            $sonoszone,
-            $zone,
-            $minVol,
-            $args['profile_selected']
-        );
+        // Read-only volume queries must not prepare or imply a target volume.
+        // The actual Sonos volume is read later by S4L_VolumeActions::getVolume().
+        $volume = null;
+        if ($action !== 'getvolume') {
+            $volume = S4L_VolumeContext::resolveMasterVolume(
+                $config,
+                $sonoszone,
+                $zone,
+                $minVol,
+                $args['profile_selected']
+            );
+        }
 
         self::applyOptionalPlayMode($sonoszone, $zone);
         self::applyOptionalDelay();
@@ -170,6 +189,7 @@ class S4L_RequestPreparation
             'sendgroupmessage',
             'volumeup',
             'gettransportinfo',
+            'getvolume',
             'volumedown',
             'leave',
             'follow',
@@ -178,12 +198,16 @@ class S4L_RequestPreparation
         $skipByParameter = isset($_GET['volume']) || isset($_GET['keepvolume']) || isset($_GET['groupvolume']);
 
         if (in_array($action, $skipActions, true) || $skipByParameter) {
-            self::log('No exception to delete temp files has been called.', 7);
+            if (in_array($action, $skipActions, true)) {
+                self::log("Temp file cleanup skipped for action '$action'.", 7);
+            } else {
+                self::log('Temp file cleanup skipped because a volume-related URL parameter is present.', 7);
+            }
             return;
         }
 
         DeleteTmpFavFiles();
-        self::log('Exception to delete temp files has been called. ONE-click functions are reset.', 6);
+        self::log("Temp files cleared for action '$action'. ONE-click functions have been reset.", 6);
     }
 
     /**
@@ -299,8 +323,14 @@ class S4L_RequestPreparation
 
         if (in_array($playmode, $validPlaymodes, true)) {
             $sonos->SetQueue('x-rincon-queue:' . $sonoszone[$master][1] . '#0');
-            SetPlaymodes($master, $playmode);
-            self::log('PlayMode "' . $playmode . '" has been set for player "' . $master . '".', 7);
+            $appliedMode = SetPlaymodes($master, $playmode);
+
+            if (!is_int($appliedMode)) {
+                self::log("Playmode '$playmode' could not be applied to player '$master'.", 4);
+                return;
+            }
+
+            self::log("Playmode '$playmode' has been applied to player '$master'.", 5);
             return;
         }
 

@@ -82,8 +82,8 @@ function w2s()
 				
 		// ---------------------------------------------------------------------
 		// Weather4Lox data input
-		// New Weather4Lox (v4): JSON in /opt/loxberry/log/plugins/weather4lox
-		// Legacy Weather4Lox:    pipe-delimited DAT in /opt/loxberry/data/plugins/weather4lox
+		// New Weather4Lox (v4): JSON in REPLACELBHOMEDIR/log/plugins/weather4lox
+		// Legacy Weather4Lox:    pipe-delimited DAT in REPLACELBHOMEDIR/data/plugins/weather4lox
 		// JSON is preferred. If JSON is missing/incomplete, legacy DAT is used.
 		// ---------------------------------------------------------------------
 		$jsonDir   = "$home/log/plugins/weather4lox";

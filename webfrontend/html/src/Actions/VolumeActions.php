@@ -1,7 +1,7 @@
 <?php
 /**
  * Sonos4Lox Volume Actions
- * Version: V02.0
+ * Version: V03.0
  * Language: EN
  *
  * Purpose:
@@ -24,6 +24,7 @@
  * - V02.0 keeps URL volume actions here and moves request-wide volume preparation
  *   plus the legacy volume_group() helper into src/Support/VolumeContext.php.
  * - setmaxvolume intentionally stays in a separate device/settings action group.
+ * - V03.0 logs the actual value returned by Sonos for getvolume.
  */
 
 class S4L_VolumeActions
@@ -196,10 +197,13 @@ class S4L_VolumeActions
 
     private function getVolume()
     {
+        $currentVolume = $this->sonos->GetVolume();
+
         echo '<PRE>';
-        print_r($this->sonos->GetVolume());
+        print_r($currentVolume);
         echo '</PRE>';
-        S4L_Logger::debug('Get volume has been executed.');
+
+        S4L_Logger::debug("Current Sonos Volume for Player '{$this->master}': " . $currentVolume);
     }
 
     private function getGroupMute()

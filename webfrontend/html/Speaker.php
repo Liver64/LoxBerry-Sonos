@@ -1034,58 +1034,125 @@ function VolumeOut() {
 where [0] is always Master 
 **/	
 
-function VolumeProfiles() {
-	
-	global $sonos, $master, $volume, $profile, $memberarray, $profile_details, $sonoszone, $vol_config, $lbpconfigdir, $profile, $playerprof, $memberincl, $masterzone, $profile_selected;
-	
-	if(isset($_GET['profile']) and isset($_GET['member']))  {
-		LOGWARN("Speaker.php: Parameters 'member' and 'profile' cannot be used together. Please correct your URL syntax.");
-		exit();
+function s4lox_profile_has_explicit_grouping($profileDetails) {
+	if (!is_array($profileDetails) || empty($profileDetails[0]['Player']) || !is_array($profileDetails[0]['Player'])) {
+		return false;
 	}
-	
-	if(isset($_GET['profile']) || (($_GET['action'] ?? '') == "Profile"))    {
-		get_profile_details();			
+
+	foreach ($profileDetails[0]['Player'] as $player => $entries) {
+		if (!isset($entries[0]) || !is_array($entries[0])) {
+			continue;
+		}
+
+		foreach (array('Master', 'Member') as $flag) {
+			$value = $entries[0][$flag] ?? false;
+			$enabled = function_exists('is_enabled')
+				? is_enabled($value)
+				: in_array(strtolower(trim((string)$value)), array('1', 'true', 'on', 'yes'), true);
+
+			if ($enabled) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+
+function VolumeProfiles() {
+
+	global $sonos, $master, $volume, $profile, $memberarray, $profile_details, $sonoszone, $vol_config, $lbpconfigdir, $playerprof, $memberincl, $masterzone, $profile_selected;
+
+	$profileRequested = isset($_GET['profile']) || (($_GET['action'] ?? '') == "Profile");
+
+	if ($profileRequested) {
+		get_profile_details();
+		$profileDefinesGrouping = s4lox_profile_has_explicit_grouping($profile_details);
+
+		// member= is only ambiguous when the selected profile already defines its
+		// own Master/Member topology. Profiles without such flags may be combined
+		// with the URL member list; the profile then supplies the sound settings.
+		if (isset($_GET['member']) && $profileDefinesGrouping) {
+			LOGWARN("Speaker.php: Parameter 'member' cannot be used with Sound Profile '" . s4lox_speaker_log_value($_GET['profile'] ?? '') . "' because the profile already defines Master/Member players.");
+			exit();
+		}
+
+		// No explicit profile topology: zone=/member= define the target players,
+		// while profile= supplies Volume/Bass/Treble/etc. Only those URL targets
+		// are changed; unrelated players are left untouched.
+		if (!$profileDefinesGrouping) {
+			$masterzone = (string)($_GET['zone'] ?? $master);
+			$master = $masterzone;
+			$playerprof = VolumeProfilesArrayURL();
+			$memberincl = array_values(array_filter($playerprof, function ($zone) use ($masterzone) {
+				return $zone !== $masterzone;
+			}));
+
+			s4lox_speaker_write_file($profile_selected, (string)($_GET['profile'] ?? ''), 'selected profile marker');
+			s4lox_speaker_delete_file($memberarray, 'member array temp file');
+			VolumeProfilesSound($playerprof);
+
+			if (!defined('PROFILAUDIO')) {
+				define('PROFILAUDIO', $playerprof);
+			}
+			if (!defined('GROUPMASTER')) {
+				define('GROUPMASTER', $masterzone);
+			}
+
+			if (isset($_GET['member']) && trim((string)$_GET['member']) !== '') {
+				CreateMember();
+			} elseif (!defined('MEMBER')) {
+				define('MEMBER', 'empty');
+			}
+
+			LOGINF("Speaker.php: Sound settings from profile '" . s4lox_speaker_log_value($_GET['profile'] ?? '') . "' have been applied to URL-selected player(s).");
+			return;
+		}
+
 		$checkprof = check_VolumeProfile();
-		if ($checkprof == true)   {
-			# member been selected
-			#echo "Profile running";
-			#echo "<br>";
-			#file_put_contents($profile_selected, $_GET['profile']);
+		if ($checkprof == true) {
 			LOGINF("Speaker.php: Selected Profile is still in use");
-			foreach (SONOSZONE as $player => $value)   {
-				if (is_enabled($profile_details[0]['Player'][$player][0]['Master']))    {
+			foreach (SONOSZONE as $player => $value) {
+				if (is_enabled($profile_details[0]['Player'][$player][0]['Master'])) {
 					$master = $player;
 				}
 			}
-			define("PROFILAUDIO", "empty");
-			define("MEMBER", "empty");
-			define("GROUPMASTER", $master);
+			if (!defined('PROFILAUDIO')) {
+				define('PROFILAUDIO', 'empty');
+			}
+			if (!defined('MEMBER')) {
+				define('MEMBER', 'empty');
+			}
+			if (!defined('GROUPMASTER')) {
+				define('GROUPMASTER', $master);
+			}
 		} else {
-			#echo "Profile New";
-			#echo "<br>";
-			# profile been selected
 			s4lox_speaker_write_file($profile_selected, (string)($_GET['profile'] ?? ''), 'selected profile marker');
 			s4lox_speaker_delete_file($memberarray, 'member array temp file');
 			create_member_sound();
 			VolumeProfilesSound($playerprof);
-			define("PROFILAUDIO", $playerprof);
-			define("MEMBER", $memberincl);
-			define("GROUPMASTER", $masterzone);
+			if (!defined('PROFILAUDIO')) {
+				define('PROFILAUDIO', $playerprof);
+			}
+			if (!defined('MEMBER')) {
+				define('MEMBER', $memberincl);
+			}
+			if (!defined('GROUPMASTER')) {
+				define('GROUPMASTER', $masterzone);
+			}
 			LOGINF("Speaker.php: Sound settings from profile '" . s4lox_speaker_log_value($_GET['profile'] ?? '') . "' have been set successfully.");
 		}
-		#print_r(PROFILAUDIO);
-		#print_r(MEMBER);
-		#print_r(GROUPMASTER);
-		#print_r($lookup);
-		#exit;
+
 		AddMemberTo();
 		return;
 	}
-	
-	if(isset($_GET['member']))    {
+
+	if (isset($_GET['member'])) {
 		CreateMember();
 	}
 }
+
 
 /**
 /* Funktion : VolumeProfilesArrayURL --> array of all players from URL

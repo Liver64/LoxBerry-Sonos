@@ -1,7 +1,7 @@
 <?php
 /**
  * Sonos4Lox Action Router
- * Version: V27.0
+ * Version: V27.2
  * Language: EN
  *
  * Purpose:
@@ -12,8 +12,9 @@
  * - No query parameter is renamed.
  * - No public action name is changed.
  * - Deprecated or obsolete actions are intentionally not registered in the refactored layer.
- * - V27.0 improves user-facing log hints for invalid actions and unknown URL parameters.
+ * - V27.2 whitelists the optional playmode URL parameter used with playlist actions.
  * - V27.1 whitelists the TTS playgong URL parameter.
+ * - V27.0 improves user-facing log hints for invalid actions and unknown URL parameters.
  * - V27.0 whitelists external music provider URI parameters (trackuri, playlisturi, albumuri).
  * - V26.0 adds early URL parameter typo warnings before runtime preparation.
  * - V25.0 adds an early action availability guard for Sonos.php so unsupported
@@ -212,6 +213,7 @@ class S4L_ActionRouter
         'text',
         'source',
         'playlist',
+        'playmode',
         'radio',
         'favorite',
         'profile',

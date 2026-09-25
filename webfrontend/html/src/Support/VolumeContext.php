@@ -1,7 +1,7 @@
 <?php
 /**
  * Sonos4Lox Volume Context Support
- * Version: V03.0
+ * Version: V03.2
  * Language: EN
  *
  * Purpose:
@@ -99,7 +99,7 @@ class S4L_VolumeContext
 
     public static function applyGroupVolume()
     {
-        global $sonoszone, $sonos, $master, $volume, $config, $sonoszonen, $min_vol, $profile_selected;
+        global $sonoszone, $sonos, $master, $volume, $config, $sonoszonen, $min_vol, $profile_details;
 
         if (isset($_GET['zone']) && $_GET['zone'] !== '') {
             $master = $_GET['zone'];
@@ -116,6 +116,7 @@ class S4L_VolumeContext
         }
 
         $sonos = new SonosAccess($sonoszone[$master][0]);
+        $appliedVolumes = array();
 
         foreach (MEMBER as $memplayer => $zone2) {
             if (!isset($sonoszone[$zone2])) {
@@ -125,53 +126,62 @@ class S4L_VolumeContext
 
             $sonos = new SonosAccess($sonoszone[$zone2][0]);
 
+            // Keep the master's resolved volume untouched. The previous code reused the
+            // global $volume for every member, so the last member volume accidentally
+            // became the master volume when the caller continued after volume_group().
+            $memberVolume = $volume;
+
             if (isset($_GET['volume']) || isset($_GET['groupvolume']) || isset($_GET['keepvolume'])) {
                 if (isset($_GET['volume'])) {
-                    $volume = $_GET['volume'];
-                    self::log('Volume for Group Member ' . $zone2 . ' has been set to: ' . $volume, 7);
+                    $memberVolume = $_GET['volume'];
+                    self::log('Volume for Group Member ' . $zone2 . ' has been set to: ' . $memberVolume, 7);
                 } elseif (isset($_GET['groupvolume'])) {
                     $groupVolume = $_GET['groupvolume'];
                     $currentVolume = $sonos->GetVolume();
-                    $volume = $currentVolume + ($currentVolume * ($groupVolume / 100));
+                    $memberVolume = $currentVolume + ($currentVolume * ($groupVolume / 100));
 
-                    if ($volume > 100) {
-                        $volume = 100;
+                    if ($memberVolume > 100) {
+                        $memberVolume = 100;
                     }
 
-                    self::log('Group Volume for Member ' . $zone2 . ' has been set to: ' . $volume, 7);
+                    self::log('Group Volume for Member ' . $zone2 . ' has been set to: ' . $memberVolume, 7);
                 } elseif (isset($_GET['keepvolume'])) {
                     $currentMemberVolume = $sonos->GetVolume();
 
                     if ($currentMemberVolume >= $min_vol) {
-                        $volume = $currentMemberVolume;
+                        $memberVolume = $currentMemberVolume;
                         self::log('Volume for Member ' . $zone2 . ' has been set to current volume', 7);
                     } else {
                         if (self::isTtsLikeRequest()) {
-                            $volume = $sonoszone[$zone2][3];
-                            self::log('T2S Volume for Member ' . $zone2 . ' is less then ' . $min_vol . ' and has been set exceptional to Standard volume ' . $volume, 7);
+                            $memberVolume = $sonoszone[$zone2][3];
+                            self::log('T2S Volume for Member ' . $zone2 . ' is less then ' . $min_vol . ' and has been set exceptional to Standard volume ' . $memberVolume, 7);
                         } else {
-                            $volume = $sonoszone[$zone2][4];
-                            self::log('Volume for Member ' . $zone2 . ' is less then ' . $min_vol . ' and has been set exceptional to Standard volume ' . $volume, 7);
+                            $memberVolume = $sonoszone[$zone2][4];
+                            self::log('Volume for Member ' . $zone2 . ' is less then ' . $min_vol . ' and has been set exceptional to Standard volume ' . $memberVolume, 7);
                         }
                     }
                 }
             } else {
                 if (self::isTtsLikeRequest()) {
-                    $volume = $sonoszone[$zone2][3];
-                    self::log('Standard T2S Volume for Member ' . $zone2 . ' has been set to: ' . $volume, 7);
+                    $memberVolume = $sonoszone[$zone2][3];
+                    self::log('Standard T2S Volume for Member ' . $zone2 . ' has been set to: ' . $memberVolume, 7);
                 } else {
-                    if ((isset($_GET['profile']) || isset($_GET['Profile'])) && self::hasProfileVolume($profile_selected, $zone2)) {
-                        $volume = $profile_selected[0]['Player'][$zone2][0]['Volume'];
+                    if ((isset($_GET['profile']) || isset($_GET['Profile'])) && self::hasProfileVolume($profile_details, $zone2)) {
+                        $memberVolume = $profile_details[0]['Player'][$zone2][0]['Volume'];
+                        self::log("Profile volume for Group Member '" . $zone2 . "' has been selected: " . $memberVolume, 7);
                     } else {
-                        $volume = $sonoszone[$zone2][4];
-                        self::log('Standard Sonos Volume for Group Member ' . $zone2 . ' has been set to: ' . $volume, 7);
+                        $memberVolume = $sonoszone[$zone2][4];
+                        self::log('Standard Sonos Volume for Group Member ' . $zone2 . ' has been set to: ' . $memberVolume, 7);
                     }
                 }
             }
 
             @$sonos->SetMute(false);
-            $sonos->SetVolume($volume);
+            $sonos->SetVolume($memberVolume);
+            $appliedVolumes[$zone2] = $memberVolume;
         }
+
+        return $appliedVolumes;
     }
 
     private static function isTtsLikeRequest()
@@ -255,6 +265,6 @@ class S4L_VolumeContext
 if (!function_exists('volume_group')) {
     function volume_group()
     {
-        S4L_VolumeContext::applyGroupVolume();
+        return S4L_VolumeContext::applyGroupVolume();
     }
 }

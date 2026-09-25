@@ -2,7 +2,7 @@
 
 /**
  * Submodule: Playlist
- * Version: PLAYLIST_HARDENING_V01_2026_06_18
+ * Version: PLAYLIST_HARDENING_V02_2026_09_25
  * Language: EN
  *
  * Purpose:
@@ -220,7 +220,31 @@ function playlist()
         $trackNumber = is_array($currtrack) ? (int)($currtrack['Track'] ?? 0) : 0;
 
         if ($trackNumber > 0 && $trackNumber < $countqueue) {
+            // This shortcut used to return before the volume/ramp logic below was
+            // reached. Therefore a repeated sonosplaylist call could log the newly
+            // resolved volume while Sonos kept the old physical volume.
+            if (!isset($_GET['rampto'])) {
+                $sonos->SetMute(false);
+
+                if (isset($_GET['profile']) || isset($_GET['Profile'])) {
+                    if (isset($profile_details[0]['Player'][GROUPMASTER][0]['Volume'])) {
+                        $volume = s4lox_playlist_normalize_volume($profile_details[0]['Player'][GROUPMASTER][0]['Volume'], $volume);
+                    }
+                } else {
+                    volume_group();
+                }
+
+                // volume_group() may leave $sonos pointing at the last group member.
+                // Always switch back to the group master before applying its volume
+                // and before NextTrack() uses the global SonosAccess instance.
+                $sonos = new SonosAccess($sonoszone[GROUPMASTER][0]);
+                $sonos->SetVolume(s4lox_playlist_normalize_volume($volume, 25));
+            } else {
+                $sonos = new SonosAccess($sonoszone[GROUPMASTER][0]);
+            }
+
             NextTrack();
+            RampTo();
             LOGINF("Playlist.php: Next track has been called.");
             return true;
         }

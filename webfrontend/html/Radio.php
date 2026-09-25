@@ -1,7 +1,7 @@
 <?php
 /**
  * Sonos4Lox Radio functions
- * Version: RADIO_REMOVE_RANDOM_RADIO_V04_2026_06_18
+ * Version: RADIO_PROFILE_VOLUME_LOG_V05_2026_09_25
  * Language: EN
  *
  * Purpose:
@@ -43,8 +43,8 @@ function nextradio()
         $master = MASTER;
     }
 
-    if (isset($_GET['member']) && trim((string)$_GET['member']) !== '') {
-        // The group member setup is idempotent and is normally already prepared by Sonos.php.
+    if (isset($_GET['member']) && trim((string)$_GET['member']) !== '' && !$profileRequested) {
+        // Without a sound profile, prepare the requested URL group here.
         SyncGroupForPlaybackToMember();
     }
 
@@ -303,6 +303,20 @@ function PluginRadio()
         exit(1);
     }
 
+    $profileRequested = isset($_GET['profile']) || isset($_GET['Profile']);
+    if (!isset($_GET['profile']) && isset($_GET['Profile'])) {
+        $_GET['profile'] = $_GET['Profile'];
+    }
+
+    // Keep profile handling identical to playlists/favorites. VolumeProfiles()
+    // decides whether the profile itself defines a Master/Member topology or
+    // whether zone=/member= from the URL may be combined with profile values.
+    if ($profileRequested && function_exists('VolumeProfiles')) {
+        VolumeProfiles();
+    } elseif ($profileRequested && function_exists('get_profile_details')) {
+        get_profile_details();
+    }
+
     if (isset($_GET['member']) && isset($_GET['profile']) && defined('GROUPMASTER')) {
         $master = GROUPMASTER;
     } elseif (isset($_GET['profile']) && defined('GROUPMASTER')) {
@@ -311,8 +325,8 @@ function PluginRadio()
         $master = MASTER;
     }
 
-    if (isset($_GET['member']) && trim((string)$_GET['member']) !== '') {
-        // The group member setup is idempotent and is normally already prepared by Sonos.php.
+    if (isset($_GET['member']) && trim((string)$_GET['member']) !== '' && !$profileRequested) {
+        // Without a sound profile, prepare the requested URL group here.
         SyncGroupForPlaybackToMember();
     }
 
@@ -367,17 +381,28 @@ function PluginRadio()
     try {
         $sonos = new SonosAccess($sonoszone[$master][0]);
 
-        if (isset($_GET['profile']) || isset($_GET['Profile'])) {
+        $memberVolumes = array();
+
+        if ($profileRequested) {
             if (isset($profile_details[0]['Player'][$master][0]['Volume'])) {
                 $volume = $profile_details[0]['Player'][$master][0]['Volume'];
+            } else {
+                LOGWARN("Radio.php: No profile volume found for Player '" . s4lox_radio_log_value($master) . "'. Standard volume will be used.");
             }
-        } elseif (isset($_GET['member'])) {
-            volume_group();
-            $sonos = new SonosAccess($sonoszone[$master][0]);
         } elseif ($announcementVolume !== null) {
             $volume = $announcementVolume;
         } elseif (isset($_GET['volume'])) {
             $volume = $_GET['volume'];
+        }
+
+        // member= controls the group composition; profile= supplies per-player
+        // volume values. Both parameters therefore work together for pluginradio.
+        if (isset($_GET['member']) && trim((string)$_GET['member']) !== '') {
+            $memberVolumes = volume_group();
+            if (!is_array($memberVolumes)) {
+                $memberVolumes = array();
+            }
+            $sonos = new SonosAccess($sonoszone[$master][0]);
         }
 
         $volume = s4lox_radio_sanitize_volume($volume, isset($sonoszone[$master][4]) ? $sonoszone[$master][4] : 20);
@@ -390,7 +415,10 @@ function PluginRadio()
         if (!isset($_GET['load']) && !isset($_GET['rampto'])) {
             $sonos->SetMute(false);
             $sonos->Stop();
-            LOGOK('Radio.php: Volume ' . $volume . ' has been set.');
+            LOGOK("Radio.php: Volume " . $volume . " has been set for Player '" . s4lox_radio_log_value($master) . "'.");
+            foreach ($memberVolumes as $memberZone => $memberVolume) {
+                LOGOK("Radio.php: Volume " . $memberVolume . " has been set for Group Member '" . s4lox_radio_log_value($memberZone) . "'.");
+            }
             $sonos->Play();
             LOGOK("Radio.php: Plugin radio station '" . s4lox_radio_log_value($stationName) . "' has been loaded successfully and is playing.");
         } else {
