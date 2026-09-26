@@ -3018,7 +3018,7 @@ function confirmDelete(title, text, onConfirm, opts) {
  * dialog()
  * - SilverBox popup with confirm button
  */
-function dialog(text, ButtonText, Icon='', Title) {
+function dialog(text, ButtonText, Icon='', Title, onConfirm) {
 	// https://silverboxjs.ir/documentation/?v=latest
 	silverBox({
 		alertIcon: Icon,
@@ -3034,8 +3034,14 @@ function dialog(text, ButtonText, Icon='', Title) {
 			textColor: "#fff",
 			text: ButtonText,
 			closeOnClick: true,
-			onClick: () => {$("button").button();
-							$("restorec").button("enable");
+			onClick: () => {
+				// Do not globally re-enhance all <button> elements here.
+				// The optional layout buttons intentionally use data-role="none";
+				// calling $("button").button() would turn them into jQM block buttons
+				// and destroy their horizontal layout after closing a modal.
+				if (typeof onConfirm === "function") {
+					setTimeout(onConfirm, 50);
+				}
 			},
 		}
 	});
@@ -3341,6 +3347,7 @@ function showFail(sel, msg, title, e) {
  * validateVolumes(e)
  * - Validates per-player volume inputs (t2svol, sonosvol, maxvol)
  * - Must be unsigned int and <= 100
+ * - Max Vol must be strictly greater than T2S Vol and Audio Vol for every zone
  * - Returns true on success
  */
 function validateVolumes(e) {
@@ -3373,6 +3380,32 @@ function validateVolumes(e) {
 		if (maxStr === '' || !isIntUnsigned(maxStr) || (parseInt(maxStr,10) > 100)) {
 			return showFail(selMax, '<TMPL_VAR ZONES.ERROR_MAX_VOLUME_PLAYER>', 'Max. Volume', e);
 		}
+
+		var t2sVal   = parseInt(t2sStr, 10);
+		var sonosVal = parseInt(sonosStr, 10);
+		var maxVal   = parseInt(maxStr, 10);
+
+		// Max Vol is a hard ceiling and therefore must always be strictly
+		// greater than both configured default volumes for this zone.
+		if (maxVal <= t2sVal || maxVal <= sonosVal) {
+			var zoneName = (($('#zone' + i).val() ?? '') + '').trim();
+			if (!zoneName) zoneName = '#' + i;
+
+			var msg = '<TMPL_VAR ZONES.ERROR_MAX_VOLUME_RELATION>';
+			msg = msg
+				.replace('{ZONE}', zoneName)
+				.replace('{MAX}', String(maxVal))
+				.replace('{T2S}', String(t2sVal))
+				.replace('{AUDIO}', String(sonosVal));
+
+			$(selMax).css('background-color', '#FFFFC0');
+			return fail(
+				e,
+				msg,
+				'<TMPL_VAR ZONES.ERROR_MAX_VOLUME_RELATION_TITLE>',
+				selMax
+			);
+		}
 	}
 
 	return true; // <-- important: explicit success
@@ -3383,11 +3416,18 @@ function validateVolumes(e) {
  * - Shows error dialog, scrolls to #info and focuses a given selector
  */
 function fail(e, msg, title, focusSel) {
-	dialog(msg, 'OK', 'error', title);
-	if (focusSel) {
-		$('html, body').animate({ scrollTop: $("#info").offset().top }, 600);
-		setTimeout(function(){ $(focusSel).focus(); }, 50);
-	}
+	dialog(msg, 'OK', 'error', title, function() {
+		if (!focusSel || $(focusSel).length !== 1) {
+			return;
+		}
+
+		var $field = $(focusSel);
+		var fieldTop = Math.max(0, $field.offset().top - 120);
+
+		$('html, body').animate({ scrollTop: fieldTop }, 600, function() {
+			$field.focus();
+		});
+	});
 	if (e) e.preventDefault();
 	return false;
 }

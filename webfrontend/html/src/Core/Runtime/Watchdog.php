@@ -2,7 +2,7 @@
 <?php
 /**
  * Sonos4Lox - Sonos Watchdog
- * Version: WATCHDOG_LOGMANAGER_REGISTRATION_FIX_V04_2026_06_18
+ * Version: WATCHDOG_LOGVIEWER_LB4_FIX_V05_2026_09_26
  *
  * Keeps the Sonos event listener and the player state check service healthy.
  * Runtime location: src/Core/Runtime/Watchdog.php.
@@ -22,8 +22,7 @@ const NOTIFY_MAX_AGE_SEC   = 600;   // health stale threshold
 
 $ramdir   = "/run/shm/sonos4lox";
 $stateDir = "REPLACELBHOMEDIR/data/plugins/sonos4lox/watchdog";
-$ramlog   = "$ramdir/sonos_watchdog.log";
-$stdfile  = "REPLACELBHOMEDIR/log/plugins/sonos4lox/sonos_watchdog.log"; // symlink target
+$stdfile  = "REPLACELBHOMEDIR/log/plugins/sonos4lox/sonos_watchdog.log"; // regular logfile for LB4 Log Viewer
 $marker   = "$ramdir/.watchdog.started";
 
 $listener = "sonos_event_listener.service";
@@ -70,41 +69,60 @@ function ensure_dir(string $dir, int $mode = 0775): bool
     return is_dir($dir) && is_writable($dir);
 }
 
-function ensure_symlink(string $target, string $link): bool
+function rotate_log_if_needed(string $logfile): bool
 {
-    $linkDir = dirname($link);
-    if (!ensure_dir($linkDir, 0775)) {
-        return false;
-    }
-
-    if (is_link($link)) {
-        $currentTarget = @readlink($link);
-        if ($currentTarget === $target) {
-            return true;
-        }
-        @unlink($link);
-    } elseif (file_exists($link)) {
-        @unlink($link);
-    }
-
-    return @symlink($target, $link) || is_link($link);
-}
-
-function rotate_ramlog_if_needed(string $ramlog): bool
-{
-    clearstatcache(true, $ramlog);
-    if (is_file($ramlog)) {
-        $sz = @filesize($ramlog);
-        if ($sz !== false && $sz > MAX_LOG_BYTES && !@unlink($ramlog)) {
+    clearstatcache(true, $logfile);
+    if (is_file($logfile)) {
+        $sz = @filesize($logfile);
+        if ($sz !== false && $sz > MAX_LOG_BYTES && !@unlink($logfile)) {
             return false;
         }
     }
 
-    if (!@touch($ramlog)) {
+    if (!@touch($logfile)) {
         return false;
     }
 
-    @chmod($ramlog, 0664);
+    @chmod($logfile, 0664);
+    return true;
+}
+
+/**
+ * LB 4.0.0.15 resolves symlinks in logfile.cgi and rejects targets outside
+ * the allowed log bases. Older Watchdog versions exposed a symlink from
+ * ~/log/plugins/sonos4lox/sonos_watchdog.log to /run/shm/sonos4lox.
+ * Convert that legacy symlink to a regular logfile while preserving the
+ * existing log contents (up to MAX_LOG_BYTES).
+ */
+function migrate_legacy_watchdog_log(string $visibleLog, string $legacyRamLog): bool
+{
+    if (!is_link($visibleLog)) {
+        return true;
+    }
+
+    $content = @file_get_contents($visibleLog);
+    if ($content === false) {
+        $content = '';
+    }
+
+    if (strlen($content) > MAX_LOG_BYTES) {
+        $content = substr($content, -MAX_LOG_BYTES);
+    }
+
+    if (!@unlink($visibleLog)) {
+        return false;
+    }
+
+    if (@file_put_contents($visibleLog, $content, LOCK_EX) === false) {
+        return false;
+    }
+
+    @chmod($visibleLog, 0664);
+
+    if ($legacyRamLog !== $visibleLog && is_file($legacyRamLog)) {
+        @unlink($legacyRamLog);
+    }
+
     return true;
 }
 
@@ -281,25 +299,18 @@ function health_age_seconds(array $health): ?int
 ensure_dir($ramdir, 0775);
 ensure_dir(dirname($stdfile), 0775);
 
-$ramlog  = $ramdir . "/sonos_watchdog.log";
+$legacyRamlog = $ramdir . "/sonos_watchdog.log";
 $stdfile = "REPLACELBHOMEDIR/log/plugins/sonos4lox/sonos_watchdog.log";
 
 /*
- * We keep the visible LoxBerry log path as symlink, but the real file is in RAM.
- * This avoids SD writes while keeping the LoxBerry Log Manager path stable.
+ * Since LoxBerry 4.0.0.15 logfile.cgi canonicalizes symlinks for security.
+ * A visible log symlink pointing to /run/shm is therefore intentionally rejected
+ * by the Core Log Viewer. Keep the Watchdog log as a regular file below ~/log.
  */
-$ramlogWasMissing = !file_exists($ramlog);
 $markerWasMissing = !file_exists($marker);
 $markerWasStale   = false;
 $stdfileWasMissing = (!file_exists($stdfile) && !is_link($stdfile));
-$stdfileNeedsRepair = false;
-
-if (is_link($stdfile)) {
-    $stdfileNeedsRepair = (@readlink($stdfile) !== $ramlog);
-} elseif (file_exists($stdfile)) {
-    // A regular file at the visible Log Manager path must be replaced by the RAM-log symlink.
-    $stdfileNeedsRepair = true;
-}
+$stdfileWasLegacySymlink = is_link($stdfile);
 
 if (!$markerWasMissing) {
     $markerMtime = @filemtime($marker);
@@ -308,16 +319,15 @@ if (!$markerWasMissing) {
     }
 }
 
-$ramlogPrepared = rotate_ramlog_if_needed($ramlog);
-$symlinkPrepared = ensure_symlink($ramlog, $stdfile);
+$legacyLogMigrated = migrate_legacy_watchdog_log($stdfile, $legacyRamlog);
+$stdlogPrepared = rotate_log_if_needed($stdfile);
 
 $needLogStart = $markerWasMissing
     || $markerWasStale
-    || $ramlogWasMissing
     || $stdfileWasMissing
-    || $stdfileNeedsRepair
-    || !$ramlogPrepared
-    || !$symlinkPrepared;
+    || $stdfileWasLegacySymlink
+    || !$legacyLogMigrated
+    || !$stdlogPrepared;
 
 /* Let LBLog register the visible LoxBerry logfile path. */
 $params = [
@@ -342,17 +352,17 @@ if ($needLogStart) {
         LOGSTART('Watchdog started or log registration refreshed.');
     }
 
-    if ($markerWasMissing || $ramlogWasMissing) {
+    if ($markerWasMissing || $stdfileWasMissing || $stdfileWasLegacySymlink) {
         wd_log('START', 'Watchdog started.');
     } else {
         wd_log('INFO', 'Watchdog Log Manager registration refreshed.');
     }
 
-    if (!$ramlogPrepared) {
-        wd_log('WARN', 'RAM watchdog log file could not be prepared cleanly.');
+    if (!$legacyLogMigrated) {
+        wd_log('WARN', 'Legacy watchdog log symlink could not be converted to a regular LoxBerry logfile.');
     }
-    if (!$symlinkPrepared) {
-        wd_log('WARN', 'Visible watchdog log symlink for LoxBerry Log Manager could not be prepared cleanly.');
+    if (!$stdlogPrepared) {
+        wd_log('WARN', 'Watchdog logfile could not be prepared cleanly.');
     }
 } else {
     wd_log('INFO', 'Watchdog timer cycle.');

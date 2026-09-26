@@ -1,7 +1,7 @@
 <?php
 /**
  * Sonos4Lox Volume Context Support
- * Version: V03.2
+ * Version: V03.5
  * Language: EN
  *
  * Purpose:
@@ -36,11 +36,20 @@ class S4L_VolumeContext
             if (isset($_GET['volume'])) {
                 $volume = $_GET['volume'];
 
-                if ($volume >= $sonoszone[$master][5]) {
+                if ($volume > $sonoszone[$master][5]) {
                     $volume = $sonoszone[$master][5];
-                    self::log('Volume for Player ' . $master . ' has been reduced to: ' . $volume, 7);
+                    self::log("Requested Volume for Player '" . $master . "' (" . $_GET['volume'] . ") was reduced to Max Volume " . $volume . ".", 7);
                 } else {
                     self::log('Volume for Player ' . $master . ' has been set to: ' . $volume, 7);
+                }
+
+                // Publish the normalized request volume back to the superglobals.
+                // Several legacy playback helpers still read $_GET['volume'] directly
+                // after request preparation. Without this, they can overwrite the
+                // already limited context volume with the original out-of-range value.
+                $_GET['volume'] = $volume;
+                if (isset($_REQUEST['volume'])) {
+                    $_REQUEST['volume'] = $volume;
                 }
 
                 return $volume;
@@ -77,20 +86,15 @@ class S4L_VolumeContext
                 return $volume;
             }
 
-            $volume = $sonoszone[$master][4];
+            $requestedVolume = $sonoszone[$master][4];
+            $volume = self::limitToMaxVolume($requestedVolume, $sonoszone, $master);
 
-            // Preserve the old max-volume guard without changing the selected default volume path.
-            try {
-                $sonos = new SonosAccess($sonoszone[$master][0]);
-                $currentVolume = $sonos->GetVolume();
-                if ($currentVolume >= $sonoszone[$master][5]) {
-                    $volume = $sonoszone[$master][5];
-                }
-            } catch (Exception $e) {
-                self::log('Could not read current volume for Player ' . $master . ': ' . $e->getMessage(), 4);
+            if ((float)$volume < (float)$requestedVolume) {
+                self::log('Standard Sonos Volume for Player ' . $master . ' has been limited to Max Volume: ' . $volume, 7);
+            } else {
+                self::log('Standard Sonos Volume for Player ' . $master . ' has been set to: ' . $volume, 7);
             }
 
-            self::log('Standard Sonos Volume for Player ' . $master . ' has been set to: ' . $volume, 7);
             return $volume;
         }
 
@@ -133,8 +137,13 @@ class S4L_VolumeContext
 
             if (isset($_GET['volume']) || isset($_GET['groupvolume']) || isset($_GET['keepvolume'])) {
                 if (isset($_GET['volume'])) {
-                    $memberVolume = $_GET['volume'];
-                    self::log('Volume for Group Member ' . $zone2 . ' has been set to: ' . $memberVolume, 7);
+                    $requestedMemberVolume = $_GET['volume'];
+                    $memberVolume = self::limitToMaxVolume($requestedMemberVolume, $sonoszone, $zone2);
+                    if ((float)$memberVolume < (float)$requestedMemberVolume) {
+                        self::log("Requested Volume for Group Member '" . $zone2 . "' (" . $requestedMemberVolume . ") was reduced to Max Volume " . $memberVolume . ".", 7);
+                    } else {
+                        self::log('Volume for Group Member ' . $zone2 . ' has been set to: ' . $memberVolume, 7);
+                    }
                 } elseif (isset($_GET['groupvolume'])) {
                     $groupVolume = $_GET['groupvolume'];
                     $currentVolume = $sonos->GetVolume();
@@ -144,13 +153,14 @@ class S4L_VolumeContext
                         $memberVolume = 100;
                     }
 
+                    $memberVolume = self::limitToMaxVolume($memberVolume, $sonoszone, $zone2);
                     self::log('Group Volume for Member ' . $zone2 . ' has been set to: ' . $memberVolume, 7);
                 } elseif (isset($_GET['keepvolume'])) {
                     $currentMemberVolume = $sonos->GetVolume();
 
                     if ($currentMemberVolume >= $min_vol) {
-                        $memberVolume = $currentMemberVolume;
-                        self::log('Volume for Member ' . $zone2 . ' has been set to current volume', 7);
+                        $memberVolume = self::limitToMaxVolume($currentMemberVolume, $sonoszone, $zone2);
+                        self::log('Volume for Member ' . $zone2 . ' has been set to current volume: ' . $memberVolume, 7);
                     } else {
                         if (self::isTtsLikeRequest()) {
                             $memberVolume = $sonoszone[$zone2][3];
@@ -176,12 +186,33 @@ class S4L_VolumeContext
                 }
             }
 
+            // Max Volume is a ceiling for normal audio/group volume handling. It must
+            // limit the requested target volume, never be derived from the player's
+            // previously observed current volume.
+            if (!self::isTtsLikeRequest()) {
+                $memberVolume = self::limitToMaxVolume($memberVolume, $sonoszone, $zone2);
+            }
+
             @$sonos->SetMute(false);
             $sonos->SetVolume($memberVolume);
             $appliedVolumes[$zone2] = $memberVolume;
         }
 
         return $appliedVolumes;
+    }
+
+    private static function limitToMaxVolume($requestedVolume, $sonoszone, $zone)
+    {
+        if (!isset($sonoszone[$zone]) || !isset($sonoszone[$zone][5]) || !is_numeric($sonoszone[$zone][5])) {
+            return $requestedVolume;
+        }
+
+        $maxVolume = (float)$sonoszone[$zone][5];
+        if (!is_numeric($requestedVolume)) {
+            return $requestedVolume;
+        }
+
+        return ((float)$requestedVolume > $maxVolume) ? $sonoszone[$zone][5] : $requestedVolume;
     }
 
     private static function isTtsLikeRequest()
