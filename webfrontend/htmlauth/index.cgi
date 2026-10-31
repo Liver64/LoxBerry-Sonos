@@ -1040,6 +1040,10 @@ sub s4l_build_htmlhead
     }
 
     $head .= '<link rel="stylesheet" href="/plugins/'.$lbpplugindir.'/LayoutUI/sonos_lbv4.css"/>';
+    $head .= '<link rel="stylesheet" href="/plugins/'.$lbpplugindir.'/LayoutUI/liquid-glass/sonos-liquid-glass.css?v=2"/>';
+    $head .= '<script defer src="/plugins/'.$lbpplugindir.'/LayoutUI/liquid-glass/lb-liquid-glass-slider.js?v=1"></script>';
+    $head .= '<script defer src="/plugins/'.$lbpplugindir.'/LayoutUI/liquid-glass/sonos-liquid-glass-effects.js?v=1"></script>';
+    $head .= '<script defer src="/plugins/'.$lbpplugindir.'/LayoutUI/liquid-glass/sonos-liquid-glass.js?v=1"></script>';
     return $head;
 }
 
@@ -1148,6 +1152,7 @@ sub form
     $template->param("T2S_ENGINE" => $cfg->{TTS}->{t2s_engine});
     $template->param("APIKEY"     => $cfg->{TTS}->{apikeys}->{$cfg->{TTS}->{t2s_engine}});
     $template->param("SECKEY"     => $cfg->{TTS}->{secretkeys}->{$cfg->{TTS}->{t2s_engine}});
+    $template->param("ELEVENLABSMODELL" => length($cfg->{TTS}->{elevenlabsmodell} // "") ? $cfg->{TTS}->{elevenlabsmodell} : "eleven_multilingual_v2");
     $template->param("VOICE"      => $cfg->{TTS}->{voice});
     $template->param("CODE"       => $cfg->{TTS}->{messageLang});
     $template->param("DATADIR"    => $cfg->{SYSTEM}->{path});
@@ -1454,14 +1459,14 @@ sub form
 			$rowssoundbar .= render_lb_flipswitch(id => "tvmonsurr_$room", name => "tvmonsurr_$room", value => $tvmonsurr_val, onchange => "toggleSoundbarSurrLevel('$room')");
 			$rowssoundbar .= "</div>\n</fieldset></td>\n";
 			$rowssoundbar .= "<td class='sb_col_level sb_tvsurrlevel_col_$room' style='$surrlevel_style'>\n<div class='sb_select_wrap sb_select_wrap_mid_left'><fieldset style='margin:0; padding:0; border:none; width:100%;'>\n";
-			$rowssoundbar .= "<select id='tvsurrlevel_$room' name='tvsurrlevel_$room' data-mini='true' data-native-menu='true' style='width:100%' class='lb-select'>\n";
+			$rowssoundbar .= "<select id='tvsurrlevel_$room' name='tvsurrlevel_$room' data-mini='true' data-native-menu='true' data-role='none' style='width:100%' class='lb-select'>\n";
 			for my $i (-15 .. 15) { my $sel = ($i == $tvsurrlevel_val) ? " selected='selected'" : ""; $rowssoundbar .= "<option value='$i'$sel>$i</option>\n"; }
 			$rowssoundbar .= "</select></fieldset></div>\n</td>\n";
 			$rowssoundbar .= "<td class='sb_col_switch'>\n<fieldset style='margin:0; padding:0; border:none; text-align:center;'>\n<div class='sb_switch_wrap'>\n";
 			$rowssoundbar .= render_lb_flipswitch(id => "tvmonnightsub_$room", name => "tvmonnightsub_$room", value => $tvmonnightsub_val);
 			$rowssoundbar .= "</div>\n</fieldset></td>\n";
 			$rowssoundbar .= "<td class='sb_col_level sb_tvsublevel_col_$room'>\n<div class='sb_select_wrap sb_select_wrap_mid_left'><fieldset style='margin:0; padding:0; border:none; width:100%;'>\n";
-			$rowssoundbar .= "<select id='tvsublevel_$room' name='tvsublevel_$room' data-mini='true' data-native-menu='true' style='width:100%' class='lb-select'>\n";
+			$rowssoundbar .= "<select id='tvsublevel_$room' name='tvsublevel_$room' data-mini='true' data-native-menu='true' data-role='none' style='width:100%' class='lb-select'>\n";
 			for my $i (-15 .. 15) { my $sel = ($i == $tvsublevel_val) ? " selected='selected'" : ""; $rowssoundbar .= "<option value='$i'$sel>$i</option>\n"; }
 			$rowssoundbar .= "</select></fieldset></div>\n</td>\n";
 			$rowssoundbar .= "<td class='sb_col_num'>\n<div class='sb_input_wrap'><input class='tvvol' type='text' id='tvvol_$room' size='100' data-validation-error-msg='$error_volume' name='tvvol_$room' value='" . ($sbcfg->{tvvol} // '') . "'></div>\n</td>\n";
@@ -1482,7 +1487,7 @@ sub form
 				foreach my $other_room (@all_rooms) {
 					next if $other_room eq $room;
 
-					my $checked = grep { $_ eq $other_room } @saved_players ? " checked='checked'" : "";
+					my $checked = (grep { $_ eq $other_room } @saved_players) ? " checked='checked'" : "";
 
 					$rowssoundbar .= "<label class='sb_player_check_label'>";
 					$rowssoundbar .= "<input type='checkbox' name='tvgrpstop_$room' value='$other_room'$checked data-role='none'> ";
@@ -1497,7 +1502,7 @@ sub form
 				foreach my $other_room (@all_rooms) {
 					next if $other_room eq $room;
 
-					my $checked = grep { $_ eq $other_room } @saved_players ? " checked='checked'" : "";
+					my $checked = (grep { $_ eq $other_room } @saved_players) ? " checked='checked'" : "";
 
 					$rowssoundbar .= "<label style='cursor:pointer;'>";
 					$rowssoundbar .= "<input type='checkbox' name='tvgrpstop_$room' value='$other_room'$checked style='cursor:pointer;'>";
@@ -1517,7 +1522,7 @@ sub form
 			$rowssoundbar .= render_lb_flipswitch(id => "tvmonnightsubn_$room", name => "tvmonnightsubn_$room", value => $tvmonnightsubn_val);
 			$rowssoundbar .= "</div>\n</fieldset></td>\n";
 			$rowssoundbar .= "<td class='sb_col_level sb_night_col_$room sb_nightsublevel_col_$room' style='$night_style'>\n<div class='sb_select_wrap sb_select_wrap_mid_right'><fieldset style='margin:0; padding:0; border:none; width:100%;'>\n";
-			$rowssoundbar .= "<select id='tvmonnightsublevel_$room' name='tvmonnightsublevel_$room' data-mini='true' data-native-menu='true' style='width:100%' class='lb-select'>\n";
+			$rowssoundbar .= "<select id='tvmonnightsublevel_$room' name='tvmonnightsublevel_$room' data-mini='true' data-native-menu='true' data-role='none' style='width:100%' class='lb-select'>\n";
 			for my $i (-15 .. 15) { my $sel = ($i == $tvmonnightsublevel_val) ? " selected='selected'" : ""; $rowssoundbar .= "<option value='$i'$sel>$i</option>\n"; }
 			$rowssoundbar .= "</select></fieldset></div>\n</td>\n</tr>\n</tbody>\n</table>\n";
 		}
@@ -2188,6 +2193,10 @@ sub save
     $cfg->{TTS}->{apikeys}->{$cfg->{TTS}->{t2s_engine}} = $cfg->{TTS}->{apikey};
     $cfg->{TTS}->{secretkey}      = "$R::seckey";
     $cfg->{TTS}->{secretkeys}->{$cfg->{TTS}->{t2s_engine}} = $cfg->{TTS}->{secretkey};
+    if ($cfg->{TTS}->{t2s_engine} eq "9011" && defined $R::elevenlabsmodell &&
+        $R::elevenlabsmodell =~ /\A[A-Za-z0-9_-]+\z/) {
+        $cfg->{TTS}->{elevenlabsmodell} = "$R::elevenlabsmodell";
+    }
     $cfg->{TTS}->{voice}          = "$R::voice";
     $cfg->{TTS}->{regionms}       = $azureregion;
     $cfg->{TTS}->{t2son}          = "$R::t2son";

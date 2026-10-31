@@ -1,4 +1,19 @@
 <script>
+
+// LoxBerry DS selects are native controls; keep jQM support for legacy pages.
+$.fn.s4lSelectmenu = function () {
+    const args = arguments;
+    const $native = this.filter('[data-role="none"]');
+    if (args[0] === 'enable' || args[0] === 'disable') {
+        $native.prop('disabled', args[0] === 'disable');
+    }
+    const $legacy = this.not('[data-role="none"]');
+    if ($legacy.length && typeof $.fn.selectmenu === 'function') {
+        $.fn.selectmenu.apply($legacy, args);
+    }
+    return this;
+};
+
 /* =================================================================================================
  * Sonos4Lox UI Script
  * -------------------------------------------------------------------------------------------------
@@ -452,11 +467,11 @@ function setSoundbarSelectState(id, enabled, fallbackValue) {
 
     try {
         if (enabled) {
-            $select.selectmenu('enable');
+            $select.s4lSelectmenu('enable');
         } else {
-            $select.selectmenu('disable');
+            $select.s4lSelectmenu('disable');
         }
-        $select.selectmenu('refresh', true);
+        $select.s4lSelectmenu('refresh', true);
     } catch (e) {
         $select.trigger('change');
     }
@@ -618,8 +633,8 @@ function updateLanguageDropdownForEngine() {
 		$('#t2slang').prop('disabled', true);
 
 		try {
-			$('#t2slang').selectmenu('disable');
-			$('#t2slang').selectmenu('refresh', true);
+			$('#t2slang').s4lSelectmenu('disable');
+			$('#t2slang').s4lSelectmenu('refresh', true);
 		} catch (e) {
 			/* ignore if selectmenu is not initialized */
 		}
@@ -628,8 +643,8 @@ function updateLanguageDropdownForEngine() {
 		$('#t2slang').prop('disabled', false);
 
 		try {
-			$('#t2slang').selectmenu('enable');
-			$('#t2slang').selectmenu('refresh', true);
+			$('#t2slang').s4lSelectmenu('enable');
+			$('#t2slang').s4lSelectmenu('refresh', true);
 		} catch (e) {
 			/* ignore if selectmenu is not initialized */
 		}
@@ -691,26 +706,26 @@ function prepareTTSConfigFields() {
 	// T2S INSTANZ
 	if (document.getElementById('tts_voicerss').checked == true) {
 		$('#voice').removeClass('ui-disabled');
-		$('#voice').selectmenu('refresh', true);
+		$('#voice').s4lSelectmenu('refresh', true);
 	} else if (document.getElementById('tts_azure').checked == true) {
 		$('#voice').removeClass('ui-disabled');
-		$('#voice').selectmenu('refresh', true);
+		$('#voice').s4lSelectmenu('refresh', true);
 	} else if (document.getElementById('tts_elevenlabs').checked == true) {
 		$('#voice').removeClass('ui-disabled');
-		$('#voice').selectmenu('refresh', true);
+		$('#voice').s4lSelectmenu('refresh', true);
 	} else if (document.getElementById('tts_polly').checked == true) {
 		$('#voice').removeClass('ui-disabled');
-		$('#voice').selectmenu('refresh', true);
+		$('#voice').s4lSelectmenu('refresh', true);
 	} else if (document.getElementById('tts_google_cloud').checked == true) {
 		$('#voice').removeClass('ui-disabled');
-		$('#voice').selectmenu('refresh', true);
+		$('#voice').s4lSelectmenu('refresh', true);
 	} else if (document.getElementById('tts_piper').checked == true) {
 		$('#voice').removeClass('ui-disabled');
-		$('#voice').selectmenu('refresh', true);
+		$('#voice').s4lSelectmenu('refresh', true);
 	}
 
-	$('#t2slang').selectmenu('refresh', true);
-	$('#voice').selectmenu('refresh', true);
+	$('#t2slang').s4lSelectmenu('refresh', true);
+	$('#voice').s4lSelectmenu('refresh', true);
 
 	populateLanguageAndVoiceFields();
 }
@@ -735,7 +750,7 @@ function selection() {
 		$('.empty_template').hide();
     }
 
-    $('#miniserver').selectmenu('refresh', true);
+    $('#miniserver').s4lSelectmenu('refresh', true);
 }
 
 
@@ -752,7 +767,7 @@ function selection() {
  */
 function populateVoice() {
 	console.log("populateVoice");
-	$('#voice').selectmenu('refresh', true);
+	$('#voice').s4lSelectmenu('refresh', true);
 
 	// === SPECIAL CASE: ELEVENLABS ==========================================
 	// ElevenLabs language+voices are handled by populateElevenlabsLang()/Voices.
@@ -799,7 +814,7 @@ function populateVoice() {
 					}
 				});
 
-				$('#voice').selectmenu('refresh', true);
+				$('#voice').s4lSelectmenu('refresh', true);
 			});
 		}
 
@@ -829,7 +844,7 @@ function populateVoice() {
 							value.name + '</option>'
 						);
 					}
-					$('#voice').selectmenu('refresh', true);
+					$('#voice').s4lSelectmenu('refresh', true);
 				});
 			});
 		}
@@ -841,7 +856,7 @@ function populateVoice() {
 	// ==== Piper ====
 	} else if (document.main_form.tts_piper.checked == true) {
 		var selectedlanguage = $("#t2slang option:selected").val();
-		$('#t2slang').selectmenu('refresh', true);
+		$('#t2slang').s4lSelectmenu('refresh', true);
 		console.log("popvoice (Piper): " + selectedlanguage);
 		if (selectedlanguage) {
 			$('#voice').empty();
@@ -866,14 +881,14 @@ function populateVoice() {
 							value.name + '</option>'
 						);
 					}
-					$('#voice').selectmenu('refresh', true);
+					$('#voice').s4lSelectmenu('refresh', true);
 				});
 			});
 		}
 	}
 
-	$('#voice').selectmenu('refresh', true);
-	$('#t2slang').selectmenu('refresh', true);
+	$('#voice').s4lSelectmenu('refresh', true);
+	$('#t2slang').s4lSelectmenu('refresh', true);
 
 	// generate language ISO Code (two chars) into info field
 	var isocode = '<TMPL_VAR CODE>'.substr(0, 2);
@@ -928,7 +943,7 @@ function setCorrectLang() {
 		var selectedlanguage = $("#t2slang").val();
 		if ($("#voice").find("option:selected").attr('data-lang') != selectedlanguage) {
 			$('#t2slang option[value="' + $("#voice").find("option:selected").attr('data-lang') + '"]').attr("selected", "selected");
-			$('#t2slang').selectmenu('refresh', true);
+			$('#t2slang').s4lSelectmenu('refresh', true);
 		}
 	}
 }
@@ -970,11 +985,11 @@ function populateGoogleCloudVoices() {
 				// Reset dropdowns to a defined state
 				$('#t2slang').empty().append(
 					'<option selected disabled value=""><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>'
-				).selectmenu('refresh', true);
+				).s4lSelectmenu('refresh', true);
 
 				$('#voice').empty().append(
 					'<option selected disabled value=""><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>'
-				).selectmenu('refresh', true);
+				).s4lSelectmenu('refresh', true);
 
 				// Throw to skip next then()
 				throw new Error("HTTP " + response.status);
@@ -1052,7 +1067,7 @@ function populateGoogleCloudVoices() {
 			if (initialLang) {
 				$('#t2slang').val(initialLang);
 			}
-			$('#t2slang').selectmenu('refresh', true);
+			$('#t2slang').s4lSelectmenu('refresh', true);
 
 			// === Helper: fill voices for a given language ===
 			function fillVoicesForLanguage(langCode) {
@@ -1077,7 +1092,7 @@ function populateGoogleCloudVoices() {
 					$('#voice').val(savedVoice);
 				}
 
-				$('#voice').selectmenu('refresh', true);
+				$('#voice').s4lSelectmenu('refresh', true);
 			}
 
 			// Initial: current language
@@ -1101,11 +1116,11 @@ function populateGoogleCloudVoices() {
 
 			$('#t2slang').empty().append(
 				'<option selected disabled value=""><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>'
-			).selectmenu('refresh', true);
+			).s4lSelectmenu('refresh', true);
 
 			$('#voice').empty().append(
 				'<option selected disabled value=""><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>'
-			).selectmenu('refresh', true);
+			).s4lSelectmenu('refresh', true);
 		});
 }
 
@@ -1201,7 +1216,7 @@ function populateLanguageBasedOnJSON(url) {
 			$('#t2slang').val(chosenVal);
 		}
 
-		$('#t2slang').selectmenu('refresh', true);
+		$('#t2slang').s4lSelectmenu('refresh', true);
 
 		// Now language is always valid -> populate voice list
 		populateVoice();
@@ -1278,6 +1293,8 @@ function checkProvider() {
 		populateAzureVoices();
 	}
 	else if (document.main_form.tts_elevenlabs?.checked === true) {
+		elevenlabsModelsKey = null;
+		elevenlabsVoicesKey = null;
 		populateElevenlabsLang();
 	}
 	else {
@@ -1371,9 +1388,9 @@ function populateElevenlabsLang() {
 
 	// UI only
 	$lang.empty().append(
-		'<option value="DE-de">Auto (Multilingual)</option>'
+		$('<option>', {value: 'DE-de', text: elevenlabsText('AUTO_LANGUAGE')})
 	);
-	$lang.selectmenu('refresh', true);
+	$lang.s4lSelectmenu('refresh', true);
 
 	// ensure POST value exists independently of jQM selectmenu
 	let $hidden = $('#t2slang_hidden');
@@ -1388,81 +1405,209 @@ function populateElevenlabsLang() {
 	$hidden.val('DE-de');
 	// -----------------------
 
-	populateElevenlabsVoices();
+    initializeElevenlabsModel();
+    populateElevenlabsVoices();
 }
 
-function populateElevenlabsVoices() {
-	console.log("populateElevenlabsVoices");
+var elevenlabsModels = [];
+var elevenlabsModelLoad = null;
+var elevenlabsModelsKey = null;
+var elevenlabsModelsRequest = 0;
+var elevenlabsVoicesRequest = 0;
+var elevenlabsVoices = null;
+var elevenlabsVoicesKey = null;
 
-	$('#voice').empty();
-
-	const key = document.getElementById('apikey').value.trim();
-	if (!key) {
-		console.warn("ElevenLabs voice error: no API key set.");
-		return;
-	}
-
-	const options = {
-		method: 'GET',
-		headers: { "xi-api-key": key }
-	};
-
-	const url = 'https://api.elevenlabs.io/v2/voices';
-
-	fetch(url, options)
-		.then(response => response.json())
-		.then(function (data) {
-
-			let voices = data['voices'];
-			if (!voices) {
-				console.warn(
-					"ElevenLabs voice error:",
-					data.detail ? data.detail.message : "Unknown error"
-				);
-				return;
-			}
-
-			$('#voice').append(
-				'<option selected="true" value="" disabled>' +
-				'<TMPL_VAR T2S.SELECT_VOICE_DROPDOWN>' +
-				'</option>'
-			);
-
-			voices.forEach((voice) => {
-
-				let labelAge = voice.labels && voice.labels.age ? voice.labels.age : '';
-				let labelDesc = voice.labels && voice.labels.description ? voice.labels.description : '';
-
-				let label = voice.name;
-				if (labelAge || labelDesc) {
-					label += " - " + labelAge;
-					if (labelDesc) label += ", " + labelDesc;
-				}
-
-				if (voice.voice_id === "<TMPL_VAR TTS.voice>") {
-					$('#voice').append(
-						"<option selected='selected' id=\"" +
-						(voice.preview_url || "") +
-						"\" value=\"" + voice.voice_id + "\">&nbsp;" +
-						label + "</option>"
-					);
-				} else {
-					$('#voice').append(
-						"<option id=\"" +
-						(voice.preview_url || "") +
-						"\" value=\"" + voice.voice_id + "\">&nbsp;" +
-						label + "</option>"
-					);
-				}
-			});
-
-			$('#voice').selectmenu('refresh', true);
-		})
-		.catch(function (err) {
-			console.warn("ElevenLabs voice error:", err);
-		});
+function elevenlabsText(name) {
+    return $('#elevenlabs_messages').attr('data-' + name.toLowerCase().replace(/_/g, '-')) || '';
 }
 
+function showElevenlabsError(message) {
+    // The shared dialog renders HTML; escape all message text first.
+    const escaped = message.replace(/[&<>"']/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[character]));
+    // Native select popups are rendered above page overlays regardless of z-index.
+    // Disable and blur the select, then allow the browser to close its popup
+    // before showing SilverBox. Preserve the original disabled state.
+    const active = document.activeElement;
+    const selects = Array.from(new Set([
+        document.getElementById('elevenlabsmodell'),
+        active && active.tagName === 'SELECT' ? active : null
+    ].filter(Boolean)));
+    const states = selects.map(select => ({select: select, disabled: select.disabled}));
+    states.forEach(state => {
+        state.select.blur();
+        state.select.disabled = true;
+    });
+    setTimeout(function () {
+        states.forEach(state => { state.select.disabled = state.disabled; });
+        dialog(escaped, elevenlabsText('DIALOG_OK'), 'error', elevenlabsText('DIALOG_TITLE'));
+    }, 0);
+}
+
+async function fetchElevenlabsJson(url, key) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000);
+    try {
+        const response = await fetch(url, {headers: {'xi-api-key': key}, signal: controller.signal});
+        if (!response.ok) {
+            const messages = {
+                401: elevenlabsText("UNAUTHORIZED"),
+                403: elevenlabsText("FORBIDDEN"),
+                429: elevenlabsText("RATE_LIMIT")
+            };
+            const error = new Error(messages[response.status] || (response.status >= 500 ?
+                elevenlabsText("SERVER_ERROR") :
+                elevenlabsText('HTTP_ERROR').replace('{status}', response.status)));
+            error.status = response.status;
+            throw error;
+        }
+        return await response.json();
+    } catch (error) {
+        if (error.name === 'AbortError') throw new Error(elevenlabsText("TIMEOUT"));
+        if (error instanceof TypeError) throw new Error(elevenlabsText("CONNECTION_ERROR"));
+        if (error instanceof SyntaxError) throw new Error(elevenlabsText("INVALID_RESPONSE"));
+        throw error;
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+function elevenlabsActive(key) {
+    return $('#tts_elevenlabs').prop('checked') && ($('#apikey').val() || '').trim() === key;
+}
+
+function refreshElevenlabsModelSelect() {
+    try { $('#elevenlabsmodell').s4lSelectmenu('refresh', true); } catch (e) { /* not initialized yet */ }
+}
+
+function initializeElevenlabsModel() {
+    const $select = $('#elevenlabsmodell');
+    const selected = $select.val() || $select.attr('data-saved-model') || 'eleven_multilingual_v2';
+    if (!$select.find('option').toArray().some(option => option.value === selected)) {
+        $select.append($('<option>', {value: selected, text: selected}));
+    }
+    $select.val(selected);
+    if (selected === 'eleven_multilingual_v2') {
+        $select.find('option').filter(function () { return this.value === selected; }).text(elevenlabsText('DEFAULT_MODEL'));
+    }
+}
+
+function loadElevenlabsModelsOnOpen(event) {
+    if (event && event.type === 'keydown' && !['Enter', ' ', 'ArrowDown', 'ArrowUp', 'F4'].includes(event.key)) return;
+    if (!elevenlabsModelLoad) {
+        elevenlabsModelLoad = populateElevenlabsModels().finally(function () { elevenlabsModelLoad = null; });
+    }
+    return elevenlabsModelLoad;
+}
+
+async function populateElevenlabsModels() {
+    const key = ($('#apikey').val() || '').trim();
+    const $select = $('#elevenlabsmodell');
+    if (!elevenlabsActive(key)) return;
+    if (elevenlabsModelsKey === key && elevenlabsModels.length) return true;
+    const request = ++elevenlabsModelsRequest;
+    initializeElevenlabsModel();
+    const selected = $select.val();
+    // Keep the current selection while loading and on failure.
+    if (!key) {
+        showElevenlabsError(elevenlabsText("MISSING_KEY"));
+        return false;
+    }
+    try {
+        const data = await fetchElevenlabsJson('https://api.elevenlabs.io/v1/models', key);
+        if (!Array.isArray(data)) throw new Error(elevenlabsText("INVALID_MODELS"));
+        if (request !== elevenlabsModelsRequest || !elevenlabsActive(key)) return;
+        const models = data.filter(model => model.can_do_text_to_speech === true);
+        if (!models.length) {
+            showElevenlabsError(elevenlabsText('NO_MODELS'));
+            return false;
+        }
+        elevenlabsModels = models;
+        elevenlabsModelsKey = key;
+        $select.empty().append($('<option>', {value: '', text: elevenlabsText("SELECT_MODEL"), disabled: true}));
+        elevenlabsModels.forEach(model => $select.append($('<option>', {
+            value: model.model_id, text: model.name || model.model_id, title: model.description || ''
+        })));
+        const available = elevenlabsModels.some(model => model.model_id === selected);
+        if (!available) $select.append($('<option>', {value: selected, text: selected === 'eleven_multilingual_v2' ? elevenlabsText('DEFAULT_MODEL') : selected}));
+        $select.val(selected);
+        if (selected && !available && elevenlabsModels.length) {
+            showElevenlabsError(elevenlabsText("MODEL_UNAVAILABLE"));
+        }
+    } catch (error) {
+        if (request !== elevenlabsModelsRequest || !elevenlabsActive(key)) return;
+        elevenlabsModelsKey = null;
+        showElevenlabsError(elevenlabsText('MODELS_ERROR') +
+            ((error.status === 401 || error.status === 403) ? '' : ' ' + error.message));
+        refreshElevenlabsModelSelect();
+        return false;
+    }
+    refreshElevenlabsModelSelect();
+    if (!elevenlabsModels.length) {
+        showElevenlabsError(elevenlabsText("NO_MODELS"));
+        return false;
+    }
+    return true;
+}
+
+function elevenlabsModelChanged() {
+    $('#elevenlabsmodell').attr('data-saved-model', $('#elevenlabsmodell').val() || '');
+    if ($('#tts_elevenlabs').prop('checked')) populateElevenlabsVoices();
+}
+
+function renderElevenlabsVoices() {
+    const $voice = $('#voice');
+    const selected = $voice.val() || '<TMPL_VAR TTS.voice>';
+    const model = elevenlabsModelsKey === elevenlabsVoicesKey &&
+        elevenlabsModels.find(item => item.model_id === $('#elevenlabsmodell').val());
+    $voice.empty().append($('<option>', {value: '', text: '<TMPL_VAR T2S.SELECT_VOICE_DROPDOWN>', disabled: true}));
+    elevenlabsVoices.forEach(voice => {
+        // Only exclude professional voices when the model explicitly disallows them.
+        if (model && model.serves_pro_voices === false && voice.category === 'professional') return;
+        const labels = voice.labels || {};
+        const details = [labels.age, labels.description].filter(Boolean).join(', ');
+        $voice.append($('<option>', {
+            value: voice.voice_id, text: voice.name + (details ? ' - ' + details : ''), id: voice.preview_url || ''
+        }));
+    });
+    $voice.val($voice.find('option').toArray().some(option => option.value === selected) ? selected : '');
+    $voice.s4lSelectmenu('refresh', true);
+}
+
+async function populateElevenlabsVoices() {
+    const key = ($('#apikey').val() || '').trim();
+    if (!elevenlabsActive(key)) return;
+    if (!key) {
+        showElevenlabsError(elevenlabsText('MISSING_KEY'));
+        return;
+    }
+    if (elevenlabsVoices && elevenlabsVoicesKey === key) {
+        renderElevenlabsVoices();
+        return;
+    }
+    const request = ++elevenlabsVoicesRequest;
+    try {
+        const voices = [];
+        let token = '';
+        do {
+            const url = 'https://api.elevenlabs.io/v2/voices?page_size=100' +
+                (token ? '&next_page_token=' + encodeURIComponent(token) : '');
+            const data = await fetchElevenlabsJson(url, key);
+            if (!Array.isArray(data.voices)) throw new Error(elevenlabsText("INVALID_VOICES"));
+            if (request !== elevenlabsVoicesRequest || !elevenlabsActive(key)) return;
+            voices.push(...data.voices);
+            token = data.has_more ? data.next_page_token : '';
+            if (data.has_more && !token) throw new Error(elevenlabsText("MISSING_PAGE_TOKEN"));
+        } while (token);
+        elevenlabsVoices = voices;
+        elevenlabsVoicesKey = key;
+        renderElevenlabsVoices();
+    } catch (error) {
+        if (request !== elevenlabsVoicesRequest || !elevenlabsActive(key)) return;
+        showElevenlabsError(elevenlabsText('VOICES_ERROR') + ' ' + error.message);
+    }
+}
 
 
 /* ================================================================================================
@@ -1530,8 +1675,8 @@ function populateAzureVoices() {
 				'<option selected disabled value=""><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>'
 			);
 
-			$('#t2slang').selectmenu('refresh', true);
-			$('#voice').selectmenu('refresh', true);
+			$('#t2slang').s4lSelectmenu('refresh', true);
+			$('#voice').s4lSelectmenu('refresh', true);
 
 			// --- Load voices for selected language ---
 			function loadVoices(selectedLang) {
@@ -1558,20 +1703,20 @@ function populateAzureVoices() {
 					}
 				});
 
-				$('#voice').selectmenu('refresh', true);
+				$('#voice').s4lSelectmenu('refresh', true);
 			}
 
 			// --- OnChange: select language -> reload voices ---
 			$('#t2slang').off('change').on('change', function () {
 				var selectedLang = $(this).val();
-				$('#t2slang').val(selectedLang).selectmenu('refresh', true);
+				$('#t2slang').val(selectedLang).s4lSelectmenu('refresh', true);
 				loadVoices(selectedLang);
 			});
 
 			// --- Initial: preselected language from template (CODE) ---
 			var defaultLang = '<TMPL_VAR CODE>';
 			if (defaultLang && langMap[defaultLang]) {
-				$('#t2slang').val(defaultLang).selectmenu('refresh', true);
+				$('#t2slang').val(defaultLang).s4lSelectmenu('refresh', true);
 				loadVoices(defaultLang);
 			}
 
@@ -1585,11 +1730,11 @@ function populateAzureVoices() {
 
 			$('#t2slang').empty().append(
 				'<option selected disabled value=""><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>'
-			).selectmenu('refresh', true);
+			).s4lSelectmenu('refresh', true);
 
 			$('#voice').empty().append(
 				'<option selected disabled value=""><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>'
-			).selectmenu('refresh', true);
+			).s4lSelectmenu('refresh', true);
 		}
 	};
 
@@ -1598,11 +1743,11 @@ function populateAzureVoices() {
 
 		$('#t2slang').empty().append(
 			'<option selected disabled value=""><TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN></option>'
-		).selectmenu('refresh', true);
+		).s4lSelectmenu('refresh', true);
 
 		$('#voice').empty().append(
 			'<option selected disabled value=""><TMPL_VAR T2S.SELECT_VOICE_DROPDOWN></option>'
-		).selectmenu('refresh', true);
+		).s4lSelectmenu('refresh', true);
 	};
 
 	request.send();
@@ -1664,10 +1809,10 @@ function populateLanguageAndVoiceFields() {
 		populateLanguageBasedOnJSON(url);
 	}
 
-	$('#t2slang').selectmenu('refresh', true);
-	$('#voice').selectmenu('refresh', true);
-	$('select').not('[data-role="none"]').selectmenu();
-	$('select').not('[data-role="none"]').selectmenu('refresh', true);
+	$('#t2slang').s4lSelectmenu('refresh', true);
+	$('#voice').s4lSelectmenu('refresh', true);
+	$('select').not('[data-role="none"]').s4lSelectmenu();
+	$('select').not('[data-role="none"]').s4lSelectmenu('refresh', true);
 
 	var isocode = '<TMPL_VAR CODE>'.substr(0, 2);
 	$('#langiso').val(isocode);
@@ -1693,8 +1838,8 @@ function initial_lang_voice_load() {
 	} else {
 		console.log("selecting engine: " + $('#val_t2s').val());
 		$('#engine-selector input[value="' + $('#val_t2s').val() + '"]').prop('checked', true).checkboxradio("refresh");
-		$('#t2slang').selectmenu('refresh', true);
-		$('#voice').selectmenu('refresh', true);
+		$('#t2slang').s4lSelectmenu('refresh', true);
+		$('#voice').s4lSelectmenu('refresh', true);
 		prepareTTSConfigFields();
 	}
 };
@@ -1959,11 +2104,11 @@ function getsbconfig() {
 		try {
 			if ($select.data("mobile-selectmenu")) {
 				if (enabled) {
-					$select.selectmenu("enable");
+					$select.s4lSelectmenu("enable");
 				} else {
-					$select.selectmenu("disable");
+					$select.s4lSelectmenu("disable");
 				}
-				$select.selectmenu("refresh", true);
+				$select.s4lSelectmenu("refresh", true);
 			} else {
 				$select.trigger("change");
 			}
@@ -2124,6 +2269,8 @@ function getsbconfig() {
 
 								$(this).prop("checked", shouldCheck);
 								refreshJqmCheckboxes(this);
+                                const details = this.closest(".sb_player_details");
+                                if (details) updateSoundbarPlayerSummary(details);
 							});
 
 						}, 100);
@@ -3274,8 +3421,8 @@ $(document).on('pagecreate pageshow', function () {
 
 function refresh() {
 	$("#langiso").textinput("refresh");
-	$('#t2slang').selectmenu('refresh');
-	$('#voice').selectmenu('refresh');
+	$('#t2slang').s4lSelectmenu('refresh');
+	$('#voice').s4lSelectmenu('refresh');
 }
 
 
@@ -4415,7 +4562,7 @@ function loadSonosReleaseDropdown() {
 		}
 
 		if ($sel.data('mobile-selectmenu')) {
-			$sel.selectmenu('refresh', true);
+			$sel.s4lSelectmenu('refresh', true);
 		}
 
 		updateSonosReleaseInstallButton();
@@ -4428,7 +4575,7 @@ function loadSonosReleaseDropdown() {
 		}));
 
 		if ($sel.data('mobile-selectmenu')) {
-			$sel.selectmenu('refresh', true);
+			$sel.s4lSelectmenu('refresh', true);
 		}
 
 		$('#sonos_release_install_wrap').hide();
@@ -5193,14 +5340,14 @@ $(document).on('pageinit', function () {
 
             appendCell('testing-json-number-cell', '<span class="testing-json-number"></span>');
             appendCell('testing-json-status-cell',
-                '<select name="testing_status_' + nextIndex + '" class="lb-select testing-json-status" data-role="none">' +
+                '<select name="testing_status_' + nextIndex + '" class="lb-select testing-json-status" data-mini="true" data-native-menu="true" data-role="none">' +
                     '<option value="active" selected="selected">active</option>' +
                     '<option value="inactive">inactive</option>' +
                 '</select>'
             );
             appendCell('testing-json-name-cell', '<input type="text" name="testing_name_' + nextIndex + '" value="" class="lb-input testing-json-name" data-role="none">');
             appendCell('testing-json-risk-cell',
-                '<select name="testing_risk_' + nextIndex + '" class="lb-select testing-json-risk" data-role="none">' +
+                '<select name="testing_risk_' + nextIndex + '" class="lb-select testing-json-risk" data-mini="true" data-native-menu="true" data-role="none">' +
                     '<option value="low">low</option>' +
                     '<option value="middle" selected="selected">middle</option>' +
                     '<option value="high">high</option>' +
@@ -5504,5 +5651,31 @@ $(document).on('pageinit', function () {
         updateTestingSourceVisibility();
         startTestingStatusPolling();
     }());
+
+// Show the selected stop players in the closed Soundbar multiselect.
+function updateSoundbarPlayerSummary(details) {
+    const summary = details.querySelector('summary');
+    if (!summary) return;
+    if (!details.hasAttribute('data-empty-label')) {
+        details.setAttribute('data-empty-label', summary.textContent.trim());
+    }
+    const names = Array.from(details.querySelectorAll('input[type="checkbox"]:checked'))
+        .map(input => input.value);
+    const text = names.length ? names.join(', ') : details.getAttribute('data-empty-label');
+    summary.textContent = text;
+    summary.title = text;
+    summary.style.whiteSpace = 'normal';
+    summary.style.overflowWrap = 'anywhere';
+}
+
+$(document)
+    .off('change.soundbarPlayerSummary', '.sb_player_details input[type="checkbox"]')
+    .on('change.soundbarPlayerSummary', '.sb_player_details input[type="checkbox"]', function () {
+        updateSoundbarPlayerSummary(this.closest('.sb_player_details'));
+    });
+
+$(function () {
+    document.querySelectorAll('.sb_player_details').forEach(updateSoundbarPlayerSummary);
+});
 
 </script>

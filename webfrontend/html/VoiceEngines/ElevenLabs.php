@@ -1,7 +1,7 @@
 <?php
 /**
  * ElevenLabs TTS Integration
- * Version: VOICE_ENGINE_ROBUSTNESS_V02_2026_08_24
+ * Version: ELEVENLABS_CONFIG_MODEL_V01_2026_10_31
  *
  * Uses voice_id directly to avoid "voice not found" errors.
  */
@@ -28,13 +28,17 @@ function t2s(array $params)
 
     // Default TTS settings
     $audio_format      = 'mp3_44100_128';
-    $model_id          = 'eleven_multilingual_v2';
+    $configured_model = $config['TTS']['elevenlabsmodell'] ?? '';
+    $model_id = is_string($configured_model) ? trim($configured_model) : '';
+    if ($model_id === '') {
+        $model_id = 'eleven_multilingual_v2';
+    }
     $stability         = 0.5;
     $similarity_boost  = 0.75;
     $style             = 0;
     $use_speaker_boost = true;
 
-    s4l_ve_log($context, 'OK', 'ElevenLabs TTS selected.');
+    s4l_ve_log($context, 'OK', 'ElevenLabs TTS selected. Model: ' . str_replace(["\r", "\n"], '', $model_id));
 
     return elevenlabs_generate_speech(
         $text,
@@ -74,13 +78,18 @@ function elevenlabs_generate_speech(
     $payload = [
         'model_id' => $model_id,
         'text' => $text,
-        'voice_settings' => [
+    ];
+
+    // Preserve the existing v2 tuning. Other models use their API defaults,
+    // avoiding settings that may not be supported by the selected model.
+    if ($model_id === 'eleven_multilingual_v2') {
+        $payload['voice_settings'] = [
             'stability' => $stability,
             'similarity_boost' => $similarity_boost,
             'style' => $style,
             'use_speaker_boost' => $use_speaker_boost,
-        ],
-    ];
+        ];
+    }
 
     $url = 'https://api.elevenlabs.io/v1/text-to-speech/' . rawurlencode($voice_id) . '?output_format=' . rawurlencode($audio_format);
 

@@ -171,7 +171,7 @@
 										</p>
 									</TMPL_IF>
 
-									<div style="display:flex; align-items:center; gap:12px; width:100%; max-width:1180px;">
+									<div style="display:flex; flex-wrap:wrap; align-items:center; gap:12px; width:100%; max-width:1180px;">
 										<div style="flex:1 1 890px; min-width:660px;">
 											<input type="text"
 												   id="vlan_ips_input"
@@ -207,7 +207,7 @@
 							rows="3"
 							class="lb-input"
 							data-role="none"
-							style="width: calc(98% - 100px); box-sizing: border-box; overflow-y: auto; margin: 0; border-radius: 12px;"></textarea>
+							style="width: <TMPL_IF NAME="LBV4">86%<TMPL_ELSE>90%</TMPL_IF>; box-sizing: border-box; overflow-y: auto; margin: 0; border-radius: 12px;"></textarea>
                     </td>
                 </tr>
                 </TMPL_IF>			
@@ -216,10 +216,9 @@
 						<label id="lt2son"><TMPL_VAR T2S.LABEL_T2SON></label>
 					</td>
 					<td style="height: 28px; width: 70%; padding-top: 2px; padding-bottom: 2px;">
-						<table border="0" width="92%" style="border-collapse:collapse;">
-							<tr>
-							<td style="width: 5%; padding-top: 0; padding-bottom: 0;">
-								<div class="lb-flipswitch"
+						<div class="tts-restore-controls" style="display:flex; align-items:center; flex-wrap:wrap; gap:12px 28px;">
+                                <div style="flex:0 0 auto;">
+                                    <div class="lb-flipswitch"
 									 data-input="t2son"
 									 data-value="<TMPL_VAR TTS.t2son>">
 
@@ -233,24 +232,17 @@
 										<span class="lb-toggle-slider"></span>
 									</label>
 								</div>
-							</td>
-
-							<td style="height: 28px; width: 25%; padding-top: 0; padding-bottom: 0;">
-								<TMPL_IF NAME="RESTORE_POSSIBLE">
-									<label id="lt2son_restore" align="right"><TMPL_VAR BASIS.PLUGIN_RESTORE></label>
-								</TMPL_IF>
-							</td>
-
-							<td style="height: 28px; width: 1%; padding-top: 0; padding-bottom: 0;">
-								<TMPL_IF NAME="RESTORE_POSSIBLE">
-									<a id="restorec" name="restorec"
+                                </div>
+                                <TMPL_IF NAME="RESTORE_POSSIBLE">
+                                    <div style="display:flex; align-items:center; flex-wrap:wrap; gap:12px;">
+                                        <label id="lt2son_restore" style="margin:0;"><TMPL_VAR BASIS.PLUGIN_RESTORE></label>
+                                        <a id="restorec" name="restorec"
 									   data-role="none" data-inline="true" data-mini="true" data-icon="refresh" class="lb-btn lb-btn-sm" href="#">
 									   Restore
 									</a>
-								</TMPL_IF>
-							</td>
-							</tr>
-						</table>
+                                    </div>
+                                </TMPL_IF>
+                            </div>
 					</td>		
 				</tr>
 
@@ -481,7 +473,47 @@
 								>
 							</div>
 
-							<div class="ttsconfig btnpopulategooglevoices 8001 9001 9011 9012" style="flex:0 0 auto; white-space:nowrap;">
+							<div id="elevenlabs_messages" hidden aria-hidden="true" style="display:none;"
+                                data-model-label="<TMPL_VAR NAME=T2S.ELEVENLABS_MODEL_LABEL ESCAPE=HTML>"
+                                data-default-model="<TMPL_VAR NAME=T2S.ELEVENLABS_DEFAULT_MODEL ESCAPE=HTML>"
+                                data-select-model="<TMPL_VAR NAME=T2S.ELEVENLABS_SELECT_MODEL ESCAPE=HTML>"
+                                data-auto-language="<TMPL_VAR NAME=T2S.ELEVENLABS_AUTO_LANGUAGE ESCAPE=HTML>"
+                                data-dialog-title="<TMPL_VAR NAME=T2S.ELEVENLABS_DIALOG_TITLE ESCAPE=HTML>"
+                                data-dialog-ok="<TMPL_VAR NAME=T2S.ELEVENLABS_DIALOG_OK ESCAPE=HTML>"
+                                data-unauthorized="<TMPL_VAR NAME=T2S.ELEVENLABS_UNAUTHORIZED ESCAPE=HTML>"
+                                data-forbidden="<TMPL_VAR NAME=T2S.ELEVENLABS_FORBIDDEN ESCAPE=HTML>"
+                                data-rate-limit="<TMPL_VAR NAME=T2S.ELEVENLABS_RATE_LIMIT ESCAPE=HTML>"
+                                data-server-error="<TMPL_VAR NAME=T2S.ELEVENLABS_SERVER_ERROR ESCAPE=HTML>"
+                                data-http-error="<TMPL_VAR NAME=T2S.ELEVENLABS_HTTP_ERROR ESCAPE=HTML>"
+                                data-timeout="<TMPL_VAR NAME=T2S.ELEVENLABS_TIMEOUT ESCAPE=HTML>"
+                                data-connection-error="<TMPL_VAR NAME=T2S.ELEVENLABS_CONNECTION_ERROR ESCAPE=HTML>"
+                                data-invalid-response="<TMPL_VAR NAME=T2S.ELEVENLABS_INVALID_RESPONSE ESCAPE=HTML>"
+                                data-missing-key="<TMPL_VAR NAME=T2S.ELEVENLABS_MISSING_KEY ESCAPE=HTML>"
+                                data-invalid-models="<TMPL_VAR NAME=T2S.ELEVENLABS_INVALID_MODELS ESCAPE=HTML>"
+                                data-model-unavailable="<TMPL_VAR NAME=T2S.ELEVENLABS_MODEL_UNAVAILABLE ESCAPE=HTML>"
+                                data-models-error="<TMPL_VAR NAME=T2S.ELEVENLABS_MODELS_ERROR ESCAPE=HTML>"
+                                data-no-models="<TMPL_VAR NAME=T2S.ELEVENLABS_NO_MODELS ESCAPE=HTML>"
+                                data-invalid-voices="<TMPL_VAR NAME=T2S.ELEVENLABS_INVALID_VOICES ESCAPE=HTML>"
+                                data-missing-page-token="<TMPL_VAR NAME=T2S.ELEVENLABS_MISSING_PAGE_TOKEN ESCAPE=HTML>"
+                                data-voices-error="<TMPL_VAR NAME=T2S.ELEVENLABS_VOICES_ERROR ESCAPE=HTML>"></div>
+                            <div id="elevenlabsmodell_wrap" class="ttsconfig 9011" style="display:none; flex:0 1 280px; min-width:210px;">
+                                <select
+                                    class="lb-select"
+                                    id="elevenlabsmodell"
+                                    name="elevenlabsmodell"
+                                    aria-label="<TMPL_VAR NAME=T2S.ELEVENLABS_MODEL_LABEL ESCAPE=HTML>"
+                                    data-mini="true"
+                                    data-saved-model="<TMPL_VAR NAME=ELEVENLABSMODELL ESCAPE=HTML>"
+                                    onchange="elevenlabsModelChanged()"
+                                    onpointerdown="loadElevenlabsModelsOnOpen(event)"
+                                    onkeydown="loadElevenlabsModelsOnOpen(event)"
+                                    style="width:100%;" data-native-menu="true" data-role="none">
+                                    <option value="" disabled><TMPL_VAR NAME=T2S.ELEVENLABS_SELECT_MODEL ESCAPE=HTML></option>
+                                    <option value="<TMPL_VAR NAME=ELEVENLABSMODELL ESCAPE=HTML>" selected><TMPL_VAR NAME=ELEVENLABSMODELL ESCAPE=HTML></option>
+                                </select>
+                            </div>
+
+                            <div class="ttsconfig btnpopulategooglevoices 8001 9001 9011 9012" style="flex:0 0 auto; white-space:nowrap;">
 								<a onclick="checkProvider(); return false;" data-role="none" data-inline="true" data-mini="true" href="#" class="lb-btn lb-btn-sm">
 									<TMPL_VAR T2S.BUTTON_VOICES>
 								</a>
@@ -506,7 +538,7 @@
 									data-mini="true"
 									data-validation-error-msg="<TMPL_VAR T2S.SELECT_LANGUAGE_DROPDOWN>"
 									data-validation-rule="^([A-Za-z0-9]){4,10}$"
-									style="width:100%;" class="lb-select">
+									style="width:100%;" class="lb-select" data-native-menu="true" data-role="none">
 								</select>
 							</div>
 
@@ -518,7 +550,7 @@
 									data-mini="true"
 									data-validation-error-msg="<TMPL_VAR T2S.SELECT_VOICE_DROPDOWN>"
 									data-validation-rule="^([A-Za-z0-9]){4,10}$"
-									style="width:100%;">
+									style="width:100%;" data-native-menu="true" data-role="none">
 								</select>
 							</div>
 
@@ -553,7 +585,7 @@
 									name="mp3store"
 									class="lb-select"
 									data-mini="true"
-									style="width:100%; box-sizing:border-box;">
+									style="width:100%; box-sizing:border-box;" data-native-menu="true" data-role="none">
 									<option value="1"><TMPL_VAR T2S.1DAY_MP3_STORE></option>
 									<option value="7"><TMPL_VAR T2S.7DAY_MP3_STORE></option>
 									<option value="30"><TMPL_VAR T2S.30DAY_MP3_STORE></option>
@@ -578,7 +610,7 @@
 										data-mini="true"
 										data-validation-error-msg="<TMPL_VAR T2S.SELECT_JINGLE_DROPDOWN>"
 										data-validation-rule="^([A-Za-z0-9]){4,10}$"
-										style="width:100%;" class="lb-select">
+										style="width:100%;" class="lb-select" data-native-menu="true" data-role="none">
 										<option selected="true" value="" disabled><TMPL_VAR T2S.SELECT_JINGLE_DROPDOWN></option>
 										<TMPL_VAR MP3_LIST>
 									</select>
@@ -1059,7 +1091,7 @@
 
 												<!-- Dropdown Region -->
 												<td style="width: 240px; height: 56px; vertical-align: middle; text-align: left;">
-													<select id="region" name="region" data-mini="true" style="width: 100%;" class="lb-select">
+													<select id="region" name="region" data-mini="true" style="width: 100%;" class="lb-select" data-native-menu="true" data-role="none">
 														<option value="baw"><TMPL_VAR WEATHER.REGION1></option>
 														<option value="bay"><TMPL_VAR WEATHER.REGION2></option>
 														<option value="bbb"><TMPL_VAR WEATHER.REGION3></option>
@@ -1352,7 +1384,7 @@
                                             name="testing_scenario"
                                             data-mini="true"
                                             data-native-menu="true"
-                                            <TMPL_IF NAME="LBV4">data-role="none"</TMPL_IF>
+                                            data-role="none"
                                             class="lb-select testing-scenario-select">
                                         <TMPL_VAR TESTING_SCENARIO_OPTIONS>
                                     </select>
@@ -1497,7 +1529,7 @@
 									</td>
 									<td class="testing-json-number-cell"><span class="testing-json-number"><TMPL_VAR TEST_NUMBER></span></td>
 									<td class="testing-json-status-cell">
-										<select name="testing_status_<TMPL_VAR ROW_INDEX>" class="lb-select testing-json-status" data-role="none">
+										<select name="testing_status_<TMPL_VAR ROW_INDEX>" class="lb-select testing-json-status" data-role="none" data-mini="true" data-native-menu="true">
 											<TMPL_VAR STATUS_OPTIONS>
 										</select>
 									</td>
@@ -1505,7 +1537,7 @@
 										<input type="text" name="testing_name_<TMPL_VAR ROW_INDEX>" value="<TMPL_VAR NAME>" class="lb-input testing-json-name" data-role="none">
 									</td>
 									<td class="testing-json-risk-cell">
-										<select name="testing_risk_<TMPL_VAR ROW_INDEX>" class="lb-select testing-json-risk" data-role="none">
+										<select name="testing_risk_<TMPL_VAR ROW_INDEX>" class="lb-select testing-json-risk" data-role="none" data-mini="true" data-native-menu="true">
 											<TMPL_VAR RISK_OPTIONS>
 										</select>
 									</td>
@@ -1665,7 +1697,7 @@
 												data-mini="true"
 												data-native-menu="true"
 												class="lb-select"
-												style="width:260px !important; max-width:260px !important;">
+												style="width:260px !important; max-width:260px !important;" data-role="none">
 											<option selected="selected" disabled value="">*** Select Function ***</option>
 											<option value="">None</option>
 											<option value="nextradio">Nextradio</option>
@@ -2040,7 +2072,7 @@
 										</label>
 
 										<div style="width:220px; min-width:220px; max-width:220px;">
-											<select id="follow_host" name="follow_host" data-mini="true" data-native-menu="true" style="width:100%;" class="lb-select">
+											<select id="follow_host" name="follow_host" data-mini="true" data-native-menu="true" style="width:100%;" class="lb-select" data-role="none">
 												<option selected="selected" value="false"><TMPL_VAR ZONES.FOLLOW_HOST_OPTION></option>
 												<TMPL_VAR ROWSHOSTPLAYER>
 											</select>
@@ -2139,7 +2171,7 @@
 							<div class="update" style="display:flex; align-items:center; gap:10px; white-space:nowrap;">
 								<label id="lstartupdate" style="margin:0;">Start:</label>
  								<fieldset class="hw-update-day-wrap" style="margin:0; width:170px;">
-									<select id="hw_update_day" name="hw_update_day" data-mini="true" data-native-menu="true" style="width:100%;" class="lb-select">
+									<select id="hw_update_day" name="hw_update_day" data-mini="true" data-native-menu="true" style="width:100%;" class="lb-select" data-role="none">
 										<option selected="selected" value="10"><TMPL_VAR TEMPLATE.UPDATE_DAILY></option>
 										<option disabled value="7"><TMPL_VAR TEMPLATE.UPDATE_WEEKLY></option>
 										<option value="1"><TMPL_VAR TEMPLATE.UPDATE_MONDAY></option>
@@ -2153,7 +2185,7 @@
 								</fieldset>
 
 								<fieldset class="hw-update-time-wrap" style="margin:0; width:130px;">
-									<select id="hw_update_time" name="hw_update_time" data-mini="true" data-native-menu="true" style="width:100%;" class="lb-select">
+									<select id="hw_update_time" name="hw_update_time" data-mini="true" data-native-menu="true" style="width:100%;" class="lb-select" data-role="none">
 										<option value="0">0:00</option>
 										<option value="1">1:00</option>
 										<option value="2">2:00</option>
@@ -2282,7 +2314,7 @@
 						<div style="display:flex; align-items:center; gap:16px; width:100%; max-width:none; white-space:nowrap; flex-wrap:nowrap;">
 							<div style="flex:0 0 280px;">
 								<fieldset style="margin:0; width:100%;">
-									<select name="sonos_release" id="sonos_release" data-mini="true" data-native-menu="true" style="width:100%;" class="lb-select">
+									<select name="sonos_release" id="sonos_release" data-mini="true" data-native-menu="true" style="width:100%;" class="lb-select" data-role="none">
 										<option value="">Loading releases...</option>
 									</select>
 								</fieldset>
