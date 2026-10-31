@@ -551,6 +551,6 @@
  7.2.0 		[IMPROVEMENT] Erweitertes Errorhandling der Online T2S Provider und im Fehlerfall Fallback auf Piper
  7.2.1 		[IMPROVEMENT] Wetteransage korrigiert (weather4lox)
 			[IMPROVEMENT] ElevenLabs Nutzer können jetzt das jeweilige Sprachmodell auswählen
-			[IMPROVEMENT] Eigenes CSS Style mit echtem Apple liquid-glass Effekt
+			[IMPROVEMENT] Eigenes CSS Style mit echtem Apple liquid-glass Effekt (nur LoxBerry v4)
 			[IMPROVEMENT] kleinere Optimierungen in der UI
  
