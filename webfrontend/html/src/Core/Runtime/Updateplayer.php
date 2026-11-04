@@ -1,7 +1,7 @@
 <?php
 	/**
 	 * Sonos4Lox - Player update helper
-	 * Version: UPDATEPLAYER_CORE_RUNTIME_RELOCATION_V01_2026_06_12
+	 * Version: UPDATEPLAYER_ROOT_INIT_PERMISSIONS_V02_2026_11_04
 	 *
 	 * Relocation package for the existing player update helper.
 	 * The file is now located in src/Core/Runtime.
@@ -10,9 +10,11 @@
 	 * - Adds safe JSON config loading and atomic config writing with backup.
 	 * - Adds timeout and validation for Sonos /info requests.
 	 * - Prevents undefined variable/index warnings in migration paths.
-	 * - Escapes chmod shell arguments and checks directories before chmod.
+	 * - Limits permission normalization to plugin-owned data directories.
+	 * - Sets directories to 0755 and media files to 0644 without following symlinks.
 	 * - Closes socket handles after reachability checks.
 	 * - Keeps PiperVoiceIndex rebuild, but shields config updates from Piper errors.
+	 * - Replaces unnecessary OS reboot advice with targeted player update advice.
 	 */
 
 	#header('Content-Type: application/json; charset=utf-8');
@@ -158,14 +160,48 @@
 				return;
 			}
 
-			if (!is_dir($path)) {
-				s4lox_updateplayer_log('WARNING', "Skipped chmod because '$path' is not an existing directory.");
+			if (!is_dir($path) || is_link($path)) {
+				s4lox_updateplayer_log('WARNING', "Skipped chmod because '$path' is not a regular directory.");
 				return;
 			}
 
-			system('chmod -R 0755 '.escapeshellarg($path), $returnCode);
-			if ($returnCode !== 0) {
-				s4lox_updateplayer_log('WARNING', "chmod returned code '$returnCode' for '$path'.");
+			// Never recursively modify arbitrary user-configured external directories as root.
+			$managedRoot = defined('LBPDATADIR') ? realpath(LBPDATADIR) : false;
+			$resolvedPath = realpath($path);
+			if ($managedRoot === false || $resolvedPath === false ||
+				($resolvedPath !== $managedRoot && strpos($resolvedPath, rtrim($managedRoot, '/').'/') !== 0)) {
+				s4lox_updateplayer_log('WARNING', "Skipped automatic chmod outside the plugin data folder: '$path'.");
+				return;
+			}
+
+			$failures = 0;
+			if (!@chmod($resolvedPath, 0755)) {
+				$failures++;
+			}
+			try {
+				$iterator = new RecursiveIteratorIterator(
+					new RecursiveDirectoryIterator($resolvedPath, FilesystemIterator::SKIP_DOTS),
+					RecursiveIteratorIterator::SELF_FIRST
+				);
+				foreach ($iterator as $entry) {
+					if ($entry->isLink()) {
+						continue;
+					}
+					if ($entry->isDir()) {
+						if (!@chmod($entry->getPathname(), 0755)) {
+							$failures++;
+						}
+					} elseif ($entry->isFile()) {
+						if (!@chmod($entry->getPathname(), 0644)) {
+							$failures++;
+						}
+					}
+				}
+			} catch (Throwable $e) {
+				s4lox_updateplayer_log('WARNING', "Permission normalization stopped for '$path': ".$e->getMessage());
+			}
+			if ($failures > 0) {
+				s4lox_updateplayer_log('WARNING', "Could not update permissions for $failures entries in '$path'.");
 			}
 		}
 	}
@@ -191,14 +227,32 @@
 			}
 
 			try {
-				S4L_PiperVoiceIndex::rebuildIndex(
+				$result = S4L_PiperVoiceIndex::rebuildIndex(
 					LBPHTMLDIR.'/VoiceEngines/piper-voices/',
 					LBPHTMLDIR.'/VoiceEngines/langfiles/piper.json',
 					LBPHTMLDIR.'/VoiceEngines/langfiles/piper_voices.json'
 				);
-				s4lox_updateplayer_log('OK', 'Piper voice index has been rebuilt.');
+				if (!empty($result['success'])) {
+					s4lox_updateplayer_log('OK', 'Piper voice index has been rebuilt.');
+				} else {
+					s4lox_updateplayer_log('WARNING', 'Piper voice index rebuild finished with warnings.');
+				}
 			} catch (Throwable $e) {
 				s4lox_updateplayer_log('WARNING', 'Piper voice index rebuild failed: '.$e->getMessage());
+			} finally {
+				// A root-run update must not leave generated JSON files owned by root.
+				$generatedFiles = array(
+					LBPHTMLDIR.'/VoiceEngines/langfiles/piper.json',
+					LBPHTMLDIR.'/VoiceEngines/langfiles/piper_voices.json',
+					LBPHTMLDIR.'/VoiceEngines/piper-voices/Thorsten-Voice_Hessisch_Piper_high-Oct2023.onnx.json'
+				);
+				foreach ($generatedFiles as $file) {
+					if (is_file($file) && !is_link($file)) {
+						@chown($file, 'loxberry');
+						@chgrp($file, 'loxberry');
+						@chmod($file, 0644);
+					}
+				}
 			}
 		}
 	}
@@ -362,12 +416,12 @@
 			if (!isset($sonoszonen[$zone][6])) {
 				if (!isset($sonoszonen[$zone][7])) {
 					$res = '2';
-					#notify(LBPPLUGINDIR, "Sonos", "Update for Player '$zone' is required, but failed due to Offline Status. Please turn Player '$zone' on and restart your Loxberry to execute Daemon again/update Setup!", "error");
-					s4lox_updateplayer_log('WARNING', "Check/update Player '$zone' failed. Please turn On all Players and restart your Loxberry.");
+					#notify(LBPPLUGINDIR, "Sonos", "Update for Player '$zone' is required, but failed due to Offline Status. Please turn on Player '$zone' and rerun Updateplayer.php.", "error");
+					s4lox_updateplayer_log('WARNING', "Check/update Player '$zone' failed. Please turn on all players and rerun the player update.");
 				}
 			} else {
 				$res = '3';
-				s4lox_updateplayer_log('OK', "Player '$zone' seems to be offline, but main config is OK. Please Power On and reboot Loxberry.");
+				s4lox_updateplayer_log('OK', "Player '$zone' seems to be offline, but main config is OK. Please turn on the player and rerun the player update.");
 			}
 		}
 	}
@@ -466,7 +520,7 @@
 			s4lox_updateplayer_log('OK', 'Player config requires update, but at least one Player seems to be Offline.');
 		break;
 		case '3':
-			s4lox_updateplayer_log('OK', 'At least one Player seems to be Offline, but main config is up-to-date. Please turn on Player(s) and restart Loxberry.');
+			s4lox_updateplayer_log('OK', 'At least one Player seems to be Offline, but main config is up-to-date. Please turn on the player(s) and rerun the player update.');
 		break;
 	}
 	s4lox_updateplayer_log('INFO', 'End of player update.');

@@ -1,7 +1,8 @@
 #!/bin/sh
 # Sonos4Lox preroot.sh
-# Version: PREROOT_MEMORY_SAFE_V02_2026_06_24
+# Version: PREROOT_PIPER_SAFE_COPY_V04_2026_11_04
 # Will be executed as user "root".
+# Back up the Piper runtime before LoxBerry removes the previous plugin tree.
 
 COMMAND="$0"
 PTEMPDIR="$1"
@@ -17,11 +18,11 @@ fi
 log_info() { echo "<INFO> $*"; }
 log_ok() { echo "<OK> $*"; }
 log_warning() { echo "<WARNING> $*"; }
+log_error() { echo "<ERROR> $*"; }
 
 log_info "Using LBHOME: $LBHOME"
-
 # ---------------------------------------------------------
-# Remove old cron.d artifact if still present
+# Remove old cron.d artifact if still present.
 # ---------------------------------------------------------
 CRON_D_FILE="$LBHOME/system/cron/cron.d/Sonos"
 
@@ -36,61 +37,58 @@ else
 fi
 
 # ---------------------------------------------------------
-# Piper installation folder
+# Back up the complete Piper runtime OUTSIDE the plugin tree.
+# Keep the original running if the upgrade is cancelled before replacement.
+# The copy stays on disk (not in /tmp) and does not use zram-backed memory.
+# PREUPGRADE clears its own backup folder, so it must not be used here.
 # ---------------------------------------------------------
-# V02: Do NOT delete the existing Piper folder during every upgrade.
-# postroot.sh validates the existing binary and only installs Piper when
-# needed. This avoids unnecessary large downloads/extractions and keeps
-# installation memory/disk pressure lower on systems using zram.
+case "$PTEMPDIR" in
+    ""|*[!A-Za-z0-9_-]*)
+        log_error "Unsafe or missing installer token for Piper preservation: $PTEMPDIR"
+        exit 2
+        ;;
+esac
+case "$PDIR" in
+    ""|*[!A-Za-z0-9_-]*)
+        log_error "Unsafe plugin directory name for Piper preservation: $PDIR"
+        exit 2
+        ;;
+esac
+
 PIPER_DIR="$LBHOME/bin/plugins/$PDIR/piper"
+PIPER_STAGE="$LBHOME/bin/plugins/.${PDIR}_piper_upgrade_${PTEMPDIR}"
 
-PIPER_BINARY="$PIPER_DIR/piper"
-
-if [ -d "$PIPER_DIR" ]; then
-    if [ -x "$PIPER_BINARY" ] && "$PIPER_BINARY" --help >/dev/null 2>&1; then
-        log_info "Existing Piper folder will be kept; binary is executable: $PIPER_BINARY"
+if [ -L "$PIPER_DIR" ]; then
+    log_error "Piper folder is a symlink, refusing to back it up: $PIPER_DIR"
+    exit 2
+elif [ -d "$PIPER_DIR" ]; then
+    if [ -e "$PIPER_STAGE" ] || [ -L "$PIPER_STAGE" ]; then
+        log_error "Piper backup already exists; refusing to overwrite it: $PIPER_STAGE"
+        exit 2
+    fi
+    if cp -a "$PIPER_DIR" "$PIPER_STAGE"; then
+        log_ok "Piper runtime backed up safely before plugin replacement: $PIPER_STAGE"
     else
-        log_warning "Existing Piper folder is missing a valid binary and will be removed so postroot can reinstall it: $PIPER_DIR"
-        if rm -rf "$PIPER_DIR"; then
-            log_ok "Invalid Piper folder has been deleted: $PIPER_DIR"
-        else
-            log_warning "Could not delete invalid Piper folder: $PIPER_DIR"
-        fi
+        log_error "Could not back up Piper runtime. Aborting upgrade to protect existing binaries: $PIPER_DIR"
+        exit 2
+    fi
+
+    # Let the LoxBerry installer remove the original tree without permission
+    # errors. Do not change executable bits on binaries or shared libraries.
+    PIPER_PARENT="$LBHOME/bin/plugins/$PDIR"
+    if chown -R loxberry:loxberry "$PIPER_DIR" && \
+       chown loxberry:loxberry "$PIPER_PARENT" && \
+       chmod u+rwx "$PIPER_PARENT" && \
+       find "$PIPER_DIR" -type d -exec chmod u+rwx {} +; then
+        log_ok "Piper runtime permissions prepared for LoxBerry plugin replacement."
+    else
+        log_error "Could not prepare Piper permissions; aborting before plugin replacement."
+        exit 2
     fi
 else
-    log_info "No existing Piper folder present: $PIPER_DIR"
+    log_info "No existing Piper runtime to stage: $PIPER_DIR"
 fi
 
-# ---------------------------------------------------------
-# Remove stale /usr/bin/piper symlink only if it points into this plugin
-# or if the target no longer exists. Do not overwrite a valid system binary.
-# ---------------------------------------------------------
-PIPER_LINK="/usr/bin/piper"
-
-if [ -L "$PIPER_LINK" ]; then
-    LINK_TARGET="$(readlink "$PIPER_LINK" 2>/dev/null || true)"
-    case "$LINK_TARGET" in
-        "$LBHOME/bin/plugins/$PDIR"/*|"$PIPER_DIR"/*)
-            if rm -f "$PIPER_LINK"; then
-                log_ok "Removed legacy Piper symlink: $PIPER_LINK -> $LINK_TARGET"
-            else
-                log_warning "Could not remove Piper symlink: $PIPER_LINK -> $LINK_TARGET"
-            fi
-            ;;
-        *)
-            if [ -n "$LINK_TARGET" ] && [ ! -e "$LINK_TARGET" ]; then
-                if rm -f "$PIPER_LINK"; then
-                    log_ok "Removed broken Piper symlink: $PIPER_LINK -> $LINK_TARGET"
-                else
-                    log_warning "Could not remove broken Piper symlink: $PIPER_LINK -> $LINK_TARGET"
-                fi
-            else
-                log_info "Existing /usr/bin/piper symlink does not belong to this plugin; leaving unchanged: $LINK_TARGET"
-            fi
-            ;;
-    esac
-else
-    log_info "No /usr/bin/piper symlink present."
-fi
-
+# The existing /usr/bin/piper symlink is intentionally left untouched until
+# postroot.sh completes. This keeps Piper functional if preupgrade aborts.
 exit 0

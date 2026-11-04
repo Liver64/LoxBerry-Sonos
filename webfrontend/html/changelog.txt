@@ -553,4 +553,6 @@
 			[IMPROVEMENT] ElevenLabs Nutzer können jetzt das jeweilige Sprachmodell auswählen
 			[IMPROVEMENT] Eigenes CSS Style mit echtem Apple liquid-glass Effekt (nur LoxBerry v4)
 			[IMPROVEMENT] kleinere Optimierungen in der UI
+ 7.2.2		[IMPROVEMENT] Verbrauch von ElevenLabs wird angezeigt
+			[IMPROVEMENT] Plugin Installation optimiert
  

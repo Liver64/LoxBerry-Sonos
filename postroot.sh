@@ -1,6 +1,6 @@
 #!/bin/sh
 # Sonos4Lox postroot.sh
-# Version: POSTROOT_MEMORY_SAFE_V02_2026_06_24
+# Version: POSTROOT_PIPER_SAFE_RESTORE_V04_2026_11_04
 # Will be executed as user "root".
 
 COMMAND="$0"
@@ -20,7 +20,6 @@ log_warning() { echo "<WARNING> $*"; }
 log_error() { echo "<ERROR> $*"; }
 
 log_info "Using LBHOME: $LBHOME"
-
 # ---------------------------------------------------------
 # Normalize plugin config permissions if config exists.
 # This prevents failed saves after root-owned backup/copy operations.
@@ -32,7 +31,6 @@ normalize_config_permissions() {
         log_info "Config folder not found yet, skipping permission normalization: $CONFIG_DIR"
         return 0
     fi
-
     chown -R loxberry:loxberry "$CONFIG_DIR" 2>/dev/null || true
     chmod 0755 "$CONFIG_DIR" 2>/dev/null || true
     find "$CONFIG_DIR" -type f -exec chmod 0644 {} \; 2>/dev/null || true
@@ -40,7 +38,57 @@ normalize_config_permissions() {
     log_ok "Config permissions normalized: $CONFIG_DIR"
     return 0
 }
+# ---------------------------------------------------------
+# Restore the complete Piper runtime staged by preroot.sh.
+# The staging path is outside the plugin folder deleted on upgrade.
+# ---------------------------------------------------------
+restore_staged_piper() {
+    case "$PTEMPDIR" in
+        ""|*[!A-Za-z0-9_-]*)
+            log_error "Unsafe or missing installer token for Piper restore: $PTEMPDIR"
+            return 1
+            ;;
+    esac
+    case "$PDIR" in
+        ""|*[!A-Za-z0-9_-]*)
+            log_error "Unsafe plugin directory name for Piper restore: $PDIR"
+            return 1
+            ;;
+    esac
 
+    PIPER_STAGE="$LBHOME/bin/plugins/.${PDIR}_piper_upgrade_${PTEMPDIR}"
+    PIPER_PARENT="$LBHOME/bin/plugins/$PDIR"
+    PIPER_RESTORE_DIR="$PIPER_PARENT/piper"
+
+    if [ -L "$PIPER_STAGE" ]; then
+        log_error "Piper staging path is a symlink; refusing restore: $PIPER_STAGE"
+        return 1
+    fi
+    if [ ! -d "$PIPER_STAGE" ]; then
+        log_info "No staged Piper runtime; a fresh installation may be needed."
+        return 0
+    fi
+
+    if ! mkdir -p "$PIPER_PARENT"; then
+        log_error "Could not create Piper destination parent: $PIPER_PARENT"
+        return 1
+    fi
+    if [ -d "$PIPER_RESTORE_DIR" ] && [ ! -L "$PIPER_RESTORE_DIR" ]; then
+        if [ -z "$(ls -A "$PIPER_RESTORE_DIR")" ]; then
+            rmdir "$PIPER_RESTORE_DIR" || return 1
+        fi
+    fi
+    if [ -e "$PIPER_RESTORE_DIR" ] || [ -L "$PIPER_RESTORE_DIR" ]; then
+        log_error "Piper destination is not empty; leaving staged backup intact: $PIPER_STAGE"
+        return 1
+    fi
+    if mv "$PIPER_STAGE" "$PIPER_RESTORE_DIR"; then
+        log_ok "Piper runtime restored after plugin replacement: $PIPER_RESTORE_DIR"
+        return 0
+    fi
+    log_error "Piper runtime restore failed; staged backup remains: $PIPER_STAGE"
+    return 1
+}
 # ---------------------------------------------------------
 # Piper Installation (robust, fixed path/layout)
 # Target:
@@ -52,14 +100,22 @@ install_or_validate_piper() {
     PIPER_DIR="$PIPER_TARGET_DIR/piper"
     PIPER_BINARY="$PIPER_DIR/piper"
 
-    mkdir -p "$PIPER_DIR"
-
+    mkdir -p "$PIPER_DIR" || {
+        log_error "Could not create Piper installation folder: $PIPER_DIR"
+        return 1
+    }
     log_info "Piper installation check – target binary: $PIPER_BINARY"
 
     NEED_INSTALL=1
-    if [ -f "$PIPER_BINARY" ] && [ -x "$PIPER_BINARY" ]; then
-        log_info "Existing Piper binary found at $PIPER_BINARY – will validate."
+    if [ -f "$PIPER_BINARY" ] && [ -x "$PIPER_BINARY" ] && "$PIPER_BINARY" --help >/dev/null 2>&1; then
+        log_info "Existing Piper binary was validated; no download needed: $PIPER_BINARY"
         NEED_INSTALL=0
+    elif [ -e "$PIPER_BINARY" ]; then
+        log_warning "Existing Piper binary is invalid; attempting a clean reinstall."
+        if ! rm -f "$PIPER_BINARY"; then
+            log_error "Could not remove invalid Piper binary: $PIPER_BINARY"
+            return 1
+        fi
     fi
 
     ARCH="$(uname -m)"
@@ -68,7 +124,6 @@ install_or_validate_piper() {
     TARBALL=""
     URL=""
     LBSCONFIG="${LBSCONFIG:-$LBHOME/config/system}"
-
     if [ "$NEED_INSTALL" -eq 1 ]; then
         case "$ARCH" in
             armv7l)
@@ -97,13 +152,11 @@ install_or_validate_piper() {
                 fi
                 ;;
         esac
-
         if [ -n "$TARBALL" ]; then
             URL="https://github.com/rhasspy/piper/releases/download/2023.11.14-2/$TARBALL"
             log_info "Downloading Piper from $URL"
 
             rm -f "$PIPER_DIR/$TARBALL" "$PIPER_DIR/$TARBALL.download"
-
             if wget --no-verbose -O "$PIPER_DIR/$TARBALL.download" "$URL"; then
                 mv -f "$PIPER_DIR/$TARBALL.download" "$PIPER_DIR/$TARBALL"
                 if tar -xzf "$PIPER_DIR/$TARBALL" --strip-components=1 -C "$PIPER_DIR"; then
@@ -119,7 +172,6 @@ install_or_validate_piper() {
             fi
         fi
     fi
-
     if [ -d "$PIPER_DIR/piper" ] && [ -f "$PIPER_DIR/piper/piper" ]; then
         log_warning "Detected legacy nested Piper folder '$PIPER_DIR/piper' – flattening."
         find "$PIPER_DIR/piper" -mindepth 1 -maxdepth 1 -exec mv -f {} "$PIPER_DIR/" \;
@@ -129,7 +181,6 @@ install_or_validate_piper() {
     if [ -f "$PIPER_BINARY" ]; then
         chmod +x "$PIPER_BINARY" 2>/dev/null || true
     fi
-
     if [ -f "$PIPER_BINARY" ] && [ -x "$PIPER_BINARY" ]; then
         log_info "Validating Piper binary: $PIPER_BINARY"
         if "$PIPER_BINARY" --help >/dev/null 2>&1; then
@@ -146,7 +197,6 @@ install_or_validate_piper() {
             log_warning "Piper binary not found after installation attempt."
         fi
     fi
-
     PIPER_LINK="/usr/bin/piper"
     if [ -f "$PIPER_BINARY" ] && [ -x "$PIPER_BINARY" ]; then
         if [ -L "$PIPER_LINK" ]; then
@@ -165,11 +215,31 @@ install_or_validate_piper() {
         fi
     else
         log_warning "No valid Piper binary – no /usr/bin/piper symlink will be created."
+        if [ -L "$PIPER_LINK" ]; then
+            CURRENT_TARGET="$(readlink "$PIPER_LINK" 2>/dev/null || true)"
+            case "$CURRENT_TARGET" in
+                "$PIPER_TARGET_DIR"/*)
+                    if rm -f "$PIPER_LINK"; then
+                        log_ok "Removed stale plugin-owned Piper symlink: $PIPER_LINK"
+                    else
+                        log_warning "Could not remove stale Piper symlink: $PIPER_LINK"
+                    fi
+                    ;;
+            esac
+        fi
     fi
 
+    # Restore normal ownership after root downloads or restores the runtime.
+    # Keep existing executable bits on Piper and its bundled helper binaries.
+    if [ -d "$PIPER_DIR" ] && [ ! -L "$PIPER_DIR" ]; then
+        if chown -R loxberry:loxberry "$PIPER_DIR" && chown loxberry:loxberry "$PIPER_TARGET_DIR"; then
+            log_ok "Piper runtime ownership normalized to loxberry:loxberry."
+        else
+            log_warning "Could not fully normalize Piper runtime ownership."
+        fi
+    fi
     return 0
 }
-
 # ---------------------------------------------------------
 # Systemd support
 # ---------------------------------------------------------
@@ -184,18 +254,22 @@ INSTALL_ANY_UNIT=0
 LOXDATEN_ENABLED=0
 CFG_S4LOX="$LBHOME/config/plugins/$PDIR/s4lox_config.json"
 
+# Remember whether the event listener was running before this installation.
+LISTENER_WAS_ACTIVE=0
+if [ "$SYSTEMD_OK" -eq 1 ] && systemctl is-active --quiet sonos_event_listener.service; then
+    LISTENER_WAS_ACTIVE=1
+fi
+
 detect_loxdaten_enabled() {
     LOXDATEN_ENABLED=0
 
     if [ "$SYSTEMD_OK" -ne 1 ]; then
         return 0
     fi
-
     if [ ! -f "$CFG_S4LOX" ]; then
         log_info "Config not found ($CFG_S4LOX) – services/timers will be DISABLED."
         return 0
     fi
-
     if command -v php >/dev/null 2>&1; then
         V="$(php -r '$f=$argv[1]; $j=@json_decode(@file_get_contents($f), true); $v=$j["LOXONE"]["LoxDaten"] ?? "false"; echo strtolower((string)$v);' "$CFG_S4LOX" 2>/dev/null || echo "false")"
     elif command -v jq >/dev/null 2>&1; then
@@ -204,7 +278,6 @@ detect_loxdaten_enabled() {
         log_warning "Neither php nor jq found – cannot parse config. Services/timers will be DISABLED."
         V="false"
     fi
-
     if [ "$V" = "true" ] || [ "$V" = "1" ]; then
         LOXDATEN_ENABLED=1
         log_info "Config: LOXONE.LoxDaten = true – services/timers will be ENABLED."
@@ -224,7 +297,6 @@ install_unit_file() {
     if [ "$SYSTEMD_OK" -ne 1 ]; then
         return 0
     fi
-
     if [ ! -f "$SRC" ]; then
         log_warning "$NAME file not found at $SRC – skipping."
         return 0
@@ -241,7 +313,6 @@ install_unit_file() {
 
     return 0
 }
-
 install_systemd_units() {
     install_unit_file "$LBHOME/webfrontend/html/plugins/$PDIR/src/Core/systemd/sonos_check_on_state.service" "/etc/systemd/system/sonos_check_on_state.service" "sonos_check_on_state.service"
     install_unit_file "$LBHOME/webfrontend/html/plugins/$PDIR/src/Core/systemd/sonos_check_on_state.timer" "/etc/systemd/system/sonos_check_on_state.timer" "sonos_check_on_state.timer"
@@ -250,7 +321,6 @@ install_systemd_units() {
     install_unit_file "$LBHOME/webfrontend/html/plugins/$PDIR/src/Core/systemd/sonos_watchdog.timer" "/etc/systemd/system/sonos_watchdog.timer" "sonos_watchdog.timer"
     return 0
 }
-
 protect_check_on_state_execstart() {
     SERVICE_DEST="/etc/systemd/system/sonos_check_on_state.service"
     PHP="/usr/bin/php"
@@ -259,7 +329,6 @@ protect_check_on_state_execstart() {
     if [ "$SYSTEMD_OK" -ne 1 ] || [ ! -f "$SERVICE_DEST" ]; then
         return 0
     fi
-
     if grep -Eq '^ExecStart=.*/(check_on_state\.php|CheckState\.php)' "$SERVICE_DEST"; then
         if grep -q "^ExecStart=$PHP " "$SERVICE_DEST"; then
             log_info "Protection: sonos_check_on_state.service already uses $PHP."
@@ -270,7 +339,6 @@ protect_check_on_state_execstart() {
             log_ok "Protection: ExecStart patched in sonos_check_on_state.service."
         fi
     fi
-
     return 0
 }
 
@@ -289,7 +357,6 @@ protect_exec_bits() {
 
 remove_sonos_on_check_cronfiles() {
     CRONROOT="$LBHOME/system/cron"
-
     log_info "Cron cleanup: Searching for 'Sonos_On_check' under: $CRONROOT"
 
     if [ ! -d "$CRONROOT" ]; then
@@ -305,7 +372,6 @@ remove_sonos_on_check_cronfiles() {
             log_warning "Cron cleanup: Could not remove $f"
         fi
     done
-
     return 0
 }
 
@@ -321,12 +387,10 @@ apply_systemd_state() {
             log_warning "Failed to reload systemd daemon."
         fi
     fi
-
     for unit in sonos_check_on_state.timer sonos_event_listener.service sonos_watchdog.timer; do
         if [ ! -f "/etc/systemd/system/$unit" ]; then
             continue
         fi
-
         if [ "$LOXDATEN_ENABLED" -eq 1 ]; then
             if systemctl enable --now "$unit" >/dev/null 2>&1; then
                 log_ok "$unit has been enabled and started."
@@ -342,13 +406,129 @@ apply_systemd_state() {
     return 0
 }
 
+# Repair only files generated by Updateplayer.php (and its Piper index helper).
+# Avoid recursive chown of the web frontend and user-controlled media folders.
+normalize_player_generated_permissions() {
+    for file in "$CFG_S4LOX" "$CFG_S4LOX.bak"; do
+        if [ -f "$file" ] && [ ! -L "$file" ]; then
+            chown loxberry:loxberry "$file" || log_warning "Could not restore owner: $file"
+            chmod 0664 "$file" || log_warning "Could not restore permissions: $file"
+        fi
+    done
+
+    PIPER_LANG_DIR="$LBHOME/webfrontend/html/plugins/$PDIR/VoiceEngines/langfiles"
+    if [ -d "$PIPER_LANG_DIR" ] && [ ! -L "$PIPER_LANG_DIR" ]; then
+        chown loxberry:loxberry "$PIPER_LANG_DIR" || log_warning "Could not restore owner: $PIPER_LANG_DIR"
+        chmod 0755 "$PIPER_LANG_DIR" || log_warning "Could not restore permissions: $PIPER_LANG_DIR"
+        for name in piper.json piper_voices.json; do
+            file="$PIPER_LANG_DIR/$name"
+            if [ -f "$file" ] && [ ! -L "$file" ]; then
+                chown loxberry:loxberry "$file" || log_warning "Could not restore owner: $file"
+                chmod 0644 "$file" || log_warning "Could not restore permissions: $file"
+            fi
+        done
+    fi
+
+    PIPER_VOICE_DIR="$LBHOME/webfrontend/html/plugins/$PDIR/VoiceEngines/piper-voices"
+    PIPER_HESSISCH_JSON="$PIPER_VOICE_DIR/Thorsten-Voice_Hessisch_Piper_high-Oct2023.onnx.json"
+    if [ -f "$PIPER_HESSISCH_JSON" ] && [ ! -L "$PIPER_HESSISCH_JSON" ]; then
+        chown loxberry:loxberry "$PIPER_HESSISCH_JSON" || log_warning "Could not restore owner: $PIPER_HESSISCH_JSON"
+        chmod 0644 "$PIPER_HESSISCH_JSON" || log_warning "Could not restore permissions: $PIPER_HESSISCH_JSON"
+    fi
+}
+
+# Run a PHP installer helper as the unprivileged LoxBerry user.
+run_unprivileged_php() {
+    HELPER_LABEL="$1"
+    HELPER_SCRIPT="$2"
+    if [ ! -f "$HELPER_SCRIPT" ]; then
+        log_warning "$HELPER_LABEL was not found: $HELPER_SCRIPT"
+        return 0
+    fi
+    if ! command -v runuser >/dev/null 2>&1; then
+        log_warning "runuser is not available; skipping $HELPER_LABEL."
+        return 0
+    fi
+    log_info "Running $HELPER_LABEL as loxberry during install/upgrade."
+    if runuser -u loxberry -- /usr/bin/php -q "$HELPER_SCRIPT"; then
+        log_ok "$HELPER_LABEL completed."
+    else
+        log_warning "$HELPER_LABEL failed; see the installation log."
+    fi
+    return 0
+}
+
+# Run after all install/upgrade restores are finished. The player update needs
+# root privileges; CheckState.php must run with the unprivileged plugin user.
+run_player_initialization() {
+    PHP_BIN="/usr/bin/php"
+    PLAYER_SCRIPT="$LBHOME/webfrontend/html/plugins/$PDIR/src/Core/Runtime/Updateplayer.php"
+    STATE_SCRIPT="$LBHOME/webfrontend/html/plugins/$PDIR/src/Core/Runtime/CheckState.php"
+
+    if [ ! -x "$PHP_BIN" ]; then
+        log_warning "PHP CLI is missing; skipping Sonos player initialization."
+        return 0
+    fi
+    if [ ! -f "$CFG_S4LOX" ]; then
+        log_info "Sonos configuration is not present yet; skipping player initialization."
+        return 0
+    fi
+
+    if [ -f "$PLAYER_SCRIPT" ]; then
+        log_info "Running Updateplayer.php as root during install/upgrade."
+        if "$PHP_BIN" -q "$PLAYER_SCRIPT"; then
+            log_ok "Updateplayer.php completed."
+        else
+            log_warning "Updateplayer.php failed; see the installation log."
+        fi
+        normalize_player_generated_permissions
+    else
+        log_warning "Updateplayer.php was not found: $PLAYER_SCRIPT"
+    fi
+
+    # Preserve the previous upgrade helper order after the root player update.
+    run_unprivileged_php "NotificationCheck.php" "$LBHOME/webfrontend/html/plugins/$PDIR/src/Support/NotificationCheck.php"
+    run_unprivileged_php "CheckState.php" "$STATE_SCRIPT"
+    run_unprivileged_php "TextUpdate.php" "$LBHOME/webfrontend/html/plugins/$PDIR/src/Support/TextUpdate.php"
+    return 0
+}
+
+# Reload Apache for updated PHP modules without requesting an OS reboot.
+reload_apache_if_running() {
+    if [ "$SYSTEMD_OK" -eq 1 ] && systemctl is-active --quiet apache2.service; then
+        if systemctl reload apache2.service >/dev/null 2>&1; then
+            log_ok "Apache configuration reloaded."
+        else
+            log_warning "Apache reload failed; verify apache2.service."
+        fi
+    fi
+}
+
+# Updated listener PHP code is not picked up by enable --now if already active.
+restart_existing_listener() {
+    if [ "$SYSTEMD_OK" -eq 1 ] && [ "$LISTENER_WAS_ACTIVE" -eq 1 ] && [ "$LOXDATEN_ENABLED" -eq 1 ]; then
+        if systemctl restart sonos_event_listener.service >/dev/null 2>&1; then
+            log_ok "Sonos Event Listener restarted with updated code."
+        else
+            log_warning "Could not restart Sonos Event Listener."
+        fi
+    fi
+}
+
 normalize_config_permissions
+if ! restore_staged_piper; then
+    log_error "Piper runtime recovery failed. Installation stopped; backup was preserved."
+    exit 2
+fi
 install_or_validate_piper
 install_systemd_units
 protect_check_on_state_execstart
 protect_exec_bits
 remove_sonos_on_check_cronfiles
+run_player_initialization
 detect_loxdaten_enabled
 apply_systemd_state
+restart_existing_listener
+reload_apache_if_running
 
 exit 0
