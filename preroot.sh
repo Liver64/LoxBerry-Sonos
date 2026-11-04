@@ -1,6 +1,6 @@
 #!/bin/sh
 # Sonos4Lox preroot.sh
-# Version: PREROOT_PIPER_SAFE_COPY_V04_2026_11_04
+# Version: PREROOT_PIPER_ONLINE_GUARD_V05_2026_11_04
 # Will be executed as user "root".
 # Back up the Piper runtime before LoxBerry removes the previous plugin tree.
 
@@ -21,6 +21,99 @@ log_warning() { echo "<WARNING> $*"; }
 log_error() { echo "<ERROR> $*"; }
 
 log_info "Using LBHOME: $LBHOME"
+
+# Block online checks before the installer replaces configuration and data.
+# The marker survives plugin folder removal; the restored postroot.sh clears it.
+case "$PTEMPDIR" in
+    ""|*[!A-Za-z0-9_-]*)
+        log_error "Unsafe or missing installer token: $PTEMPDIR"
+        exit 2
+        ;;
+esac
+case "$PDIR" in
+    ""|*[!A-Za-z0-9_-]*)
+        log_error "Unsafe plugin directory: $PDIR"
+        exit 2
+        ;;
+esac
+
+ONLINE_GUARD_DIR="/run/shm/$PDIR"
+ONLINE_GUARD_FILE="$ONLINE_GUARD_DIR/.online_check_upgrade"
+if [ -L "$ONLINE_GUARD_DIR" ] || [ -L "$ONLINE_GUARD_FILE" ]; then
+    log_error "Online-check guard path is a symlink; refusing to continue."
+    exit 2
+fi
+# Undo the local pause if this preroot script itself fails. A later installer
+# failure is handled by the expiring guard and the cron fallback.
+PREROOT_COMPLETE=0
+ONLINE_TIMER_WAS_ACTIVE=0
+preroot_exit_cleanup() {
+    if [ "$PREROOT_COMPLETE" -eq 1 ]; then
+        return 0
+    fi
+    if [ -f "$ONLINE_GUARD_FILE" ] && [ ! -L "$ONLINE_GUARD_FILE" ] &&
+       [ "$(cat "$ONLINE_GUARD_FILE" 2>/dev/null || true)" = "$PTEMPDIR" ]; then
+        rm -f "$ONLINE_GUARD_FILE"
+    fi
+    if [ "$ONLINE_TIMER_WAS_ACTIVE" -eq 1 ]; then
+        systemctl start sonos_check_on_state.timer >/dev/null 2>&1 || true
+    fi
+}
+trap 'preroot_exit_cleanup' 0
+
+if [ ! -d "$ONLINE_GUARD_DIR" ]; then
+    if ! mkdir -p "$ONLINE_GUARD_DIR" ||
+       ! chown loxberry:loxberry "$ONLINE_GUARD_DIR" ||
+       ! chmod 0755 "$ONLINE_GUARD_DIR"; then
+        log_error "Cannot create online-check guard directory: $ONLINE_GUARD_DIR"
+        exit 2
+    fi
+fi
+if ! printf '%s\n' "$PTEMPDIR" > "$ONLINE_GUARD_FILE" || ! chmod 0644 "$ONLINE_GUARD_FILE"; then
+    log_error "Cannot create online-check upgrade guard: $ONLINE_GUARD_FILE"
+    exit 2
+fi
+if command -v runuser >/dev/null 2>&1 &&
+   ! runuser -u loxberry -- test -r "$ONLINE_GUARD_FILE"; then
+    log_error "Online-check guard is not readable by loxberry: $ONLINE_GUARD_FILE"
+    exit 2
+fi
+log_ok "Online checks paused for plugin replacement."
+
+# Stop systemd scheduling and wait for any active one-shot check to finish.
+# The cron fallback also observes the upgrade guard in CheckState.php.
+if command -v systemctl >/dev/null 2>&1; then
+    if systemctl is-active --quiet sonos_check_on_state.timer; then
+        ONLINE_TIMER_WAS_ACTIVE=1
+    fi
+    systemctl stop sonos_check_on_state.timer >/dev/null 2>&1 || true
+    if systemctl stop sonos_check_on_state.service >/dev/null 2>&1; then
+        log_ok "Online-check systemd service stopped for upgrade."
+    else
+        log_info "Online-check systemd service was not active or could not be stopped."
+    fi
+fi
+
+# Keep the small online-state markers outside the plugin data tree so a
+# restored marker cannot be mistaken for a newly online player after upgrade.
+STATUS_DIR="$LBHOME/data/plugins/$PDIR/PlayerStatus"
+STATUS_STAGE="$LBHOME/data/plugins/.${PDIR}_playerstatus_upgrade_${PTEMPDIR}"
+if [ -L "$STATUS_DIR" ] || [ -L "$STATUS_STAGE" ] || [ -e "$STATUS_STAGE" ]; then
+    log_error "Unsafe or occupied PlayerStatus backup path: $STATUS_STAGE"
+    rm -f "$ONLINE_GUARD_FILE"
+    exit 2
+fi
+if [ -d "$STATUS_DIR" ]; then
+    if cp -a "$STATUS_DIR" "$STATUS_STAGE"; then
+        log_ok "PlayerStatus markers preserved before plugin replacement: $STATUS_STAGE"
+    else
+        log_error "PlayerStatus backup failed; keeping the existing installation."
+        rm -f "$ONLINE_GUARD_FILE"
+        exit 2
+    fi
+else
+    log_info "No PlayerStatus folder to preserve."
+fi
 # ---------------------------------------------------------
 # Remove old cron.d artifact if still present.
 # ---------------------------------------------------------
@@ -91,4 +184,5 @@ fi
 
 # The existing /usr/bin/piper symlink is intentionally left untouched until
 # postroot.sh completes. This keeps Piper functional if preupgrade aborts.
+PREROOT_COMPLETE=1
 exit 0

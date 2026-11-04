@@ -3,7 +3,7 @@
 
 /**
  * Sonos4Lox - Online Check / CheckState
- * Version: CHECKSTATE_ONLINE_HYSTERESIS_V04_2026_09_25
+ * Version: CHECKSTATE_UPGRADE_LOCK_V05_2026_11_04
  *
  * Purpose:
  * - Check configured Sonos players for online/offline state.
@@ -38,6 +38,30 @@ $offline_grace_sec = 120; // Keep a player online through a single transient fai
 $GLOBALS['ONLINE_CHECK_STARTED'] = false;
 
 echo "<PRE>";
+
+// During plugin replacement, the configuration and PlayerStatus files are
+// intentionally unavailable. Ignore a stale guard after two hours so a failed
+// upgrade cannot permanently block the cron fallback.
+$upgradeGuard = "/run/shm/{$lbpplugindir}/.online_check_upgrade";
+if (s4l_upgrade_in_progress($upgradeGuard)) {
+    s4l_console('INFO', 'Online check paused during plugin installation/upgrade.');
+    exit(0);
+}
+
+// A persistent lock in the plugin log folder works for systemd (PrivateTmp)
+// and cron alike. Keep the descriptor open for the entire PHP process.
+$lockPath = $lbplogdir . '/.checkstate.lock';
+$checkstateLock = @fopen($lockPath, 'c');
+if ($checkstateLock === false || !@flock($checkstateLock, LOCK_EX | LOCK_NB)) {
+    s4l_console('WARNING', 'Online check lock unavailable or another check is running; skipping.');
+    exit(0);
+}
+
+// Recheck the guard after acquiring the lock to close the initial race.
+if (s4l_upgrade_in_progress($upgradeGuard)) {
+    s4l_console('INFO', 'Online check paused during plugin installation/upgrade.');
+    exit(0);
+}
 
 // Check if script/Sonos plugin is off.
 if (file_exists($off_file)) {
@@ -81,8 +105,17 @@ if (!is_dir($statusDir)) {
     s4l_log('INFO', "Status directory '{$statusDir}' has been created.");
 }
 
+if (!is_writable($statusDir)) {
+    s4l_log('ERROR', "PlayerStatus directory '{$statusDir}' is not writable by the online-check user; online check aborted.");
+    exit(1);
+}
+
 // Check online status per zone.
 foreach ($sonoszonen as $zonen => $ip) {
+    if (s4l_upgrade_in_progress($upgradeGuard)) {
+        s4l_console('INFO', 'Plugin replacement started; stopping online check before status changes.');
+        exit(0);
+    }
 
     if (!is_array($ip)) {
         s4l_log('WARNING', "Zone '{$zonen}' has an invalid configuration entry and was skipped.");
@@ -113,6 +146,10 @@ foreach ($sonoszonen as $zonen => $ip) {
     }
 
     $online = is_sonos_device_online($playerIp, $http_timeout_sec);
+    if (s4l_upgrade_in_progress($upgradeGuard)) {
+        s4l_console('INFO', 'Plugin replacement started; stopping online check before status changes.');
+        exit(0);
+    }
 
     if ($online) {
         if (!file_exists($onFile)) {
@@ -173,6 +210,17 @@ s4l_console('INFO', 'Online check for players has been executed successfully.');
 /**
  * Prefixes all explicit messages with the relative file context.
  */
+function s4l_upgrade_in_progress(string $guardPath): bool
+{
+    if (!is_file($guardPath)) {
+        return false;
+    }
+    clearstatcache(true, $guardPath);
+    $mtime = @filemtime($guardPath);
+    // Refuse work if the marker is newer than two hours or cannot be stat'ed.
+    return $mtime === false || time() - $mtime < 7200;
+}
+
 function s4l_message(string $message): string
 {
     return S4L_CHECKSTATE_CONTEXT . ': ' . $message;

@@ -1,6 +1,6 @@
 #!/bin/sh
 # Sonos4Lox postroot.sh
-# Version: POSTROOT_PIPER_SAFE_RESTORE_V04_2026_11_04
+# Version: POSTROOT_PIPER_ONLINE_GUARD_V05_2026_11_04
 # Will be executed as user "root".
 
 COMMAND="$0"
@@ -89,6 +89,97 @@ restore_staged_piper() {
     log_error "Piper runtime restore failed; staged backup remains: $PIPER_STAGE"
     return 1
 }
+# ---------------------------------------------------------
+# Restore online markers preserved by preroot.sh before the first online check.
+# A failed restoration keeps the backup and prevents unintended autoplay.
+# ---------------------------------------------------------
+restore_staged_playerstatus() {
+    case "$PTEMPDIR" in
+        ""|*[!A-Za-z0-9_-]*)
+            log_error "Unsafe installer token for PlayerStatus restore."
+            return 1
+            ;;
+    esac
+    case "$PDIR" in
+        ""|*[!A-Za-z0-9_-]*)
+            log_error "Unsafe plugin directory for PlayerStatus restore."
+            return 1
+            ;;
+    esac
+    STATUS_STAGE="$LBHOME/data/plugins/.${PDIR}_playerstatus_upgrade_${PTEMPDIR}"
+    STATUS_DIR="$LBHOME/data/plugins/$PDIR/PlayerStatus"
+    if [ -L "$STATUS_STAGE" ] || [ -L "$STATUS_DIR" ]; then
+        log_error "PlayerStatus backup or destination is a symlink."
+        return 1
+    fi
+    if [ -d "$STATUS_STAGE" ]; then
+        if ! mkdir -p "$STATUS_DIR"; then
+            log_error "Cannot create PlayerStatus destination: $STATUS_DIR"
+            return 1
+        fi
+        for marker in "$STATUS_STAGE"/s4lox_on_*.txt; do
+            [ -f "$marker" ] && [ ! -L "$marker" ] || continue
+            target="$STATUS_DIR/$(basename "$marker")"
+            if [ -L "$target" ]; then
+                log_error "Refusing to overwrite linked PlayerStatus marker: $target"
+                return 1
+            fi
+            if [ ! -e "$target" ]; then
+                if ! cp -p "$marker" "$target"; then
+                    log_error "Could not restore PlayerStatus marker: $target"
+                    return 1
+                fi
+            fi
+        done
+        log_ok "PlayerStatus markers restored/preserved from upgrade backup."
+    fi
+    if [ -d "$STATUS_DIR" ]; then
+        if ! chown loxberry:loxberry "$STATUS_DIR" || ! chmod 0755 "$STATUS_DIR"; then
+            log_error "Cannot normalize PlayerStatus directory permissions: $STATUS_DIR"
+            return 1
+        fi
+        for marker in "$STATUS_DIR"/s4lox_on_*.txt; do
+            [ -e "$marker" ] || [ -L "$marker" ] || continue
+            if [ -L "$marker" ] || [ ! -f "$marker" ] ||
+               ! chown loxberry:loxberry "$marker" || ! chmod 0644 "$marker"; then
+                log_error "Cannot normalize PlayerStatus marker: $marker"
+                return 1
+            fi
+        done
+        log_ok "PlayerStatus directory and marker permissions normalized."
+    fi
+    if [ -d "$STATUS_STAGE" ]; then
+        rm -rf -- "$STATUS_STAGE" || {
+            log_warning "Could not remove completed PlayerStatus backup: $STATUS_STAGE"
+            return 0
+        }
+    fi
+    return 0
+}
+
+# Remove only the guard created by this installation; never clear another
+# concurrently staged install marker.
+resume_online_checks() {
+    case "$PTEMPDIR" in
+        ""|*[!A-Za-z0-9_-]*) return 1 ;;
+    esac
+    ONLINE_GUARD_FILE="/run/shm/$PDIR/.online_check_upgrade"
+    if [ -L "$ONLINE_GUARD_FILE" ]; then
+        log_error "Online-check guard changed to a symlink."
+        return 1
+    fi
+    if [ -f "$ONLINE_GUARD_FILE" ]; then
+        GUARD_TOKEN="$(cat "$ONLINE_GUARD_FILE" 2>/dev/null || true)"
+        if [ "$GUARD_TOKEN" != "$PTEMPDIR" ]; then
+            log_error "Online-check guard belongs to a different installation."
+            return 1
+        fi
+        rm -f "$ONLINE_GUARD_FILE" || return 1
+        log_ok "Online-check upgrade guard cleared."
+    fi
+    return 0
+}
+
 # ---------------------------------------------------------
 # Piper Installation (robust, fixed path/layout)
 # Target:
@@ -521,10 +612,18 @@ if ! restore_staged_piper; then
     exit 2
 fi
 install_or_validate_piper
+if ! restore_staged_playerstatus; then
+    log_error "PlayerStatus recovery failed. Backup was retained; installation stopped."
+    exit 2
+fi
 install_systemd_units
 protect_check_on_state_execstart
 protect_exec_bits
 remove_sonos_on_check_cronfiles
+if ! resume_online_checks; then
+    log_error "Could not safely resume online checks; aborting before service activation."
+    exit 2
+fi
 run_player_initialization
 detect_loxdaten_enabled
 apply_systemd_state

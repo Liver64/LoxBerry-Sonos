@@ -1,40 +1,30 @@
 #!/usr/bin/env bash
-
-# This is a sample cron file. According to it's name it will go to
-# ~/system/cron/cron.hourly. You may also let your Pluginscript create a
-# symbolic link dynamically in ~/system/cron/cron.10min which links to your
-# cron-script instead (which is prefered). Use NAME from
-# /data/system/plugindatabase.dat in that case as scriptname! Otherwise the
-# cron script will not be uninstalled cleanly.
-
-# Will be executed as user "loxberry".
+# Sonos4Lox cron.01min
+# Version: CRON_CHECKSTATE_TIMER_FALLBACK_V01_2026_11_04
+# Runs as user "loxberry".
 set -euo pipefail
 
-#---- BACKUP FALLS VERBINDUNG ZU LOXONE AUS IST ---
 CFG="REPLACELBPCONFIGDIR/s4lox_config.json"
-
-# Falls Config fehlt: abbrechen oder Default setzen
 if [[ ! -f "$CFG" ]]; then
-  echo "Config not found: $CFG" >&2
-  exit 0
+    echo "Config not found: $CFG" >&2
+    exit 0
 fi
 
-LOXONE="$(jq -r '.LOXONE.LoxDaten // "false"' "$CFG")"
+# The systemd timer is the primary scheduler for CheckState.php. Cron provides
+# a fallback when that timer is inactive; CheckState's lock prevents overlaps.
+if ! command -v systemctl >/dev/null 2>&1 || ! systemctl is-active --quiet sonos_check_on_state.timer; then
+    /usr/bin/php REPLACELBPHTMLDIR/src/Core/Runtime/CheckState.php >/dev/null 2>&1 &
+fi
 
-# check_on_state ausführen
-/usr/bin/php /opt/loxberry/webfrontend/html/plugins/sonos4lox/src/Core/Runtime/CheckState.php >/dev/null 2>&1 &
-
-#---- AUSFÜHRUNG ALLE 10 SEKUNDEN ----
+# Preserve the original per-minute enforcement cycle (10-second cadence).
 i=0
 while [[ $i -lt 6 ]]; do
-  # /usr/bin/php REPLACELBPHTMLDIR/bin/push_loxone.php &
-  sleep 2
-  /usr/bin/php REPLACELBPHTMLDIR/src/Support/MaxVolumeEnforcer.php &
-  sleep 2
-  /usr/bin/php REPLACELBPHTMLDIR/src/Support/TvMonitor.php run &
-  sleep 2
-  /usr/bin/php REPLACELBPHTMLDIR/src/Support/TimeRestrictionEnforcer.php &
-  sleep 4
-  i=$(( i + 1 ))
+    sleep 2
+    /usr/bin/php REPLACELBPHTMLDIR/src/Support/MaxVolumeEnforcer.php &
+    sleep 2
+    /usr/bin/php REPLACELBPHTMLDIR/src/Support/TvMonitor.php run &
+    sleep 2
+    /usr/bin/php REPLACELBPHTMLDIR/src/Support/TimeRestrictionEnforcer.php &
+    sleep 4
+    i=$((i + 1))
 done
-
