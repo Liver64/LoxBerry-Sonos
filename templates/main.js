@@ -1293,6 +1293,7 @@ function checkProvider() {
 		populateAzureVoices();
 	}
 	else if (document.main_form.tts_elevenlabs?.checked === true) {
+		elevenlabsUsageCache = null;
 		elevenlabsModelsKey = null;
 		elevenlabsVoicesKey = null;
 		populateElevenlabsLang();
@@ -1406,6 +1407,7 @@ function populateElevenlabsLang() {
 	// -----------------------
 
     initializeElevenlabsModel();
+    $('#elevenlabs_usage').prop('hidden', true);
     populateElevenlabsVoices();
 }
 
@@ -1472,6 +1474,48 @@ async function fetchElevenlabsJson(url, key) {
         clearTimeout(timer);
     }
 }
+
+var elevenlabsUsageCache = null;
+var elevenlabsUsageRequest = 0;
+
+function renderElevenlabsUsage(text, title) {
+    const $usage = $('#elevenlabs_usage');
+    const reference = document.getElementById('linkazuelevenlabs');
+    if (reference) {
+        const style = window.getComputedStyle(reference);
+        $usage.css({color: style.color, fontSize: style.fontSize, fontWeight: style.fontWeight, lineHeight: style.lineHeight});
+    }
+    $usage.text(text).attr('title', title || '').prop('hidden', false);
+}
+
+async function populateElevenlabsUsage() {
+    const key = ($('#apikey').val() || '').trim();
+    if (!key || !elevenlabsActive(key)) return;
+    if (elevenlabsUsageCache && elevenlabsUsageCache.key === key && Date.now() - elevenlabsUsageCache.time < 60000) {
+        renderElevenlabsUsage(elevenlabsUsageCache.text);
+        return;
+    }
+    const request = ++elevenlabsUsageRequest;
+    try {
+        const data = await fetchElevenlabsJson('https://api.elevenlabs.io/v1/user/subscription', key);
+        if (request !== elevenlabsUsageRequest || !elevenlabsActive(key)) return;
+        if (typeof data.character_count !== 'number' || !Number.isFinite(data.character_count) ||
+            typeof data.character_limit !== 'number' || !Number.isFinite(data.character_limit)) {
+            throw new Error(elevenlabsText('INVALID_RESPONSE'));
+        }
+        const format = new Intl.NumberFormat(elevenlabsText('USAGE_LOCALE'));
+        const text = elevenlabsText('USAGE').replace('{used}', format.format(data.character_count))
+            .replace('{limit}', format.format(data.character_limit));
+        elevenlabsUsageCache = {key: key, time: Date.now(), text: text};
+        renderElevenlabsUsage(text);
+    } catch (error) {
+        if (request !== elevenlabsUsageRequest || !elevenlabsActive(key)) return;
+        // An optional account permission must not prevent voice selection or open another modal.
+        renderElevenlabsUsage(elevenlabsText('USAGE_UNAVAILABLE'),
+            (error.status === 401 || error.status === 403) ? elevenlabsText('USAGE_PERMISSION') : error.message);
+    }
+}
+
 
 function elevenlabsActive(key) {
     return $('#tts_elevenlabs').prop('checked') && ($('#apikey').val() || '').trim() === key;
@@ -1584,6 +1628,7 @@ async function populateElevenlabsVoices() {
     }
     if (elevenlabsVoices && elevenlabsVoicesKey === key) {
         renderElevenlabsVoices();
+        populateElevenlabsUsage();
         return;
     }
     const request = ++elevenlabsVoicesRequest;
@@ -1603,6 +1648,7 @@ async function populateElevenlabsVoices() {
         elevenlabsVoices = voices;
         elevenlabsVoicesKey = key;
         renderElevenlabsVoices();
+        populateElevenlabsUsage();
     } catch (error) {
         if (request !== elevenlabsVoicesRequest || !elevenlabsActive(key)) return;
         showElevenlabsError(elevenlabsText('VOICES_ERROR') + ' ' + error.message);

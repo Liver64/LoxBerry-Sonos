@@ -495,8 +495,12 @@
                                 data-no-models="<TMPL_VAR NAME=T2S.ELEVENLABS_NO_MODELS ESCAPE=HTML>"
                                 data-invalid-voices="<TMPL_VAR NAME=T2S.ELEVENLABS_INVALID_VOICES ESCAPE=HTML>"
                                 data-missing-page-token="<TMPL_VAR NAME=T2S.ELEVENLABS_MISSING_PAGE_TOKEN ESCAPE=HTML>"
-                                data-voices-error="<TMPL_VAR NAME=T2S.ELEVENLABS_VOICES_ERROR ESCAPE=HTML>"></div>
-                            <div id="elevenlabsmodell_wrap" class="ttsconfig 9011" style="display:none; flex:0 1 280px; min-width:210px;">
+                                data-voices-error="<TMPL_VAR NAME=T2S.ELEVENLABS_VOICES_ERROR ESCAPE=HTML>"
+                                data-usage="<TMPL_VAR NAME=T2S.ELEVENLABS_USAGE ESCAPE=HTML>"
+                                data-usage-unavailable="<TMPL_VAR NAME=T2S.ELEVENLABS_USAGE_UNAVAILABLE ESCAPE=HTML>"
+                                data-usage-permission="<TMPL_VAR NAME=T2S.ELEVENLABS_USAGE_PERMISSION ESCAPE=HTML>"
+                                data-usage-locale="<TMPL_VAR NAME=T2S.ELEVENLABS_USAGE_LOCALE ESCAPE=HTML>"></div>
+                            <div id="elevenlabsmodell_wrap" class="ttsconfig 9011" style="display:none; flex:0 1 280px; min-width:210px; position:relative;">
                                 <select
                                     class="lb-select"
                                     id="elevenlabsmodell"
@@ -511,6 +515,7 @@
                                     <option value="" disabled><TMPL_VAR NAME=T2S.ELEVENLABS_SELECT_MODEL ESCAPE=HTML></option>
                                     <option value="<TMPL_VAR NAME=ELEVENLABSMODELL ESCAPE=HTML>" selected><TMPL_VAR NAME=ELEVENLABSMODELL ESCAPE=HTML></option>
                                 </select>
+                                    <span id="elevenlabs_usage" role="status" aria-live="polite" hidden style="position:absolute; top:100%; left:0; margin-top:4px; font-size:smaller; font-weight:600; color:var(--lb-link-color, #3388cc); text-decoration:none; white-space:nowrap;"></span>
                             </div>
 
                             <div class="ttsconfig btnpopulategooglevoices 8001 9001 9011 9012" style="flex:0 0 auto; white-space:nowrap;">
